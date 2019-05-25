@@ -23,7 +23,7 @@ public class EventDispatcher<R extends CustomResource,
     }
 
     public void eventReceived(Action action, R resource) {
-        log.info("Action: {}, Event: {}", action, resource);
+        log.debug("Action: {}, {}: {}", action, resource.getClass().getSimpleName(), resource.getMetadata().getName());
 
         if (action == Action.MODIFIED || action == Action.ADDED) {
             if (markedForDeletion(resource)) {
