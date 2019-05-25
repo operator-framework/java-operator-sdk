@@ -120,8 +120,8 @@ public class BitbucketRepo extends io.fabric8.kubernetes.client.CustomResource {
 public class BitbucketRepoList extends io.fabric8.kubernetes.client.CustomResourceList<BitbucketRepo> {
 }
 
-public class DoneableOpsRepo extends io.fabric8.kubernetes.client.CustomResourceDoneable<BitbucketRepo> {
-    public DoneableOpsRepo(OpsRepo resource, io.fabric8.kubernetes.api.builder.Function function) {
+public class DoneableBitbucketRepo extends io.fabric8.kubernetes.client.CustomResourceDoneable<BitbucketRepo> {
+    public DoneableBitbucketRepo(BitbucketRepo resource, io.fabric8.kubernetes.api.builder.Function function) {
         super(resource, function);
     }
 }
