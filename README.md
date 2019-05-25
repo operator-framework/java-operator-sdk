@@ -19,12 +19,16 @@ Feature we would like to implement and invite the community to help us implement
 
 ## Usage
 
+Main method initializing the Operator and registering a controller for Bitbucket.
+
 ```java
 public static void main(String[] args) {
     Operator operator = Operator.initializeFromEnvironment();
     operator.registerController(new BitbucketController(new Bitbucket()));
 }
 ```
+
+The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
 public class BitbucketRepoController implements CustomResourceController<BitbucketRepo, BitbucketRepoList, DoneableBitbucketRepo> {
@@ -83,4 +87,42 @@ public class BitbucketRepoController implements CustomResourceController<Bitbuck
     }
 }
 
+```
+
+Classes mapping the Customer resource + boilerplate needed for the kubernetes-client.
+
+```java
+public class BitbucketRepo extends io.fabric8.kubernetes.client.CustomResource {
+    public static final String CRD_VERSION = "v1";
+    public static final String API_VERSION = "jkube.bitbucket/v1";
+    public static final String DEFAULT_DELETE_FINALIZER = "finalizer.BitbucketRepo.jkube.bitbucket";
+
+    private BitbucketRepoSpec spec;
+    private BitbucketRepoStatus status;
+
+    public BitbucketRepoSpec getSpec() {
+        return spec;
+    }
+
+    public void setSpec(BitbucketRepoSpec spec) {
+        this.spec = spec;
+    }
+
+    public BitbucketRepoStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BitbucketRepoStatus status) {
+        this.status = status;
+    }
+}
+
+public class BitbucketRepoList extends io.fabric8.kubernetes.client.CustomResourceList<BitbucketRepo> {
+}
+
+public class DoneableOpsRepo extends io.fabric8.kubernetes.client.CustomResourceDoneable<BitbucketRepo> {
+    public DoneableOpsRepo(OpsRepo resource, io.fabric8.kubernetes.api.builder.Function function) {
+        super(resource, function);
+    }
+}
 ```
