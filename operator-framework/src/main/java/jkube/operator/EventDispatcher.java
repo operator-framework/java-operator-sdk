@@ -40,7 +40,8 @@ public class EventDispatcher<R extends CustomResource,
     }
 
     private void replace(R resource) {
-        CustomResourceOperationsImpl resourceOperation = (CustomResourceOperationsImpl<R, L, D>) resourceClient;
+        CustomResourceOperationsImpl<R, L, D> resourceOperation = (CustomResourceOperationsImpl<R, L, D>) resourceClient;
+        // Todo add default finalizer
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 

@@ -18,36 +18,39 @@ import java.util.Optional;
 
 public class Operator {
 
-    private KubernetesClient k8sClient;
+    private static Operator singletonOperator;
+
+    private final KubernetesClient k8sClient;
 
     private Map<CustomResourceController, EventDispatcher> controllers = new HashMap<>();
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
+
     public static Operator initializeFromEnvironment() {
-        ConfigBuilder config = new ConfigBuilder().withTrustCerts(true);
-        if (StringUtils.isNotBlank(System.getenv("K8S_MASTER_URL"))) {
-            config.withMasterUrl(System.getenv("K8S_MASTER_URL"));
+        if (singletonOperator == null) {
+            ConfigBuilder config = new ConfigBuilder().withTrustCerts(true);
+            if (StringUtils.isNotBlank(System.getenv("K8S_MASTER_URL"))) {
+                config.withMasterUrl(System.getenv("K8S_MASTER_URL"));
+            }
+            if (StringUtils.isNoneBlank(System.getenv("K8S_USERNAME"), System.getenv("K8S_PASSWORD"))) {
+                config.withUsername(System.getenv("K8S_USERNAME")).withPassword(System.getenv("K8S_PASSWORD"));
+            }
+            singletonOperator = new Operator(new DefaultOpenShiftClient(config.build()));
         }
-        if (StringUtils.isNoneBlank(System.getenv("K8S_USERNAME"), System.getenv("K8S_PASSWORD"))) {
-            config.withUsername(System.getenv("K8S_USERNAME")).withPassword(System.getenv("K8S_PASSWORD"));
-        }
-        DefaultOpenShiftClient client = new DefaultOpenShiftClient(config.build());
-
-
-        Operator operator = new Operator();
-        operator.k8sClient = client;
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            log.error("Error", e);
-            operator.stop();
-        });
-        return operator;
+        return singletonOperator;
     }
 
-    private Operator() {
+    private Operator(KubernetesClient k8sClient) {
+        this.k8sClient = k8sClient;
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            log.error("Error", e);
+            this.stop();
+        });
     }
 
     public <R extends CustomResource, L extends CustomResourceList<R>, D extends CustomResourceDoneable<R>>
+
     void registerController(CustomResourceController<R, L, D> controller) throws OperatorException {
         Class<R> resClass = controller.getCustomResourceClass();
         KubernetesDeserializer.registerCustomKind(controller.getApiVersion(),
