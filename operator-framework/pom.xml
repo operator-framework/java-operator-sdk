@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>operator-framework</artifactId>
-    <name>operator-sdk - framework</name>
+    <name>Operator SDK - Framework</name>
     <description>Framework for implementing Kubernetes operators</description>
     <packaging>jar</packaging>
 

@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>operator-framework-sample</artifactId>
-    <name>operator-sdk - sample</name>
+    <name>Operator SDK - Sample</name>
     <description>Sample usage of operator framework</description>
     <packaging>jar</packaging>
 
