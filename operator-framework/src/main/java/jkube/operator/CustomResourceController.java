@@ -10,15 +10,4 @@ public interface CustomResourceController<R extends CustomResource, L extends Cu
 
     R createOrUpdateResource(R resource);
 
-    Class<R> getCustomResourceClass();
-
-    Class<L> getCustomResourceListClass();
-
-    Class<D> getCustomResourceDoneableClass();
-
-    String getApiVersion();
-
-    String getCrdVersion();
-
-
 }

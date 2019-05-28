@@ -1,8 +1,32 @@
 package jkube.operator;
 
-public class ControllerUtils {
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.fabric8.kubernetes.client.CustomResourceList;
 
-    public static String getDefaultFinalizer(Class<? extends CustomResourceController> controllerClass) {
-        return "todo";
+class ControllerUtils {
+
+    static String getDefaultFinalizer(CustomResourceController controller) {
+        return null;
+    }
+
+    static Class<? extends CustomResource> getCustomResourceClass(CustomResourceController controller) {
+        return null;
+    }
+
+    static Class<? extends CustomResourceList> getCustomResourceListClass(CustomResourceController controller) {
+        return null;
+    }
+
+    static Class<? extends CustomResourceDoneable> getCustomResourceDoneableClass(CustomResourceController controller) {
+        return null;
+    }
+
+    static String getApiVersion(CustomResourceController controller) {
+        return null;
+    }
+
+    static String getCrdVersion(CustomResourceController controller) {
+        return null;
     }
 }

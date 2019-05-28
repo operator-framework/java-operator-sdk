@@ -4,8 +4,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.internal.RawCustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
@@ -15,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import static jkube.operator.ControllerUtils.*;
 
 public class Operator {
 
@@ -52,25 +52,28 @@ public class Operator {
     public <R extends CustomResource, L extends CustomResourceList<R>, D extends CustomResourceDoneable<R>>
 
     void registerController(CustomResourceController<R, L, D> controller) throws OperatorException {
-        Class<R> resClass = controller.getCustomResourceClass();
-        KubernetesDeserializer.registerCustomKind(controller.getApiVersion(),
+        Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
+        KubernetesDeserializer.registerCustomKind(getApiVersion(controller),
                 resClass.getSimpleName(), resClass);
 
         CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
         Optional<CustomResourceDefinition> crd = crdList.getItems().stream()
                 .filter(c -> resClass.getSimpleName().equals(c.getSpec().getNames().getKind()) &&
-                        controller.getCrdVersion().equals(c.getSpec().getVersion()))
+                        getCrdVersion(controller).equals(c.getSpec().getVersion()))
                 .findFirst();
 
         if (crd.isPresent()) {
-            MixedOperation<R, L, D, Resource<R, D>> client = k8sClient.customResources(crd.get(), resClass, controller.getCustomResourceListClass(),
-                    controller.getCustomResourceDoneableClass());
+            MixedOperation client = k8sClient.customResources(crd.get(), resClass,
+                    getCustomResourceListClass(controller),
+                    getCustomResourceDoneableClass(controller));
             EventDispatcher<R, L, D> eventDispatcher = new EventDispatcher<>(controller, client);
             client.watch(eventDispatcher);
             controllers.put(controller, eventDispatcher);
-            log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '" + controller.getCustomResourceClass().getName() + "'");
+            log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '"
+                    + getCustomResourceClass(controller).getName() + "'");
         } else {
-            throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '" + controller.getCrdVersion() + "' not found");
+            throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"
+                    + getCrdVersion(controller) + "' not found");
         }
     }
 

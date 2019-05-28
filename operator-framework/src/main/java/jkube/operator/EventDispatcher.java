@@ -23,7 +23,7 @@ public class EventDispatcher<R extends CustomResource,
                            NonNamespaceOperation<R, L, D, Resource<R, D>> resourceClient) {
         this.controller = controller;
         this.resourceOperation = (CustomResourceOperationsImpl<R, L, D>) resourceClient;
-        this.resourceDefaultFinalizer = ControllerUtils.getDefaultFinalizer(controller.getClass());
+        this.resourceDefaultFinalizer = ControllerUtils.getDefaultFinalizer(controller);
     }
 
     public void eventReceived(Action action, R resource) {

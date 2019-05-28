@@ -15,28 +15,4 @@ public class BitbucketController implements CustomResourceController {
         return null;
     }
 
-    @Override
-    public Class getCustomResourceClass() {
-        return null;
-    }
-
-    @Override
-    public Class getCustomResourceListClass() {
-        return null;
-    }
-
-    @Override
-    public Class getCustomResourceDoneableClass() {
-        return null;
-    }
-
-    @Override
-    public String getApiVersion() {
-        return null;
-    }
-
-    @Override
-    public String getCrdVersion() {
-        return null;
-    }
 }
