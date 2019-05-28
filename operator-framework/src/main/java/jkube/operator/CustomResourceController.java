@@ -1,6 +1,5 @@
 package jkube.operator;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;

@@ -1,35 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>jkube</groupId>
-	<artifactId>operator-sdk</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>operator-sdk</name>
-	<description>Framework for implementing Kubernetes operators</description>
 
-	<properties>
-		<java.version>8</java.version>
-	</properties>
+    <groupId>jkube</groupId>
+    <artifactId>operator-sdk</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>operator-sdk</name>
+    <description>SDK for implementing Kubernetes operators</description>
+    <packaging>pom</packaging>
 
-	<dependencies>
-		<dependency>
-			<groupId>io.fabric8</groupId>
-			<artifactId>openshift-client</artifactId>
-			<version>4.2.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.8.1</version>
-		</dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.26</version>
-        </dependency>
-	</dependencies>
+    <properties>
+        <java.version>8</java.version>
+    </properties>
+
+    <modules>
+        <module>operator-framework</module>
+        <module>sample</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>openshift-client</artifactId>
+                <version>4.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.8.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.26</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
