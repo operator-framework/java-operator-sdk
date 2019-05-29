@@ -64,9 +64,7 @@ public class Operator {
                 .findFirst();
 
         if (crd.isPresent()) {
-            MixedOperation client = k8sClient.customResources(crd.get(), resClass,
-                    getCustomResourceListClass(controller),
-                    getCustomResourceDoneableClass(controller));
+            MixedOperation client = k8sClient.customResources(crd.get(), resClass, CustomResourceList.class, CustomResourceDoneable.class);
             EventDispatcher<R, L, D> eventDispatcher = new EventDispatcher<>(controller, client);
             client.watch(eventDispatcher);
             controllers.put(controller, eventDispatcher);
