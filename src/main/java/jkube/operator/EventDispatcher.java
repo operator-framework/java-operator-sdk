@@ -40,7 +40,7 @@ public class EventDispatcher<R extends CustomResource,
     }
 
     private void replace(R resource) {
-        var resourceOperation = (CustomResourceOperationsImpl<R, L, D>) resourceClient;
+        CustomResourceOperationsImpl resourceOperation = (CustomResourceOperationsImpl<R, L, D>) resourceClient;
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 

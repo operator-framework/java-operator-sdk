@@ -1,7 +1,11 @@
 package jkube.operator;
 
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.internal.RawCustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
@@ -10,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class Operator {
 
@@ -27,7 +32,7 @@ public class Operator {
         if (StringUtils.isNoneBlank(System.getenv("K8S_USERNAME"), System.getenv("K8S_PASSWORD"))) {
             config.withUsername(System.getenv("K8S_USERNAME")).withPassword(System.getenv("K8S_PASSWORD"));
         }
-        var client = new DefaultOpenShiftClient(config.build());
+        DefaultOpenShiftClient client = new DefaultOpenShiftClient(config.build());
 
 
         Operator operator = new Operator();
@@ -44,20 +49,20 @@ public class Operator {
 
     public <R extends CustomResource, L extends CustomResourceList<R>, D extends CustomResourceDoneable<R>>
     void registerController(CustomResourceController<R, L, D> controller) throws OperatorException {
-        var resClass = controller.getCustomResourceClass();
+        Class<R> resClass = controller.getCustomResourceClass();
         KubernetesDeserializer.registerCustomKind(controller.getApiVersion(),
                 resClass.getSimpleName(), resClass);
 
         CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
-        var crd = crdList.getItems().stream()
+        Optional<CustomResourceDefinition> crd = crdList.getItems().stream()
                 .filter(c -> resClass.getSimpleName().equals(c.getSpec().getNames().getKind()) &&
                         controller.getCrdVersion().equals(c.getSpec().getVersion()))
                 .findFirst();
 
         if (crd.isPresent()) {
-            var client = k8sClient.customResources(crd.get(), resClass, controller.getCustomResourceListClass(),
+            MixedOperation<R, L, D, Resource<R, D>> client = k8sClient.customResources(crd.get(), resClass, controller.getCustomResourceListClass(),
                     controller.getCustomResourceDoneableClass());
-            var eventDispatcher = new EventDispatcher<>(controller, client);
+            EventDispatcher<R, L, D> eventDispatcher = new EventDispatcher<>(controller, client);
             client.watch(eventDispatcher);
             controllers.put(controller, eventDispatcher);
             log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '" + controller.getCustomResourceClass().getName() + "'");
