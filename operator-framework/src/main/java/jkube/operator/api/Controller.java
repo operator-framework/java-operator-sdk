@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface Controller {
 
-    String DEFAULT_FINALIZER = "default";
+    String DEFAULT_FINALIZER = "operator.default.finalizer";
 
     String apiVersion() default "apiextensions.k8s.io/v1beta1";
 

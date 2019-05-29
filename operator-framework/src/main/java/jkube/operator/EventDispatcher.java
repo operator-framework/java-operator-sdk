@@ -10,9 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
-public class EventDispatcher<R extends CustomResource,
-        L extends CustomResourceList<R>,
-        D extends CustomResourceDoneable<R>> implements Watcher<R> {
+public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
@@ -21,15 +19,17 @@ public class EventDispatcher<R extends CustomResource,
     private final String resourceDefaultFinalizer;
     private final NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
             Resource<R, CustomResourceDoneable<R>>> resourceClient;
+    private final KubernetesClient k8sClient;
 
     public EventDispatcher(CustomResourceController<R> controller,
                            NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
-                                   Resource<R, CustomResourceDoneable<R>>> resourceClient) {
+                                   Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient) {
 
         this.controller = controller;
         this.resourceClient = resourceClient;
         this.resourceOperation = (CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>>) resourceClient;
         this.resourceDefaultFinalizer = ControllerUtils.getDefaultFinalizer(controller);
+        this.k8sClient = k8sClient;
     }
 
     public void eventReceived(Action action, R resource) {
@@ -39,10 +39,10 @@ public class EventDispatcher<R extends CustomResource,
             // we don't want to try delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
-                controller.deleteResource(resource, new Context(resourceClient));
+                controller.deleteResource(resource, new Context(k8sClient, resourceClient));
                 removeDefaultFinalizer(resource);
             } else {
-                R updatedResource = controller.createOrUpdateResource(resource,new Context<>(resourceClient));
+                R updatedResource = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
                 addFinalizerIfNotPresent(updatedResource);
                 replace(updatedResource);
             }

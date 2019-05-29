@@ -50,22 +50,17 @@ public class Operator {
         });
     }
 
-    public <R extends CustomResource, L extends CustomResourceList<R>, D extends CustomResourceDoneable<R>>
-
-    void registerController(CustomResourceController<R> controller) throws OperatorException {
+    public <R extends CustomResource> void registerController(CustomResourceController<R> controller) throws OperatorException {
         Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
+
         KubernetesDeserializer.registerCustomKind(getApiVersion(controller),
                 resClass.getSimpleName(), resClass);
 
-        CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
-        Optional<CustomResourceDefinition> crd = crdList.getItems().stream()
-                .filter(c -> resClass.getSimpleName().equals(c.getSpec().getNames().getKind()) &&
-                        getCrdVersion(controller).equals(c.getSpec().getVersion()))
-                .findFirst();
+        Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
 
         if (crd.isPresent()) {
             MixedOperation client = k8sClient.customResources(crd.get(), resClass, CustomResourceList.class, CustomResourceDoneable.class);
-            EventDispatcher<R, L, D> eventDispatcher = new EventDispatcher<>(controller, client);
+            EventDispatcher<R> eventDispatcher = new EventDispatcher<>(controller, client, k8sClient);
             client.watch(eventDispatcher);
             controllers.put(controller, eventDispatcher);
             log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '"
@@ -75,6 +70,16 @@ public class Operator {
                     + getCrdVersion(controller) + "' not found");
         }
     }
+
+    private Optional<CustomResourceDefinition> getCustomResourceDefinitionForController(CustomResourceController controller) {
+        CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
+        return null;
+//        return crdList.getItems().stream()
+//                .filter(c -> resClass.getSimpleName().equals(c.getSpec().getNames().getKind()) &&
+//                        getCrdVersion(controller).equals(c.getSpec().getVersion()))
+//                .findFirst();
+    }
+
 
     public void stop() {
         k8sClient.close();
