@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import jkube.operator.api.CustomResourceController;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public class Operator {
 
     public <R extends CustomResource, L extends CustomResourceList<R>, D extends CustomResourceDoneable<R>>
 
-    void registerController(CustomResourceController<R, L, D> controller) throws OperatorException {
+    void registerController(CustomResourceController<R> controller) throws OperatorException {
         Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
         KubernetesDeserializer.registerCustomKind(getApiVersion(controller),
                 resClass.getSimpleName(), resClass);

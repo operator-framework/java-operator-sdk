@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import jkube.operator.api.CustomResourceController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,14 +16,19 @@ public class EventDispatcher<R extends CustomResource,
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    private final CustomResourceController<R, L, D> controller;
-    private final CustomResourceOperationsImpl<R, L, D> resourceOperation;
+    private final CustomResourceController<R> controller;
+    private final CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation;
     private final String resourceDefaultFinalizer;
+    private final NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
+            Resource<R, CustomResourceDoneable<R>>> resourceClient;
 
-    public EventDispatcher(CustomResourceController<R, L, D> controller,
-                           NonNamespaceOperation<R, L, D, Resource<R, D>> resourceClient) {
+    public EventDispatcher(CustomResourceController<R> controller,
+                           NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
+                                   Resource<R, CustomResourceDoneable<R>>> resourceClient) {
+
         this.controller = controller;
-        this.resourceOperation = (CustomResourceOperationsImpl<R, L, D>) resourceClient;
+        this.resourceClient = resourceClient;
+        this.resourceOperation = (CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>>) resourceClient;
         this.resourceDefaultFinalizer = ControllerUtils.getDefaultFinalizer(controller);
     }
 
@@ -33,10 +39,10 @@ public class EventDispatcher<R extends CustomResource,
             // we don't want to try delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
-                controller.deleteResource(resource);
+                controller.deleteResource(resource, new Context(resourceClient));
                 removeDefaultFinalizer(resource);
             } else {
-                R updatedResource = controller.createOrUpdateResource(resource);
+                R updatedResource = controller.createOrUpdateResource(resource,new Context<>(resourceClient));
                 addFinalizerIfNotPresent(updatedResource);
                 replace(updatedResource);
             }

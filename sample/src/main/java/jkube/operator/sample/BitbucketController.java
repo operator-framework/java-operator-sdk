@@ -1,18 +1,17 @@
 package jkube.operator.sample;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import jkube.operator.CustomResourceController;
+import jkube.operator.Context;
+import jkube.operator.api.CustomResourceController;
 
-public class BitbucketController implements CustomResourceController {
+public class BitbucketController implements CustomResourceController<BitbucketRepository> {
 
     @Override
-    public void deleteResource(CustomResource resource) {
+    public void deleteResource(BitbucketRepository resource, Context<BitbucketRepository> context) {
 
     }
 
     @Override
-    public CustomResource createOrUpdateResource(CustomResource resource) {
+    public BitbucketRepository createOrUpdateResource(BitbucketRepository resource, Context<BitbucketRepository> context) {
         return null;
     }
-
 }

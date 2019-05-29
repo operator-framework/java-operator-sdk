@@ -3,6 +3,7 @@ package jkube.operator;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
+import jkube.operator.api.CustomResourceController;
 
 class ControllerUtils {
 
