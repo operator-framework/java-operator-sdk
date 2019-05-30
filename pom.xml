@@ -8,6 +8,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
+    <packaging>pom</packaging>
 
     <properties>
         <java.version>8</java.version>
