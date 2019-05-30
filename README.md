@@ -1,4 +1,5 @@
 # jkube-operator-sdk
+> This project is incubation phase.
 
 **!!! Project is in incubation phase !!!**
 
