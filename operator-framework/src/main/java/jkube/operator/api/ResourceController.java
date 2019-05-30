@@ -7,6 +7,9 @@ public interface ResourceController<R extends CustomResource> {
 
     void deleteResource(R resource, Context<R> context);
 
+    /*
+     * This operation is required to be idempotent.
+     */
     R createOrUpdateResource(R resource, Context<R> context);
 
 }

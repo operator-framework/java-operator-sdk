@@ -33,11 +33,18 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     }
 
     public void eventReceived(Action action, R resource) {
-        log.debug("Action: {}, {}: {}", action, resource.getClass().getSimpleName(), resource.getMetadata().getName());
+        try {
+            log.debug("Action: {}, {}: {}", action, resource.getClass().getSimpleName(), resource.getMetadata().getName());
+            handleEvent(action, resource);
+        } catch (RuntimeException e) {
+            log.error("Error on resource: {}", resource.getMetadata().getName(), e);
+        }
+    }
 
+    private void handleEvent(Action action, R resource) {
         if (action == Action.MODIFIED || action == Action.ADDED) {
-            // we don't want to try delete resource if it not contains our finalizer,
-            // since the resource still can be updates when marked for deletion
+            // we don't want to call delete resource if it not contains our finalizer,
+            // since the resource still can be updates when marked for deletion and contains other finalizers
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
                 controller.deleteResource(resource, new Context(k8sClient, resourceClient));
                 removeDefaultFinalizer(resource);
@@ -47,9 +54,11 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
                 replace(updatedResource);
             }
         }
-
         if (Action.ERROR == action) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
+        }
+        if (Action.DELETED == action) {
+            log.debug("Resource deleted: {}", resource.getMetadata().getName());
         }
     }
 

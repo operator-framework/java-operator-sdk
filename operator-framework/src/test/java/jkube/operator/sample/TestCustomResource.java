@@ -1,4 +1,4 @@
-package jkube.operator;
+package jkube.operator.sample;
 
 import io.fabric8.kubernetes.client.CustomResource;
 

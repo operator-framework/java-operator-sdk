@@ -1,9 +1,11 @@
 package jkube.operator;
 
+import jkube.operator.sample.TestCustomResource;
+import jkube.operator.sample.TestResourceController;
 import org.junit.jupiter.api.Test;
 
-import static jkube.operator.TestResourceController.CUSTOM_RESOURCE_DEFINITION_NAME;
 import static jkube.operator.api.Controller.*;
+import static jkube.operator.sample.TestResourceController.CUSTOM_RESOURCE_DEFINITION_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ControllerUtilsTest {

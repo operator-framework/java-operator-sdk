@@ -1,5 +1,6 @@
-package jkube.operator;
+package jkube.operator.sample;
 
+import jkube.operator.Context;
 import jkube.operator.api.Controller;
 import jkube.operator.api.ResourceController;
 
