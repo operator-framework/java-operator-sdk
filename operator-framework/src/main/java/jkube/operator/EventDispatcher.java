@@ -4,7 +4,7 @@ import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import jkube.operator.api.CustomResourceController;
+import jkube.operator.api.ResourceController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,14 +14,14 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    private final CustomResourceController<R> controller;
+    private final ResourceController<R> controller;
     private final CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation;
     private final String resourceDefaultFinalizer;
     private final NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
             Resource<R, CustomResourceDoneable<R>>> resourceClient;
     private final KubernetesClient k8sClient;
 
-    public EventDispatcher(CustomResourceController<R> controller,
+    public EventDispatcher(ResourceController<R> controller,
                            NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
                                    Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient) {
 

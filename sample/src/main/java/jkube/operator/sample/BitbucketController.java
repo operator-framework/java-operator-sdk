@@ -1,9 +1,9 @@
 package jkube.operator.sample;
 
 import jkube.operator.Context;
-import jkube.operator.api.CustomResourceController;
+import jkube.operator.api.ResourceController;
 
-public class BitbucketController implements CustomResourceController<BitbucketRepository> {
+public class BitbucketController implements ResourceController<BitbucketRepository> {
 
     @Override
     public void deleteResource(BitbucketRepository resource, Context<BitbucketRepository> context) {

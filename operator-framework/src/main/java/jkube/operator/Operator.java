@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import jkube.operator.api.CustomResourceController;
+import jkube.operator.api.ResourceController;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ public class Operator {
 
     private final KubernetesClient k8sClient;
 
-    private Map<CustomResourceController, EventDispatcher> controllers = new HashMap<>();
+    private Map<ResourceController, EventDispatcher> controllers = new HashMap<>();
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
@@ -50,7 +50,7 @@ public class Operator {
         });
     }
 
-    public <R extends CustomResource> void registerController(CustomResourceController<R> controller) throws OperatorException {
+    public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
         Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
 
         KubernetesDeserializer.registerCustomKind(getApiVersion(controller),
@@ -71,13 +71,13 @@ public class Operator {
         }
     }
 
-    private Optional<CustomResourceDefinition> getCustomResourceDefinitionForController(CustomResourceController controller) {
+    private Optional<CustomResourceDefinition> getCustomResourceDefinitionForController(ResourceController controller) {
         CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
-        return null;
-//        return crdList.getItems().stream()
-//                .filter(c -> resClass.getSimpleName().equals(c.getSpec().getNames().getKind()) &&
-//                        getCrdVersion(controller).equals(c.getSpec().getVersion()))
-//                .findFirst();
+
+        return crdList.getItems().stream()
+                .filter(c -> getCustomResourceDefinitionName(controller).equals(c.getSpec().getNames().getKind()) &&
+                        getCrdVersion(controller).equals(c.getSpec().getVersion()))
+                .findFirst();
     }
 
 

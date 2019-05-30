@@ -12,12 +12,13 @@ import java.lang.annotation.Target;
 public @interface Controller {
 
     String DEFAULT_FINALIZER = "operator.default.finalizer";
+    String DEFAULT_API_EXTENSION_VERSION = "apiextensions.k8s.io/v1beta1";
+    String DEFAULT_API_VERSION = "v1";
 
-    String apiVersion() default "apiextensions.k8s.io/v1beta1";
+    String apiVersion() default DEFAULT_API_EXTENSION_VERSION;
 
-    String crdVersion() default "v1";
+    String crdVersion() default DEFAULT_API_VERSION;
 
-    // todo we can get this from the class generic
     Class<? extends CustomResource> customResourceClass();
 
     String defaultFinalizer() default DEFAULT_FINALIZER;
