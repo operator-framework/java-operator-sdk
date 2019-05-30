@@ -19,6 +19,7 @@ kubernetes-client.
 Feature we would like to implement and invite the community to help us implement in the future:
 * Testing support
 * Class generation from CRD to POJO
+* Spring Boot support
 
 ## Usage
 
