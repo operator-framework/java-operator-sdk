@@ -1,6 +1,8 @@
 # jkube-operator-sdk
 > This project is incubation phase.
 
+**!!! Project is in incubation phase !!!**
+
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 In this first iteration we aim to provide a framework which handles the reconciliation loop by dispatching events to
 a Controller written by the user of the framework.
