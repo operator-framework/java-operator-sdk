@@ -1,4 +1,4 @@
-package jkube.operator;
+package com.github.containersolutions.operator;
 
 public class OperatorException extends RuntimeException {
 

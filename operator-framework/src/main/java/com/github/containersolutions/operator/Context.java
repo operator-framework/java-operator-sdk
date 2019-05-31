@@ -1,4 +1,4 @@
-package jkube.operator;
+package com.github.containersolutions.operator;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;

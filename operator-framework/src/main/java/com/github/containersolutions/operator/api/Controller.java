@@ -1,4 +1,4 @@
-package jkube.operator.api;
+package com.github.containersolutions.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
@@ -19,9 +19,10 @@ public @interface Controller {
 
     String crdVersion() default DEFAULT_API_VERSION;
 
+    String kind();
+
     Class<? extends CustomResource> customResourceClass();
 
     String defaultFinalizer() default DEFAULT_FINALIZER;
 
-    String customResourceDefinitionName();
 }

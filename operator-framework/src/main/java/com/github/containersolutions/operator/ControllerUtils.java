@@ -1,8 +1,8 @@
-package jkube.operator;
+package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.api.Controller;
+import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.CustomResource;
-import jkube.operator.api.Controller;
-import jkube.operator.api.ResourceController;
 
 class ControllerUtils {
 
@@ -22,8 +22,8 @@ class ControllerUtils {
         return getAnnotation(controller).crdVersion();
     }
 
-    static String getCustomResourceDefinitionName(ResourceController controller) {
-        return getAnnotation(controller).customResourceDefinitionName();
+    static String getKind(ResourceController controller) {
+        return getAnnotation(controller).kind();
     }
 
     private static Controller getAnnotation(ResourceController controller) {

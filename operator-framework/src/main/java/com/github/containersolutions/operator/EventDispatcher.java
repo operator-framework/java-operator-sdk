@@ -1,10 +1,10 @@
-package jkube.operator;
+package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import jkube.operator.api.ResourceController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

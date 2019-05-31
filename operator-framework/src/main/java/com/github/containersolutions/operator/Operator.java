@@ -1,12 +1,12 @@
-package jkube.operator;
+package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import jkube.operator.api.ResourceController;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static jkube.operator.ControllerUtils.*;
+import static com.github.containersolutions.operator.ControllerUtils.*;
 
 public class Operator {
-
-    private static Operator singletonOperator;
 
     private final KubernetesClient k8sClient;
 
@@ -27,22 +25,7 @@ public class Operator {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
-
-    public static Operator initializeFromEnvironment() {
-        if (singletonOperator == null) {
-            ConfigBuilder config = new ConfigBuilder().withTrustCerts(true);
-            if (StringUtils.isNotBlank(System.getenv("K8S_MASTER_URL"))) {
-                config.withMasterUrl(System.getenv("K8S_MASTER_URL"));
-            }
-            if (StringUtils.isNoneBlank(System.getenv("K8S_USERNAME"), System.getenv("K8S_PASSWORD"))) {
-                config.withUsername(System.getenv("K8S_USERNAME")).withPassword(System.getenv("K8S_PASSWORD"));
-            }
-            singletonOperator = new Operator(new DefaultOpenShiftClient(config.build()));
-        }
-        return singletonOperator;
-    }
-
-    private Operator(KubernetesClient k8sClient) {
+    public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             log.error("Error", e);
@@ -50,11 +33,30 @@ public class Operator {
         });
     }
 
+    public static Operator initializeFromEnvironmentForOpenshift() {
+        return initializeFromEnvironment(true);
+    }
+
+    public static Operator initializeFromEnvironment() {
+        return initializeFromEnvironment(false);
+    }
+
+    private static Operator initializeFromEnvironment(boolean openshift) {
+        //todo  add trust certificate as a flag, as a builder?
+        ConfigBuilder config = new ConfigBuilder().withTrustCerts(true);
+        if (StringUtils.isNotBlank(System.getenv("K8S_MASTER_URL"))) {
+            config.withMasterUrl(System.getenv("K8S_MASTER_URL"));
+        }
+        if (StringUtils.isNoneBlank(System.getenv("K8S_USERNAME"), System.getenv("K8S_PASSWORD"))) {
+            config.withUsername(System.getenv("K8S_USERNAME")).withPassword(System.getenv("K8S_PASSWORD"));
+        }
+        return new Operator(openshift ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build()));
+    }
+
     public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
         Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
 
-        KubernetesDeserializer.registerCustomKind(getApiVersion(controller),
-                resClass.getSimpleName(), resClass);
+        KubernetesDeserializer.registerCustomKind(ControllerUtils.getKind(controller), resClass);
 
         Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
 
@@ -75,7 +77,7 @@ public class Operator {
         CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
 
         return crdList.getItems().stream()
-                .filter(c -> getCustomResourceDefinitionName(controller).equals(c.getSpec().getNames().getKind()) &&
+                .filter(c -> getKind(controller).equals(c.getSpec().getNames().getKind()) &&
                         getCrdVersion(controller).equals(c.getSpec().getVersion()))
                 .findFirst();
     }

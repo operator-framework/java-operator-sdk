@@ -1,4 +1,4 @@
-package jkube.operator;
+package com.github.containersolutions.operator;
 
 import org.junit.jupiter.api.Test;
 

@@ -26,107 +26,56 @@ Feature we would like to implement and invite the community to help us implement
 Main method initializing the Operator and registering a controller for Bitbucket.
 
 ```java
-public static void main(String[] args) {
-    Operator operator = Operator.initializeFromEnvironment();
-    operator.registerController(new BitbucketController(new Bitbucket()));
+public class Runner {
+
+    public static void main(String[] args) {
+        Operator operator = Operator.initializeFromEnvironment();
+        operator.registerController(new CustomServiceController());
+    }
 }
 ```
 
 The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
-public class BitbucketRepoController implements CustomResourceController<BitbucketRepo, BitbucketRepoList, DoneableBitbucketRepo> {
+@Controller(customResourceClass = CustomService.class,
+        kind = CustomServiceController.CRD_NAME)
+public class CustomServiceController implements ResourceController<CustomService> {
 
-    private final static Logger log = LoggerFactory.getLogger(BitbucketRepoService.class);
-
-    // This class would handle the actual Bitbucket API calls
-    private final Bitbucket bitbucket;
-
-    public BitbucketRepoController(Bitbucket bitbucket) {
-        this.bitbucket = bitbucket;
-    }
-
-    // Two methods containing the logic
+    public static final String CRD_NAME = "CustomService";
 
     @Override
-    public BitbucketRepo createOrUpdateResource(BitbucketRepo BitbucketRepo) {
-        String url = bitbucket.createBitbucketRepository(BitbucketRepo.getSpec().getTeam(), BitbucketRepo.getSpec().getEnvironment());
-
-        status.setRepoUrl(url);
-        status.setState(BitbucketRepoState.CREATED);
-        return BitbucketRepo;
+    public void deleteResource(CustomService resource, Context<CustomService> context) {
+        context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace())
+                .withName(resource.getMetadata().getName()).delete();
     }
 
     @Override
-    public void deleteResource(BitbucketRepo BitbucketRepo) {
-        bitbucket.deleteBitbucketRepository(BitbucketRepo.getSpec().getTeam(), BitbucketRepo.getSpec().getEnvironment());
-        log.info("Deleting Bitbucket repositor with name: {}", BitbucketRepo.getSpec().getTeam());
-    }
-    
-    // Methods describing the CRD this Controller is handling
-
-    @Override
-    public Class<BitbucketRepo> getCustomResourceClass() {
-        return BitbucketRepo.class;
-    }
-
-    @Override
-    public Class<BitbucketRepoList> getCustomResourceListClass() {
-        return BitbucketRepoList.class;
-    }
-
-    @Override
-    public Class<DoneableBitbucketRepo> getCustomResourceDoneableClass() {
-        return DoneableBitbucketRepo.class;
-    }
-
-    @Override
-    public String getApiVersion() {
-        return BitbucketRepo.API_VERSION;
-    }
-
-    @Override
-    public String getCrdVersion() {
-        return BitbucketRepo.CRD_VERSION;
+    public CustomService createOrUpdateResource(CustomService resource, Context<CustomService> context) {
+        context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace()).createOrReplaceWithNew()
+                .withNewMetadata()
+                .withName(resource.getSpec().getName())
+                .addToLabels("testLabel", resource.getSpec().getLabel())
+                .endMetadata()
+                .done();
+        return resource;
     }
 }
-
 ```
 
 Classes mapping the Customer resource + boilerplate needed for the kubernetes-client.
 
 ```java
-public class BitbucketRepo extends io.fabric8.kubernetes.client.CustomResource {
-    public static final String CRD_VERSION = "v1";
-    public static final String API_VERSION = "jkube.bitbucket/v1";
-    public static final String DEFAULT_DELETE_FINALIZER = "finalizer.BitbucketRepo.jkube.bitbucket";
+public class CustomService extends CustomResource {
 
-    private BitbucketRepoSpec spec;
-    private BitbucketRepoStatus status;
+    private ServiceSpec spec;
 
-    public BitbucketRepoSpec getSpec() {
+    public ServiceSpec getSpec() {
         return spec;
     }
 
-    public void setSpec(BitbucketRepoSpec spec) {
+    public void setSpec(ServiceSpec spec) {
         this.spec = spec;
-    }
-
-    public BitbucketRepoStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(BitbucketRepoStatus status) {
-        this.status = status;
-    }
-}
-
-public class BitbucketRepoList extends io.fabric8.kubernetes.client.CustomResourceList<BitbucketRepo> {
-}
-
-public class DoneableBitbucketRepo extends io.fabric8.kubernetes.client.CustomResourceDoneable<BitbucketRepo> {
-    public DoneableBitbucketRepo(BitbucketRepo resource, io.fabric8.kubernetes.api.builder.Function function) {
-        super(resource, function);
     }
 }
 ```

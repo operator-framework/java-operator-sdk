@@ -1,7 +1,7 @@
-package jkube.operator.api;
+package com.github.containersolutions.operator.api;
 
+import com.github.containersolutions.operator.Context;
 import io.fabric8.kubernetes.client.CustomResource;
-import jkube.operator.Context;
 
 public interface ResourceController<R extends CustomResource> {
 
