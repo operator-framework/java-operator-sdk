@@ -56,7 +56,7 @@ public class Operator {
     public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
         Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
 
-        KubernetesDeserializer.registerCustomKind(ControllerUtils.getKind(controller), resClass);
+        KubernetesDeserializer.registerCustomKind(getApiVersion(controller), ControllerUtils.getKind(controller), resClass);
 
         Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
 
@@ -69,7 +69,7 @@ public class Operator {
                     + getCustomResourceClass(controller).getName() + "'");
         } else {
             throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"
-                    + getCrdVersion(controller) + "' not found");
+                    + getVersion(controller) + "' not found");
         }
     }
 
@@ -78,7 +78,7 @@ public class Operator {
 
         return crdList.getItems().stream()
                 .filter(c -> getKind(controller).equals(c.getSpec().getNames().getKind()) &&
-                        getCrdVersion(controller).equals(c.getSpec().getVersion()))
+                        getVersion(controller).equals(c.getSpec().getVersion()))
                 .findFirst();
     }
 

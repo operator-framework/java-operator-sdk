@@ -12,12 +12,12 @@ import java.lang.annotation.Target;
 public @interface Controller {
 
     String DEFAULT_FINALIZER = "operator.default.finalizer";
-    String DEFAULT_API_EXTENSION_VERSION = "apiextensions.k8s.io/v1beta1";
-    String DEFAULT_API_VERSION = "v1";
 
-    String apiVersion() default DEFAULT_API_EXTENSION_VERSION;
+    String DEFAULT_VERSION = "v1";
 
-    String crdVersion() default DEFAULT_API_VERSION;
+    String version() default DEFAULT_VERSION;
+
+    String group();
 
     String kind();
 

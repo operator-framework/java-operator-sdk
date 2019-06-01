@@ -6,6 +6,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 class ControllerUtils {
 
+    public static final String GROUP_API_DELIMITER = "/";
+
     static String getDefaultFinalizer(ResourceController controller) {
         return getAnnotation(controller).defaultFinalizer();
     }
@@ -15,11 +17,15 @@ class ControllerUtils {
     }
 
     static String getApiVersion(ResourceController controller) {
-        return getAnnotation(controller).apiVersion();
+        return getGroup(controller) + GROUP_API_DELIMITER + getAnnotation(controller).version();
     }
 
-    static String getCrdVersion(ResourceController controller) {
-        return getAnnotation(controller).crdVersion();
+    private static String getGroup(ResourceController controller) {
+        return getAnnotation(controller).group();
+    }
+
+    static String getVersion(ResourceController controller) {
+        return getAnnotation(controller).version();
     }
 
     static String getKind(ResourceController controller) {
