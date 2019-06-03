@@ -12,7 +12,10 @@ import java.util.Arrays;
  * A very simple sample controller that creates a service with a label.
  */
 @Controller(customResourceClass = CustomService.class,
-        kind = CustomServiceController.CRD_NAME, group = CustomServiceController.GROUP)
+        kind = CustomServiceController.CRD_NAME,
+        group = CustomServiceController.GROUP,
+        customResourceListClass = CustomServiceList.class,
+        customResourceDonebaleClass = CustomServiceDoneable.class)
 public class CustomServiceController implements ResourceController<CustomService> {
 
     public static final String CRD_NAME = "CustomService";

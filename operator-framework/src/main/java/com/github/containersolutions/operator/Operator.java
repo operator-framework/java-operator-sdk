@@ -54,14 +54,20 @@ public class Operator {
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
-        Class<? extends CustomResource> resClass = getCustomResourceClass(controller);
+        Class<R> resClass = getCustomResourceClass(controller);
 
         KubernetesDeserializer.registerCustomKind(getApiVersion(controller), ControllerUtils.getKind(controller), resClass);
 
         Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
 
+
         if (crd.isPresent()) {
-            MixedOperation client = k8sClient.customResources(crd.get(), resClass, CustomResourceList.class, CustomResourceDoneable.class);
+//            MixedOperation client = k8sClient.customResources(crd.get(), resClass, CustomResourceList.class, CustomResourceDoneable.class);
+
+            Class<? extends CustomResourceList<R>> list = getCustomResourceListClass(controller);
+            Class<? extends CustomResourceDoneable<R>> doneable = getCustomResourceDonebaleClass(controller);
+            MixedOperation client = k8sClient.customResources(crd.get(), resClass, list, doneable);
+
             EventDispatcher<R> eventDispatcher = new EventDispatcher<>(controller, client, k8sClient);
             client.watch(eventDispatcher);
             controllers.put(controller, eventDispatcher);
