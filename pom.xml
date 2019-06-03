@@ -47,6 +47,12 @@
                 <artifactId>log4j-slf4j-impl</artifactId>
                 <version>2.11.2</version>
             </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>2.28.2</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

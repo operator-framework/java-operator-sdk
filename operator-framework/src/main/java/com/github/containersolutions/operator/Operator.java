@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
@@ -25,50 +26,47 @@ public class Operator {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
+    public Operator(OperatorConfig operatorConfig) {
+        ConfigBuilder config = new ConfigBuilder();
+        config.withTrustCerts(operatorConfig.isTrustSelfSignedCertificates());
+        if (StringUtils.isNotBlank(operatorConfig.getUsername())) {
+            config.withUsername(operatorConfig.getUsername());
+        }
+        if (StringUtils.isNotBlank(operatorConfig.getPassword())) {
+            config.withUsername(operatorConfig.getPassword());
+        }
+        if (StringUtils.isNotBlank(operatorConfig.getMasterUrl())) {
+            config.withMasterUrl(operatorConfig.getMasterUrl());
+        }
+        k8sClient = operatorConfig.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
+        setDefaultExceptionHandler();
+    }
+
     public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
+        setDefaultExceptionHandler();
+    }
+
+    private void setDefaultExceptionHandler() {
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             log.error("Error", e);
             this.stop();
         });
     }
 
-    public static Operator initializeFromEnvironmentForOpenshift() {
-        return initializeFromEnvironment(true);
-    }
-
-    public static Operator initializeFromEnvironment() {
-        return initializeFromEnvironment(false);
-    }
-
-    private static Operator initializeFromEnvironment(boolean openshift) {
-        //todo  add trust certificate as a flag, as a builder?
-        ConfigBuilder config = new ConfigBuilder().withTrustCerts(true);
-        if (StringUtils.isNotBlank(System.getenv("K8S_MASTER_URL"))) {
-            config.withMasterUrl(System.getenv("K8S_MASTER_URL"));
-        }
-        if (StringUtils.isNoneBlank(System.getenv("K8S_USERNAME"), System.getenv("K8S_PASSWORD"))) {
-            config.withUsername(System.getenv("K8S_USERNAME")).withPassword(System.getenv("K8S_PASSWORD"));
-        }
-        return new Operator(openshift ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build()));
-    }
-
     public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
-
+        Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(getApiVersion(controller), ControllerUtils.getKind(controller), resClass);
 
-        Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
-
-
         if (crd.isPresent()) {
-//            MixedOperation client = k8sClient.customResources(crd.get(), resClass, CustomResourceList.class, CustomResourceDoneable.class);
-
             Class<? extends CustomResourceList<R>> list = getCustomResourceListClass(controller);
             Class<? extends CustomResourceDoneable<R>> doneable = getCustomResourceDonebaleClass(controller);
             MixedOperation client = k8sClient.customResources(crd.get(), resClass, list, doneable);
 
-            EventDispatcher<R> eventDispatcher = new EventDispatcher<>(controller, client, k8sClient);
+            EventDispatcher<R> eventDispatcher =
+                    new EventDispatcher<>(controller, (CustomResourceOperationsImpl) client, client, k8sClient,
+                            ControllerUtils.getDefaultFinalizer(controller));
             client.watch(eventDispatcher);
             controllers.put(controller, eventDispatcher);
             log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '"
@@ -92,4 +90,5 @@ public class Operator {
     public void stop() {
         k8sClient.close();
     }
+
 }

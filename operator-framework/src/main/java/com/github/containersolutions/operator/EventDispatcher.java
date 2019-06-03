@@ -22,13 +22,17 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     private final KubernetesClient k8sClient;
 
     public EventDispatcher(ResourceController<R> controller,
+                           CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
                            NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
-                                   Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient) {
+                                   Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient,
+                           String defaultFinalizer
+
+    ) {
 
         this.controller = controller;
+        this.resourceOperation = resourceOperation;
         this.resourceClient = resourceClient;
-        this.resourceOperation = (CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>>) resourceClient;
-        this.resourceDefaultFinalizer = ControllerUtils.getDefaultFinalizer(controller);
+        this.resourceDefaultFinalizer = defaultFinalizer;
         this.k8sClient = k8sClient;
     }
 
