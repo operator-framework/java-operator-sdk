@@ -20,7 +20,7 @@ Feature we would like to implement and invite the community to help us implement
 * Spring Boot support
 
 ## Usage
-> Under sample directory you can try out our example.
+> Under sample directory you can try out our sample.
 
 Add dependency to your project:
 
@@ -61,7 +61,7 @@ public class CustomServiceController implements ResourceController<CustomService
     public void deleteResource(CustomService resource, Context<CustomService> context) {
         // ... your logic ...
     }
-
+    
     @Override
     public CustomService createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         // ... your logic ...
@@ -89,13 +89,30 @@ public class CustomService extends CustomResource {
 
 ## Dealing with Consistency 
 
-### At Least Once
+### Run Single Instance
 
-To implement controller logic, we need just override two methods: `createOrUpdateResource` and `deleteResource`. 
-These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
-called just once, but in some corner cases can happen that are called more then once. In practice this means that the 
-implementation needs to be **idempotent**.    
+There should be always just one instance of an operator running at a time (think process). If there there would be 
+two ore more, in general it could lead to concurrency issues. Note that we are also doing optimistic locking when we update a resource.
+In this way the operator is not highly available. However for operators this not necessary an issue, 
+if the operator just gets restarted after it went down. 
 
 ### Operator Restarts
 
+When an operator is started we got events for every resource (of a type we listen to) already on the cluster. Even if the resource is not changed 
+(We use `kubectl get ... --watch` in the background). This can be a huge amount of resources depending on your use case.
+So it could be a good case just have a status field on the resource which is checked, if there anything needs to be done.
+
+### At Least Once
+
+To implement controller logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
+These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
+called just once, but in some rare cases can happen that are called more then once. In practice this means that the 
+implementation needs to be **idempotent**.    
+
 ### Deleting a Resource
+
+During deletion process we use [Kubernetes finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers 
+"Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running, while the delete 
+operation is executed. In this case we would not catch the delete event (we are using . So we automatically add a
+finalizer first time we update the resource if its not there. 
+
