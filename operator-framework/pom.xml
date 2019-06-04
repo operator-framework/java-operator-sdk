@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework</artifactId>
+    <artifactId>java-operator-framework</artifactId>
     <name>Operator SDK - Framework</name>
     <description>Framework for implementing Kubernetes operators</description>
     <packaging>jar</packaging>
