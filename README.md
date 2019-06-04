@@ -60,7 +60,7 @@ public class CustomServiceController implements ResourceController<CustomService
 }
 ```
 
-Classes mapping the Customer resource + boilerplate needed for the kubernetes-client.
+Class that reflects CRD properties.
 
 ```java
 public class CustomService extends CustomResource {
