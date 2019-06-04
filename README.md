@@ -20,16 +20,17 @@ Feature we would like to implement and invite the community to help us implement
 * Spring Boot support
 
 ## Usage
+> Under sample directory you can try out our example.
 
-Main method initializing the Operator and registering a controller for Bitbucket.
+Main method initializing the Operator and registering a controller..
 
 ```java
 public class Runner {
 
-    public static void main(String[] args) {
-        Operator operator = Operator.initializeFromEnvironment();
-        operator.registerController(new CustomServiceController());
-    }
+   public static void main(String[] args) {
+       Operator operator = new Operator(new OperatorConfig().setTrustSelfSignedCertificates(true));
+       operator.registerController(new CustomServiceController());
+   }
 }
 ```
 
@@ -37,25 +38,23 @@ The Controller implements the business logic and describes all the classes neede
 
 ```java
 @Controller(customResourceClass = CustomService.class,
-        kind = CustomServiceController.CRD_NAME)
+        kind = CustomServiceController.CRD_NAME,
+        group = CustomServiceController.GROUP,
+        customResourceListClass = CustomServiceList.class,
+        customResourceDonebaleClass = CustomServiceDoneable.class)
 public class CustomServiceController implements ResourceController<CustomService> {
 
     public static final String CRD_NAME = "CustomService";
+    public static final String GROUP = "sample.javaoperatorsdk";
 
     @Override
     public void deleteResource(CustomService resource, Context<CustomService> context) {
-        context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace())
-                .withName(resource.getMetadata().getName()).delete();
+        // ...  
     }
 
     @Override
     public CustomService createOrUpdateResource(CustomService resource, Context<CustomService> context) {
-        context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace()).createOrReplaceWithNew()
-                .withNewMetadata()
-                .withName(resource.getSpec().getName())
-                .addToLabels("testLabel", resource.getSpec().getLabel())
-                .endMetadata()
-                .done();
+        // ...
         return resource;
     }
 }
@@ -77,3 +76,4 @@ public class CustomService extends CustomResource {
     }
 }
 ```
+/
