@@ -113,6 +113,6 @@ implementation needs to be **idempotent**.
 
 During deletion process we use [Kubernetes finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers 
 "Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running, while the delete 
-operation is executed. In this case we would not catch the delete event (we are using . So we automatically add a
+operation is executed. In this case we would not catch the delete event. So we automatically add a
 finalizer first time we update the resource if its not there. 
 
