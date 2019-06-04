@@ -9,7 +9,7 @@ The Controller only contains the logic to create, update and delete the actual r
 
 ## Implementation
 
-This library relies on the amazing [kubernetes-client]() from fabric8. Most of the heavy lifting is actually done by
+This library relies on the amazing [kubernetes-client](https://github.com/fabric8io/kubernetes-client) from fabric8. Most of the heavy lifting is actually done by
 kubernetes-client.
 
 ## Roadmap
