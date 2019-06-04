@@ -5,10 +5,34 @@
 
     <groupId>com.github.containersolutions</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
     <packaging>pom</packaging>
+    <url>https://github.com/ContainerSolutions/java-operator-sdk</url>
+
+    <licenses>
+        <license>
+            <name>Apache 2 License</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Adam Sandor</name>
+            <email>adam.sandor@container-solutions.com</email>
+        </developer>
+        <developer>
+            <name>Attila Meszaros</name>
+            <email>attila.meszaros@container-solutions.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/ContainerSolutions/java-operator-sdk.git</connection>
+        <developerConnection>scm:git:git@github.com/ContainerSolutions/java-operator-sdk.git</developerConnection>
+        <url>https://github.com/ContainerSolutions/java-operator-sdk/tree/master</url>
+    </scm>
 
     <properties>
         <java.version>8</java.version>
@@ -89,6 +113,46 @@
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
