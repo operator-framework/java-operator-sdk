@@ -89,13 +89,13 @@ public class CustomService extends CustomResource {
 
 ## Dealing with Consistency 
 
-### At least once
+### At Least Once
 
 To implement controller logic, we need just override two methods: `createOrUpdateResource` and `deleteResource`. 
 These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
 called just once, but in some corner cases can happen that are called more then once. In practice this means that the 
 implementation needs to be **idempotent**.    
 
-### Operator restarts
+### Operator Restarts
 
-### Deleting a resource
+### Deleting a Resource
