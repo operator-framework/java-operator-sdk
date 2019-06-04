@@ -22,6 +22,16 @@ Feature we would like to implement and invite the community to help us implement
 ## Usage
 > Under sample directory you can try out our example.
 
+Add dependency to your project:
+
+```xml
+<dependency>
+  <groupId>com.github.containersolutions</groupId>
+  <artifactId>operator-framework</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
 Main method initializing the Operator and registering a controller..
 
 ```java
@@ -49,18 +59,18 @@ public class CustomServiceController implements ResourceController<CustomService
 
     @Override
     public void deleteResource(CustomService resource, Context<CustomService> context) {
-        // ...  
+        // ... your logic ...
     }
 
     @Override
     public CustomService createOrUpdateResource(CustomService resource, Context<CustomService> context) {
-        // ...
+        // ... your logic ...
         return resource;
     }
 }
 ```
 
-Class that reflects CRD properties.
+Our custom resource java representation
 
 ```java
 public class CustomService extends CustomResource {
@@ -76,3 +86,16 @@ public class CustomService extends CustomResource {
     }
 }
 ```
+
+## Dealing with Consistency 
+
+### At least once
+
+To implement controller logic, we need just override two methods: `createOrUpdateResource` and `deleteResource`. 
+These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
+called just once, but in some corner cases can happen that are called more then once. In practice this means that the 
+implementation needs to be **idempotent**.    
+
+### Operator restarts
+
+### Deleting a resource
