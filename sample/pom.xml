@@ -21,7 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>com.github.containersolutions</groupId>
-            <artifactId>java-operator-framework</artifactId>
+            <artifactId>operator-framework</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
