@@ -4,10 +4,7 @@ import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
@@ -17,6 +14,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -32,7 +30,7 @@ class EventDispatcherTest {
             operation = mock(NonNamespaceOperation.class);
     private KubernetesClient k8sClient = mock(KubernetesClient.class);
     private CustomResourceOperationsImpl<TestCustomResource, CustomResourceList<TestCustomResource>,
-            CustomResourceDoneable<TestCustomResource>> resourceOperation;
+            CustomResourceDoneable<TestCustomResource>> resourceOperation = mock(CustomResourceOperationsImpl.class);
 
     @BeforeEach
     public void setup() {
@@ -43,7 +41,7 @@ class EventDispatcherTest {
         testCustomResource.setMetadata(new ObjectMeta());
         testCustomResource.getMetadata().setFinalizers(new ArrayList<>());
 
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(testCustomResource);
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.of(testCustomResource));
     }
 
     @Test
@@ -84,7 +82,7 @@ class EventDispatcherTest {
      */
     @Test
     public void doesNotCallDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
-        testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
+        markForDeletion(testCustomResource);
 
         eventDispatcher.eventReceived(Watcher.Action.MODIFIED, testCustomResource);
 
@@ -93,11 +91,48 @@ class EventDispatcherTest {
 
     @Test
     public void removesDefaultFinalizerOnDelete() {
-        testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
+        markForDeletion(testCustomResource);
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
 
         eventDispatcher.eventReceived(Watcher.Action.MODIFIED, testCustomResource);
 
         assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
+        verify(resourceOperation, times(1)).lockResourceVersion(any());
     }
+
+    @Test
+    public void doesNotUpdateTheResourceIfEmptyOptionalReturned() {
+        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
+
+        eventDispatcher.eventReceived(Watcher.Action.MODIFIED, testCustomResource);
+
+        verify(resourceOperation, never()).lockResourceVersion(any());
+    }
+
+    @Test
+    public void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
+
+        eventDispatcher.eventReceived(Watcher.Action.MODIFIED, testCustomResource);
+
+        assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
+        verify(resourceOperation, times(1)).lockResourceVersion(any());
+    }
+
+    @Test
+    public void doesNotAddFinalizerIfOptionalIsReturnedButMarkedForDeletion() {
+        markForDeletion(testCustomResource);
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
+
+        eventDispatcher.eventReceived(Watcher.Action.MODIFIED, testCustomResource);
+
+        assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
+        verify(resourceOperation, never()).lockResourceVersion(any());
+    }
+
+    private void markForDeletion(CustomResource customResource) {
+        customResource.getMetadata().setDeletionTimestamp("2019-8-10");
+    }
+
 }

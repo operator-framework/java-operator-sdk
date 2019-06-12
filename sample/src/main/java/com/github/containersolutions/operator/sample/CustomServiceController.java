@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * A very simple sample controller that creates a service with a label.
@@ -28,7 +29,7 @@ public class CustomServiceController implements ResourceController<CustomService
     }
 
     @Override
-    public CustomService createOrUpdateResource(CustomService resource, Context<CustomService> context) {
+    public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         ServicePort servicePort = new ServicePort();
         servicePort.setPort(8080);
         ServiceSpec serviceSpec = new ServiceSpec();
@@ -41,6 +42,6 @@ public class CustomServiceController implements ResourceController<CustomService
                 .endMetadata()
                 .withSpec(serviceSpec)
                 .done();
-        return resource;
+        return Optional.of(resource);
     }
 }

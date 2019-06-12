@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
 
@@ -53,9 +54,16 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
                 controller.deleteResource(resource, new Context(k8sClient, resourceClient));
                 removeDefaultFinalizer(resource);
             } else {
-                R updatedResource = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
-                addFinalizerIfNotPresent(updatedResource);
-                replace(updatedResource);
+                Optional<R> updateResult = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
+                if (updateResult.isPresent()) {
+                    R updatedResource = updateResult.get();
+                    addFinalizerIfNotPresent(updatedResource);
+                    replace(updatedResource);
+                    // We always add the default finalizer if missing and not marked for deletion.
+                } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
+                    addFinalizerIfNotPresent(resource);
+                    replace(resource);
+                }
             }
         }
         if (Action.ERROR == action) {

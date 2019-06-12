@@ -4,6 +4,8 @@ import com.github.containersolutions.operator.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 
+import java.util.Optional;
+
 @Controller(
         group = TestCustomResourceController.TEST_GROUP,
         kind = TestCustomResourceController.KIND_NAME,
@@ -20,7 +22,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
     }
 
     @Override
-    public TestCustomResource createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
-        return null;
+    public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
+        return Optional.empty();
     }
 }
