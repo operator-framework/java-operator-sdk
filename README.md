@@ -27,7 +27,7 @@ Add dependency to your project:
 ```xml
 <dependency>
   <groupId>com.github.containersolutions</groupId>
-  <artifactId>java-operator-framework</artifactId>
+  <artifactId>operator-framework</artifactId>
   <version>1.0.0</version>
 </dependency>
 ```
