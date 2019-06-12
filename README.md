@@ -62,6 +62,7 @@ public class CustomServiceController implements ResourceController<CustomService
         // ... your logic ...
     }
     
+    // Return the changed resource, so it gets updated. See javadoc for details.
     @Override
     public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         // ... your logic ...
