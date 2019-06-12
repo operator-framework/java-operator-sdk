@@ -63,7 +63,7 @@ public class CustomServiceController implements ResourceController<CustomService
     }
     
     @Override
-    public CustomService createOrUpdateResource(CustomService resource, Context<CustomService> context) {
+    public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         // ... your logic ...
         return resource;
     }
