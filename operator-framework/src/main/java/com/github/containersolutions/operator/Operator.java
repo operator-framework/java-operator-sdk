@@ -23,6 +23,7 @@ public class Operator {
     private final KubernetesClient k8sClient;
 
     private Map<ResourceController, EventDispatcher> controllers = new HashMap<>();
+    private Map<String, CustomResourceOperationsImpl> customResourceClients;
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
@@ -57,7 +58,8 @@ public class Operator {
     public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
         Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
-        KubernetesDeserializer.registerCustomKind(getApiVersion(controller), ControllerUtils.getKind(controller), resClass);
+        String kind = ControllerUtils.getKind(controller);
+        KubernetesDeserializer.registerCustomKind(getApiVersion(controller), kind, resClass);
 
         if (crd.isPresent()) {
             Class<? extends CustomResourceList<R>> list = getCustomResourceListClass(controller);
@@ -68,6 +70,7 @@ public class Operator {
                     new EventDispatcher<>(controller, (CustomResourceOperationsImpl) client, client, k8sClient,
                             ControllerUtils.getDefaultFinalizer(controller));
             client.watch(eventDispatcher);
+            customResourceClients.put(kind, (CustomResourceOperationsImpl) client);
             controllers.put(controller, eventDispatcher);
             log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '"
                     + getCustomResourceClass(controller).getName() + "'");
@@ -91,4 +94,7 @@ public class Operator {
         k8sClient.close();
     }
 
+    public CustomResourceOperationsImpl getCustomResourceClients(String kind) {
+        return customResourceClients.get(kind);
+    }
 }
