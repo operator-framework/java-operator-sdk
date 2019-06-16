@@ -28,7 +28,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.containersolutions</groupId>
   <artifactId>operator-framework</artifactId>
-  <version>1.0.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
