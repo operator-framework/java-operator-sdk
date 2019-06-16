@@ -9,9 +9,9 @@
         <version>0.1.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-samples-spring-boot-starter</artifactId>
-    <name>Operator SDK - Samples - Spring Boot Starter</name>
-    <description>Sample usage with spring boot starter</description>
+    <artifactId>operator-framework-samples-common-files</artifactId>
+    <name>Operator SDK - Samples - Common Files</name>
+    <description>Files shared between samples</description>
     <packaging>jar</packaging>
 
     <properties>
@@ -23,8 +23,16 @@
     <dependencies>
         <dependency>
             <groupId>com.github.containersolutions</groupId>
-            <artifactId>operator-framework-samples-common-files</artifactId>
+            <artifactId>operator-framework</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
     </dependencies>
 

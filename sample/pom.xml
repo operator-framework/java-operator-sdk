@@ -15,6 +15,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>common</module>
         <module>pure-java</module>
         <module>spring-boot</module>
     </modules>
