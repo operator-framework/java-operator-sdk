@@ -23,7 +23,7 @@ public class Operator {
     private final KubernetesClient k8sClient;
 
     private Map<ResourceController, EventDispatcher> controllers = new HashMap<>();
-    private Map<String, CustomResourceOperationsImpl> customResourceClients;
+    private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
@@ -70,7 +70,7 @@ public class Operator {
                     new EventDispatcher<>(controller, (CustomResourceOperationsImpl) client, client, k8sClient,
                             ControllerUtils.getDefaultFinalizer(controller));
             client.watch(eventDispatcher);
-            customResourceClients.put(kind, (CustomResourceOperationsImpl) client);
+            customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
             controllers.put(controller, eventDispatcher);
             log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '"
                     + getCustomResourceClass(controller).getName() + "'");
@@ -94,7 +94,7 @@ public class Operator {
         k8sClient.close();
     }
 
-    public CustomResourceOperationsImpl getCustomResourceClients(String kind) {
-        return customResourceClients.get(kind);
+    public <T extends CustomResource> CustomResourceOperationsImpl getCustomResourceClients(Class<T> customResourceClass) {
+        return customResourceClients.get(customResourceClass);
     }
 }
