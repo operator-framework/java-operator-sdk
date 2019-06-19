@@ -132,7 +132,8 @@ We provide a spring boot starter to automatically handle bean registration. To u
 </dependency>
 ```
 
-In addition the `@Controllers` needs to be registered as a bean. Either annotation them with Spring's 
- `@Component` or `@Service` annotation (see Spring docs for all possibilities, also our sample for component scanning).
+Note that controllers needs to be registered as a bean. Either annotation them with Spring's 
+ `@Component` or `@Service` annotation (see Spring docs for all possibilities, also our sample for component scanning). 
+After controllers are registered as a bean, gets automatically registered also to operator. 
  
 Kubernetes client creation by properties is also supported, for complete list see: [Link for config class]  
