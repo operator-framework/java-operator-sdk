@@ -15,9 +15,11 @@ kubernetes-client.
 ## Roadmap
 
 Feature we would like to implement and invite the community to help us implement in the future:
+
+* ~~Spring Boot support~~
 * Testing support
 * Class generation from CRD to POJO
-* Spring Boot support
+
 
 ## Usage
 > Under sample directory you can try out our sample.
@@ -117,3 +119,20 @@ During deletion process we use [Kubernetes finalizers](https://kubernetes.io/doc
 of resource is executed (think `oc delete`). In this case we would not catch the delete event. So we automatically add a
 finalizer first time we update the resource if its not there. 
 
+## Spring Boot Support
+
+We provide a spring boot starter to automatically handle bean registration. To use it just include the
+ following dependency to you project: 
+
+```
+<dependency>
+ <groupId>com.github.containersolutions</groupId>
+ <artifactId>spring-boot-operator-framework-starter</artifactId>
+ <version>[version]</version>
+</dependency>
+```
+
+In addition the `@Controllers` needs to be registered as a bean. Either annotation them with Spring's 
+ `@Component` or `@Service` annotation (see Spring docs for all possibilities, also our sample for component scanning).
+ 
+Kubernetes client creation by properties is also supported, for complete list see: [Link for config class]  

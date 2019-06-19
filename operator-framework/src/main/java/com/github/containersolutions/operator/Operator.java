@@ -3,12 +3,13 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
-import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +74,9 @@ public class Operator {
                 .findFirst();
     }
 
+    public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {
+        return customResourceClients;
+    }
 
     public void stop() {
         k8sClient.close();

@@ -21,7 +21,6 @@ public class AutoconfigurationTest {
     @Autowired
     private OperatorProperties operatorProperties;
 
-
     @MockBean
     private Operator operator;
 
@@ -35,7 +34,7 @@ public class AutoconfigurationTest {
     public void configurationsLoadedProperly() {
         assertEquals("user", operatorProperties.getUsername());
         assertEquals("password", operatorProperties.getPassword());
-        assertEquals("http://master.url",operatorProperties.getMasterUrl());
+        assertEquals("http://master.url", operatorProperties.getMasterUrl());
     }
 
     @Test
@@ -45,7 +44,7 @@ public class AutoconfigurationTest {
 
     @Test
     public void resourceControllersAreDiscovered() {
-        assertEquals(1,resourceControllers.size());
+        assertEquals(1, resourceControllers.size());
         assertTrue(resourceControllers.get(0) instanceof TestController);
     }
 
