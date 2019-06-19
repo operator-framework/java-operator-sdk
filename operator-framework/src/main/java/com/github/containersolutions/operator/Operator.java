@@ -27,22 +27,6 @@ public class Operator {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
-    public Operator(OperatorConfig operatorConfig) {
-        ConfigBuilder config = new ConfigBuilder();
-        config.withTrustCerts(operatorConfig.isTrustSelfSignedCertificates());
-        if (StringUtils.isNotBlank(operatorConfig.getUsername())) {
-            config.withUsername(operatorConfig.getUsername());
-        }
-        if (StringUtils.isNotBlank(operatorConfig.getPassword())) {
-            config.withUsername(operatorConfig.getPassword());
-        }
-        if (StringUtils.isNotBlank(operatorConfig.getMasterUrl())) {
-            config.withMasterUrl(operatorConfig.getMasterUrl());
-        }
-        k8sClient = operatorConfig.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
-        setDefaultExceptionHandler();
-    }
-
     public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
         setDefaultExceptionHandler();
