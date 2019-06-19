@@ -3,7 +3,6 @@ package com.github.containersolutions.operator.spingboot.starter;
 import com.github.containersolutions.operator.Operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +13,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
