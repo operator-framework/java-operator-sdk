@@ -12,15 +12,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class SampleComponent {
 
-    /**
-     * You can use qualifier for custom resource operation in case there are more custom resources for the operator
-     */
     private final Operator operator;
 
     private final KubernetesClient kubernetesClient;
 
     private final CustomServiceController customServiceController;
 
+    /**
+     * You can use qualifier for custom resource operation in case there are more custom resources for the operator
+     */
     private final CustomResourceOperationsImpl customResourceOperations;
 
     public SampleComponent(Operator operator, KubernetesClient kubernetesClient,
