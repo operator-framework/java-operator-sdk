@@ -23,7 +23,6 @@ import java.util.List;
 @EnableConfigurationProperties(OperatorProperties.class)
 @ConditionalOnMissingBean(Operator.class)
 public class OperatorAutoConfiguration {
-
     private static final Logger log = LoggerFactory.getLogger(OperatorAutoConfiguration.class);
 
     @Autowired
@@ -58,11 +57,11 @@ public class OperatorAutoConfiguration {
         Operator operator = new Operator(kubernetesClient);
         resourceControllers.forEach(r -> operator.registerController(r));
         operator.getCustomResourceClients().entrySet().forEach(e -> {
+            // todo ensure these are registered very early
             log.info("Registering CustomResourceOperationsImpl for kind: {}", e.getValue().getKind());
             genericApplicationContext.registerBean(e.getValue().getKind(), CustomResourceOperationsImpl.class,
                     () -> operator.getCustomResourceClients(e.getKey()));
         });
         return operator;
     }
-
 }
