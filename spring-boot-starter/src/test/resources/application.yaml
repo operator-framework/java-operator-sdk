@@ -1,0 +1,4 @@
+operator.kubernetes:
+  username: user
+  password: password
+  masterUrl: http://master.url

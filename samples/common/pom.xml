@@ -9,9 +9,9 @@
         <version>0.1.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-sample</artifactId>
-    <name>Operator SDK - Sample</name>
-    <description>Sample usage of operator framework</description>
+    <artifactId>operator-framework-samples-common-files</artifactId>
+    <name>Operator SDK - Samples - Common Files</name>
+    <description>Files shared between samples</description>
     <packaging>jar</packaging>
 
     <properties>

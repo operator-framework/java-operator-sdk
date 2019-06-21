@@ -3,12 +3,13 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
-import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,22 +27,6 @@ public class Operator {
     private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
-
-    public Operator(OperatorConfig operatorConfig) {
-        ConfigBuilder config = new ConfigBuilder();
-        config.withTrustCerts(operatorConfig.isTrustSelfSignedCertificates());
-        if (StringUtils.isNotBlank(operatorConfig.getUsername())) {
-            config.withUsername(operatorConfig.getUsername());
-        }
-        if (StringUtils.isNotBlank(operatorConfig.getPassword())) {
-            config.withUsername(operatorConfig.getPassword());
-        }
-        if (StringUtils.isNotBlank(operatorConfig.getMasterUrl())) {
-            config.withMasterUrl(operatorConfig.getMasterUrl());
-        }
-        k8sClient = operatorConfig.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
-        setDefaultExceptionHandler();
-    }
 
     public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
@@ -89,6 +74,9 @@ public class Operator {
                 .findFirst();
     }
 
+    public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {
+        return customResourceClients;
+    }
 
     public void stop() {
         k8sClient.close();
