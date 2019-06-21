@@ -121,8 +121,8 @@ finalizer first time we update the resource if its not there.
 
 ## Spring Boot Support
 
-We provide a spring boot starter to automatically handle bean registration. To use it just include the
- following dependency to you project: 
+We provide a spring boot starter to automatically handle bean registration, and registering variouse components as beans. 
+To use it just include the following dependency to you project: 
 
 ```
 <dependency>
@@ -132,8 +132,8 @@ We provide a spring boot starter to automatically handle bean registration. To u
 </dependency>
 ```
 
-Note that controllers needs to be registered as a bean. Either annotation them with Spring's 
- `@Component` or `@Service` annotation (see Spring docs for all possibilities, also our sample for component scanning). 
-After controllers are registered as a bean, gets automatically registered also to operator. 
+Note that controllers needs to be registered as a bean. Thus just annotating them also with `@Component` annotation.
+See Spring docs for for details, also our sample with component scanning. 
+All controllers that are registered as a bean, gets automatically registered to operator. 
  
-Kubernetes client creation by properties is also supported, for complete list see: [Link for config class]  
+Kubernetes client creation using properties is also supported, for complete list see: [Link for config class]  
