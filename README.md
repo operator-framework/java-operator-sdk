@@ -90,6 +90,25 @@ public class CustomService extends CustomResource {
 }
 ```
 
+## Spring Boot Support
+
+We provide a spring boot starter to automatically handle bean registration, and registering variouse components as beans. 
+To use it just include the following dependency to you project: 
+
+```
+<dependency>
+ <groupId>com.github.containersolutions</groupId>
+ <artifactId>spring-boot-operator-framework-starter</artifactId>
+ <version>[version]</version>
+</dependency>
+```
+
+Note that controllers needs to be registered as a bean. Thus just annotating them also with `@Component` annotation.
+See Spring docs for for details, also our sample with component scanning. 
+All controllers that are registered as a bean, gets automatically registered to operator. 
+ 
+Kubernetes client creation using properties is also supported, for complete list see: [Link for config class]  
+
 ## Dealing with Consistency 
 
 ### Run Single Instance
@@ -118,22 +137,3 @@ During deletion process we use [Kubernetes finalizers](https://kubernetes.io/doc
 "Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running while the delete 
 of resource is executed (think `oc delete`). In this case we would not catch the delete event. So we automatically add a
 finalizer first time we update the resource if its not there. 
-
-## Spring Boot Support
-
-We provide a spring boot starter to automatically handle bean registration, and registering variouse components as beans. 
-To use it just include the following dependency to you project: 
-
-```
-<dependency>
- <groupId>com.github.containersolutions</groupId>
- <artifactId>spring-boot-operator-framework-starter</artifactId>
- <version>[version]</version>
-</dependency>
-```
-
-Note that controllers needs to be registered as a bean. Thus just annotating them also with `@Component` annotation.
-See Spring docs for for details, also our sample with component scanning. 
-All controllers that are registered as a bean, gets automatically registered to operator. 
- 
-Kubernetes client creation using properties is also supported, for complete list see: [Link for config class]  
