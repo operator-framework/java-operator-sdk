@@ -30,14 +30,6 @@ public class Operator {
 
     public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
-        setDefaultExceptionHandler();
-    }
-
-    private void setDefaultExceptionHandler() {
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            log.error("Error", e);
-            this.stop();
-        });
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
