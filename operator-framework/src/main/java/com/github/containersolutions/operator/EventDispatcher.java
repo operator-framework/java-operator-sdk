@@ -39,8 +39,10 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
 
     public void eventReceived(Action action, R resource) {
         try {
-            log.debug("Action: {}, {}: {}", action, resource.getClass().getSimpleName(), resource.getMetadata().getName());
+            log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
+                    resource.getMetadata().getName(), resource);
             handleEvent(action, resource);
+            log.trace("Even handling finished for action: {} resource: {}", action, resource);
         } catch (RuntimeException e) {
             log.error("Error on resource: {}", resource.getMetadata().getName(), e);
         }
