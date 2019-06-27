@@ -1,0 +1,14 @@
+apiVersion: "sample.javaoperatorsdk/v1"
+kind: NginxWww
+metadata:
+  name: mynginx-hello
+spec:
+  html: |
+    <html>
+      <head>
+        <title>Hello Operator World</title>
+      </head>
+      <body>
+        Hellooooo!!sfsdfs! Operators!!
+      </body>
+    </html>

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-www-operator
+  namespace: nginx-www-operator
+spec:
+  selector:
+    matchLabels:
+      app: nginx-www-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx-www-operator
+    spec:
+      serviceAccountName: nginx-www-operator
+      serviceAccount: nginx-www-operator
+      containers:
+      - name: operator
+        image: nginx-www-operator
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-www-operator
+  namespace: nginx-www-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: operator-admin
+subjects:
+- kind: ServiceAccount
+  name: nginx-www-operator
+  namespace: nginx-www-operator
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: ""
