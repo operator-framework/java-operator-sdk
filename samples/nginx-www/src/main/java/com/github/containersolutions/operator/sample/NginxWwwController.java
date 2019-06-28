@@ -31,33 +31,6 @@ public class NginxWwwController implements ResourceController<NginxWww> {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
-    public void deleteResource(NginxWww nginx, Context<NginxWww> context) {
-        log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
-
-
-        var configMap = context.getK8sClient().configMaps()
-                .inNamespace(nginx.getMetadata().getNamespace())
-                .withName(configMapName(nginx));
-        if (configMap.get() != null) {
-            configMap.delete();
-        }
-
-        var deployment = context.getK8sClient().apps().deployments()
-                .inNamespace(nginx.getMetadata().getNamespace())
-                .withName(deploymentName(nginx));
-        if (deployment.get() != null) {
-            deployment.cascading(true).delete();
-        }
-
-        var service = context.getK8sClient().services()
-                .inNamespace(nginx.getMetadata().getNamespace())
-                .withName(serviceName(nginx));
-        if (service.get() != null) {
-            service.delete();
-        }
-    }
-
-    @Override
     public Optional<NginxWww> createOrUpdateResource(NginxWww nginx, Context<NginxWww> context) {
         log.info("Execution createOrUpdateResource for: {}", nginx.getMetadata().getName());
 
@@ -108,6 +81,32 @@ public class NginxWwwController implements ResourceController<NginxWww> {
         nginx.setStatus(status);
 
         return Optional.of(nginx);
+    }
+
+    @Override
+    public void deleteResource(NginxWww nginx, Context<NginxWww> context) {
+        log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
+
+        var configMap = context.getK8sClient().configMaps()
+                .inNamespace(nginx.getMetadata().getNamespace())
+                .withName(configMapName(nginx));
+        if (configMap.get() != null) {
+            configMap.delete();
+        }
+
+        var deployment = context.getK8sClient().apps().deployments()
+                .inNamespace(nginx.getMetadata().getNamespace())
+                .withName(deploymentName(nginx));
+        if (deployment.get() != null) {
+            deployment.cascading(true).delete();
+        }
+
+        var service = context.getK8sClient().services()
+                .inNamespace(nginx.getMetadata().getNamespace())
+                .withName(serviceName(nginx));
+        if (service.get() != null) {
+            service.delete();
+        }
     }
 
     private static String configMapName(NginxWww nginx) {

@@ -17,13 +17,9 @@ public class NginxWwwOperator {
 
     public static void main(String[] args) throws IOException {
         log.info("NginxWww Operator starting");
-        var client = new DefaultKubernetesClient();
-        Operator operator = new Operator(client);
-        operator.registerController(new NginxWwwController());
 
-        client.pods().inAnyNamespace().list().getItems()
-                .forEach(item -> log.info("{} in {}", item.getMetadata().getName(),
-                        item.getMetadata().getNamespace()));
+        Operator operator = new Operator(new DefaultKubernetesClient());
+        operator.registerController(new NginxWwwController());
 
         new FtBasic(
                 new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080
