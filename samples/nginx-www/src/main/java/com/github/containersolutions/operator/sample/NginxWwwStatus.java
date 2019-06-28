@@ -4,6 +4,8 @@ public class NginxWwwStatus {
 
     private String htmlConfigMap;
 
+    private String areWeGood;
+
     private String url;
 
     public String getHtmlConfigMap() {
@@ -12,6 +14,14 @@ public class NginxWwwStatus {
 
     public void setHtmlConfigMap(String htmlConfigMap) {
         this.htmlConfigMap = htmlConfigMap;
+    }
+
+    public String getAreWeGood() {
+        return areWeGood;
+    }
+
+    public void setAreWeGood(String areWeGood) {
+        this.areWeGood = areWeGood;
     }
 
     public String getUrl() {

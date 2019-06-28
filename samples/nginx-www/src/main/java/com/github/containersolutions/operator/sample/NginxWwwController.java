@@ -5,6 +5,8 @@ import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.apache.commons.lang3.StringUtils;
@@ -64,8 +66,11 @@ public class NginxWwwController implements ResourceController<NginxWww> {
                 .inNamespace(htmlConfigMap.getMetadata().getNamespace())
                 .withName(htmlConfigMap.getMetadata().getName()).get();
 
+        log.info("Creating or updating ConfigMap {}", htmlConfigMap.getMetadata().getName());
         context.getK8sClient().configMaps().inNamespace(ns).createOrReplace(htmlConfigMap);
+        log.info("Creating or updating Deployment {}", deployment.getMetadata().getName());
         context.getK8sClient().apps().deployments().inNamespace(ns).createOrReplace(deployment);
+        log.info("Creating or updating Service {}", service.getMetadata().getName());
         context.getK8sClient().services().inNamespace(ns).createOrReplace(service);
 
         if (existingConfigMap != null) {
@@ -77,7 +82,7 @@ public class NginxWwwController implements ResourceController<NginxWww> {
 
         var status = new NginxWwwStatus();
         status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
-        status.setUrl("http://localhost:" + service.getSpec().getPorts().get(0).getNodePort());
+        status.setAreWeGood("Yes!");
         nginx.setStatus(status);
 
         return Optional.of(nginx);
@@ -87,6 +92,7 @@ public class NginxWwwController implements ResourceController<NginxWww> {
     public void deleteResource(NginxWww nginx, Context<NginxWww> context) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
+        log.info("Deleting ConfigMap {}", configMapName(nginx));
         var configMap = context.getK8sClient().configMaps()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(configMapName(nginx));
@@ -94,6 +100,7 @@ public class NginxWwwController implements ResourceController<NginxWww> {
             configMap.delete();
         }
 
+        log.info("Deleting Deployment {}", deploymentName(nginx));
         var deployment = context.getK8sClient().apps().deployments()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(deploymentName(nginx));
@@ -101,6 +108,7 @@ public class NginxWwwController implements ResourceController<NginxWww> {
             deployment.cascading(true).delete();
         }
 
+        log.info("Deleting Service {}", serviceName(nginx));
         var service = context.getK8sClient().services()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(serviceName(nginx));
