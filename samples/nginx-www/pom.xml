@@ -59,7 +59,9 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
                                         <Main-Class>com.github.containersolutions.operator.sample.NginxWwwOperator</Main-Class>
@@ -68,6 +70,14 @@
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>io.fabric8:openshift-client</artifact>
+                                    <excludes>
+                                        <exclude>io/fabric8/kubernetes/client/Config*</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <finalName>${project.artifactId}</finalName>
                         </configuration>
                     </execution>
