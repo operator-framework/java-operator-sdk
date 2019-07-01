@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +33,7 @@ public class Operator {
         this.k8sClient = k8sClient;
     }
 
-    public <R extends CustomResource> void registerController(ResourceController<R> controller) throws OperatorException {
+    public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
         Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
         String kind = ControllerUtils.getKind(controller);
@@ -46,15 +47,28 @@ public class Operator {
             EventDispatcher<R> eventDispatcher =
                     new EventDispatcher<>(controller, (CustomResourceOperationsImpl) client, client, k8sClient,
                             ControllerUtils.getDefaultFinalizer(controller));
-            client.watch(eventDispatcher);
-            customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
-            controllers.put(controller, eventDispatcher);
-            log.info("Registered Controller '" + controller.getClass().getSimpleName() + "' for CRD '"
-                    + getCustomResourceClass(controller).getName() + "'");
+            registerWatches(controller, client, eventDispatcher, resClass, targetNamespaces);
         } else {
             throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"
                     + getVersion(controller) + "' not found");
         }
+    }
+
+    private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
+                                                            EventDispatcher<R> eventDispatcher, Class<R> resClass, String[] targetNamespaces) {
+        CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
+        if (targetNamespaces.length == 0) {
+            client.watch(eventDispatcher);
+        } else {
+            for (String targetNamespace : targetNamespaces) {
+                crClient.inNamespace(targetNamespace).watch(eventDispatcher);
+                log.debug("Registered controller for namespace: {}", targetNamespace);
+            }
+        }
+        customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
+        controllers.put(controller, eventDispatcher);
+        log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
+                resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
 
     private Optional<CustomResourceDefinition> getCustomResourceDefinitionForController(ResourceController controller) {
