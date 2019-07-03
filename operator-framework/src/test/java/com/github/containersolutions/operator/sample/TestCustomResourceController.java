@@ -18,7 +18,8 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public static final String TEST_GROUP = "test.group";
 
     @Override
-    public void deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+    public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+        return true;
     }
 
     @Override

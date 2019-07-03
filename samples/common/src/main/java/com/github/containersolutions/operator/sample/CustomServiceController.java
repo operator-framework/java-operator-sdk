@@ -26,10 +26,11 @@ public class CustomServiceController implements ResourceController<CustomService
     public static final String GROUP = "sample.javaoperatorsdk";
 
     @Override
-    public void deleteResource(CustomService resource, Context<CustomService> context) {
+    public boolean deleteResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
         context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getMetadata().getName()).delete();
+        return true;
     }
 
     @Override

@@ -60,8 +60,9 @@ public class CustomServiceController implements ResourceController<CustomService
     public static final String GROUP = "sample.javaoperatorsdk";
 
     @Override
-    public void deleteResource(CustomService resource, Context<CustomService> context) {
+    public boolean deleteResource(CustomService resource, Context<CustomService> context) {
         // ... your logic ...
+        return true;
     }
     
     // Return the changed resource, so it gets updated. See javadoc for details.

@@ -7,7 +7,17 @@ import java.util.Optional;
 
 public interface ResourceController<R extends CustomResource> {
 
-    void deleteResource(R resource, Context<R> context);
+    /**
+     * The implementation should delete the associated component(s). Note that this is method is called when an object
+     * is marked for deletion. After its executed the default finalizer is automatically removed by the framework;
+     * unless the return value is false - note that this is almost never the case.
+     *
+     * @param resource
+     * @param context
+     * @return true - so the finalizer is automatically removed after the call.
+     * false if you don't want to remove the finalizer. Note that this is ALMOST NEVER the case.
+     */
+    boolean deleteResource(R resource, Context<R> context);
 
     /**
      * The implementation of this operation is required to be idempotent.

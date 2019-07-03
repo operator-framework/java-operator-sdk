@@ -42,6 +42,7 @@ class EventDispatcherTest {
         testCustomResource.getMetadata().setFinalizers(new ArrayList<>());
 
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.of(testCustomResource));
+        when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(true);
     }
 
     @Test
@@ -98,6 +99,18 @@ class EventDispatcherTest {
 
         assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
         verify(resourceOperation, times(1)).lockResourceVersion(any());
+    }
+
+    @Test
+    public void doesNotRemovesTheFinalizerIfTheDeleteMethodRemovesFalse() {
+        when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(false);
+        markForDeletion(testCustomResource);
+        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+
+        eventDispatcher.eventReceived(Watcher.Action.MODIFIED, testCustomResource);
+
+        assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
+        verify(resourceOperation, never()).lockResourceVersion(any());
     }
 
     @Test

@@ -22,8 +22,8 @@ public class TestController implements ResourceController {
     public static final String KIND = "testKind";
 
     @Override
-    public void deleteResource(CustomResource resource, Context context) {
-
+    public boolean deleteResource(CustomResource resource, Context context) {
+        return true;
     }
 
     @Override
