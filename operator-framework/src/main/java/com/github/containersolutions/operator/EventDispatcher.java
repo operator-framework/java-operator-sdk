@@ -53,8 +53,10 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
-                controller.deleteResource(resource, new Context(k8sClient, resourceClient));
-                removeDefaultFinalizer(resource);
+                boolean removeFinalizer = controller.deleteResource(resource, new Context(k8sClient, resourceClient));
+                if (removeFinalizer) {
+                    removeDefaultFinalizer(resource);
+                }
             } else {
                 Optional<R> updateResult = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
                 if (updateResult.isPresent()) {
