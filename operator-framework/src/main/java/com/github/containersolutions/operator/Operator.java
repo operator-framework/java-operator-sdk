@@ -33,7 +33,16 @@ public class Operator {
         this.k8sClient = k8sClient;
     }
 
+    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
+        registerController(controller, true);
+    }
+
     public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
+        registerController(controller, false, targetNamespaces);
+    }
+
+    private <R extends CustomResource> void registerController(ResourceController<R> controller,
+                                                               boolean watchAllNamespaces, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
         Optional<CustomResourceDefinition> crd = getCustomResourceDefinitionForController(controller);
         String kind = ControllerUtils.getKind(controller);
@@ -47,7 +56,7 @@ public class Operator {
             EventDispatcher<R> eventDispatcher =
                     new EventDispatcher<>(controller, (CustomResourceOperationsImpl) client, client, k8sClient,
                             ControllerUtils.getDefaultFinalizer(controller));
-            registerWatches(controller, client, eventDispatcher, resClass, targetNamespaces);
+            registerWatches(controller, client, eventDispatcher, resClass, watchAllNamespaces, targetNamespaces);
         } else {
             throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"
                     + getVersion(controller) + "' not found");
@@ -55,9 +64,12 @@ public class Operator {
     }
 
     private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
-                                                            EventDispatcher<R> eventDispatcher, Class<R> resClass, String[] targetNamespaces) {
+                                                            EventDispatcher<R> eventDispatcher, Class<R> resClass,
+                                                            boolean watchAllNamespaces, String[] targetNamespaces) {
         CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
-        if (targetNamespaces.length == 0) {
+        if (watchAllNamespaces) {
+            crClient.inAnyNamespace().watch(eventDispatcher);
+        } else if (targetNamespaces.length == 0) {
             client.watch(eventDispatcher);
         } else {
             for (String targetNamespace : targetNamespaces) {
