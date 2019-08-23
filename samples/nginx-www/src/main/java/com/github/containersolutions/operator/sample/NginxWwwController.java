@@ -89,7 +89,7 @@ public class NginxWwwController implements ResourceController<NginxWww> {
     }
 
     @Override
-    public void deleteResource(NginxWww nginx, Context<NginxWww> context) {
+    public boolean deleteResource(NginxWww nginx, Context<NginxWww> context) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));
@@ -115,6 +115,7 @@ public class NginxWwwController implements ResourceController<NginxWww> {
         if (service.get() != null) {
             service.delete();
         }
+        return true;
     }
 
     private static String configMapName(NginxWww nginx) {
