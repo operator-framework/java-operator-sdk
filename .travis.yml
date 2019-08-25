@@ -2,7 +2,11 @@ language: java
 dist: bionic
 before_install:
 - openssl aes-256-cbc -K $encrypted_fda1a939a5f2_key -iv $encrypted_fda1a939a5f2_iv
+  -in gpgkey.gpg.enc -out gpgkey.gpg -d
+- openssl aes-256-cbc -K $encrypted_fda1a939a5f2_key -iv $encrypted_fda1a939a5f2_iv
   -in maven-settings.xml.enc -out maven-settings.xml -d
+- gpg --import gpgkey.gpg
 script:
-- mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
+- mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}
+  versions:commit
 - mvn deploy --settings=maven-settings.xml -Prelease
