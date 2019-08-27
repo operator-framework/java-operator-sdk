@@ -30,7 +30,7 @@ public class WebServerController implements ResourceController<WebServer> {
 
     @Override
     public Optional<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
-        log.info("Execution createOrUpdateResource for: {}", webServer.getMetadata().getName());
+        log.info("Execution createOrUpdateResource for: {} in {}", webServer.getMetadata().getName(), webServer.getMetadata().getNamespace());
 
         String ns = webServer.getMetadata().getNamespace();
 
@@ -62,19 +62,19 @@ public class WebServerController implements ResourceController<WebServer> {
                 .inNamespace(htmlConfigMap.getMetadata().getNamespace())
                 .withName(htmlConfigMap.getMetadata().getName()).get();
 
-        log.info("Creating or updating ConfigMap {}", htmlConfigMap.getMetadata().getName());
+        log.info("Creating or updating ConfigMap {} in {}", htmlConfigMap.getMetadata().getName(), ns);
         context.getK8sClient().configMaps().inNamespace(ns).createOrReplace(htmlConfigMap);
-        log.info("Creating or updating Deployment {}", deployment.getMetadata().getName());
+        log.info("Creating or updating Deployment {} in {}", deployment.getMetadata().getName(), ns);
         context.getK8sClient().apps().deployments().inNamespace(ns).createOrReplace(deployment);
 
         if (context.getK8sClient().services().inNamespace(ns).withName(service.getMetadata().getName()).get() == null) {
-            log.info("Creating Service {}", service.getMetadata().getName());
+            log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
             context.getK8sClient().services().inNamespace(ns).createOrReplace(service);
         }
 
         if (existingConfigMap != null) {
             if (!StringUtils.equals(existingConfigMap.getData().get("index.html"), htmlConfigMap.getData().get("index.html"))) {
-                log.info("Restarting pods because HTML has changed");
+                log.info("Restarting pods because HTML has changed in {}", ns);
                 context.getK8sClient().pods().inNamespace(ns).withLabel("app", deploymentName(webServer)).delete();
             }
         }
