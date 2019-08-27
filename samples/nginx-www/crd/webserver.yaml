@@ -1,7 +1,7 @@
 apiVersion: "sample.javaoperatorsdk/v1"
-kind: NginxWww
+kind: WebServer
 metadata:
-  name: mynginx-hello
+  name: hellows
 spec:
   html: |
     <html>

@@ -11,15 +11,15 @@ import org.takes.http.FtBasic;
 
 import java.io.IOException;
 
-public class NginxWwwOperator {
+public class WebServerOperator {
 
-    private static final Logger log = LoggerFactory.getLogger(NginxWwwOperator.class);
+    private static final Logger log = LoggerFactory.getLogger(WebServerOperator.class);
 
     public static void main(String[] args) throws IOException {
-        log.info("NginxWww Operator starting");
+        log.info("WebServer Operator starting");
 
         Operator operator = new Operator(new DefaultKubernetesClient());
-        operator.registerController(new NginxWwwController());
+        operator.registerControllerForAllNamespaces(new WebServerController());
 
         new FtBasic(
                 new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080

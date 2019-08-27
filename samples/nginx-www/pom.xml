@@ -4,11 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.containersolutions</groupId>
-    <artifactId>nginx-www-operator</artifactId>
+    <artifactId>webserver-sample</artifactId>
     <version>0.3.2-SNAPSHOT</version>
-
-    <name>Operator SDK - Samples - Nginx WWW</name>
-    <description>Nginx Sample</description>
     <packaging>jar</packaging>
 
     <properties>
@@ -55,19 +52,53 @@
                 <executions>
                     <execution>
                         <id>default</id>
+                        <phase>install</phase>
                         <goals>
                             <goal>build</goal>
-                            <goal>push</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <repository>adamsandor83</repository>
-                    <tag>${project.version}</tag>
+                    <repository>webserver-operator</repository>
+                    <tag>latest</tag>
                     <buildArgs>
-                        <JAR_FILE>nginx-www-operator.jar</JAR_FILE>
+                        <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
                     </buildArgs>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>com.github.containersolutions.operator.sample.WebServerOperator</Main-Class>
+                                        <Build-Number>1.0</Build-Number>
+                                        <Multi-Release>true</Multi-Release>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>io.fabric8:openshift-client</artifact>
+                                    <excludes>
+                                        <exclude>io/fabric8/kubernetes/client/Config*</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

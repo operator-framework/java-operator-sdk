@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-public class NginxWwwStatus {
+public class WebServerStatus {
 
     private String htmlConfigMap;
 

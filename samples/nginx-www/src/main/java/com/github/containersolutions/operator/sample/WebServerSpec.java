@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-public class NginxWwwSpec {
+public class WebServerSpec {
 
     private String html;
 

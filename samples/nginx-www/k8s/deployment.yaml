@@ -1,23 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-www-operator
-  namespace: nginx-www-operator
+  name: webserver-operator
+  namespace: webserver-operator
 spec:
   selector:
     matchLabels:
-      app: nginx-www-operator
+      app: webserver-operator
   replicas: 1
   template:
     metadata:
       labels:
-        app: nginx-www-operator
+        app: webserver-operator
     spec:
-      serviceAccountName: nginx-www-operator
-      serviceAccount: nginx-www-operator
+      serviceAccount: webserver-operator
       containers:
       - name: operator
-        image: nginx-www-operator
+        image: webserver-operator
         imagePullPolicy: Never
         ports:
         - containerPort: 80
@@ -37,8 +36,8 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: nginx-www-operator
-  namespace: nginx-www-operator
+  name: webserver-operator
+  namespace: webserver-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -46,8 +45,8 @@ metadata:
   name: operator-admin
 subjects:
 - kind: ServiceAccount
-  name: nginx-www-operator
-  namespace: nginx-www-operator
+  name: webserver-operator
+  namespace: webserver-operator
 roleRef:
   kind: ClusterRole
   name: cluster-admin

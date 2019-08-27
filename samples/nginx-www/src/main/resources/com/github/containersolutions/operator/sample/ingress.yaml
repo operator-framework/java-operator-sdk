@@ -1,16 +1,16 @@
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-    name: nginx-www-deployment
+    name:
 spec:
     selector:
         matchLabels:
-            app: nginx-www
+            app:
     replicas: 1
     template:
         metadata:
             labels:
-                app: nginx-www
+                app:
         spec:
             containers:
                 - name: nginx
