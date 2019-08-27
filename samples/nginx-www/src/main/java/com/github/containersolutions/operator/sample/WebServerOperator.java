@@ -1,6 +1,8 @@
 package com.github.containersolutions.operator.sample;
 
 import com.github.containersolutions.operator.Operator;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +20,8 @@ public class WebServerOperator {
     public static void main(String[] args) throws IOException {
         log.info("WebServer Operator starting");
 
-        Operator operator = new Operator(new DefaultKubernetesClient());
+        Config config = new ConfigBuilder().withNamespace(null).build();
+        Operator operator = new Operator(new DefaultKubernetesClient(config));
         operator.registerControllerForAllNamespaces(new WebServerController());
 
         new FtBasic(
