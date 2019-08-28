@@ -18,6 +18,7 @@
         <module>common</module>
         <module>pure-java</module>
         <module>spring-boot</module>
+        <module>webserver</module>
     </modules>
 
 </project>
