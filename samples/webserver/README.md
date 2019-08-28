@@ -1,7 +1,7 @@
-# Nginx WWW Operator
+# WebServer Operator
 
 This is a more complex example of how a Custom Resource backed by an Operator can serve as
-an abstraction layer. This Operator will use an nginxwww resource, which mainly contains a
+an abstraction layer. This Operator will use an webserver resource, which mainly contains a
 static webpage definition and creates a nginx Deployment backed by a ConfigMap which holds
 the html.
 
@@ -15,12 +15,10 @@ spec:
   html: |
     <html>
       <head>
-        <title>Nginx WWW Operator</title>
+        <title>Webserver Operator</title>
       </head>
       <body>
         Hello World!!
       </body>
     </html>
 ```
-
-The Operator will create 
