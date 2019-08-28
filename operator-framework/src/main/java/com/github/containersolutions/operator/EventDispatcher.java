@@ -39,19 +39,20 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     }
 
     public void eventReceived(Action action, R resource) {
+        eventScheduler = new EventScheduler(this);
         try {
             log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
                     resource.getMetadata().getName(), resource);
-            eventScheduler.eventArrived(resource);
+            eventScheduler.eventArrived(action, resource);
             handleEvent(action, resource);
-            log.trace("Even handling finished for action: {} resource: {}", action, resource);
+            log.trace("Event handling finished for action: {} resource: {}", action, resource);
         } catch (RuntimeException e) {
-            eventScheduler.rescheduleEvent(action, resource);
             log.error("Error on resource: {}", resource.getMetadata().getName(), e);
+            eventScheduler.rescheduleEvent(action, resource);
         }
     }
 
-    private void handleEvent(Action action, R resource) {
+    protected void handleEvent(Action action, R resource) {
         if (action == Action.MODIFIED || action == Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
