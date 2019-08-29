@@ -26,6 +26,7 @@ public class Operator {
 
     private Map<ResourceController, EventDispatcher> controllers = new HashMap<>();
     private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
+    private EventScheduler eventScheduler;
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
@@ -70,7 +71,7 @@ public class Operator {
         if (watchAllNamespaces) {
             crClient.inAnyNamespace().watch(eventDispatcher);
         } else if (targetNamespaces.length == 0) {
-            client.watch(eventDispatcher);
+            client.watch(eventScheduler);
         } else {
             for (String targetNamespace : targetNamespaces) {
                 crClient.inNamespace(targetNamespace).watch(eventDispatcher);

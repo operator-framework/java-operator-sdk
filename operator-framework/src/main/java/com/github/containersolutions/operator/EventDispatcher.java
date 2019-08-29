@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Optional;
 
-public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
+// instance per resource type
+public class EventDispatcher<R extends CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
@@ -37,22 +38,16 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
         this.k8sClient = k8sClient;
     }
 
-    public void eventReceived(Action action, R resource) {
-        EventScheduler.eventScheduler.registerDispatcher(this, resource);
-        try {
-            log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
-                    resource.getMetadata().getName(), resource);
-            EventScheduler.eventScheduler.eventArrived(action, resource);
-            handleEvent(action, resource);
-            log.trace("Event handling finished for action: {} resource: {}", action, resource);
-        } catch (RuntimeException e) {
-            log.error("Error on resource: {}", resource.getMetadata().getName(), e);
-            EventScheduler.eventScheduler.rescheduleEvent(action, resource);
-        }
+    public void eventReceived(Watcher.Action action, R resource) {
+        log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
+                resource.getMetadata().getName(), resource);
+        EventScheduler.eventScheduler.eventArrived(action, resource);
+        handleEvent(action, resource);
+        log.trace("Event handling finished for action: {} resource: {}", action, resource);
     }
 
-    protected void handleEvent(Action action, R resource) {
-        if (action == Action.MODIFIED || action == Action.ADDED) {
+    protected void handleEvent(Watcher.Action action, R resource) {
+        if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
@@ -73,10 +68,10 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
                 }
             }
         }
-        if (Action.ERROR == action) {
+        if (Watcher.Action.ERROR == action) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
         }
-        if (Action.DELETED == action) {
+        if (Watcher.Action.DELETED == action) {
             log.debug("Resource deleted: {}", resource.getMetadata().getName());
         }
     }
@@ -108,12 +103,5 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
 
     private boolean markedForDeletion(R resource) {
         return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
-    }
-
-    @Override
-    public void onClose(KubernetesClientException e) {
-        if (e != null) {
-            log.error("Error: ", e);
-        }
     }
 }
