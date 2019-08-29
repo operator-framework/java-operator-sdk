@@ -21,7 +21,6 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     private final NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
             Resource<R, CustomResourceDoneable<R>>> resourceClient;
     private final KubernetesClient k8sClient;
-    private EventScheduler eventScheduler;
 
     public EventDispatcher(ResourceController<R> controller,
                            CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
@@ -39,16 +38,16 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     }
 
     public void eventReceived(Action action, R resource) {
-        eventScheduler = new EventScheduler(this);
+        EventScheduler.eventScheduler.registerDispatcher(this, resource);
         try {
             log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
                     resource.getMetadata().getName(), resource);
-            eventScheduler.eventArrived(action, resource);
+            EventScheduler.eventScheduler.eventArrived(action, resource);
             handleEvent(action, resource);
             log.trace("Event handling finished for action: {} resource: {}", action, resource);
         } catch (RuntimeException e) {
             log.error("Error on resource: {}", resource.getMetadata().getName(), e);
-            eventScheduler.rescheduleEvent(action, resource);
+            EventScheduler.eventScheduler.rescheduleEvent(action, resource);
         }
     }
 
