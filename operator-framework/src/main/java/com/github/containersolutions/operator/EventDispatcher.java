@@ -30,7 +30,6 @@ public class EventDispatcher<R extends CustomResource> {
                            String defaultFinalizer
 
     ) {
-
         this.controller = controller;
         this.resourceOperation = resourceOperation;
         this.resourceClient = resourceClient;
@@ -41,7 +40,6 @@ public class EventDispatcher<R extends CustomResource> {
     public void eventReceived(Watcher.Action action, R resource) {
         log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
                 resource.getMetadata().getName(), resource);
-        EventScheduler.eventScheduler.eventArrived(action, resource);
         handleEvent(action, resource);
         log.trace("Event handling finished for action: {} resource: {}", action, resource);
     }

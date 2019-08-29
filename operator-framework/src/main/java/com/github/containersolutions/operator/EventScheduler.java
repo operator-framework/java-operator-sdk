@@ -15,33 +15,43 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EventScheduler<T extends CustomResource> implements Watcher<T> {
+public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Double INITIAL_SECONDS_BETWEEN_RETRIES = 5d;
     private final static Integer MAX_NUMBER_OF_RETRIES = 3;
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    private Map<CustomResource, EventDispatcher> eventDispatchers = Collections.synchronizedMap(new HashMap<>());
     // ConcurrentHashMap instead for locking at hashmap bucket level?
-    private Map<CustomResource, Watcher.Action> customResourceMap = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, Watcher.Action> customResourceMap = Collections.synchronizedMap(new HashMap<>());
 
-    public static EventScheduler eventScheduler = new EventScheduler();
 
-    private Map<String, EventDispatcher> eventDispatcher;
+    private EventDispatcher eventDispatcher;
+
+    public <R extends CustomResource> EventScheduler(EventDispatcher<R> eventDispatcher) {
+        this.eventDispatcher = eventDispatcher;
+    }
 
     @Override
-    public void eventReceived(Action action, T t) {
+    public void eventReceived(Watcher.Action action, R resource) {
         try {
-//            eventDispatcher.eventReceived(action, t);
+            log.debug("Event received for action: {}, {}: {}, on resource: {}", action, resource.getClass().getSimpleName(),
+                    resource.getMetadata().getName(), resource);
+
+            String resourceUid = resource.getMetadata().getUid();
+            if (customResourceMap.containsKey(resourceUid)) {
+                customResourceMap.remove(resourceUid);
+            } else {
+                customResourceMap.put(resourceUid, action);
+            }
+            eventDispatcher.eventReceived(action, resource);
         } catch (RuntimeException e) {
-//          ....
+            rescheduleEvent(action, resource);
         }
     }
 
+
     public void rescheduleEvent(Watcher.Action action, CustomResource resource) {
-        customResourceMap.put(resource, action);
-        EventDispatcher eventDispatcher = eventDispatchers.get(resource);
 
         RetryConfig retryConfig = RetryConfig.custom()
                 .maxAttempts(MAX_NUMBER_OF_RETRIES)
@@ -51,23 +61,12 @@ public class EventScheduler<T extends CustomResource> implements Watcher<T> {
         Retry retry = Retry.of("eventDispatcher", retryConfig);
 
         Runnable runnable = () -> {
-            eventDispatcher.handleEvent(action, resource);
+            eventDispatcher.eventReceived(action, resource);
         };
 
         Runnable retriableEventHandler = Retry.decorateRunnable(retry, runnable);
         Try<Void> result = Try.run(retriableEventHandler::run);
         log.info("Trying action {} on resource:{} resulted in {}", action.toString(), resource.getMetadata().getName(), result);
-        eventDispatchers.remove(resource);
-    }
-
-    public void eventArrived(Watcher.Action action, CustomResource resource) {
-        if (customResourceMap.containsKey(resource)) {
-            customResourceMap.remove(resource);
-        }
-    }
-
-    public void registerDispatcher(EventDispatcher eventDispatcher, CustomResource resource){
-        eventDispatchers.put(resource, eventDispatcher);
     }
 
 
@@ -75,4 +74,6 @@ public class EventScheduler<T extends CustomResource> implements Watcher<T> {
     public void onClose(KubernetesClientException e) {
 
     }
+
 }
+
