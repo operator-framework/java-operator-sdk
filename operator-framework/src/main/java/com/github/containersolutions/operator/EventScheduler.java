@@ -2,23 +2,20 @@ package com.github.containersolutions.operator;
 
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.github.resilience4j.retry.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.vavr.control.Try;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
-import io.github.resilience4j.retry.IntervalFunction;
-import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
-import io.github.resilience4j.retry.RetryRegistry;
-
-import io.vavr.control.Try;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class EventScheduler {
+public class EventScheduler<T extends CustomResource> implements Watcher<T> {
 
     private final static Double INITIAL_SECONDS_BETWEEN_RETRIES = 5d;
     private final static Integer MAX_NUMBER_OF_RETRIES = 3;
@@ -31,7 +28,16 @@ public class EventScheduler {
 
     public static EventScheduler eventScheduler = new EventScheduler();
 
+    private Map<String, EventDispatcher> eventDispatcher;
 
+    @Override
+    public void eventReceived(Action action, T t) {
+        try {
+//            eventDispatcher.eventReceived(action, t);
+        } catch (RuntimeException e) {
+//          ....
+        }
+    }
 
     public void rescheduleEvent(Watcher.Action action, CustomResource resource) {
         customResourceMap.put(resource, action);
@@ -65,4 +71,8 @@ public class EventScheduler {
     }
 
 
+    @Override
+    public void onClose(KubernetesClientException e) {
+
+    }
 }
