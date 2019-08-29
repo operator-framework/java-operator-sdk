@@ -24,7 +24,7 @@ public class Operator {
 
     private final KubernetesClient k8sClient;
 
-    private Map<ResourceController, EventDispatcher> controllers = new HashMap<>();
+    private Map<ResourceController, EventScheduler> controllers = new HashMap<>();
     private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
     private EventScheduler eventScheduler;
 
@@ -57,7 +57,9 @@ public class Operator {
             EventDispatcher<R> eventDispatcher =
                     new EventDispatcher<>(controller, (CustomResourceOperationsImpl) client, client, k8sClient,
                             ControllerUtils.getDefaultFinalizer(controller));
-            registerWatches(controller, client, eventDispatcher, resClass, watchAllNamespaces, targetNamespaces);
+
+            eventScheduler = new EventScheduler(eventDispatcher);
+            registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces);
         } else {
             throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"
                     + getVersion(controller) + "' not found");
@@ -65,21 +67,21 @@ public class Operator {
     }
 
     private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
-                                                            EventDispatcher<R> eventDispatcher, Class<R> resClass,
+                                                            Class<R> resClass,
                                                             boolean watchAllNamespaces, String[] targetNamespaces) {
         CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
         if (watchAllNamespaces) {
-            crClient.inAnyNamespace().watch(eventDispatcher);
+            crClient.inAnyNamespace().watch(eventScheduler);
         } else if (targetNamespaces.length == 0) {
             client.watch(eventScheduler);
         } else {
             for (String targetNamespace : targetNamespaces) {
-                crClient.inNamespace(targetNamespace).watch(eventDispatcher);
+                crClient.inNamespace(targetNamespace).watch(eventScheduler);
                 log.debug("Registered controller for namespace: {}", targetNamespace);
             }
         }
         customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
-        controllers.put(controller, eventDispatcher);
+        controllers.put(controller, eventScheduler);
         log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
                 resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
