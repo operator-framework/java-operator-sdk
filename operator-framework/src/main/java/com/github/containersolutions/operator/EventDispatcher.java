@@ -37,12 +37,6 @@ public class EventDispatcher<R extends CustomResource> {
         this.k8sClient = k8sClient;
     }
 
-    public void eventReceived(Watcher.Action action, R resource) {
-        log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
-                resource.getMetadata().getName(), resource);
-        handleEvent(action, resource);
-        log.trace("Event handling finished for action: {} resource: {}", action, resource);
-    }
 
     protected void handleEvent(Watcher.Action action, R resource) {
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
