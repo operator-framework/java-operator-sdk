@@ -5,36 +5,35 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class EventScheduler<R extends CustomResource> implements Watcher<R> {
-
-
-    private long initialSecondsBetweenRetries;
-    private long maxSecondsBetweenRetries;
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
     // ConcurrentHashMap instead for locking at hashmap bucket level?
-    private Map<String, Boolean> customResourceMap = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, Pair<Action, CustomResource>> customEventQueue = Collections.synchronizedMap(new HashMap<>());
 
     private EventDispatcher eventDispatcher;
 
+    private Integer BACKOFF = 5;
+    private Integer DELAY = 0;
+
     public <R extends CustomResource> EventScheduler(EventDispatcher<R> eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
-        setInitialSecondsBetweenRetries(1l);
-        setMaxSecondsBetweenRetries(30);
+        startRetryingQueue();
     }
+
 
     @Override
     public void eventReceived(Watcher.Action action, R resource) {
@@ -43,62 +42,41 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                     resource.getMetadata().getName(), resource);
 
             String resourceUid = resource.getMetadata().getUid();
-
-            if (customResourceMap.containsKey(resourceUid)) {
-                // replacing existing resource in map with new resource
-                customResourceMap.put(resourceUid, true);
-            } else {
-                // adding new resource to map
-                customResourceMap.put(resourceUid, false);
-            }
+            Pair<Action, CustomResource> event = new ImmutablePair<>(action, resource);
+            customEventQueue.put(resourceUid, event);
             eventDispatcher.handleEvent(action, resource);
-            log.trace("Event handling finished for action: {} resource: {}", action, resource);
+            log.trace("Event handling finished for action: {} resource: {}, removing from queue", action, resource);
+            customEventQueue.remove(resourceUid);
         } catch (RuntimeException e) {
-            rescheduleEvent(action, resource);
+            log.warn("Action {} on {} {} failed. Leaving in queue for retry.", action, resource.getClass().getSimpleName(),
+                    resource.getMetadata().getName());
         }
     }
 
-
-    private void rescheduleEvent(Watcher.Action action, CustomResource resource) {
-
-        String resourceUid = resource.getMetadata().getUid();
-        RetryPolicy<Object> retryPolicy = new RetryPolicy<>()
-                .handle(Exception.class)
-                .withBackoff(initialSecondsBetweenRetries, maxSecondsBetweenRetries, ChronoUnit.SECONDS)
-                .abortWhen(hasNewEventArrived(resourceUid))
-                .onFailedAttempt(e -> log.warn("Retry failed", e.getLastFailure()))
-                .onRetriesExceeded(e -> log.warn("Max retries exceeded. All failed."))
-                .onAbort(e -> log.info("Retries aborted, new event came in."))
-                .onSuccess(e -> log.info("Retry successful."));
-
-        CompletableFuture<Void> future = Failsafe.with(retryPolicy).runAsync(() -> eventDispatcher.handleEvent(action, resource));
-        log.debug("Future {}",future.toString());
-        customResourceMap.remove(resourceUid);
-    }
-
-    private Boolean hasNewEventArrived(String resourceUid){
-        return customResourceMap.containsKey(resourceUid) && customResourceMap.get(resourceUid);
+    private void startRetryingQueue() {
+        Runnable runnable = () -> {
+            customEventQueue.forEach((resourceUid, event) ->{
+                Watcher.Action action = event.getKey();
+                CustomResource resource = event.getValue();
+                try {
+                    eventDispatcher.handleEvent(action, resource);
+                    log.info("Retry of action {} on {} {} succeeded.", action, resource.getClass().getSimpleName(),
+                            resource.getMetadata().getName());
+                    customEventQueue.remove(resourceUid);
+                } catch (RuntimeException e) {
+                    log.warn("Retry of action {} on {} {} failed.", action, resource.getClass().getSimpleName(),
+                            resource.getMetadata().getName());
+                }
+            });
+        };
+        ScheduledExecutorService service = Executors
+                .newSingleThreadScheduledExecutor();
+        service.scheduleAtFixedRate(runnable, DELAY, BACKOFF, TimeUnit.SECONDS);
     }
 
     @Override
     public void onClose(KubernetesClientException e) {
-
     }
-
-    public void setInitialSecondsBetweenRetries(long initialSecondsBetweenRetries) {
-        this.initialSecondsBetweenRetries = initialSecondsBetweenRetries;
-    }
-/*    public static long getInitialSecondsBetweenRetries() {
-        return initialSecondsBetweenRetries;
-    }*/
-
-    public void setMaxSecondsBetweenRetries(long maxSecondsBetweenRetries) {
-        this.maxSecondsBetweenRetries = maxSecondsBetweenRetries;
-    }
-/*
-    public static long getMaxSecondsBetweenRetries(){
-        return maxSecondsBetweenRetries;
-    }*/
-
 }
+
 
