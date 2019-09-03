@@ -49,8 +49,8 @@ class EventSchedulerTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        // calls handleEvent 2 times (one standard, one unsuccessful retry in the time the test takes)
-        verify(eventDispatcher, times(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
+        // calls handleEvent at least 2 times (one standard, one unsuccessful retry in the time the test takes)
+        verify(eventDispatcher, atLeast(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
     }
 
     @Test
@@ -59,7 +59,7 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
 
         try {
-            sleep(10000l);
+            sleep(6000l);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -121,7 +121,7 @@ class EventSchedulerTest {
 
         // tries first event once, fails, second interrupts, tries second, fails three times
         verify(eventDispatcher, times(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
-        verify(eventDispatcher, times(3)).handleEvent(ArgumentMatchers.eq(Watcher.Action.DELETED), ArgumentMatchers.eq(testCustomResourceModified));
+        verify(eventDispatcher, atLeast(3)).handleEvent(ArgumentMatchers.eq(Watcher.Action.DELETED), ArgumentMatchers.eq(testCustomResourceModified));
     }
 }
 
