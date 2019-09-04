@@ -43,7 +43,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             log.debug("Event received for action: {}, {}: {}, on resource: {}", action, resource.getClass().getSimpleName(),
                     resource.getMetadata().getName(), resource);
             eventDispatcher.handleEvent(action, resource);
-            log.info("Event handling finished for action: {} resource: {}, removing from queue", action, resource);
+            log.info("Event handling finished for action: {} resource: {}.", action, resource);
         } catch (RuntimeException e) {
             customEventQueue.put(resourceUid, event);
             log.warn("Action {} on {} {} failed. Leaving in queue for retry.", action, resource.getClass().getSimpleName(),
@@ -58,7 +58,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 CustomResource resource = event.getValue();
                 try {
                     eventDispatcher.handleEvent(action, resource);
-                    log.info("Retry of action {} on {} {} succeeded.", action, resource.getClass().getSimpleName(),
+                    log.info("Retry of action {} on {} {} succeeded, removing from queue.", action, resource.getClass().getSimpleName(),
                             resource.getMetadata().getName());
                     customEventQueue.remove(resourceUid);
                 } catch (RuntimeException e) {
