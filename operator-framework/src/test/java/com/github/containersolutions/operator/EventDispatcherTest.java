@@ -6,6 +6,7 @@ import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Replaceable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,7 @@ class EventDispatcherTest {
 
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.of(testCustomResource));
         when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(true);
+        when(resourceOperation.lockResourceVersion(any())).thenReturn(mock(Replaceable.class));
     }
 
     @Test
@@ -60,12 +62,9 @@ class EventDispatcherTest {
     @Test
     public void adsDefaultFinalizerOnCreateIfNotThere() {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
-        verify(resourceController, times(1)).createOrUpdateResource(argThat(new ArgumentMatcher<TestCustomResource>() {
-            @Override
-            public boolean matches(TestCustomResource testCustomResource) {
-                return testCustomResource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER);
-            }
-        }), any());
+        verify(resourceController, times(1))
+                .createOrUpdateResource(argThat(testCustomResource ->
+                        testCustomResource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)), any());
     }
 
     @Test
