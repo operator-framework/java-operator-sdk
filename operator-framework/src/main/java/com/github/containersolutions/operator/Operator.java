@@ -59,6 +59,8 @@ public class Operator {
                             ControllerUtils.getDefaultFinalizer(controller));
 
             eventScheduler = new EventScheduler(eventDispatcher);
+            eventScheduler.startRetryingQueue();
+
             registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces);
         } else {
             throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"

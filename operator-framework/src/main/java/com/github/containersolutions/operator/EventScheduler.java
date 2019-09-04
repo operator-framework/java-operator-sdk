@@ -21,7 +21,6 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    // ConcurrentHashMap instead for locking at hashmap bucket level?
     private Map<String, Pair<Action, CustomResource>> customEventQueue = Collections.synchronizedMap(new HashMap<>());
 
     private EventDispatcher eventDispatcher;
@@ -31,7 +30,6 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     public <R extends CustomResource> EventScheduler(EventDispatcher<R> eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
-        startRetryingQueue();
     }
 
 
@@ -51,7 +49,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         }
     }
 
-    private void startRetryingQueue() {
+    public void startRetryingQueue() {
         Runnable runnable = () -> {
             customEventQueue.forEach((resourceUid, event) ->{
                 Watcher.Action action = event.getKey();

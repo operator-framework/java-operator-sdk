@@ -31,6 +31,8 @@ class EventSchedulerTest {
         ObjectMeta metadata = new ObjectMeta();
         metadata.setUid(mockUid);
         testCustomResource.setMetadata(metadata);
+        
+        eventScheduler.startRetryingQueue();
 
     }
     @Test
@@ -78,6 +80,7 @@ class EventSchedulerTest {
 
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.DELETED, testCustomResourceModified);
+
 
         sleep(10000l);
 
