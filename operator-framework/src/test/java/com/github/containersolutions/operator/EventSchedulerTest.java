@@ -40,36 +40,30 @@ class EventSchedulerTest {
     }
 
     @Test
-    public void callEventReceivedThrowsException() {
+    public void callEventReceivedThrowsException() throws InterruptedException {
         doThrow(new RuntimeException()).when(eventDispatcher).handleEvent(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
 
-        try {
-            sleep(5000l);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        sleep(5000l);
+
         // calls handleEvent at least 2 times (one standard, one unsuccessful retry in the time the test takes)
         verify(eventDispatcher, atLeast(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
     }
 
     @Test
-    public void callEventReceivedThrowsExceptionOnce() {
+    public void callEventReceivedThrowsExceptionOnce() throws InterruptedException {
         doThrow(new RuntimeException()).doNothing().when(eventDispatcher).handleEvent(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
 
-        try {
-            sleep(6000l);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        sleep(6000l);
+
         // calls handleEvent 2 times (one standard, one successful retry)
         verify(eventDispatcher, times(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
 
     }
 
     @Test
-    public void callEventReceivedWithTwoConflictingEvents() {
+    public void callEventReceivedWithTwoConflictingEvents() throws InterruptedException {
 
         TestCustomResource testCustomResourceModified = new TestCustomResource();
         ObjectMeta metadata = new ObjectMeta();
@@ -85,11 +79,7 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.DELETED, testCustomResourceModified);
 
-        try {
-            sleep(10000l);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        sleep(10000l);
 
         // tries first event once, fails, second interrupts, tries second once, fails, then succeeds
         verify(eventDispatcher, times(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
@@ -97,7 +87,7 @@ class EventSchedulerTest {
     }
 
     @Test
-    public void callEventReceivedWithTwoConflictingEvents2() {
+    public void callEventReceivedWithTwoConflictingEvents2() throws InterruptedException {
 
         TestCustomResource testCustomResourceModified = new TestCustomResource();
         ObjectMeta metadata = new ObjectMeta();
@@ -113,11 +103,7 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.DELETED, testCustomResourceModified);
 
-        try {
-            sleep(10000l);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        sleep(10000l);
 
         // tries first event once, fails, second interrupts, tries second, fails three times
         verify(eventDispatcher, times(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
