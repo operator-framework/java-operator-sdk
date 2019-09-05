@@ -31,7 +31,7 @@ class EventSchedulerTest {
         ObjectMeta metadata = new ObjectMeta();
         metadata.setUid(mockUid);
         testCustomResource.setMetadata(metadata);
-        
+
         eventScheduler.startRetryingQueue();
 
     }
@@ -65,7 +65,7 @@ class EventSchedulerTest {
     }
 
     @Test
-    public void callEventReceivedWithTwoConflictingEvents() throws InterruptedException {
+    public void callEventReceivedWithTwoConflictingEventsSuccessfullHandling() throws InterruptedException {
 
         TestCustomResource testCustomResourceModified = new TestCustomResource();
         ObjectMeta metadata = new ObjectMeta();
@@ -87,10 +87,11 @@ class EventSchedulerTest {
         // tries first event once, fails, second interrupts, tries second once, fails, then succeeds
         verify(eventDispatcher, times(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
         verify(eventDispatcher, times(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.DELETED), ArgumentMatchers.eq(testCustomResourceModified));
+        verifyNoMoreInteractions(eventDispatcher);
     }
 
     @Test
-    public void callEventReceivedWithTwoConflictingEvents2() throws InterruptedException {
+    public void callEventReceivedWithTwoConflictingEventsUnsuccessfulHandling() throws InterruptedException {
 
         TestCustomResource testCustomResourceModified = new TestCustomResource();
         ObjectMeta metadata = new ObjectMeta();
@@ -109,8 +110,9 @@ class EventSchedulerTest {
         sleep(10000l);
 
         // tries first event once, fails, second interrupts, tries second, fails three times
-        verify(eventDispatcher, times(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
+        verify(eventDispatcher, atLeast(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
         verify(eventDispatcher, atLeast(3)).handleEvent(ArgumentMatchers.eq(Watcher.Action.DELETED), ArgumentMatchers.eq(testCustomResourceModified));
+        verifyNoMoreInteractions(eventDispatcher);
     }
 }
 
