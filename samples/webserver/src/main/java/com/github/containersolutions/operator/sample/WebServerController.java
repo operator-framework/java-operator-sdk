@@ -5,6 +5,10 @@ import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -79,7 +83,7 @@ public class WebServerController implements ResourceController<WebServer> {
             }
         }
 
-        var status = new WebServerStatus();
+        WebServerStatus status = new WebServerStatus();
         status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
         status.setAreWeGood("Yes!");
         webServer.setStatus(status);
@@ -92,7 +96,7 @@ public class WebServerController implements ResourceController<WebServer> {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));
-        var configMap = context.getK8sClient().configMaps()
+        Resource<ConfigMap, DoneableConfigMap> configMap = context.getK8sClient().configMaps()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(configMapName(nginx));
         if (configMap.get() != null) {
@@ -100,7 +104,7 @@ public class WebServerController implements ResourceController<WebServer> {
         }
 
         log.info("Deleting Deployment {}", deploymentName(nginx));
-        var deployment = context.getK8sClient().apps().deployments()
+        RollableScalableResource<Deployment, DoneableDeployment> deployment = context.getK8sClient().apps().deployments()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(deploymentName(nginx));
         if (deployment.get() != null) {
@@ -108,7 +112,7 @@ public class WebServerController implements ResourceController<WebServer> {
         }
 
         log.info("Deleting Service {}", serviceName(nginx));
-        var service = context.getK8sClient().services()
+        ServiceResource<Service, DoneableService> service = context.getK8sClient().services()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(serviceName(nginx));
         if (service.get() != null) {
