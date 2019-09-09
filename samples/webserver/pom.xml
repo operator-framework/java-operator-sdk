@@ -7,6 +7,7 @@
     <artifactId>webserver-sample</artifactId>
     <version>0.3.2-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <name>Operator SDK - Samples - Web Server</name>
 
     <properties>
         <java.version>11</java.version>
