@@ -43,7 +43,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    private final Map<String, Pair<Action, CustomResource>> customEventQueue = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Pair<Action, CustomResource>> retryEventQueue = Collections.synchronizedMap(new HashMap<>());
 
     private final EventDispatcher eventDispatcher;
 
@@ -63,22 +63,22 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             eventDispatcher.handleEvent(action, resource);
             log.info("Event handling finished for action: {} resource: {}.", action, resource);
         } catch (RuntimeException e) {
-            customEventQueue.put(resourceUid, event);
-            log.warn("Action {} on {} {} failed. Adding to retry queue.", action, resource.getClass().getSimpleName(),
-                    resource.getMetadata().getName());
+            retryEventQueue.put(resourceUid, event);
+            log.warn("Action {} on {} {} failed. Adding to retry queue. Queue length is now {}", action, resource.getClass().getSimpleName(),
+                    resource.getMetadata().getName(), retryEventQueue.size());
         }
     }
 
     public void startRetryingQueue() {
         Runnable runnable = () -> {
-            customEventQueue.forEach((resourceUid, event) -> {
+            retryEventQueue.forEach((resourceUid, event) -> {
                 Watcher.Action action = event.getKey();
                 CustomResource resource = event.getValue();
                 try {
                     eventDispatcher.handleEvent(action, resource);
                     log.info("Retry of action {} on {} {} succeeded, removing from queue.", action, resource.getClass().getSimpleName(),
                             resource.getMetadata().getName());
-                    customEventQueue.remove(resourceUid);
+                    retryEventQueue.remove(resourceUid);
                 } catch (RuntimeException e) {
                     log.warn("Retry of action {} on {} {} failed.", action, resource.getClass().getSimpleName(),
                             resource.getMetadata().getName());
