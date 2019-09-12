@@ -50,7 +50,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     private Integer backoff = 5;
     private Integer delay = 0;
 
-    public <R extends CustomResource> EventScheduler(EventDispatcher<R> eventDispatcher) {
+    public EventScheduler(EventDispatcher<R> eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
     }
 
