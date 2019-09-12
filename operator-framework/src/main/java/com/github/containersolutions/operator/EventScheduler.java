@@ -71,7 +71,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     public void startRetryingQueue() {
         Runnable runnable = () -> {
-            customEventQueue.forEach((resourceUid, event) ->{
+            customEventQueue.forEach((resourceUid, event) -> {
                 Watcher.Action action = event.getKey();
                 CustomResource resource = event.getValue();
                 try {
