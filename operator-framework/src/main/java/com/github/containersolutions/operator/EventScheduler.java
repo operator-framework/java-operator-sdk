@@ -60,8 +60,8 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         String resourceUid = resource.getMetadata().getUid();
         Pair<Action, CustomResource> event = new ImmutablePair<>(action, resource);
         try {
-            log.debug("Event received for action: {}, {}: {}, on resource: {}", action, resource.getClass().getSimpleName(),
-                    resource.getMetadata().getName(), resource);
+            log.debug("Event received for action: {}, {}: {}", action, resource.getClass().getSimpleName(),
+                    resource.getMetadata().getName());
             eventDispatcher.handleEvent(action, resource);
             log.info("Event handling finished for action: {} resource: {}.", action, resource);
         } catch (RuntimeException e) {
