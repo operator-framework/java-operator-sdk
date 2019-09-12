@@ -43,9 +43,9 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    private Map<String, Pair<Action, CustomResource>> customEventQueue = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Pair<Action, CustomResource>> customEventQueue = Collections.synchronizedMap(new HashMap<>());
 
-    private EventDispatcher eventDispatcher;
+    private final EventDispatcher eventDispatcher;
 
     private final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor();
 
