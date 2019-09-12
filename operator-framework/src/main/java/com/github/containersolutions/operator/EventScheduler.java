@@ -47,8 +47,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private EventDispatcher eventDispatcher;
 
-    private Integer backoff = 5;
-    private Integer delay = 0;
+    private final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public EventScheduler(EventDispatcher<R> eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
@@ -86,13 +85,12 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 }
             });
         };
-        ScheduledExecutorService service = Executors
-                .newSingleThreadScheduledExecutor();
-        service.scheduleAtFixedRate(runnable, delay, backoff, TimeUnit.SECONDS);
+        retryExecutor.scheduleAtFixedRate(runnable, 0, 5, TimeUnit.SECONDS);
     }
 
     @Override
     public void onClose(KubernetesClientException e) {
+        retryExecutor.shutdown();
     }
 }
 
