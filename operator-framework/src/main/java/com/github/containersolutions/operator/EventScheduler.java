@@ -47,13 +47,12 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private EventDispatcher eventDispatcher;
 
-    private Integer BACKOFF = 5;
-    private Integer DELAY = 0;
+    private Integer backoff = 5;
+    private Integer delay = 0;
 
     public <R extends CustomResource> EventScheduler(EventDispatcher<R> eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
     }
-
 
     @Override
     public void eventReceived(Watcher.Action action, R resource) {
@@ -89,7 +88,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         };
         ScheduledExecutorService service = Executors
                 .newSingleThreadScheduledExecutor();
-        service.scheduleAtFixedRate(runnable, DELAY, BACKOFF, TimeUnit.SECONDS);
+        service.scheduleAtFixedRate(runnable, delay, backoff, TimeUnit.SECONDS);
     }
 
     @Override
