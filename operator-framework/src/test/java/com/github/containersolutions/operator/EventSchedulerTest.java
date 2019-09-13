@@ -2,12 +2,10 @@ package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.*;
-
+import io.fabric8.kubernetes.client.Watcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +23,7 @@ class EventSchedulerTest {
 
     @BeforeEach
     public void setup() {
-        eventScheduler = new EventScheduler(eventDispatcher);
+        eventScheduler = new EventScheduler(eventDispatcher, 1);
 
         testCustomResource = new TestCustomResource();
         ObjectMeta metadata = new ObjectMeta();
@@ -46,7 +44,7 @@ class EventSchedulerTest {
         doThrow(new RuntimeException()).when(eventDispatcher).handleEvent(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
 
-        sleep(5000l);
+        sleep(2000);
 
         // calls handleEvent at least 2 times (one standard, one unsuccessful retry in the time the test takes)
         verify(eventDispatcher, atLeast(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
@@ -57,7 +55,7 @@ class EventSchedulerTest {
         doThrow(new RuntimeException()).doNothing().when(eventDispatcher).handleEvent(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
 
-        sleep(6000l);
+        sleep(1200);
 
         // calls handleEvent 2 times (one standard, one successful retry)
         verify(eventDispatcher, times(2)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
@@ -82,7 +80,7 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.DELETED, testCustomResourceModified);
 
 
-        sleep(10000l);
+        sleep(2000);
 
         // tries first event once, fails, second interrupts, tries second once, fails, then succeeds
         verify(eventDispatcher, times(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));
@@ -107,7 +105,7 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.ADDED, testCustomResource);
         eventScheduler.eventReceived(Watcher.Action.DELETED, testCustomResourceModified);
 
-        sleep(10000l);
+        sleep(2000);
 
         // tries first event once, fails, second interrupts, tries second, fails three times
         verify(eventDispatcher, atLeast(1)).handleEvent(ArgumentMatchers.eq(Watcher.Action.ADDED), ArgumentMatchers.eq(testCustomResource));

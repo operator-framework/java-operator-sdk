@@ -49,8 +49,16 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor();
 
+    private final int retryPeriodSeconds;
+
     public EventScheduler(EventDispatcher<R> eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
+        this.retryPeriodSeconds = 5;
+    }
+
+    public EventScheduler(EventDispatcher<R> eventDispatcher, int retryPeriodSeconds) {
+        this.eventDispatcher = eventDispatcher;
+        this.retryPeriodSeconds = retryPeriodSeconds;
     }
 
     @Override
@@ -61,7 +69,8 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             log.debug("Event received for action: {}, {}: {}", action, resource.getClass().getSimpleName(),
                     resource.getMetadata().getName());
             eventDispatcher.handleEvent(action, resource);
-            log.info("Event handling finished for action: {} resource: {}.", action, resource);
+            log.info("Event handling finished for action: {} resource: {} {}", action, resource.getClass().getSimpleName(),
+                    resource.getMetadata().getName());
         } catch (RuntimeException e) {
             retryEventQueue.put(resourceUid, event);
             log.warn("Action {} on {} {} failed. Adding to retry queue. Queue length is now {}", action, resource.getClass().getSimpleName(),
@@ -85,7 +94,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 }
             });
         };
-        retryExecutor.scheduleAtFixedRate(runnable, 0, 5, TimeUnit.SECONDS);
+        retryExecutor.scheduleAtFixedRate(runnable, 0, retryPeriodSeconds, TimeUnit.SECONDS);
     }
 
     @Override
