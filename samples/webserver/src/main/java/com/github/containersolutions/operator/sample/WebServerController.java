@@ -30,7 +30,9 @@ public class WebServerController implements ResourceController<WebServer> {
 
     @Override
     public Optional<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
-        log.info("Execution createOrUpdateResource for: {} in {}", webServer.getMetadata().getName(), webServer.getMetadata().getNamespace());
+        if (webServer.getSpec().getHtml().contains("error")) {
+            throw new ErrorSimulationException("Simulating error");
+        }
 
         String ns = webServer.getMetadata().getNamespace();
 
