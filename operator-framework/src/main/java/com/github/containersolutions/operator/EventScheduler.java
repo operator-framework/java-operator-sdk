@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
  *     (skip if there is not enough time left since last execution)
  *   </li>
  *   <li>Threading approach thus thread pool size and/or implementation should be configurable</li>
+ *   <li>see also: https://github.com/ContainerSolutions/java-operator-sdk/issues/34</li>
  * </ul>
  *
  * @param <R>
