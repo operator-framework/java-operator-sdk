@@ -65,17 +65,9 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     public void eventReceived(Watcher.Action action, R resource) {
         String resourceUid = resource.getMetadata().getUid();
         Pair<Action, CustomResource> event = new ImmutablePair<>(action, resource);
-        try {
-            log.debug("Event received for action: {}, {}: {}", action, resource.getClass().getSimpleName(),
+        log.info("Event received for action: {}, {}: {}", action, resource.getClass().getSimpleName(),
                     resource.getMetadata().getName());
-            eventDispatcher.handleEvent(action, resource);
-            log.info("Event handling finished for action: {} resource: {} {}", action, resource.getClass().getSimpleName(),
-                    resource.getMetadata().getName());
-        } catch (RuntimeException e) {
-            retryEventQueue.put(resourceUid, event);
-            log.warn("Action {} on {} {} failed. Adding to retry queue. Queue length is now {}", action, resource.getClass().getSimpleName(),
-                    resource.getMetadata().getName(), retryEventQueue.size());
-        }
+        retryEventQueue.put(resourceUid, event);
     }
 
     public void startRetryingQueue() {
