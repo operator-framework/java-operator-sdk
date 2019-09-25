@@ -59,7 +59,8 @@ public class Operator {
                             ControllerUtils.getDefaultFinalizer(controller));
 
             eventScheduler = new EventScheduler(eventDispatcher);
-            eventScheduler.startRetryingQueue();
+
+            eventScheduler.startProcessing();
 
             registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces);
         } else {
