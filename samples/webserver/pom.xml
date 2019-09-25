@@ -13,6 +13,7 @@
     <name>Operator SDK - Samples - Webserver</name>
     <description>Provisions an nginx Webserver based on a CRD</description>
     <packaging>jar</packaging>
+    <name>Operator SDK - Samples - Web Server</name>
 
     <properties>
         <java.version>11</java.version>
