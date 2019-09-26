@@ -3,11 +3,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.containersolutions</groupId>
+    <parent>
+        <groupId>com.github.containersolutions</groupId>
+        <artifactId>operator-framework-samples</artifactId>
+        <version>0.3.2-SNAPSHOT</version>
+    </parent>
+
     <artifactId>webserver-sample</artifactId>
-    <version>0.3.2-SNAPSHOT</version>
+    <name>Operator SDK - Samples - Webserver</name>
+    <description>Provisions an nginx Webserver based on a CRD</description>
     <packaging>jar</packaging>
-    <name>Operator SDK - Samples - Web Server</name>
 
     <properties>
         <java.version>11</java.version>
@@ -50,15 +55,6 @@
                 <groupId>com.spotify</groupId>
                 <artifactId>dockerfile-maven-plugin</artifactId>
                 <version>1.4.12</version>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <repository>webserver-operator</repository>
                     <tag>latest</tag>
