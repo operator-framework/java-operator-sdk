@@ -1,9 +1,6 @@
 language: java
 dist: bionic
 before_install:
-- openssl aes-256-cbc -K $encrypted_fda1a939a5f2_key -iv $encrypted_fda1a939a5f2_iv
-  -in secrets.zip.enc -out secrets.zip -d
-- unzip secrets.zip
-- gpg --import gpgkey-nopwd.gpg
+- echo $GPGKEY | base64 --decode | gpg --import
 script:
 - mvn deploy --settings=maven-settings.xml -Prelease
