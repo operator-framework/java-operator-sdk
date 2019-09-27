@@ -5,13 +5,13 @@
 
     <parent>
         <groupId>com.github.containersolutions</groupId>
-        <artifactId>operator-framework-samples</artifactId>
+        <artifactId>java-operator-sdk-basic-sample</artifactId>
         <version>0.3.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-samples-common-files</artifactId>
-    <name>Operator SDK - Samples - Common Files</name>
-    <description>Files shared between samples</description>
+    <artifactId>operator-framework-samples-pure-java</artifactId>
+    <name>Operator SDK - Samples - Basic - Pure Java</name>
+    <description>Sample usage with pure java app</description>
     <packaging>jar</packaging>
 
     <properties>
@@ -23,16 +23,8 @@
     <dependencies>
         <dependency>
             <groupId>com.github.containersolutions</groupId>
-            <artifactId>operator-framework</artifactId>
+            <artifactId>operator-framework-samples-common-files</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
     </dependencies>
 

@@ -5,13 +5,13 @@
 
     <parent>
         <groupId>com.github.containersolutions</groupId>
-        <artifactId>operator-framework-samples</artifactId>
+        <artifactId>java-operator-sdk-basic-sample</artifactId>
         <version>0.3.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-samples-spring-boot-starter</artifactId>
-    <name>Operator SDK - Samples - Spring Boot Starter</name>
-    <description>Sample usage with spring boot starter</description>
+    <artifactId>operator-framework-samples-spring-boot</artifactId>
+    <name>Operator SDK - Samples - Basic - Spring Boot</name>
+    <description>Sample usage with Spring Boot</description>
     <packaging>jar</packaging>
 
     <properties>
