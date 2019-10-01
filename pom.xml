@@ -5,7 +5,7 @@
 
     <groupId>com.github.containersolutions</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>0.3.5-SNAPSHOT</version>
+    <version>0.3.5</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
     <packaging>pom</packaging>
