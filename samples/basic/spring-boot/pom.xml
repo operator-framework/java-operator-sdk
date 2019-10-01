@@ -23,7 +23,7 @@
     <dependencies>
         <dependency>
             <groupId>com.github.containersolutions</groupId>
-            <artifactId>operator-framework-samples-common-files</artifactId>
+            <artifactId>operator-framework-samples-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
