@@ -85,7 +85,7 @@ public class WebServerController implements ResourceController<WebServer> {
         status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
         status.setAreWeGood("Yes!");
         webServer.setStatus(status);
-
+//        throw new RuntimeException("Creating object failed, because it failed");
         return Optional.of(webServer);
     }
 
