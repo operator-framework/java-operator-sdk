@@ -5,8 +5,8 @@
 
     <parent>
         <groupId>com.github.containersolutions</groupId>
-        <artifactId>operator-framework-samples</artifactId>
-        <version>0.3.2-SNAPSHOT</version>
+        <artifactId>java-operator-sdk-samples</artifactId>
+        <version>0.3.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>webserver-sample</artifactId>

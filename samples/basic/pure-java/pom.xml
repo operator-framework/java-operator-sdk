@@ -5,12 +5,12 @@
 
     <parent>
         <groupId>com.github.containersolutions</groupId>
-        <artifactId>operator-framework-samples</artifactId>
-        <version>0.3.2-SNAPSHOT</version>
+        <artifactId>java-operator-sdk-basic-sample</artifactId>
+        <version>0.3.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>operator-framework-samples-pure-java</artifactId>
-    <name>Operator SDK - Samples - Pure Java</name>
+    <name>Operator SDK - Samples - Basic - Pure Java</name>
     <description>Sample usage with pure java app</description>
     <packaging>jar</packaging>
 
@@ -23,7 +23,7 @@
     <dependencies>
         <dependency>
             <groupId>com.github.containersolutions</groupId>
-            <artifactId>operator-framework-samples-common-files</artifactId>
+            <artifactId>operator-framework-samples-common</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
