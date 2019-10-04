@@ -53,18 +53,14 @@ public class EventDispatcher<R extends CustomResource> {
         Long thisVersion = resource.getMetadata().getGeneration();
         Map<String, Object> object = k8sClient.customResource(context).get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
         Map<String, Object> metadata = (Map<String, Object>) object.get("metadata");
-        Integer generation = (Integer) metadata.getOrDefault("generation", 0);
+        Long generation = Long.valueOf(metadata.getOrDefault("generation", 0).toString());
 
         log.debug("This generation is {} and latest is {} for resource {}", thisVersion, generation, resource.getMetadata().getName());
         if (generation > thisVersion) {
             log.warn("Skipping event because it's not latest modification. This generation is {} and latest is {} for resource {}", thisVersion, generation, resource.getMetadata().getName());
             return;
         }
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers

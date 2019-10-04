@@ -1,66 +1,71 @@
 package com.github.containersolutions.operator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResource;
+import io.fabric8.kubernetes.api.model.Initializers;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Replaceable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.kubernetes.client.dsl.internal.RawCustomResourceOperationsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 
-import java.util.ArrayList;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class EventDispatcherTest {
 
-    TestCustomResource testCustomResource;
-    private EventDispatcher<TestCustomResource> eventDispatcher;
-    private ResourceController<TestCustomResource> resourceController = mock(ResourceController.class);
-    private NonNamespaceOperation<TestCustomResource, CustomResourceList<TestCustomResource>,
-            CustomResourceDoneable<TestCustomResource>,
-            Resource<TestCustomResource, CustomResourceDoneable<TestCustomResource>>>
+    private CustomResource testCustomResource;
+    private EventDispatcher<CustomResource> eventDispatcher;
+    private ResourceController<CustomResource> resourceController = mock(ResourceController.class);
+    private NonNamespaceOperation<CustomResource, CustomResourceList<CustomResource>,
+            CustomResourceDoneable<CustomResource>,
+            Resource<CustomResource, CustomResourceDoneable<CustomResource>>>
             operation = mock(NonNamespaceOperation.class);
     private KubernetesClient k8sClient = mock(KubernetesClient.class);
-    private CustomResourceOperationsImpl<TestCustomResource, CustomResourceList<TestCustomResource>,
-            CustomResourceDoneable<TestCustomResource>> resourceOperation = mock(CustomResourceOperationsImpl.class);
+    private CustomResourceOperationsImpl<CustomResource, CustomResourceList<CustomResource>,
+            CustomResourceDoneable<CustomResource>> resourceOperation = mock(CustomResourceOperationsImpl.class);
 
+    private RawCustomResourceOperationsImpl rawResourceOperations = mock(RawCustomResourceOperationsImpl.class);
     @BeforeEach
-    public void setup() {
+    void setup() {
         eventDispatcher = new EventDispatcher(resourceController, resourceOperation, operation, k8sClient,
                 Controller.DEFAULT_FINALIZER);
 
-        testCustomResource = new TestCustomResource();
-        testCustomResource.setMetadata(new ObjectMeta());
-        testCustomResource.getMetadata().setFinalizers(new ArrayList<>());
+        testCustomResource = getResource();
 
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.of(testCustomResource));
         when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(true);
         when(resourceOperation.lockResourceVersion(any())).thenReturn(mock(Replaceable.class));
+
+        // K8s client mocking
+        when(k8sClient.customResource(any())).thenReturn(rawResourceOperations);
+        when(rawResourceOperations.get(any(), any())).thenReturn(getRawResource());
     }
 
     @Test
-    public void callCreateOrUpdateOnNewResource() {
+    void callCreateOrUpdateOnNewResource() {
         eventDispatcher.handleEvent(Watcher.Action.ADDED, testCustomResource);
         verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
     }
 
     @Test
-    public void callCreateOrUpdateOnModifiedResource() {
+    void callCreateOrUpdateOnModifiedResource() {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
         verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
     }
 
     @Test
-    public void adsDefaultFinalizerOnCreateIfNotThere() {
+    void adsDefaultFinalizerOnCreateIfNotThere() {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
         verify(resourceController, times(1))
                 .createOrUpdateResource(argThat(testCustomResource ->
@@ -68,7 +73,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    public void callsDeleteIfObjectHasFinalizerAndMarkedForDelete() {
+    void callsDeleteIfObjectHasFinalizerAndMarkedForDelete() {
         testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
 
@@ -81,7 +86,7 @@ class EventDispatcherTest {
      * Note that there could be more finalizers. Out of our control.
      */
     @Test
-    public void doesNotCallDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
+    void doesNotCallDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
         markForDeletion(testCustomResource);
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
@@ -90,7 +95,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    public void removesDefaultFinalizerOnDelete() {
+    void removesDefaultFinalizerOnDelete() {
         markForDeletion(testCustomResource);
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
 
@@ -101,7 +106,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    public void doesNotRemovesTheFinalizerIfTheDeleteMethodRemovesFalse() {
+    void doesNotRemovesTheFinalizerIfTheDeleteMethodRemovesFalse() {
         when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(false);
         markForDeletion(testCustomResource);
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
@@ -113,7 +118,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    public void doesNotUpdateTheResourceIfEmptyOptionalReturned() {
+    void doesNotUpdateTheResourceIfEmptyOptionalReturned() {
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
 
@@ -123,7 +128,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    public void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
+    void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
@@ -133,7 +138,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    public void doesNotAddFinalizerIfOptionalIsReturnedButMarkedForDeletion() {
+    void doesNotAddFinalizerIfOptionalIsReturnedButMarkedForDeletion() {
         markForDeletion(testCustomResource);
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
 
@@ -147,4 +152,30 @@ class EventDispatcherTest {
         customResource.getMetadata().setDeletionTimestamp("2019-8-10");
     }
 
+    CustomResource getResource() {
+        TestCustomResource resource = new TestCustomResource();
+        resource.setMetadata(new ObjectMeta(
+                new HashMap<String, String>(),
+                "clusterName",
+                "creationTimestamp",
+                10L,
+                null,
+                new LinkedList<String>(),
+                "generatedName",
+                10L,
+                new Initializers(),
+                new HashMap<String, String>(),
+                "name",
+                "namespace",
+                new LinkedList<OwnerReference>(),
+                "resourceVersion",
+                "selfLink",
+                "uid"
+        ));
+        return resource;
+    }
+
+    HashMap getRawResource() {
+        return new ObjectMapper().convertValue(getResource(), HashMap.class);
+    }
 }
