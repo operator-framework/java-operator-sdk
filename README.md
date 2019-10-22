@@ -1,17 +1,11 @@
 # java-operator-sdk
 [![Build Status](https://travis-ci.org/ContainerSolutions/java-operator-sdk.svg?branch=master)](https://travis-ci.org/ContainerSolutions/java-operator-sdk)
-> This project is in incubation phase.
 
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 In this first iteration we aim to provide a framework which handles the reconciliation loop by dispatching events to
 a Controller written by the user of the framework.
 
 The Controller only contains the logic to create, update and delete the actual resources related to the CRD.
-
-## Implementation
-
-This library relies on the amazing [kubernetes-client](https://github.com/fabric8io/kubernetes-client) from fabric8. Most of the heavy lifting is actually done by
-kubernetes-client.
 
 ## Roadmap
 
@@ -21,9 +15,12 @@ Feature we would like to implement and invite the community to help us implement
 * Testing support
 * Class generation from CRD to POJO
 
-
 ## Usage
-> Under sample directory you can try out our sample.
+
+We have several sample Operators under the samples directory:
+* *basic*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
+Implemented with and without Spring Boot support. The two samples share the common module.
+* *webserver*: More realistic example creating an nginx webserver from a Custom Resource containing html code.
 
 Add dependency to your project:
 
@@ -31,7 +28,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.containersolutions</groupId>
   <artifactId>operator-framework</artifactId>
-  <version>0.1.1</version>
+  <version>{see https://search.maven.org/search?q=a:operator-framework for latest version}</version>
 </dependency>
 ```
 
@@ -50,15 +47,15 @@ public class Runner {
 The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
-@Controller(customResourceClass = CustomService.class,
-        kind = CustomServiceController.CRD_NAME,
-        group = CustomServiceController.GROUP,
-        customResourceListClass = CustomServiceList.class,
-        customResourceDonebaleClass = CustomServiceDoneable.class)
-public class CustomServiceController implements ResourceController<CustomService> {
+@Controller(customResourceClass = WebServer.class,
+        kind = WebServerController.KIND,
+        group = WebServerController.GROUP,
+        customResourceListClass = WebServerList.class,
+        customResourceDonebaleClass = WebServerDoneable.class)
+public class WebServerController implements ResourceController<WebServer> {
 
-    public static final String CRD_NAME = "CustomService";
-    public static final String GROUP = "sample.javaoperatorsdk";
+    static final String KIND = "WebServer";
+    static final String GROUP = "sample.javaoperatorsdk";
 
     @Override
     public boolean deleteResource(CustomService resource, Context<CustomService> context) {
@@ -78,23 +75,46 @@ public class CustomServiceController implements ResourceController<CustomService
 Our custom resource java representation
 
 ```java
-public class CustomService extends CustomResource {
+public class WebServer extends CustomResource {
 
-    private ServiceSpec spec;
+    private WebServerSpec spec;
 
-    public ServiceSpec getSpec() {
+    private WebServerStatus status;
+
+    public WebServerSpec getSpec() {
         return spec;
     }
 
-    public void setSpec(ServiceSpec spec) {
+    public void setSpec(WebServerSpec spec) {
         this.spec = spec;
+    }
+
+    public WebServerStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(WebServerStatus status) {
+        this.status = status;
+    }
+}
+
+public class WebServerSpec {
+
+    private String html;
+
+    public String getHtml() {
+        return html;
+    }
+
+    public void setHtml(String html) {
+        this.html = html;
     }
 }
 ```
 
 ## Spring Boot Support
 
-We provide a spring boot starter to automatically handle bean registration, and registering variouse components as beans. 
+We provide a spring boot starter to automatically handle bean registration, and registering various components as beans. 
 To use it just include the following dependency to you project: 
 
 ```
@@ -105,35 +125,49 @@ To use it just include the following dependency to you project:
 </dependency>
 ```
 
-Note that controllers needs to be registered as a bean. Thus just annotating them also with `@Component` annotation.
-See Spring docs for for details, also our sample with component scanning. 
+Note that controllers needs to be registered as beans in the Spring context. For example adding the `@Component` annotation
+on the classes will work.
+See Spring docs for for details, also our spring-boot with component scanning. 
 All controllers that are registered as a bean, gets automatically registered to operator. 
  
 Kubernetes client creation using properties is also supported, for complete list see: [Link for config class]  
 
-## Dealing with Consistency 
 
-### Run Single Instance
+## Implementation / Design details
+
+This library relies on the amazing [kubernetes-client](https://github.com/fabric8io/kubernetes-client) from fabric8. 
+Most of the heavy lifting is actually done by kubernetes-client.
+
+What the framework adds on top of the bare client:
+* Management of events from the Kubernetes API. All events are inserted into a queue by the EventScheduler. The 
+framework makes sure only the latest event for a certain resource is processed. This is especially important since
+on startup the operator can receive a whole series of obsolete events.
+* Retrying of failed actions. When an event handler throws an exception the event is put back in the queue.
+* A clean interface to the user of the framework to receive events related to the Controller's resource.
+
+### Dealing with Consistency 
+
+#### Run Single Instance
 
 There should be always just one instance of an operator running at a time (think process). If there there would be 
 two ore more, in general it could lead to concurrency issues. Note that we are also doing optimistic locking when we update a resource.
 In this way the operator is not highly available. However for operators this not necessary an issue, 
 if the operator just gets restarted after it went down. 
 
-### Operator Restarts
+#### Operator Restarts
 
 When an operator is started we got events for every resource (of a type we listen to) already on the cluster. Even if the resource is not changed 
 (We use `kubectl get ... --watch` in the background). This can be a huge amount of resources depending on your use case.
 So it could be a good case just have a status field on the resource which is checked, if there anything needs to be done.
 
-### At Least Once
+#### At Least Once
 
 To implement controller logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
 These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
 called just once, but in some rare cases can happen that are called more then once. In practice this means that the 
 implementation needs to be **idempotent**.    
 
-### Deleting a Resource
+#### Deleting a Resource
 
 During deletion process we use [Kubernetes finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers 
 "Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running while the delete 

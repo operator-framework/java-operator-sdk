@@ -1,2 +1,9 @@
 language: java
 dist: bionic
+cache:
+  directories:
+  - $HOME/.m2
+before_install:
+- echo $GPGKEY | base64 --decode | gpg --import
+script:
+- mvn deploy --settings=maven-settings.xml -Prelease

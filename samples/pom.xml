@@ -6,19 +6,30 @@
     <parent>
         <groupId>com.github.containersolutions</groupId>
         <artifactId>java-operator-sdk</artifactId>
-        <version>0.3.2-SNAPSHOT</version>
+        <version>0.3.7-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-samples</artifactId>
+    <artifactId>java-operator-sdk-samples</artifactId>
     <name>Operator SDK - Samples</name>
-    <description>Sample usage of operator framework</description>
+    <description>Sample usage of the operator sdk</description>
     <packaging>pom</packaging>
 
     <modules>
-        <module>common</module>
-        <module>pure-java</module>
-        <module>spring-boot</module>
+        <module>basic</module>
         <module>webserver</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
