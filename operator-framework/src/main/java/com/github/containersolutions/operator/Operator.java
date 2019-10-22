@@ -84,12 +84,16 @@ public class Operator {
     }
 
     private Optional<CustomResourceDefinition> getCustomResourceDefinitionForController(ResourceController controller) {
-        CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
-
-        return crdList.getItems().stream()
-                .filter(c -> getKind(controller).equals(c.getSpec().getNames().getKind()) &&
-                        getVersion(controller).equals(c.getSpec().getVersion()))
-                .findFirst();
+        Optional<String> crdName = getCrdName(controller);
+        if (crdName.isPresent()) {
+            return Optional.ofNullable(k8sClient.customResourceDefinitions().withName(crdName.get()).get());
+        } else {
+            CustomResourceDefinitionList crdList = k8sClient.customResourceDefinitions().list();
+            return crdList.getItems().stream()
+                    .filter(c -> getKind(controller).equals(c.getSpec().getNames().getKind()) &&
+                            getVersion(controller).equals(c.getSpec().getVersion()))
+                    .findFirst();
+        }
     }
 
     public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {

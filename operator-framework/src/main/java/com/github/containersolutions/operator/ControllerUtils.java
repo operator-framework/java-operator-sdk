@@ -6,6 +6,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 
+import java.util.Optional;
+
 class ControllerUtils {
 
     public static final String GROUP_API_DELIMITER = "/";
@@ -22,15 +24,22 @@ class ControllerUtils {
         return getGroup(controller) + GROUP_API_DELIMITER + getAnnotation(controller).version();
     }
 
-
     static String getVersion(ResourceController controller) {
         return getAnnotation(controller).version();
+    }
+
+    static Optional<String> getCrdName(ResourceController controller) {
+        String crdName = getAnnotation(controller).crdName();
+        if (crdName.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(crdName);
+        }
     }
 
     static String getKind(ResourceController controller) {
         return getAnnotation(controller).kind();
     }
-
 
     static <R extends CustomResource> Class<? extends CustomResourceList<R>> getCustomResourceListClass(ResourceController controller) {
         return (Class<? extends CustomResourceList<R>>) getAnnotation(controller).customResourceListClass();
@@ -40,10 +49,10 @@ class ControllerUtils {
         return (Class<? extends CustomResourceDoneable<R>>) getAnnotation(controller).customResourceDonebaleClass();
     }
 
-
     private static String getGroup(ResourceController controller) {
         return getAnnotation(controller).group();
     }
+
     private static Controller getAnnotation(ResourceController controller) {
         return controller.getClass().getAnnotation(Controller.class);
     }
