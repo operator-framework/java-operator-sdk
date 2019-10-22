@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.github.containersolutions.operator.api.Controller.DEFAULT_FINALIZER;
 import static com.github.containersolutions.operator.api.Controller.DEFAULT_VERSION;
+import static com.github.containersolutions.operator.sample.TestCustomResourceController.CRD_NAME;
 import static com.github.containersolutions.operator.sample.TestCustomResourceController.TEST_GROUP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,6 +23,7 @@ class ControllerUtilsTest {
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController()));
         assertEquals(TestCustomResourceDoneable.class, ControllerUtils.getCustomResourceDonebaleClass(new TestCustomResourceController()));
         assertEquals(TestCustomResourceList.class, ControllerUtils.getCustomResourceListClass(new TestCustomResourceController()));
+        assertEquals(CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController()).get());
     }
 
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
  * A very simple sample controller that creates a service with a label.
  */
 @Controller(customResourceClass = CustomService.class,
+        crdName = "customservices.sample.javaoperatorsdk",
         kind = CustomServiceController.KIND,
         group = CustomServiceController.GROUP,
         customResourceListClass = CustomServiceList.class,

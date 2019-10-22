@@ -19,6 +19,8 @@ public @interface Controller {
 
     String version() default DEFAULT_VERSION;
 
+    String crdName() default "";
+
     String group();
 
     String kind();
