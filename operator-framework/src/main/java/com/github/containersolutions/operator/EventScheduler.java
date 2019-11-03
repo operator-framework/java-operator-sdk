@@ -127,15 +127,15 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     @Override
     public void onClose(KubernetesClientException e) {
-//        processingEnabled.set(false);
-//        executor.shutdown();
-//        try {
-//            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-//                executor.shutdownNow();
-//            }
-//        } catch (InterruptedException ex) {
-//            log.error("It was not possible to finish all threads, Killed them.");
-//        }
+        processingEnabled.set(false);
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            log.error("It was not possible to finish all threads, Killed them.");
+        }
     }
 
 }
