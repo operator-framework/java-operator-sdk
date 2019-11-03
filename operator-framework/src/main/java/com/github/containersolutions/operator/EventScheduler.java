@@ -46,9 +46,9 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
     private final EventDispatcher eventDispatcher;
-    final ScheduledThreadPoolExecutor executor;
-    final HashMap<CustomResourceEvent, BackOffExecution> backoffSchedulerCache = new HashMap<>();
-    final Map<CustomResourceEvent, ScheduledFuture<?>> eventCache = new ConcurrentHashMap<>();
+    private final ScheduledThreadPoolExecutor executor;
+    private final HashMap<CustomResourceEvent, BackOffExecution> backoffSchedulerCache = new HashMap<>();
+    private final Map<CustomResourceEvent, ScheduledFuture<?>> eventCache = new ConcurrentHashMap<>();
     private AtomicBoolean processingEnabled = new AtomicBoolean(false);
 
     EventScheduler(EventDispatcher<R> eventDispatcher) {
