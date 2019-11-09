@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResource;
-import io.fabric8.kubernetes.api.model.Initializers;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Replaceable;
@@ -17,7 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -154,24 +153,16 @@ class EventDispatcherTest {
 
     CustomResource getResource() {
         TestCustomResource resource = new TestCustomResource();
-        resource.setMetadata(new ObjectMeta(
-                new HashMap<String, String>(),
-                "clusterName",
-                "creationTimestamp",
-                10L,
-                null,
-                new LinkedList<String>(),
-                "generatedName",
-                10L,
-                new Initializers(),
-                new HashMap<String, String>(),
-                "name",
-                "namespace",
-                new LinkedList<OwnerReference>(),
-                "resourceVersion",
-                "selfLink",
-                "uid"
-        ));
+        resource.setMetadata(new ObjectMetaBuilder()
+                .withClusterName("clusterName")
+                .withCreationTimestamp("creationTimestamp")
+                .withDeletionGracePeriodSeconds(10L)
+                .withGeneration(10L)
+                .withName("name")
+                .withNamespace("namespace")
+                .withResourceVersion("resourceVersion")
+                .withSelfLink("selfLink")
+                .withUid("uid").build());
         return resource;
     }
 

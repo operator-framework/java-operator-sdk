@@ -1,16 +1,10 @@
 package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.sample.TestCustomResource;
-import io.fabric8.kubernetes.api.model.Initializers;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -43,24 +37,15 @@ class EventSchedulerTest {
 
     CustomResource getResource() {
         TestCustomResource resource = new TestCustomResource();
-        resource.setMetadata(new ObjectMeta(
-                new HashMap<String, String>(),
-                "clusterName",
-                "creationTimestamp",
-                10L,
-                "deletionTimestamp",
-                new LinkedList<String>(),
-                "generatedName",
-                10L,
-                new Initializers(),
-                new HashMap<String, String>(),
-                "name",
-                "namespace",
-                new LinkedList<OwnerReference>(),
-                "resourceVersion",
-                "selfLink",
-                "uid"
-        ));
+        resource.setMetadata(new ObjectMetaBuilder()
+                .withCreationTimestamp("creationTimestamp")
+                .withDeletionGracePeriodSeconds(10L)
+                .withGeneration(10L)
+                .withName("name")
+                .withNamespace("namespace")
+                .withResourceVersion("resourceVersion")
+                .withSelfLink("selfLink")
+                .withUid("uid").build());
         return resource;
     }
 }
