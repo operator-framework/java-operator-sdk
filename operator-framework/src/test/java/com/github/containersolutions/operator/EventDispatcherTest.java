@@ -147,6 +147,18 @@ class EventDispatcherTest {
         verify(resourceOperation, never()).lockResourceVersion(any());
     }
 
+    /**
+     * When receiving a DELETE event the resource is already gone and we did the processing already on a MODIFIED
+     * event received when then finalizer is added. The correct action on a DELETE event is a noop.
+     */
+    @Test
+    void doesntDoAnythingOnDeleteEvent() {
+        eventDispatcher.handleEvent(Watcher.Action.DELETED, testCustomResource);
+
+        verify(k8sClient, never()).customResource(any());
+    }
+
+
     private void markForDeletion(CustomResource customResource) {
         customResource.getMetadata().setDeletionTimestamp("2019-8-10");
     }

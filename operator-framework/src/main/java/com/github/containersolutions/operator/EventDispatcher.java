@@ -50,6 +50,15 @@ public class EventDispatcher<R extends CustomResource> {
                 .withScope(resourceOperation.isResourceNamespaced() ? "Namespaced" : "Cluster")
                 .withPlural(resourceOperation.getResourceT()).build();
 
+        if (Watcher.Action.ERROR == action) {
+            log.error("Received error for resource: {}", resource.getMetadata().getName());
+            return;
+        }
+        if (Watcher.Action.DELETED == action) {
+            log.debug("Resource deleted: {}", resource.getMetadata().getName());
+            return;
+        }
+
         Long thisVersion = resource.getMetadata().getGeneration();
         Map<String, Object> object = k8sClient.customResource(context).get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
         Map<String, Object> metadata = (Map<String, Object>) object.get("metadata");
@@ -81,12 +90,6 @@ public class EventDispatcher<R extends CustomResource> {
                     replace(resource);
                 }
             }
-        }
-        if (Watcher.Action.ERROR == action) {
-            log.error("Received error for resource: {}", resource.getMetadata().getName());
-        }
-        if (Watcher.Action.DELETED == action) {
-            log.debug("Resource deleted: {}", resource.getMetadata().getName());
         }
     }
 
