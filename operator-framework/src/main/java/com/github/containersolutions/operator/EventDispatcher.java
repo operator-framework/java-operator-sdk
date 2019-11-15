@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 // instance per resource type
-public class EventDispatcher<R extends CustomResource> {
+class EventDispatcher<R extends CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
@@ -25,7 +25,7 @@ public class EventDispatcher<R extends CustomResource> {
             Resource<R, CustomResourceDoneable<R>>> resourceClient;
     private final KubernetesClient k8sClient;
 
-    public EventDispatcher(ResourceController<R> controller,
+    EventDispatcher(ResourceController<R> controller,
                            CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
                            NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
                                    Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient,
@@ -40,7 +40,7 @@ public class EventDispatcher<R extends CustomResource> {
     }
 
 
-    protected void handleEvent(Watcher.Action action, R resource) {
+    void handleEvent(Watcher.Action action, R resource) {
 
 
         CustomResourceDefinitionContext context = new CustomResourceDefinitionContext.Builder()
