@@ -13,7 +13,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
-// instance per resource type
+/**
+ * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
+ */
 class EventDispatcher<R extends CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
