@@ -43,6 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
+    // todo this if this is 0 its just works? We want also limit the number of retries etc
     private final static ExponentialBackOff backOff = new ExponentialBackOff(0L, 1.5);
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
@@ -78,6 +79,10 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         scheduleEvent(event);
     }
 
+    // todo we want to strictly scheduler resources for execution, so if an event is under processing we should wait
+    //  with the incoming event to be scheduled/executed until that one is not finished
+
+    // todo handle delete event: cleanup when a real delete arrived
     void scheduleEvent(CustomResourceEvent newEvent) {
         log.debug("Current queue size {}", executor.getQueue().size());
         log.info("Scheduling event: {}", newEvent.getEventInfo());
@@ -106,11 +111,11 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                         // If newEvent is older than existing in queue, don't schedule and remove from cache
                         if (queuedEvent.isSameResourceAndNewerGeneration(newEvent)) {
                             log.debug("Incoming event canceled because queued event is newer. [{}]", newEvent.getEventInfo());
+                            // todo this is not in cache at this point, or? (ask Marek)
                             eventCache.remove(newEvent);
                             scheduleEvent.set(false);
                         }
                     });
-
             if (!scheduleEvent.get()) return;
             backoffSchedulerCache.put(newEvent, backOff.start());
             ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(newEvent, eventDispatcher, this),

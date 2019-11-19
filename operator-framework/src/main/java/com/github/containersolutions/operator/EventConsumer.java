@@ -21,13 +21,11 @@ class EventConsumer implements Runnable {
     @Override
     public void run() {
         if (processEvent()) return;
-
         this.eventScheduler.retryFailedEvent(this.event);
     }
 
     @SuppressWarnings("unchecked")
     private boolean processEvent() {
-
         Watcher.Action action = event.getAction();
         CustomResource resource = event.getResource();
         log.info("Processing event {}", event.getEventInfo());
@@ -37,7 +35,6 @@ class EventConsumer implements Runnable {
             log.error("Processing event {} failed.", event.getEventInfo(), e);
             return false;
         }
-
         return true;
     }
 }
