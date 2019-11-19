@@ -10,8 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.backoff.BackOffExecution;
 import org.springframework.util.backoff.ExponentialBackOff;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -43,14 +42,18 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
-    // todo this if this is 0 its just works? We want also limit the number of retries etc
-    private final static ExponentialBackOff backOff = new ExponentialBackOff(0L, 1.5);
+    // todo limit number of back offs
+    private final static ExponentialBackOff backOff = new ExponentialBackOff(2000L, 1.5);
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
     private final EventDispatcher eventDispatcher;
     private final ScheduledThreadPoolExecutor executor;
     private final HashMap<CustomResourceEvent, BackOffExecution> backoffSchedulerCache = new HashMap<>();
-    private final Map<CustomResourceEvent, ScheduledFuture<?>> eventCache = new ConcurrentHashMap<>();
+
+    private final Set<CustomResourceEvent> eventsNotScheduledYet = Collections.synchronizedSet(new HashSet<>());
+    private final Map<CustomResourceEvent, ScheduledFuture<?>> eventsScheduledForProcessing = new ConcurrentHashMap<>();
+    private final Set<CustomResourceEvent> eventsUnderProcessing = Collections.synchronizedSet(new HashSet<>());
+
     private AtomicBoolean processingEnabled = new AtomicBoolean(false);
     private ReentrantLock lock = new ReentrantLock();
 
@@ -90,44 +93,85 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             // we have to lock since the fabric8 client event handling is multi-threaded,
             // so in the following part could be a race condition when multiple events are received for same resource.
             lock.lock();
-            AtomicBoolean scheduleEvent = new AtomicBoolean(true);
-            eventCache
-                    .entrySet()
-                    .parallelStream()
-                    .forEach(entry -> {
-                        CustomResourceEvent queuedEvent = entry.getKey();
-                        ScheduledFuture<?> scheduledFuture = entry.getValue();
-                        // Cleaning cache
-                        if (scheduledFuture.isDone() || scheduledFuture.isCancelled()) {
-                            log.debug("Event dropped from cache because is done or cancelled. [{}]", queuedEvent.getEventInfo());
-                            eventCache.remove(queuedEvent, scheduledFuture);
-                        }
-                        // If newEvent is newer than existing in queue, cancel and remove queuedEvent
-                        if (newEvent.isSameResourceAndNewerGeneration(queuedEvent)) {
-                            log.debug("Queued event canceled because incoming event is newer. [{}]", queuedEvent.getEventInfo());
-                            scheduledFuture.cancel(false);
-                            eventCache.remove(queuedEvent, scheduledFuture);
-                        }
-                        // If newEvent is older than existing in queue, don't schedule and remove from cache
-                        if (queuedEvent.isSameResourceAndNewerGeneration(newEvent)) {
-                            log.debug("Incoming event canceled because queued event is newer. [{}]", newEvent.getEventInfo());
-                            // todo this is not in cache at this point, or? (ask Marek)
-                            eventCache.remove(newEvent);
-                            scheduleEvent.set(false);
-                        }
-                    });
-            if (!scheduleEvent.get()) return;
+
+            // if there is an event waiting for to be scheduled we just replace that.
+            if (eventsNotScheduledYet.contains(newEvent)) {
+                // although the objects equal in name and metadata the data itself can be different
+                eventsNotScheduledYet.add(newEvent);
+            } else if (eventsUnderProcessing.contains(newEvent)) {
+                // we add new event that will be scheduled when previous processing finished
+                eventsNotScheduledYet.add(newEvent);
+            } else {
+                AtomicBoolean scheduleEvent = new AtomicBoolean(true);
+                if (eventsScheduledForProcessing.containsKey(newEvent)) {
+                    eventsScheduledForProcessing
+                            .entrySet()
+                            .parallelStream()
+                            .forEach(entry -> {
+                                CustomResourceEvent queuedEvent = entry.getKey();
+                                ScheduledFuture<?> scheduledFuture = entry.getValue();
+                                // Cleaning cache
+                                if (scheduledFuture.isDone() || scheduledFuture.isCancelled()) {
+                                    log.debug("Event dropped from cache because is done or cancelled. [{}]", queuedEvent.getEventInfo());
+                                    eventsScheduledForProcessing.remove(queuedEvent, scheduledFuture);
+                                }
+                                // If newEvent is newer than existing in queue, cancel and remove queuedEvent
+                                if (newEvent.isSameResourceAndNewerGeneration(queuedEvent)) {
+                                    log.debug("Queued event canceled because incoming event is newer. [{}]", queuedEvent.getEventInfo());
+                                    scheduledFuture.cancel(false);
+                                    eventsScheduledForProcessing.remove(queuedEvent, scheduledFuture);
+                                }
+                                // If newEvent is older than existing in queue, don't schedule and remove from cache
+                                if (queuedEvent.isSameResourceAndNewerGeneration(newEvent)) {
+                                    log.debug("Incoming event canceled because queued event is newer. [{}]", newEvent.getEventInfo());
+                                    // todo this is not in cache at this point, or? (ask Marek)
+                                    eventsScheduledForProcessing.remove(newEvent);
+                                    scheduleEvent.set(false);
+                                }
+                            });
+                }
+                if (!scheduleEvent.get()) return;
+            }
+
             backoffSchedulerCache.put(newEvent, backOff.start());
             ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(newEvent, eventDispatcher, this),
                     backoffSchedulerCache.get(newEvent).nextBackOff(), TimeUnit.MILLISECONDS);
-            eventCache.put(newEvent, scheduledTask);
+            eventsScheduledForProcessing.put(newEvent, scheduledTask);
         } finally {
             lock.unlock();
         }
     }
 
-    void retryFailedEvent(CustomResourceEvent event) {
-        scheduleEvent(event);
+    void eventProcessingStarted(CustomResourceEvent event) {
+        try {
+            lock.lock();
+            eventsScheduledForProcessing.remove(event);
+            eventsUnderProcessing.add(event);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void eventProcessingFinishedSuccessfully(CustomResourceEvent event) {
+        try {
+            lock.lock();
+            eventsUnderProcessing.remove(event);
+            backoffSchedulerCache.remove(event);
+            // todo schedule from not processed yet if such
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void eventProcessingFailed(CustomResourceEvent event) {
+        try {
+            lock.lock();
+            eventsUnderProcessing.remove(event);
+            // retry
+            scheduleEvent(event);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override

@@ -19,7 +19,7 @@ class EventConsumerTest {
         eventConsumer.run();
 
         verify(eventDispatcher, times(1)).handleEvent(any(), any());
-        verify(eventScheduler, times(0)).retryFailedEvent(customResourceEvent);
+        verify(eventScheduler, times(0)).eventProcessingFailed(customResourceEvent);
         verify(customResourceEvent, times(1)).getResource();
         verify(customResourceEvent, times(1)).getAction();
 
@@ -35,7 +35,7 @@ class EventConsumerTest {
         eventConsumer.run();
 
         verify(eventDispatcher, times(1)).handleEvent(any(), any());
-        verify(eventScheduler, times(1)).retryFailedEvent(customResourceEvent);
+        verify(eventScheduler, times(1)).eventProcessingFailed(customResourceEvent);
         verify(customResourceEvent, times(1)).getResource();
         verify(customResourceEvent, times(1)).getAction();
 
