@@ -111,6 +111,9 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     public void onClose(KubernetesClientException e) {
         if (e != null) {
             log.error("Error: ", e);
+            // we will exit the application if there was a watching exception, because of the bug in fabric8 client
+            // see https://github.com/fabric8io/kubernetes-client/issues/1318
+            System.exit(1);
         }
     }
 }
