@@ -1,5 +1,6 @@
-package com.github.containersolutions.operator;
+package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -14,7 +15,7 @@ import java.util.Optional;
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
  */
-class EventDispatcher<R extends CustomResource> {
+public class EventDispatcher<R extends CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
@@ -25,11 +26,11 @@ class EventDispatcher<R extends CustomResource> {
             Resource<R, CustomResourceDoneable<R>>> resourceClient;
     private final KubernetesClient k8sClient;
 
-    EventDispatcher(ResourceController<R> controller,
-                    CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
-                    NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
+    public EventDispatcher(ResourceController<R> controller,
+                           CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
+                           NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
                             Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient,
-                    String defaultFinalizer
+                           String defaultFinalizer
 
     ) {
         this.controller = controller;

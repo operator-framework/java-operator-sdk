@@ -1,5 +1,9 @@
 package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.processing.CustomResourceEvent;
+import com.github.containersolutions.operator.processing.EventConsumer;
+import com.github.containersolutions.operator.processing.EventDispatcher;
+import com.github.containersolutions.operator.processing.EventScheduler;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.any;

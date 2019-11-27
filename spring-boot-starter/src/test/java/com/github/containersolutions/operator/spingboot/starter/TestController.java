@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.spingboot.starter;
 
-import com.github.containersolutions.operator.Context;
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.spingboot.starter.model.TestResource;

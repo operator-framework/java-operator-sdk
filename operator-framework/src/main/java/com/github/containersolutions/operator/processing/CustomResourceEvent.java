@@ -1,11 +1,10 @@
-package com.github.containersolutions.operator;
+package com.github.containersolutions.operator.processing;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.Optional;
 
 class CustomResourceEvent {
@@ -13,7 +12,7 @@ class CustomResourceEvent {
 
     private final Watcher.Action action;
     private final CustomResource resource;
-    private Integer retriesCount = 0;
+    private Integer retriesIndex = 0;
 
     CustomResourceEvent(Watcher.Action action, CustomResource resource) {
         this.action = action;
@@ -38,20 +37,8 @@ class CustomResourceEvent {
 
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CustomResourceEvent that = (CustomResourceEvent) o;
-        // note that action is not interesting for us since, we schedule only modified and added events, and we decide
-        // between those inside dispatcher not based on fabric8 client
-        return sameResourceAs(that);
-    }
-
-    @Override
-    public int hashCode() {
-        // todo this probably needs to be improved use the api version + kind + name
-        return Objects.hash(resource);
+    public String resourceKey() {
+        return resource.getKind() + "_" + resource.getMetadata().getName();
     }
 
     public Boolean sameResourceAs(CustomResourceEvent otherEvent) {
@@ -66,5 +53,20 @@ class CustomResourceEvent {
 
     }
 
+    public Boolean isSameResourceAndNewerVersion(CustomResourceEvent otherEvent) {
+        return sameResourceAs(otherEvent) &&
+                Long.parseLong(getResource().getMetadata().getResourceVersion()) >
+                        Long.parseLong(otherEvent.getResource().getMetadata().getResourceVersion());
 
+    }
+
+    @Override
+    public String toString() {
+        return "CustomResourceEvent{" +
+                "action=" + action +
+                ", resource=[ name=" + resource.getMetadata().getName() + ", kind=" + resource.getKind() +
+                ", apiVersion=" + resource.getApiVersion() + "]" +
+                ", retriesIndex=" + retriesIndex +
+                '}';
+    }
 }

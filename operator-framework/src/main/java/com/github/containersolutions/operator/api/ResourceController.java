@@ -1,6 +1,5 @@
 package com.github.containersolutions.operator.api;
 
-import com.github.containersolutions.operator.Context;
 import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.Optional;

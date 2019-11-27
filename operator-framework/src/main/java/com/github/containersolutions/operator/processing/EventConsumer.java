@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator;
+package com.github.containersolutions.operator.processing;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -20,7 +20,10 @@ class EventConsumer implements Runnable {
 
     @Override
     public void run() {
-        eventScheduler.eventProcessingStarted(event);
+        boolean stillScheduledForProcessing = eventScheduler.eventProcessingStarted(event);
+        if (!stillScheduledForProcessing) {
+            return;
+        }
         if (processEvent()) {
             eventScheduler.eventProcessingFinishedSuccessfully(event);
         } else {

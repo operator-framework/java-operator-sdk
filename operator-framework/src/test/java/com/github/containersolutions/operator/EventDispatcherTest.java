@@ -3,6 +3,7 @@ package com.github.containersolutions.operator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.*;

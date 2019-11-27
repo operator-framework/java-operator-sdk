@@ -1,6 +1,8 @@
 package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.processing.EventDispatcher;
+import com.github.containersolutions.operator.processing.EventScheduler;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.CustomResource;
