@@ -54,6 +54,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     private final ScheduledThreadPoolExecutor executor;
     private final HashMap<CustomResourceEvent, BackOffExecution> backoffSchedulerCache = new HashMap<>();
 
+    // todo check uid for key
     // note that these hash maps does not needs to be concurrent, since we are already locking all methods where are used
     private final Map<String, CustomResourceEvent> eventsNotScheduledYet = new HashMap<>();
     private final Map<String, ResourceScheduleHolder> eventsScheduledForProcessing = new HashMap<>();
@@ -117,16 +118,16 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
             if (eventsScheduledForProcessing.containsKey(newEvent.resourceKey())) {
                 ResourceScheduleHolder scheduleHolder = eventsScheduledForProcessing.get(newEvent.resourceKey());
-                CustomResourceEvent queuedEvent = scheduleHolder.getCustomResourceEvent();
+                CustomResourceEvent scheduledEvent = scheduleHolder.getCustomResourceEvent();
                 ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
                 // If newEvent is newer than existing in queue, cancel and remove queuedEvent
-                if (newEvent.isSameResourceAndNewerVersion(queuedEvent)) {
-                    log.debug("Queued event canceled because incoming event is newer. [{}]", queuedEvent);
+                if (newEvent.isSameResourceAndNewerVersion(scheduledEvent)) {
+                    log.debug("Queued event canceled because incoming event is newer. [{}]", scheduledEvent);
                     scheduledFuture.cancel(false);
-                    eventsScheduledForProcessing.remove(queuedEvent.resourceKey());
+                    eventsScheduledForProcessing.remove(scheduledEvent.resourceKey());
                 }
                 // If newEvent is older than existing in queue, don't schedule and remove from cache
-                if (queuedEvent.isSameResourceAndNewerVersion(newEvent)) {
+                if (scheduledEvent.isSameResourceAndNewerVersion(newEvent)) {
                     log.debug("Incoming event discarded because queued event is newer. [{}]", newEvent);
                     return;
                 }
@@ -186,15 +187,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     // todo review this in light of new restart functionality from master
     @Override
     public void onClose(KubernetesClientException e) {
-        processingEnabled.set(false);
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
-            }
-        } catch (InterruptedException ex) {
-            log.error("It was not possible to finish all threads, Killed them.");
-        }
+//     todo re apply the watch
     }
 
     private static class ResourceScheduleHolder {

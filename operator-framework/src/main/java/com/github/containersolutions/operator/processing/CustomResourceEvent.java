@@ -47,12 +47,6 @@ class CustomResourceEvent {
                 getResource().getMetadata().getName().equals(otherEvent.getResource().getMetadata().getName());
     }
 
-    public Boolean isSameResourceAndNewerGeneration(CustomResourceEvent otherEvent) {
-        return sameResourceAs(otherEvent) &&
-                getResource().getMetadata().getGeneration() > otherEvent.getResource().getMetadata().getGeneration();
-
-    }
-
     public Boolean isSameResourceAndNewerVersion(CustomResourceEvent otherEvent) {
         return sameResourceAs(otherEvent) &&
                 Long.parseLong(getResource().getMetadata().getResourceVersion()) >
