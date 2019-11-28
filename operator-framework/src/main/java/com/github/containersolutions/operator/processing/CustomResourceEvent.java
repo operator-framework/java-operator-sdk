@@ -37,8 +37,8 @@ class CustomResourceEvent {
 
     }
 
-    public String resourceKey() {
-        return resource.getKind() + "_" + resource.getMetadata().getName();
+    public String resourceUid() {
+        return resource.getMetadata().getUid();
     }
 
     public Boolean sameResourceAs(CustomResourceEvent otherEvent) {

@@ -54,8 +54,6 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     private final ScheduledThreadPoolExecutor executor;
     private final HashMap<CustomResourceEvent, BackOffExecution> backoffSchedulerCache = new HashMap<>();
 
-    // todo check uid for key
-    // note that these hash maps does not needs to be concurrent, since we are already locking all methods where are used
     private final Map<String, CustomResourceEvent> eventsNotScheduledYet = new HashMap<>();
     private final Map<String, ResourceScheduleHolder> eventsScheduledForProcessing = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
@@ -102,29 +100,29 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             lock.lock();
 
             // if there is an event waiting for to be scheduled we just replace that.
-            if (eventsNotScheduledYet.containsKey(newEvent.resourceKey()) &&
-                    newEvent.isSameResourceAndNewerVersion(eventsNotScheduledYet.get(newEvent.resourceKey()))) {
+            if (eventsNotScheduledYet.containsKey(newEvent.resourceUid()) &&
+                    newEvent.isSameResourceAndNewerVersion(eventsNotScheduledYet.get(newEvent.resourceUid()))) {
                 log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}"
                         , newEvent);
-                eventsNotScheduledYet.put(newEvent.resourceKey(), newEvent);
+                eventsNotScheduledYet.put(newEvent.resourceUid(), newEvent);
                 return;
-            } else if (eventsUnderProcessing.containsKey(newEvent.resourceKey()) &&
-                    newEvent.isSameResourceAndNewerVersion(eventsUnderProcessing.get(newEvent.resourceKey()))) {
+            } else if (eventsUnderProcessing.containsKey(newEvent.resourceUid()) &&
+                    newEvent.isSameResourceAndNewerVersion(eventsUnderProcessing.get(newEvent.resourceUid()))) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", newEvent);
-                eventsNotScheduledYet.put(newEvent.resourceKey(), newEvent);
+                eventsNotScheduledYet.put(newEvent.resourceUid(), newEvent);
                 return;
             }
 
-            if (eventsScheduledForProcessing.containsKey(newEvent.resourceKey())) {
-                ResourceScheduleHolder scheduleHolder = eventsScheduledForProcessing.get(newEvent.resourceKey());
+            if (eventsScheduledForProcessing.containsKey(newEvent.resourceUid())) {
+                ResourceScheduleHolder scheduleHolder = eventsScheduledForProcessing.get(newEvent.resourceUid());
                 CustomResourceEvent scheduledEvent = scheduleHolder.getCustomResourceEvent();
                 ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
                 // If newEvent is newer than existing in queue, cancel and remove queuedEvent
                 if (newEvent.isSameResourceAndNewerVersion(scheduledEvent)) {
                     log.debug("Queued event canceled because incoming event is newer. [{}]", scheduledEvent);
                     scheduledFuture.cancel(false);
-                    eventsScheduledForProcessing.remove(scheduledEvent.resourceKey());
+                    eventsScheduledForProcessing.remove(scheduledEvent.resourceUid());
                 }
                 // If newEvent is older than existing in queue, don't schedule and remove from cache
                 if (scheduledEvent.isSameResourceAndNewerVersion(newEvent)) {
@@ -135,7 +133,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             backoffSchedulerCache.put(newEvent, backOff.start());
             ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(newEvent, eventDispatcher, this),
                     backoffSchedulerCache.get(newEvent).nextBackOff(), TimeUnit.MILLISECONDS);
-            eventsScheduledForProcessing.put(newEvent.resourceKey(), new ResourceScheduleHolder(newEvent, scheduledTask));
+            eventsScheduledForProcessing.put(newEvent.resourceUid(), new ResourceScheduleHolder(newEvent, scheduledTask));
         } finally {
             lock.unlock();
         }
@@ -144,7 +142,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     boolean eventProcessingStarted(CustomResourceEvent event) {
         try {
             lock.lock();
-            ResourceScheduleHolder res = eventsScheduledForProcessing.remove(event.resourceKey());
+            ResourceScheduleHolder res = eventsScheduledForProcessing.remove(event.resourceUid());
             if (res == null) {
                 // if its still scheduled for processing.
                 // note that it can happen that we scheduled an event for processing, it took some time that is was picked
@@ -152,7 +150,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 // this should be checked also here. In other word scheduleEvent function can run in parallel with eventDispatcher.
                 return false;
             }
-            eventsUnderProcessing.put(event.resourceKey(), event);
+            eventsUnderProcessing.put(event.resourceUid(), event);
             return true;
         } finally {
             lock.unlock();
@@ -162,10 +160,10 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     void eventProcessingFinishedSuccessfully(CustomResourceEvent event) {
         try {
             lock.lock();
-            eventsUnderProcessing.remove(event.resourceKey());
+            eventsUnderProcessing.remove(event.resourceUid());
             backoffSchedulerCache.remove(event);
 
-            CustomResourceEvent notScheduledYetEvent = eventsNotScheduledYet.remove(event.resourceKey());
+            CustomResourceEvent notScheduledYetEvent = eventsNotScheduledYet.remove(event.resourceUid());
             if (notScheduledYetEvent != null) {
                 scheduleEvent(notScheduledYetEvent);
             }
