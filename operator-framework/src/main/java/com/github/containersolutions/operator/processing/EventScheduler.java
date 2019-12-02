@@ -103,12 +103,12 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
                 // If newEvent is older than existing in queue, don't schedule and remove from cache
                 if (scheduledEvent.isSameResourceAndNewerVersion(newEvent)) {
-                    log.debug("Incoming event discarded because queued event is newer. {}", newEvent);
+                    log.debug("Incoming event discarded because already scheduled event is newer. {}", newEvent);
                     return;
                 }
                 // If newEvent is newer than existing in queue, cancel and remove queuedEvent
                 if (newEvent.isSameResourceAndNewerVersion(scheduledEvent)) {
-                    log.debug("Queued event canceled because incoming event is newer. {}", scheduledEvent);
+                    log.debug("Scheduled event canceled because incoming event is newer. {}", scheduledEvent);
                     scheduledFuture.cancel(false);
                     eventStore.removeEventScheduledForProcessing(scheduledEvent.resourceUid());
                 }

@@ -10,7 +10,9 @@ import org.springframework.util.backoff.ExponentialBackOff;
 import java.util.Optional;
 
 class CustomResourceEvent {
+
     public static final int MAX_RETRY_COUNT = 5;
+
     private final static Logger log = LoggerFactory.getLogger(CustomResourceEvent.class);
 
     private final static BackOffExecution backOff = new ExponentialBackOff(2000L, 1.5).start();
@@ -79,8 +81,8 @@ class CustomResourceEvent {
         return "CustomResourceEvent{" +
                 "action=" + action +
                 ", resource=[ name=" + resource.getMetadata().getName() + ", kind=" + resource.getKind() +
-                ", apiVersion=" + resource.getApiVersion() + "]" +
-                ", retriesIndex=" + retryIndex +
+                ", apiVersion=" + resource.getApiVersion() + " ,resourceVersion=" + resource.getMetadata().getResourceVersion() +
+                " ], retriesIndex=" + retryIndex +
                 '}';
     }
 }
