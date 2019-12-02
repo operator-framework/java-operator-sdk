@@ -32,6 +32,41 @@ class EventSchedulerTest {
 
     }
 
+    @Test
+    public void retriesEventsWithErrors() {
+
+    }
+
+    @Test
+    public void replacesEventWhichIsScheduledAfterCurrentProcessingEventIfNewerVersion() {
+
+    }
+
+    @Test
+    public void discardsEventIfThereIsAlreadyNewerEventWaitingForExecution() {
+
+    }
+
+    @Test
+    public void discardsEventIfNewerVersionIsAlreadyUnderProcessing() {
+
+    }
+
+    @Test
+    public void schedulesEventIfOlderVersionIsAlreadyUnderProcessing() {
+
+    }
+
+    @Test
+    public void retryDelayIncreasesExponentially() {
+
+    }
+
+    @Test
+    public void numberOfRetriesIsLimited() {
+
+    }
+
     private void waitMinimalTimeForExecution() {
         try {
             Thread.sleep(300);

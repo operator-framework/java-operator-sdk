@@ -4,15 +4,20 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.backoff.BackOffExecution;
+import org.springframework.util.backoff.ExponentialBackOff;
 
 import java.util.Optional;
 
 class CustomResourceEvent {
+    public static final int MAX_RETRY_COUNT = 5;
     private final static Logger log = LoggerFactory.getLogger(CustomResourceEvent.class);
+
+    private final static BackOffExecution backOff = new ExponentialBackOff(2000L, 1.5).start();
 
     private final Watcher.Action action;
     private final CustomResource resource;
-    private Integer retryIndex = 0;
+    private Integer retryIndex = -1;
 
     CustomResourceEvent(Watcher.Action action, CustomResource resource) {
         this.action = action;
@@ -54,8 +59,19 @@ class CustomResourceEvent {
 
     }
 
-    public Integer getRetryIndex() {
-        return retryIndex;
+
+    public Optional<Long> nextBackOff() {
+        if (retryIndex == -1) {
+            retryIndex = 0;
+            return Optional.of(0l);
+        } else {
+            if (retryIndex >= MAX_RETRY_COUNT - 1) {
+                return Optional.empty();
+            } else {
+                retryIndex++;
+                return Optional.of(backOff.nextBackOff());
+            }
+        }
     }
 
     @Override
