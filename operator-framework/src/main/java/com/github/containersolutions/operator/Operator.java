@@ -62,8 +62,6 @@ public class Operator {
 
             eventScheduler = new EventScheduler(eventDispatcher);
 
-            eventScheduler.startProcessing();
-
             registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces);
         } else {
             throw new OperatorException("CRD '" + resClass.getSimpleName() + "' with version '"

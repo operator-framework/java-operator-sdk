@@ -16,7 +16,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 
@@ -58,7 +57,6 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     private final Map<String, ResourceScheduleHolder> eventsScheduledForProcessing = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
 
-    private AtomicBoolean processingEnabled = new AtomicBoolean(false);
     private ReentrantLock lock = new ReentrantLock();
 
     public EventScheduler(EventDispatcher<R> eventDispatcher) {
@@ -71,26 +69,14 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         executor.setRemoveOnCancelPolicy(true);
     }
 
-    public void startProcessing() {
-        processingEnabled.set(true);
-    }
-
     @Override
     public void eventReceived(Watcher.Action action, R resource) {
-        if (!processingEnabled.get()) return;
-
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
-
         CustomResourceEvent event = new CustomResourceEvent(action, resource);
         scheduleEvent(event);
     }
 
-    // todo we want to strictly scheduler resources for execution, so if an event is under processing we should wait
-    //  with the incoming event to be scheduled/executed until that one is not finished
-
-    // todo handle delete event: cleanup when a real delete arrived
-    // todo discuss new version vs new generation comparison
     void scheduleEvent(CustomResourceEvent newEvent) {
         log.debug("Current queue size {}", executor.getQueue().size());
         log.info("Scheduling event: {}", newEvent.getEventInfo());
@@ -98,7 +84,11 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             // we have to lock since the fabric8 client event handling is multi-threaded,
             // so in the following part could be a race condition when multiple events are received for same resource.
             lock.lock();
-
+            if (newEvent.getAction() == Action.DELETED) {
+                // this is a tricky situation, do we want to process only events which are marked for deletion?
+                // or just ignore the problem
+                return;
+            }
             // if there is an event waiting for to be scheduled we just replace that.
             if (eventsNotScheduledYet.containsKey(newEvent.resourceUid()) &&
                     newEvent.isSameResourceAndNewerVersion(eventsNotScheduledYet.get(newEvent.resourceUid()))) {
@@ -130,9 +120,11 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                     return;
                 }
             }
+
+            // todo handle backoff instances
             backoffSchedulerCache.put(newEvent, backOff.start());
             ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(newEvent, eventDispatcher, this),
-                    backoffSchedulerCache.get(newEvent).nextBackOff(), TimeUnit.MILLISECONDS);
+                    newEvent.getRetryIndex() < 1 ? 0 : backoffSchedulerCache.get(newEvent).nextBackOff(), TimeUnit.MILLISECONDS);
             eventsScheduledForProcessing.put(newEvent.resourceUid(), new ResourceScheduleHolder(newEvent, scheduledTask));
         } finally {
             lock.unlock();

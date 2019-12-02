@@ -12,7 +12,7 @@ class CustomResourceEvent {
 
     private final Watcher.Action action;
     private final CustomResource resource;
-    private Integer retriesIndex = 0;
+    private Integer retryIndex = 0;
 
     CustomResourceEvent(Watcher.Action action, CustomResource resource) {
         this.action = action;
@@ -54,13 +54,17 @@ class CustomResourceEvent {
 
     }
 
+    public Integer getRetryIndex() {
+        return retryIndex;
+    }
+
     @Override
     public String toString() {
         return "CustomResourceEvent{" +
                 "action=" + action +
                 ", resource=[ name=" + resource.getMetadata().getName() + ", kind=" + resource.getKind() +
                 ", apiVersion=" + resource.getApiVersion() + "]" +
-                ", retriesIndex=" + retriesIndex +
+                ", retriesIndex=" + retryIndex +
                 '}';
     }
 }

@@ -8,37 +8,39 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import org.junit.jupiter.api.Test;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 class EventSchedulerTest {
 
     @SuppressWarnings("unchecked")
     private EventDispatcher<CustomResource> eventDispatcher = mock(EventDispatcher.class);
 
+    private EventScheduler<CustomResource> eventScheduler = new EventScheduler(eventDispatcher);
+
     @Test
-    void dontScheduleReceivedEventIfProcessingNotStarted() {
-        EventScheduler<CustomResource> eventScheduler = spy(new EventScheduler<>(eventDispatcher));
+    public void schedulesEvent() {
+        CustomResource resource = sampleResource();
 
-        eventScheduler.eventReceived(any(), any());
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource);
 
-//        verify(eventScheduler, times(0)).scheduleEvent(any());
+        waitMinimalTimeForExecution();
+        verify(eventDispatcher, times(1)).handleEvent(Watcher.Action.MODIFIED, resource);
     }
 
     @Test
-    void scheduleReceivedEventIfProcessingStarted() {
-        EventScheduler<CustomResource> eventScheduler = spy(new EventScheduler<>(eventDispatcher));
+    public void eventsAreNotExecutedConcurrentlyForSameResource() {
 
-        eventScheduler.eventReceived(Watcher.Action.ADDED, getResource());
-        eventScheduler.startProcessing();
-        eventScheduler.eventReceived(Watcher.Action.ADDED, getResource());
-
-//        verify(eventScheduler, times(1)).scheduleEvent(any());
     }
 
+    private void waitMinimalTimeForExecution() {
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
-    CustomResource getResource() {
+    CustomResource sampleResource() {
         TestCustomResource resource = new TestCustomResource();
         resource.setMetadata(new ObjectMetaBuilder()
                 .withCreationTimestamp("creationTimestamp")
