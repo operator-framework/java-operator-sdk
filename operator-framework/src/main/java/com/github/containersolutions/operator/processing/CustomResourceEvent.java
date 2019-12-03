@@ -9,13 +9,14 @@ import org.springframework.util.backoff.ExponentialBackOff;
 
 import java.util.Optional;
 
-class CustomResourceEvent {
+public class CustomResourceEvent {
+
+    public static final long INITIAL_BACK_OFF_INTERVAL = 2000L;
 
     public static final int MAX_RETRY_COUNT = 5;
-
+    public static final double BACK_OFF_MULTIPLIER = 1.5;
     private final static Logger log = LoggerFactory.getLogger(CustomResourceEvent.class);
-
-    private final static BackOffExecution backOff = new ExponentialBackOff(2000L, 1.5).start();
+    private final static BackOffExecution backOff = new ExponentialBackOff(INITIAL_BACK_OFF_INTERVAL, BACK_OFF_MULTIPLIER).start();
 
     private final Watcher.Action action;
     private final CustomResource resource;
@@ -49,9 +50,7 @@ class CustomResourceEvent {
     }
 
     public Boolean sameResourceAs(CustomResourceEvent otherEvent) {
-        return getResource().getKind().equals(otherEvent.getResource().getKind()) &&
-                getResource().getApiVersion().equals(otherEvent.getResource().getApiVersion()) &&
-                getResource().getMetadata().getName().equals(otherEvent.getResource().getMetadata().getName());
+        return getResource().getMetadata().getUid().equals(otherEvent.getResource().getMetadata().getUid());
     }
 
     public Boolean isSameResourceAndNewerVersion(CustomResourceEvent otherEvent) {

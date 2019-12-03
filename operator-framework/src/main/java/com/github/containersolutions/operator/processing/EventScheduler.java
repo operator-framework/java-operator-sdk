@@ -23,7 +23,7 @@ import static com.github.containersolutions.operator.processing.CustomResourceEv
  * <ul>
  *   <li>Only 1 event should be processed at a time for same custom resource
  *   (metadata.name is the id, but kind and api should be taken into account)</li>
- *   <li>Done - If event processing fails it should be rescheduled with retry - with limited number of retried
+ *   <li>If event processing fails it should be rescheduled with retry - with limited number of retried
  *   and exponential time slacks (pluggable reschedule strategy in future?)</li>
  *   <li>if there are multiple events received for the same resource process only the last one. (Others can be discarded)
  *   User resourceVersion to check which is the latest. Put the new one at the and of the queue?
@@ -31,17 +31,16 @@ import static com.github.containersolutions.operator.processing.CustomResourceEv
  *   <li>Done - Avoid starvation, so on retry put back resource at the end of the queue.</li>
  *   <li>The selecting event from a queue should not be naive. So for example:
  *     If we cannot pick the last event because an event for that resource is currently processing just gor for the next one.
- *     (Maybe is good to represent this queue with a list.) Or if and event is rescheduled
- *     (skip if there is not enough time left since last execution)
  *   </li>
- *   <li>Impossible, scheduled chosen - Threading approach thus thread pool size and/or implementation should be configurable</li>
- *   <li>see also: https://github.com/ContainerSolutions/java-operator-sdk/issues/34</li>
+ *   <li>Threading approach thus thread pool size and/or implementation should be configurable</li>
  * </ul>
  *
  * @param <R>
  */
 
-
+/**
+ *
+ **/
 public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
@@ -77,12 +76,11 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             // we have to lock since the fabric8 client event handling is multi-threaded,
             // so in the following part could be a race condition when multiple events are received for same resource.
             lock.lock();
+            if (eventStore.processedNewerVersionBefore(newEvent)) {
+                log.debug("Skipping event processing since was processed event with newer version before. {}", newEvent);
+                return;
+            }
             if (newEvent.getAction() == Action.DELETED) {
-                // this is a tricky situation, do we want to process only events which are marked for deletion?
-                // or just ignore the problem. Note that marked for deletion event should already be the last event either
-                // under processing, or scheduled for it.
-                // There could be some corner case when we do have a event which we received before marked for deletion,
-                //   and did not received the marked for deletion, but this is such corner case that for sake of simplicity will ignore this.
                 return;
             }
             // if there is an event waiting for to be scheduled we just replace that.
