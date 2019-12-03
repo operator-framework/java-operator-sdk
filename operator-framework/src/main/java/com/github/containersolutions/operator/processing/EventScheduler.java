@@ -34,13 +34,18 @@ import static com.github.containersolutions.operator.processing.CustomResourceEv
  *   </li>
  *   <li>Threading approach thus thread pool size and/or implementation should be configurable</li>
  * </ul>
+ * <p>
+ * Notes:
+ * <ul>
+ *     <li> In implementation we have to lock since the fabric8 client event handling is multi-threaded, we can receive multiple events
+ *          for same resource. Also we do callback from other threads.
+ *   </li>
+ *   <li>We don't react for delete event, since we always use finalizers and do delete on marked for deletion.</li>
+ * </ul>
  *
  * @param <R>
  */
 
-/**
- *
- **/
 public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
@@ -73,8 +78,6 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         log.debug("Current queue size {}", executor.getQueue().size());
         log.info("Scheduling event: {}", newEvent.getEventInfo());
         try {
-            // we have to lock since the fabric8 client event handling is multi-threaded,
-            // so in the following part could be a race condition when multiple events are received for same resource.
             lock.lock();
             if (eventStore.processedNewerVersionBefore(newEvent)) {
                 log.debug("Skipping event processing since was processed event with newer version before. {}", newEvent);
@@ -83,7 +86,6 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             if (newEvent.getAction() == Action.DELETED) {
                 return;
             }
-            // if there is an event waiting for to be scheduled we just replace that.
             if (eventStore.containsOlderVersionOfNotScheduledEvent(newEvent)) {
                 log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", newEvent);
                 eventStore.addOrReplaceEventAsNotScheduledYet(newEvent);
@@ -130,8 +132,8 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
             lock.lock();
             EventStore.ResourceScheduleHolder res = eventStore.removeEventScheduledForProcessing(event.resourceUid());
             if (res == null) {
-                // if its still scheduled for processing.
-                // note that it can happen that we scheduled an event for processing, it took some time that is was picked
+                // Double checking if the event is still scheduled. This is a corner case, but can actually happen.
+                // In detail: it can happen that we scheduled an event for processing, it took some time that is was picked
                 // by executor, and it was removed during that time from the schedule but not cancelled yet. So to be correct
                 // this should be checked also here. In other word scheduleEvent function can run in parallel with eventDispatcher.
                 return false;
