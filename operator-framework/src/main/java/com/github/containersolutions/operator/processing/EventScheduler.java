@@ -168,10 +168,14 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         }
     }
 
-    // todo review this in light of new restart functionality from master
     @Override
     public void onClose(KubernetesClientException e) {
-//     todo re apply the watch
+        if (e != null) {
+            log.error("Error: ", e);
+            // we will exit the application if there was a watching exception, because of the bug in fabric8 client
+            // see https://github.com/fabric8io/kubernetes-client/issues/1318
+            System.exit(1);
+        }
     }
 }
 
