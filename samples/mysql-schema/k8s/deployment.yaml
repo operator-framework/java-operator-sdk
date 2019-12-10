@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mysql-schema-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+spec:
+  selector:
+    matchLabels:
+      app: mysql-schema-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql-schema-operator
+    spec:
+      serviceAccount: mysql-schema-operator
+      containers:
+      - name: operator
+        image: mysql-schema-operator
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        env:
+        - name: MYSQL_HOST
+          value: mysql.mysql
+        - name: MYSQL_USER
+          value: root
+        - name: MYSQL_PASSWORD
+          value: password
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: operator-admin
+subjects:
+- kind: ServiceAccount
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: ""

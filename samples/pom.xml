@@ -17,6 +17,7 @@
     <modules>
         <module>basic</module>
         <module>webserver</module>
+        <module>mysql-schema</module>
     </modules>
 
     <build>
