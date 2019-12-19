@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.Context;
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.ServicePort;

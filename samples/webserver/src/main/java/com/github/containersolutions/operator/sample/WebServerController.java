@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.Context;
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.*;
@@ -34,7 +34,9 @@ public class WebServerController implements ResourceController<WebServer> {
 
     @Override
     public Optional<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
-        log.info("Execution createOrUpdateResource for: {} in {}", webServer.getMetadata().getName(), webServer.getMetadata().getNamespace());
+        if (webServer.getSpec().getHtml().contains("error")) {
+            throw new ErrorSimulationException("Simulating error");
+        }
 
         String ns = webServer.getMetadata().getNamespace();
 
@@ -87,7 +89,7 @@ public class WebServerController implements ResourceController<WebServer> {
         status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
         status.setAreWeGood("Yes!");
         webServer.setStatus(status);
-
+//        throw new RuntimeException("Creating object failed, because it failed");
         return Optional.of(webServer);
     }
 

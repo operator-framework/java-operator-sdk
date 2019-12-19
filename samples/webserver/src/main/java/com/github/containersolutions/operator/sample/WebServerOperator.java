@@ -18,7 +18,7 @@ public class WebServerOperator {
     private static final Logger log = LoggerFactory.getLogger(WebServerOperator.class);
 
     public static void main(String[] args) throws IOException {
-        log.info("WebServer Operator starting");
+        log.info("WebServer Operator starting!");
 
         Config config = new ConfigBuilder().withNamespace(null).build();
         Operator operator = new Operator(new DefaultKubernetesClient(config));

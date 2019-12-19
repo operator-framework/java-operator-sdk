@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator;
+package com.github.containersolutions.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;

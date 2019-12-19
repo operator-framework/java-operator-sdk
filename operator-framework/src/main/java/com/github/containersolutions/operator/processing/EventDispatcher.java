@@ -1,5 +1,6 @@
-package com.github.containersolutions.operator;
+package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -11,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Optional;
 
-public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
+/**
+ * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
+ */
+public class EventDispatcher<R extends CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
@@ -25,11 +29,10 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
     public EventDispatcher(ResourceController<R> controller,
                            CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
                            NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
-                                   Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient,
+                            Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient,
                            String defaultFinalizer
 
     ) {
-
         this.controller = controller;
         this.resourceOperation = resourceOperation;
         this.resourceClient = resourceClient;
@@ -37,19 +40,8 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
         this.k8sClient = k8sClient;
     }
 
-    public void eventReceived(Action action, R resource) {
-        try {
-            log.debug("Action: {}, {}: {}, Resource: {}", action, resource.getClass().getSimpleName(),
-                    resource.getMetadata().getName(), resource);
-            handleEvent(action, resource);
-            log.trace("Even handling finished for action: {} resource: {}", action, resource);
-        } catch (RuntimeException e) {
-            log.error("Error on resource: {}", resource.getMetadata().getName(), e);
-        }
-    }
-
-    private void handleEvent(Action action, R resource) {
-        if (action == Action.MODIFIED || action == Action.ADDED) {
+    public void handleEvent(Watcher.Action action, R resource) {
+        if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
@@ -70,11 +62,13 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
                 }
             }
         }
-        if (Action.ERROR == action) {
+        if (Watcher.Action.ERROR == action) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
+            return;
         }
-        if (Action.DELETED == action) {
+        if (Watcher.Action.DELETED == action) {
             log.debug("Resource deleted: {}", resource.getMetadata().getName());
+            return;
         }
     }
 
@@ -105,15 +99,5 @@ public class EventDispatcher<R extends CustomResource> implements Watcher<R> {
 
     private boolean markedForDeletion(R resource) {
         return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
-    }
-
-    @Override
-    public void onClose(KubernetesClientException e) {
-        if (e != null) {
-            log.error("Error: ", e);
-            // we will exit the application if there was a watching exception, because of the bug in fabric8 client
-            // see https://github.com/fabric8io/kubernetes-client/issues/1318
-            System.exit(1);
-        }
     }
 }
