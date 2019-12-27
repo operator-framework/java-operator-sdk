@@ -3,7 +3,12 @@ package com.github.containersolutions.operator.sample;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller(
@@ -15,17 +20,48 @@ import java.util.Optional;
         customResourceDonebaleClass = TestCustomResourceDoneable.class)
 public class TestCustomResourceController implements ResourceController<TestCustomResource> {
 
-    public static final String KIND_NAME = "customResourceDefinition";
-    public static final String TEST_GROUP = "test.group";
-    public static final String CRD_NAME = "crdName";
+    public static final String KIND_NAME = "CustomService";
+    public static final String TEST_GROUP = "sample.javaoperatorsdk";
+    public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
 
     @Override
     public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+        context.getK8sClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
+                .withName(resource.getSpec().getConfigMapName()).delete();
         return true;
     }
 
     @Override
     public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
-        return Optional.empty();
+        ConfigMap existingConfigMap = context.getK8sClient()
+                .configMaps().withName(resource.getSpec().getConfigMapName()).get();
+
+        if (existingConfigMap != null) {
+            existingConfigMap.setData(configMapData(resource));
+            context.getK8sClient().configMaps().createOrReplace(existingConfigMap);
+        } else {
+            Map<String, String> labels = new HashMap<>();
+            labels.put("managedBy", TestCustomResourceController.class.getSimpleName());
+            ConfigMap newConfigMap = new ConfigMapBuilder()
+                    .withMetadata(new ObjectMetaBuilder()
+                            .withName(resource.getSpec().getConfigMapName())
+                            .withNamespace(resource.getMetadata().getNamespace())
+                            .withLabels(labels)
+                            .build())
+                    .withData(configMapData(resource)).build();
+            context.getK8sClient().configMaps().create(newConfigMap);
+        }
+
+        if (resource.getStatus() == null) {
+            resource.setStatus(new TestCustomResourceStatus());
+        }
+        resource.getStatus().setConfigMapStatus("ConfigMap Ready");
+        return Optional.of(resource);
+    }
+
+    private Map<String, String> configMapData(TestCustomResource resource) {
+        Map<String, String> data = new HashMap<>();
+        data.put(resource.getSpec().getKey(), resource.getSpec().getValue());
+        return data;
     }
 }

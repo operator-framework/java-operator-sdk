@@ -1,0 +1,100 @@
+package com.github.containersolutions.operator;
+
+import com.github.containersolutions.operator.sample.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class IntegrationTest {
+
+    private static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
+
+    private KubernetesClient k8sClient = new DefaultKubernetesClient();
+    private MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable, Resource<TestCustomResource, TestCustomResourceDoneable>> crOperations;
+
+    @BeforeAll
+    public void setup() {
+        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
+        k8sClient.customResourceDefinitions().createOrReplace(crd);
+        KubernetesDeserializer.registerCustomKind(crd.getApiVersion(), crd.getKind(), TestCustomResource.class);
+
+        if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
+            k8sClient.namespaces().create(new NamespaceBuilder()
+                    .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());
+        }
+
+        k8sClient.configMaps().inNamespace(TEST_NAMESPACE)
+                .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
+                .delete();
+
+        crOperations = k8sClient.customResources(crd, TestCustomResource.class, TestCustomResourceList.class, TestCustomResourceDoneable.class);
+        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
+
+        //we depend on the actual operator here to handle the finalizers and clean up
+        //resources from previous test runs
+        Operator operator = new Operator(k8sClient);
+        operator.registerController(new TestCustomResourceController());
+
+        await("all resources cleaned up").atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
+                    assertThat(k8sClient.configMaps().inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
+                });
+    }
+
+    @Test
+    public void configMapGetsCreatedForTestCustomResource() {
+        TestCustomResource resource = new TestCustomResource();
+        resource.setMetadata(new ObjectMetaBuilder()
+                .withName("test-custom-resource")
+                .withNamespace(TEST_NAMESPACE)
+                .build());
+        resource.setKind("CustomService");
+        resource.setSpec(new TestCustomResourceSpec());
+        resource.getSpec().setConfigMapName("test-config-map");
+        resource.getSpec().setKey("test-key");
+        resource.getSpec().setValue("test-value");
+        crOperations.inNamespace(TEST_NAMESPACE).create(resource);
+
+        await("configmap created").atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    ConfigMap configMap = k8sClient.configMaps().inNamespace(TEST_NAMESPACE)
+                            .withName("test-config-map").get();
+                    assertThat(configMap).isNotNull();
+                    assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
+                });
+        await("cr status updated").atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    TestCustomResource cr = crOperations.inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
+                    assertThat(cr).isNotNull();
+                    assertThat(cr.getStatus()).isNotNull();
+                    assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
+                });
+    }
+
+    private <T> T loadYaml(Class<T> clazz, String yaml) {
+        try (InputStream is = getClass().getResourceAsStream(yaml)) {
+            return Serialization.unmarshal(is, clazz);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
+        }
+    }
+}
