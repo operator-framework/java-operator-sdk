@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,13 +27,17 @@ import static org.awaitility.Awaitility.await;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IntegrationTest {
 
-    private static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
+    public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
 
-    private KubernetesClient k8sClient = new DefaultKubernetesClient();
-    private MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable, Resource<TestCustomResource, TestCustomResourceDoneable>> crOperations;
+    public final KubernetesClient k8sClient = new DefaultKubernetesClient();
+    public MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable, Resource<TestCustomResource, TestCustomResourceDoneable>> crOperations;
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @BeforeAll
     public void setup() {
+        log.info("Running integration test in namespace " + TEST_NAMESPACE);
+
         CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
         k8sClient.customResourceDefinitions().createOrReplace(crd);
         KubernetesDeserializer.registerCustomKind(crd.getApiVersion(), crd.getKind(), TestCustomResource.class);
@@ -53,11 +59,13 @@ public class IntegrationTest {
         Operator operator = new Operator(k8sClient);
         operator.registerController(new TestCustomResourceController());
 
-        await("all resources cleaned up").atMost(10, TimeUnit.SECONDS)
+        await("all resources cleaned up").atMost(60, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
                     assertThat(k8sClient.configMaps().inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
                 });
+
+        log.info("Cleaned up namespace " + TEST_NAMESPACE);
     }
 
     @Test
