@@ -48,7 +48,7 @@ public class ConcurrencyTest {
                 .build());
         resource.setKind("CustomService");
         resource.setSpec(new TestCustomResourceSpec());
-        resource.getSpec().setConfigMapName("test-config-map");
+        resource.getSpec().setConfigMapName("test-config-map-" + id);
         resource.getSpec().setKey("test-key");
         resource.getSpec().setValue(id);
         return resource;
