@@ -5,9 +5,7 @@ import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -24,9 +22,19 @@ public class ConcurrencyTest {
         integrationTest.setup();
     }
 
+    @BeforeEach
+    public void cleanup() {
+        integrationTest.cleanup();
+    }
+
+    @AfterAll
+    public void teardown() {
+        integrationTest.teardown();
+    }
+
     @Test
     public void manyResourcesGetCreatedUpdatedAndDeleted() {
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 35; i++) {
             TestCustomResource tcr = createTCR(String.valueOf(i));
             integrationTest.crOperations.inNamespace(IntegrationTest.TEST_NAMESPACE).create(tcr);
         }
@@ -36,7 +44,7 @@ public class ConcurrencyTest {
                     List<ConfigMap> items = integrationTest.k8sClient.configMaps()
                             .inNamespace(IntegrationTest.TEST_NAMESPACE)
                             .list().getItems();
-                    assertThat(items).hasSize(30);
+                    assertThat(items).hasSize(35);
                 });
     }
 
