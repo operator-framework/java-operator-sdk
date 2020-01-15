@@ -39,6 +39,9 @@ public class IntegrationTest {
     public void setup() {
         log.info("Running integration test in namespace " + TEST_NAMESPACE);
 
+        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
+        k8sClient.customResourceDefinitions().createOrReplace(crd);
+
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
                     .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());

@@ -33,10 +33,34 @@ public class ConcurrencyTest {
     }
 
     @Test
+    public void manyResourcesGetCreatedAndUpdated() {
+        for (int i = 0; i < 35; i++) {
+            TestCustomResource tcr = createTCR(String.valueOf(i));
+            integrationTest.crOperations.inNamespace(IntegrationTest.TEST_NAMESPACE).create(tcr);
+//            if (i % 3 == 0) {
+//                TestCustomResource newTcr = createTCR(String.valueOf(i));
+//                integrationTest.crOperations.inNamespace(IntegrationTest.TEST_NAMESPACE).createOrReplace(newTcr);
+//            }
+        }
+        Awaitility.await().atMost(1, TimeUnit.MINUTES)
+                .untilAsserted(() -> {
+                    List<ConfigMap> items = integrationTest.k8sClient.configMaps()
+                            .inNamespace(IntegrationTest.TEST_NAMESPACE)
+                            .list().getItems();
+                    assertThat(items).hasSize(35);
+                });
+    }
+
+
+    @Test
     public void manyResourcesGetCreatedUpdatedAndDeleted() {
         for (int i = 0; i < 35; i++) {
             TestCustomResource tcr = createTCR(String.valueOf(i));
             integrationTest.crOperations.inNamespace(IntegrationTest.TEST_NAMESPACE).create(tcr);
+//            if (i % 3 == 0) {
+//                TestCustomResource newTcr = createTCR(String.valueOf(i));
+//                integrationTest.crOperations.inNamespace(IntegrationTest.TEST_NAMESPACE).createOrReplace(newTcr);
+//            }
         }
 
         Awaitility.await().atMost(1, TimeUnit.MINUTES)
@@ -45,6 +69,19 @@ public class ConcurrencyTest {
                             .inNamespace(IntegrationTest.TEST_NAMESPACE)
                             .list().getItems();
                     assertThat(items).hasSize(35);
+                });
+
+        for (int i = 0; i < 10; i++) {
+            TestCustomResource tcr = createTCR(String.valueOf(i));
+            integrationTest.crOperations.inNamespace(IntegrationTest.TEST_NAMESPACE).delete(tcr);
+        }
+
+        Awaitility.await().atMost(1, TimeUnit.MINUTES)
+                .untilAsserted(() -> {
+                    List<ConfigMap> items = integrationTest.k8sClient.configMaps()
+                            .inNamespace(IntegrationTest.TEST_NAMESPACE)
+                            .list().getItems();
+                    assertThat(items).hasSize(25);
                 });
     }
 
