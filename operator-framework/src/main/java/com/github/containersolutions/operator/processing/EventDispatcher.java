@@ -41,12 +41,14 @@ public class EventDispatcher<R extends CustomResource> {
     }
 
     public void handleEvent(Watcher.Action action, R resource) {
+        log.info("Handling event {} for resource {}", action, resource.getMetadata());
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
                 boolean removeFinalizer = controller.deleteResource(resource, new Context(k8sClient, resourceClient));
                 if (removeFinalizer) {
+                    log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                     removeDefaultFinalizer(resource);
                 }
             } else {
@@ -81,10 +83,12 @@ public class EventDispatcher<R extends CustomResource> {
 
     private void removeDefaultFinalizer(R resource) {
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
+        log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 
     private void replace(R resource) {
+        log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 
