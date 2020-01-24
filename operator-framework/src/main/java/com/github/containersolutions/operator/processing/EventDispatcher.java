@@ -51,14 +51,14 @@ public class EventDispatcher<R extends CustomResource> {
                     log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                     removeDefaultFinalizer(resource);
                 }
-            } else {
+            } else if (!markedForDeletion(resource)){
                 Optional<R> updateResult = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
                 if (updateResult.isPresent()) {
                     R updatedResource = updateResult.get();
                     addFinalizerIfNotPresent(updatedResource);
                     replace(updatedResource);
                     // We always add the default finalizer if missing and not marked for deletion.
-                } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
+                } else if (!hasDefaultFinalizer(resource)) {
                     addFinalizerIfNotPresent(resource);
                     replace(resource);
                 }
