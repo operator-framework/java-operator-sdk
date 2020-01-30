@@ -41,22 +41,27 @@ public class EventDispatcher<R extends CustomResource> {
     }
 
     public void handleEvent(Watcher.Action action, R resource) {
+        log.info("Handling event {} for resource {}", action, resource.getMetadata());
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
             if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
                 boolean removeFinalizer = controller.deleteResource(resource, new Context(k8sClient, resourceClient));
                 if (removeFinalizer) {
+                    log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                     removeDefaultFinalizer(resource);
                 }
-            } else {
+            } else if (!markedForDeletion(resource)){
                 Optional<R> updateResult = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
                 if (updateResult.isPresent()) {
                     R updatedResource = updateResult.get();
+                    log.info("Actual resource in etcd {}", resourceOperation.withName(resource.getMetadata().getName()).get());
+                    log.info("Updated resource handled {}", updatedResource.getMetadata());
                     addFinalizerIfNotPresent(updatedResource);
                     replace(updatedResource);
                     // We always add the default finalizer if missing and not marked for deletion.
-                } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
+                } else if (!hasDefaultFinalizer(resource)) {
+                    log.info("Actual resource with no finalizer: {}", resourceOperation.withName(resource.getMetadata().getName()).get());
                     addFinalizerIfNotPresent(resource);
                     replace(resource);
                 }
@@ -81,15 +86,18 @@ public class EventDispatcher<R extends CustomResource> {
 
     private void removeDefaultFinalizer(R resource) {
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
+        log.debug("Removed finalizer. Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 
     private void replace(R resource) {
+        log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 
     private void addFinalizerIfNotPresent(R resource) {
         if (!hasDefaultFinalizer(resource)) {
+            log.info("Adding default finalizer to {}", resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
                 resource.getMetadata().setFinalizers(new ArrayList<>(1));
             }

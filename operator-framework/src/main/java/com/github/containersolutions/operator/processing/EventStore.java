@@ -67,6 +67,9 @@ public class EventStore {
         long received = Long.parseLong(event.getResource().getMetadata().getResourceVersion());
         if (current == null || received > current) {
             lastResourceVersion.put(event.resourceUid(), received);
+            log.debug("Resource version for {} updated from {} to {}", event.getResource().getMetadata().getName(), current, received);
+        } else {
+            log.debug("Resource version for {} not updated from {}", event.getResource().getMetadata().getName(), current);
         }
     }
 
