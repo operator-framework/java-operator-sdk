@@ -74,54 +74,54 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         scheduleEvent(event);
     }
 
-    void scheduleEvent(CustomResourceEvent newEvent) {
+    void scheduleEvent(CustomResourceEvent event) {
         log.debug("Current queue size {}", executor.getQueue().size());
-        log.info("Scheduling event: {}", newEvent.getEventInfo());
+        log.info("Scheduling event: {}", event.getEventInfo());
         try {
             lock.lock();
-            if (eventStore.processedNewerVersionBefore(newEvent)) {
-                log.debug("Skipping event processing since was processed event with newer version before. {}", newEvent);
+            if (eventStore.processedNewerVersionBefore(event)) {
+                log.debug("Skipping event processing since was processed event with newer version before. {}", event);
                 return;
             }
-            if (newEvent.getAction() == Action.DELETED) {
+            if (event.getAction() == Action.DELETED) {
                 return;
             }
-            if (eventStore.containsOlderVersionOfNotScheduledEvent(newEvent)) {
-                log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", newEvent);
-                eventStore.addOrReplaceEventAsNotScheduledYet(newEvent);
+            if (eventStore.containsOlderVersionOfNotScheduledEvent(event)) {
+                log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", event);
+                eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
-            if (eventStore.containsOlderVersionOfEventUnderProcessing(newEvent)) {
+            if (eventStore.containsOlderVersionOfEventUnderProcessing(event)) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
-                        " New event: {}", newEvent);
-                eventStore.addOrReplaceEventAsNotScheduledYet(newEvent);
+                        " New event: {}", event);
+                eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
-            if (eventStore.containsEventScheduledForProcessing(newEvent.resourceUid())) {
-                EventStore.ResourceScheduleHolder scheduleHolder = eventStore.getEventScheduledForProcessing(newEvent.resourceUid());
+            if (eventStore.containsEventScheduledForProcessing(event.resourceUid())) {
+                EventStore.ResourceScheduleHolder scheduleHolder = eventStore.getEventScheduledForProcessing(event.resourceUid());
                 CustomResourceEvent scheduledEvent = scheduleHolder.getCustomResourceEvent();
                 ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
                 // If newEvent is older than existing in queue, don't schedule and remove from cache
-                if (scheduledEvent.isSameResourceAndNewerVersion(newEvent)) {
-                    log.debug("Incoming event discarded because already scheduled event is newer. {}", newEvent);
+                if (scheduledEvent.isSameResourceAndNewerVersion(event)) {
+                    log.debug("Incoming event discarded because already scheduled event is newer. {}", event);
                     return;
                 }
                 // If newEvent is newer than existing in queue, cancel and remove queuedEvent
-                if (newEvent.isSameResourceAndNewerVersion(scheduledEvent)) {
+                if (event.isSameResourceAndNewerVersion(scheduledEvent)) {
                     log.debug("Scheduled event canceled because incoming event is newer. {}", scheduledEvent);
                     scheduledFuture.cancel(false);
                     eventStore.removeEventScheduledForProcessing(scheduledEvent.resourceUid());
                 }
             }
 
-            Optional<Long> nextBackOff = newEvent.nextBackOff();
+            Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
-                log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, newEvent);
+                log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, event);
                 return;
             }
-            ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(newEvent, eventDispatcher, this),
+            ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
-            eventStore.addEventScheduledForProcessing(new EventStore.ResourceScheduleHolder(newEvent, scheduledTask));
+            eventStore.addEventScheduledForProcessing(new EventStore.ResourceScheduleHolder(event, scheduledTask));
         } finally {
             lock.unlock();
         }
@@ -162,7 +162,17 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         try {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
-            scheduleEvent(event);
+            CustomResourceEvent notScheduledYetEvent = eventStore.removeEventNotScheduledYet(event.resourceUid());
+            if (notScheduledYetEvent != null) {
+                if (!notScheduledYetEvent.isSameResourceAndNewerVersion(event)) {
+                    log.warn("The not yet scheduled event has older version then actual event. This is probably a bug.");
+                }
+                // this is the case when we failed processing an event but we already received a new one.
+                // Since since we process declarative resources it correct to schedule the new event.
+                scheduleEvent(notScheduledYetEvent);
+            } else {
+                scheduleEvent(event);
+            }
         } finally {
             lock.unlock();
         }
