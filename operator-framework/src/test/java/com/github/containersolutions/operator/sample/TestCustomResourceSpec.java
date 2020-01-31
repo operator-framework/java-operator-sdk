@@ -31,4 +31,13 @@ public class TestCustomResourceSpec {
     public void setValue(String value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "TestCustomResourceSpec{" +
+                "configMapName='" + configMapName + '\'' +
+                ", key='" + key + '\'' +
+                ", value='" + value + '\'' +
+                '}';
+    }
 }

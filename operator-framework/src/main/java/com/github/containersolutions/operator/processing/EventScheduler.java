@@ -76,16 +76,20 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     void scheduleEvent(CustomResourceEvent event) {
         log.debug("Current queue size {}", executor.getQueue().size());
-        log.info("Scheduling event: {}", event.getEventInfo());
+        log.info("Scheduling event: {}", event);
         try {
             lock.lock();
+            if (event.getAction() == Action.DELETED) {
+                log.debug("Received delete action for event: {}", event);
+                //
+                // should we still check if its a retry for a "marked for deletion" modification event?
+                return;
+            }
             if (eventStore.processedNewerVersionBefore(event)) {
                 log.debug("Skipping event processing since was processed event with newer version before. {}", event);
                 return;
             }
-            if (event.getAction() == Action.DELETED) {
-                return;
-            }
+            eventStore.updateLatestResourceVersionProcessed(event);
             if (eventStore.containsOlderVersionOfNotScheduledEvent(event)) {
                 log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", event);
                 eventStore.addOrReplaceEventAsNotScheduledYet(event);
@@ -101,16 +105,11 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 EventStore.ResourceScheduleHolder scheduleHolder = eventStore.getEventScheduledForProcessing(event.resourceUid());
                 CustomResourceEvent scheduledEvent = scheduleHolder.getCustomResourceEvent();
                 ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
-                // If newEvent is older than existing in queue, don't schedule and remove from cache
-                if (scheduledEvent.isSameResourceAndNewerVersion(event)) {
-                    log.debug("Incoming event discarded because already scheduled event is newer. Discarded: {}, Scheduled: {}", event, scheduledEvent);
-                    return;
-                }
                 // If newEvent is newer than existing in queue, cancel and remove queuedEvent
                 if (event.isSameResourceAndNewerVersion(scheduledEvent)) {
                     log.debug("Scheduled event canceled because incoming event is newer. Discarded: {}, New: {}", scheduledEvent, event);
                     scheduledFuture.cancel(false);
-                    eventStore.removeEventScheduledForProcessing(scheduledEvent.resourceUid());
+                    eventStore.removeEventScheduledForProcessingVersionAware(scheduledEvent.resourceUid());
                 }
             }
 
@@ -119,10 +118,12 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, event);
                 return;
             }
+            log.debug("Creating scheduled task for event: {}", event);
             ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
             eventStore.addEventScheduledForProcessing(new EventStore.ResourceScheduleHolder(event, scheduledTask));
         } finally {
+            log.info("Scheduling event finished: {}", event);
             lock.unlock();
         }
     }
@@ -130,7 +131,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     boolean eventProcessingStarted(CustomResourceEvent event) {
         try {
             lock.lock();
-            EventStore.ResourceScheduleHolder res = eventStore.removeEventScheduledForProcessing(event.resourceUid());
+            EventStore.ResourceScheduleHolder res = eventStore.removeEventScheduledForProcessingVersionAware(event);
             if (res == null) {
                 // Double checking if the event is still scheduled. This is a corner case, but can actually happen.
                 // In detail: it can happen that we scheduled an event for processing, it took some time that is was picked

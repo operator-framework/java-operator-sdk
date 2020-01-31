@@ -45,9 +45,9 @@ public class EventDispatcher<R extends CustomResource> {
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // we don't want to call delete resource if it not contains our finalizer,
             // since the resource still can be updates when marked for deletion and contains other finalizers
-            if (markedForDeletion(resource) && hasDefaultFinalizer(resource)) {
+            if (markedForDeletion(resource)) {
                 boolean removeFinalizer = controller.deleteResource(resource, new Context(k8sClient, resourceClient));
-                if (removeFinalizer) {
+                if (removeFinalizer && hasDefaultFinalizer(resource)) {
                     log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                     removeDefaultFinalizer(resource);
                 }

@@ -23,8 +23,6 @@ public class IntegrationTest {
     private final static Logger log = LoggerFactory.getLogger(IntegrationTest.class);
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
-    private Operator operator;
-
     @BeforeAll
     public void setup() {
         integrationTestSupport.initialize();

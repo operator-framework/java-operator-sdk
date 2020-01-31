@@ -11,4 +11,11 @@ public class TestCustomResourceStatus {
     public void setConfigMapStatus(String configMapStatus) {
         this.configMapStatus = configMapStatus;
     }
+
+    @Override
+    public String toString() {
+        return "TestCustomResourceStatus{" +
+                "configMapStatus='" + configMapStatus + '\'' +
+                '}';
+    }
 }

@@ -35,16 +35,6 @@ public class CustomResourceEvent {
         return resource;
     }
 
-    public String getEventInfo() {
-        CustomResource resource = this.getResource();
-        return new StringBuilder().
-                append("Resource ").append(getAction().toString().toLowerCase()).append(" -> ").
-                append(Optional.ofNullable(resource.getMetadata().getNamespace()).orElse("cluster")).append("/").
-                append(resource.getKind()).append(":").
-                append(resource.getMetadata().getName()).toString();
-
-    }
-
     public String resourceUid() {
         return resource.getMetadata().getUid();
     }
@@ -59,7 +49,6 @@ public class CustomResourceEvent {
                         Long.parseLong(otherEvent.getResource().getMetadata().getResourceVersion());
 
     }
-
 
     public Optional<Long> nextBackOff() {
         if (retryIndex == -1) {
@@ -81,7 +70,7 @@ public class CustomResourceEvent {
                 "action=" + action +
                 ", resource=[ name=" + resource.getMetadata().getName() + ", kind=" + resource.getKind() +
                 ", apiVersion=" + resource.getApiVersion() + " ,resourceVersion=" + resource.getMetadata().getResourceVersion() +
-                " ], retriesIndex=" + retryIndex +
+                ", markerForDeletion: " + (resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty()) + " ], retriesIndex=" + retryIndex +
                 '}';
     }
 }

@@ -23,4 +23,13 @@ public class TestCustomResource extends CustomResource {
     public void setStatus(TestCustomResourceStatus status) {
         this.status = status;
     }
+
+    @Override
+    public String toString() {
+        return "TestCustomResource{" +
+                "spec=" + spec +
+                ", status=" + status +
+                ", extendedFrom=" + super.toString() +
+                '}';
+    }
 }

@@ -36,11 +36,12 @@ class EventConsumer implements Runnable {
 
         Watcher.Action action = event.getAction();
         CustomResource resource = event.getResource();
-        log.info("Processing event {}", event.getEventInfo());
+        log.info("Processing event {}", event);
         try {
             eventDispatcher.handleEvent(action, resource);
         } catch (RuntimeException e) {
-            log.error("Processing event {} failed.", event.getEventInfo(), e);
+            log.error("Processing event {} failed.", event, e);
+            log.debug("Failed object: {}", resource);
             return false;
         }
 

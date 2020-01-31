@@ -9,7 +9,7 @@ import java.util.concurrent.ScheduledFuture;
 
 public class EventStore {
 
-    private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
+    private final static Logger log = LoggerFactory.getLogger(EventStore.class);
 
     private final Map<String, Long> lastResourceVersion = new HashMap<>();
 
@@ -28,7 +28,6 @@ public class EventStore {
 
     public void addOrReplaceEventAsNotScheduledYet(CustomResourceEvent event) {
         eventsNotScheduledYet.put(event.resourceUid(), event);
-        updateLatestResourceVersionProcessed(event);
     }
 
     public boolean containsOlderVersionOfEventUnderProcessing(CustomResourceEvent newEvent) {
@@ -42,27 +41,34 @@ public class EventStore {
 
     public void addEventUnderProcessing(CustomResourceEvent event) {
         eventsUnderProcessing.put(event.resourceUid(), event);
-        updateLatestResourceVersionProcessed(event);
     }
 
     public ResourceScheduleHolder getEventScheduledForProcessing(String uid) {
         return eventsScheduledForProcessing.get(uid);
     }
 
-    public ResourceScheduleHolder removeEventScheduledForProcessing(String uid) {
+    public ResourceScheduleHolder removeEventScheduledForProcessingVersionAware(String uid) {
         return eventsScheduledForProcessing.remove(uid);
+    }
+
+    public ResourceScheduleHolder removeEventScheduledForProcessingVersionAware(CustomResourceEvent customResourceEvent) {
+        ResourceScheduleHolder holder = eventsScheduledForProcessing.get(customResourceEvent.resourceUid());
+        if (holder.getCustomResourceEvent().getResource().getMetadata().getResourceVersion().equals(customResourceEvent.getResource().getMetadata().getResourceVersion())) {
+            return removeEventScheduledForProcessingVersionAware(customResourceEvent.resourceUid());
+        } else {
+            return null;
+        }
     }
 
     public void addEventScheduledForProcessing(ResourceScheduleHolder resourceScheduleHolder) {
         eventsScheduledForProcessing.put(resourceScheduleHolder.getCustomResourceEvent().resourceUid(), resourceScheduleHolder);
-        updateLatestResourceVersionProcessed(resourceScheduleHolder.getCustomResourceEvent());
     }
 
     public CustomResourceEvent removeEventUnderProcessing(String uid) {
         return eventsUnderProcessing.remove(uid);
     }
 
-    private void updateLatestResourceVersionProcessed(CustomResourceEvent event) {
+    public void updateLatestResourceVersionProcessed(CustomResourceEvent event) {
         Long current = lastResourceVersion.get(event.resourceUid());
         long received = Long.parseLong(event.getResource().getMetadata().getResourceVersion());
         if (current == null || received > current) {
