@@ -80,9 +80,8 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         try {
             lock.lock();
             if (event.getAction() == Action.DELETED) {
+                // we might want to have a state check here that only an event is scheduled for delete.
                 log.debug("Received delete action for event: {}", event);
-                //
-                // should we still check if its a retry for a "marked for deletion" modification event?
                 return;
             }
             if (eventStore.processedNewerVersionBefore(event)) {
