@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_CUSTOM_RESOURCE_PREFIX;
 import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -62,18 +61,8 @@ public class ConcurrencyIT {
             tcr.getSpec().setValue(i + UPDATED_SUFFIX);
             integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(tcr);
         }
-
-        Awaitility.await().atMost(1, TimeUnit.MINUTES)
-                .untilAsserted(() -> {
-                    List<TestCustomResource> crs = integrationTest.getCrOperations()
-                            .inNamespace(TEST_NAMESPACE)
-                            .list().getItems();
-                    for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
-                        final int k = i;
-                        TestCustomResource testCustomResource = crs.stream().filter(c -> c.getMetadata().getName().equals(TEST_CUSTOM_RESOURCE_PREFIX + k)).findFirst().get();
-                        assertThat(testCustomResource.getSpec().getValue()).isEqualTo(i + UPDATED_SUFFIX);
-                    }
-                });
+        // sleep to make some variability to the test, so some updates are not executed before delete
+        Thread.sleep(300);
 
         log.info("Deleting resources.");
         // deleting some resources
