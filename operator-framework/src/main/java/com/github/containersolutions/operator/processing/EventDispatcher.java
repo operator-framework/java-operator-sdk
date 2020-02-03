@@ -43,8 +43,11 @@ public class EventDispatcher<R extends CustomResource> {
     public void handleEvent(Watcher.Action action, R resource) {
         log.info("Handling event {} for resource {}", action, resource.getMetadata());
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
-            // we don't want to call delete resource if it not contains our finalizer,
-            // since the resource still can be updates when marked for deletion and contains other finalizers
+            // Its interesting problem if we should call delete if received event after object is marked for deletion
+            // but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
+            // we called delete and remove finalizers already. But also it can happen that we did not manage to put
+            // finalizer into the resource before marked for delete. So for now we will call delete every time, since delete
+            // operation should be idempotent too, and this way we cover the corner case.
             if (markedForDeletion(resource)) {
                 boolean removeFinalizer = controller.deleteResource(resource, new Context(k8sClient, resourceClient));
                 if (removeFinalizer && hasDefaultFinalizer(resource)) {

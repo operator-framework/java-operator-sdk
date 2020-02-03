@@ -86,12 +86,12 @@ class EventDispatcherTest {
      * Note that there could be more finalizers. Out of our control.
      */
     @Test
-    void doesNotCallDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
+    void callDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
         markForDeletion(testCustomResource);
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
-        verify(resourceController, never()).deleteResource(eq(testCustomResource), any());
+        verify(resourceController).deleteResource(eq(testCustomResource), any());
     }
 
     @Test
