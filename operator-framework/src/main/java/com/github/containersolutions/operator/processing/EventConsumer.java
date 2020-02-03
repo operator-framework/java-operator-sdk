@@ -20,10 +20,6 @@ class EventConsumer implements Runnable {
 
     @Override
     public void run() {
-        boolean stillScheduledForProcessing = eventScheduler.eventProcessingStarted(event);
-        if (!stillScheduledForProcessing) {
-            return;
-        }
         if (processEvent()) {
             eventScheduler.eventProcessingFinishedSuccessfully(event);
         } else {

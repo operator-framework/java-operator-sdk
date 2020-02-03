@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -100,47 +99,17 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                 eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
-            if (eventStore.containsEventScheduledForProcessing(event.resourceUid())) {
-                EventStore.ResourceScheduleHolder scheduleHolder = eventStore.getEventScheduledForProcessing(event.resourceUid());
-                CustomResourceEvent scheduledEvent = scheduleHolder.getCustomResourceEvent();
-                ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
-                // If newEvent is newer than existing in queue, cancel and remove queuedEvent
-                if (event.isSameResourceAndNewerVersion(scheduledEvent)) {
-                    log.debug("Scheduled event canceled because incoming event is newer. Discarded: {}, New: {}", scheduledEvent, event);
-                    scheduledFuture.cancel(false);
-                    eventStore.removeEventScheduledForProcessingVersionAware(scheduledEvent.resourceUid());
-                }
-            }
-
             Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
                 log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, event);
                 return;
             }
             log.debug("Creating scheduled task for event: {}", event);
-            ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(event, eventDispatcher, this),
+            executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
-            eventStore.addEventScheduledForProcessing(new EventStore.ResourceScheduleHolder(event, scheduledTask));
+            eventStore.addEventUnderProcessing(event);
         } finally {
             log.info("Scheduling event finished: {}", event);
-            lock.unlock();
-        }
-    }
-
-    boolean eventProcessingStarted(CustomResourceEvent event) {
-        try {
-            lock.lock();
-            EventStore.ResourceScheduleHolder res = eventStore.removeEventScheduledForProcessingVersionAware(event);
-            if (res == null) {
-                // Double checking if the event is still scheduled. This is a corner case, but can actually happen.
-                // In detail: it can happen that we scheduled an event for processing, it took some time that is was picked
-                // by executor, and it was removed during that time from the schedule but not cancelled yet. So to be correct
-                // this should be checked also here. In other word scheduleEvent function can run in parallel with eventDispatcher.
-                return false;
-            }
-            eventStore.addEventUnderProcessing(event);
-            return true;
-        } finally {
             lock.unlock();
         }
     }

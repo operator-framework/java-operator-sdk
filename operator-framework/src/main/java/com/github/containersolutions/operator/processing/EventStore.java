@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
 
 public class EventStore {
 
@@ -14,7 +13,6 @@ public class EventStore {
     private final Map<String, Long> lastResourceVersion = new HashMap<>();
 
     private final Map<String, CustomResourceEvent> eventsNotScheduledYet = new HashMap<>();
-    private final Map<String, ResourceScheduleHolder> eventsScheduledForProcessing = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
 
     public boolean containsOlderVersionOfNotScheduledEvent(CustomResourceEvent newEvent) {
@@ -35,33 +33,9 @@ public class EventStore {
                 newEvent.isSameResourceAndNewerVersion(eventsUnderProcessing.get(newEvent.resourceUid()));
     }
 
-    public boolean containsEventScheduledForProcessing(String uid) {
-        return eventsScheduledForProcessing.containsKey(uid);
-    }
 
     public void addEventUnderProcessing(CustomResourceEvent event) {
         eventsUnderProcessing.put(event.resourceUid(), event);
-    }
-
-    public ResourceScheduleHolder getEventScheduledForProcessing(String uid) {
-        return eventsScheduledForProcessing.get(uid);
-    }
-
-    public ResourceScheduleHolder removeEventScheduledForProcessingVersionAware(String uid) {
-        return eventsScheduledForProcessing.remove(uid);
-    }
-
-    public ResourceScheduleHolder removeEventScheduledForProcessingVersionAware(CustomResourceEvent customResourceEvent) {
-        ResourceScheduleHolder holder = eventsScheduledForProcessing.get(customResourceEvent.resourceUid());
-        if (holder.getCustomResourceEvent().getResource().getMetadata().getResourceVersion().equals(customResourceEvent.getResource().getMetadata().getResourceVersion())) {
-            return removeEventScheduledForProcessingVersionAware(customResourceEvent.resourceUid());
-        } else {
-            return null;
-        }
-    }
-
-    public void addEventScheduledForProcessing(ResourceScheduleHolder resourceScheduleHolder) {
-        eventsScheduledForProcessing.put(resourceScheduleHolder.getCustomResourceEvent().resourceUid(), resourceScheduleHolder);
     }
 
     public CustomResourceEvent removeEventUnderProcessing(String uid) {
@@ -86,24 +60,6 @@ public class EventStore {
         } else {
             return lastVersionProcessed > Long.parseLong(customResourceEvent.getResource()
                     .getMetadata().getResourceVersion());
-        }
-    }
-
-    public static class ResourceScheduleHolder {
-        private CustomResourceEvent customResourceEvent;
-        private ScheduledFuture<?> scheduledFuture;
-
-        public ResourceScheduleHolder(CustomResourceEvent customResourceEvent, ScheduledFuture<?> scheduledFuture) {
-            this.customResourceEvent = customResourceEvent;
-            this.scheduledFuture = scheduledFuture;
-        }
-
-        public CustomResourceEvent getCustomResourceEvent() {
-            return customResourceEvent;
-        }
-
-        public ScheduledFuture<?> getScheduledFuture() {
-            return scheduledFuture;
         }
     }
 }
