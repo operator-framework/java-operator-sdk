@@ -74,8 +74,8 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     }
 
     void scheduleEvent(CustomResourceEvent event) {
-        log.debug("Current queue size {}", executor.getQueue().size());
-        log.info("Scheduling event: {}", event);
+        log.trace("Current queue size {}", executor.getQueue().size());
+        log.debug("Scheduling event: {}", event);
         try {
             lock.lock();
             if (event.getAction() == Action.DELETED) {
@@ -109,7 +109,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
             eventStore.addEventUnderProcessing(event);
         } finally {
-            log.info("Scheduling event finished: {}", event);
+            log.debug("Scheduling event finished: {}", event);
             lock.unlock();
         }
     }
