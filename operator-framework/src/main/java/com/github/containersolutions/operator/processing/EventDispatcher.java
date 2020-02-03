@@ -1,10 +1,10 @@
 package com.github.containersolutions.operator.processing;
 
-import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.ResourceController;
-import io.fabric8.kubernetes.client.*;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,22 +22,14 @@ public class EventDispatcher<R extends CustomResource> {
     private final ResourceController<R> controller;
     private final CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation;
     private final String resourceDefaultFinalizer;
-    private final NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
-            Resource<R, CustomResourceDoneable<R>>> resourceClient;
-    private final KubernetesClient k8sClient;
 
     public EventDispatcher(ResourceController<R> controller,
                            CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
-                           NonNamespaceOperation<R, CustomResourceList<R>, CustomResourceDoneable<R>,
-                                   Resource<R, CustomResourceDoneable<R>>> resourceClient, KubernetesClient k8sClient,
                            String defaultFinalizer
-
     ) {
         this.controller = controller;
         this.resourceOperation = resourceOperation;
-        this.resourceClient = resourceClient;
         this.resourceDefaultFinalizer = defaultFinalizer;
-        this.k8sClient = k8sClient;
     }
 
     public void handleEvent(Watcher.Action action, R resource) {
@@ -49,13 +41,13 @@ public class EventDispatcher<R extends CustomResource> {
             // finalizer into the resource before marked for delete. So for now we will call delete every time, since delete
             // operation should be idempotent too, and this way we cover the corner case.
             if (markedForDeletion(resource)) {
-                boolean removeFinalizer = controller.deleteResource(resource, new Context(k8sClient, resourceClient));
+                boolean removeFinalizer = controller.deleteResource(resource);
                 if (removeFinalizer && hasDefaultFinalizer(resource)) {
                     log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                     removeDefaultFinalizer(resource);
                 }
             } else {
-                Optional<R> updateResult = controller.createOrUpdateResource(resource, new Context<>(k8sClient, resourceClient));
+                Optional<R> updateResult = controller.createOrUpdateResource(resource);
                 if (updateResult.isPresent()) {
                     log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
                             resource.getMetadata().getResourceVersion());

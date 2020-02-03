@@ -1,11 +1,11 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,24 +28,30 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public static final String TEST_GROUP = "sample.javaoperatorsdk";
     public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
 
+    private final KubernetesClient kubernetesClient;
+
+    public TestCustomResourceController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
+    }
+
     @Override
-    public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
-        context.getK8sClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
+    public boolean deleteResource(TestCustomResource resource) {
+        kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).delete();
         log.info("Deleting config map with name: {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
         return true;
     }
 
     @Override
-    public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
-        ConfigMap existingConfigMap = context.getK8sClient()
+    public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource) {
+        ConfigMap existingConfigMap = kubernetesClient
                 .configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).get();
 
         if (existingConfigMap != null) {
             existingConfigMap.setData(configMapData(resource));
 //            existingConfigMap.getMetadata().setResourceVersion(null);
-            context.getK8sClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
+            kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                     .withName(existingConfigMap.getMetadata().getName()).createOrReplace(existingConfigMap);
         } else {
             Map<String, String> labels = new HashMap<>();
@@ -57,7 +63,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
                             .withLabels(labels)
                             .build())
                     .withData(configMapData(resource)).build();
-            context.getK8sClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
+            kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                     .createOrReplace(newConfigMap);
         }
 

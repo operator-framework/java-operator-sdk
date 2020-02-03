@@ -44,7 +44,7 @@ public class IntegrationTestSupport {
                     .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());
         }
         operator = new Operator(k8sClient);
-        operator.registerController(new TestCustomResourceController(), TEST_NAMESPACE);
+        operator.registerController(new TestCustomResourceController(k8sClient), TEST_NAMESPACE);
     }
 
     public void cleanup() {

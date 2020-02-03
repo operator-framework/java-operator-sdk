@@ -1,10 +1,10 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,16 +26,22 @@ public class CustomServiceController implements ResourceController<CustomService
     private final static Logger log = LoggerFactory.getLogger(CustomServiceController.class);
     public static final String GROUP = "sample.javaoperatorsdk";
 
+    private final KubernetesClient kubernetesClient;
+
+    public CustomServiceController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
+    }
+
     @Override
-    public boolean deleteResource(CustomService resource, Context<CustomService> context) {
+    public boolean deleteResource(CustomService resource) {
         log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
-        context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace())
+        kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getMetadata().getName()).delete();
         return true;
     }
 
     @Override
-    public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
+    public Optional<CustomService> createOrUpdateResource(CustomService resource) {
         log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
 
         ServicePort servicePort = new ServicePort();
@@ -43,7 +49,7 @@ public class CustomServiceController implements ResourceController<CustomService
         ServiceSpec serviceSpec = new ServiceSpec();
         serviceSpec.setPorts(Arrays.asList(servicePort));
 
-        context.getK8sClient().services().inNamespace(resource.getMetadata().getNamespace()).createOrReplaceWithNew()
+        kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace()).createOrReplaceWithNew()
                 .withNewMetadata()
                 .withName(resource.getSpec().getName())
                 .addToLabels("testLabel", resource.getSpec().getLabel())
