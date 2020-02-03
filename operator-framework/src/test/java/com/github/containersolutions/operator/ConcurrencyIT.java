@@ -15,12 +15,12 @@ import static com.github.containersolutions.operator.IntegrationTestSupport.TEST
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ConcurrencyTest {
+public class ConcurrencyIT {
 
     public static final int NUMBER_OF_RESOURCES_CREATED = 50;
     public static final int NUMBER_OF_RESOURCES_DELETED = 30;
     public static final int NUMBER_OF_RESOURCES_UPDATED = 20;
-    private static final Logger log = LoggerFactory.getLogger(ConcurrencyTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
     public static final String UPDATED_SUFFIX = "_updated";
     private IntegrationTestSupport integrationTest = new IntegrationTestSupport();
 

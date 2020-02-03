@@ -4,13 +4,10 @@ import com.github.containersolutions.operator.sample.TestCustomResource;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
@@ -18,9 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class IntegrationTest {
+public class ControllerExecutionIT {
 
-    private final static Logger log = LoggerFactory.getLogger(IntegrationTest.class);
+    private final static Logger log = LoggerFactory.getLogger(ControllerExecutionIT.class);
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     @BeforeAll
@@ -66,13 +63,5 @@ public class IntegrationTest {
                     assertThat(cr.getStatus()).isNotNull();
                     assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
                 });
-    }
-
-    private <T> T loadYaml(Class<T> clazz, String yaml) {
-        try (InputStream is = getClass().getResourceAsStream(yaml)) {
-            return Serialization.unmarshal(is, clazz);
-        } catch (IOException ex) {
-            throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
-        }
     }
 }
