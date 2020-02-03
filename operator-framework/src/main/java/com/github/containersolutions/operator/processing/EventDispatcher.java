@@ -2,8 +2,6 @@ package com.github.containersolutions.operator.processing;
 
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import org.slf4j.Logger;
@@ -15,16 +13,16 @@ import java.util.Optional;
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
  */
-public class EventDispatcher<R extends CustomResource> {
+public class EventDispatcher {
 
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-    private final ResourceController<R> controller;
-    private final CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation;
+    private final ResourceController controller;
+    private final CustomResourceOperationsImpl resourceOperation;
     private final String resourceDefaultFinalizer;
 
-    public EventDispatcher(ResourceController<R> controller,
-                           CustomResourceOperationsImpl<R, CustomResourceList<R>, CustomResourceDoneable<R>> resourceOperation,
+    public EventDispatcher(ResourceController controller,
+                           CustomResourceOperationsImpl resourceOperation,
                            String defaultFinalizer
     ) {
         this.controller = controller;
@@ -32,7 +30,7 @@ public class EventDispatcher<R extends CustomResource> {
         this.resourceDefaultFinalizer = defaultFinalizer;
     }
 
-    public void handleEvent(Watcher.Action action, R resource) {
+    public void handleEvent(Watcher.Action action, CustomResource resource) {
         log.info("Handling event {} for resource {}", action, resource.getMetadata());
         if (action == Watcher.Action.MODIFIED || action == Watcher.Action.ADDED) {
             // Its interesting problem if we should call delete if received event after object is marked for deletion
@@ -47,12 +45,12 @@ public class EventDispatcher<R extends CustomResource> {
                     removeDefaultFinalizer(resource);
                 }
             } else {
-                Optional<R> updateResult = controller.createOrUpdateResource(resource);
+                Optional<CustomResource> updateResult = controller.createOrUpdateResource(resource);
                 if (updateResult.isPresent()) {
                     log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
                             resource.getMetadata().getResourceVersion());
                     log.trace("Resource before update: {}", resource);
-                    R updatedResource = updateResult.get();
+                    CustomResource updatedResource = updateResult.get();
                     addFinalizerIfNotPresent(updatedResource);
                     replace(updatedResource);
                     log.trace("Resource after update: {}", resource);
@@ -75,25 +73,25 @@ public class EventDispatcher<R extends CustomResource> {
         }
     }
 
-    private boolean hasDefaultFinalizer(R resource) {
+    private boolean hasDefaultFinalizer(CustomResource resource) {
         if (resource.getMetadata().getFinalizers() != null) {
             return resource.getMetadata().getFinalizers().contains(resourceDefaultFinalizer);
         }
         return false;
     }
 
-    private void removeDefaultFinalizer(R resource) {
+    private void removeDefaultFinalizer(CustomResource resource) {
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
         log.debug("Removed finalizer. Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 
-    private void replace(R resource) {
+    private void replace(CustomResource resource) {
         log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
     }
 
-    private void addFinalizerIfNotPresent(R resource) {
+    private void addFinalizerIfNotPresent(CustomResource resource) {
         if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
             log.info("Adding default finalizer to {}", resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
@@ -103,7 +101,7 @@ public class EventDispatcher<R extends CustomResource> {
         }
     }
 
-    private boolean markedForDeletion(R resource) {
+    private boolean markedForDeletion(CustomResource resource) {
         return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
     }
 }

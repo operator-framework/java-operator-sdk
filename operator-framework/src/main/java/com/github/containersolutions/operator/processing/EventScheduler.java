@@ -41,11 +41,9 @@ import static com.github.containersolutions.operator.processing.CustomResourceEv
  *   </li>
  *   <li>We don't react for delete event, since we always use finalizers and do delete on marked for deletion.</li>
  * </ul>
- *
- * @param <R>
  */
 
-public class EventScheduler<R extends CustomResource> implements Watcher<R> {
+public class EventScheduler implements Watcher<CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
@@ -55,7 +53,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher<R> eventDispatcher) {
+    public EventScheduler(EventDispatcher eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("event-consumer-%d")
@@ -66,7 +64,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     }
 
     @Override
-    public void eventReceived(Watcher.Action action, R resource) {
+    public void eventReceived(Watcher.Action action, CustomResource resource) {
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
         CustomResourceEvent event = new CustomResourceEvent(action, resource);
