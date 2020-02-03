@@ -15,17 +15,13 @@ import java.util.Optional;
 
 @Controller(
         crdName = TestCustomResourceController.CRD_NAME,
-        group = TestCustomResourceController.TEST_GROUP,
-        kind = TestCustomResourceController.KIND_NAME,
         customResourceClass = TestCustomResource.class,
         customResourceListClass = TestCustomResourceList.class,
-        customResourceDonebaleClass = TestCustomResourceDoneable.class)
+        customResourceDoneableClass = TestCustomResourceDoneable.class)
 public class TestCustomResourceController implements ResourceController<TestCustomResource> {
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 
-    public static final String KIND_NAME = "CustomService";
-    public static final String TEST_GROUP = "sample.javaoperatorsdk";
     public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
 
     private final KubernetesClient kubernetesClient;

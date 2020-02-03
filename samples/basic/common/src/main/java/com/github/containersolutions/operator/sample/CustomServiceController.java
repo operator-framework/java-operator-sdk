@@ -16,15 +16,12 @@ import java.util.Optional;
  */
 @Controller(customResourceClass = CustomService.class,
         crdName = "customservices.sample.javaoperatorsdk",
-        kind = CustomServiceController.KIND,
-        group = CustomServiceController.GROUP,
         customResourceListClass = CustomServiceList.class,
-        customResourceDonebaleClass = CustomServiceDoneable.class)
+        customResourceDoneableClass = CustomServiceDoneable.class)
 public class CustomServiceController implements ResourceController<CustomService> {
 
     public static final String KIND = "CustomService";
     private final static Logger log = LoggerFactory.getLogger(CustomServiceController.class);
-    public static final String GROUP = "sample.javaoperatorsdk";
 
     private final KubernetesClient kubernetesClient;
 

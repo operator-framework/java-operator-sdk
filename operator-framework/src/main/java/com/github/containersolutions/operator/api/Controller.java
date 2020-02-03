@@ -15,21 +15,13 @@ public @interface Controller {
 
     String DEFAULT_FINALIZER = "operator.default.finalizer";
 
-    String DEFAULT_VERSION = "v1";
-
-    String version() default DEFAULT_VERSION;
-
-    String crdName() default "";
-
-    String group();
-
-    String kind();
+    String crdName();
 
     Class<? extends CustomResource> customResourceClass();
 
     Class<? extends CustomResourceList<? extends CustomResource>> customResourceListClass();
 
-    Class<? extends CustomResourceDoneable<? extends CustomResource>> customResourceDonebaleClass();
+    Class<? extends CustomResourceDoneable<? extends CustomResource>> customResourceDoneableClass();
 
     String defaultFinalizer() default DEFAULT_FINALIZER;
 

@@ -21,17 +21,12 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller(customResourceClass = WebServer.class,
-        kind = WebServerController.KIND,
-        group = WebServerController.GROUP,
+        crdName = "webservers.sample.javaoperatorsdk",
         customResourceListClass = WebServerList.class,
-        customResourceDonebaleClass = WebServerDoneable.class)
+        customResourceDoneableClass = WebServerDoneable.class)
 public class WebServerController implements ResourceController<WebServer> {
 
-    static final String KIND = "WebServer";
-    static final String GROUP = "sample.javaoperatorsdk";
-
     private final Logger log = LoggerFactory.getLogger(getClass());
-
 
     private final KubernetesClient kubernetesClient;
 

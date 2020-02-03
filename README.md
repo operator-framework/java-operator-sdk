@@ -48,24 +48,20 @@ The Controller implements the business logic and describes all the classes neede
 
 ```java
 @Controller(customResourceClass = WebServer.class,
-        kind = WebServerController.KIND,
-        group = WebServerController.GROUP,
+        crdName = "webservers.sample.javaoperatorsdk",
         customResourceListClass = WebServerList.class,
         customResourceDonebaleClass = WebServerDoneable.class)
 public class WebServerController implements ResourceController<WebServer> {
 
-    static final String KIND = "WebServer";
-    static final String GROUP = "sample.javaoperatorsdk";
-
     @Override
-    public boolean deleteResource(CustomService resource, Context<CustomService> context) {
+    public boolean deleteResource(CustomService resource) {
         // ... your logic ...
         return true;
     }
     
     // Return the changed resource, so it gets updated. See javadoc for details.
     @Override
-    public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
+    public Optional<CustomService> createOrUpdateResource(CustomService resource) {
         // ... your logic ...
         return resource;
     }
