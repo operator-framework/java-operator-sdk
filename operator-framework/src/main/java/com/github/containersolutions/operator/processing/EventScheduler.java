@@ -39,7 +39,6 @@ import static com.github.containersolutions.operator.processing.CustomResourceEv
  *     <li> In implementation we have to lock since the fabric8 client event handling is multi-threaded, we can receive multiple events
  *          for same resource. Also we do callback from other threads.
  *   </li>
- *   <li>We don't react for delete event, since we always use finalizers and do delete on marked for deletion.</li>
  * </ul>
  */
 

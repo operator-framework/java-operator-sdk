@@ -70,7 +70,7 @@ public class CustomResourceEvent {
                 "action=" + action +
                 ", resource=[ name=" + resource.getMetadata().getName() + ", kind=" + resource.getKind() +
                 ", apiVersion=" + resource.getApiVersion() + " ,resourceVersion=" + resource.getMetadata().getResourceVersion() +
-                ", markerForDeletion: " + (resource.getMetadata().getDeletionTimestamp() != null
+                ", markedForDeletion: " + (resource.getMetadata().getDeletionTimestamp() != null
                 && !resource.getMetadata().getDeletionTimestamp().isEmpty()) +
                 " ], retriesIndex=" + retryIndex +
                 '}';
