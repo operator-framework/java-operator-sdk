@@ -1,11 +1,11 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
@@ -21,19 +21,21 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller(customResourceClass = WebServer.class,
-        kind = WebServerController.KIND,
-        group = WebServerController.GROUP,
+        crdName = "webservers.sample.javaoperatorsdk",
         customResourceListClass = WebServerList.class,
-        customResourceDonebaleClass = WebServerDoneable.class)
+        customResourceDoneableClass = WebServerDoneable.class)
 public class WebServerController implements ResourceController<WebServer> {
-
-    static final String KIND = "WebServer";
-    static final String GROUP = "sample.javaoperatorsdk";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    private final KubernetesClient kubernetesClient;
+
+    public WebServerController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
+    }
+
     @Override
-    public Optional<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
+    public Optional<WebServer> createOrUpdateResource(WebServer webServer) {
         if (webServer.getSpec().getHtml().contains("error")) {
             throw new ErrorSimulationException("Simulating error");
         }
@@ -64,24 +66,24 @@ public class WebServerController implements ResourceController<WebServer> {
         service.getMetadata().setNamespace(ns);
         service.getSpec().setSelector(deployment.getSpec().getTemplate().getMetadata().getLabels());
 
-        ConfigMap existingConfigMap = context.getK8sClient().configMaps()
+        ConfigMap existingConfigMap = kubernetesClient.configMaps()
                 .inNamespace(htmlConfigMap.getMetadata().getNamespace())
                 .withName(htmlConfigMap.getMetadata().getName()).get();
 
         log.info("Creating or updating ConfigMap {} in {}", htmlConfigMap.getMetadata().getName(), ns);
-        context.getK8sClient().configMaps().inNamespace(ns).createOrReplace(htmlConfigMap);
+        kubernetesClient.configMaps().inNamespace(ns).createOrReplace(htmlConfigMap);
         log.info("Creating or updating Deployment {} in {}", deployment.getMetadata().getName(), ns);
-        context.getK8sClient().apps().deployments().inNamespace(ns).createOrReplace(deployment);
+        kubernetesClient.apps().deployments().inNamespace(ns).createOrReplace(deployment);
 
-        if (context.getK8sClient().services().inNamespace(ns).withName(service.getMetadata().getName()).get() == null) {
+        if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName()).get() == null) {
             log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
-            context.getK8sClient().services().inNamespace(ns).createOrReplace(service);
+            kubernetesClient.services().inNamespace(ns).createOrReplace(service);
         }
 
         if (existingConfigMap != null) {
             if (!StringUtils.equals(existingConfigMap.getData().get("index.html"), htmlConfigMap.getData().get("index.html"))) {
                 log.info("Restarting pods because HTML has changed in {}", ns);
-                context.getK8sClient().pods().inNamespace(ns).withLabel("app", deploymentName(webServer)).delete();
+                kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webServer)).delete();
             }
         }
 
@@ -94,11 +96,11 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public boolean deleteResource(WebServer nginx, Context<WebServer> context) {
+    public boolean deleteResource(WebServer nginx) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));
-        Resource<ConfigMap, DoneableConfigMap> configMap = context.getK8sClient().configMaps()
+        Resource<ConfigMap, DoneableConfigMap> configMap = kubernetesClient.configMaps()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(configMapName(nginx));
         if (configMap.get() != null) {
@@ -106,7 +108,7 @@ public class WebServerController implements ResourceController<WebServer> {
         }
 
         log.info("Deleting Deployment {}", deploymentName(nginx));
-        RollableScalableResource<Deployment, DoneableDeployment> deployment = context.getK8sClient().apps().deployments()
+        RollableScalableResource<Deployment, DoneableDeployment> deployment = kubernetesClient.apps().deployments()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(deploymentName(nginx));
         if (deployment.get() != null) {
@@ -114,7 +116,7 @@ public class WebServerController implements ResourceController<WebServer> {
         }
 
         log.info("Deleting Service {}", serviceName(nginx));
-        ServiceResource<Service, DoneableService> service = context.getK8sClient().services()
+        ServiceResource<Service, DoneableService> service = kubernetesClient.services()
                 .inNamespace(nginx.getMetadata().getNamespace())
                 .withName(serviceName(nginx));
         if (service.get() != null) {

@@ -6,39 +6,18 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 
-import java.util.Optional;
-
 class ControllerUtils {
 
-    public static final String GROUP_API_DELIMITER = "/";
-
     static String getDefaultFinalizer(ResourceController controller) {
-        return getAnnotation(controller).defaultFinalizer();
+        return getAnnotation(controller).finalizerName();
     }
 
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }
 
-    static String getApiVersion(ResourceController controller) {
-        return getGroup(controller) + GROUP_API_DELIMITER + getAnnotation(controller).version();
-    }
-
-    static String getVersion(ResourceController controller) {
-        return getAnnotation(controller).version();
-    }
-
-    static Optional<String> getCrdName(ResourceController controller) {
-        String crdName = getAnnotation(controller).crdName();
-        if (crdName.isEmpty()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(crdName);
-        }
-    }
-
-    static String getKind(ResourceController controller) {
-        return getAnnotation(controller).kind();
+    static String getCrdName(ResourceController controller) {
+        return getAnnotation(controller).crdName();
     }
 
     static <R extends CustomResource> Class<? extends CustomResourceList<R>> getCustomResourceListClass(ResourceController controller) {
@@ -46,11 +25,7 @@ class ControllerUtils {
     }
 
     static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> getCustomResourceDonebaleClass(ResourceController controller) {
-        return (Class<? extends CustomResourceDoneable<R>>) getAnnotation(controller).customResourceDonebaleClass();
-    }
-
-    private static String getGroup(ResourceController controller) {
-        return getAnnotation(controller).group();
+        return (Class<? extends CustomResourceDoneable<R>>) getAnnotation(controller).customResourceDoneableClass();
     }
 
     private static Controller getAnnotation(ResourceController controller) {

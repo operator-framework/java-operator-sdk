@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -40,13 +39,10 @@ import static com.github.containersolutions.operator.processing.CustomResourceEv
  *     <li> In implementation we have to lock since the fabric8 client event handling is multi-threaded, we can receive multiple events
  *          for same resource. Also we do callback from other threads.
  *   </li>
- *   <li>We don't react for delete event, since we always use finalizers and do delete on marked for deletion.</li>
  * </ul>
- *
- * @param <R>
  */
 
-public class EventScheduler<R extends CustomResource> implements Watcher<R> {
+public class EventScheduler implements Watcher<CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
@@ -56,7 +52,7 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher<R> eventDispatcher) {
+    public EventScheduler(EventDispatcher eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("event-consumer-%d")
@@ -67,80 +63,47 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
     }
 
     @Override
-    public void eventReceived(Watcher.Action action, R resource) {
+    public void eventReceived(Watcher.Action action, CustomResource resource) {
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
         CustomResourceEvent event = new CustomResourceEvent(action, resource);
         scheduleEvent(event);
     }
 
-    void scheduleEvent(CustomResourceEvent newEvent) {
-        log.debug("Current queue size {}", executor.getQueue().size());
-        log.info("Scheduling event: {}", newEvent.getEventInfo());
+    void scheduleEvent(CustomResourceEvent event) {
+        log.trace("Current queue size {}", executor.getQueue().size());
+        log.debug("Scheduling event: {}", event);
         try {
             lock.lock();
-            if (eventStore.processedNewerVersionBefore(newEvent)) {
-                log.debug("Skipping event processing since was processed event with newer version before. {}", newEvent);
+            if (eventStore.receivedMoreRecentEventBefore(event)) {
+                log.debug("Skipping event processing since was processed event with newer version before. {}", event);
                 return;
             }
-            if (newEvent.getAction() == Action.DELETED) {
+            eventStore.updateLatestResourceVersionReceived(event);
+
+            if (eventStore.containsOlderVersionOfNotScheduledEvent(event)) {
+                log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", event);
+                eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
-            if (eventStore.containsOlderVersionOfNotScheduledEvent(newEvent)) {
-                log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", newEvent);
-                eventStore.addOrReplaceEventAsNotScheduledYet(newEvent);
-                return;
-            }
-            if (eventStore.containsOlderVersionOfEventUnderProcessing(newEvent)) {
+            if (eventStore.containsOlderVersionOfEventUnderProcessing(event)) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
-                        " New event: {}", newEvent);
-                eventStore.addOrReplaceEventAsNotScheduledYet(newEvent);
+                        " New event: {}", event);
+                eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
-            if (eventStore.containsEventScheduledForProcessing(newEvent.resourceUid())) {
-                EventStore.ResourceScheduleHolder scheduleHolder = eventStore.getEventScheduledForProcessing(newEvent.resourceUid());
-                CustomResourceEvent scheduledEvent = scheduleHolder.getCustomResourceEvent();
-                ScheduledFuture<?> scheduledFuture = scheduleHolder.getScheduledFuture();
-                // If newEvent is older than existing in queue, don't schedule and remove from cache
-                if (scheduledEvent.isSameResourceAndNewerVersion(newEvent)) {
-                    log.debug("Incoming event discarded because already scheduled event is newer. {}", newEvent);
-                    return;
-                }
-                // If newEvent is newer than existing in queue, cancel and remove queuedEvent
-                if (newEvent.isSameResourceAndNewerVersion(scheduledEvent)) {
-                    log.debug("Scheduled event canceled because incoming event is newer. {}", scheduledEvent);
-                    scheduledFuture.cancel(false);
-                    eventStore.removeEventScheduledForProcessing(scheduledEvent.resourceUid());
-                }
-            }
 
-            Optional<Long> nextBackOff = newEvent.nextBackOff();
+            Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
-                log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, newEvent);
+                log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, event);
                 return;
             }
-            ScheduledFuture<?> scheduledTask = executor.schedule(new EventConsumer(newEvent, eventDispatcher, this),
+            log.debug("Creating scheduled task for event: {}", event);
+            executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
-            eventStore.addEventScheduledForProcessing(new EventStore.ResourceScheduleHolder(newEvent, scheduledTask));
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    boolean eventProcessingStarted(CustomResourceEvent event) {
-        try {
-            lock.lock();
-            EventStore.ResourceScheduleHolder res = eventStore.removeEventScheduledForProcessing(event.resourceUid());
-            if (res == null) {
-                // Double checking if the event is still scheduled. This is a corner case, but can actually happen.
-                // In detail: it can happen that we scheduled an event for processing, it took some time that is was picked
-                // by executor, and it was removed during that time from the schedule but not cancelled yet. So to be correct
-                // this should be checked also here. In other word scheduleEvent function can run in parallel with eventDispatcher.
-                return false;
-            }
             eventStore.addEventUnderProcessing(event);
-            return true;
         } finally {
+            log.debug("Scheduling event finished: {}", event);
             lock.unlock();
         }
     }
@@ -162,7 +125,17 @@ public class EventScheduler<R extends CustomResource> implements Watcher<R> {
         try {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
-            scheduleEvent(event);
+            CustomResourceEvent notScheduledYetEvent = eventStore.removeEventNotScheduledYet(event.resourceUid());
+            if (notScheduledYetEvent != null) {
+                if (!notScheduledYetEvent.isSameResourceAndNewerVersion(event)) {
+                    log.warn("The not yet scheduled event has older version then actual event. This is probably a bug.");
+                }
+                // this is the case when we failed processing an event but we already received a new one.
+                // Since since we process declarative resources it correct to schedule the new event.
+                scheduleEvent(notScheduledYetEvent);
+            } else {
+                scheduleEvent(event);
+            }
         } finally {
             lock.unlock();
         }
