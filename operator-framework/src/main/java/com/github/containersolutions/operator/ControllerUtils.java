@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 class ControllerUtils {
 
     static String getDefaultFinalizer(ResourceController controller) {
-        return getAnnotation(controller).defaultFinalizer();
+        return getAnnotation(controller).finalizerName();
     }
 
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {

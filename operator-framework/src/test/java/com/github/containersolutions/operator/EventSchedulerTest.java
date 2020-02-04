@@ -25,9 +25,9 @@ class EventSchedulerTest {
 
     public static final int INVOCATION_DURATION = 80;
     @SuppressWarnings("unchecked")
-    private EventDispatcher<CustomResource> eventDispatcher = mock(EventDispatcher.class);
+    private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
-    private EventScheduler<CustomResource> eventScheduler = new EventScheduler(eventDispatcher);
+    private EventScheduler eventScheduler = new EventScheduler(eventDispatcher);
 
     private List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
 

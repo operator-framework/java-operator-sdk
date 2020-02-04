@@ -23,6 +23,6 @@ public @interface Controller {
 
     Class<? extends CustomResourceDoneable<? extends CustomResource>> customResourceDoneableClass();
 
-    String defaultFinalizer() default DEFAULT_FINALIZER;
+    String finalizerName() default DEFAULT_FINALIZER;
 
 }

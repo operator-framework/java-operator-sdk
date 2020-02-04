@@ -76,16 +76,12 @@ public class EventScheduler implements Watcher<CustomResource> {
         log.debug("Scheduling event: {}", event);
         try {
             lock.lock();
-            if (event.getAction() == Action.DELETED) {
-                // we might want to have a state check here that only an event is scheduled for delete.
-                log.debug("Received delete action for event: {}", event);
-                return;
-            }
-            if (eventStore.processedNewerVersionBefore(event)) {
+            if (eventStore.receivedMoreRecentEventBefore(event)) {
                 log.debug("Skipping event processing since was processed event with newer version before. {}", event);
                 return;
             }
-            eventStore.updateLatestResourceVersionProcessed(event);
+            eventStore.updateLatestResourceVersionReceived(event);
+
             if (eventStore.containsOlderVersionOfNotScheduledEvent(event)) {
                 log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", event);
                 eventStore.addOrReplaceEventAsNotScheduledYet(event);
@@ -97,6 +93,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
+
             Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
                 log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, event);

@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 class EventDispatcherTest {
 
     private CustomResource testCustomResource;
-    private EventDispatcher<CustomResource> eventDispatcher;
+    private EventDispatcher eventDispatcher;
     private ResourceController<CustomResource> resourceController = mock(ResourceController.class);
     private CustomResourceOperationsImpl<CustomResource, CustomResourceList<CustomResource>,
             CustomResourceDoneable<CustomResource>> resourceOperation = mock(CustomResourceOperationsImpl.class);

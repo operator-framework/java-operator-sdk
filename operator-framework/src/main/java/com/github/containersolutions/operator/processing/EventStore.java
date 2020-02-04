@@ -42,7 +42,7 @@ public class EventStore {
         return eventsUnderProcessing.remove(uid);
     }
 
-    public void updateLatestResourceVersionProcessed(CustomResourceEvent event) {
+    public void updateLatestResourceVersionReceived(CustomResourceEvent event) {
         Long current = lastResourceVersion.get(event.resourceUid());
         long received = Long.parseLong(event.getResource().getMetadata().getResourceVersion());
         if (current == null || received > current) {
@@ -53,7 +53,7 @@ public class EventStore {
         }
     }
 
-    public boolean processedNewerVersionBefore(CustomResourceEvent customResourceEvent) {
+    public boolean receivedMoreRecentEventBefore(CustomResourceEvent customResourceEvent) {
         Long lastVersionProcessed = lastResourceVersion.get(customResourceEvent.resourceUid());
         if (lastVersionProcessed == null) {
             return false;
