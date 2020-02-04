@@ -1,6 +1,5 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import org.slf4j.Logger;
@@ -14,20 +13,18 @@ import java.util.Optional;
 
 import static java.lang.String.format;
 
-@Controller(customResourceClass = Schema.class,
-        kind = SchemaController.KIND,
-        group = SchemaController.GROUP,
+@Controller(
+        crdName = "schemas.mysql.sample.javaoperatorsdk",
+        customResourceClass = Schema.class,
         customResourceListClass = SchemaList.class,
-        customResourceDonebaleClass = SchemaDoneable.class)
+        customResourceDoneableClass = SchemaDoneable.class)
 public class SchemaController implements ResourceController<Schema> {
 
-    static final String KIND = "MySQLSchema";
-    static final String GROUP = "mysql.sample.javaoperatorsdk";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
-    public Optional<Schema> createOrUpdateResource(Schema schema, Context<Schema> context) {
+    public Optional<Schema> createOrUpdateResource(Schema schema) {
         try {
             Connection connection = getConnection();
             ResultSet resultSet = connection.createStatement().executeQuery(
@@ -63,7 +60,7 @@ public class SchemaController implements ResourceController<Schema> {
     }
 
     @Override
-    public boolean deleteResource(Schema schema, Context<Schema> context) {
+    public boolean deleteResource(Schema schema) {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
 
         try {
