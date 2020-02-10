@@ -1,11 +1,13 @@
 package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.*;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
+import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -17,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceDoneableClass;
+import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceListClass;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -26,8 +30,10 @@ public class IntegrationTestSupport {
     public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
     private final static Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
     private KubernetesClient k8sClient;
-    private MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable,
-            Resource<TestCustomResource, TestCustomResourceDoneable>> crOperations;
+    private MixedOperation<TestCustomResource, CustomResourceList, CustomResourceDoneable,
+            Resource<TestCustomResource, CustomResourceDoneable>> crOperations;
+    private CreateOrReplaceable<TestCustomResource, TestCustomResource, CustomResourceDoneable> createOrReplaceable;
+    private Deletable<TestCustomResource> deleteable;
     private Operator operator;
 
 
@@ -52,7 +58,10 @@ public class IntegrationTestSupport {
         k8sClient.customResourceDefinitions().createOrReplace(crd);
         KubernetesDeserializer.registerCustomKind(crd.getApiVersion(), crd.getKind(), TestCustomResource.class);
 
-        crOperations = k8sClient.customResources(crd, TestCustomResource.class, TestCustomResourceList.class, TestCustomResourceDoneable.class);
+        ResourceController<TestCustomResource> controller = new TestCustomResourceController(k8sClient);
+        Class listClass = getCustomResourceListClass();
+        Class doneableClass = getCustomResourceDoneableClass(controller);
+        crOperations = k8sClient.customResources(crd, TestCustomResource.class, listClass, doneableClass);
         crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
         //we depend on the actual operator from the startup to handle the finalizers and clean up
         //resources from previous test runs
@@ -69,7 +78,9 @@ public class IntegrationTestSupport {
 
         await("all config maps cleaned up").atMost(60, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
-                    assertThat(k8sClient.configMaps().inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
+                    assertThat(k8sClient.configMaps().inNamespace(TEST_NAMESPACE)
+                            .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
+                            .list().getItems().isEmpty());
                 });
 
         log.info("Cleaned up namespace " + TEST_NAMESPACE);
@@ -105,7 +116,7 @@ public class IntegrationTestSupport {
         return k8sClient;
     }
 
-    public MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable, Resource<TestCustomResource, TestCustomResourceDoneable>> getCrOperations() {
+    public MixedOperation<TestCustomResource, CustomResourceList, CustomResourceDoneable, Resource<TestCustomResource, CustomResourceDoneable>> getCrOperations() {
         return crOperations;
     }
 

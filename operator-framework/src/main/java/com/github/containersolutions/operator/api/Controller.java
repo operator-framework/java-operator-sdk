@@ -19,10 +19,9 @@ public @interface Controller {
 
     Class<? extends CustomResource> customResourceClass();
 
-    Class<? extends CustomResourceList<? extends CustomResource>> customResourceListClass();
+    Class<? extends CustomResourceDoneable> customResourceDoneableClass() default CustomResourceDoneable.class;
 
-    Class<? extends CustomResourceDoneable<? extends CustomResource>> customResourceDoneableClass();
+    Class<? extends CustomResourceList> customResourceListClass() default CustomResourceList.class;
 
     String finalizerName() default DEFAULT_FINALIZER;
-
 }

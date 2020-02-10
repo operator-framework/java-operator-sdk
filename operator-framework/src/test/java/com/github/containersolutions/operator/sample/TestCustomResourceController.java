@@ -15,9 +15,7 @@ import java.util.Optional;
 
 @Controller(
         crdName = TestCustomResourceController.CRD_NAME,
-        customResourceClass = TestCustomResource.class,
-        customResourceListClass = TestCustomResourceList.class,
-        customResourceDoneableClass = TestCustomResourceDoneable.class)
+        customResourceClass = TestCustomResource.class)
 public class TestCustomResourceController implements ResourceController<TestCustomResource> {
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);

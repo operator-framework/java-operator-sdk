@@ -1,6 +1,7 @@
 package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.sample.TestCustomResource;
+import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
@@ -50,6 +51,7 @@ public class ConcurrencyIT {
                 .untilAsserted(() -> {
                     List<ConfigMap> items = integrationTest.getK8sClient().configMaps()
                             .inNamespace(TEST_NAMESPACE)
+                            .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
                             .list().getItems();
                     assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
                 });
@@ -75,6 +77,7 @@ public class ConcurrencyIT {
                 .untilAsserted(() -> {
                     List<ConfigMap> items = integrationTest.getK8sClient().configMaps()
                             .inNamespace(TEST_NAMESPACE)
+                            .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
                             .list().getItems();
                     assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
