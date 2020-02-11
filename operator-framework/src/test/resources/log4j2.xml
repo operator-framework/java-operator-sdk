@@ -3,7 +3,7 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                    pattern="%style{%d}{yellow} %style{%threadId}{green} % %style{%-30c{1.}}{cyan} %highlight{[%-5level] %msg%n%throwable}{INFO=black}"/>
+                    pattern="%style{%d}{yellow} %style{%threadId}{green} %style{%-30c{1.}}{cyan} %highlight{[%-5level] %msg%n%throwable}{INFO=black}"/>
         </Console>
     </Appenders>
     <Loggers>

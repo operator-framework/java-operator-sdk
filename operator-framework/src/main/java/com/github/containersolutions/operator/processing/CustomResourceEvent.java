@@ -1,30 +1,23 @@
 package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.processing.retry.Retry;
+import com.github.containersolutions.operator.processing.retry.RetryExecution;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.backoff.BackOffExecution;
-import org.springframework.util.backoff.ExponentialBackOff;
 
 import java.util.Optional;
 
 public class CustomResourceEvent {
 
-    public static final long INITIAL_BACK_OFF_INTERVAL = 2000L;
-
-    public static final int MAX_RETRY_COUNT = 5;
-    public static final double BACK_OFF_MULTIPLIER = 1.5;
-    private final static Logger log = LoggerFactory.getLogger(CustomResourceEvent.class);
-    private final static BackOffExecution backOff = new ExponentialBackOff(INITIAL_BACK_OFF_INTERVAL, BACK_OFF_MULTIPLIER).start();
-
+    private final RetryExecution retryExecution;
     private final Watcher.Action action;
     private final CustomResource resource;
-    private Integer retryIndex = -1;
+    private int retryCount = -1;
 
-    CustomResourceEvent(Watcher.Action action, CustomResource resource) {
+    CustomResourceEvent(Watcher.Action action, CustomResource resource, Retry retry) {
         this.action = action;
         this.resource = resource;
+        this.retryExecution = retry.initExecution();
     }
 
     Watcher.Action getAction() {
@@ -51,17 +44,8 @@ public class CustomResourceEvent {
     }
 
     public Optional<Long> nextBackOff() {
-        if (retryIndex == -1) {
-            retryIndex = 0;
-            return Optional.of(0l);
-        } else {
-            if (retryIndex >= MAX_RETRY_COUNT - 1) {
-                return Optional.empty();
-            } else {
-                retryIndex++;
-                return Optional.of(backOff.nextBackOff());
-            }
-        }
+        retryCount++;
+        return retryExecution.nextDelay();
     }
 
     @Override
@@ -72,7 +56,7 @@ public class CustomResourceEvent {
                 ", apiVersion=" + resource.getApiVersion() + " ,resourceVersion=" + resource.getMetadata().getResourceVersion() +
                 ", markedForDeletion: " + (resource.getMetadata().getDeletionTimestamp() != null
                 && !resource.getMetadata().getDeletionTimestamp().isEmpty()) +
-                " ], retriesIndex=" + retryIndex +
+                " ], retriesIndex=" + retryCount +
                 '}';
     }
 }

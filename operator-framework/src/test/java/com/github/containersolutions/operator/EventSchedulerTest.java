@@ -2,6 +2,7 @@ package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
+import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -16,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.github.containersolutions.operator.processing.CustomResourceEvent.*;
+import static com.github.containersolutions.operator.processing.retry.GenericRetry.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.atIndex;
 import static org.mockito.Mockito.*;
@@ -27,7 +28,7 @@ class EventSchedulerTest {
     @SuppressWarnings("unchecked")
     private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
-    private EventScheduler eventScheduler = new EventScheduler(eventDispatcher);
+    private EventScheduler eventScheduler = new EventScheduler(eventDispatcher, GenericRetry.defaultLimitedExponentialRetry());
 
     private List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
 
@@ -136,8 +137,8 @@ class EventSchedulerTest {
 
         CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, sampleResource()));
 
-        waitTimeForExecution(1, MAX_RETRY_COUNT + 2);
-        assertThat(eventProcessingList).hasSize(MAX_RETRY_COUNT);
+        waitTimeForExecution(1, DEFAULT_MAX_ATTEMPTS + 2);
+        assertThat(eventProcessingList).hasSize(DEFAULT_MAX_ATTEMPTS);
     }
 
     public void normalDispatcherExecution() {
@@ -183,7 +184,7 @@ class EventSchedulerTest {
     private void waitTimeForExecution(int numberOfEvents, int retries) {
         try {
             Thread.sleep((long) (200 + ((INVOCATION_DURATION + 30) * numberOfEvents) + (retries * (INVOCATION_DURATION + 100)) +
-                    (Math.pow(BACK_OFF_MULTIPLIER, retries) * (INITIAL_BACK_OFF_INTERVAL + 100))));
+                    (Math.pow(DEFAULT_MULTIPLIER, retries) * (DEFAULT_INITIAL_INTERVAL + 100))));
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }

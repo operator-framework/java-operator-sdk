@@ -3,6 +3,8 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
+import com.github.containersolutions.operator.processing.retry.GenericRetry;
+import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
@@ -25,6 +27,7 @@ public class Operator {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
+    private final Retry defaultRetry = GenericRetry.defaultLimitedExponentialRetry();
     private final KubernetesClient k8sClient;
     private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
 
@@ -32,17 +35,26 @@ public class Operator {
         this.k8sClient = k8sClient;
     }
 
+
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true);
+        registerController(controller, true, defaultRetry);
+    }
+
+    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
+        registerController(controller, true, retry);
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, targetNamespaces);
+        registerController(controller, false, defaultRetry, targetNamespaces);
+    }
+
+    public <R extends CustomResource> void registerController(ResourceController<R> controller, Retry retry, String... targetNamespaces) throws OperatorException {
+        registerController(controller, false, retry, targetNamespaces);
     }
 
     @SuppressWarnings("rawtypes")
     private <R extends CustomResource> void registerController(ResourceController<R> controller,
-                                                               boolean watchAllNamespaces, String... targetNamespaces) throws OperatorException {
+                                                               boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
         CustomResourceDefinition crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(getApiVersion(crd), getKind(crd), resClass);
@@ -53,7 +65,7 @@ public class Operator {
 
         EventDispatcher eventDispatcher = new EventDispatcher(controller, (CustomResourceOperationsImpl) client,
                 getDefaultFinalizer(controller));
-        EventScheduler eventScheduler = new EventScheduler(eventDispatcher);
+        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
 
