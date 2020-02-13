@@ -16,6 +16,17 @@ public class GenericRetry implements Retry {
         return new GenericRetry();
     }
 
+    public static GenericRetry noRetry() {
+        return new GenericRetry().setMaxAttempts(1);
+    }
+
+    public static GenericRetry every10second10TimesRetry() {
+        return new GenericRetry()
+                .setMaxAttempts(10)
+                .setIntervalMultiplier(1)
+                .setInitialInterval(10000);
+    }
+
     @Override
     public GenericRetryExecution initExecution() {
         return new GenericRetryExecution(this);

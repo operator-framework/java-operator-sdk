@@ -66,6 +66,13 @@ public class GenericRetryExecutionTest {
         assertThat(res.get()).isEqualTo(4500);
     }
 
+    @Test
+    public void supportsNoRetry() {
+        RetryExecution retryExecution = GenericRetry.noRetry().initExecution();
+        assertThat(retryExecution.nextDelay().get()).isZero();
+        assertThat(retryExecution.nextDelay()).isEmpty();
+    }
+
     private RetryExecution getDefaultRetryExecution() {
         return GenericRetry.defaultLimitedExponentialRetry().initExecution();
     }
