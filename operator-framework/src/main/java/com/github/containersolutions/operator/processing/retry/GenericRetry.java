@@ -22,8 +22,8 @@ public class GenericRetry implements Retry {
 
     public static GenericRetry every10second10TimesRetry() {
         return new GenericRetry()
+                .withLinearRetry()
                 .setMaxAttempts(10)
-                .setIntervalMultiplier(1)
                 .setInitialInterval(10000);
     }
 
@@ -95,6 +95,4 @@ public class GenericRetry implements Retry {
         this.intervalMultiplier = 1;
         return this;
     }
-
-
 }
