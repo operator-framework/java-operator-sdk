@@ -11,7 +11,6 @@ public class EventStore {
     private final static Logger log = LoggerFactory.getLogger(EventStore.class);
 
     private final Map<String, Long> lastResourceVersion = new HashMap<>();
-
     private final Map<String, CustomResourceEvent> eventsNotScheduledYet = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
 

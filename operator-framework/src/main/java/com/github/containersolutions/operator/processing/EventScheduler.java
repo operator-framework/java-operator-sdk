@@ -1,6 +1,7 @@
 package com.github.containersolutions.operator.processing;
 
 
+import com.github.containersolutions.operator.processing.retry.Retry;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -13,9 +14,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static com.github.containersolutions.operator.processing.CustomResourceEvent.MAX_RETRY_COUNT;
-
 
 /**
  * Requirements:
@@ -49,11 +47,13 @@ public class EventScheduler implements Watcher<CustomResource> {
     private final EventDispatcher eventDispatcher;
     private final ScheduledThreadPoolExecutor executor;
     private final EventStore eventStore = new EventStore();
+    private final Retry retry;
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
         this.eventDispatcher = eventDispatcher;
+        this.retry = retry;
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("event-consumer-%d")
                 .setDaemon(false)
@@ -66,7 +66,7 @@ public class EventScheduler implements Watcher<CustomResource> {
     public void eventReceived(Watcher.Action action, CustomResource resource) {
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
-        CustomResourceEvent event = new CustomResourceEvent(action, resource);
+        CustomResourceEvent event = new CustomResourceEvent(action, resource, retry);
         scheduleEvent(event);
     }
 
@@ -95,7 +95,7 @@ public class EventScheduler implements Watcher<CustomResource> {
 
             Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
-                log.warn("Event limited max retry limit ({}), will be discarded. {}", MAX_RETRY_COUNT, event);
+                log.warn("Event max retry limit reached. Will be discarded. {}", event);
                 return;
             }
             log.debug("Creating scheduled task for event: {}", event);
