@@ -21,9 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller(customResourceClass = WebServer.class,
-        crdName = "webservers.sample.javaoperatorsdk",
-        customResourceListClass = WebServerList.class,
-        customResourceDoneableClass = WebServerDoneable.class)
+        crdName = "webservers.sample.javaoperatorsdk")
 public class WebServerController implements ResourceController<WebServer> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());

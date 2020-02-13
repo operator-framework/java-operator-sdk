@@ -3,9 +3,10 @@ package com.github.containersolutions.operator.spingboot.starter;
 import com.github.containersolutions.operator.Operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableConfigurationProperties(OperatorProperties.class)
@@ -56,10 +58,11 @@ public class OperatorAutoConfiguration {
     public Operator operator(KubernetesClient kubernetesClient) {
         Operator operator = new Operator(kubernetesClient);
         resourceControllers.forEach(r -> operator.registerController(r));
-        operator.getCustomResourceClients().entrySet().forEach(e -> {
+        Map<Class<? extends CustomResource>, MixedOperation> clients = operator.getCustomResourceClients();
+        clients.entrySet().forEach(e -> {
             // todo ensure these are registered very early
-            log.info("Registering CustomResourceOperationsImpl for kind: {}", e.getValue().getKind());
-            genericApplicationContext.registerBean(e.getValue().getKind(), CustomResourceOperationsImpl.class,
+            log.info("Registering CustomResourceOperationsImpl for kind: {}", (((CustomResource) e.getValue()).getKind()));
+            genericApplicationContext.registerBean(((CustomResource) e.getValue()).getKind(), MixedOperation.class,
                     () -> operator.getCustomResourceClients(e.getKey()));
         });
         return operator;

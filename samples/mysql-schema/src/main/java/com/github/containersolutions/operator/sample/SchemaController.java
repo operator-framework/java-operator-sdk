@@ -15,9 +15,7 @@ import static java.lang.String.format;
 
 @Controller(
         crdName = "schemas.mysql.sample.javaoperatorsdk",
-        customResourceClass = Schema.class,
-        customResourceListClass = SchemaList.class,
-        customResourceDoneableClass = SchemaDoneable.class)
+        customResourceClass = Schema.class)
 public class SchemaController implements ResourceController<Schema> {
 
 

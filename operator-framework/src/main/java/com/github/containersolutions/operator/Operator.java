@@ -7,16 +7,17 @@ import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +30,9 @@ public class Operator {
 
     private final Retry defaultRetry = GenericRetry.defaultLimitedExponentialRetry();
     private final KubernetesClient k8sClient;
-    private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
+    private Map<Class<? extends CustomResource>,
+            MixedOperation<? extends CustomResource, CustomResourceList, ?, Resource<? extends CustomResource, ?>>>
+            customResourceClients = new HashMap<>();
 
     public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
@@ -59,9 +62,9 @@ public class Operator {
         CustomResourceDefinition crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(getApiVersion(crd), getKind(crd), resClass);
 
-        Class<? extends CustomResourceList<R>> list = getCustomResourceListClass(controller);
-        Class<? extends CustomResourceDoneable<R>> doneable = getCustomResourceDonebaleClass(controller);
-        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, ControllerUtils.createDoneableClassForCustomResource(resClass));
+        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class,
+                ControllerUtils.createDoneableClassForCustomResource(resClass));
+
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 getDefaultFinalizer(controller), new EventDispatcher.CustomResourceReplaceFacade(client));
         EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);
@@ -84,7 +87,7 @@ public class Operator {
                 log.debug("Registered controller for namespace: {}", targetNamespace);
             }
         }
-        customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
+        customResourceClients.put(resClass, client);
         log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
                 resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
@@ -98,15 +101,17 @@ public class Operator {
         return customResourceDefinition;
     }
 
-    public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {
-        return customResourceClients;
+    public Map<Class<? extends CustomResource>,
+            MixedOperation> getCustomResourceClients() {
+        return Collections.unmodifiableMap(customResourceClients);
     }
 
     public void stop() {
         k8sClient.close();
     }
 
-    public <T extends CustomResource> CustomResourceOperationsImpl getCustomResourceClients(Class<T> customResourceClass) {
+    public <T extends CustomResource> MixedOperation
+    getCustomResourceClients(Class<T> customResourceClass) {
         return customResourceClients.get(customResourceClass);
     }
 

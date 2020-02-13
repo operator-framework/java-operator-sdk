@@ -1,9 +1,12 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.sample.*;
+import com.github.containersolutions.operator.sample.TestCustomResource;
+import com.github.containersolutions.operator.sample.TestCustomResourceController;
+import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -26,10 +29,8 @@ public class IntegrationTestSupport {
     public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
     private final static Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
     private KubernetesClient k8sClient;
-    private MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable,
-            Resource<TestCustomResource, TestCustomResourceDoneable>> crOperations;
+    private MixedOperation<TestCustomResource, CustomResourceList, ?, Resource<TestCustomResource, ?>> crOperations;
     private Operator operator;
-
 
     public void initialize() {
         k8sClient = new DefaultKubernetesClient();
@@ -52,7 +53,7 @@ public class IntegrationTestSupport {
         k8sClient.customResourceDefinitions().createOrReplace(crd);
         KubernetesDeserializer.registerCustomKind(crd.getApiVersion(), crd.getKind(), TestCustomResource.class);
 
-        crOperations = k8sClient.customResources(crd, TestCustomResource.class, TestCustomResourceList.class, TestCustomResourceDoneable.class);
+        crOperations = operator.getCustomResourceClients(TestCustomResource.class);
         crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
         //we depend on the actual operator from the startup to handle the finalizers and clean up
         //resources from previous test runs
@@ -105,7 +106,7 @@ public class IntegrationTestSupport {
         return k8sClient;
     }
 
-    public MixedOperation<TestCustomResource, TestCustomResourceList, TestCustomResourceDoneable, Resource<TestCustomResource, TestCustomResourceDoneable>> getCrOperations() {
+    public MixedOperation<TestCustomResource, CustomResourceList, ?, Resource<TestCustomResource, ?>> getCrOperations() {
         return crOperations;
     }
 

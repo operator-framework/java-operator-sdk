@@ -47,10 +47,7 @@ public class Runner {
 The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
-@Controller(customResourceClass = WebServer.class,
-        crdName = "webservers.sample.javaoperatorsdk",
-        customResourceListClass = WebServerList.class,
-        customResourceDonebaleClass = WebServerDoneable.class)
+@Controller(customResourceClass = WebServer.class, crdName = "webservers.sample.javaoperatorsdk")
 public class WebServerController implements ResourceController<WebServer> {
 
     @Override
