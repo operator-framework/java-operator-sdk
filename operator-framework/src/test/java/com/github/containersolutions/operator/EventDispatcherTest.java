@@ -7,11 +7,7 @@ import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.Replaceable;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -27,19 +23,19 @@ class EventDispatcherTest {
     private CustomResource testCustomResource;
     private EventDispatcher eventDispatcher;
     private ResourceController<CustomResource> resourceController = mock(ResourceController.class);
-    private CustomResourceOperationsImpl<CustomResource, CustomResourceList<CustomResource>,
-            CustomResourceDoneable<CustomResource>> resourceOperation = mock(CustomResourceOperationsImpl.class);
+    private EventDispatcher.CustomResourceReplaceFacade customResourceReplaceFacade = mock(EventDispatcher.CustomResourceReplaceFacade.class);
+
 
     @BeforeEach
     void setup() {
-        eventDispatcher = new EventDispatcher(resourceController, resourceOperation,
-                Controller.DEFAULT_FINALIZER);
+        eventDispatcher = new EventDispatcher(resourceController,
+                Controller.DEFAULT_FINALIZER, customResourceReplaceFacade);
 
         testCustomResource = getResource();
 
         when(resourceController.createOrUpdateResource(eq(testCustomResource))).thenReturn(Optional.of(testCustomResource));
         when(resourceController.deleteResource(eq(testCustomResource))).thenReturn(true);
-        when(resourceOperation.lockResourceVersion(any())).thenReturn(mock(Replaceable.class));
+        when(customResourceReplaceFacade.replaceWithLock(any())).thenReturn(null);
     }
 
     @Test
@@ -92,7 +88,7 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
         assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
-        verify(resourceOperation, times(1)).lockResourceVersion(any());
+        verify(customResourceReplaceFacade, times(1)).replaceWithLock(any());
     }
 
     @Test
@@ -104,7 +100,7 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
         assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-        verify(resourceOperation, never()).lockResourceVersion(any());
+        verify(customResourceReplaceFacade, never()).replaceWithLock(any());
     }
 
     @Test
@@ -113,8 +109,7 @@ class EventDispatcherTest {
         when(resourceController.createOrUpdateResource(eq(testCustomResource))).thenReturn(Optional.empty());
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
-
-        verify(resourceOperation, never()).lockResourceVersion(any());
+        verify(customResourceReplaceFacade, never()).replaceWithLock(any());
     }
 
     @Test
@@ -124,7 +119,7 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
         assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-        verify(resourceOperation, times(1)).lockResourceVersion(any());
+        verify(customResourceReplaceFacade, times(1)).replaceWithLock(any());
     }
 
     @Test
@@ -135,7 +130,7 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
         assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
-        verify(resourceOperation, never()).lockResourceVersion(any());
+        verify(customResourceReplaceFacade, never()).replaceWithLock(any());
     }
 
     private void markForDeletion(CustomResource customResource) {

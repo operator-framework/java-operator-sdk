@@ -3,7 +3,8 @@ package com.github.containersolutions.operator.processing;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,15 +19,14 @@ public class EventDispatcher {
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
     private final ResourceController controller;
-    private final CustomResourceOperationsImpl resourceOperation;
     private final String resourceDefaultFinalizer;
+    private final CustomResourceReplaceFacade customResourceReplaceFacade;
 
     public EventDispatcher(ResourceController controller,
-                           CustomResourceOperationsImpl resourceOperation,
-                           String defaultFinalizer
-    ) {
+                           String defaultFinalizer,
+                           CustomResourceReplaceFacade customResourceReplaceFacade) {
         this.controller = controller;
-        this.resourceOperation = resourceOperation;
+        this.customResourceReplaceFacade = customResourceReplaceFacade;
         this.resourceDefaultFinalizer = defaultFinalizer;
     }
 
@@ -77,12 +77,12 @@ public class EventDispatcher {
     private void removeDefaultFinalizer(CustomResource resource) {
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
         log.debug("Removed finalizer. Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
-        resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
+        customResourceReplaceFacade.replaceWithLock(resource);
     }
 
     private void replace(CustomResource resource) {
         log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
-        resourceOperation.lockResourceVersion(resource.getMetadata().getResourceVersion()).replace(resource);
+        customResourceReplaceFacade.replaceWithLock(resource);
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
@@ -97,5 +97,22 @@ public class EventDispatcher {
 
     private boolean markedForDeletion(CustomResource resource) {
         return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
+    }
+
+    // created to support unit testing
+    public static class CustomResourceReplaceFacade {
+
+        private final MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation;
+
+        public CustomResourceReplaceFacade(MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation) {
+            this.resourceOperation = resourceOperation;
+        }
+
+        public CustomResource replaceWithLock(CustomResource resource) {
+            return resourceOperation.inNamespace(resource.getMetadata().getNamespace())
+                    .withName(resource.getMetadata().getName())
+                    .lockResourceVersion(resource.getMetadata().getResourceVersion())
+                    .replace(resource);
+        }
     }
 }

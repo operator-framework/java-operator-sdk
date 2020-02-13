@@ -62,9 +62,8 @@ public class Operator {
         Class<? extends CustomResourceList<R>> list = getCustomResourceListClass(controller);
         Class<? extends CustomResourceDoneable<R>> doneable = getCustomResourceDonebaleClass(controller);
         MixedOperation client = k8sClient.customResources(crd, resClass, list, doneable);
-
-        EventDispatcher eventDispatcher = new EventDispatcher(controller, (CustomResourceOperationsImpl) client,
-                getDefaultFinalizer(controller));
+        EventDispatcher eventDispatcher = new EventDispatcher(controller,
+                getDefaultFinalizer(controller), new EventDispatcher.CustomResourceReplaceFacade(client));
         EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
