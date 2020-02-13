@@ -73,5 +73,9 @@
             <version>4.0.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+        </dependency>
     </dependencies>
 </project>

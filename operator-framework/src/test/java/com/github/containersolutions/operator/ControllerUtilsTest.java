@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.github.containersolutions.operator.api.Controller.DEFAULT_FINALIZER;
 import static com.github.containersolutions.operator.sample.TestCustomResourceController.CRD_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ControllerUtilsTest {
@@ -19,6 +20,12 @@ class ControllerUtilsTest {
         assertEquals(TestCustomResourceDoneable.class, ControllerUtils.getCustomResourceDonebaleClass(new TestCustomResourceController(null)));
         assertEquals(TestCustomResourceList.class, ControllerUtils.getCustomResourceListClass(new TestCustomResourceController(null)));
         assertEquals(CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
+    }
+
+    @Test
+    public void createsCustomResourceDoneableImplementation() {
+        Class result = ControllerUtils.createDoneableClassForCustomResource(TestCustomResource.class);
+        assertThat(result.getSimpleName()).isEqualTo(TestCustomResource.class.getSimpleName() + "Doneable");
     }
 
 }
