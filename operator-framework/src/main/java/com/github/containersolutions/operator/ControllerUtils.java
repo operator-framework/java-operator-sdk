@@ -29,8 +29,8 @@ class ControllerUtils {
         return getAnnotation(controller).crdName();
     }
 
-    public static Class<? extends CustomResourceList> getCustomResourceListClass() {
-        return CustomResourceList.class;
+    public static <R extends CustomResource> Class<? extends CustomResourceList<R>>  getCustomResourceListClass() {
+        return (Class<? extends CustomResourceList<R>>) CustomResourceList.class;
     }
 
     public static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> getCustomResourceDoneableClass(ResourceController<R> controller) {

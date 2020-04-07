@@ -32,8 +32,6 @@ public class IntegrationTestSupport {
     private KubernetesClient k8sClient;
     private MixedOperation<TestCustomResource, CustomResourceList, CustomResourceDoneable,
             Resource<TestCustomResource, CustomResourceDoneable>> crOperations;
-    private CreateOrReplaceable<TestCustomResource, TestCustomResource, CustomResourceDoneable> createOrReplaceable;
-    private Deletable<TestCustomResource> deleteable;
     private Operator operator;
 
 

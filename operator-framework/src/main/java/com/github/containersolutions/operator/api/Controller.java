@@ -1,8 +1,6 @@
 package com.github.containersolutions.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,10 +16,6 @@ public @interface Controller {
     String crdName();
 
     Class<? extends CustomResource> customResourceClass();
-
-    Class<? extends CustomResourceDoneable> customResourceDoneableClass() default CustomResourceDoneable.class;
-
-    Class<? extends CustomResourceList> customResourceListClass() default CustomResourceList.class;
 
     String finalizerName() default DEFAULT_FINALIZER;
 }
