@@ -48,20 +48,19 @@ class ControllerUtils {
         if (isClassInPool(className)) {
             return generatedCustomResourceDoneable;
         }
-        String superClassName = "io.fabric8.kubernetes.client.CustomResourceDoneable";
-        CtClass customDoneable = getOrCreateClass(className, superClassName);
-
+        CtClass customDoneable = null;
         try {
-            CtClass customResource = pool.get(customResourceClass.getName());
+            CtClass superClass = pool.get("io.fabric8.kubernetes.client.CustomResourceDoneable");
             CtClass function = pool.get("io.fabric8.kubernetes.api.builder.Function");
+            CtClass customResource = pool.get(customResourceClass.getName());
             CtClass[] argTypes = {customResource, function};
+            customDoneable = pool.makeClass(className, superClass);
             CtConstructor ctConstructor = CtNewConstructor.make(argTypes, null, "super($1, $2);", customDoneable);
             customDoneable.addConstructor(ctConstructor);
 
         } catch (CannotCompileException | NotFoundException e) {
-            log.error("Error compiling constructor for CustomResourceDoneable class: {}", e);
+            log.error("Error creating CustomResourceDoneable CtClass: {}", e);
         }
-
         Class<? extends CustomResourceDoneable<R>> doneableClass = getClassFromCtClass(customDoneable);
         generatedCustomResourceDoneable = doneableClass;
         return doneableClass;
@@ -75,24 +74,6 @@ class ControllerUtils {
             log.debug("Class {} not in pool", className);
             return false;
         }
-    }
-
-    private static CtClass getOrCreateClass(String className, String superClassName){
-        CtClass customClass;
-        try {
-            customClass = pool.get(className);
-            customClass.defrost();
-        } catch (NotFoundException ce) {
-            log.info("Class not found, creating new: {}", className);
-            CtClass superClass = null;
-            try {
-                superClass = pool.get(superClassName);
-            } catch (NotFoundException sce) {
-                log.error("Error getting superClass: {}", sce);
-            }
-            customClass = pool.makeClass(className, superClass);
-        }
-        return customClass;
     }
 
     private static Controller getAnnotation(ResourceController controller) {
