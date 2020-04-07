@@ -1,13 +1,16 @@
 package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.sample.*;
+import com.github.containersolutions.operator.sample.TestCustomResource;
+import com.github.containersolutions.operator.sample.TestCustomResourceController;
+import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.*;
-import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
-import io.fabric8.kubernetes.client.dsl.Deletable;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -20,7 +23,6 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceDoneableClass;
-import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceListClass;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -57,9 +59,8 @@ public class IntegrationTestSupport {
         KubernetesDeserializer.registerCustomKind(crd.getApiVersion(), crd.getKind(), TestCustomResource.class);
 
         ResourceController<TestCustomResource> controller = new TestCustomResourceController(k8sClient);
-        Class listClass = getCustomResourceListClass();
         Class doneableClass = getCustomResourceDoneableClass(controller);
-        crOperations = k8sClient.customResources(crd, TestCustomResource.class, listClass, doneableClass);
+        crOperations = k8sClient.customResources(crd, TestCustomResource.class, CustomResourceList.class, doneableClass);
         crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
         //we depend on the actual operator from the startup to handle the finalizers and clean up
         //resources from previous test runs

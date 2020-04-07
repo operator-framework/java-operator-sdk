@@ -4,7 +4,6 @@ import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import javassist.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -29,9 +28,6 @@ class ControllerUtils {
         return getAnnotation(controller).crdName();
     }
 
-    public static <R extends CustomResource> Class<? extends CustomResourceList<R>>  getCustomResourceListClass() {
-        return (Class<? extends CustomResourceList<R>>) CustomResourceList.class;
-    }
 
     public static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> getCustomResourceDoneableClass(ResourceController<R> controller) {
         return createCustomResourceDoneableClass(controller);

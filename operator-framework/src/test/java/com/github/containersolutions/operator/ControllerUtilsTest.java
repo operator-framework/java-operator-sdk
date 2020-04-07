@@ -3,7 +3,6 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import org.junit.jupiter.api.Test;
 
 import static com.github.containersolutions.operator.api.Controller.DEFAULT_FINALIZER;
@@ -19,6 +18,5 @@ class ControllerUtilsTest {
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController(null)));
         assertEquals(CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
         assertTrue(CustomResourceDoneable.class.isAssignableFrom(ControllerUtils.getCustomResourceDoneableClass(new TestCustomResourceController(null))));
-        assertEquals(CustomResourceList.class, ControllerUtils.getCustomResourceListClass());
     }
 }
