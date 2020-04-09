@@ -7,7 +7,6 @@ import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -59,8 +58,7 @@ public class Operator {
         CustomResourceDefinition crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(getApiVersion(crd), getKind(crd), resClass);
 
-        Class<? extends CustomResourceDoneable<R>> doneable = getCustomResourceDoneableClass(controller);
-        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, doneable);
+        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 getDefaultFinalizer(controller), new EventDispatcher.CustomResourceReplaceFacade(client));
         EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);

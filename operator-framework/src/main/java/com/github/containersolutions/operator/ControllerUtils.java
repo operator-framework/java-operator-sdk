@@ -2,19 +2,25 @@ package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import javassist.*;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 class ControllerUtils {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
-    private static ClassPool pool;
-    private static Class generatedCustomResourceDoneable;
+
+    // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
+    // note that other solution is to add a random string to doneable class name
+    private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable<? extends CustomResource>>>
+            doneableClassCache = new HashMap<>();
 
     static String getDefaultFinalizer(ResourceController controller) {
         return getAnnotation(controller).finalizerName();
@@ -29,71 +35,36 @@ class ControllerUtils {
     }
 
 
-    public static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> getCustomResourceDoneableClass(ResourceController<R> controller) {
-        return createCustomResourceDoneableClass(controller);
-    }
-
-    private static <R extends CustomResource> Class<? extends CustomResourceDoneable<R>> createCustomResourceDoneableClass(ResourceController<R> controller) {
-        pool = ClassPool.getDefault();
-        pool.appendClassPath(new ClassClassPath(ControllerUtils.class));
-
-        String controllerName = StringUtils.substringAfterLast(controller.getClass().toString(), ".");
-        Class<R> customResourceClass = (Class<R>) getAnnotation(controller).customResourceClass();
-
-        String className = getPackageName(customResourceClass.getName(), controllerName + "CustomResourceDoneable");
-        if (isClassInPool(className)) {
-            return generatedCustomResourceDoneable;
-        }
-        CtClass customDoneable = null;
+    public static <T extends CustomResource> Class<? extends CustomResourceDoneable<T>>
+    getCustomResourceDoneableClass(ResourceController<T> controller) {
         try {
-            CtClass superClass = pool.get("io.fabric8.kubernetes.client.CustomResourceDoneable");
-            CtClass function = pool.get("io.fabric8.kubernetes.api.builder.Function");
+            Class<? extends CustomResource> customResourceClass = getAnnotation(controller).customResourceClass();
+            String className = customResourceClass.getPackage().getName() + "." + customResourceClass.getSimpleName() + "CustomResourceDoneable";
+
+            if (doneableClassCache.containsKey(customResourceClass)) {
+                return (Class<? extends CustomResourceDoneable<T>>) doneableClassCache.get(customResourceClass);
+            }
+
+            ClassPool pool = ClassPool.getDefault();
+            pool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+
+            CtClass superClass = pool.get(CustomResourceDoneable.class.getName());
+            CtClass function = pool.get(Function.class.getName());
             CtClass customResource = pool.get(customResourceClass.getName());
             CtClass[] argTypes = {customResource, function};
-            customDoneable = pool.makeClass(className, superClass);
+            CtClass customDoneable = pool.makeClass(className, superClass);
             CtConstructor ctConstructor = CtNewConstructor.make(argTypes, null, "super($1, $2);", customDoneable);
             customDoneable.addConstructor(ctConstructor);
 
+            Class<? extends CustomResourceDoneable<T>> doneableClass = customDoneable.toClass();
+            doneableClassCache.put(customResourceClass, doneableClass);
+            return doneableClass;
         } catch (CannotCompileException | NotFoundException e) {
-            log.error("Error creating CustomResourceDoneable CtClass: {}", e);
-        }
-        Class<? extends CustomResourceDoneable<R>> doneableClass = getClassFromCtClass(customDoneable);
-        generatedCustomResourceDoneable = doneableClass;
-        return doneableClass;
-    }
-
-    private static boolean isClassInPool(String className) {
-        try {
-            pool.get(className);
-            return true;
-        } catch (NotFoundException e) {
-            log.debug("Class {} not in pool", className);
-            return false;
+            throw new IllegalStateException(e);
         }
     }
 
     private static Controller getAnnotation(ResourceController controller) {
         return controller.getClass().getAnnotation(Controller.class);
-    }
-
-    private static String getPackageName(String customResourceName, String newClassName) {
-        CtClass customResource = null;
-        try {
-            customResource = pool.get(customResourceName);
-        } catch (NotFoundException e) {
-            log.error("Error getting class: {}", e);
-        }
-        String packageName = customResource != null ? customResource.getPackageName() : "";
-        return packageName + "." + newClassName;
-    }
-
-    private static Class getClassFromCtClass(CtClass customCtClass) {
-        Class customClass = null;
-        try {
-            customClass = customCtClass.toClass();
-        } catch (CannotCompileException e) {
-            log.error("Error transforming CtClass to Class: {}", e);
-        }
-        return customClass;
     }
 }
