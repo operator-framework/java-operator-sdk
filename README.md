@@ -134,7 +134,7 @@ These methods are called if a resource is create/changed or marked for deletion.
 called just once, but in some rare cases can happen that are called more then once. In practice this means that the 
 implementation needs to be **idempotent**.    
 
-### Smart Scheduling
+#### Smart Scheduling
 
 In our scheduling algorithm we make sure, that no events are processed concurrently for a resource. In addition we provide
 a customizable retry mechanism to deal with temporal errors.
