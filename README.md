@@ -11,9 +11,9 @@ The Controller only contains the logic to create, update and delete the actual r
 
 Feature we would like to implement and invite the community to help us implement in the future:
 
-* ~~Spring Boot support~~
-* Testing support
+* ~~Spring Boot sample~~
 * Class generation from CRD to POJO
+* Quarkus support
 
 ## Usage
 
