@@ -106,27 +106,6 @@ public class WebServerSpec {
 }
 ```
 
-## Spring Boot Support
-
-We provide a spring boot starter to automatically handle bean registration, and registering various components as beans. 
-To use it just include the following dependency to you project: 
-
-```
-<dependency>
- <groupId>com.github.containersolutions</groupId>
- <artifactId>spring-boot-operator-framework-starter</artifactId>
- <version>[version]</version>
-</dependency>
-```
-
-Note that controllers needs to be registered as beans in the Spring context. For example adding the `@Component` annotation
-on the classes will work.
-See Spring docs for for details, also our spring-boot with component scanning. 
-All controllers that are registered as a bean, gets automatically registered to operator. 
- 
-Kubernetes client creation using properties is also supported, for complete list see: [Link for config class]  
-
-
 ## Implementation / Design details
 
 This library relies on the amazing [kubernetes-client](https://github.com/fabric8io/kubernetes-client) from fabric8. 
@@ -148,18 +127,23 @@ two ore more, in general it could lead to concurrency issues. Note that we are a
 In this way the operator is not highly available. However for operators this not necessary an issue, 
 if the operator just gets restarted after it went down. 
 
-#### Operator Restarts
-
-When an operator is started we got events for every resource (of a type we listen to) already on the cluster. Even if the resource is not changed 
-(We use `kubectl get ... --watch` in the background). This can be a huge amount of resources depending on your use case.
-So it could be a good case just have a status field on the resource which is checked, if there anything needs to be done.
-
 #### At Least Once
 
 To implement controller logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
 These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
 called just once, but in some rare cases can happen that are called more then once. In practice this means that the 
 implementation needs to be **idempotent**.    
+
+### Smart Scheduling
+
+In our scheduling algorithm we make sure, that no events are processed concurrently for a resource. In addition we provide
+a customizable retry mechanism to deal with temporal errors.
+
+#### Operator Restarts
+
+When an operator is started we got events for every resource (of a type we listen to) already on the cluster. Even if the resource is not changed 
+(We use `kubectl get ... --watch` in the background). This can be a huge amount of resources depending on your use case.
+So it could be a good case just have a status field on the resource which is checked, if there anything needs to be done.
 
 #### Deleting a Resource
 
