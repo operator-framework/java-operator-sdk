@@ -56,7 +56,7 @@ class ControllerUtils {
             CtConstructor ctConstructor = CtNewConstructor.make(argTypes, null, "super($1, $2);", customDoneable);
             customDoneable.addConstructor(ctConstructor);
 
-            Class<? extends CustomResourceDoneable<T>> doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass(customResourceClass);
+            Class<? extends CustomResourceDoneable<T>> doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass();
             doneableClassCache.put(customResourceClass, doneableClass);
             return doneableClass;
         } catch (CannotCompileException | NotFoundException e) {
