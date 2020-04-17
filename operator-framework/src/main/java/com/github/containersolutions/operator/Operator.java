@@ -99,10 +99,6 @@ public class Operator {
         return customResourceClients;
     }
 
-    public void stop() {
-        k8sClient.close();
-    }
-
     public <T extends CustomResource> CustomResourceOperationsImpl getCustomResourceClients(Class<T> customResourceClass) {
         return customResourceClients.get(customResourceClass);
     }

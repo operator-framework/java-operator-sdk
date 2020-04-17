@@ -86,7 +86,7 @@ public class IntegrationTestSupport {
     }
 
     public void teardown() {
-        operator.stop();
+        k8sClient.close();
     }
 
     private <T> T loadYaml(Class<T> clazz, String yaml) {
