@@ -15,6 +15,8 @@ import java.util.Map;
 
 class ControllerUtils {
 
+    private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
+
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
 
     // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
@@ -56,7 +58,12 @@ class ControllerUtils {
             CtConstructor ctConstructor = CtNewConstructor.make(argTypes, null, "super($1, $2);", customDoneable);
             customDoneable.addConstructor(ctConstructor);
 
-            Class<? extends CustomResourceDoneable<T>> doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass();
+            Class<? extends CustomResourceDoneable<T>> doneableClass;
+            if (JAVA_VERSION >= 9) {
+                doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass(customResourceClass);
+            } else {
+                doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass();
+            }
             doneableClassCache.put(customResourceClass, doneableClass);
             return doneableClass;
         } catch (CannotCompileException | NotFoundException e) {
