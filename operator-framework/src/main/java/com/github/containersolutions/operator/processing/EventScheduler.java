@@ -154,6 +154,8 @@ public class EventScheduler implements Watcher<CustomResource> {
         log.error("Error: ", e);
         // we will exit the application if there was a watching exception, because of the bug in fabric8 client
         // see https://github.com/fabric8io/kubernetes-client/issues/1318
+        // Note that this should not happen normally, since fabric8 client handles reconnect.
+        // In case it tries to reconnect this method is not called.
         System.exit(1);
     }
 }
