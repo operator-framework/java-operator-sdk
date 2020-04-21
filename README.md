@@ -15,6 +15,11 @@ Feature we would like to implement and invite the community to help us implement
 * Class generation from CRD to POJO
 * Quarkus support
 
+## Additional Features
+
+* Configurable Retry Handling
+* Smart Event Processing Scheduling
+
 ## Usage
 
 We have several sample Operators under the samples directory:
