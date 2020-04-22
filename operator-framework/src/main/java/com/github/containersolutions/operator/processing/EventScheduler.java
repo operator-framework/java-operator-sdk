@@ -84,7 +84,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 return;
             }
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                log.debug("Replacing event for later processing." +
+                log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
                 eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
