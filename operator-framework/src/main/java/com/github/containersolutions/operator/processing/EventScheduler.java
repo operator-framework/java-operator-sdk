@@ -79,7 +79,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 // Note that we always use finalizers, we want to process delete event just in corner case,
                 // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
                 // We want to skip in case of finalizer was there since we don't want to execute delete method always at least 2x,
-                // which would be the result if we don't skip here. (If there is no deletion timestamp if resource deleted without finalizer.
+                // which would be the result if we don't skip here. (there is no deletion timestamp if resource deleted without finalizer.)
                 log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
                 return;
             }
