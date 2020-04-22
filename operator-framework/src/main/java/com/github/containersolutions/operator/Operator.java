@@ -7,6 +7,7 @@ import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -71,7 +72,6 @@ public class Operator {
 
         CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
         if (watchAllNamespaces) {
-            // todo test this
             crClient.inAnyNamespace().watch(eventScheduler);
         } else if (targetNamespaces.length == 0) {
             client.watch(eventScheduler);
@@ -99,7 +99,8 @@ public class Operator {
         return customResourceClients;
     }
 
-    public <T extends CustomResource> CustomResourceOperationsImpl getCustomResourceClients(Class<T> customResourceClass) {
+    public <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> CustomResourceOperationsImpl<T, L, D> 
+    getCustomResourceClients(Class<T> customResourceClass) {
         return customResourceClients.get(customResourceClass);
     }
 
