@@ -72,7 +72,6 @@ public class Operator {
 
         CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
         if (watchAllNamespaces) {
-            // todo test this
             crClient.inAnyNamespace().watch(eventScheduler);
         } else if (targetNamespaces.length == 0) {
             client.watch(eventScheduler);
