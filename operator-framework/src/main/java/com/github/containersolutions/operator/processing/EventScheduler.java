@@ -114,10 +114,10 @@ public class EventScheduler implements Watcher<CustomResource> {
     void eventProcessingFinishedSuccessfully(CustomResourceEvent event) {
         try {
             lock.lock();
-            log.debug("Even processing successful for event: {}", event);
+            log.debug("Event processing successful for event: {}", event);
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                log.debug("Scheduling not yet scheduled after previous successful processing: {}", event);
+                log.debug("Scheduling recent event for processing processing: {}", event);
                 scheduleEvent(eventStore.removeEventNotScheduledYet(event.resourceUid()));
             }
         } finally {
@@ -131,11 +131,11 @@ public class EventScheduler implements Watcher<CustomResource> {
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduledYet(event.resourceUid());
-                log.debug("Even processing failed. Scheduling the most recent event. Failed event: {}," +
+                log.debug("Event processing failed. Scheduling the most recent event. Failed event: {}," +
                         " Most recent event: {}", event, notScheduledEvent);
                 scheduleEvent(notScheduledEvent);
             } else {
-                log.debug("Even processing failed. Attempting to re-schedule the event: {}", event);
+                log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
                 scheduleEvent(event);
             }
         } finally {
