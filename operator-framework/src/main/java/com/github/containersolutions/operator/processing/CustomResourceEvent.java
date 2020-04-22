@@ -32,16 +32,7 @@ public class CustomResourceEvent {
         return resource.getMetadata().getUid();
     }
 
-    public Boolean sameResourceAs(CustomResourceEvent otherEvent) {
-        return getResource().getMetadata().getUid().equals(otherEvent.getResource().getMetadata().getUid());
-    }
 
-    public Boolean isSameResourceAndNewerVersion(CustomResourceEvent otherEvent) {
-        return sameResourceAs(otherEvent) &&
-                Long.parseLong(getResource().getMetadata().getResourceVersion()) >
-                        Long.parseLong(otherEvent.getResource().getMetadata().getResourceVersion());
-
-    }
 
     public Optional<Long> nextBackOff() {
         retryCount++;
