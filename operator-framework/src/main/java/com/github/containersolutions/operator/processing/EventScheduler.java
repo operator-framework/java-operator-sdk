@@ -32,12 +32,6 @@ import java.util.concurrent.locks.ReentrantLock;
  *   <li>Threading approach thus thread pool size and/or implementation should be configurable</li>
  * </ul>
  * <p>
- * Notes:
- * <ul>
- *     <li> In implementation we have to lock since the fabric8 client event handling is multi-threaded, we can receive multiple events
- *          for same resource. Also we do callback from other threads.
- *   </li>
- * </ul>
  */
 
 public class EventScheduler implements Watcher<CustomResource> {
