@@ -79,25 +79,20 @@ public class EventScheduler implements Watcher<CustomResource> {
                 // Note that we always use finalizers, we want to process delete event just in corner case,
                 // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
                 // We want to skip in case of finalizer was there since we don't want to execute delete method always at least 2x,
-                // which would be the result if we don't skip here. (If there is no deletion timestamp if resource deleted without finalizer.
+                // which would be the result if we don't skip here. (there is no deletion timestamp if resource deleted without finalizer.)
                 log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
                 return;
             }
-            if (eventStore.receivedMoreRecentEventBefore(event)) {
-                log.debug("Skipping event processing since was processed event with newer version before. {}", event);
+            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
+                log.debug("Replacing not scheduled event with actual event." +
+                        " New event: {}", event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
-            eventStore.updateLatestResourceVersionReceived(event);
-
-            if (eventStore.containsOlderVersionOfNotScheduledEvent(event)) {
-                log.debug("Replacing event which is not scheduled yet, since incoming event is more recent. new Event:{}", event);
-                eventStore.addOrReplaceEventAsNotScheduledYet(event);
-                return;
-            }
-            if (eventStore.containsOlderVersionOfEventUnderProcessing(event)) {
+            if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledYet(event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
 
@@ -107,9 +102,9 @@ public class EventScheduler implements Watcher<CustomResource> {
                 return;
             }
             log.debug("Creating scheduled task for event: {}", event);
+            eventStore.addEventUnderProcessing(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
-            eventStore.addEventUnderProcessing(event);
         } finally {
             log.debug("Scheduling event finished: {}", event);
             lock.unlock();
@@ -119,10 +114,11 @@ public class EventScheduler implements Watcher<CustomResource> {
     void eventProcessingFinishedSuccessfully(CustomResourceEvent event) {
         try {
             lock.lock();
+            log.debug("Event processing successful for event: {}", event);
             eventStore.removeEventUnderProcessing(event.resourceUid());
-            CustomResourceEvent notScheduledYetEvent = eventStore.removeEventNotScheduledYet(event.resourceUid());
-            if (notScheduledYetEvent != null) {
-                scheduleEvent(notScheduledYetEvent);
+            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
+                log.debug("Scheduling recent event for processing processing: {}", event);
+                scheduleEvent(eventStore.removeEventNotScheduled(event.resourceUid()));
             }
         } finally {
             lock.unlock();
@@ -133,15 +129,13 @@ public class EventScheduler implements Watcher<CustomResource> {
         try {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
-            CustomResourceEvent notScheduledYetEvent = eventStore.removeEventNotScheduledYet(event.resourceUid());
-            if (notScheduledYetEvent != null) {
-                if (!notScheduledYetEvent.isSameResourceAndNewerVersion(event)) {
-                    log.warn("The not yet scheduled event has older version then actual event. This is probably a bug.");
-                }
-                // this is the case when we failed processing an event but we already received a new one.
-                // Since since we process declarative resources it correct to schedule the new event.
-                scheduleEvent(notScheduledYetEvent);
+            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
+                CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduled(event.resourceUid());
+                log.debug("Event processing failed. Scheduling the most recent event. Failed event: {}," +
+                        " Most recent event: {}", event, notScheduledEvent);
+                scheduleEvent(notScheduledEvent);
             } else {
+                log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
                 scheduleEvent(event);
             }
         } finally {
