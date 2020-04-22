@@ -86,13 +86,13 @@ public class EventScheduler implements Watcher<CustomResource> {
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledYet(event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledYet(event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
 
@@ -118,7 +118,7 @@ public class EventScheduler implements Watcher<CustomResource> {
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Scheduling recent event for processing processing: {}", event);
-                scheduleEvent(eventStore.removeEventNotScheduledYet(event.resourceUid()));
+                scheduleEvent(eventStore.removeEventNotScheduled(event.resourceUid()));
             }
         } finally {
             lock.unlock();
@@ -130,7 +130,7 @@ public class EventScheduler implements Watcher<CustomResource> {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduledYet(event.resourceUid());
+                CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduled(event.resourceUid());
                 log.debug("Event processing failed. Scheduling the most recent event. Failed event: {}," +
                         " Most recent event: {}", event, notScheduledEvent);
                 scheduleEvent(notScheduledEvent);

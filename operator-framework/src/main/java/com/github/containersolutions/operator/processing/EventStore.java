@@ -1,28 +1,23 @@
 package com.github.containersolutions.operator.processing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class EventStore {
 
-    private final static Logger log = LoggerFactory.getLogger(EventStore.class);
-
-    private final Map<String, CustomResourceEvent> eventsNotScheduledYet = new HashMap<>();
+    private final Map<String, CustomResourceEvent> eventsNotScheduled = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
 
     public boolean containsNotScheduledEvent(String uuid) {
-        return eventsNotScheduledYet.containsKey(uuid);
+        return eventsNotScheduled.containsKey(uuid);
     }
 
-    public CustomResourceEvent removeEventNotScheduledYet(String uid) {
-        return eventsNotScheduledYet.remove(uid);
+    public CustomResourceEvent removeEventNotScheduled(String uid) {
+        return eventsNotScheduled.remove(uid);
     }
 
-    public void addOrReplaceEventAsNotScheduledYet(CustomResourceEvent event) {
-        eventsNotScheduledYet.put(event.resourceUid(), event);
+    public void addOrReplaceEventAsNotScheduled(CustomResourceEvent event) {
+        eventsNotScheduled.put(event.resourceUid(), event);
     }
 
     public boolean containsEventUnderProcessing(String uuid) {
