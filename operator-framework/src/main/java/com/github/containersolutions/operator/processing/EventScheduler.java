@@ -84,11 +84,18 @@ public class EventScheduler implements Watcher<CustomResource> {
                 return;
             }
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
+                log.debug("Replacing event for later processing." +
+                        " New event: {}", event);
+                eventStore.addOrReplaceEventAsNotScheduledYet(event);
+                return;
+            }
+            if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
                 eventStore.addOrReplaceEventAsNotScheduledYet(event);
                 return;
             }
+
             Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
                 log.warn("Event max retry limit reached. Will be discarded. {}", event);

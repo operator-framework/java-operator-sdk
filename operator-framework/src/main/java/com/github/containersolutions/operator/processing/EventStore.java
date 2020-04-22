@@ -25,9 +25,14 @@ public class EventStore {
         eventsNotScheduledYet.put(event.resourceUid(), event);
     }
 
+    public boolean containsEventUnderProcessing(String uuid) {
+        return eventsUnderProcessing.containsKey(uuid);
+    }
+
     public void addEventUnderProcessing(CustomResourceEvent event) {
         eventsUnderProcessing.put(event.resourceUid(), event);
     }
+
     public CustomResourceEvent removeEventUnderProcessing(String uid) {
         return eventsUnderProcessing.remove(uid);
     }
