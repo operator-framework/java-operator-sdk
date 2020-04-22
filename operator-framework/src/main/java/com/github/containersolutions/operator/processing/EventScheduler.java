@@ -102,9 +102,9 @@ public class EventScheduler implements Watcher<CustomResource> {
                 return;
             }
             log.debug("Creating scheduled task for event: {}", event);
+            eventStore.addEventUnderProcessing(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
-            eventStore.addEventUnderProcessing(event);
         } finally {
             log.debug("Scheduling event finished: {}", event);
             lock.unlock();
