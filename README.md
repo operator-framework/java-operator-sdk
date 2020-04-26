@@ -1,5 +1,6 @@
 # java-operator-sdk
 [![Build Status](https://travis-ci.org/ContainerSolutions/java-operator-sdk.svg?branch=master)](https://travis-ci.org/ContainerSolutions/java-operator-sdk)
+![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 In this first iteration we aim to provide a framework which handles the reconciliation loop by dispatching events to
@@ -13,7 +14,7 @@ Feature we would like to implement and invite the community to help us implement
 
 * ~~Spring Boot sample~~
 * Class generation from CRD to POJO
-* Quarkus support
+* GraalVM / Quarkus support
 
 ## Additional Features
 
