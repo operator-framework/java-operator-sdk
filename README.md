@@ -72,7 +72,7 @@ public class WebServerController implements ResourceController<WebServer> {
 }
 ```
 
-Our custom resource java representation
+A sample custom resource POJO representation
 
 ```java
 public class WebServer extends CustomResource {
