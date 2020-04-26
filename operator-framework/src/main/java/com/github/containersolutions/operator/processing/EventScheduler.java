@@ -2,7 +2,6 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.retry.Retry;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
@@ -11,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,11 +46,7 @@ public class EventScheduler implements Watcher<CustomResource> {
     public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
-        ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("event-consumer-%d")
-                .setDaemon(false)
-                .build();
-        executor = new ScheduledThreadPoolExecutor(1, threadFactory);
+        executor = new ScheduledThreadPoolExecutor(1);
         executor.setRemoveOnCancelPolicy(true);
     }
 

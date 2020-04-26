@@ -42,11 +42,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>28.1-jre</version>
-            </dependency>
-            <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
                 <version>4.9.0</version>
