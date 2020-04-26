@@ -55,14 +55,13 @@ public class EventScheduler implements Watcher<CustomResource> {
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
         CustomResourceEvent event = new CustomResourceEvent(action, resource, retry);
-        scheduleEvent(event);
+        scheduleEventFromApi(event);
     }
 
-    void scheduleEvent(CustomResourceEvent event) {
-        log.trace("Current queue size {}", executor.getQueue().size());
-        log.debug("Scheduling event: {}", event);
+    void scheduleEventFromApi(CustomResourceEvent event) {
         try {
             lock.lock();
+            log.debug("Scheduling event from Api: {}", event);
             if (event.getResource().getMetadata().getDeletionTimestamp() != null && event.getAction() == Action.DELETED) {
                 // Note that we always use finalizers, we want to process delete event just in corner case,
                 // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
@@ -83,18 +82,28 @@ public class EventScheduler implements Watcher<CustomResource> {
                 eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
+            scheduleEventForExecution(event);
+            log.trace("Scheduling event from API finished: {}", event);
+        } finally {
+            lock.unlock();
+        }
+    }
 
+    private void scheduleEventForExecution(CustomResourceEvent event) {
+        try {
+            lock.lock();
+            log.trace("Current queue size {}", executor.getQueue().size());
+            log.debug("Scheduling event for execution: {}", event);
             Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
                 log.warn("Event max retry limit reached. Will be discarded. {}", event);
                 return;
             }
-            log.debug("Creating scheduled task for event: {}", event);
             eventStore.addEventUnderProcessing(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
+            log.trace("Scheduled task for event: {}", event);
         } finally {
-            log.debug("Scheduling event finished: {}", event);
             lock.unlock();
         }
     }
@@ -102,11 +111,10 @@ public class EventScheduler implements Watcher<CustomResource> {
     void eventProcessingFinishedSuccessfully(CustomResourceEvent event) {
         try {
             lock.lock();
-            log.debug("Event processing successful for event: {}", event);
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                log.debug("Scheduling recent event for processing processing: {}", event);
-                scheduleEvent(eventStore.removeEventNotScheduled(event.resourceUid()));
+                log.debug("Scheduling recent event for processing: {}", event);
+                scheduleNotYetScheduledEventForExecution(event.resourceUid());
             }
         } finally {
             lock.unlock();
@@ -118,17 +126,20 @@ public class EventScheduler implements Watcher<CustomResource> {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduled(event.resourceUid());
-                log.debug("Event processing failed. Scheduling the most recent event. Failed event: {}," +
-                        " Most recent event: {}", event, notScheduledEvent);
-                scheduleEvent(notScheduledEvent);
+                log.debug("Event processing failed. Scheduling the most recent event. Failed event: {}", event);
+                scheduleNotYetScheduledEventForExecution(event.resourceUid());
             } else {
                 log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
-                scheduleEvent(event);
+                scheduleEventForExecution(event);
             }
         } finally {
             lock.unlock();
         }
+    }
+
+    private void scheduleNotYetScheduledEventForExecution(String uuid) {
+        CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduled(uuid);
+        scheduleEventForExecution(notScheduledEvent);
     }
 
     @Override
