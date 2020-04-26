@@ -44,7 +44,7 @@
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
-                <version>4.9.0</version>
+                <version>4.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -92,6 +92,7 @@
                 <configuration>
                     <includes>
                         <include>**/*IT.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>

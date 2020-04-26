@@ -4,7 +4,10 @@ import com.github.containersolutions.operator.sample.TestCustomResource;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,38 +33,35 @@ public class ControllerExecutionIT {
         integrationTestSupport.cleanup();
     }
 
-    @AfterAll
-    public void teardown() {
-        integrationTestSupport.teardown();
-    }
-
     @Test
-    public void configMapGetsCreatedForTestCustomResource() {
-        TestCustomResource resource = new TestCustomResource();
-        resource.setMetadata(new ObjectMetaBuilder()
-                .withName("test-custom-resource")
-                .withNamespace(TEST_NAMESPACE)
-                .build());
-        resource.setKind("CustomService");
-        resource.setSpec(new TestCustomResourceSpec());
-        resource.getSpec().setConfigMapName("test-config-map");
-        resource.getSpec().setKey("test-key");
-        resource.getSpec().setValue("test-value");
-        integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
+    public void configMapGetsCreatedForTestCustomResource() throws Exception {
+        integrationTestSupport.teardownIfSuccess(() -> {
+            TestCustomResource resource = new TestCustomResource();
+            resource.setMetadata(new ObjectMetaBuilder()
+                    .withName("test-custom-resource")
+                    .withNamespace(TEST_NAMESPACE)
+                    .build());
+            resource.setKind("CustomService");
+            resource.setSpec(new TestCustomResourceSpec());
+            resource.getSpec().setConfigMapName("test-config-map");
+            resource.getSpec().setKey("test-key");
+            resource.getSpec().setValue("test-value");
+            integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
 
-        await("configmap created").atMost(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> {
-                    ConfigMap configMap = integrationTestSupport.getK8sClient().configMaps().inNamespace(TEST_NAMESPACE)
-                            .withName("test-config-map").get();
-                    assertThat(configMap).isNotNull();
-                    assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
-                });
-        await("cr status updated").atMost(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> {
-                    TestCustomResource cr = integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
-                    assertThat(cr).isNotNull();
-                    assertThat(cr.getStatus()).isNotNull();
-                    assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
-                });
+            await("configmap created").atMost(5, TimeUnit.SECONDS)
+                    .untilAsserted(() -> {
+                        ConfigMap configMap = integrationTestSupport.getK8sClient().configMaps().inNamespace(TEST_NAMESPACE)
+                                .withName("test-config-map").get();
+                        assertThat(configMap).isNotNull();
+                        assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
+                    });
+            await("cr status updated").atMost(5, TimeUnit.SECONDS)
+                    .untilAsserted(() -> {
+                        TestCustomResource cr = integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
+                        assertThat(cr).isNotNull();
+                        assertThat(cr.getStatus()).isNotNull();
+                        assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
+                    });
+        });
     }
 }

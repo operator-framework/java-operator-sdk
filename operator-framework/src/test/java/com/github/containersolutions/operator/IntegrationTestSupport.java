@@ -4,6 +4,7 @@ import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
@@ -14,7 +15,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,28 +40,28 @@ public class IntegrationTestSupport {
     public void initialize() {
         k8sClient = new DefaultKubernetesClient();
 
-        log.info("Running integration test in namespace " + TEST_NAMESPACE);
+        log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
 
         CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
         k8sClient.customResourceDefinitions().createOrReplace(crd);
+
+        ResourceController<TestCustomResource> controller = new TestCustomResourceController(k8sClient);
+        Class doneableClass = getCustomResourceDoneableClass(controller);
+        crOperations = k8sClient.customResources(crd, TestCustomResource.class, CustomResourceList.class, doneableClass);
+        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
                     .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());
         }
         operator = new Operator(k8sClient);
-        operator.registerController(new TestCustomResourceController(k8sClient), TEST_NAMESPACE);
+        operator.registerController(controller, TEST_NAMESPACE);
+        log.info("Operator is running with TestCustomeResourceController");
     }
 
     public void cleanup() {
-        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
-        k8sClient.customResourceDefinitions().createOrReplace(crd);
-        KubernetesDeserializer.registerCustomKind(crd.getApiVersion(), crd.getKind(), TestCustomResource.class);
+        log.info("Cleaning up namespace {}", TEST_NAMESPACE);
 
-        ResourceController<TestCustomResource> controller = new TestCustomResourceController(k8sClient);
-        Class doneableClass = getCustomResourceDoneableClass(controller);
-        crOperations = k8sClient.customResources(crd, TestCustomResource.class, CustomResourceList.class, doneableClass);
-        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
         //we depend on the actual operator from the startup to handle the finalizers and clean up
         //resources from previous test runs
 
@@ -85,8 +85,29 @@ public class IntegrationTestSupport {
         log.info("Cleaned up namespace " + TEST_NAMESPACE);
     }
 
-    public void teardown() {
-        k8sClient.close();
+    /**
+     * Use this method to execute the cleanup of the integration test namespace only in case the test
+     * was successful. This is useful to keep the Kubernetes resources around to debug a failed test run.
+     * Unfortunately I couldn't make this work with standard JUnit methods as the @AfterAll method doesn't know
+     * if the tests succeeded or not.
+     *
+     * @param test The code of the actual test.
+     * @throws Exception if the test threw an exception.
+     */
+    public void teardownIfSuccess(TestRun test) throws Exception {
+        try {
+            test.run();
+
+            log.info("Deleting namespace {} and stopping operator", TEST_NAMESPACE);
+            Namespace namespace = k8sClient.namespaces().withName(TEST_NAMESPACE).get();
+            if (namespace.getStatus().getPhase().equals("Active")) {
+                k8sClient.namespaces().withName(TEST_NAMESPACE).delete();
+            }
+            await("namespace deleted").atMost(30, TimeUnit.SECONDS)
+                    .until(() -> k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null);
+        } finally {
+            k8sClient.close();
+        }
     }
 
     private <T> T loadYaml(Class<T> clazz, String yaml) {
@@ -121,5 +142,9 @@ public class IntegrationTestSupport {
 
     public Operator getOperator() {
         return operator;
+    }
+
+    public interface TestRun {
+        void run() throws Exception;
     }
 }
