@@ -1,6 +1,5 @@
 # java-operator-sdk
 [![Build Status](https://travis-ci.org/ContainerSolutions/java-operator-sdk.svg?branch=master)](https://travis-ci.org/ContainerSolutions/java-operator-sdk)
-
 ![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
