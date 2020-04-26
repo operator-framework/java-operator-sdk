@@ -14,7 +14,7 @@ Feature we would like to implement and invite the community to help us implement
 
 * ~~Spring Boot sample~~
 * Class generation from CRD to POJO
-* Quarkus support
+* GraalVM / Quarkus support
 
 ## Additional Features
 
