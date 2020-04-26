@@ -85,6 +85,15 @@ public class IntegrationTestSupport {
         log.info("Cleaned up namespace " + TEST_NAMESPACE);
     }
 
+    /**
+     * Use this method to execute the cleanup of the integration test namespace only in case the test
+     * was successful. This is useful to keep the Kubernetes resources around to debug a failed test run.
+     * Unfortunately I couldn't make this work with standard JUnit methods as the @AfterAll method doesn't know
+     * if the tests succeeded or not.
+     *
+     * @param test The code of the actual test.
+     * @throws Exception if the test threw an exception.
+     */
     public void teardownIfSuccess(TestRun test) throws Exception {
         try {
             test.run();
