@@ -84,24 +84,6 @@ class EventSchedulerTest {
                 .has(new Condition<>(e -> e.getException() == null, ""), atIndex(1));
     }
 
-
-    @Test
-    public void discardsEventIfThereWereANewerVersionProcessedBefore() throws InterruptedException {
-        normalDispatcherExecution();
-        CustomResource resource1 = sampleResource();
-        CustomResource resource2 = sampleResource();
-        resource2.getMetadata().setResourceVersion("2");
-
-        CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2));
-        Thread.sleep(50);
-        CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1));
-
-        waitTimeForExecution(2);
-
-        assertThat(eventProcessingList).hasSize(1).has(new Condition<>(e -> e.getCustomResource().getMetadata().getResourceVersion().equals("2"),
-                "Just handles event that arrived first"), atIndex(0));
-    }
-
     @Test
     public void schedulesEventIfOlderVersionIsAlreadyUnderProcessing() {
         normalDispatcherExecution();

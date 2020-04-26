@@ -92,6 +92,7 @@
                 <configuration>
                     <includes>
                         <include>**/*IT.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>
