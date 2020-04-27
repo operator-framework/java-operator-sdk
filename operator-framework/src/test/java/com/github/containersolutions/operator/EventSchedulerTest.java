@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import org.assertj.core.api.Condition;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
@@ -16,9 +15,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
-import static com.github.containersolutions.operator.processing.retry.GenericRetry.*;
+import static com.github.containersolutions.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.atIndex;
 import static org.mockito.Mockito.*;
@@ -26,10 +24,11 @@ import static org.mockito.Mockito.*;
 class EventSchedulerTest {
 
     public static final int INVOCATION_DURATION = 80;
+    public static final int MAX_RETRY_ATTEMPTS = 3;
     @SuppressWarnings("unchecked")
     private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
-    private EventScheduler eventScheduler = new EventScheduler(eventDispatcher, GenericRetry.defaultLimitedExponentialRetry());
+    private EventScheduler eventScheduler = new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry());
 
     private List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
 
@@ -53,9 +52,8 @@ class EventSchedulerTest {
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
 
-        CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1));
-        Thread.sleep(50);
-        CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2));
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
 
         waitTimeForExecution(2);
         assertThat(eventProcessingList).hasSize(2)
@@ -85,27 +83,21 @@ class EventSchedulerTest {
                 .has(new Condition<>(e -> e.getException() == null, ""), atIndex(1));
     }
 
-    @Disabled("Todo change according to new scheduling")
+
     @Test
-    public void schedulesEventIfOlderVersionIsAlreadyUnderProcessing() {
-        normalDispatcherExecution();
+    public void processesNewEventIfItIsReceivedAfterExecutionInError() {
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
 
-        doAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            LocalDateTime start = LocalDateTime.now();
-            CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2));
-            Thread.sleep(INVOCATION_DURATION);
-            LocalDateTime end = LocalDateTime.now();
-            eventProcessingList.add(new EventProcessingDetail((Watcher.Action) args[0], start, end, (CustomResource) args[1]));
-            return null;
-        }).doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), any(CustomResource.class));
+        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), eq(resource1));
+        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), eq(resource2));
 
-        CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1));
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
 
         waitTimeForExecution(2);
+
         assertThat(eventProcessingList).hasSize(2)
                 .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
                                 eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("2"),
@@ -113,16 +105,19 @@ class EventSchedulerTest {
                 .matches(list ->
                                 eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
                         "Start time of event 2 is after end time of event 1");
+
+        assertThat(eventProcessingList.get(0).getException()).isNotNull();
+        assertThat(eventProcessingList.get(1).getException()).isNull();
     }
 
     @Test
     public void numberOfRetriesIsLimited() {
         doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), any(CustomResource.class));
 
-        CompletableFuture.runAsync(() -> eventScheduler.eventReceived(Watcher.Action.MODIFIED, sampleResource()));
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, sampleResource());
 
-        waitTimeForExecution(1, DEFAULT_MAX_ATTEMPTS + 2);
-        assertThat(eventProcessingList).hasSize(DEFAULT_MAX_ATTEMPTS);
+        waitTimeForExecution(1, MAX_RETRY_ATTEMPTS + 2);
+        assertThat(eventProcessingList).hasSize(MAX_RETRY_ATTEMPTS);
     }
 
     public void normalDispatcherExecution() {
@@ -167,8 +162,8 @@ class EventSchedulerTest {
 
     private void waitTimeForExecution(int numberOfEvents, int retries) {
         try {
-            Thread.sleep((long) (200 + ((INVOCATION_DURATION + 30) * numberOfEvents) + (retries * (INVOCATION_DURATION + 100)) +
-                    (Math.pow(DEFAULT_MULTIPLIER, retries) * (DEFAULT_INITIAL_INTERVAL + 100))));
+            Thread.sleep(200 + ((INVOCATION_DURATION + 30) * numberOfEvents) + (retries * (INVOCATION_DURATION + 100)) +
+                    retries * (DEFAULT_INITIAL_INTERVAL + 100));
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
