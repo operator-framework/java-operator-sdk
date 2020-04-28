@@ -34,7 +34,7 @@ Add dependency to your project:
 <dependency>
   <groupId>com.github.containersolutions</groupId>
   <artifactId>operator-framework</artifactId>
-  <version>{see https://search.maven.org/search?q=a:operator-framework for latest version}</version>
+  <version>{see [maven central](https://search.maven.org/search?q=a:operator-framework) for latest version}</version>
 </dependency>
 ```
 
