@@ -28,13 +28,13 @@ We have several sample Operators under the samples directory:
 Implemented with and without Spring Boot support. The two samples share the common module.
 * *webserver*: More realistic example creating an nginx webserver from a Custom Resource containing html code.
 
-Add dependency to your project:
+Add [dependency]([maven central](https://search.maven.org/search?q=a:operator-framework) to your project:
 
 ```xml
 <dependency>
   <groupId>com.github.containersolutions</groupId>
   <artifactId>operator-framework</artifactId>
-  <version>{see [maven central](https://search.maven.org/search?q=a:operator-framework) for latest version}</version>
+  <version>{see https://search.maven.org/search?q=a:operator-framework for latest version}</version>
 </dependency>
 ```
 
