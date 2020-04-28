@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-@Controller(
-        crdName = "name",
+@Controller(crdName = "name",
         customResourceClass = TestResource.class)
 public class TestController implements ResourceController {
 

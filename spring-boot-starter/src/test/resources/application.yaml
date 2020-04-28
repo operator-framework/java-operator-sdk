@@ -1,4 +1,12 @@
-operator.kubernetes:
-  username: user
-  password: password
-  masterUrl: http://master.url
+operator:
+  kubernetes.client:
+    username: user
+    password: password
+    masterUrl: http://master.url
+
+  controller.retry:
+    maxAttempts: 3
+    initialInterval: 1000
+    intervalMultiplier: 1.5
+    maxInterval: 50000
+    maxElapsedTime: 100000

@@ -18,6 +18,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 public class AutoconfigurationTest {
 
+
+    @Autowired
+    private RetryProperties retryProperties;
+
     @Autowired
     private OperatorProperties operatorProperties;
 
@@ -31,10 +35,19 @@ public class AutoconfigurationTest {
     private List<ResourceController> resourceControllers;
 
     @Test
-    public void configurationsLoadedProperly() {
+    public void loadsKubernetesClientPropertiesProperly() {
         assertEquals("user", operatorProperties.getUsername());
         assertEquals("password", operatorProperties.getPassword());
         assertEquals("http://master.url", operatorProperties.getMasterUrl());
+    }
+
+    @Test
+    public void loadsRetryPropertiesProperly() {
+        assertEquals(3, retryProperties.getMaxAttempts().intValue());
+        assertEquals(1000, retryProperties.getInitialInterval().intValue());
+        assertEquals(1.5, retryProperties.getIntervalMultiplier().doubleValue());
+        assertEquals(50000, retryProperties.getMaxInterval().intValue());
+        assertEquals(100000, retryProperties.getMaxElapsedTime().intValue());
     }
 
     @Test
