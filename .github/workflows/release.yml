@@ -16,6 +16,9 @@ jobs:
         run: mvn versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
         env:
           RELEASE_VERSION: ${{ github.event.release.tag_name }}
+      #       see: https://github.com/keybase/keybase-issues/issues/2798
+      - name: gpg fix
+        run: export GPG_TTY=$(tty)
       - name: Release Maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
