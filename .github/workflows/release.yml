@@ -1,0 +1,30 @@
+name: Release to Maven Central
+on:
+  release:
+    types: [created]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: change version to release version
+        # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
+        run: mvn versions:set "${RELEASE_VERSION:1}" versions:commit
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+      #      - name: Release Maven package
+      #        uses: samuelmeuli/action-maven-publish@v1
+      #        with:
+      #          maven_profiles: "release"
+      #          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      #          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      #          nexus_username: ${{ secrets.OSSRH_USERNAME }}
+      #          nexus_password: ${{ secrets.OSSRH_TOKEN }}
+      - name: Set version to next snapshot version
+        run: mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
+      - name: Push changes to master
+        uses: tcitry/push-to-master@v1.0
