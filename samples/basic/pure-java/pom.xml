@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.github.containersolutions</groupId>
         <artifactId>java-operator-sdk-basic-sample</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.1.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>operator-framework-samples-pure-java</artifactId>
