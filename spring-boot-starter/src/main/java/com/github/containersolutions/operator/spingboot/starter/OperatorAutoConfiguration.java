@@ -53,14 +53,15 @@ public class OperatorAutoConfiguration {
     }
 
     @Bean
-    public Operator operator(KubernetesClient kubernetesClient) {
+    public Operator operator(KubernetesClient kubernetesClient, Retry retry) {
         Operator operator = new Operator(kubernetesClient);
-        Retry retry = createRetryBasedOnProperties();
         resourceControllers.forEach(r -> operator.registerControllerForAllNamespaces(r, retry));
         return operator;
     }
 
-    private Retry createRetryBasedOnProperties() {
+    @Bean
+    @ConditionalOnMissingBean
+    public Retry retry() {
         GenericRetry retry = new GenericRetry();
         if (retryProperties.getInitialInterval() != null) {
             retry.setInitialInterval(retryProperties.getInitialInterval());
