@@ -2,7 +2,7 @@ package com.github.containersolutions.operator.spingboot.starter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "operator.kubernetes")
+@ConfigurationProperties(prefix = "operator.kubernetes.client")
 public class OperatorProperties {
 
     private boolean openshift = false;
