@@ -36,6 +36,7 @@
 
     <modules>
         <module>operator-framework</module>
+        <module>spring-boot-starter</module>
         <module>samples</module>
     </modules>
 
