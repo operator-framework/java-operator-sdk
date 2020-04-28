@@ -28,7 +28,7 @@ We have several sample Operators under the samples directory:
 Implemented with and without Spring Boot support. The two samples share the common module.
 * *webserver*: More realistic example creating an nginx webserver from a Custom Resource containing html code.
 
-Add [dependency]([maven central](https://search.maven.org/search?q=a:operator-framework) to your project:
+Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project:
 
 ```xml
 <dependency>
