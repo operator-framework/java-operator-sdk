@@ -26,5 +26,12 @@ jobs:
       #          nexus_password: ${{ secrets.OSSRH_TOKEN }}
       - name: Set version to next snapshot version
         run: mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
-      - name: Push changes to master
-        uses: tcitry/push-to-master@v1.0
+      - name: Commit files
+          run: |
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git commit -m "Add changes" -a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
