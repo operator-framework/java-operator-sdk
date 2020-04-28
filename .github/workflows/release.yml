@@ -16,16 +16,16 @@ jobs:
           server-password: MAVEN_PASSWORD
       - name: change version to release version
         #       Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
-        uses: mvn versions:set "${RELEASE_VERSION:1}"
+        run: mvn versions:set "${RELEASE_VERSION:1}" versions:commit
         env:
           RELEASE_VERSION: ${{ github.event.release.tag_name }}
       #       todo signing
-      - name: Publish package
-        run: mvn -B deploy
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+      #      - name: Publish package
+      #        run: mvn -B deploy
+      #        env:
+      #          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      #          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
       - name: Set version to next snapshot version
-        uses: mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
+        run: mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
       - name: Push changes to master
-        uses:
+        uses: tcitry/push-to-master@v1.0
