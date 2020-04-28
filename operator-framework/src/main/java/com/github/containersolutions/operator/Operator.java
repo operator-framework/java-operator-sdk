@@ -26,8 +26,6 @@ import static com.github.containersolutions.operator.ControllerUtils.*;
 public class Operator {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
-
-    private final Retry defaultRetry = GenericRetry.defaultLimitedExponentialRetry();
     private final KubernetesClient k8sClient;
     private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
 
@@ -37,7 +35,7 @@ public class Operator {
 
 
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true, defaultRetry);
+        registerController(controller, true, GenericRetry.defaultLimitedExponentialRetry());
     }
 
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
@@ -45,7 +43,7 @@ public class Operator {
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, defaultRetry, targetNamespaces);
+        registerController(controller, false, GenericRetry.defaultLimitedExponentialRetry(), targetNamespaces);
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller, Retry retry, String... targetNamespaces) throws OperatorException {
@@ -99,7 +97,7 @@ public class Operator {
         return customResourceClients;
     }
 
-    public <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> CustomResourceOperationsImpl<T, L, D> 
+    public <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> CustomResourceOperationsImpl<T, L, D>
     getCustomResourceClients(Class<T> customResourceClass) {
         return customResourceClients.get(customResourceClass);
     }

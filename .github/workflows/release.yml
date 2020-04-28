@@ -1,0 +1,31 @@
+name: Publish package to the Maven Central Repository
+on:
+  release:
+    types: [created]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+      - name: change version to release version
+        #       Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
+        uses: mvn versions:set "${RELEASE_VERSION:1}"
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+      #       todo signing
+      - name: Publish package
+        run: mvn -B deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+      - name: Set version to next snapshot version
+        uses: mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
+      - name: Push changes to master
+        uses:
