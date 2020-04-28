@@ -36,8 +36,10 @@
 
     <modules>
         <module>operator-framework</module>
+        <module>spring-boot-starter</module>
         <module>samples</module>
     </modules>
+
 
     <dependencyManagement>
         <dependencies>
@@ -72,6 +74,12 @@
                 <artifactId>mockito-core</artifactId>
                 <version>3.0.0</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+                <version>5.2.5.RELEASE</version>
+                <scope>compile</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

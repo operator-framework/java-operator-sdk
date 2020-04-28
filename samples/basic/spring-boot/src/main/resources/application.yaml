@@ -1,0 +1,2 @@
+operator.controller.retry:
+  maxAttempts: 3
