@@ -9,8 +9,8 @@
         <version>1.1.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-samples-spring-boot</artifactId>
-    <name>Operator SDK - Samples - Basic - Spring Boot</name>
+    <artifactId>operator-framework-samples-spring-boot-auto-configuration</artifactId>
+    <name>Operator SDK - Samples - Basic - Spring Boot - Auto Configuration</name>
     <description>Sample usage with Spring Boot</description>
     <packaging>jar</packaging>
 
