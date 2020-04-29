@@ -111,6 +111,36 @@ public class WebServerSpec {
 }
 ```
 
+### Spring Boot
+
+You can also let Spring Boot wire your application together and automatically register the controllers.
+
+Add [this dependency](https://search.maven.org/search?q=a:spring-boot-operator-framework-starter) to your project:
+
+```xml
+<dependency>
+ <groupId>com.github.containersolutions</groupId>
+ <artifactId>spring-boot-operator-framework-starter</artifactId>
+ <version>{see https://search.maven.org/search?q=a:spring-boot-operator-framework-starter for latest version}</version>
+</dependency>
+```
+
+Create an Application
+```java
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+
+And add Spring's `@Service` annotation to your controller classes so they will be automatically registered as resource controllers.
+
+The Operator's Spring Boot integration leverages [Spring's configuration mechanisms](https://docs.spring.io/spring-boot/docs/1.0.1.RELEASE/reference/html/boot-features-external-config.html) to configure
+- [The Kubernetes client](spring-boot-starter/src/main/java/com/github/containersolutions/operator/spingboot/starter/OperatorProperties.java)
+- [Retries](spring-boot-starter/src/main/java/com/github/containersolutions/operator/spingboot/starter/RetryProperties.java)
+
 ## Implementation / Design details
 
 This library relies on the amazing [kubernetes-client](https://github.com/fabric8io/kubernetes-client) from fabric8. 
