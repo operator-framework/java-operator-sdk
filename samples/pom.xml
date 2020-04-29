@@ -15,7 +15,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>basic</module>
+        <module>common</module>
+        <module>pure-java</module>
+        <module>spring-boot-plain</module>
+        <module>spring-boot-auto-config</module>
         <module>webserver</module>
         <module>mysql-schema</module>
     </modules>

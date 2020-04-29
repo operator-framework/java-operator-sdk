@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>com.github.containersolutions</groupId>
-        <artifactId>java-operator-sdk-basic-sample</artifactId>
+        <artifactId>java-operator-sdk-samples</artifactId>
         <version>1.1.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>operator-framework-samples-spring-boot-auto-configuration</artifactId>
-    <name>Operator SDK - Samples - Basic - Spring Boot - Auto Configuration</name>
+    <artifactId>operator-framework-samples-spring-boot-plain</artifactId>
+    <name>Operator SDK - Samples - Spring Boot - Plain</name>
     <description>Sample usage with Spring Boot</description>
     <packaging>jar</packaging>
 
@@ -27,9 +27,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.containersolutions</groupId>
-            <artifactId>spring-boot-operator-framework-starter</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
