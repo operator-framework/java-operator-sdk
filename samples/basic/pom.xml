@@ -17,7 +17,8 @@
     <modules>
         <module>common</module>
         <module>pure-java</module>
-        <module>spring-boot</module>
+        <module>spring-boot-plain</module>
+        <module>spring-boot-auto-config</module>
     </modules>
 
 </project>
