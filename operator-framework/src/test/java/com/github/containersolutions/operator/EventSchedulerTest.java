@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.client.Watcher;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,6 +24,8 @@ import static org.assertj.core.api.Assertions.atIndex;
 import static org.mockito.Mockito.*;
 
 class EventSchedulerTest {
+
+    private static final Logger log = LoggerFactory.getLogger(EventSchedulerTest.class);
 
     public static final int INVOCATION_DURATION = 80;
     public static final int MAX_RETRY_ATTEMPTS = 3;
@@ -56,6 +60,7 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
 
         waitTimeForExecution(2);
+        log.info("Event processing details 1.: {}. 2: {}", eventProcessingList.get(0), eventProcessingList.get(1));
         assertThat(eventProcessingList).hasSize(2)
                 .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
                                 eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("2"),
@@ -241,6 +246,17 @@ class EventSchedulerTest {
 
         public Exception getException() {
             return exception;
+        }
+
+        @Override
+        public String toString() {
+            return "EventProcessingDetail{" +
+                    "action=" + action +
+                    ", startTime=" + startTime +
+                    ", endTime=" + endTime +
+                    ", customResource=" + customResource +
+                    ", exception=" + exception +
+                    '}';
         }
     }
 }
