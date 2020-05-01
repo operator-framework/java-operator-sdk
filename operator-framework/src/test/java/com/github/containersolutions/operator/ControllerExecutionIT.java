@@ -67,7 +67,7 @@ public class ControllerExecutionIT {
     }
 
     @Test
-    public void eventIsSkippedIfNoGenerationChangedOnMetadataOnlyUpdate() {
+    public void eventIsSkippedChangedOnMetadataOnlyUpdate() {
         fail("TODO");
     }
 
