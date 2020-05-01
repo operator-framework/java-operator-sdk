@@ -71,6 +71,30 @@ class EventSchedulerTest {
     }
 
     @Test
+    public void onlyLastEventIsScheduledIfMoreReceivedDuringAndExecution() {
+        normalDispatcherExecution();
+        CustomResource resource1 = sampleResource();
+        CustomResource resource2 = sampleResource();
+        resource2.getMetadata().setResourceVersion("2");
+        CustomResource resource3 = sampleResource();
+        resource3.getMetadata().setResourceVersion("3");
+
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource3);
+
+        waitTimeForExecution(3);
+        log.info("Event processing details 1.: {}. 2: {}", eventProcessingList.get(0), eventProcessingList.get(1));
+        assertThat(eventProcessingList).hasSize(2)
+                .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
+                                eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("3"),
+                        "Events processed in correct order")
+                .matches(list ->
+                                eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
+                        "Start time of event 2 is after end time of event 1");
+    }
+
+    @Test
     public void retriesEventsWithErrors() {
         doAnswer(this::exceptionInExecution)
                 .doAnswer(this::normalExecution)
