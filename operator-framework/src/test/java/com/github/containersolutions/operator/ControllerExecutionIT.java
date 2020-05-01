@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -64,4 +65,10 @@ public class ControllerExecutionIT {
                     });
         });
     }
+
+    @Test
+    public void eventIsSkippedIfNoGenerationChangedOnMetadataOnlyUpdate() {
+        fail("TODO");
+    }
+
 }
