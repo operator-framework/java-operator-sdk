@@ -32,7 +32,7 @@ class EventSchedulerTest {
     @SuppressWarnings("unchecked")
     private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
-    private EventScheduler eventScheduler = new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry());
+    private EventScheduler eventScheduler = initScheduler(true);
 
     private List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
 
@@ -55,6 +55,7 @@ class EventSchedulerTest {
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
+        resource2.getMetadata().setGeneration(2l);
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
@@ -71,13 +72,55 @@ class EventSchedulerTest {
     }
 
     @Test
+    public void generationAwareSchedulingSkipsEventsWithoutIncreasedGeneration() {
+        normalDispatcherExecution();
+        CustomResource resource1 = sampleResource();
+        CustomResource resource2 = sampleResource();
+        resource2.getMetadata().setResourceVersion("2");
+
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
+
+        waitTimeForExecution(2);
+        assertThat(eventProcessingList).hasSize(1)
+                .matches(list ->
+                        eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1"));
+
+    }
+
+    @Test
+    public void notGenerationAwareSchedulingProcessesAllEventsRegardlessOfGeneration() {
+        generationUnAwareScheduler();
+        normalDispatcherExecution();
+        CustomResource resource1 = sampleResource();
+        CustomResource resource2 = sampleResource();
+        resource2.getMetadata().setResourceVersion("2");
+
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
+        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
+
+        waitTimeForExecution(2);
+        log.info("Event processing details 1.: {}. 2: {}", eventProcessingList.get(0), eventProcessingList.get(1));
+        assertThat(eventProcessingList).hasSize(2)
+                .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
+                                eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("2"),
+                        "Events processed in correct order")
+                .matches(list ->
+                                eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
+                        "Start time of event 2 is after end time of event 1");
+    }
+
+    // note that this is true for generation aware scheduling
+    @Test
     public void onlyLastEventIsScheduledIfMoreReceivedDuringAndExecution() {
         normalDispatcherExecution();
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
+        resource2.getMetadata().setGeneration(2l);
         CustomResource resource3 = sampleResource();
         resource3.getMetadata().setResourceVersion("3");
+        resource3.getMetadata().setGeneration(3l);
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
@@ -118,6 +161,7 @@ class EventSchedulerTest {
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
+        resource2.getMetadata().setGeneration(2l);
 
         doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), eq(resource1));
         doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), eq(resource2));
@@ -140,7 +184,7 @@ class EventSchedulerTest {
     }
 
     @Test
-    public void numberOfRetriesIsLimited() {
+    public void numberOfRetriesCanBeLimited() {
         doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), any(CustomResource.class));
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, sampleResource());
@@ -166,6 +210,14 @@ class EventSchedulerTest {
         }
     }
 
+    private void generationUnAwareScheduler() {
+        eventScheduler = initScheduler(false);
+    }
+
+    private EventScheduler initScheduler(boolean generationAware) {
+        return new EventScheduler(eventDispatcher,
+                new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry(), generationAware);
+    }
 
     private Object exceptionInExecution(InvocationOnMock invocation) {
         try {
@@ -203,7 +255,7 @@ class EventSchedulerTest {
         resource.setMetadata(new ObjectMetaBuilder()
                 .withCreationTimestamp("creationTimestamp")
                 .withDeletionGracePeriodSeconds(10L)
-                .withGeneration(10L)
+                .withGeneration(1L)
                 .withName("name")
                 .withNamespace("namespace")
                 .withResourceVersion("1")

@@ -18,4 +18,11 @@ public @interface Controller {
     Class<? extends CustomResource> customResourceClass();
 
     String finalizerName() default DEFAULT_FINALIZER;
+
+    /**
+     * If true, will schedule new event only if generation increased since the last processing, otherwise will
+     * process all events.
+     * See: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource
+     */
+    boolean generationAwareEventProcessing() default true;
 }
