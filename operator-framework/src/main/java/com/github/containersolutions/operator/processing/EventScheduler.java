@@ -40,12 +40,14 @@ public class EventScheduler implements Watcher<CustomResource> {
     private final ScheduledThreadPoolExecutor executor;
     private final EventStore eventStore = new EventStore();
     private final Retry retry;
+    private final boolean generationAware;
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, boolean generationAware) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
+        this.generationAware = generationAware;
         executor = new ScheduledThreadPoolExecutor(1);
         executor.setRemoveOnCancelPolicy(true);
     }
@@ -70,10 +72,17 @@ public class EventScheduler implements Watcher<CustomResource> {
                 log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
                 return;
             }
+            // In case of generation aware processing, we want to replace this even if generation not increased,
+            // to have the most recent copy of the event.
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
                 eventStore.addOrReplaceEventAsNotScheduled(event);
+                return;
+            }
+            if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)) {
+                log.debug("Skipping event, has not larger generation than last stored, actual generation: {}, last stored: {} ",
+                        event.getResource().getMetadata().getGeneration(), eventStore.getLastStoredGeneration(event));
                 return;
             }
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
