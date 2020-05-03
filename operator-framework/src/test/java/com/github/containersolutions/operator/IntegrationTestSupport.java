@@ -1,6 +1,5 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
@@ -35,9 +34,13 @@ public class IntegrationTestSupport {
     private MixedOperation<TestCustomResource, CustomResourceList, CustomResourceDoneable,
             Resource<TestCustomResource, CustomResourceDoneable>> crOperations;
     private Operator operator;
-
+    private TestCustomResourceController controller;
 
     public void initialize() {
+        initialize(true);
+    }
+
+    public void initialize(boolean updateStatus) {
         k8sClient = new DefaultKubernetesClient();
 
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
@@ -45,7 +48,7 @@ public class IntegrationTestSupport {
         CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
         k8sClient.customResourceDefinitions().createOrReplace(crd);
 
-        ResourceController<TestCustomResource> controller = new TestCustomResourceController(k8sClient);
+        controller = new TestCustomResourceController(k8sClient, updateStatus);
         Class doneableClass = getCustomResourceDoneableClass(controller);
         crOperations = k8sClient.customResources(crd, TestCustomResource.class, CustomResourceList.class, doneableClass);
         crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
@@ -94,7 +97,7 @@ public class IntegrationTestSupport {
      * @param test The code of the actual test.
      * @throws Exception if the test threw an exception.
      */
-    public void teardownIfSuccess(TestRun test) throws Exception {
+    public void teardownIfSuccess(TestRun test) {
         try {
             test.run();
 
@@ -105,9 +108,15 @@ public class IntegrationTestSupport {
             }
             await("namespace deleted").atMost(30, TimeUnit.SECONDS)
                     .until(() -> k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         } finally {
             k8sClient.close();
         }
+    }
+
+    public int numberOfControllerExecutions() {
+        return controller.getNumberOfExecutions();
     }
 
     private <T> T loadYaml(Class<T> clazz, String yaml) {

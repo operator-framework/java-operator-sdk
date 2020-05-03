@@ -38,7 +38,7 @@ public class ConcurrencyIT {
     }
 
     @Test
-    public void manyResourcesGetCreatedUpdatedAndDeleted() throws Exception {
+    public void manyResourcesGetCreatedUpdatedAndDeleted() {
         integrationTest.teardownIfSuccess(() -> {
             log.info("Adding new resources.");
             for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
