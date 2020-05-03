@@ -105,8 +105,7 @@ class EventSchedulerTest {
                 .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
                                 eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("2"),
                         "Events processed in correct order")
-                .matches(list ->
-                                eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
+                .matches(list -> eventExecutedBefore(0, 1),
                         "Start time of event 2 is after end time of event 1");
     }
 
@@ -132,8 +131,7 @@ class EventSchedulerTest {
                 .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
                                 eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("3"),
                         "Events processed in correct order")
-                .matches(list ->
-                                eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
+                .matches(list -> eventExecutedBefore(0, 1),
                         "Start time of event 2 is after end time of event 1");
     }
 
@@ -175,8 +173,7 @@ class EventSchedulerTest {
                 .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
                                 eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("2"),
                         "Events processed in correct order")
-                .matches(list ->
-                                eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
+                .matches(list -> eventExecutedBefore(0, 1),
                         "Start time of event 2 is after end time of event 1");
 
         assertThat(eventProcessingList.get(0).getException()).isNotNull();
@@ -231,6 +228,11 @@ class EventSchedulerTest {
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private boolean eventExecutedBefore(int event1Index, int event2Index) {
+        return eventProcessingList.get(event1Index).getEndTime().isBefore(eventProcessingList.get(event2Index).startTime) ||
+                eventProcessingList.get(event1Index).getEndTime().equals(eventProcessingList.get(event2Index).startTime);
     }
 
     private void waitMinimalTimeForExecution() {
