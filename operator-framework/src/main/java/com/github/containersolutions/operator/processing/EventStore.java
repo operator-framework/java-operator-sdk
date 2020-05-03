@@ -17,7 +17,7 @@ public class EventStore {
         return eventsNotScheduled.remove(uid);
     }
 
-    public void addOrReplaceEventAsNotScheduled(CustomResourceEvent event) {
+    public void addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(CustomResourceEvent event) {
         eventsNotScheduled.put(event.resourceUid(), event);
         updateLastGeneration(event);
     }
@@ -26,7 +26,7 @@ public class EventStore {
         return eventsUnderProcessing.containsKey(uuid);
     }
 
-    public void addEventUnderProcessing(CustomResourceEvent event) {
+    public void addEventUnderProcessingAndUpdateLastGeneration(CustomResourceEvent event) {
         eventsUnderProcessing.put(event.resourceUid(), event);
         updateLastGeneration(event);
     }

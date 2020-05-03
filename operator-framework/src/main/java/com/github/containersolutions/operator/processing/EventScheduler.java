@@ -77,7 +77,7 @@ public class EventScheduler implements Watcher<CustomResource> {
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduled(event);
+                eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
                 return;
             }
             if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)) {
@@ -88,7 +88,7 @@ public class EventScheduler implements Watcher<CustomResource> {
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduled(event);
+                eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
                 return;
             }
             scheduleEventForExecution(event);
@@ -108,7 +108,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 log.warn("Event max retry limit reached. Will be discarded. {}", event);
                 return;
             }
-            eventStore.addEventUnderProcessing(event);
+            eventStore.addEventUnderProcessingAndUpdateLastGeneration(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
             log.trace("Scheduled task for event: {}", event);
