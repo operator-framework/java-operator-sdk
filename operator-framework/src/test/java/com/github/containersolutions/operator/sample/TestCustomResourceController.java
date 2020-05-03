@@ -9,9 +9,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
         crdName = TestCustomResourceController.CRD_NAME,
@@ -23,9 +25,16 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
 
     private final KubernetesClient kubernetesClient;
+    private final boolean updateStatus;
+    private AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
     public TestCustomResourceController(KubernetesClient kubernetesClient) {
+        this(kubernetesClient, true);
+    }
+
+    public TestCustomResourceController(KubernetesClient kubernetesClient, boolean updateStatus) {
         this.kubernetesClient = kubernetesClient;
+        this.updateStatus = updateStatus;
     }
 
     @Override
@@ -38,6 +47,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
     @Override
     public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource) {
+        numberOfExecutions.addAndGet(1);
         ConfigMap existingConfigMap = kubernetesClient
                 .configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).get();
@@ -60,17 +70,31 @@ public class TestCustomResourceController implements ResourceController<TestCust
             kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                     .createOrReplace(newConfigMap);
         }
-
-        if (resource.getStatus() == null) {
-            resource.setStatus(new TestCustomResourceStatus());
+        if (updateStatus) {
+            if (resource.getStatus() == null) {
+                resource.setStatus(new TestCustomResourceStatus());
+            }
+            resource.getStatus().setConfigMapStatus("ConfigMap Ready");
         }
-        resource.getStatus().setConfigMapStatus("ConfigMap Ready");
+        addOrUpdateAnnotation(resource);
         return Optional.of(resource);
+    }
+
+    // for testing purposes we change metadata
+    private void addOrUpdateAnnotation(TestCustomResource resource) {
+        if (resource.getMetadata().getAnnotations() == null) {
+            resource.getMetadata().setAnnotations(new HashMap<>());
+        }
+        resource.getMetadata().getAnnotations().put("testAnnotation", LocalDateTime.now().toString());
     }
 
     private Map<String, String> configMapData(TestCustomResource resource) {
         Map<String, String> data = new HashMap<>();
         data.put(resource.getSpec().getKey(), resource.getSpec().getValue());
         return data;
+    }
+
+    public int getNumberOfExecutions() {
+        return numberOfExecutions.get();
     }
 }
