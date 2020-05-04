@@ -23,8 +23,7 @@ public class SchemaController implements ResourceController<Schema> {
 
     @Override
     public Optional<Schema> createOrUpdateResource(Schema schema) {
-        try {
-            Connection connection = getConnection();
+        try (Connection connection = getConnection()) {
             ResultSet resultSet = connection.createStatement().executeQuery(
                     format("SELECT schema_name FROM information_schema.schemata WHERE schema_name = \"%1$s\"",
                             schema.getMetadata().getName()));
@@ -61,8 +60,7 @@ public class SchemaController implements ResourceController<Schema> {
     public boolean deleteResource(Schema schema) {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
 
-        try {
-            Connection connection = getConnection();
+        try (Connection connection = getConnection()) {
             connection.createStatement().execute("DROP DATABASE `" + schema.getMetadata().getName() + "`");
             log.info("Deleted Schema '{}'", schema.getMetadata().getName());
 
