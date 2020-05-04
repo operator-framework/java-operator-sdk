@@ -180,6 +180,10 @@ class EventSchedulerTest {
         assertThat(eventProcessingList.get(1).getException()).isNull();
     }
 
+    /**
+     * Tests scenario when controller execution always fails (throws exception), but since the number of retries is limited
+     * it will end eventually with maximal number of processing attempts.
+     */
     @Test
     public void numberOfRetriesCanBeLimited() {
         doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), any(CustomResource.class));
