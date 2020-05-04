@@ -26,6 +26,7 @@ jobs:
           nexus_username: ${{ secrets.OSSRH_USERNAME }}
           nexus_password: ${{ secrets.OSSRH_TOKEN }}
 
+# This is separate job because there were issues with git after release step, was not able to commit changes. See history.
   update-working-version:
     runs-on: ubuntu-latest
     steps:
