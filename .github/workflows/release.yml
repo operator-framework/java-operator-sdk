@@ -29,7 +29,9 @@ jobs:
         run: mvn -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
       - name: Commit files
         run: |
-          git checkout -f master
+          git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --all
+          git checkout master
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -m "Set new SNAPSHOT version into pom files." -a
