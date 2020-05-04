@@ -3,28 +3,28 @@ on:
   release:
     types: [created]
 jobs:
-#  publish:
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - uses: actions/checkout@v2
-  #      - name: Set up Java and Maven
-  #        uses: actions/setup-java@v1
-  #        with:
-  #          java-version: 1.8
-  #      - name: change version to release version
-  #        # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
-  #        run: mvn versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
-  #        env:
-  #          RELEASE_VERSION: ${{ github.event.release.tag_name }}
-  #      #       see: https://github.com/keybase/keybase-issues/issues/2798
-  #      - name: Release Maven package
-  #        uses: samuelmeuli/action-maven-publish@v1
-  #        with:
-  #          maven_profiles: "release"
-  #          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-  #          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-  #          nexus_username: ${{ secrets.OSSRH_USERNAME }}
-  #          nexus_password: ${{ secrets.OSSRH_TOKEN }}
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: change version to release version
+        # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
+        run: mvn versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+      #       see: https://github.com/keybase/keybase-issues/issues/2798
+      - name: Release Maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          maven_profiles: "release"
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          nexus_username: ${{ secrets.OSSRH_USERNAME }}
+          nexus_password: ${{ secrets.OSSRH_TOKEN }}
 
   update-working-version:
     runs-on: ubuntu-latest
