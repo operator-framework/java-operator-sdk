@@ -60,8 +60,8 @@
                 <artifactId>dockerfile-maven-plugin</artifactId>
                 <version>1.4.12</version>
                 <configuration>
-                    <repository>mysql-schema-operator</repository>
-                    <tag>latest</tag>
+                    <repository>${docker-registry}/mysql-schema-operator</repository>
+                    <tag>${project.version}</tag>
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
                     </buildArgs>
