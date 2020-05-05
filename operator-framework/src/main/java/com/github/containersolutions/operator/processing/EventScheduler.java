@@ -65,9 +65,9 @@ public class EventScheduler implements Watcher<CustomResource> {
             lock.lock();
             log.debug("Scheduling event from Api: {}", event);
             if (event.getAction() == Action.DELETED) {
-                // This removed data from memory for deleted resource (prevent memory leak basically).
-                // Its quite interesting that this is always sufficient here (no finalizer or other mechanism needs to involved).
-                // If we are running we get DELETE the event, if not the memory is already gone.
+                // This removes data from memory for deleted resource (prevent memory leak basically).
+                // Its quite interesting that this is always sufficient here (no finalizer or other mechanism needs to be involved).
+                // Thus, if operator is running we get DELETE the event, if not the memory is already gone anyways.
                 eventStore.removeLastGenerationForDeletedResource(event.resourceUid());
                 if (event.getResource().getMetadata().getDeletionTimestamp() != null) {
                     // Note that we always use finalizers, we want to process delete event just in corner case,
