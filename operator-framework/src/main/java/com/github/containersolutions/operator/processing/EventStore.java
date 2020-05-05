@@ -51,4 +51,8 @@ public class EventStore {
     public Long getLastStoredGeneration(CustomResourceEvent event) {
         return lastGeneration.get(event.getResource().getMetadata().getUid());
     }
+
+    public void removeLastGenerationForDeletedResource(String uuid) {
+        lastGeneration.remove(uuid);
+    }
 }
