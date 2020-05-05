@@ -24,10 +24,7 @@ public class SchemaController implements ResourceController<Schema> {
     @Override
     public Optional<Schema> createOrUpdateResource(Schema schema) {
         try (Connection connection = getConnection()) {
-            ResultSet resultSet = connection.createStatement().executeQuery(
-                    format("SELECT schema_name FROM information_schema.schemata WHERE schema_name = \"%1$s\"",
-                            schema.getMetadata().getName()));
-            if (!resultSet.first()) {
+            if (schemaExists(connection, schema.getMetadata().getName())) {
                 connection.createStatement().execute(format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
                         schema.getMetadata().getName(),
                         schema.getSpec().getEncoding()));
@@ -40,10 +37,8 @@ public class SchemaController implements ResourceController<Schema> {
                 schema.setStatus(status);
 
                 log.info("Schema {} created", schema.getMetadata().getName());
-                return Optional.of(schema);
-            } else {
-                return Optional.of(schema);
             }
+            return Optional.of(schema);
         } catch (SQLException e) {
             log.error("Error while creating Schema", e);
 
@@ -61,9 +56,13 @@ public class SchemaController implements ResourceController<Schema> {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
 
         try (Connection connection = getConnection()) {
-            connection.createStatement().execute("DROP DATABASE `" + schema.getMetadata().getName() + "`");
-            log.info("Deleted Schema '{}'", schema.getMetadata().getName());
-
+            if (schemaExists(connection, schema.getMetadata().getName())) {
+                connection.createStatement().execute("DROP DATABASE `" + schema.getMetadata().getName() + "`");
+                log.info("Deleted Schema '{}'", schema.getMetadata().getName());
+            } else {
+                log.info("Delete event ignored for schema '{}', real schema doesn't exist",
+                        schema.getMetadata().getName());
+            }
             return true;
         } catch (SQLException e) {
             log.error("Error while trying to delete Schema", e);
@@ -77,6 +76,13 @@ public class SchemaController implements ResourceController<Schema> {
                 System.getenv("MYSQL_PORT") != null ? System.getenv("MYSQL_PORT") : "3306",
                 System.getenv("MYSQL_USER"),
                 System.getenv("MYSQL_PASSWORD")));
+    }
+
+    private boolean schemaExists(Connection connection, String schemaName) throws SQLException {
+        ResultSet resultSet = connection.createStatement().executeQuery(
+                format("SELECT schema_name FROM information_schema.schemata WHERE schema_name = \"%1$s\"",
+                        schemaName));
+        return resultSet.first();
     }
 
 }
