@@ -8,6 +8,7 @@ public class EventStore {
     private final Map<String, CustomResourceEvent> eventsNotScheduled = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
     private final Map<String, Long> lastGeneration = new HashMap<>();
+    private final Map<String, CustomResourceEvent> receivedLastEventForGenerationAwareRetry = new HashMap<>();
 
     public boolean containsNotScheduledEvent(String uuid) {
         return eventsNotScheduled.containsKey(uuid);
@@ -52,7 +53,16 @@ public class EventStore {
         return lastGeneration.get(event.getResource().getMetadata().getUid());
     }
 
-    public void removeLastGenerationForDeletedResource(String uuid) {
+    public void addLastEventForGenerationAwareRetry(CustomResourceEvent event) {
+        receivedLastEventForGenerationAwareRetry.put(event.resourceUid(), event);
+    }
+
+    public CustomResourceEvent getReceivedLastEventForGenerationAwareRetry(String uuid) {
+        return receivedLastEventForGenerationAwareRetry.get(uuid);
+    }
+
+    public void cleanup(String uuid) {
         lastGeneration.remove(uuid);
+        receivedLastEventForGenerationAwareRetry.remove(uuid);
     }
 }

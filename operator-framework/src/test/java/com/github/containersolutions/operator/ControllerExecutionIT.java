@@ -9,6 +9,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
@@ -36,6 +37,7 @@ public class ControllerExecutionIT {
 
             awaitResourcesCreatedOrUpdated();
             awaitStatusUpdated();
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
     }
 
@@ -52,6 +54,26 @@ public class ControllerExecutionIT {
         });
     }
 
+    // We test the scenario when we receive 2 events, while the generation is not increased by the other.
+    // This will cause a conflict, and on retry the new version of the resource needs to be scheduled
+    // to avoid repeating conflicts
+    @Test
+    public void generationAwareRetryConflict() {
+        initAndCleanup(true);
+        integrationTestSupport.teardownIfSuccess(() -> {
+            TestCustomResource resource = testCustomResource();
+            TestCustomResource resource2 = testCustomResource();
+            resource2.getMetadata().getAnnotations().put("testannotation", "val");
+
+            integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
+            integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(resource2);
+
+            awaitResourcesCreatedOrUpdated();
+            awaitStatusUpdated(10);
+        });
+    }
+
+
     void awaitResourcesCreatedOrUpdated() {
         await("configmap created").atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
@@ -63,7 +85,11 @@ public class ControllerExecutionIT {
     }
 
     void awaitStatusUpdated() {
-        await("cr status updated").atMost(5, TimeUnit.SECONDS)
+        awaitStatusUpdated(5);
+    }
+
+    void awaitStatusUpdated(int timeout) {
+        await("cr status updated").atMost(timeout, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     TestCustomResource cr = integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
                     assertThat(cr).isNotNull();
@@ -78,6 +104,7 @@ public class ControllerExecutionIT {
                 .withName("test-custom-resource")
                 .withNamespace(TEST_NAMESPACE)
                 .build());
+        resource.getMetadata().setAnnotations(new HashMap<>());
         resource.setKind("CustomService");
         resource.setSpec(new TestCustomResourceSpec());
         resource.getSpec().setConfigMapName("test-config-map");
