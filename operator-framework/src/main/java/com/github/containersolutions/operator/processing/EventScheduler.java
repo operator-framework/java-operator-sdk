@@ -64,19 +64,22 @@ public class EventScheduler implements Watcher<CustomResource> {
         try {
             lock.lock();
             log.debug("Scheduling event from Api: {}", event);
-            if (event.getAction() == Action.DELETED) {
-                // This removes data from memory for deleted resource (prevent memory leak basically).
-                // Its quite interesting that this is always sufficient here (no finalizer or other mechanism needs to be involved).
-                // Thus, if operator is running we get DELETE the event, if not the memory is already gone anyways.
-                eventStore.removeLastGenerationForDeletedResource(event.resourceUid());
-                if (event.getResource().getMetadata().getDeletionTimestamp() != null) {
-                    // Note that we always use finalizers, we want to process delete event just in corner case,
-                    // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
-                    // We want to skip in case of finalizer was there since we don't want to execute delete method always at least 2x,
-                    // which would be the result if we don't skip here. (there is no deletion timestamp if resource deleted without finalizer.)
-                    log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
-                    return;
-                }
+            if (event.getAction() == Action.DELETED && event.getResource().getMetadata().getDeletionTimestamp() != null) {
+                // This removes data from memory for deleted resource (prevent memory leak).
+                // There is am extreme corner case when there is no finalizer, we ignore this situation now.
+                eventStore.cleanup(event.resourceUid());
+                // Note that we always use finalizers, we want to process delete event just in corner case,
+                // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
+                // We want to skip in case of finalizer was there since we don't want to execute delete method always at least 2x,
+                // which would be the result if we don't skip here. (there is no deletion timestamp if resource deleted without finalizer.)
+                log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
+                return;
+            }
+            if (generationAware) {
+                // we have to store the last event for generation aware retries, since if we received new events since
+                // the execution, which did not have increased generation we will fail automatically on a conflict
+                // on a retry.
+                eventStore.addLastEventForGenerationAwareRetry(event);
             }
             // In case of generation aware processing, we want to replace this even if generation not increased,
             // to have the most recent copy of the event.
@@ -145,10 +148,25 @@ public class EventScheduler implements Watcher<CustomResource> {
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
             } else {
                 log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
-                scheduleEventForExecution(event);
+                if (generationAware) {
+                    CustomResourceEvent eventToRetry = selectEventToRetry(event);
+                    scheduleEventForExecution(eventToRetry);
+                } else {
+                    scheduleEventForExecution(event);
+                }
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    private CustomResourceEvent selectEventToRetry(CustomResourceEvent event) {
+        CustomResourceEvent lastEvent = eventStore.getReceivedLastEventForGenerationAwareRetry(event.resourceUid());
+        if (!event.getResource().getMetadata().getResourceVersion()
+                .equals(lastEvent.getResource().getMetadata().getResourceVersion())) {
+            return lastEvent;
+        } else {
+            return event;
         }
     }
 
