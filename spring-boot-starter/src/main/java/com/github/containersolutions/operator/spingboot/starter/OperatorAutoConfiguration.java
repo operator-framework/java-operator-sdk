@@ -11,7 +11,6 @@ import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -21,22 +20,12 @@ import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties({OperatorProperties.class, RetryProperties.class})
-@ConditionalOnMissingBean(Operator.class)
 public class OperatorAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(OperatorAutoConfiguration.class);
 
-    @Autowired
-    private RetryProperties retryProperties;
-
-    @Autowired
-    private OperatorProperties operatorProperties;
-
-    @Autowired
-    private List<ResourceController> resourceControllers;
-
     @Bean
     @ConditionalOnMissingBean
-    public KubernetesClient kubernetesClient() {
+    public KubernetesClient kubernetesClient(OperatorProperties operatorProperties) {
         ConfigBuilder config = new ConfigBuilder();
         config.withTrustCerts(operatorProperties.isTrustSelfSignedCertificates());
         if (StringUtils.isNotBlank(operatorProperties.getUsername())) {
@@ -53,7 +42,8 @@ public class OperatorAutoConfiguration {
     }
 
     @Bean
-    public Operator operator(KubernetesClient kubernetesClient, Retry retry) {
+    @ConditionalOnMissingBean(Operator.class)
+    public Operator operator(KubernetesClient kubernetesClient, Retry retry, List<ResourceController> resourceControllers) {
         Operator operator = new Operator(kubernetesClient);
         resourceControllers.forEach(r -> operator.registerControllerForAllNamespaces(r, retry));
         return operator;
@@ -61,7 +51,7 @@ public class OperatorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Retry retry() {
+    public Retry retry(RetryProperties retryProperties) {
         GenericRetry retry = new GenericRetry();
         if (retryProperties.getInitialInterval() != null) {
             retry.setInitialInterval(retryProperties.getInitialInterval());
