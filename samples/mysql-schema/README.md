@@ -44,7 +44,7 @@ This should update the actual nginx deployment with new configuration.
 
 ### Build
 
-You can build the sample using `mvn dockerfile:build` this will produce a Docker image you can push to the registry 
+You can build the sample using `mvn package dockerfile:build` this will produce a Docker image you can push to the registry 
 of your choice. The jar file is built using your local Maven and JDK and then copied into the Docker image.
 
 ### Deployment
