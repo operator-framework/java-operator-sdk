@@ -24,7 +24,7 @@ public class SchemaController implements ResourceController<Schema> {
     @Override
     public Optional<Schema> createOrUpdateResource(Schema schema) {
         try (Connection connection = getConnection()) {
-            if (schemaExists(connection, schema.getMetadata().getName())) {
+            if (!schemaExists(connection, schema.getMetadata().getName())) {
                 connection.createStatement().execute(format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
                         schema.getMetadata().getName(),
                         schema.getSpec().getEncoding()));
