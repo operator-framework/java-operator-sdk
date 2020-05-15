@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: objectstore-operator
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: objectstores.sample.javaoperatorsdk
+spec:
+  group: sample.javaoperatorsdk
+  scope: Namespaced
+  names:
+    plural: objectstores
+    singular: objectstore
+    kind: ObjectStore
+    shortNames:
+    - os
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                name: 
+                  type: string
+                deployNamespace:
+                  type: string
+                instances:
+                  type: object
+                  properties:
+                    zone:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        servers: 
+                          type: integer
+                        mem:
+                          type: string
+                        cpu: 
+                          type: string
+                volumes:
+                  type: object
+                  properties:
+                    count: 
+                      type: integer
+                    size:
+                      type: string
+                stores: 
+                  type: object
+                  properties:
+                    configstore: 
+                      type: array
+                      items:
+                        type: string
+                    filestore:
+                      type: array
+                      items:
+                        type: string
+---                    
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: objectstore-operator
+  namespace: objectstore-operator
+spec:
+  selector:
+    matchLabels:
+      app: objectstore-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: objectstore-operator
+    spec:
+      serviceAccount: objectstore-operator
+      containers:
+      - name: operator
+        image: objectstore-operator
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: objectstore-operator
+  namespace: objectstore-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: operator-admin
+subjects:
+- kind: ServiceAccount
+  name: objectstore-operator
+  namespace: objectstore-operator
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: ""

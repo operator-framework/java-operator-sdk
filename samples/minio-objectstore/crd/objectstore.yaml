@@ -1,0 +1,21 @@
+apiVersion: sample.javaoperatorsdk/v1
+kind: ObjectStore
+metadata:
+  name: my-objectstore
+spec:
+  name: objectstore
+  deployNamespace: objectstore-runtime
+  instances:
+    zone:
+      name: zone-0
+      servers: 1
+      mem: 250m
+      cpu: 100m
+  volumes:
+    count: 1
+    size: 10M
+  stores: 
+    configstore: 
+      - cfg-test
+    filestore:
+      - file-test
