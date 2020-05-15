@@ -3,6 +3,7 @@ package com.github.containersolutions.operator.sample;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -14,19 +15,23 @@ import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.DoneableNamespace;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.kubernetes.client.utils.URLFromServiceUtil;
 
 @Controller(customResourceClass = ObjectStore.class,
         crdName = "objectstores.sample.javaoperatorsdk")
@@ -62,6 +67,10 @@ public class ObjectStoreController implements ResourceController<ObjectStore> {
         service.getMetadata().setName(serviceName(objectStore));
         service.getMetadata().setNamespace(ns);
         service.getSpec().setSelector(minioInstance.getSpec().getSelector().getMatchLabels());
+        if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName()).get() == null) {
+            log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
+            kubernetesClient.services().inNamespace(ns).createOrReplace(service);
+        }
         
         Secret secret = loadYaml(Secret.class, "secret.yaml");
         secret.getMetadata().setName(secretName(objectStore));
@@ -85,15 +94,19 @@ public class ObjectStoreController implements ResourceController<ObjectStore> {
                 "cpu", new Quantity(objectStore.getSpec().getInstances().getZone().getCpu()));
         
         CustomResourceDefinition minioOperatorCrd = getMinioOperatorCRD();
-        MixedOperation<MinioInstance, MinioInstanceList, DoneableMinioInstance, Resource<MinioInstance, DoneableMinioInstance>> minioInstanceClient = 
+        NonNamespaceOperation<MinioInstance, MinioInstanceList, DoneableMinioInstance, Resource<MinioInstance, DoneableMinioInstance>> minioInstanceClient = 
                 kubernetesClient.customResources(minioOperatorCrd, MinioInstance.class, MinioInstanceList.class, DoneableMinioInstance.class);
+        minioInstanceClient = 
+                ((MixedOperation<MinioInstance, MinioInstanceList, DoneableMinioInstance, Resource<MinioInstance, DoneableMinioInstance>>) minioInstanceClient).inNamespace(ns);
         minioInstanceClient.createOrReplace(minioInstance);
 
-        if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName()).get() == null) {
-            log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
-            kubernetesClient.services().inNamespace(ns).createOrReplace(service);
-        }       
-
+        ServicePort port = URLFromServiceUtil.getServicePortByName(service, "http-minio");
+        IntOrString targetPort = port.getTargetPort();
+        String serviceProto = port.getProtocol();
+        String clusterIP = (String) kubernetesClient.services().inNamespace(ns).withName(serviceName(objectStore)).get().getSpec().getClusterIP();
+        String serviceURL = (serviceProto + "://" + clusterIP + ":" + targetPort.getIntVal()).toLowerCase(Locale.ROOT);
+        log.info("Accesing service url {} of MinioInstance {} in {}", serviceURL, minioInstance.getMetadata().getName(), ns);
+        
         ObjectStoreStatus status = new ObjectStoreStatus();
         status.setStatus("Yes!");
         objectStore.setStatus(status);
@@ -106,12 +119,14 @@ public class ObjectStoreController implements ResourceController<ObjectStore> {
 
         log.info("Deleting MinioInstance {}", deploymentName(objectStore));
         CustomResourceDefinition minioOperatorCrd = getMinioOperatorCRD();
-        MixedOperation<MinioInstance, MinioInstanceList, DoneableMinioInstance, Resource<MinioInstance, DoneableMinioInstance>> minioInstanceClient = 
+        NonNamespaceOperation<MinioInstance, MinioInstanceList, DoneableMinioInstance, Resource<MinioInstance, DoneableMinioInstance>> minioInstanceClient = 
                 kubernetesClient.customResources(minioOperatorCrd, MinioInstance.class, MinioInstanceList.class, DoneableMinioInstance.class);
+        minioInstanceClient = 
+                ((MixedOperation<MinioInstance, MinioInstanceList, DoneableMinioInstance, Resource<MinioInstance, DoneableMinioInstance>>) minioInstanceClient).inNamespace(ns);
         MinioInstance minioInstance = getMinioInstance(objectStore, minioInstanceClient.list());
         
         if (minioInstance != null) {
-            minioInstanceClient.inNamespace(ns).delete(minioInstance);
+            minioInstanceClient.delete(minioInstance);
         }
 
         log.info("Deleting Service {}", serviceName(objectStore));

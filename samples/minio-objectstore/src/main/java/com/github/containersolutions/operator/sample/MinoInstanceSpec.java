@@ -3,14 +3,16 @@ package com.github.containersolutions.operator.sample;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class MinoInstanceSpec {
     private LabelSelector selector;
     private ObjectMeta metadata;    
@@ -153,7 +155,7 @@ public class MinoInstanceSpec {
         return liveness;
     }
  
-    public void setLivenessProbe(Probe liveness) {
+    public void setLiveness(Probe liveness) {
         this.liveness = liveness;
     }
 }
