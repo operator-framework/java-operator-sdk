@@ -7,9 +7,6 @@ definitions and creates a minio deployment.
 Refer: https://github.com/minio/minio-operator for more details on the custom resource we would be deploying, 
 which intrun would deploy minio.
 
-## TODO:
-- Create buckets in minio based on stores config.
-
 This is an example input of our object store:
 ```yaml
 apiVersion: "sample.javaoperatorsdk/v1"
@@ -34,6 +31,11 @@ spec:
     filestore:
       - file-test
 ```
+
+After minio operator installs and configures **minio**, our operator will configure buckets on that **minio** instance.
+It will use the configration under `stores` to create these buckets, by using minio java client.
+
+_This operator can further be extended to create custom objects, inside these stores._
 
 ### Try 
 
