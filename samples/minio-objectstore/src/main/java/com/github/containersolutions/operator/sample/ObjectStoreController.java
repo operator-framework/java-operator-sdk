@@ -2,6 +2,9 @@ package com.github.containersolutions.operator.sample;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -32,6 +35,16 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.fabric8.kubernetes.client.utils.URLFromServiceUtil;
+import io.minio.MinioClient;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.InsufficientDataException;
+import io.minio.errors.InternalException;
+import io.minio.errors.InvalidBucketNameException;
+import io.minio.errors.InvalidEndpointException;
+import io.minio.errors.InvalidPortException;
+import io.minio.errors.InvalidResponseException;
+import io.minio.errors.RegionConflictException;
+import io.minio.errors.XmlParserException;
 
 @Controller(customResourceClass = ObjectStore.class,
         crdName = "objectstores.sample.javaoperatorsdk")
@@ -106,11 +119,42 @@ public class ObjectStoreController implements ResourceController<ObjectStore> {
         String clusterIP = (String) kubernetesClient.services().inNamespace(ns).withName(serviceName(objectStore)).get().getSpec().getClusterIP();
         String serviceURL = (serviceProto + "://" + clusterIP + ":" + targetPort.getIntVal()).toLowerCase(Locale.ROOT);
         log.info("Accesing service url {} of MinioInstance {} in {}", serviceURL, minioInstance.getMetadata().getName(), ns);
+        log.info("Secret Key {} Access Key {}", secret.getData().get("accesskey"), secret.getData().get("secretkey"));
         
         ObjectStoreStatus status = new ObjectStoreStatus();
         status.setStatus("Yes!");
+        try {
+            Base64.Decoder decoder = Base64.getDecoder();
+            String accesskey = new String(decoder.decode(secret.getData().get("accesskey"))); 
+            String secretkey = new String(decoder.decode(secret.getData().get("secretkey")));
+            MinioClient minioClient = new MinioClient(serviceURL, accesskey, secretkey);
+            Stores stores = objectStore.getSpec().getStores();
+            for (String cfgBucket : stores.getConfigstore()) {
+                makeBucketIfExists(minioClient, cfgBucket);
+            }
+            for (String fileBucket : stores.getFilestore()) {
+                makeBucketIfExists(minioClient, fileBucket);
+            }
+        } catch (InvalidEndpointException | InvalidPortException e) {
+            log.error("MinioClientEndpointException", e);
+            status.setStatus(e.getMessage());
+        }
         objectStore.setStatus(status);
+
         return Optional.of(objectStore);
+    }
+
+    private void makeBucketIfExists(MinioClient minioClient, String cfgBucket) {
+        try {
+            boolean found = minioClient.bucketExists(cfgBucket);
+            if (!found) {
+                minioClient.makeBucket(cfgBucket);
+            }
+        } catch (InvalidKeyException | ErrorResponseException | IllegalArgumentException | InsufficientDataException
+                | InternalException | InvalidBucketNameException | InvalidResponseException | NoSuchAlgorithmException
+                | XmlParserException | IOException | RegionConflictException e) {
+            log.error("BucketExistsException", e);
+        }
     }
 
     @Override
