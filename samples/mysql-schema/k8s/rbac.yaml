@@ -1,0 +1,37 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: mysql-schema-operator
+rules:
+- apiGroups:
+  - mysql.sample.javaoperatorsdk
+  resources:
+  - schemas
+  verbs:
+  - "*"
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - "get"
+  - "list"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mysql-schema-operator
+subjects:
+- kind: ServiceAccount
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+roleRef:
+  kind: ClusterRole
+  name: mysql-schema-operator
+  apiGroup: ""

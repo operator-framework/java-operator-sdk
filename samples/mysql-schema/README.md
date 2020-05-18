@@ -1,53 +1,77 @@
-# WebServer Operator
+# MySQL Schema Operator
 
-This is a more complex example of how a Custom Resource backed by an Operator can serve as
-an abstraction layer. This Operator will use an webserver resource, which mainly contains a
-static webpage definition and creates a nginx Deployment backed by a ConfigMap which holds
-the html.
+This example shows how an operator can control resources outside of the Kubernetes cluster. In this case it will be
+managing MySQL schemas in an existing database server. This is a common scenario in many organizations where developers
+need to create schemas for different applications and environments, but the database server itself is managed by a 
+different team. Using this operator a dev team can create a CR in their namespace and have a schema provisioned automatically.
+Access to the MySQL server is configured in the configuration of the operator, so admin access is restricted. 
 
 This is an example input:
 ```yaml
-apiVersion: "sample.javaoperatorsdk/v1"
-kind: WebServer
+apiVersion: "mysql.sample.javaoperatorsdk/v1"
+kind: MySQLSchema
 metadata:
-  name: mynginx-hello
+  name: mydb
 spec:
-  html: |
-    <html>
-      <head>
-        <title>Webserver Operator</title>
-      </head>
-      <body>
-        Hello World!!
-      </body>
-    </html>
+  encoding: utf8
 ```
+
+Creating this custom resource will prompt the operator to create a schema named `mydb` in the MySQL server and update
+the resource status with its URL. Once the resource is deleted, the operator will delete the schema. Obviously don't
+use it as is with real databases. 
 
 ### Try 
 
-The quickest way to try the operator is to run it on your local machine, while it connects to a local or remote
-Kubernetes cluster. When you start it it will use the current kubectl context on your machine to connect to the cluster.
+To try how the operator works you will need the following:
+* JDK installed (minimum version 8, tested with 1.8, 12, 13)
+* Maven installed (tested with 3.6.3)
+* A working Kubernetes cluster (tested with v1.15.9-gke.24)
+* kubectl installed (tested with v1.15.5)
+* Docker installed (tested with 19.03.8)
+* Container image registry
+How to configure all the above depends heavily on where your Kubernetes cluster is hosted. 
+If you use [minikube](https://minikube.sigs.k8s.io/docs/) you will need to configure kubectl and docker differently
+than if you'd use [GKE](https://cloud.google.com/kubernetes-engine/). You will have to read the documentation of your
+Kubernetes provider to figure this out.
 
-Before you run it you have to install the CRD on your cluster by running `kubectl apply -f crd/crd.yaml`
+Once you have the basics you can build and deploy the operator.
 
-When the Operator is running you can create some Webserver Custom Resources. You can find a sample custom resource in
-`crd/webserver.yaml`. You can create it by running `kubectl apply -f webserver.yaml`
+### Build & Deploy
 
-After the Operator has picked up the new webserver resource (see the logs) it should create the nginx server in the 
-same namespace where the webserver resource is created. To connect to the server using your browser you can
-run `kubectl get service` and view the service created by the Operator. It should have a NodePort configured. If you are
-running a single-node cluster (e.g. Docker for Mac or Minikube) you can connect to the VM on this port to access the
-page.
+1. We will be building the Docker image from the source code using Maven, so we have to configure the Docker registry
+where the image should be pushed. Do this in your ~/.m2/settings.xml. In the example below I'm setting it to
+the [Container Registry](https://cloud.google.com/container-registry/) in Google Cloud Europe. 
+  
+```xml
+<properties>
+    <docker-registry>eu.gcr.io/my-gcp-project</docker-registry>
+</properties>
+```
 
-You can also try to change the html code in `crd/webserver.yaml` and do another `kubectl apply -f crd/webserver.yaml`.
-This should update the actual nginx deployment with new configuration.  
+1. The following Maven command will build the jar file, package it as a Docker image and push it to the registry.
 
-### Build
+   `mvn package dockerfile:build dockerfile:push` 
 
-You can build the sample using `mvn package dockerfile:build` this will produce a Docker image you can push to the registry 
-of your choice. The jar file is built using your local Maven and JDK and then copied into the Docker image.
+1. Deploy the test MySQL on your cluster if you want to use it. Note that if you have an already running MySQL server
+you want to use, you can skip this step, but you will have to configure the operator to use that server.
+   
+   `kubectl apply -f k8s/mysql.yaml`
+1. Deploy the CRD: 
 
-### Deployment
+   `kubectl apply -f k8s/crd.yaml`
+1. Set up RBAC: 
 
-1. Deploy the CRD: kubectl apply -f crd/crd.yaml
-2. Deploy the operator: kubectl apply -f k8s/deployment.yaml
+   `kubectl apply -f k8s/rbac.yaml`
+1. Make a copy of `k8s/deployment.yaml` and replace ${DOCKER_REGISTRY} and ${OPERATOR_VERSION} to the 
+right values. You will want to set `OPERATOR_VERSION` to the one used for building the Docker image. `DOCKER_REGISTRY` should
+be the same as you set the docker-registry property in your `settings.xml`.
+If you look at the environment variables you will notice this is where the access to the MySQL server is configured.
+The default values assume the server is running in another Kubernetes namespace (called `mysql`), uses the `root` user
+with a not very secure password. In case you want to use a different MySQL server, this is where you configure it. 
+
+1. Run `kubectl apply -f copy-of-deployment.yaml` to deploy the operator. You can wait for the deployment to succeed using
+this command: `kubectl rollout status deployment mysql-schema-operator -w`. `-w` will cause kubectl to continuously monitor 
+the deployment until you stop it.
+
+1. Now you are ready to create some databases! To create a database schema called `mydb` just apply the `k8s/example.yaml`
+file with kubectl: `kubectl apply -f k8s/example.yaml`. You can modify the database name in the file to create more schemas.
