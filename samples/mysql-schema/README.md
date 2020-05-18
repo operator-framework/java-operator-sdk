@@ -23,7 +23,7 @@ use it as is with real databases.
 ### Try 
 
 To try how the operator works you will need the following:
-* JDK installed (minimum version 8, tested with 13)
+* JDK installed (minimum version 8, tested with 1.8, 12, 13)
 * Maven installed (tested with 3.6.3)
 * A working Kubernetes cluster (tested with v1.15.9-gke.24)
 * kubectl installed (tested with v1.15.5)
