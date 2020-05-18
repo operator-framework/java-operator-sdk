@@ -23,7 +23,7 @@ spec:
       serviceAccount: mysql-schema-operator
       containers:
       - name: operator
-        image: eu.gcr.io/adamsandor-test/mysql-schema-operator:1.2.3-SNAPSHOT
+        image: ${DOCKER_REGISTRY}/mysql-schema-operator:${OPERATOR_VERSION}
         imagePullPolicy: Always
         ports:
         - containerPort: 80
