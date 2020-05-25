@@ -7,7 +7,7 @@ import org.junit.jupiter.api.TestInstance;
 public class SubResourceIT {
 
     @Test
-    public void updatesSubresourceStatus() {
+    public void updatesSubResourceStatus() {
 
     }
 

@@ -45,8 +45,7 @@ public class IntegrationTestSupport {
 
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
 
-        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
-        k8sClient.customResourceDefinitions().createOrReplace(crd);
+        CustomResourceDefinition crd = loadCRDAndApplyToCluster("test-crd.yaml");
 
         controller = new TestCustomResourceController(k8sClient, updateStatus);
         Class doneableClass = getCustomResourceDoneableClass(controller);
@@ -60,6 +59,12 @@ public class IntegrationTestSupport {
         operator = new Operator(k8sClient);
         operator.registerController(controller, TEST_NAMESPACE);
         log.info("Operator is running with TestCustomeResourceController");
+    }
+
+    public CustomResourceDefinition loadCRDAndApplyToCluster(String classPathYaml) {
+        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, classPathYaml);
+        k8sClient.customResourceDefinitions().createOrReplace(crd);
+        return crd;
     }
 
     public void cleanup() {

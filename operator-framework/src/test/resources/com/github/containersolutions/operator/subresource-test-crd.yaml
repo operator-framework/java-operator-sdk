@@ -8,6 +8,8 @@ spec:
     - name: v1
       served: true
       storage: true
+      subresources:
+        status: {}
   scope: Namespaced
   names:
     plural: customservices2

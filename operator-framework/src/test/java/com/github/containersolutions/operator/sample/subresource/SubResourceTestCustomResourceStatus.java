@@ -2,20 +2,20 @@ package com.github.containersolutions.operator.sample.subresource;
 
 public class SubResourceTestCustomResourceStatus {
 
-    private String configMapStatus;
+    private State state;
 
-    public String getConfigMapStatus() {
-        return configMapStatus;
+    public State getState() {
+        return state;
     }
 
-    public void setConfigMapStatus(String configMapStatus) {
-        this.configMapStatus = configMapStatus;
+    public SubResourceTestCustomResourceStatus setState(State state) {
+        this.state = state;
+        return this;
     }
 
-    @Override
-    public String toString() {
-        return "TestCustomResourceStatus{" +
-                "configMapStatus='" + configMapStatus + '\'' +
-                '}';
+    public enum State {
+        SUCCESS,
+        ERROR
     }
+
 }
