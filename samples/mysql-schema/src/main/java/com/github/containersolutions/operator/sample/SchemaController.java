@@ -37,8 +37,9 @@ public class SchemaController implements ResourceController<Schema> {
                 schema.setStatus(status);
 
                 log.info("Schema {} created", schema.getMetadata().getName());
+                return Optional.of(schema);
             }
-            return Optional.of(schema);
+            return Optional.empty();
         } catch (SQLException e) {
             log.error("Error while creating Schema", e);
 
