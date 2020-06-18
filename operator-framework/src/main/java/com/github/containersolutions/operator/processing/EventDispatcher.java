@@ -109,6 +109,9 @@ public class EventDispatcher {
         }
 
         public CustomResource replaceWithLock(CustomResource resource) {
+            resource = resourceOperation.inNamespace(resource.getMetadata().getNamespace())
+                    .withName(resource.getMetadata().getName())
+                    .updateStatus(resource);
             return resourceOperation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .lockResourceVersion(resource.getMetadata().getResourceVersion())
