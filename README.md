@@ -9,7 +9,7 @@ The Controller only contains the logic to create, update and delete the actual r
 
 ## Join us on Discord!
 
-[Discord Invice Link](https://discord.gg/DacEhAy)
+[Discord Invite Link](https://discord.gg/DacEhAy)
 
 ## Roadmap
 
