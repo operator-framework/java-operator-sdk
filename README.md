@@ -7,6 +7,10 @@ a Controller written by the user of the framework.
 
 The Controller only contains the logic to create, update and delete the actual resources related to the CRD.
 
+## Join us on Discord!
+
+https://discord.gg/DacEhAy
+
 ## Roadmap
 
 Feature we would like to implement and invite the community to help us implement in the future:
