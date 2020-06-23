@@ -6,6 +6,10 @@ public class SchemaStatus {
 
     private String status;
 
+    private String userName;
+
+    private String secretName;
+
     public String getUrl() {
         return url;
     }
@@ -21,4 +25,12 @@ public class SchemaStatus {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getUserName() { return userName; }
+
+    public void setUserName(String userName) { this.userName = userName; }
+
+    public String getSecretName() { return secretName; }
+
+    public void setSecretName(String secretName) { this.secretName = secretName; }
 }

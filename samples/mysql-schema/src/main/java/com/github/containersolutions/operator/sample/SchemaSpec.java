@@ -11,4 +11,5 @@ public class SchemaSpec {
     public void setEncoding(String encoding) {
         this.encoding = encoding;
     }
+
 }
