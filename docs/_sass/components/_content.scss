@@ -1,0 +1,120 @@
+.content {
+  align-items: center;
+  font-size: 22px;
+  line-height: 30px;
+  justify-content: space-between;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 940px;
+  padding: 80px 0px;
+
+  h1 {
+    font-size: 32px;
+    font-weight: bold;
+    line-height: 36px;
+    margin: 20px 0px 30px;
+    text-transform: uppercase;
+  }
+
+  table {
+    width: 100%;
+
+    td {
+      float: none;
+      width: 50%;
+
+      a {
+        color: #000;
+        margin: 20px;
+        vertical-align: middle;
+
+        &:hover {
+          color: #000;
+          text-decoration: none;
+        }
+      }
+    }
+
+    @media all and (max-width: 700px) {
+      td {
+        float: left;
+        width: 100%;
+      }
+    }
+  }
+
+  ul.plusminus {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    li.minus {
+      padding: 0px 0px 0px 40px;
+      position: relative;
+
+      &:before {
+        content: "-";
+        font-weight: 800;
+        left: 16px;
+        position: absolute;
+      }
+    }
+
+    li.plus {
+      padding: 0px 0px 0px 40px;
+      position: relative;
+
+      &:before {
+        content: "+";
+        font-weight: 800;
+        left: 16px;
+        position: absolute;
+      }
+    }
+  }
+}
+
+.book-section {
+  background-color: #000;
+  background-image: url("#{$baseurl}/assets/images/pattern%20white_1.png");
+  background-size: cover;
+  color: #fff;
+  font-weight: 600;
+
+  a {
+    color: #fff;
+    text-decoration: underline;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  div {
+    background-color: transparent;
+    background-image: none;
+  }
+}
+
+.cta-section {
+  text-align: center;
+
+  strong {
+    text-transform: uppercase;
+  }
+}
+
+.patterns-section {
+  a {
+    color: #000;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 36px;
+    margin: 30px 0px 0px;
+
+    &:hover {
+      color: #000;
+      text-decoration: none;
+    }
+  }
+}

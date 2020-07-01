@@ -1,0 +1,25 @@
+.title-strip {
+  background-color: #2841f9;
+  background-image: url("#{$baseurl}/assets/images/bg-blueprint.png");
+  background-size: cover;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 30px;
+  padding: 195px 0px;
+}
+
+.title {
+  align-items: center;
+  justify-content: space-between;
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+
+  h1 {
+    font-size: 60px;
+    font-weight: bold;
+    line-height: 58px;
+    text-transform: uppercase;
+  }
+}
