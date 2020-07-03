@@ -33,21 +33,21 @@ class EventDispatcherTest {
 
         testCustomResource = getResource();
 
-        when(resourceController.createOrUpdateResource(eq(testCustomResource))).thenReturn(Optional.of(testCustomResource));
-        when(resourceController.deleteResource(eq(testCustomResource))).thenReturn(true);
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.of(testCustomResource));
+        when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(true);
         when(customResourceReplaceFacade.replaceWithLock(any())).thenReturn(null);
     }
 
     @Test
     void callCreateOrUpdateOnNewResource() {
         eventDispatcher.handleEvent(Watcher.Action.ADDED, testCustomResource);
-        verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource));
+        verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
     }
 
     @Test
     void callCreateOrUpdateOnModifiedResource() {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
-        verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource));
+        verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
     }
 
     @Test
@@ -55,7 +55,7 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
         verify(resourceController, times(1))
                 .createOrUpdateResource(argThat(testCustomResource ->
-                        testCustomResource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)));
+                        testCustomResource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)), any());
     }
 
     @Test
@@ -65,7 +65,7 @@ class EventDispatcherTest {
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
-        verify(resourceController, times(1)).deleteResource(eq(testCustomResource));
+        verify(resourceController, times(1)).deleteResource(eq(testCustomResource), any());
     }
 
     /**
@@ -77,7 +77,7 @@ class EventDispatcherTest {
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
-        verify(resourceController).deleteResource(eq(testCustomResource));
+        verify(resourceController).deleteResource(eq(testCustomResource), any());
     }
 
     @Test
@@ -93,7 +93,7 @@ class EventDispatcherTest {
 
     @Test
     void doesNotRemovesTheFinalizerIfTheDeleteMethodRemovesFalse() {
-        when(resourceController.deleteResource(eq(testCustomResource))).thenReturn(false);
+        when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(false);
         markForDeletion(testCustomResource);
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
 
@@ -106,7 +106,7 @@ class EventDispatcherTest {
     @Test
     void doesNotUpdateTheResourceIfEmptyOptionalReturned() {
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
-        when(resourceController.createOrUpdateResource(eq(testCustomResource))).thenReturn(Optional.empty());
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
         verify(customResourceReplaceFacade, never()).replaceWithLock(any());
@@ -114,7 +114,7 @@ class EventDispatcherTest {
 
     @Test
     void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
-        when(resourceController.createOrUpdateResource(eq(testCustomResource))).thenReturn(Optional.empty());
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 
@@ -125,7 +125,7 @@ class EventDispatcherTest {
     @Test
     void doesNotAddFinalizerIfOptionalIsReturnedButMarkedForDeletion() {
         markForDeletion(testCustomResource);
-        when(resourceController.createOrUpdateResource(eq(testCustomResource))).thenReturn(Optional.empty());
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
 
         eventDispatcher.handleEvent(Watcher.Action.MODIFIED, testCustomResource);
 

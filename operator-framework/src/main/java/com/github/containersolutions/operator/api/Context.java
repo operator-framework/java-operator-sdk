@@ -6,8 +6,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
-public interface CustomResourceClientAware<T extends CustomResource> {
+public interface Context<T extends CustomResource> {
 
-    void setCustomResourceClient(MixedOperation<T, KubernetesResourceList<T>, Doneable<T>, Resource<T, Doneable<T>>> client);
+    MixedOperation<T, KubernetesResourceList<T>, Doneable<T>, Resource<T, Doneable<T>>> getCustomResourceClient();
 
 }

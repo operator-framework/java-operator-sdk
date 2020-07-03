@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -36,19 +37,21 @@ public class EventDispatcher {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
         }
+        // todo
+        Context context = null;
         // Its interesting problem if we should call delete if received event after object is marked for deletion
         // but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
         // we called delete and remove finalizers already. But also it can happen that we did not manage to put
         // finalizer into the resource before marked for delete. So for now we will call delete every time, since delete
         // operation should be idempotent too, and this way we cover the corner case.
         if (markedForDeletion(resource) || action == Watcher.Action.DELETED) {
-            boolean removeFinalizer = controller.deleteResource(resource);
+            boolean removeFinalizer = controller.deleteResource(resource, context);
             if (removeFinalizer && hasDefaultFinalizer(resource)) {
                 log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                 removeDefaultFinalizer(resource);
             }
         } else {
-            Optional<CustomResource> updateResult = controller.createOrUpdateResource(resource);
+            Optional<CustomResource> updateResult = controller.createOrUpdateResource(resource, context);
             if (updateResult.isPresent()) {
                 log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
                         resource.getMetadata().getResourceVersion());

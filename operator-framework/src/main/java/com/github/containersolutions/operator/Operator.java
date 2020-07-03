@@ -1,6 +1,5 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.api.CustomResourceClientAware;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
@@ -59,18 +58,12 @@ public class Operator {
         KubernetesDeserializer.registerCustomKind(getApiVersion(crd), getKind(crd), resClass);
 
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
-        setCustomResourceClientToController(controller, client);
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 getDefaultFinalizer(controller), new EventDispatcher.CustomResourceReplaceFacade(client));
         EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry, ControllerUtils.getGenerationEventProcessing(controller));
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
 
-    private <R extends CustomResource> void setCustomResourceClientToController(ResourceController<R> controller, MixedOperation client) {
-        if (controller instanceof CustomResourceClientAware) {
-            ((CustomResourceClientAware) controller).setCustomResourceClient(client);
-        }
-    }
 
     private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
                                                             Class<R> resClass,
