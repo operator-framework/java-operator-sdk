@@ -16,6 +16,8 @@ spec:
       properties:
         spec:
           type: object
+          required:
+          - encoding
           properties:
             encoding:
               type: string
