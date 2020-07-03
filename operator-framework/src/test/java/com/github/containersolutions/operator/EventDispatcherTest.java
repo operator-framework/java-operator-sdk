@@ -8,6 +8,7 @@ import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -24,12 +25,12 @@ class EventDispatcherTest {
     private EventDispatcher eventDispatcher;
     private ResourceController<CustomResource> resourceController = mock(ResourceController.class);
     private EventDispatcher.CustomResourceReplaceFacade customResourceReplaceFacade = mock(EventDispatcher.CustomResourceReplaceFacade.class);
-
+    private MixedOperation mixedOperation = mock(MixedOperation.class);
 
     @BeforeEach
     void setup() {
         eventDispatcher = new EventDispatcher(resourceController,
-                Controller.DEFAULT_FINALIZER, customResourceReplaceFacade);
+                Controller.DEFAULT_FINALIZER, customResourceReplaceFacade, mixedOperation);
 
         testCustomResource = getResource();
 

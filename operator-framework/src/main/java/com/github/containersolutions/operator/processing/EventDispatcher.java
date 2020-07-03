@@ -1,6 +1,7 @@
 package com.github.containersolutions.operator.processing;
 
 import com.github.containersolutions.operator.api.Context;
+import com.github.containersolutions.operator.api.DefaultContext;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -22,13 +23,16 @@ public class EventDispatcher {
     private final ResourceController controller;
     private final String resourceDefaultFinalizer;
     private final CustomResourceReplaceFacade customResourceReplaceFacade;
+    private final MixedOperation mixedOperation;
 
     public EventDispatcher(ResourceController controller,
                            String defaultFinalizer,
-                           CustomResourceReplaceFacade customResourceReplaceFacade) {
+                           CustomResourceReplaceFacade customResourceReplaceFacade,
+                           MixedOperation mixedOperation) {
         this.controller = controller;
         this.customResourceReplaceFacade = customResourceReplaceFacade;
         this.resourceDefaultFinalizer = defaultFinalizer;
+        this.mixedOperation = mixedOperation;
     }
 
     public void handleEvent(Watcher.Action action, CustomResource resource) {
@@ -37,8 +41,8 @@ public class EventDispatcher {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
         }
-        // todo
-        Context context = null;
+        Context context = new DefaultContext(mixedOperation);
+
         // Its interesting problem if we should call delete if received event after object is marked for deletion
         // but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
         // we called delete and remove finalizers already. But also it can happen that we did not manage to put

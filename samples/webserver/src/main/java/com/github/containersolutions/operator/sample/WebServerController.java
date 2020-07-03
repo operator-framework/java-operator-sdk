@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.*;
@@ -33,7 +34,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public Optional<WebServer> createOrUpdateResource(WebServer webServer) {
+    public Optional<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
         if (webServer.getSpec().getHtml().contains("error")) {
             throw new ErrorSimulationException("Simulating error");
         }
@@ -94,7 +95,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public boolean deleteResource(WebServer nginx) {
+    public boolean deleteResource(WebServer nginx, Context<WebServer> context) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));

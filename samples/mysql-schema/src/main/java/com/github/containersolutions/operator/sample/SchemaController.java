@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -29,10 +30,12 @@ public class SchemaController implements ResourceController<Schema> {
 
     private final KubernetesClient kubernetesClient;
 
-    public SchemaController(KubernetesClient kubernetesClient) { this.kubernetesClient = kubernetesClient; }
+    public SchemaController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
+    }
 
     @Override
-    public Optional<Schema> createOrUpdateResource(Schema schema) {
+    public Optional<Schema> createOrUpdateResource(Schema schema, Context<Schema> context) {
         try (Connection connection = getConnection()) {
             if (!schemaExists(connection, schema.getMetadata().getName())) {
                 connection.createStatement().execute(format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
@@ -87,7 +90,7 @@ public class SchemaController implements ResourceController<Schema> {
     }
 
     @Override
-    public boolean deleteResource(Schema schema) {
+    public boolean deleteResource(Schema schema, Context<Schema> context) {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
 
         try (Connection connection = getConnection()) {
@@ -130,7 +133,7 @@ public class SchemaController implements ResourceController<Schema> {
         return resultSet.first();
     }
 
-    private boolean userExists(Connection connection, String userName) throws  SQLException {
+    private boolean userExists(Connection connection, String userName) throws SQLException {
         ResultSet resultSet = connection.createStatement().executeQuery(
                 format("SELECT User FROM mysql.user WHERE User='%1$s'", userName)
         );

@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.spingboot.starter;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.spingboot.starter.model.TestResource;
@@ -14,12 +15,12 @@ import java.util.Optional;
 public class TestController implements ResourceController {
 
     @Override
-    public boolean deleteResource(CustomResource resource) {
+    public boolean deleteResource(CustomResource resource, Context context) {
         return true;
     }
 
     @Override
-    public Optional createOrUpdateResource(CustomResource resource) {
+    public Optional createOrUpdateResource(CustomResource resource, Context context) {
         return Optional.empty();
     }
 }

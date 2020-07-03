@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -28,7 +29,7 @@ public class CustomServiceController implements ResourceController<CustomService
     }
 
     @Override
-    public boolean deleteResource(CustomService resource) {
+    public boolean deleteResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
         kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getMetadata().getName()).delete();
@@ -36,7 +37,7 @@ public class CustomServiceController implements ResourceController<CustomService
     }
 
     @Override
-    public Optional<CustomService> createOrUpdateResource(CustomService resource) {
+    public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
 
         ServicePort servicePort = new ServicePort();
