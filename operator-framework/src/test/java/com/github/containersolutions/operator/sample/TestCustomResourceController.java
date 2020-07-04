@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.TestExecutionInfoProvider;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Controller(
         crdName = TestCustomResourceController.CRD_NAME,
         customResourceClass = TestCustomResource.class)
-public class TestCustomResourceController implements ResourceController<TestCustomResource> {
+public class TestCustomResourceController implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 

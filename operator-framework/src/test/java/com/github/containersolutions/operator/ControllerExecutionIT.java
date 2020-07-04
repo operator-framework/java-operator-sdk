@@ -1,9 +1,12 @@
 package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.sample.TestCustomResource;
+import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
@@ -23,7 +26,8 @@ public class ControllerExecutionIT {
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     public void initAndCleanup(boolean controllerStatusUpdate) {
-        integrationTestSupport.initialize(controllerStatusUpdate);
+        KubernetesClient k8sClient = new DefaultKubernetesClient();
+        integrationTestSupport.initialize(k8sClient, new TestCustomResourceController(k8sClient, controllerStatusUpdate), "test-crd.yaml");
         integrationTestSupport.cleanup();
     }
 
@@ -91,7 +95,7 @@ public class ControllerExecutionIT {
     void awaitStatusUpdated(int timeout) {
         await("cr status updated").atMost(timeout, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
-                    TestCustomResource cr = integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
+                    TestCustomResource cr = (TestCustomResource) integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
                     assertThat(cr).isNotNull();
                     assertThat(cr.getStatus()).isNotNull();
                     assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");

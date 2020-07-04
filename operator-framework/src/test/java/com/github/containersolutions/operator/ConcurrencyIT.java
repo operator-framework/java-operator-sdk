@@ -3,6 +3,8 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.sample.TestCustomResource;
 import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +31,9 @@ public class ConcurrencyIT {
 
     @BeforeAll
     public void setup() {
-        integrationTest.initialize();
+        KubernetesClient k8sClient = new DefaultKubernetesClient();
+        integrationTest.initialize(k8sClient, new TestCustomResourceController(k8sClient, true),
+                "test-crd.yaml");
     }
 
     @BeforeEach
