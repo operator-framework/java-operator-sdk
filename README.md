@@ -139,7 +139,7 @@ public class Application {
 }
 ```
 
-And add Spring's `@Service` annotation to your controller classes so they will be automatically registered as resource controllers.
+add Spring's `@Service` annotation to your controller classes so they will be automatically registered as resource controllers.
 
 The Operator's Spring Boot integration leverages [Spring's configuration mechanisms](https://docs.spring.io/spring-boot/docs/1.0.1.RELEASE/reference/html/boot-features-external-config.html) to configure
 - [The Kubernetes client](spring-boot-starter/src/main/java/com/github/containersolutions/operator/spingboot/starter/OperatorProperties.java)
