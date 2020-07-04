@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SubResourceTestCustomResourceController implements ResourceController<SubResourceTestCustomResource>,
         TestExecutionInfoProvider {
 
-    public static final String CRD_NAME = "customservices2.sample.javaoperatorsdk";
+    public static final String CRD_NAME = "subresourcesample.sample.javaoperatorsdk";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
