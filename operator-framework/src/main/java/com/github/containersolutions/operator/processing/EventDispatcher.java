@@ -38,16 +38,14 @@ public class EventDispatcher {
             return;
         }
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
-
-        // Its interesting problem if we should call delete if received event after object is marked for deletion
-        // but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
-        // we called delete and remove finalizers already. But also it can happen that we did not manage to put
-        // finalizer into the resource before marked for delete. So for now we will call delete every time, since delete
-        // operation should be idempotent too, and this way we cover the corner case.
+        /* Its interesting problem if we should call delete if received event after object is marked for deletion
+           but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
+           we called delete and remove finalizers already. But also it can happen that we did not manage to put
+           finalizer into the resource before marked for delete. So for now we will call delete every time, since delete
+           operation should be idempotent too, and this way we cover the corner case. */
         if (markedForDeletion(resource) || action == Watcher.Action.DELETED) {
             boolean removeFinalizer = controller.deleteResource(resource, context);
             if (removeFinalizer && hasDefaultFinalizer(resource)) {
-                log.debug("Removing finalizer on {}: {}", resource.getMetadata().getName(), resource.getMetadata());
                 removeDefaultFinalizer(resource);
             }
         } else {
@@ -55,27 +53,33 @@ public class EventDispatcher {
             // note that we do the status sub-resource update first, since if there is an event from Custom resource
             // update as next step, the new status is already present.
             if (updateControl.isUpdateStatusSubResource()) {
-                log.trace("Updating status for resource: {}", resource);
-                customResourceFacade.updateStatus(updateControl.getCustomResource().get());
+                customResourceFacade.updateStatus(updateControl.getCustomResource());
             }
             if (updateControl.isUpdateCustomResource()) {
-                log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
-                        resource.getMetadata().getResourceVersion());
-                log.trace("Resource before update: {}", resource);
-                CustomResource updatedResource = updateControl.getCustomResource().get();
-                addFinalizerIfNotPresent(updatedResource);
-                replace(updatedResource);
-                log.trace("Resource after update: {}", resource);
+                updateCustomResource(updateControl.getCustomResource());
+            } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
                 // We always add the default finalizer if missing and not marked for deletion.
                 // Adding it for original resource since the update was not requested. (Although we are not cloning
                 // passing it as argument)
-            } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
-                log.debug("Adding finalizer for resource: {} version: {}", resource.getMetadata().getName(),
-                        resource.getMetadata().getResourceVersion());
-                addFinalizerIfNotPresent(resource);
-                replace(resource);
+                updateCustomResourceWithFinalizer(resource);
             }
         }
+    }
+
+    private void updateCustomResourceWithFinalizer(CustomResource resource) {
+        log.debug("Adding finalizer for resource: {} version: {}", resource.getMetadata().getName(),
+                resource.getMetadata().getResourceVersion());
+        addFinalizerIfNotPresent(resource);
+        replace(resource);
+    }
+
+    private void updateCustomResource(CustomResource updatedResource) {
+        log.debug("Updating resource: {} with version: {}", updatedResource.getMetadata().getName(),
+                updatedResource.getMetadata().getResourceVersion());
+        log.trace("Resource before update: {}", updatedResource);
+        addFinalizerIfNotPresent(updatedResource);
+        replace(updatedResource);
+        log.trace("Resource after update: {}", updatedResource);
     }
 
 
@@ -87,8 +91,8 @@ public class EventDispatcher {
     }
 
     private void removeDefaultFinalizer(CustomResource resource) {
+        log.debug("Removing finalizer on {}: {}", resource);
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
-        log.debug("Removed finalizer. Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
         customResourceFacade.replaceWithLock(resource);
     }
 
@@ -121,6 +125,7 @@ public class EventDispatcher {
         }
 
         public void updateStatus(CustomResource resource) {
+            log.trace("Updating status for resource: {}", resource);
             resourceOperation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .updateStatus(resource);
