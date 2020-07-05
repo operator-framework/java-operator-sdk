@@ -70,9 +70,9 @@ public class SchemaController implements ResourceController<Schema> {
                 status.setSecretName(secretName);
                 status.setStatus("CREATED");
                 schema.setStatus(status);
-                log.info("Schema {} created", schema.getMetadata().getName());
+                log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
 
-                return UpdateControl.updateCustomResource(schema);
+                return UpdateControl.updateStatusSubResource(schema);
             }
             return UpdateControl.noUpdate();
         } catch (SQLException e) {

@@ -10,6 +10,12 @@ rules:
   verbs:
   - "*"
 - apiGroups:
+  - mysql.sample.javaoperatorsdk
+  resources:
+  - schemas/status
+  verbs:
+  - "*"
+- apiGroups:
   - apiextensions.k8s.io
   resources:
   - customresourcedefinitions
