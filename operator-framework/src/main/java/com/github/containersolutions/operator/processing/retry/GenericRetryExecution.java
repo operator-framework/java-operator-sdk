@@ -24,12 +24,6 @@ public class GenericRetryExecution implements RetryExecution {
             lastAttemptIndex++;
             return Optional.of(0l);
         }
-        if (genericRetry.getMaxElapsedTime() > 0 && lastAttemptIndex > 0) {
-            elapsedTime += currentInterval;
-            if (elapsedTime > genericRetry.getMaxElapsedTime()) {
-                return Optional.empty();
-            }
-        }
         if (genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
             return Optional.empty();
         }

@@ -10,4 +10,5 @@ public interface Context<T extends CustomResource> {
 
     MixedOperation<T, KubernetesResourceList<T>, Doneable<T>, Resource<T, Doneable<T>>> getCustomResourceClient();
 
+
 }

@@ -10,7 +10,6 @@ public class GenericRetry implements Retry {
     private long initialInterval = DEFAULT_INITIAL_INTERVAL;
     private double intervalMultiplier = DEFAULT_MULTIPLIER;
     private long maxInterval = -1;
-    private long maxElapsedTime = -1;
 
     public static GenericRetry defaultLimitedExponentialRetry() {
         return new GenericRetry();
@@ -68,22 +67,8 @@ public class GenericRetry implements Retry {
         return this;
     }
 
-    public long getMaxElapsedTime() {
-        return maxElapsedTime;
-    }
-
-    public GenericRetry setMaxElapsedTime(long maxElapsedTime) {
-        this.maxElapsedTime = maxElapsedTime;
-        return this;
-    }
-
     public GenericRetry withoutMaxInterval() {
         this.maxInterval = -1;
-        return this;
-    }
-
-    public GenericRetry withoutMaxElapsedTime() {
-        this.maxElapsedTime = -1;
         return this;
     }
 
