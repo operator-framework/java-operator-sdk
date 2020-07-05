@@ -5,7 +5,7 @@ SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https:
 User (you) only writes the logic in a Controller that creates/updates or deletes resources related to a custom resource.
 All the issues around are handled by the framework for you.
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
-about the non-trivial common problems needs to be solved for every operator. 
+about the non-trivial yet common problems needs to be solved for every operator. 
 
 ## Join us on Discord!
 
