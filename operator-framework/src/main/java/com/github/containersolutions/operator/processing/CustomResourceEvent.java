@@ -14,13 +14,13 @@ public class CustomResourceEvent {
     private final CustomResource resource;
     private int retryCount = -1;
 
-    CustomResourceEvent(Watcher.Action action, CustomResource resource, Retry retry) {
+    public CustomResourceEvent(Watcher.Action action, CustomResource resource, Retry retry) {
         this.action = action;
         this.resource = resource;
         this.retryExecution = retry.initExecution();
     }
 
-    Watcher.Action getAction() {
+    public Watcher.Action getAction() {
         return action;
     }
 
@@ -31,8 +31,6 @@ public class CustomResourceEvent {
     public String resourceUid() {
         return resource.getMetadata().getUid();
     }
-
-
 
     public Optional<Long> nextBackOff() {
         retryCount++;
@@ -49,5 +47,13 @@ public class CustomResourceEvent {
                 && !resource.getMetadata().getDeletionTimestamp().isEmpty()) +
                 " ], retriesIndex=" + retryCount +
                 '}';
+    }
+
+    public RetryExecution getRetryExecution() {
+        return retryExecution;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
     }
 }

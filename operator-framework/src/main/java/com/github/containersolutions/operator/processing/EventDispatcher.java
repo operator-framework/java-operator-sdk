@@ -3,6 +3,7 @@ package com.github.containersolutions.operator.processing;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.DefaultContext;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.RetryInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -35,13 +36,16 @@ public class EventDispatcher {
         this.mixedOperation = mixedOperation;
     }
 
-    public void handleEvent(Watcher.Action action, CustomResource resource) {
+    public void handleEvent(CustomResourceEvent event) {
+        Watcher.Action action = event.getAction();
+        CustomResource resource = event.getResource();
         log.info("Handling event {} for resource {}", action, resource.getMetadata());
         if (Watcher.Action.ERROR == action) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
         }
-        Context context = new DefaultContext(mixedOperation);
+        Context context = new DefaultContext(mixedOperation,
+                new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
 
         // Its interesting problem if we should call delete if received event after object is marked for deletion
         // but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
@@ -56,6 +60,8 @@ public class EventDispatcher {
             }
         } else {
             Optional<CustomResource> updateResult = controller.createOrUpdateResource(resource, context);
+            // status update? and/or customResource or both?
+
             if (updateResult.isPresent()) {
                 log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
                         resource.getMetadata().getResourceVersion());

@@ -62,9 +62,6 @@ public class OperatorAutoConfiguration {
         if (retryProperties.getMaxAttempts() != null) {
             retry.setMaxAttempts(retryProperties.getMaxAttempts());
         }
-        if (retryProperties.getMaxElapsedTime() != null) {
-            retry.setMaxElapsedTime(retryProperties.getMaxElapsedTime());
-        }
         if (retryProperties.getMaxInterval() != null) {
             retry.setInitialInterval(retryProperties.getMaxInterval());
         }

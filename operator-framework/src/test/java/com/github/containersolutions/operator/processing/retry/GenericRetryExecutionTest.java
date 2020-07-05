@@ -59,6 +59,16 @@ public class GenericRetryExecutionTest {
         assertThat(retryExecution.nextDelay()).isEmpty();
     }
 
+    @Test
+    public void supportsIsLastExecution() {
+        GenericRetryExecution execution = new GenericRetry().setMaxAttempts(2).initExecution();
+        assertThat(execution.isLastExecution()).isFalse();
+
+        execution.nextDelay();
+        execution.nextDelay();
+        assertThat(execution.isLastExecution()).isTrue();
+    }
+
     private RetryExecution getDefaultRetryExecution() {
         return GenericRetry.defaultLimitedExponentialRetry().initExecution();
     }

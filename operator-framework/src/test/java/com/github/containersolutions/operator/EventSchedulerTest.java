@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.processing.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
@@ -9,6 +10,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +48,9 @@ class EventSchedulerTest {
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource);
 
         waitMinimalTimeForExecution();
-        verify(eventDispatcher, times(1)).handleEvent(Watcher.Action.MODIFIED, resource);
+        verify(eventDispatcher, times(1)).handleEvent(
+                argThat(event -> event.getResource().equals(resource) && event.getAction() == Watcher.Action.MODIFIED));
+
         assertThat(eventProcessingList).hasSize(1);
     }
 
@@ -140,7 +145,7 @@ class EventSchedulerTest {
         doAnswer(this::exceptionInExecution)
                 .doAnswer(this::normalExecution)
                 .when(eventDispatcher)
-                .handleEvent(any(Watcher.Action.class), any(CustomResource.class));
+                .handleEvent(any(CustomResourceEvent.class));
 
         CustomResource resource = sampleResource();
 
@@ -161,8 +166,18 @@ class EventSchedulerTest {
         resource2.getMetadata().setResourceVersion("2");
         resource2.getMetadata().setGeneration(2l);
 
-        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), eq(resource1));
-        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), eq(resource2));
+        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
+            @Override
+            public boolean matches(CustomResourceEvent event) {
+                return event.getResource().equals(resource1);
+            }
+        }));
+        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
+            @Override
+            public boolean matches(CustomResourceEvent event) {
+                return event.getResource().equals(resource2);
+            }
+        }));
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
@@ -186,7 +201,7 @@ class EventSchedulerTest {
      */
     @Test
     public void numberOfRetriesCanBeLimited() {
-        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), any(CustomResource.class));
+        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(any(CustomResourceEvent.class));
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, sampleResource());
 
@@ -195,7 +210,7 @@ class EventSchedulerTest {
     }
 
     public void normalDispatcherExecution() {
-        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(any(Watcher.Action.class), any(CustomResource.class));
+        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(any(CustomResourceEvent.class));
     }
 
     private Object normalExecution(InvocationOnMock invocation) {
@@ -204,7 +219,8 @@ class EventSchedulerTest {
             LocalDateTime start = LocalDateTime.now();
             Thread.sleep(INVOCATION_DURATION);
             LocalDateTime end = LocalDateTime.now();
-            eventProcessingList.add(new EventProcessingDetail((Watcher.Action) args[0], start, end, (CustomResource) args[1]));
+            eventProcessingList.add(new EventProcessingDetail(((CustomResourceEvent) args[0]).getAction(), start, end,
+                    ((CustomResourceEvent) args[0]).getResource()));
             return null;
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
@@ -227,7 +243,8 @@ class EventSchedulerTest {
             Thread.sleep(INVOCATION_DURATION);
             LocalDateTime end = LocalDateTime.now();
             IllegalStateException exception = new IllegalStateException("Exception thrown for testing purposes");
-            eventProcessingList.add(new EventProcessingDetail((Watcher.Action) args[0], start, end, (CustomResource) args[1], exception));
+            eventProcessingList.add(new EventProcessingDetail(((CustomResourceEvent) args[0]).getAction(), start, end,
+                    ((CustomResourceEvent) args[0]).getResource(), exception));
             throw exception;
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
