@@ -2,7 +2,7 @@
 ![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
-User (you) only writes the logic in a Controller that creates, updates or deletes resources related to a custom resource.
+User (you) only writes the logic in a Controller that creates/updates or deletes resources related to a custom resource.
 All the issues around are handled by the framework for you.
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
 about the non-trivial common problems needs to be solved for every operator. 
