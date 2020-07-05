@@ -3,11 +3,10 @@ package com.github.containersolutions.operator.spingboot.starter;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import com.github.containersolutions.operator.spingboot.starter.model.TestResource;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Component
 @Controller(crdName = "name",
@@ -20,7 +19,7 @@ public class TestController implements ResourceController {
     }
 
     @Override
-    public Optional createOrUpdateResource(CustomResource resource, Context context) {
-        return Optional.empty();
+    public UpdateControl createOrUpdateResource(CustomResource resource, Context context) {
+        return UpdateControl.noUpdate();
     }
 }

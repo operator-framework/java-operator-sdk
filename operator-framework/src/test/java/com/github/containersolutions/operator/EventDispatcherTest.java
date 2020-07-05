@@ -2,6 +2,7 @@ package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import com.github.containersolutions.operator.processing.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
@@ -13,8 +14,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -34,7 +33,7 @@ class EventDispatcherTest {
 
         testCustomResource = getResource();
 
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.of(testCustomResource));
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.updateCustomResource(testCustomResource));
         when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(true);
         when(customResourceReplaceFacade.replaceWithLock(any())).thenReturn(null);
     }
@@ -107,7 +106,7 @@ class EventDispatcherTest {
     @Test
     void doesNotUpdateTheResourceIfEmptyOptionalReturned() {
         testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(customResourceReplaceFacade, never()).replaceWithLock(any());
@@ -115,7 +114,7 @@ class EventDispatcherTest {
 
     @Test
     void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -126,7 +125,7 @@ class EventDispatcherTest {
     @Test
     void doesNotAddFinalizerIfOptionalIsReturnedButMarkedForDeletion() {
         markForDeletion(testCustomResource);
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(Optional.empty());
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 

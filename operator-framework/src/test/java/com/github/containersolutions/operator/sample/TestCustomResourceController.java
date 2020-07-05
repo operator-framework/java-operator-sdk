@@ -4,6 +4,7 @@ import com.github.containersolutions.operator.TestExecutionInfoProvider;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
@@ -48,8 +48,8 @@ public class TestCustomResourceController implements ResourceController<TestCust
     }
 
     @Override
-    public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource,
-                                                               Context<TestCustomResource> context) {
+    public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource,
+                                                                    Context<TestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
         ConfigMap existingConfigMap = kubernetesClient
                 .configMaps().inNamespace(resource.getMetadata().getNamespace())
@@ -80,7 +80,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
             resource.getStatus().setConfigMapStatus("ConfigMap Ready");
         }
         addOrUpdateAnnotation(resource);
-        return Optional.of(resource);
+        return UpdateControl.updateCustomResource(resource);
     }
 
     // for testing purposes we change metadata

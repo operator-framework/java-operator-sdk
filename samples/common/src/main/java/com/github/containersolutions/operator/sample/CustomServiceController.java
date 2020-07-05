@@ -3,6 +3,7 @@ package com.github.containersolutions.operator.sample;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -10,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 /**
  * A very simple sample controller that creates a service with a label.
@@ -37,7 +37,7 @@ public class CustomServiceController implements ResourceController<CustomService
     }
 
     @Override
-    public Optional<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
+    public UpdateControl<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
 
         ServicePort servicePort = new ServicePort();
@@ -52,6 +52,6 @@ public class CustomServiceController implements ResourceController<CustomService
                 .endMetadata()
                 .withSpec(serviceSpec)
                 .done();
-        return Optional.of(resource);
+        return UpdateControl.updateCustomResource(resource);
     }
 }

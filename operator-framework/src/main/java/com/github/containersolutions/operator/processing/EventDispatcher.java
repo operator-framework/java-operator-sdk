@@ -1,9 +1,6 @@
 package com.github.containersolutions.operator.processing;
 
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.DefaultContext;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.RetryInfo;
+import com.github.containersolutions.operator.api.*;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -12,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Optional;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
@@ -44,8 +40,7 @@ public class EventDispatcher {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
         }
-        Context context = new DefaultContext(mixedOperation,
-                new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
+        Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
 
         // Its interesting problem if we should call delete if received event after object is marked for deletion
         // but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
@@ -59,18 +54,23 @@ public class EventDispatcher {
                 removeDefaultFinalizer(resource);
             }
         } else {
-            Optional<CustomResource> updateResult = controller.createOrUpdateResource(resource, context);
-            // status update? and/or customResource or both?
-
-            if (updateResult.isPresent()) {
+            UpdateControl updateControl = controller.createOrUpdateResource(resource, context);
+            // note that we do the status sub-resource update first, since if there is an event from Custom resource
+            // update as next step, the new status is already present.
+            if (updateStatusSubResource(updateControl)) {
+                mixedOperation.updateStatus(updateControl.getCustomResource());
+            }
+            if (updateRequested(updateControl)) {
                 log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
                         resource.getMetadata().getResourceVersion());
                 log.trace("Resource before update: {}", resource);
-                CustomResource updatedResource = updateResult.get();
+                CustomResource updatedResource = updateControl.getCustomResource();
                 addFinalizerIfNotPresent(updatedResource);
                 replace(updatedResource);
                 log.trace("Resource after update: {}", resource);
                 // We always add the default finalizer if missing and not marked for deletion.
+                // Adding it for original resource since the update was not requested. (Although we are not cloning
+                // passing it as argument)
             } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
                 log.debug("Adding finalizer for resource: {} version: {}", resource.getMetadata().getName(),
                         resource.getMetadata().getResourceVersion());
@@ -78,6 +78,16 @@ public class EventDispatcher {
                 replace(resource);
             }
         }
+    }
+
+    private boolean updateRequested(UpdateControl updateControl) {
+        return updateControl.getUpdateMode() == UpdateControl.UpdateMode.CUSTOM_RESOURCE
+                || updateControl.getUpdateMode() == UpdateControl.UpdateMode.STATUS_AND_CUSTOM_RESOURCE;
+    }
+
+    private boolean updateStatusSubResource(UpdateControl updateControl) {
+        return updateControl.getUpdateMode() == UpdateControl.UpdateMode.STATUS
+                || updateControl.getUpdateMode() == UpdateControl.UpdateMode.STATUS_AND_CUSTOM_RESOURCE;
     }
 
     private boolean hasDefaultFinalizer(CustomResource resource) {

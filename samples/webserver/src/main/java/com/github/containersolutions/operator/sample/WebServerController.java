@@ -3,6 +3,7 @@ package com.github.containersolutions.operator.sample;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
@@ -19,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller(customResourceClass = WebServer.class,
         crdName = "webservers.sample.javaoperatorsdk")
@@ -34,7 +34,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public Optional<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
+    public UpdateControl<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
         if (webServer.getSpec().getHtml().contains("error")) {
             throw new ErrorSimulationException("Simulating error");
         }
@@ -91,7 +91,7 @@ public class WebServerController implements ResourceController<WebServer> {
         status.setAreWeGood("Yes!");
         webServer.setStatus(status);
 //        throw new RuntimeException("Creating object failed, because it failed");
-        return Optional.of(webServer);
+        return UpdateControl.updateCustomResource(webServer);
     }
 
     @Override

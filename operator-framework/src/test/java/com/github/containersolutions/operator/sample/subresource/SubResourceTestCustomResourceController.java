@@ -4,10 +4,10 @@ import com.github.containersolutions.operator.TestExecutionInfoProvider;
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
@@ -26,14 +26,15 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     }
 
     @Override
-    public Optional<SubResourceTestCustomResource> createOrUpdateResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
+    public UpdateControl<SubResourceTestCustomResource> createOrUpdateResource(SubResourceTestCustomResource resource,
+                                                                               Context<SubResourceTestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
         log.info("Value: " + resource.getSpec().getValue());
 
         ensureStatusExists(resource);
         resource.getStatus().setState(SubResourceTestCustomResourceStatus.State.SUCCESS);
-        context.getCustomResourceClient().updateStatus(resource);
-        return Optional.empty();
+
+        return UpdateControl.updateStatusSubResource(resource);
     }
 
     private void ensureStatusExists(SubResourceTestCustomResource resource) {
