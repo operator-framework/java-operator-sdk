@@ -66,9 +66,7 @@ class EventSchedulerTest {
                 .matches(list -> eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1") &&
                                 eventProcessingList.get(1).getCustomResource().getMetadata().getResourceVersion().equals("2"),
                         "Events processed in correct order")
-                .matches(list ->
-                                eventProcessingList.get(0).getEndTime().isBefore(eventProcessingList.get(1).startTime),
-                        "Start time of event 2 is after end time of event 1");
+                .matches(list -> eventExecutedBefore(0, 1));
     }
 
     @Test
