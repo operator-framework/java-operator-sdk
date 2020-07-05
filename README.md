@@ -70,7 +70,7 @@ public class WebServerController implements ResourceController<WebServer> {
     @Override
     public UpdateControl<CustomService> createOrUpdateResource(CustomService resource, Context<WebServer> context) {
         // ... your logic ...
-        return resource;
+        return UpdateControl.updateStatusSubResource(resource);
     }
 }
 ```

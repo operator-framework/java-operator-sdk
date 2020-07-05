@@ -54,17 +54,17 @@ public class EventDispatcher {
                 removeDefaultFinalizer(resource);
             }
         } else {
-            UpdateControl updateControl = controller.createOrUpdateResource(resource, context);
+            UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
             // note that we do the status sub-resource update first, since if there is an event from Custom resource
             // update as next step, the new status is already present.
-            if (updateStatusSubResource(updateControl)) {
-                mixedOperation.updateStatus(updateControl.getCustomResource());
+            if (updateControl.isUpdateStatusSubResource()) {
+                mixedOperation.updateStatus(updateControl.getCustomResource().get());
             }
-            if (updateRequested(updateControl)) {
+            if (updateControl.isUpdateCustomResource()) {
                 log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
                         resource.getMetadata().getResourceVersion());
                 log.trace("Resource before update: {}", resource);
-                CustomResource updatedResource = updateControl.getCustomResource();
+                CustomResource updatedResource = updateControl.getCustomResource().get();
                 addFinalizerIfNotPresent(updatedResource);
                 replace(updatedResource);
                 log.trace("Resource after update: {}", resource);
@@ -78,16 +78,6 @@ public class EventDispatcher {
                 replace(resource);
             }
         }
-    }
-
-    private boolean updateRequested(UpdateControl updateControl) {
-        return updateControl.getUpdateMode() == UpdateControl.UpdateMode.CUSTOM_RESOURCE
-                || updateControl.getUpdateMode() == UpdateControl.UpdateMode.STATUS_AND_CUSTOM_RESOURCE;
-    }
-
-    private boolean updateStatusSubResource(UpdateControl updateControl) {
-        return updateControl.getUpdateMode() == UpdateControl.UpdateMode.STATUS
-                || updateControl.getUpdateMode() == UpdateControl.UpdateMode.STATUS_AND_CUSTOM_RESOURCE;
     }
 
     private boolean hasDefaultFinalizer(CustomResource resource) {

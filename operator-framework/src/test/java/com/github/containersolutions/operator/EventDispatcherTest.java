@@ -1,6 +1,5 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.api.UpdateControl;
 import com.github.containersolutions.operator.processing.CustomResourceEvent;
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
+import static com.github.containersolutions.operator.api.Controller.DEFAULT_FINALIZER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -29,7 +29,7 @@ class EventDispatcherTest {
     @BeforeEach
     void setup() {
         eventDispatcher = new EventDispatcher(resourceController,
-                Controller.DEFAULT_FINALIZER, customResourceReplaceFacade, mixedOperation);
+                DEFAULT_FINALIZER, customResourceReplaceFacade, mixedOperation);
 
         testCustomResource = getResource();
 
@@ -45,6 +45,30 @@ class EventDispatcherTest {
     }
 
     @Test
+    void updatesOnlyStatusSubResource() {
+        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any()))
+                .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
+
+        eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.ADDED, testCustomResource));
+
+        verify(mixedOperation, times(1)).updateStatus(testCustomResource);
+        verify(customResourceReplaceFacade, never()).replaceWithLock(any());
+    }
+
+    @Test
+    void updateStatusSubResourceAndCustomResource() {
+        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
+        when(resourceController.createOrUpdateResource(eq(testCustomResource), any()))
+                .thenReturn(UpdateControl.updateStatusAndCustomResource(testCustomResource));
+
+        eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.ADDED, testCustomResource));
+
+        verify(mixedOperation, times(1)).updateStatus(testCustomResource);
+        verify(customResourceReplaceFacade, times(1)).replaceWithLock(any());
+    }
+
+    @Test
     void callCreateOrUpdateOnModifiedResource() {
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(resourceController, times(1)).createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
@@ -55,13 +79,13 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(resourceController, times(1))
                 .createOrUpdateResource(argThat(testCustomResource ->
-                        testCustomResource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)), any());
+                        testCustomResource.getMetadata().getFinalizers().contains(DEFAULT_FINALIZER)), any());
     }
 
     @Test
     void callsDeleteIfObjectHasFinalizerAndMarkedForDelete() {
         testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
-        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -83,7 +107,7 @@ class EventDispatcherTest {
     @Test
     void removesDefaultFinalizerOnDelete() {
         markForDeletion(testCustomResource);
-        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -95,7 +119,7 @@ class EventDispatcherTest {
     void doesNotRemovesTheFinalizerIfTheDeleteMethodRemovesFalse() {
         when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(false);
         markForDeletion(testCustomResource);
-        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -104,12 +128,13 @@ class EventDispatcherTest {
     }
 
     @Test
-    void doesNotUpdateTheResourceIfEmptyOptionalReturned() {
-        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+    void doesNotUpdateTheResourceIfNoUpdateUpdateControl() {
+        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(customResourceReplaceFacade, never()).replaceWithLock(any());
+        verify(mixedOperation, never()).updateStatus(testCustomResource);
     }
 
     @Test
@@ -123,7 +148,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    void doesNotAddFinalizerIfOptionalIsReturnedButMarkedForDeletion() {
+    void doesNotAddFinalizerIfNoUpdateIsReturnedButMarkedForDeletion() {
         markForDeletion(testCustomResource);
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 

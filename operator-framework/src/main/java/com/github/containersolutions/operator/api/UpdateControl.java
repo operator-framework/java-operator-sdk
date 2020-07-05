@@ -2,44 +2,45 @@ package com.github.containersolutions.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
+import java.util.Optional;
+
 public class UpdateControl<T extends CustomResource> {
 
-    private T customResource;
-    private UpdateMode updateMode;
+    private final T customResource;
+    private final boolean updateStatusSubResource;
+    private final boolean updateCustomResource;
 
-    private UpdateControl(T customResource, UpdateMode updateMode) {
+    private UpdateControl(T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
         this.customResource = customResource;
-        this.updateMode = updateMode;
+        this.updateStatusSubResource = updateStatusSubResource;
+        this.updateCustomResource = updateCustomResource;
     }
 
-    public static <T extends CustomResource> UpdateControl updateStatusAndeCustomResource(T customResource) {
-        return new UpdateControl(customResource, UpdateMode.STATUS_AND_CUSTOM_RESOURCE);
+    public static <T extends CustomResource> UpdateControl updateStatusAndCustomResource(T customResource) {
+        return new UpdateControl(customResource, true, true);
     }
 
     public static <T extends CustomResource> UpdateControl updateCustomResource(T customResource) {
-        return new UpdateControl(customResource, UpdateMode.CUSTOM_RESOURCE);
+        return new UpdateControl(customResource, false, true);
     }
 
     public static <T extends CustomResource> UpdateControl updateStatusSubResource(T customResource) {
-        return new UpdateControl(customResource, UpdateMode.STATUS);
+        return new UpdateControl(customResource, true, false);
     }
 
     public static UpdateControl noUpdate() {
-        return new UpdateControl(null, UpdateMode.NO_UPDATE);
+        return new UpdateControl(null, false, false);
     }
 
-    public T getCustomResource() {
-        return customResource;
+    public Optional<T> getCustomResource() {
+        return Optional.ofNullable(customResource);
     }
 
-    public UpdateMode getUpdateMode() {
-        return updateMode;
+    public boolean isUpdateStatusSubResource() {
+        return updateStatusSubResource;
     }
 
-    public enum UpdateMode {
-        STATUS_AND_CUSTOM_RESOURCE,
-        STATUS,
-        CUSTOM_RESOURCE,
-        NO_UPDATE
+    public boolean isUpdateCustomResource() {
+        return updateCustomResource;
     }
 }
