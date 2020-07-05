@@ -124,6 +124,7 @@ public class EventDispatcher {
             this.resourceOperation = resourceOperation;
         }
 
+        // todo should we check resource version?
         public void updateStatus(CustomResource resource) {
             log.trace("Updating status for resource: {}", resource);
             resourceOperation.inNamespace(resource.getMetadata().getNamespace())
