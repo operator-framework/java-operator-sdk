@@ -54,17 +54,6 @@ class EventDispatcherTest {
         verify(customResourceFacade, never()).replaceWithLock(any());
     }
 
-    @Test
-    void updateStatusSubResourceAndCustomResource() {
-        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any()))
-                .thenReturn(UpdateControl.updateStatusAndCustomResource(testCustomResource));
-
-        eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.ADDED, testCustomResource));
-
-        verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
-        verify(customResourceFacade, times(1)).replaceWithLock(any());
-    }
 
     @Test
     void callCreateOrUpdateOnModifiedResource() {

@@ -17,10 +17,6 @@ public class UpdateControl<T extends CustomResource> {
         this.updateCustomResource = updateCustomResource;
     }
 
-    public static <T extends CustomResource> UpdateControl<T> updateStatusAndCustomResource(T customResource) {
-        return new UpdateControl<>(customResource, true, true);
-    }
-
     public static <T extends CustomResource> UpdateControl<T> updateCustomResource(T customResource) {
         return new UpdateControl<>(customResource, false, true);
     }
@@ -44,4 +40,5 @@ public class UpdateControl<T extends CustomResource> {
     public boolean isUpdateCustomResource() {
         return updateCustomResource;
     }
+
 }
