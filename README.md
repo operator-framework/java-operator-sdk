@@ -2,10 +2,10 @@
 ![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
-In this first iteration we aim to provide a framework which handles the reconciliation loop by dispatching events to
-a Controller written by the user of the framework.
-
-The Controller only contains the logic to create, update and delete the actual resources related to the CRD.
+User (you) only writes the logic in a Controller that creates, updates or deletes resources related to a custom resource.
+All the issues around are handled by the framework for you.
+Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
+about the non-trivial common problems needs to be solved for every operator. 
 
 ## Join us on Discord!
 
