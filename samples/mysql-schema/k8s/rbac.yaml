@@ -16,6 +16,12 @@ rules:
   verbs:
   - "get"
   - "list"
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - "*"
 ---
 apiVersion: v1
 kind: ServiceAccount
