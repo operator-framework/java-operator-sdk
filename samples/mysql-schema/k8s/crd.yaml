@@ -5,6 +5,8 @@ metadata:
 spec:
   group: mysql.sample.javaoperatorsdk
   version: v1
+  subresources:
+    status: {}
   scope: Namespaced
   names:
     plural: schemas
