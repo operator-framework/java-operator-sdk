@@ -19,17 +19,14 @@ public class EventDispatcher {
 
     private final ResourceController controller;
     private final String resourceDefaultFinalizer;
-    private final CustomResourceReplaceFacade customResourceReplaceFacade;
-    private final MixedOperation mixedOperation;
+    private final CustomResourceFacade customResourceFacade;
 
     public EventDispatcher(ResourceController controller,
                            String defaultFinalizer,
-                           CustomResourceReplaceFacade customResourceReplaceFacade,
-                           MixedOperation mixedOperation) {
+                           CustomResourceFacade customResourceFacade) {
         this.controller = controller;
-        this.customResourceReplaceFacade = customResourceReplaceFacade;
+        this.customResourceFacade = customResourceFacade;
         this.resourceDefaultFinalizer = defaultFinalizer;
-        this.mixedOperation = mixedOperation;
     }
 
     public void handleEvent(CustomResourceEvent event) {
@@ -58,7 +55,8 @@ public class EventDispatcher {
             // note that we do the status sub-resource update first, since if there is an event from Custom resource
             // update as next step, the new status is already present.
             if (updateControl.isUpdateStatusSubResource()) {
-                mixedOperation.updateStatus(updateControl.getCustomResource().get());
+                log.trace("Updating status for resource: {}", resource);
+                customResourceFacade.updateStatus(updateControl.getCustomResource().get());
             }
             if (updateControl.isUpdateCustomResource()) {
                 log.debug("Updating resource: {} with version: {}", resource.getMetadata().getName(),
@@ -80,6 +78,7 @@ public class EventDispatcher {
         }
     }
 
+
     private boolean hasDefaultFinalizer(CustomResource resource) {
         if (resource.getMetadata().getFinalizers() != null) {
             return resource.getMetadata().getFinalizers().contains(resourceDefaultFinalizer);
@@ -90,12 +89,12 @@ public class EventDispatcher {
     private void removeDefaultFinalizer(CustomResource resource) {
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
         log.debug("Removed finalizer. Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
-        customResourceReplaceFacade.replaceWithLock(resource);
+        customResourceFacade.replaceWithLock(resource);
     }
 
     private void replace(CustomResource resource) {
         log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
-        customResourceReplaceFacade.replaceWithLock(resource);
+        customResourceFacade.replaceWithLock(resource);
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
@@ -113,12 +112,18 @@ public class EventDispatcher {
     }
 
     // created to support unit testing
-    public static class CustomResourceReplaceFacade {
+    public static class CustomResourceFacade {
 
         private final MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation;
 
-        public CustomResourceReplaceFacade(MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation) {
+        public CustomResourceFacade(MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation) {
             this.resourceOperation = resourceOperation;
+        }
+
+        public void updateStatus(CustomResource resource) {
+            resourceOperation.inNamespace(resource.getMetadata().getNamespace())
+                    .withName(resource.getMetadata().getName())
+                    .updateStatus(resource);
         }
 
         public CustomResource replaceWithLock(CustomResource resource) {
