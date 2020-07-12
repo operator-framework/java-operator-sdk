@@ -1,7 +1,5 @@
 package com.github.containersolutions.operator.processing;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +32,6 @@ class EventConsumer implements Runnable {
 
     @SuppressWarnings("unchecked")
     private boolean processEvent() {
-        Watcher.Action action = event.getAction();
-        CustomResource resource = event.getResource();
         try {
             eventDispatcher.handleEvent(event);
         } catch (RuntimeException e) {
