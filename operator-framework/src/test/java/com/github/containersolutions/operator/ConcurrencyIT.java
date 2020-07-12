@@ -70,7 +70,6 @@ public class ConcurrencyIT {
             Thread.sleep(300);
 
             log.info("Deleting resources.");
-            // deleting some resources
             for (int i = 0; i < NUMBER_OF_RESOURCES_DELETED; i++) {
                 TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
                 integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).delete(tcr);
