@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
@@ -21,13 +23,16 @@ public class EventDispatcher {
     private final ResourceController controller;
     private final String resourceDefaultFinalizer;
     private final CustomResourceFacade customResourceFacade;
+    private final boolean generationAware;
+    private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
 
     public EventDispatcher(ResourceController controller,
                            String defaultFinalizer,
-                           CustomResourceFacade customResourceFacade) {
+                           CustomResourceFacade customResourceFacade, boolean generationAware) {
         this.controller = controller;
         this.customResourceFacade = customResourceFacade;
         this.resourceDefaultFinalizer = defaultFinalizer;
+        this.generationAware = generationAware;
     }
 
     public void handleEvent(CustomResourceEvent event) {
@@ -47,6 +52,7 @@ public class EventDispatcher {
             if (removeFinalizer && ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
                 removeDefaultFinalizer(resource);
             }
+            cleanup(resource);
         } else {
             if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
                 /*  We always add the default finalizer if missing and not marked for deletion.
@@ -56,13 +62,39 @@ public class EventDispatcher {
                  */
                 updateCustomResourceWithFinalizer(resource);
             } else {
-                UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
-                if (updateControl.isUpdateStatusSubResource()) {
-                    customResourceFacade.updateStatus(updateControl.getCustomResource());
-                } else if (updateControl.isUpdateCustomResource()) {
-                    updateCustomResource(updateControl.getCustomResource());
+                if (!generationAware || largerGenerationThenProcessedBefore(resource)) {
+                    UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
+                    if (updateControl.isUpdateStatusSubResource()) {
+                        customResourceFacade.updateStatus(updateControl.getCustomResource());
+                    } else if (updateControl.isUpdateCustomResource()) {
+                        updateCustomResource(updateControl.getCustomResource());
+                    }
+                    markLastGenerationProcessed(resource);
+                } else {
+                    log.debug("Skipping processing since generation not increased. Event: {}", event);
                 }
             }
+        }
+    }
+
+    public boolean largerGenerationThenProcessedBefore(CustomResource resource) {
+        Long lastGeneration = lastGenerationProcessedSuccessfully.get(resource.getMetadata().getUid());
+        if (lastGeneration == null) {
+            return true;
+        } else {
+            return resource.getMetadata().getGeneration() > lastGeneration;
+        }
+    }
+
+    private void cleanup(CustomResource resource) {
+        if (generationAware) {
+            lastGenerationProcessedSuccessfully.remove(resource.getMetadata().getUid());
+        }
+    }
+
+    private void markLastGenerationProcessed(CustomResource resource) {
+        if (generationAware) {
+            lastGenerationProcessedSuccessfully.put(resource.getMetadata().getUid(), resource.getMetadata().getGeneration());
         }
     }
 
