@@ -43,10 +43,10 @@ public class EventDispatcher {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
         }
-        Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
         if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
             return;
         }
+        Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
         if (markedForDeletion(resource)) {
             boolean removeFinalizer = controller.deleteResource(resource, context);
             if (removeFinalizer && ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
