@@ -65,21 +65,19 @@ public class EventScheduler implements Watcher<CustomResource> {
             lock.lock();
             log.debug("Scheduling event from Api: {}", event);
             if (event.getAction() == Action.DELETED) {
-                // This removes data from memory for deleted resource (prevent memory leak).
-                eventStore.cleanup(event.resourceUid());
                 log.debug("Skipping delete event");
                 return;
             }
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
             scheduleEventForExecution(event);

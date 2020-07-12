@@ -62,7 +62,6 @@ class EventSchedulerTest {
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
-        resource2.getMetadata().setGeneration(2l);
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
@@ -78,7 +77,6 @@ class EventSchedulerTest {
 
     @Test
     public void processesAllEventsRegardlessOfGeneration() {
-        generationUnAwareScheduler();
         normalDispatcherExecution();
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
@@ -104,10 +102,8 @@ class EventSchedulerTest {
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
-        resource2.getMetadata().setGeneration(2l);
         CustomResource resource3 = sampleResource();
         resource3.getMetadata().setResourceVersion("3");
-        resource3.getMetadata().setGeneration(3l);
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
@@ -147,7 +143,6 @@ class EventSchedulerTest {
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
-        resource2.getMetadata().setGeneration(2l);
 
         doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
             @Override
@@ -210,9 +205,9 @@ class EventSchedulerTest {
         }
     }
 
-    private void generationUnAwareScheduler() {
-        eventScheduler = initScheduler();
-    }
+
+
+
 
     private EventScheduler initScheduler() {
         return new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry(), finalizer);
