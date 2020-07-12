@@ -9,7 +9,9 @@ public class EventStore {
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
     private final Map<String, Long> lastGeneration = new HashMap<>();
     private final Map<String, CustomResourceEvent> receivedLastEventForGenerationAwareRetry = new HashMap<>();
-    private final Map<String, Boolean> lastProcessingWithFinalizer = new HashMap<>();
+
+    private final Map<String, Boolean> startedProcessingWithFinalizer = new HashMap<>();
+    private final Map<String, Boolean> successFullyProcessedWithFinalizer = new HashMap<>();
 
     public boolean containsNotScheduledEvent(String uuid) {
         return eventsNotScheduled.containsKey(uuid);
@@ -62,18 +64,28 @@ public class EventStore {
         return receivedLastEventForGenerationAwareRetry.get(uuid);
     }
 
-    public boolean lastProcessingHadFinalizer(CustomResourceEvent event) {
-        Boolean res = lastProcessingWithFinalizer.get(event.resourceUid());
+    public void markStartedProcessingWithFinalizerOnResource(CustomResourceEvent event) {
+        startedProcessingWithFinalizer.put(event.resourceUid(),true);
+    }
+
+    public boolean startedProcessingWithFinalizerOnResource(CustomResourceEvent event) {
+        Boolean res = startedProcessingWithFinalizer.get(event.resourceUid());
         return res == null ? false : res;
     }
 
-    public void markProcessedWitFinalizer(String uuid, boolean hadFinalizer) {
-        lastProcessingWithFinalizer.put(uuid, hadFinalizer);
+    public boolean successfullyProcessedWithFinalizer(CustomResourceEvent event) {
+        Boolean res = successFullyProcessedWithFinalizer.get(event.resourceUid());
+        return res == null ? false : res;
+    }
+
+    public void markSuccessfullyProcessedWitFinalizer(String uuid) {
+        successFullyProcessedWithFinalizer.put(uuid, true);
     }
 
     public void cleanup(String uuid) {
         lastGeneration.remove(uuid);
         receivedLastEventForGenerationAwareRetry.remove(uuid);
-        lastProcessingWithFinalizer.remove(uuid);
+        successFullyProcessedWithFinalizer.remove(uuid);
+        startedProcessingWithFinalizer.remove(uuid);
     }
 }

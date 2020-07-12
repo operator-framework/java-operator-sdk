@@ -79,9 +79,7 @@ public class EventDispatcher {
         log.debug("Updating resource: {} with version: {}", updatedResource.getMetadata().getName(),
                 updatedResource.getMetadata().getResourceVersion());
         log.trace("Resource before update: {}", updatedResource);
-        addFinalizerIfNotPresent(updatedResource);
         replace(updatedResource);
-        log.trace("Resource after update: {}", updatedResource);
     }
 
 

@@ -88,16 +88,11 @@ public class EventScheduler implements Watcher<CustomResource> {
                 return;
             }
             if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)
-                    && eventStore.lastProcessingHadFinalizer(event)) {
+                    && eventStore.successfullyProcessedWithFinalizer(event)) {
                 log.debug("Skipping event, has not larger generation than last stored, actual generation: {}, last stored: {} ",
                         event.getResource().getMetadata().getGeneration(), eventStore.getLastStoredGeneration(event));
                 return;
             }
-            if (generationAware && !eventStore.lastProcessingHadFinalizer(event)
-                    && ControllerUtils.hasDefaultFinalizer(event.getResource(), finalizer)) {
-                eventStore.markProcessedWitFinalizer(event.resourceUid(), true);
-            }
-
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
@@ -122,6 +117,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 return;
             }
             eventStore.addEventUnderProcessingAndUpdateLastGeneration(event);
+            markStartedProcessingWithFinalizer(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
             log.trace("Scheduled task for event: {}", event);
@@ -134,6 +130,7 @@ public class EventScheduler implements Watcher<CustomResource> {
         try {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
+            markSuccessfullyProcessedWithFinalizer(event);
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Scheduling recent event for processing: {}", event);
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
@@ -161,6 +158,18 @@ public class EventScheduler implements Watcher<CustomResource> {
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void markStartedProcessingWithFinalizer(CustomResourceEvent event) {
+        if (ControllerUtils.hasDefaultFinalizer(event.getResource(),finalizer) && !eventStore.successfullyProcessedWithFinalizer(event)) {
+            eventStore.markStartedProcessingWithFinalizerOnResource(event);
+        }
+    }
+
+    private void markSuccessfullyProcessedWithFinalizer (CustomResourceEvent event) {
+        if (eventStore.startedProcessingWithFinalizerOnResource(event)) {
+            eventStore.markSuccessfullyProcessedWitFinalizer(event.resourceUid());
         }
     }
 
