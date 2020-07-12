@@ -6,6 +6,7 @@ import com.github.containersolutions.operator.sample.subresource.SubResourceTest
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -22,6 +23,7 @@ public class SubResourceUpdateIT {
 
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
+    @BeforeEach
     public void initAndCleanup() {
         KubernetesClient k8sClient = new DefaultKubernetesClient();
         integrationTestSupport.initialize(k8sClient, new SubResourceTestCustomResourceController(),
@@ -31,7 +33,6 @@ public class SubResourceUpdateIT {
 
     @Test
     public void updatesSubResourceStatus() {
-        initAndCleanup();
         integrationTestSupport.teardownIfSuccess(() -> {
             SubResourceTestCustomResource resource = createTestCustomResource("1");
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
@@ -49,7 +50,6 @@ public class SubResourceUpdateIT {
      */
     @Test
     public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
-        initAndCleanup();
         integrationTestSupport.teardownIfSuccess(() -> {
             SubResourceTestCustomResource resource = createTestCustomResource("1");
             resource.getMetadata().getFinalizers().clear();
@@ -71,7 +71,6 @@ public class SubResourceUpdateIT {
      * */
     @Test
     public void updateCustomResourceAfterSubResourceChange() {
-        initAndCleanup();
         integrationTestSupport.teardownIfSuccess(() -> {
             SubResourceTestCustomResource resource = createTestCustomResource("1");
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
