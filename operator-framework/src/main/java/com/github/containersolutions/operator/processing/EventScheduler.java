@@ -1,7 +1,6 @@
 package com.github.containersolutions.operator.processing;
 
 
-import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -41,15 +40,13 @@ public class EventScheduler implements Watcher<CustomResource> {
     private final ScheduledThreadPoolExecutor executor;
     private final EventStore eventStore = new EventStore();
     private final Retry retry;
-    private final boolean generationAware;
     private final String finalizer;
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, boolean generationAware, String finalizer) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, String finalizer) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
-        this.generationAware = generationAware;
         this.finalizer = finalizer;
         executor = new ScheduledThreadPoolExecutor(1);
         executor.setRemoveOnCancelPolicy(true);
@@ -73,24 +70,10 @@ public class EventScheduler implements Watcher<CustomResource> {
                 log.debug("Skipping delete event");
                 return;
             }
-            if (generationAware) {
-                // we have to store the last event for generation aware retries, since if we received new events since
-                // the execution, which did not have increased generation we will fail automatically on a conflict
-                // on a retry.
-                eventStore.addLastEventForGenerationAwareRetry(event);
-            }
-            // In case of generation aware processing, we want to replace this even if generation not increased,
-            // to have the most recent copy of the event.
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
                 eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
-                return;
-            }
-            if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)
-                    && eventStore.successfullyProcessedWithFinalizer(event)) {
-                log.debug("Skipping event, has not larger generation than last stored, actual generation: {}, last stored: {} ",
-                        event.getResource().getMetadata().getGeneration(), eventStore.getLastStoredGeneration(event));
                 return;
             }
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
@@ -116,8 +99,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 log.warn("Event max retry limit reached. Will be discarded. {}", event);
                 return;
             }
-            eventStore.addEventUnderProcessingAndUpdateLastGeneration(event);
-            markStartedProcessingWithFinalizer(event);
+            eventStore.addEventUnderProcessing(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
             log.trace("Scheduled task for event: {}", event);
@@ -130,7 +112,6 @@ public class EventScheduler implements Watcher<CustomResource> {
         try {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
-            markSuccessfullyProcessedWithFinalizer(event);
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Scheduling recent event for processing: {}", event);
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
@@ -149,37 +130,10 @@ public class EventScheduler implements Watcher<CustomResource> {
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
             } else {
                 log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
-                if (generationAware) {
-                    CustomResourceEvent eventToRetry = selectEventToRetry(event);
-                    scheduleEventForExecution(eventToRetry);
-                } else {
-                    scheduleEventForExecution(event);
-                }
+                scheduleEventForExecution(event);
             }
         } finally {
             lock.unlock();
-        }
-    }
-
-    private void markStartedProcessingWithFinalizer(CustomResourceEvent event) {
-        if (ControllerUtils.hasDefaultFinalizer(event.getResource(),finalizer) && !eventStore.successfullyProcessedWithFinalizer(event)) {
-            eventStore.markStartedProcessingWithFinalizerOnResource(event);
-        }
-    }
-
-    private void markSuccessfullyProcessedWithFinalizer (CustomResourceEvent event) {
-        if (eventStore.startedProcessingWithFinalizerOnResource(event)) {
-            eventStore.markSuccessfullyProcessedWitFinalizer(event.resourceUid());
-        }
-    }
-
-    private CustomResourceEvent selectEventToRetry(CustomResourceEvent event) {
-        CustomResourceEvent lastEvent = eventStore.getReceivedLastEventForGenerationAwareRetry(event.resourceUid());
-        if (!event.getResource().getMetadata().getResourceVersion()
-                .equals(lastEvent.getResource().getMetadata().getResourceVersion())) {
-            return lastEvent;
-        } else {
-            return event;
         }
     }
 

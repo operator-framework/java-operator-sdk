@@ -59,11 +59,8 @@ public class ControllerExecutionIT {
         });
     }
 
-    // We test the scenario when we receive 2 events, while the generation is not increased by the other.
-    // This will cause a conflict, and on retry the new version of the resource needs to be scheduled
-    // to avoid repeating conflicts
     @Test
-    public void generationAwareRetryConflict() {
+    public void retryConflict() {
         initAndCleanup(true);
         integrationTestSupport.teardownIfSuccess(() -> {
             TestCustomResource resource = testCustomResource();
@@ -74,7 +71,7 @@ public class ControllerExecutionIT {
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(resource2);
 
             awaitResourcesCreatedOrUpdated();
-            awaitStatusUpdated(20);
+            awaitStatusUpdated(5);
         });
     }
 
