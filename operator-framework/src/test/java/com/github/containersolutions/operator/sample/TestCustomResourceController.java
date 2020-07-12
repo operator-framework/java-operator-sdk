@@ -83,16 +83,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
             }
             resource.getStatus().setConfigMapStatus("ConfigMap Ready");
         }
-        addOrUpdateAnnotation(resource);
         return UpdateControl.updateCustomResource(resource);
-    }
-
-    // for testing purposes we change metadata
-    private void addOrUpdateAnnotation(TestCustomResource resource) {
-        if (resource.getMetadata().getAnnotations() == null) {
-            resource.getMetadata().setAnnotations(new HashMap<>());
-        }
-        resource.getMetadata().getAnnotations().put("testAnnotation", LocalDateTime.now().toString());
     }
 
     private Map<String, String> configMapData(TestCustomResource resource) {

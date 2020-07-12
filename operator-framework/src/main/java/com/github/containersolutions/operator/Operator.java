@@ -60,7 +60,7 @@ public class Operator {
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 finalizer, new EventDispatcher.CustomResourceFacade(client));
-        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry, ControllerUtils.getGenerationEventProcessing(controller), finalizer);
+        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry, finalizer);
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
 

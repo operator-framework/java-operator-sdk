@@ -28,10 +28,6 @@ public class ControllerUtils {
         return getAnnotation(controller).finalizerName();
     }
 
-    static boolean getGenerationEventProcessing(ResourceController controller) {
-        return getAnnotation(controller).generationAwareEventProcessing();
-    }
-
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }

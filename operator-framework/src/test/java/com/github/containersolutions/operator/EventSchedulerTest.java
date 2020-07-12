@@ -37,7 +37,7 @@ class EventSchedulerTest {
     @SuppressWarnings("unchecked")
     private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
-    private EventScheduler eventScheduler = initScheduler(true);
+    private EventScheduler eventScheduler = initScheduler();
 
     private List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
 
@@ -77,33 +77,7 @@ class EventSchedulerTest {
     }
 
     @Test
-    public void generationAwareSchedulingSkipsEventsWithoutIncreasedGeneration() {
-        normalDispatcherExecution();
-        CustomResource resource1 = sampleResource();
-        addFinalizer(resource1);
-        CustomResource resource2 = sampleResource();
-        addFinalizer(resource2);
-        resource2.getMetadata().setResourceVersion("2");
-
-        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
-        eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
-
-        waitTimeForExecution(2);
-        assertThat(eventProcessingList).hasSize(1)
-                .matches(list ->
-                        eventProcessingList.get(0).getCustomResource().getMetadata().getResourceVersion().equals("1"));
-
-    }
-
-    private void addFinalizer(CustomResource resource) {
-        if (resource.getMetadata().getFinalizers() == null) {
-            resource.getMetadata().setFinalizers(new ArrayList<>());
-        }
-        resource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
-    }
-
-    @Test
-    public void notGenerationAwareSchedulingProcessesAllEventsRegardlessOfGeneration() {
+    public void processesAllEventsRegardlessOfGeneration() {
         generationUnAwareScheduler();
         normalDispatcherExecution();
         CustomResource resource1 = sampleResource();
@@ -237,12 +211,11 @@ class EventSchedulerTest {
     }
 
     private void generationUnAwareScheduler() {
-        eventScheduler = initScheduler(false);
+        eventScheduler = initScheduler();
     }
 
-    private EventScheduler initScheduler(boolean generationAware) {
-        return new EventScheduler(eventDispatcher,
-                new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry(), generationAware, finalizer);
+    private EventScheduler initScheduler() {
+        return new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry(), finalizer);
     }
 
     private Object exceptionInExecution(InvocationOnMock invocation) {

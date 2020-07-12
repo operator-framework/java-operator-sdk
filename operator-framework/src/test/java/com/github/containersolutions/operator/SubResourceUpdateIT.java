@@ -40,7 +40,7 @@ public class SubResourceUpdateIT {
             // wait for sure, there are no more events
             waitXms(200);
             // there is no event on status update processed
-            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
     }
 
@@ -59,7 +59,7 @@ public class SubResourceUpdateIT {
             // wait for sure, there are no more events
             waitXms(200);
             // there is no event on status update processed
-            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
     }
 
