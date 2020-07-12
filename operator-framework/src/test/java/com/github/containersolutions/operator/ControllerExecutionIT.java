@@ -19,10 +19,11 @@ import static com.github.containersolutions.operator.IntegrationTestSupport.TEST
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class ControllerExecutionIT {
 
     private final static Logger log = LoggerFactory.getLogger(ControllerExecutionIT.class);
+    public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     public void initAndCleanup(boolean controllerStatusUpdate) {
@@ -73,7 +74,7 @@ public class ControllerExecutionIT {
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(resource2);
 
             awaitResourcesCreatedOrUpdated();
-            awaitStatusUpdated(10);
+            awaitStatusUpdated(20);
         });
     }
 
@@ -95,7 +96,8 @@ public class ControllerExecutionIT {
     void awaitStatusUpdated(int timeout) {
         await("cr status updated").atMost(timeout, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
-                    TestCustomResource cr = (TestCustomResource) integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
+                    TestCustomResource cr = (TestCustomResource) integrationTestSupport.getCrOperations()
+                            .inNamespace(TEST_NAMESPACE).withName(TEST_CUSTOM_RESOURCE_NAME).get();
                     assertThat(cr).isNotNull();
                     assertThat(cr.getStatus()).isNotNull();
                     assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
@@ -105,7 +107,7 @@ public class ControllerExecutionIT {
     private TestCustomResource testCustomResource() {
         TestCustomResource resource = new TestCustomResource();
         resource.setMetadata(new ObjectMetaBuilder()
-                .withName("test-custom-resource")
+                .withName(TEST_CUSTOM_RESOURCE_NAME)
                 .withNamespace(TEST_NAMESPACE)
                 .build());
         resource.getMetadata().setAnnotations(new HashMap<>());
