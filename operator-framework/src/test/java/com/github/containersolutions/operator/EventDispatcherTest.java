@@ -94,7 +94,6 @@ class EventDispatcherTest {
     @Test
     void removesDefaultFinalizerOnDelete() {
         markForDeletion(testCustomResource);
-        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -106,7 +105,6 @@ class EventDispatcherTest {
     void doesNotRemovesTheFinalizerIfTheDeleteMethodRemovesFalse() {
         when(resourceController.deleteResource(eq(testCustomResource), any())).thenReturn(false);
         markForDeletion(testCustomResource);
-        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -116,7 +114,6 @@ class EventDispatcherTest {
 
     @Test
     void doesNotUpdateTheResourceIfNoUpdateUpdateControl() {
-        testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
@@ -126,6 +123,7 @@ class EventDispatcherTest {
 
     @Test
     void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
+        removeFinalizers(testCustomResource);
         when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
@@ -135,18 +133,22 @@ class EventDispatcherTest {
     }
 
     @Test
-    void doesNotAddFinalizerIfNoUpdateIsReturnedButMarkedForDeletion() {
+    void doesNotCallDeleteIfMarkedForDeletionButNotOurFinalizer() {
+        removeFinalizers(testCustomResource);
         markForDeletion(testCustomResource);
-        when(resourceController.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.noUpdate());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
-        assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
         verify(customResourceFacade, never()).replaceWithLock(any());
+        verify(resourceController, never()).deleteResource(eq(testCustomResource), any());
     }
 
     private void markForDeletion(CustomResource customResource) {
         customResource.getMetadata().setDeletionTimestamp("2019-8-10");
+    }
+
+    private void removeFinalizers(CustomResource customResource) {
+        customResource.getMetadata().getFinalizers().clear();
     }
 
     CustomResource getResource() {
@@ -157,6 +159,7 @@ class EventDispatcherTest {
                 .withDeletionGracePeriodSeconds(10L)
                 .withGeneration(10L)
                 .withName("name")
+                .withFinalizers(DEFAULT_FINALIZER)
                 .withNamespace("namespace")
                 .withResourceVersion("resourceVersion")
                 .withSelfLink("selfLink")

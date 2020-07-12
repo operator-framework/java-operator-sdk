@@ -42,7 +42,9 @@ public class EventDispatcher {
         /* Its interesting problem if we should call delete if received event after object is marked for deletion
            but finalizer is not on the object. Since it can happen that there are multiple finalizers, also other events after
            we called delete and remove finalizers already. Delete should be also idempotent, we call it now. */
-        // todo should we check if it has also finalizer?
+        if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
+            return;
+        }
         if (markedForDeletion(resource)) {
             boolean removeFinalizer = controller.deleteResource(resource, context);
             if (removeFinalizer && ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
