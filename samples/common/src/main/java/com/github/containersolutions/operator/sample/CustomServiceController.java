@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * A very simple sample controller that creates a service with a label.
@@ -43,7 +44,7 @@ public class CustomServiceController implements ResourceController<CustomService
         ServicePort servicePort = new ServicePort();
         servicePort.setPort(8080);
         ServiceSpec serviceSpec = new ServiceSpec();
-        serviceSpec.setPorts(Arrays.asList(servicePort));
+        serviceSpec.setPorts(Collections.singletonList(servicePort));
 
         kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace()).createOrReplaceWithNew()
                 .withNewMetadata()

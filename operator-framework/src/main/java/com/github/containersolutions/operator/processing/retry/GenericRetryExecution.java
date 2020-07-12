@@ -21,7 +21,7 @@ public class GenericRetryExecution implements RetryExecution {
     public Optional<Long> nextDelay() {
         if (lastAttemptIndex == 0) {
             lastAttemptIndex++;
-            return Optional.of(0l);
+            return Optional.of(0L);
         }
         if (genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
             return Optional.empty();

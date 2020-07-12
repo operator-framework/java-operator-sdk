@@ -37,8 +37,7 @@ public class OperatorAutoConfiguration {
         if (StringUtils.isNotBlank(operatorProperties.getMasterUrl())) {
             config.withMasterUrl(operatorProperties.getMasterUrl());
         }
-        KubernetesClient k8sClient = operatorProperties.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
-        return k8sClient;
+        return operatorProperties.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
     }
 
     @Bean

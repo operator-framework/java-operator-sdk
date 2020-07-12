@@ -40,14 +40,12 @@ public class EventScheduler implements Watcher<CustomResource> {
     private final ScheduledThreadPoolExecutor executor;
     private final EventStore eventStore = new EventStore();
     private final Retry retry;
-    private final String finalizer;
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, String finalizer) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
-        this.finalizer = finalizer;
         executor = new ScheduledThreadPoolExecutor(1);
         executor.setRemoveOnCancelPolicy(true);
     }

@@ -65,7 +65,7 @@ public class ControllerExecutionIT {
         integrationTestSupport.teardownIfSuccess(() -> {
             TestCustomResource resource = testCustomResource();
             TestCustomResource resource2 = testCustomResource();
-            resource2.getMetadata().getAnnotations().put("testannotation", "val");
+            resource2.getMetadata().getAnnotations().put("test-annotation", "val");
 
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(resource2);
@@ -77,7 +77,7 @@ public class ControllerExecutionIT {
 
 
     void awaitResourcesCreatedOrUpdated() {
-        await("configmap created").atMost(5, TimeUnit.SECONDS)
+        await("config map created").atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     ConfigMap configMap = integrationTestSupport.getK8sClient().configMaps().inNamespace(TEST_NAMESPACE)
                             .withName("test-config-map").get();
