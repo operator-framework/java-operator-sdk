@@ -25,5 +25,5 @@ public @interface Controller {
      * See generation meta attribute
      * <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource">here</a>
      */
-    boolean generationAwareEventProcessing() default false;
+    boolean generationAwareEventProcessing() default true;
 }

@@ -12,12 +12,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
+        generationAwareEventProcessing = false,
         crdName = TestCustomResourceController.CRD_NAME,
         customResourceClass = TestCustomResource.class)
 public class TestCustomResourceController implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {

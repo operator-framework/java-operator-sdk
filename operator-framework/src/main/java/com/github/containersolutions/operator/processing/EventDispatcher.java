@@ -114,7 +114,7 @@ public class EventDispatcher {
 
 
     private void removeDefaultFinalizer(CustomResource resource) {
-        log.debug("Removing finalizer on {}: {}", resource);
+        log.debug("Removing finalizer on resource {}:", resource);
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
         customResourceFacade.replaceWithLock(resource);
     }

@@ -1,6 +1,5 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.processing.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
@@ -33,7 +32,6 @@ class EventSchedulerTest {
 
     public static final int INVOCATION_DURATION = 80;
     public static final int MAX_RETRY_ATTEMPTS = 3;
-    public static final String finalizer = Controller.DEFAULT_FINALIZER;
     @SuppressWarnings("unchecked")
     private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
@@ -210,7 +208,7 @@ class EventSchedulerTest {
 
 
     private EventScheduler initScheduler() {
-        return new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry(), finalizer);
+        return new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry());
     }
 
     private Object exceptionInExecution(InvocationOnMock invocation) {
