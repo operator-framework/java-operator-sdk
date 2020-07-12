@@ -27,7 +27,7 @@ class EventDispatcherTest {
     @BeforeEach
     void setup() {
         eventDispatcher = new EventDispatcher(resourceController,
-                DEFAULT_FINALIZER, customResourceFacade);
+                DEFAULT_FINALIZER, customResourceFacade, false);
 
         testCustomResource = getResource();
 
