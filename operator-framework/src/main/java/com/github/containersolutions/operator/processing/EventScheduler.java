@@ -65,7 +65,7 @@ public class EventScheduler implements Watcher<CustomResource> {
             lock.lock();
             log.debug("Scheduling event from Api: {}", event);
             if (event.getAction() == Action.DELETED) {
-                log.debug("Skipping delete event");
+                log.debug("Skipping delete event for event: {}", event);
                 return;
             }
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
