@@ -25,9 +25,6 @@ processing events of custom resources immediately.
 
 Controllers are where you implement you logic for you operator.
 
-
-## Spring Boot Support
-
 ## Automatic Retries
 
 ## Event Processing Details
@@ -39,4 +36,4 @@ Controllers are where you implement you logic for you operator.
 
 ## Running The Operator
 
-
+## Spring Boot Support
