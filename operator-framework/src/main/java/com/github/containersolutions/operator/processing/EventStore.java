@@ -7,7 +7,6 @@ public class EventStore {
 
     private final Map<String, CustomResourceEvent> eventsNotScheduled = new HashMap<>();
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
-    private final Map<String, Long> lastGeneration = new HashMap<>();
 
     public boolean containsNotScheduledEvent(String uuid) {
         return eventsNotScheduled.containsKey(uuid);
@@ -17,9 +16,8 @@ public class EventStore {
         return eventsNotScheduled.remove(uid);
     }
 
-    public void addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(CustomResourceEvent event) {
+    public void addOrReplaceEventAsNotScheduled(CustomResourceEvent event) {
         eventsNotScheduled.put(event.resourceUid(), event);
-
     }
 
     public boolean containsEventUnderProcessing(String uuid) {
@@ -33,7 +31,4 @@ public class EventStore {
         return eventsUnderProcessing.remove(uid);
     }
 
-    public void cleanup(String uuid) {
-        lastGeneration.remove(uuid);
-    }
 }

@@ -46,7 +46,7 @@ public class SubResourceUpdateIT {
 
     /**
      * Note that we check on controller impl if there is finalizer on execution.
-     * */
+     */
     @Test
     public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
         initAndCleanup();
@@ -63,10 +63,37 @@ public class SubResourceUpdateIT {
         });
     }
 
+    /**
+     * Not that here status sub-resource update will fail on optimistic locking. This solves a tricky situation:
+     * If this would not happen (no optimistic locking on status sub-resource)  we could receive and store an event
+     * while processing the controller method. But this event would always fail since its resource version is outdated
+     * already.
+     * */
+    @Test
+    public void updateCustomResourceAfterSubResourceChange() {
+        initAndCleanup();
+        integrationTestSupport.teardownIfSuccess(() -> {
+            SubResourceTestCustomResource resource = createTestCustomResource("1");
+            integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
+
+            resource.getSpec().setValue("new value");
+            integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(resource);
+
+            awaitStatusUpdated(resource.getMetadata().getName());
+
+            // wait for sure, there are no more events
+            waitXms(200);
+            // there is no event on status update processed
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(3);
+        });
+
+    }
+
     void awaitStatusUpdated(String name) {
         await("cr status updated").atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     SubResourceTestCustomResource cr = (SubResourceTestCustomResource) integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName(name).get();
+                    assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
                     assertThat(cr).isNotNull();
                     assertThat(cr.getStatus()).isNotNull();
                     assertThat(cr.getStatus().getState()).isEqualTo(SUCCESS);
