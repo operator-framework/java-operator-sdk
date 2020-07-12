@@ -1,5 +1,6 @@
 package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.api.*;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -39,29 +40,31 @@ public class EventDispatcher {
         }
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
         /* Its interesting problem if we should call delete if received event after object is marked for deletion
-           but there is not our finalizer. Since it can happen that there are multiple finalizers, also other events after
-           we called delete and remove finalizers already. But also it can happen that we did not manage to put
-           finalizer into the resource before marked for delete. So for now we will call delete every time, since delete
-           operation should be idempotent too, and this way we cover the corner case. */
-        if (markedForDeletion(resource) || action == Watcher.Action.DELETED) {
+           but finalizer is not on the object. Since it can happen that there are multiple finalizers, also other events after
+           we called delete and remove finalizers already. Delete should be also idempotent, we call it now. */
+        // todo should we check if it has also finalizer?
+        if (markedForDeletion(resource)) {
             boolean removeFinalizer = controller.deleteResource(resource, context);
-            if (removeFinalizer && hasDefaultFinalizer(resource)) {
+            if (removeFinalizer && ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
                 removeDefaultFinalizer(resource);
             }
         } else {
-            UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
-            // note that we do the status sub-resource update first, since if there is an event from Custom resource
-            // update as next step, the new status is already present.
-            if (updateControl.isUpdateStatusSubResource()) {
-                customResourceFacade.updateStatus(updateControl.getCustomResource());
-            }
-            if (updateControl.isUpdateCustomResource()) {
-                updateCustomResource(updateControl.getCustomResource());
-            } else if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
-                // We always add the default finalizer if missing and not marked for deletion.
-                // Adding it for original resource since the update was not requested. (Although we are not cloning
-                // passing it as argument)
+            if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
+                /*  We always add the default finalizer if missing and not marked for deletion.
+                    We execute the controller processing only for processing the event sent as a results
+                    of the finalizer add. This will make sure that the resources are not created before
+                    there is a finalizer.
+                 */
                 updateCustomResourceWithFinalizer(resource);
+            } else {
+                UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
+                // note that we do the status sub-resource update first, since if there is an event from Custom resource
+                // update as next step, the new status is already present.
+                if (updateControl.isUpdateStatusSubResource()) {
+                    customResourceFacade.updateStatus(updateControl.getCustomResource());
+                } else if (updateControl.isUpdateCustomResource()) {
+                    updateCustomResource(updateControl.getCustomResource());
+                }
             }
         }
     }
@@ -83,13 +86,6 @@ public class EventDispatcher {
     }
 
 
-    private boolean hasDefaultFinalizer(CustomResource resource) {
-        if (resource.getMetadata().getFinalizers() != null) {
-            return resource.getMetadata().getFinalizers().contains(resourceDefaultFinalizer);
-        }
-        return false;
-    }
-
     private void removeDefaultFinalizer(CustomResource resource) {
         log.debug("Removing finalizer on {}: {}", resource);
         resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
@@ -102,7 +98,7 @@ public class EventDispatcher {
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
-        if (!hasDefaultFinalizer(resource) && !markedForDeletion(resource)) {
+        if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
             log.info("Adding default finalizer to {}", resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
                 resource.getMetadata().setFinalizers(new ArrayList<>(1));

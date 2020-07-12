@@ -9,6 +9,7 @@ public class EventStore {
     private final Map<String, CustomResourceEvent> eventsUnderProcessing = new HashMap<>();
     private final Map<String, Long> lastGeneration = new HashMap<>();
     private final Map<String, CustomResourceEvent> receivedLastEventForGenerationAwareRetry = new HashMap<>();
+    private final Map<String, Boolean> lastProcessingWithFinalizer = new HashMap<>();
 
     public boolean containsNotScheduledEvent(String uuid) {
         return eventsNotScheduled.containsKey(uuid);
@@ -61,8 +62,18 @@ public class EventStore {
         return receivedLastEventForGenerationAwareRetry.get(uuid);
     }
 
+    public boolean lastProcessingHadFinalizer(CustomResourceEvent event) {
+        Boolean res = lastProcessingWithFinalizer.get(event.resourceUid());
+        return res == null ? false : res;
+    }
+
+    public void markProcessedWitFinalizer(String uuid, boolean hadFinalizer) {
+        lastProcessingWithFinalizer.put(uuid, hadFinalizer);
+    }
+
     public void cleanup(String uuid) {
         lastGeneration.remove(uuid);
         receivedLastEventForGenerationAwareRetry.remove(uuid);
+        lastProcessingWithFinalizer.remove(uuid);
     }
 }

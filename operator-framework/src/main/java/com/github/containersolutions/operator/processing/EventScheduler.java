@@ -1,6 +1,7 @@
 package com.github.containersolutions.operator.processing;
 
 
+import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -41,13 +42,15 @@ public class EventScheduler implements Watcher<CustomResource> {
     private final EventStore eventStore = new EventStore();
     private final Retry retry;
     private final boolean generationAware;
+    private final String finalizer;
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, boolean generationAware) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, boolean generationAware, String finalizer) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
         this.generationAware = generationAware;
+        this.finalizer = finalizer;
         executor = new ScheduledThreadPoolExecutor(1);
         executor.setRemoveOnCancelPolicy(true);
     }
@@ -64,15 +67,10 @@ public class EventScheduler implements Watcher<CustomResource> {
         try {
             lock.lock();
             log.debug("Scheduling event from Api: {}", event);
-            if (event.getAction() == Action.DELETED && event.getResource().getMetadata().getDeletionTimestamp() != null) {
+            if (event.getAction() == Action.DELETED) {
                 // This removes data from memory for deleted resource (prevent memory leak).
-                // There is am extreme corner case when there is no finalizer, we ignore this situation now.
                 eventStore.cleanup(event.resourceUid());
-                // Note that we always use finalizers, we want to process delete event just in corner case,
-                // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
-                // We want to skip in case of finalizer was there since we don't want to execute delete method always at least 2x,
-                // which would be the result if we don't skip here. (there is no deletion timestamp if resource deleted without finalizer.)
-                log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
+                log.debug("Skipping delete event");
                 return;
             }
             if (generationAware) {
@@ -89,11 +87,17 @@ public class EventScheduler implements Watcher<CustomResource> {
                 eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
                 return;
             }
-            if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)) {
+            if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)
+                    && eventStore.lastProcessingHadFinalizer(event)) {
                 log.debug("Skipping event, has not larger generation than last stored, actual generation: {}, last stored: {} ",
                         event.getResource().getMetadata().getGeneration(), eventStore.getLastStoredGeneration(event));
                 return;
             }
+            if (generationAware && !eventStore.lastProcessingHadFinalizer(event)
+                    && ControllerUtils.hasDefaultFinalizer(event.getResource(), finalizer)) {
+                eventStore.markProcessedWitFinalizer(event.resourceUid(), true);
+            }
+
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);

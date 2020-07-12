@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-class ControllerUtils {
+public class ControllerUtils {
 
     private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
 
@@ -77,5 +77,12 @@ class ControllerUtils {
 
     private static Controller getAnnotation(ResourceController controller) {
         return controller.getClass().getAnnotation(Controller.class);
+    }
+
+    public static boolean hasDefaultFinalizer(CustomResource resource, String finalizer) {
+        if (resource.getMetadata().getFinalizers() != null) {
+            return resource.getMetadata().getFinalizers().contains(finalizer);
+        }
+        return false;
     }
 }
