@@ -39,9 +39,6 @@ public class EventDispatcher {
             return;
         }
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
-        /* Its interesting problem if we should call delete if received event after object is marked for deletion
-           but finalizer is not on the object. Since it can happen that there are multiple finalizers, also other events after
-           we called delete and remove finalizers already. Delete should be also idempotent, we call it now. */
         if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
             return;
         }

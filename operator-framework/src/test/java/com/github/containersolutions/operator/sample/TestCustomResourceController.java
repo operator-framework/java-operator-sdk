@@ -51,6 +51,10 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource,
                                                                     Context<TestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
+        if (!resource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)) {
+            throw new IllegalStateException("Finalizer is not present.");
+        }
+
         ConfigMap existingConfigMap = kubernetesClient
                 .configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).get();

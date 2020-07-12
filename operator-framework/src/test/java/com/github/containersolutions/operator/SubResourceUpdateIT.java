@@ -44,6 +44,9 @@ public class SubResourceUpdateIT {
         });
     }
 
+    /**
+     * Note that we check on controller impl if there is finalizer on execution.
+     * */
     @Test
     public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
         initAndCleanup();
@@ -56,7 +59,7 @@ public class SubResourceUpdateIT {
             // wait for sure, there are no more events
             waitXms(200);
             // there is no event on status update processed
-            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
         });
     }
 
