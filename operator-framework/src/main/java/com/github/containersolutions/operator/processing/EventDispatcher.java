@@ -57,8 +57,6 @@ public class EventDispatcher {
                 updateCustomResourceWithFinalizer(resource);
             } else {
                 UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
-                // note that we do the status sub-resource update first, since if there is an event from Custom resource
-                // update as next step, the new status is already present.
                 if (updateControl.isUpdateStatusSubResource()) {
                     customResourceFacade.updateStatus(updateControl.getCustomResource());
                 } else if (updateControl.isUpdateCustomResource()) {
