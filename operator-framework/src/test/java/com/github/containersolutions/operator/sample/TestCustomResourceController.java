@@ -28,7 +28,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
     private final KubernetesClient kubernetesClient;
     private final boolean updateStatus;
-    private AtomicInteger numberOfExecutions = new AtomicInteger(0);
+    private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
     public TestCustomResourceController(KubernetesClient kubernetesClient) {
         this(kubernetesClient, true);
@@ -41,10 +41,15 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
     @Override
     public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
-        kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
+        Boolean delete = kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).delete();
-        log.info("Deleting config map with name: {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
-        return true;
+        if (Boolean.TRUE.equals(delete)) {
+            log.info("Deleted ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
+            return true;
+        } else {
+            log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
+            return false;
+        }
     }
 
     @Override

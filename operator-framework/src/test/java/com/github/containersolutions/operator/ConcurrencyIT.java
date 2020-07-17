@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +45,7 @@ public class ConcurrencyIT {
     @Test
     public void manyResourcesGetCreatedUpdatedAndDeleted() {
         integrationTest.teardownIfSuccess(() -> {
-            log.info("Adding new resources.");
+            log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
             for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
                 TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
                 integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).create(tcr);
@@ -59,7 +60,7 @@ public class ConcurrencyIT {
                         assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
                     });
 
-            log.info("Updating resources.");
+            log.info("Updating {} resources", NUMBER_OF_RESOURCES_UPDATED);
             // update some resources
             for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
                 TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
@@ -69,7 +70,7 @@ public class ConcurrencyIT {
             // sleep to make some variability to the test, so some updates are not executed before delete
             Thread.sleep(300);
 
-            log.info("Deleting resources.");
+            log.info("Deleting {} resources", NUMBER_OF_RESOURCES_DELETED);
             for (int i = 0; i < NUMBER_OF_RESOURCES_DELETED; i++) {
                 TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
                 integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).delete(tcr);
@@ -81,7 +82,9 @@ public class ConcurrencyIT {
                                 .inNamespace(TEST_NAMESPACE)
                                 .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
                                 .list().getItems();
-                        assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
+                        //reducing configmaps to names only - better for debugging
+                        List<String> itemDescs = items.stream().map(configMap -> configMap.getMetadata().getName()).collect(Collectors.toList());
+                        assertThat(itemDescs).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
                         List<TestCustomResource> crs = integrationTest.getCrOperations()
                                 .inNamespace(TEST_NAMESPACE)

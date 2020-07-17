@@ -46,7 +46,6 @@ public class IntegrationTestSupport {
         Class doneableClass = getCustomResourceDoneableClass(controller);
         Class customResourceClass = getCustomResourceClass(controller);
         crOperations = k8sClient.customResources(crd, customResourceClass, CustomResourceList.class, doneableClass);
-        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
@@ -68,6 +67,7 @@ public class IntegrationTestSupport {
 
         //we depend on the actual operator from the startup to handle the finalizers and clean up
         //resources from previous test runs
+        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
 
         await("all CRs cleaned up").atMost(60, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
