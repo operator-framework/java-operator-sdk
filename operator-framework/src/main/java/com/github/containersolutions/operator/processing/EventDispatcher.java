@@ -44,6 +44,7 @@ public class EventDispatcher {
             return;
         }
         if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
+            log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", event);
             return;
         }
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));

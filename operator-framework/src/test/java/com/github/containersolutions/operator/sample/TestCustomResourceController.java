@@ -43,13 +43,12 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
         Boolean delete = kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).delete();
-        if (Boolean.TRUE.equals(delete)) {
+        if (delete) {
             log.info("Deleted ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
-            return true;
         } else {
             log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
-            return true;
         }
+        return true;
     }
 
     @Override
