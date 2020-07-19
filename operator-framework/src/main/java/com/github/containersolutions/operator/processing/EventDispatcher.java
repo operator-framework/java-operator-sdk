@@ -38,7 +38,7 @@ public class EventDispatcher {
     public void handleEvent(CustomResourceEvent event) {
         Watcher.Action action = event.getAction();
         CustomResource resource = event.getResource();
-        log.info("Handling event {} for resource {}", action, resource.getMetadata());
+        log.info("Handling {} event for resource {}", action, resource.getMetadata());
         if (Watcher.Action.ERROR == action) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
