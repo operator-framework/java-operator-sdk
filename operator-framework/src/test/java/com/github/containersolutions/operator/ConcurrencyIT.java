@@ -67,7 +67,7 @@ public class ConcurrencyIT {
                 tcr.getSpec().setValue(i + UPDATED_SUFFIX);
                 integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(tcr);
             }
-            // sleep to make some variability to the test, so some updates are not executed before delete
+            // sleep for a short time to make variability to the test, so some updates are not executed before delete
             Thread.sleep(300);
 
             log.info("Deleting {} resources", NUMBER_OF_RESOURCES_DELETED);
