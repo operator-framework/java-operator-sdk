@@ -48,7 +48,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
             return true;
         } else {
             log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
-            return false;
+            return true;
         }
     }
 
