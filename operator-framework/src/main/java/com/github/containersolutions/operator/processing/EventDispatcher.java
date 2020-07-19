@@ -50,8 +50,12 @@ public class EventDispatcher {
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
         if (markedForDeletion(resource)) {
             boolean removeFinalizer = controller.deleteResource(resource, context);
-            if (removeFinalizer && ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
+            boolean hasDefaultFinalizer = ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer);
+            if (removeFinalizer && hasDefaultFinalizer) {
                 removeDefaultFinalizer(resource);
+            } else {
+                log.debug("Skipping finalizer remove. removeFinalizer: {}, hasDefaultFinalizer: {} ",
+                        removeFinalizer, hasDefaultFinalizer);
             }
             cleanup(resource);
         } else {
