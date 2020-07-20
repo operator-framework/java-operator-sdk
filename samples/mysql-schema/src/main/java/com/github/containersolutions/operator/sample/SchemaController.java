@@ -1,7 +1,9 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -14,7 +16,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Base64;
-import java.util.Optional;
 
 import static java.lang.String.format;
 
@@ -29,10 +30,12 @@ public class SchemaController implements ResourceController<Schema> {
 
     private final KubernetesClient kubernetesClient;
 
-    public SchemaController(KubernetesClient kubernetesClient) { this.kubernetesClient = kubernetesClient; }
+    public SchemaController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
+    }
 
     @Override
-    public Optional<Schema> createOrUpdateResource(Schema schema) {
+    public UpdateControl<Schema> createOrUpdateResource(Schema schema, Context<Schema> context) {
         try (Connection connection = getConnection()) {
             if (!schemaExists(connection, schema.getMetadata().getName())) {
                 connection.createStatement().execute(format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
@@ -67,11 +70,11 @@ public class SchemaController implements ResourceController<Schema> {
                 status.setSecretName(secretName);
                 status.setStatus("CREATED");
                 schema.setStatus(status);
-                log.info("Schema {} created", schema.getMetadata().getName());
+                log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
 
-                return Optional.of(schema);
+                return UpdateControl.updateStatusSubResource(schema);
             }
-            return Optional.empty();
+            return UpdateControl.noUpdate();
         } catch (SQLException e) {
             log.error("Error while creating Schema", e);
 
@@ -82,12 +85,12 @@ public class SchemaController implements ResourceController<Schema> {
             status.setStatus("ERROR");
             schema.setStatus(status);
 
-            return Optional.of(schema);
+            return UpdateControl.updateCustomResource(schema);
         }
     }
 
     @Override
-    public boolean deleteResource(Schema schema) {
+    public boolean deleteResource(Schema schema, Context<Schema> context) {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
 
         try (Connection connection = getConnection()) {
@@ -130,7 +133,7 @@ public class SchemaController implements ResourceController<Schema> {
         return resultSet.first();
     }
 
-    private boolean userExists(Connection connection, String userName) throws  SQLException {
+    private boolean userExists(Connection connection, String userName) throws SQLException {
         ResultSet resultSet = connection.createStatement().executeQuery(
                 format("SELECT User FROM mysql.user WHERE User='%1$s'", userName)
         );

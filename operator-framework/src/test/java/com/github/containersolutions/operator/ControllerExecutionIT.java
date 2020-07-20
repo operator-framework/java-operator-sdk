@@ -1,9 +1,12 @@
 package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.sample.TestCustomResource;
+import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
@@ -16,14 +19,16 @@ import static com.github.containersolutions.operator.IntegrationTestSupport.TEST
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class ControllerExecutionIT {
 
     private final static Logger log = LoggerFactory.getLogger(ControllerExecutionIT.class);
+    public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     public void initAndCleanup(boolean controllerStatusUpdate) {
-        integrationTestSupport.initialize(controllerStatusUpdate);
+        KubernetesClient k8sClient = new DefaultKubernetesClient();
+        integrationTestSupport.initialize(k8sClient, new TestCustomResourceController(k8sClient, controllerStatusUpdate), "test-crd.yaml");
         integrationTestSupport.cleanup();
     }
 
@@ -54,28 +59,25 @@ public class ControllerExecutionIT {
         });
     }
 
-    // We test the scenario when we receive 2 events, while the generation is not increased by the other.
-    // This will cause a conflict, and on retry the new version of the resource needs to be scheduled
-    // to avoid repeating conflicts
     @Test
-    public void generationAwareRetryConflict() {
+    public void retryConflict() {
         initAndCleanup(true);
         integrationTestSupport.teardownIfSuccess(() -> {
             TestCustomResource resource = testCustomResource();
             TestCustomResource resource2 = testCustomResource();
-            resource2.getMetadata().getAnnotations().put("testannotation", "val");
+            resource2.getMetadata().getAnnotations().put("test-annotation", "val");
 
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(resource2);
 
             awaitResourcesCreatedOrUpdated();
-            awaitStatusUpdated(10);
+            awaitStatusUpdated(5);
         });
     }
 
 
     void awaitResourcesCreatedOrUpdated() {
-        await("configmap created").atMost(5, TimeUnit.SECONDS)
+        await("config map created").atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     ConfigMap configMap = integrationTestSupport.getK8sClient().configMaps().inNamespace(TEST_NAMESPACE)
                             .withName("test-config-map").get();
@@ -91,7 +93,8 @@ public class ControllerExecutionIT {
     void awaitStatusUpdated(int timeout) {
         await("cr status updated").atMost(timeout, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
-                    TestCustomResource cr = integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).withName("test-custom-resource").get();
+                    TestCustomResource cr = (TestCustomResource) integrationTestSupport.getCrOperations()
+                            .inNamespace(TEST_NAMESPACE).withName(TEST_CUSTOM_RESOURCE_NAME).get();
                     assertThat(cr).isNotNull();
                     assertThat(cr.getStatus()).isNotNull();
                     assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
@@ -101,7 +104,7 @@ public class ControllerExecutionIT {
     private TestCustomResource testCustomResource() {
         TestCustomResource resource = new TestCustomResource();
         resource.setMetadata(new ObjectMetaBuilder()
-                .withName("test-custom-resource")
+                .withName(TEST_CUSTOM_RESOURCE_NAME)
                 .withNamespace(TEST_NAMESPACE)
                 .build());
         resource.getMetadata().setAnnotations(new HashMap<>());

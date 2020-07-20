@@ -2,10 +2,10 @@
 ![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 SDK for building Kubernetes Operators in Java. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
-In this first iteration we aim to provide a framework which handles the reconciliation loop by dispatching events to
-a Controller written by the user of the framework.
-
-The Controller only contains the logic to create, update and delete the actual resources related to the CRD.
+User (you) only writes the logic in a Controller that creates/updates or deletes resources related to a custom resource.
+All the issues around are handled by the framework for you.
+Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
+about the non-trivial yet common problems needs to be solved for every operator. 
 
 ## Join us on Discord!
 
@@ -61,16 +61,16 @@ The Controller implements the business logic and describes all the classes neede
 public class WebServerController implements ResourceController<WebServer> {
 
     @Override
-    public boolean deleteResource(CustomService resource) {
+    public boolean deleteResource(CustomService resource, Context<WebServer> context) {
         // ... your logic ...
         return true;
     }
     
     // Return the changed resource, so it gets updated. See javadoc for details.
     @Override
-    public Optional<CustomService> createOrUpdateResource(CustomService resource) {
+    public UpdateControl<CustomService> createOrUpdateResource(CustomService resource, Context<WebServer> context) {
         // ... your logic ...
-        return resource;
+        return UpdateControl.updateStatusSubResource(resource);
     }
 }
 ```
@@ -139,7 +139,7 @@ public class Application {
 }
 ```
 
-And add Spring's `@Service` annotation to your controller classes so they will be automatically registered as resource controllers.
+add Spring's `@Service` annotation to your controller classes so they will be automatically registered as resource controllers.
 
 The Operator's Spring Boot integration leverages [Spring's configuration mechanisms](https://docs.spring.io/spring-boot/docs/1.0.1.RELEASE/reference/html/boot-features-external-config.html) to configure
 - [The Kubernetes client](spring-boot-starter/src/main/java/com/github/containersolutions/operator/spingboot/starter/OperatorProperties.java)

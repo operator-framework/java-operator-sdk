@@ -2,8 +2,6 @@ package com.github.containersolutions.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
-import java.util.Optional;
-
 public interface ResourceController<R extends CustomResource> {
 
     /**
@@ -17,7 +15,7 @@ public interface ResourceController<R extends CustomResource> {
      * @return true - so the finalizer is automatically removed after the call.
      * false if you don't want to remove the finalizer. Note that this is ALMOST NEVER the case.
      */
-    boolean deleteResource(R resource);
+    boolean deleteResource(R resource, Context<R> context);
 
     /**
      * The implementation of this operation is required to be idempotent.
@@ -28,6 +26,6 @@ public interface ResourceController<R extends CustomResource> {
      * this update can be skipped.
      * <b>However we will always call an update if there is no finalizer on object and its not marked for deletion.</b>
      */
-    Optional<R> createOrUpdateResource(R resource);
+    UpdateControl createOrUpdateResource(R resource, Context<R> context);
 
 }

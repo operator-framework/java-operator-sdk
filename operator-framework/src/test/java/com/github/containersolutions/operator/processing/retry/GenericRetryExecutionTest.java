@@ -30,20 +30,6 @@ public class GenericRetryExecutionTest {
     }
 
     @Test
-    public void noNextDelayIfMaxElapsedTimeReached() {
-        RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry()
-                .setMaxElapsedTime(5000)
-                .setInitialInterval(2000)
-                .setIntervalMultiplier(1)
-                .initExecution();
-        Optional<Long> res = callNextDelayNTimes(retryExecution, 3);
-        assertThat(res).isNotEmpty();
-
-        res = retryExecution.nextDelay();
-        assertThat(res).isEmpty();
-    }
-
-    @Test
     public void noNextDelayIfMaxAttemptLimitReached() {
         RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().setMaxAttempts(3).initExecution();
         Optional<Long> res = callNextDelayNTimes(retryExecution, 3);
@@ -71,6 +57,16 @@ public class GenericRetryExecutionTest {
         RetryExecution retryExecution = GenericRetry.noRetry().initExecution();
         assertThat(retryExecution.nextDelay().get()).isZero();
         assertThat(retryExecution.nextDelay()).isEmpty();
+    }
+
+    @Test
+    public void supportsIsLastExecution() {
+        GenericRetryExecution execution = new GenericRetry().setMaxAttempts(2).initExecution();
+        assertThat(execution.isLastExecution()).isFalse();
+
+        execution.nextDelay();
+        execution.nextDelay();
+        assertThat(execution.isLastExecution()).isTrue();
     }
 
     private RetryExecution getDefaultRetryExecution() {
