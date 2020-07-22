@@ -12,9 +12,9 @@ spec:
   selector:
     matchLabels:
       app: mysql-schema-operator
-  replicas: 1
+  replicas: 1 # we always run a single replica of the operator to avoid duplicate handling of events
   strategy:
-    type: Recreate
+    type: Recreate # during an upgrade the operator will shut down before the new version comes up to prevent two instances running at the same time
   template:
     metadata:
       labels:
@@ -29,20 +29,20 @@ spec:
         - containerPort: 80
         env:
         - name: MYSQL_HOST
-          value: mysql.mysql
+          value: mysql.mysql # assuming the MySQL server runs in a namespace called "mysql" on Kubernetes
         - name: MYSQL_USER
           value: root
         - name: MYSQL_PASSWORD
-          value: password
+          value: password # sample-level security
         readinessProbe:
           httpGet:
-            path: /health
+            path: /health # when this returns 200 the operator is considered up and running
             port: 8080
           initialDelaySeconds: 1
           timeoutSeconds: 1
         livenessProbe:
           httpGet:
-            path: /health
+            path: /health # when this endpoint doesn't return 200 the operator is considered broken and get's restarted
             port: 8080
           initialDelaySeconds: 30
           timeoutSeconds: 1
