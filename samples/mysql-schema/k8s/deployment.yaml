@@ -20,7 +20,7 @@ spec:
       labels:
         app: mysql-schema-operator
     spec:
-      serviceAccount: mysql-schema-operator
+      serviceAccount: mysql-schema-operator # specify the ServiceAccount under which's RBAC persmissions the operator will be executed under
       containers:
       - name: operator
         image: ${DOCKER_REGISTRY}/mysql-schema-operator:${OPERATOR_VERSION}
