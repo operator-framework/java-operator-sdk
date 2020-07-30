@@ -48,7 +48,7 @@ public class Runner {
 
    public static void main(String[] args) {
        Operator operator = new Operator(new DefaultKubernetesClient());
-       operator.registerController(new CustomServiceController());
+       operator.registerController(new WebServerController());
    }
 }
 ```
