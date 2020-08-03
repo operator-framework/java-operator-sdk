@@ -19,16 +19,19 @@ Note that you don't have to deploy the operator to a Kubernetes clusters as a po
 If you run this example from you favorite IDE, it will pick up the kubeconfig (prepared by minikube) and will start
 processing events of custom resources immediately. 
 
-<!-- todo add Adam's blogpost here -->
 
 ## Controllers
+Controllers are where you implement you logic for you operator.
 
 ### Generation Awareness
-Controllers are where you implement you logic for you operator.
 
 ## Automatic Retries
 
 ## Running The Operator
+
+## Development Tips & Tricks
+
+TODO: explain running operator locally against a cluster
 
 ## Event Processing Details
 ### Handling Finalizers
