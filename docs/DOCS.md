@@ -23,17 +23,18 @@ processing events of custom resources immediately.
 
 ## Controllers
 
+### Generation Awareness
 Controllers are where you implement you logic for you operator.
 
 ## Automatic Retries
 
+## Running The Operator
+
 ## Event Processing Details
 ### Handling Finalizers
 ### Managing Consistency
-### Generation Awareness
 ### Event Scheduling
 ### Event Dispatching 
-
-## Running The Operator
+### Generation Awareness
 
 ## Spring Boot Support
