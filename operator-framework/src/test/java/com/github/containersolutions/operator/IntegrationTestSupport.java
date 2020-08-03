@@ -1,15 +1,15 @@
 package com.github.containersolutions.operator;
 
+import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResource;
-import com.github.containersolutions.operator.sample.TestCustomResourceController;
 import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceClass;
 import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceDoneableClass;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -31,27 +32,20 @@ public class IntegrationTestSupport {
     public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
     private final static Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
     private KubernetesClient k8sClient;
-    private MixedOperation<TestCustomResource, CustomResourceList, CustomResourceDoneable,
-            Resource<TestCustomResource, CustomResourceDoneable>> crOperations;
+    private MixedOperation<CustomResource, CustomResourceList, CustomResourceDoneable,
+            Resource<CustomResource, CustomResourceDoneable>> crOperations;
     private Operator operator;
-    private TestCustomResourceController controller;
+    private ResourceController controller;
 
-    public void initialize() {
-        initialize(true);
-    }
-
-    public void initialize(boolean updateStatus) {
-        k8sClient = new DefaultKubernetesClient();
-
+    public void initialize(KubernetesClient k8sClient, ResourceController controller, String crdPath) {
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
+        this.k8sClient = k8sClient;
+        CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
+        this.controller = controller;
 
-        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, "test-crd.yaml");
-        k8sClient.customResourceDefinitions().createOrReplace(crd);
-
-        controller = new TestCustomResourceController(k8sClient, updateStatus);
         Class doneableClass = getCustomResourceDoneableClass(controller);
-        crOperations = k8sClient.customResources(crd, TestCustomResource.class, CustomResourceList.class, doneableClass);
-        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
+        Class customResourceClass = getCustomResourceClass(controller);
+        crOperations = k8sClient.customResources(crd, customResourceClass, CustomResourceList.class, doneableClass);
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
@@ -62,11 +56,18 @@ public class IntegrationTestSupport {
         log.info("Operator is running with TestCustomeResourceController");
     }
 
+    public CustomResourceDefinition loadCRDAndApplyToCluster(String classPathYaml) {
+        CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, classPathYaml);
+        k8sClient.customResourceDefinitions().createOrReplace(crd);
+        return crd;
+    }
+
     public void cleanup() {
         log.info("Cleaning up namespace {}", TEST_NAMESPACE);
 
         //we depend on the actual operator from the startup to handle the finalizers and clean up
         //resources from previous test runs
+        crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
 
         await("all CRs cleaned up").atMost(60, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
@@ -75,13 +76,13 @@ public class IntegrationTestSupport {
                 });
 
         k8sClient.configMaps().inNamespace(TEST_NAMESPACE)
-                .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
+                .withLabel("managedBy", controller.getClass().getSimpleName())
                 .delete();
 
         await("all config maps cleaned up").atMost(60, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     assertThat(k8sClient.configMaps().inNamespace(TEST_NAMESPACE)
-                            .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
+                            .withLabel("managedBy", controller.getClass().getSimpleName())
                             .list().getItems().isEmpty());
                 });
 
@@ -116,7 +117,7 @@ public class IntegrationTestSupport {
     }
 
     public int numberOfControllerExecutions() {
-        return controller.getNumberOfExecutions();
+        return ((TestExecutionInfoProvider) controller).getNumberOfExecutions();
     }
 
     private <T> T loadYaml(Class<T> clazz, String yaml) {
@@ -145,7 +146,7 @@ public class IntegrationTestSupport {
         return k8sClient;
     }
 
-    public MixedOperation<TestCustomResource, CustomResourceList, CustomResourceDoneable, Resource<TestCustomResource, CustomResourceDoneable>> getCrOperations() {
+    public MixedOperation<CustomResource, CustomResourceList, CustomResourceDoneable, Resource<CustomResource, CustomResourceDoneable>> getCrOperations() {
         return crOperations;
     }
 

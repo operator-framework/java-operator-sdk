@@ -17,7 +17,7 @@ class ControllerUtilsTest {
         assertEquals(DEFAULT_FINALIZER, ControllerUtils.getDefaultFinalizer(new TestCustomResourceController(null)));
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController(null)));
         assertEquals(CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
-        assertEquals(true, ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));
+        assertEquals(false, ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));
         assertTrue(CustomResourceDoneable.class.isAssignableFrom(ControllerUtils.getCustomResourceDoneableClass(new TestCustomResourceController(null))));
     }
 }

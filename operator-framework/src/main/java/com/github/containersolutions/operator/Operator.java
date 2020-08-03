@@ -56,13 +56,14 @@ public class Operator {
         Class<R> resClass = getCustomResourceClass(controller);
         CustomResourceDefinition crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(getApiVersion(crd), getKind(crd), resClass);
-
+        String finalizer = getDefaultFinalizer(controller);
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
-                getDefaultFinalizer(controller), new EventDispatcher.CustomResourceReplaceFacade(client));
-        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry, ControllerUtils.getGenerationEventProcessing(controller));
+                finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
+        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
+
 
     private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
                                                             Class<R> resClass,

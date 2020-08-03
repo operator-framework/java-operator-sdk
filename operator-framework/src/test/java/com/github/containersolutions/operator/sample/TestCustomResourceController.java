@@ -1,7 +1,10 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.TestExecutionInfoProvider;
+import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
 import com.github.containersolutions.operator.api.ResourceController;
+import com.github.containersolutions.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -9,16 +12,15 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
+        generationAwareEventProcessing = false,
         crdName = TestCustomResourceController.CRD_NAME,
         customResourceClass = TestCustomResource.class)
-public class TestCustomResourceController implements ResourceController<TestCustomResource> {
+public class TestCustomResourceController implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 
@@ -26,7 +28,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
     private final KubernetesClient kubernetesClient;
     private final boolean updateStatus;
-    private AtomicInteger numberOfExecutions = new AtomicInteger(0);
+    private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
     public TestCustomResourceController(KubernetesClient kubernetesClient) {
         this(kubernetesClient, true);
@@ -38,16 +40,25 @@ public class TestCustomResourceController implements ResourceController<TestCust
     }
 
     @Override
-    public boolean deleteResource(TestCustomResource resource) {
-        kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
+    public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+        Boolean delete = kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).delete();
-        log.info("Deleting config map with name: {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
+        if (delete) {
+            log.info("Deleted ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
+        } else {
+            log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
+        }
         return true;
     }
 
     @Override
-    public Optional<TestCustomResource> createOrUpdateResource(TestCustomResource resource) {
+    public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource,
+                                                                    Context<TestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
+        if (!resource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)) {
+            throw new IllegalStateException("Finalizer is not present.");
+        }
+
         ConfigMap existingConfigMap = kubernetesClient
                 .configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).get();
@@ -76,16 +87,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
             }
             resource.getStatus().setConfigMapStatus("ConfigMap Ready");
         }
-        addOrUpdateAnnotation(resource);
-        return Optional.of(resource);
-    }
-
-    // for testing purposes we change metadata
-    private void addOrUpdateAnnotation(TestCustomResource resource) {
-        if (resource.getMetadata().getAnnotations() == null) {
-            resource.getMetadata().setAnnotations(new HashMap<>());
-        }
-        resource.getMetadata().getAnnotations().put("testAnnotation", LocalDateTime.now().toString());
+        return UpdateControl.updateCustomResource(resource);
     }
 
     private Map<String, String> configMapData(TestCustomResource resource) {

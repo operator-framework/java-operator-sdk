@@ -37,8 +37,7 @@ public class OperatorAutoConfiguration {
         if (StringUtils.isNotBlank(operatorProperties.getMasterUrl())) {
             config.withMasterUrl(operatorProperties.getMasterUrl());
         }
-        KubernetesClient k8sClient = operatorProperties.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
-        return k8sClient;
+        return operatorProperties.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
     }
 
     @Bean
@@ -61,9 +60,6 @@ public class OperatorAutoConfiguration {
         }
         if (retryProperties.getMaxAttempts() != null) {
             retry.setMaxAttempts(retryProperties.getMaxAttempts());
-        }
-        if (retryProperties.getMaxElapsedTime() != null) {
-            retry.setMaxElapsedTime(retryProperties.getMaxElapsedTime());
         }
         if (retryProperties.getMaxInterval() != null) {
             retry.setInitialInterval(retryProperties.getMaxInterval());

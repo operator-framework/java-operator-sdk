@@ -40,14 +40,12 @@ public class EventScheduler implements Watcher<CustomResource> {
     private final ScheduledThreadPoolExecutor executor;
     private final EventStore eventStore = new EventStore();
     private final Retry retry;
-    private final boolean generationAware;
 
     private ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, boolean generationAware) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
-        this.generationAware = generationAware;
         executor = new ScheduledThreadPoolExecutor(1);
         executor.setRemoveOnCancelPolicy(true);
     }
@@ -64,40 +62,20 @@ public class EventScheduler implements Watcher<CustomResource> {
         try {
             lock.lock();
             log.debug("Scheduling event from Api: {}", event);
-            if (event.getAction() == Action.DELETED && event.getResource().getMetadata().getDeletionTimestamp() != null) {
-                // This removes data from memory for deleted resource (prevent memory leak).
-                // There is am extreme corner case when there is no finalizer, we ignore this situation now.
-                eventStore.cleanup(event.resourceUid());
-                // Note that we always use finalizers, we want to process delete event just in corner case,
-                // when we are not able to add finalizer (lets say because of optimistic locking error, and the resource was deleted instantly).
-                // We want to skip in case of finalizer was there since we don't want to execute delete method always at least 2x,
-                // which would be the result if we don't skip here. (there is no deletion timestamp if resource deleted without finalizer.)
-                log.debug("Skipping delete event since deletion timestamp is present on resource, so finalizer was in place.");
+            if (event.getAction() == Action.DELETED) {
+                log.debug("Skipping delete event for event: {}", event);
                 return;
             }
-            if (generationAware) {
-                // we have to store the last event for generation aware retries, since if we received new events since
-                // the execution, which did not have increased generation we will fail automatically on a conflict
-                // on a retry.
-                eventStore.addLastEventForGenerationAwareRetry(event);
-            }
-            // In case of generation aware processing, we want to replace this even if generation not increased,
-            // to have the most recent copy of the event.
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Replacing not scheduled event with actual event." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
-                return;
-            }
-            if (generationAware && !eventStore.hasLargerGenerationThanLastStored(event)) {
-                log.debug("Skipping event, has not larger generation than last stored, actual generation: {}, last stored: {} ",
-                        event.getResource().getMetadata().getGeneration(), eventStore.getLastStoredGeneration(event));
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
             if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
                 log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
                         " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduledAndUpdateLastGeneration(event);
+                eventStore.addOrReplaceEventAsNotScheduled(event);
                 return;
             }
             scheduleEventForExecution(event);
@@ -117,7 +95,7 @@ public class EventScheduler implements Watcher<CustomResource> {
                 log.warn("Event max retry limit reached. Will be discarded. {}", event);
                 return;
             }
-            eventStore.addEventUnderProcessingAndUpdateLastGeneration(event);
+            eventStore.addEventUnderProcessing(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
                     nextBackOff.get(), TimeUnit.MILLISECONDS);
             log.trace("Scheduled task for event: {}", event);
@@ -148,25 +126,10 @@ public class EventScheduler implements Watcher<CustomResource> {
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
             } else {
                 log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
-                if (generationAware) {
-                    CustomResourceEvent eventToRetry = selectEventToRetry(event);
-                    scheduleEventForExecution(eventToRetry);
-                } else {
-                    scheduleEventForExecution(event);
-                }
+                scheduleEventForExecution(event);
             }
         } finally {
             lock.unlock();
-        }
-    }
-
-    private CustomResourceEvent selectEventToRetry(CustomResourceEvent event) {
-        CustomResourceEvent lastEvent = eventStore.getReceivedLastEventForGenerationAwareRetry(event.resourceUid());
-        if (!event.getResource().getMetadata().getResourceVersion()
-                .equals(lastEvent.getResource().getMetadata().getResourceVersion())) {
-            return lastEvent;
-        } else {
-            return event;
         }
     }
 
