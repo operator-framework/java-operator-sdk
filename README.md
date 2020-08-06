@@ -24,6 +24,11 @@ Feature we would like to implement and invite the community to help us implement
 * Configurable Retry Handling
 * Smart Event Processing Scheduling
 
+## User Guide
+
+You can find detailed documentation [here](docs/DOCS.md). 
+Note that these docs are currently in progress. 
+
 ## Usage
 
 We have several sample Operators under the samples directory:
