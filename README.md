@@ -26,7 +26,7 @@ Feature we would like to implement and invite the community to help us implement
 
 ## User Guide
 
-You can find detailed documentation [here](docs/DOCS.md). 
+You can (will) find detailed documentation [here](docs/DOCS.md). 
 Note that these docs are currently in progress. 
 
 ## Usage
