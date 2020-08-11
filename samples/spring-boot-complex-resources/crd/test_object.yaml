@@ -1,0 +1,14 @@
+apiVersion: "sample.javaoperatorsdk/v1"
+kind: CustomService
+metadata:
+  name: custom-service1
+spec:
+  testSuite: thoba/todo-list-app:latest
+  service:
+    name: reporting
+    image: thoba/todo-list-app:latest
+  dependencies:
+    - name: authentication
+      image: thoba/todo-list-app:latest
+status:
+  ready: no
