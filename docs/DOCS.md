@@ -13,15 +13,27 @@ You can read about the common problems what is this operator framework is solvin
 ## Getting Started
 
 The easiest way to get started with SDK is start [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) and 
-execute one of our [examples](https://github.com/ContainerSolutions/java-operator-sdk/tree/master/samples/webserver)
+execute one of our [examples](https://github.com/ContainerSolutions/java-operator-sdk/tree/master/samples/mysql-schema)
 
-Note that you don't have to deploy the operator to a Kubernetes clusters as a pod (however you have to apply the CRD).
-If you run this example from you favorite IDE, it will pick up the kubeconfig (prepared by minikube) and will start
-processing events of custom resources immediately. 
+Here are the main steps to develop the code and deploy the operator to a Kubernetes cluster. A more detailed and specific
+version can be found under `samples/mysql-schema/README.md`.
 
+1. Setup kubectl to work with your Kubernetes cluster of choice.
+1. Apply Custom Resource Definition
+1. Compile the whole project (framework + samples) using `mvn install -P no-integration-tests` in the root directory
+1. Run the main class of the sample you picked and check out the sample's README to see what it does.
+When run locally the framework will use your Kubernetes client configuration (in ~/.kube/config) to make the connection
+to the cluster. This is why it was important to set up kubectl up front.
+1. You can work in this local development mode to play with the code.
+1. Build the Docker image and push it to the registry
+1. Apply RBAC configuration
+1. Apply deployment configuration
+1. Verify if the operator is up and running. Don't run it locally anymore to avoid conflicts in processing events from 
+the cluster's API server.
 
 ## Controllers
-Controllers are where you implement you logic for you operator.
+Controllers are where you implement the business logic of the Operator. An Operator can host multiple Controllers, 
+each handling a different type of Custom Resource. In our samples each Operator has a single Controller. 
 
 ### Generation Awareness
 
