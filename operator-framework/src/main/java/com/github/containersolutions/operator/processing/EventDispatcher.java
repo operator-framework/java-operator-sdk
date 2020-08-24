@@ -35,17 +35,17 @@ public class EventDispatcher {
         this.generationAware = generationAware;
     }
 
-    public void handleEvent(CustomResourceEvent event) {
+    public DispatchControl handleEvent(CustomResourceEvent event) {
         Watcher.Action action = event.getAction();
         CustomResource resource = event.getResource();
         log.info("Handling {} event for resource {}", action, resource.getMetadata());
         if (Watcher.Action.ERROR == action) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
-            return;
+            return DispatchControl.defaultDispatch();
         }
         if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
             log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", event);
-            return;
+            return DispatchControl.defaultDispatch();
         }
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
         if (markedForDeletion(resource)) {
@@ -58,6 +58,7 @@ public class EventDispatcher {
                         removeFinalizer, hasDefaultFinalizer);
             }
             cleanup(resource);
+            return DispatchControl.defaultDispatch();
         } else {
             if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
                 /*  We always add the default finalizer if missing and not marked for deletion.
@@ -66,7 +67,9 @@ public class EventDispatcher {
                     there is a finalizer.
                  */
                 updateCustomResourceWithFinalizer(resource);
+                return DispatchControl.defaultDispatch();
             } else {
+                // todo generation awareness on rescheduled event
                 if (!generationAware || largerGenerationThenProcessedBefore(resource)) {
                     UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
                     if (updateControl.isUpdateStatusSubResource()) {
@@ -75,10 +78,20 @@ public class EventDispatcher {
                         updateCustomResource(updateControl.getCustomResource());
                     }
                     markLastGenerationProcessed(resource);
+                    return updateControlToDispatchControl(updateControl);
                 } else {
                     log.debug("Skipping processing since generation not increased. Event: {}", event);
+                    return DispatchControl.defaultDispatch();
                 }
             }
+        }
+    }
+
+    private DispatchControl updateControlToDispatchControl(UpdateControl updateControl) {
+        if (updateControl.isForReprocess()) {
+            return DispatchControl.reprocessAfter(updateControl.getReprocessDelay());
+        } else {
+            return DispatchControl.defaultDispatch();
         }
     }
 

@@ -47,6 +47,9 @@ public class UpdateControl<T extends CustomResource> {
     public long getReprocessDelay() {
         return reprocessDelay;
     }
+    public boolean isForReprocess() {
+        return reprocessDelay > 0;
+    }
 
     public UpdateControl<T> reprocessAfter(long milliseconds) {
         this.reprocessDelay = milliseconds;

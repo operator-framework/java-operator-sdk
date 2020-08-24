@@ -21,23 +21,13 @@ class EventConsumer implements Runnable {
     @Override
     public void run() {
         log.debug("Processing event started: {}", event);
-        if (processEvent()) {
-            eventScheduler.eventProcessingFinishedSuccessfully(event);
-            log.debug("Event processed successfully: {}", event);
-        } else {
-            this.eventScheduler.eventProcessingFailed(event);
-            log.debug("Event processed failed: {}", event);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean processEvent() {
         try {
-            eventDispatcher.handleEvent(event);
+            DispatchControl dispatchControl = eventDispatcher.handleEvent(event);
+            eventScheduler.eventProcessingFinishedSuccessfully(event, dispatchControl);
+            log.debug("Event processed successfully: {}", event);
         } catch (RuntimeException e) {
             log.error("Processing event {} failed.", event, e);
-            return false;
+            this.eventScheduler.eventProcessingFailed(event);
         }
-        return true;
     }
 }

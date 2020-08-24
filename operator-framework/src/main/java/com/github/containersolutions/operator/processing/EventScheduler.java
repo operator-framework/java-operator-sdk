@@ -88,29 +88,45 @@ public class EventScheduler implements Watcher<CustomResource> {
     private void scheduleEventForExecution(CustomResourceEvent event) {
         try {
             lock.lock();
-            log.trace("Current queue size {}", executor.getQueue().size());
-            log.debug("Scheduling event for execution: {}", event);
             Optional<Long> nextBackOff = event.nextBackOff();
             if (!nextBackOff.isPresent()) {
                 log.warn("Event max retry limit reached. Will be discarded. {}", event);
                 return;
             }
+            scheduleEventForExecutionWithBackoff(event, nextBackOff.get());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void scheduleEventForExecutionWithBackoff(CustomResourceEvent event, long backOff) {
+        try {
+            lock.lock();
+            log.trace("Current queue size {}", executor.getQueue().size());
+            log.debug("Scheduling event for execution: {}", event);
+
             eventStore.addEventUnderProcessing(event);
             executor.schedule(new EventConsumer(event, eventDispatcher, this),
-                    nextBackOff.get(), TimeUnit.MILLISECONDS);
+                    backOff, TimeUnit.MILLISECONDS);
             log.trace("Scheduled task for event: {}", event);
         } finally {
             lock.unlock();
         }
     }
 
-    void eventProcessingFinishedSuccessfully(CustomResourceEvent event) {
+
+    void eventProcessingFinishedSuccessfully(CustomResourceEvent event, DispatchControl dispatchControl) {
         try {
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
                 log.debug("Scheduling recent event for processing: {}", event);
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
+            } else if (dispatchControl.reprocessEvent()) {
+                // reset retry - if putting back an event the old retries info does not make sense anymore.
+                CustomResourceEvent eventWithRetryReset
+                        = new CustomResourceEvent(event.getAction(), event.getResource(), retry);
+                scheduleEventForExecutionWithBackoff(eventWithRetryReset, dispatchControl.getReprocessDelay());
             }
         } finally {
             lock.unlock();
