@@ -36,12 +36,14 @@ public class EventScheduler implements Watcher<CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
+    private final EventStore eventStore = new EventStore();
+    private final ResourceCache resourceCache = new ResourceCache();
+
     private final EventDispatcher eventDispatcher;
     private final ScheduledThreadPoolExecutor executor;
-    private final EventStore eventStore = new EventStore();
     private final Retry retry;
 
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
         this.eventDispatcher = eventDispatcher;
@@ -54,15 +56,15 @@ public class EventScheduler implements Watcher<CustomResource> {
     public void eventReceived(Watcher.Action action, CustomResource resource) {
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
-        CustomResourceEvent event = new CustomResourceEvent(action, resource, retry);
-        scheduleEventFromApi(event);
+        resourceCache.cacheResource(resource); // always store the latest event. Outside the sync block is intentional.
+        scheduleEventFromApi(new CustomResourceEvent(action, resource, retry));
     }
 
     void scheduleEventFromApi(CustomResourceEvent event) {
         try {
             lock.lock();
-            log.debug("Scheduling event from Api: {}", event);
             if (event.getAction() == Action.DELETED) {
+                // todo cancel retries and reprocessing
                 log.debug("Skipping delete event for event: {}", event);
                 return;
             }
@@ -88,64 +90,58 @@ public class EventScheduler implements Watcher<CustomResource> {
     private void scheduleEventForExecution(CustomResourceEvent event) {
         try {
             lock.lock();
-            Optional<Long> nextBackOff = event.nextBackOff();
-            if (!nextBackOff.isPresent()) {
-                log.warn("Event max retry limit reached. Will be discarded. {}", event);
-                return;
-            }
-            scheduleEventForExecutionWithBackoff(event, nextBackOff.get());
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private void scheduleEventForExecutionWithBackoff(CustomResourceEvent event, long backOff) {
-        try {
-            lock.lock();
             log.trace("Current queue size {}", executor.getQueue().size());
             log.debug("Scheduling event for execution: {}", event);
-
             eventStore.addEventUnderProcessing(event);
-            executor.schedule(new EventConsumer(event, eventDispatcher, this),
-                    backOff, TimeUnit.MILLISECONDS);
-            log.trace("Scheduled task for event: {}", event);
+            executor.execute(new EventConsumer(event, eventDispatcher, this));
         } finally {
             lock.unlock();
         }
     }
 
-
-    void eventProcessingFinishedSuccessfully(CustomResourceEvent event, DispatchControl dispatchControl) {
+    void eventProcessingFinished(CustomResourceEvent event, DispatchControl dispatchControl) {
         try {
+            // todo log debug messages
             lock.lock();
             eventStore.removeEventUnderProcessing(event.resourceUid());
             if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                log.debug("Scheduling recent event for processing: {}", event);
-                scheduleNotYetScheduledEventForExecution(event.resourceUid());
-            } else if (dispatchControl.reprocessEvent()) {
-                // reset retry - if putting back an event the old retries info does not make sense anymore.
-                CustomResourceEvent eventWithRetryReset
-                        = new CustomResourceEvent(event.getAction(), event.getResource(), retry);
-                scheduleEventForExecutionWithBackoff(eventWithRetryReset, dispatchControl.getReprocessDelay());
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    void eventProcessingFailed(CustomResourceEvent event) {
-        try {
-            lock.lock();
-            eventStore.removeEventUnderProcessing(event.resourceUid());
-            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                log.debug("Event processing failed. Scheduling the most recent event. Failed event: {}", event);
                 scheduleNotYetScheduledEventForExecution(event.resourceUid());
             } else {
-                log.debug("Event processing failed. Attempting to re-schedule the event: {}", event);
-                scheduleEventForExecution(event);
+                // todo reprocess even is there is an event scheduled?
+                if (dispatchControl.reprocessEvent()) {
+                    scheduleEventForReprocessing(event);
+                }
+                if (dispatchControl.isError()) {
+                    scheduleEventForRetry(event);
+                }
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+
+    private void scheduleEventForReprocessing(CustomResourceEvent event) {
+
+    }
+
+    private void scheduleEventForRetry(CustomResourceEvent event) {
+
+    }
+
+    private class ReprocessSupport implements Runnable {
+
+        @Override
+        public void run() {
+
+        }
+    }
+
+    private class RetrySupport implements Runnable {
+
+        @Override
+        public void run() {
+
         }
     }
 

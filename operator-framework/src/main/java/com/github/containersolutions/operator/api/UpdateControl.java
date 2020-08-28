@@ -4,12 +4,12 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.concurrent.TimeUnit;
 
-public class UpdateControl<T extends CustomResource> {
+public class UpdateControl<T extends CustomResource> extends ReprocessControl {
 
     private final T customResource;
     private final boolean updateStatusSubResource;
     private final boolean updateCustomResource;
-    private long reprocessDelay = -1;
+
 
     private UpdateControl(T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
         if ((updateCustomResource || updateStatusSubResource) && customResource == null) {
@@ -44,20 +44,4 @@ public class UpdateControl<T extends CustomResource> {
         return updateCustomResource;
     }
 
-    public long getReprocessDelay() {
-        return reprocessDelay;
-    }
-    public boolean isForReprocess() {
-        return reprocessDelay > 0;
-    }
-
-    public UpdateControl<T> reprocessAfter(long milliseconds) {
-        this.reprocessDelay = milliseconds;
-        return this;
-    }
-
-    public UpdateControl<T> reprocessAfter(long delay, TimeUnit timeUnit) {
-        this.reprocessDelay = timeUnit.toMillis(delay);
-        return this;
-    }
 }

@@ -15,7 +15,7 @@ public interface ResourceController<R extends CustomResource> {
      * @return true - so the finalizer is automatically removed after the call.
      * false if you don't want to remove the finalizer. Note that this is ALMOST NEVER the case.
      */
-    boolean deleteResource(R resource, Context<R> context);
+    DeleteControl deleteResource(R resource, Context<R> context);
 
     /**
      * The implementation of this operation is required to be idempotent.

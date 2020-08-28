@@ -13,11 +13,20 @@ public class CustomResourceEvent {
     private final Watcher.Action action;
     private final CustomResource resource;
     private int retryCount = -1;
+    private boolean processRegardlessOfGeneration = false;
 
     public CustomResourceEvent(Watcher.Action action, CustomResource resource, Retry retry) {
         this.action = action;
         this.resource = resource;
         this.retryExecution = retry.initExecution();
+    }
+
+    public boolean isProcessRegardlessOfGeneration() {
+        return processRegardlessOfGeneration;
+    }
+
+    public void setProcessRegardlessOfGeneration(boolean processRegardlessOfGeneration) {
+        this.processRegardlessOfGeneration = processRegardlessOfGeneration;
     }
 
     public Watcher.Action getAction() {
