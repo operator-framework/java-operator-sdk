@@ -8,7 +8,12 @@
 </head>
 <body class="page">
   {% include header.html %}
-  {% include title.html %}
+  <div class="title-strip {{ page.collection }} {{ page.name | split: "." | first }}">
+  <div class="title">
+    <h1><img class="homepage-logo" src="{{ site.baseurl }}/assets/images/logo.png" width="400px"></h1>
+    {{ page.description }}
+  </div>
+  </div>
   <div id="content" class="content">
     {{ content }}
   </div>

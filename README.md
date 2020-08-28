@@ -1,4 +1,4 @@
-# ![java-operator-sdk](logo.png) 
+# ![java-operator-sdk](docs/assets/images/logo.png) 
 ![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
