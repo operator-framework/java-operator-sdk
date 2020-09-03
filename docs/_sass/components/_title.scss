@@ -17,7 +17,10 @@
   h1 {
     font-size: 60px;
     font-weight: bold;
-    line-height: 58px;
     text-transform: uppercase;
+    max-height: 300px;
+  }
+  h3 {
+    line-height: 50px;
   }
 }
