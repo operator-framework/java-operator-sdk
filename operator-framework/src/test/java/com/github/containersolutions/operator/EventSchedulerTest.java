@@ -49,7 +49,7 @@ class EventSchedulerTest {
 
         waitMinimalTimeForExecution();
         verify(eventDispatcher, times(1)).handleEvent(
-                argThat(event -> event.getResource().equals(resource) && event.getAction() == Watcher.Action.MODIFIED));
+                argThat(event -> event.getCustomResource().equals(resource) && event.getAction() == Watcher.Action.MODIFIED));
 
         assertThat(eventProcessingList).hasSize(1);
     }
@@ -145,13 +145,13 @@ class EventSchedulerTest {
         doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
             @Override
             public boolean matches(CustomResourceEvent event) {
-                return event.getResource().equals(resource1);
+                return event.getCustomResource().equals(resource1);
             }
         }));
         doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
             @Override
             public boolean matches(CustomResourceEvent event) {
-                return event.getResource().equals(resource2);
+                return event.getCustomResource().equals(resource2);
             }
         }));
 
@@ -196,7 +196,7 @@ class EventSchedulerTest {
             Thread.sleep(INVOCATION_DURATION);
             LocalDateTime end = LocalDateTime.now();
             eventProcessingList.add(new EventProcessingDetail(((CustomResourceEvent) args[0]).getAction(), start, end,
-                    ((CustomResourceEvent) args[0]).getResource()));
+                    ((CustomResourceEvent) args[0]).getCustomResource()));
             return null;
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
@@ -219,7 +219,7 @@ class EventSchedulerTest {
             LocalDateTime end = LocalDateTime.now();
             IllegalStateException exception = new IllegalStateException("Exception thrown for testing purposes");
             eventProcessingList.add(new EventProcessingDetail(((CustomResourceEvent) args[0]).getAction(), start, end,
-                    ((CustomResourceEvent) args[0]).getResource(), exception));
+                    ((CustomResourceEvent) args[0]).getCustomResource(), exception));
             throw exception;
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);

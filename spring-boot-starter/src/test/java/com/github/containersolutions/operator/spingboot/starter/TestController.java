@@ -20,6 +20,9 @@ public class TestController implements ResourceController {
 
     @Override
     public UpdateControl createOrUpdateResource(CustomResource resource, Context context) {
+
+
+
         return UpdateControl.noUpdate();
     }
 }

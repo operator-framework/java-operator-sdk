@@ -22,14 +22,5 @@ class EventConsumer implements Runnable {
     public void run() {
         DispatchControl dispatchControl = eventDispatcher.handleEvent(event);
         eventScheduler.eventProcessingFinished(event, dispatchControl);
-//        log.debug("Processing event started: {}", event);
-//        try {
-//            DispatchControl dispatchControl = eventDispatcher.handleEvent(event);
-//            eventScheduler.eventProcessingFinishedSuccessfully(event, dispatchControl);
-//            log.debug("Event processed successfully: {}", event);
-//        } catch (RuntimeException e) {
-//            log.error("Processing event {} failed.", event, e);
-//            this.eventScheduler.eventProcessingFailed(event);
-//        }
     }
 }

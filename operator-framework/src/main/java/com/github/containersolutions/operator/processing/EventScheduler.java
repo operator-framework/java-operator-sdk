@@ -1,6 +1,7 @@
 package com.github.containersolutions.operator.processing;
 
 
+import com.github.containersolutions.operator.processing.event.Event;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -58,6 +59,10 @@ public class EventScheduler implements Watcher<CustomResource> {
                 resource.getMetadata().getName());
         resourceCache.cacheResource(resource); // always store the latest event. Outside the sync block is intentional.
         scheduleEventFromApi(new CustomResourceEvent(action, resource, retry));
+    }
+
+    public void handleEvent(Event event) {
+
     }
 
     void scheduleEventFromApi(CustomResourceEvent event) {
