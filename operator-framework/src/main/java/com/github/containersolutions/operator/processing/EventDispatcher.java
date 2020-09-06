@@ -45,7 +45,7 @@ public class EventDispatcher {
     }
 
     private DispatchControl handDispatch(CustomResourceEvent event) {
-        CustomResource resource = event.getResource();
+        CustomResource resource = event.getCustomResource();
         log.info("Handling {} event for resource {}", event.getAction(), resource.getMetadata());
         if (Watcher.Action.ERROR == event.getAction()) {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
