@@ -10,9 +10,9 @@ public abstract class EventProducer {
         this.eventHandler = eventHandler;
     }
 
-    protected void eventProducerRegistered(CustomResource customResource) {
+    protected void eventProducerRegistered(String customResourceUid) {
     }
 
-    protected void eventProducerDeRegistered(CustomResource customResource) {
+    protected void eventProducerDeRegistered(String customResourceUid) {
     }
 }

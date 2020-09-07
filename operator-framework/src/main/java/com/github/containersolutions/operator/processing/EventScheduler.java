@@ -1,6 +1,7 @@
 package com.github.containersolutions.operator.processing;
 
 
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.event.Event;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -9,10 +10,12 @@ import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.github.containersolutions.operator.processing.ProcessingUtils.*;
 
 /**
  * Requirements:
@@ -37,20 +40,21 @@ public class EventScheduler implements Watcher<CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
-    private final EventStore eventStore = new EventStore();
+    //    private final EventStore eventStore = new EventStore();
     private final ResourceCache resourceCache = new ResourceCache();
+    private final Set<String> underProcessing = new HashSet<>();
+    private final EventBuffer eventBuffer;
 
     private final EventDispatcher eventDispatcher;
-    private final ScheduledThreadPoolExecutor executor;
     private final Retry retry;
+
 
     private final ReentrantLock lock = new ReentrantLock();
 
     public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
-        executor = new ScheduledThreadPoolExecutor(1);
-        executor.setRemoveOnCancelPolicy(true);
+        eventBuffer = new EventBuffer();
     }
 
     @Override
@@ -58,68 +62,61 @@ public class EventScheduler implements Watcher<CustomResource> {
         log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
                 resource.getMetadata().getName());
         resourceCache.cacheResource(resource); // always store the latest event. Outside the sync block is intentional.
-        scheduleEventFromApi(new CustomResourceEvent(action, resource, retry));
+        if (action == Action.DELETED) {
+            // todo cleanup
+            log.debug("Skipping delete event for custom resource: {}", resource);
+            return;
+        }
+        scheduleEvent(new CustomResourceEvent(action, resource, retry));
     }
 
-    public void handleEvent(Event event) {
-
-    }
-
-    void scheduleEventFromApi(CustomResourceEvent event) {
+    public void scheduleEvent(Event event) {
         try {
             lock.lock();
-            if (event.getAction() == Action.DELETED) {
-                // todo cancel retries and reprocessing
-                log.debug("Skipping delete event for event: {}", event);
-                return;
+            if (event instanceof CustomResourceEvent) {
+                eventBuffer.addOrUpdateLatestCustomResourceEvent((CustomResourceEvent) event);
+            } else {
+                eventBuffer.addEvent(event);
             }
-            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                log.debug("Replacing not scheduled event with actual event." +
-                        " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduled(event);
-                return;
+            if (!isControllerUnderExecutionForCR(event.getRelatedCustomResourceUid())) {
+                executeEvents(event.getRelatedCustomResourceUid());
             }
-            if (eventStore.containsEventUnderProcessing(event.resourceUid())) {
-                log.debug("Scheduling event for later processing since there is an event under processing for same kind." +
-                        " New event: {}", event);
-                eventStore.addOrReplaceEventAsNotScheduled(event);
-                return;
-            }
-            scheduleEventForExecution(event);
-            log.trace("Scheduling event from API finished: {}", event);
         } finally {
             lock.unlock();
         }
     }
 
-    private void scheduleEventForExecution(CustomResourceEvent event) {
+    private boolean isControllerUnderExecutionForCR(String customResource) {
+        return underProcessing.contains(customResource);
+    }
+
+
+    private void executeEvents(String customResourceUid) {
         try {
             lock.lock();
-            log.trace("Current queue size {}", executor.getQueue().size());
-            log.debug("Scheduling event for execution: {}", event);
-            eventStore.addEventUnderProcessing(event);
-            executor.execute(new EventConsumer(event, eventDispatcher, this));
+            underProcessing.add(customResourceUid);
+//            executor.execute(new ExecutionUnit(event, eventDispatcher, this));
         } finally {
             lock.unlock();
         }
     }
 
-    void eventProcessingFinished(CustomResourceEvent event, DispatchControl dispatchControl) {
+    void eventProcessingFinished(ExecutionUnit event, DispatchControl dispatchControl) {
         try {
             // todo log debug messages
-            lock.lock();
-            eventStore.removeEventUnderProcessing(event.resourceUid());
-            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
-                scheduleNotYetScheduledEventForExecution(event.resourceUid());
-            } else {
-                // todo reprocess even is there is an event scheduled?
-                if (dispatchControl.reprocessEvent()) {
-                    scheduleEventForReprocessing(event);
-                }
-                if (dispatchControl.isError()) {
-                    scheduleEventForRetry(event);
-                }
-            }
+//            lock.lock();
+//            eventStore.removeEventUnderProcessing(event.resourceUid());
+//            if (eventStore.containsNotScheduledEvent(event.resourceUid())) {
+//                scheduleNotYetScheduledEventForExecution(event.resourceUid());
+//            } else {
+//                // todo reprocess even is there is an event scheduled?
+//                if (dispatchControl.reprocessEvent()) {
+//                    scheduleEventForReprocessing(event);
+//                }
+//                if (dispatchControl.isError()) {
+//                    scheduleEventForRetry(event);
+//                }
+//            }
         } finally {
             lock.unlock();
         }
@@ -132,27 +129,6 @@ public class EventScheduler implements Watcher<CustomResource> {
 
     private void scheduleEventForRetry(CustomResourceEvent event) {
 
-    }
-
-    private class ReprocessSupport implements Runnable {
-
-        @Override
-        public void run() {
-
-        }
-    }
-
-    private class RetrySupport implements Runnable {
-
-        @Override
-        public void run() {
-
-        }
-    }
-
-    private void scheduleNotYetScheduledEventForExecution(String uuid) {
-        CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduled(uuid);
-        scheduleEventForExecution(notScheduledEvent);
     }
 
     @Override

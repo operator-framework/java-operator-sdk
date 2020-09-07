@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface EventManager {
 
-    void registerEventProducer(CustomResource customResource, EventProducer eventSource);
+    void registerEventProducer(String customResource, EventProducer eventSource);
 
-    void deRegisterEventProducer(CustomResource customResource, EventProducer eventSource);
+    void deRegisterEventProducer(String customResource, EventProducer eventSource);
 
-    List<EventProducer> getRegisteredEventSources(CustomResource customResource);
+    List<EventProducer> getRegisteredEventSources(String customResource);
 }

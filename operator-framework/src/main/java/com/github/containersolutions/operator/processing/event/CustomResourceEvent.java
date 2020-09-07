@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing;
+package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.event.Event;
 import com.github.containersolutions.operator.processing.retry.Retry;
@@ -8,19 +8,19 @@ import io.fabric8.kubernetes.client.Watcher;
 
 import java.util.Optional;
 
-public class CustomResourceEvent extends Event {
+public class CustomResourceEvent implements Event {
 
     private final RetryExecution retryExecution;
     private final Watcher.Action action;
+    private final CustomResource customResource;
 
     private int retryCount = -1;
     private boolean processRegardlessOfGeneration = false;
 
     public CustomResourceEvent(Watcher.Action action, CustomResource resource, Retry retry) {
-        super(resource);
         this.action = action;
-
         this.retryExecution = retry.initExecution();
+        this.customResource = resource;
     }
 
     public boolean isProcessRegardlessOfGeneration() {
@@ -62,5 +62,14 @@ public class CustomResourceEvent extends Event {
 
     public int getRetryCount() {
         return retryCount;
+    }
+
+    @Override
+    public String getRelatedCustomResourceUid() {
+        return null;
+    }
+
+    public CustomResource getCustomResource() {
+        return customResource;
     }
 }

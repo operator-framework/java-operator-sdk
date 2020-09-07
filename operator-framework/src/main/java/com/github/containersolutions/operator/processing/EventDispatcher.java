@@ -2,6 +2,7 @@ package com.github.containersolutions.operator.processing;
 
 import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.api.*;
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -35,7 +36,7 @@ public class EventDispatcher {
         this.generationAware = generationAware;
     }
 
-    public DispatchControl handleEvent(CustomResourceEvent event) {
+    public DispatchControl handleEvent(ExecutionUnit event) {
         try {
             return handDispatch(event);
         } catch (RuntimeException e) {

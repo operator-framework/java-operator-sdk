@@ -1,5 +1,7 @@
 package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
+
 import java.util.HashMap;
 import java.util.Map;
 

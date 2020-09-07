@@ -1,7 +1,6 @@
 package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.EventScheduler;
-import io.fabric8.kubernetes.api.model.EventSource;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,7 @@ public class DefaultEventManager implements EventHandler, EventManager {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultEventManager.class);
 
-    private Map<CustomResource, List<EventProducer>> eventSources = new ConcurrentHashMap<>();
+    private Map<String, List<EventProducer>> eventSources = new ConcurrentHashMap<>();
 
     private EventScheduler eventScheduler;
 
@@ -26,37 +25,37 @@ public class DefaultEventManager implements EventHandler, EventManager {
 
     @Override
     public void handleEvent(Event event, EventProducer eventProducer) {
-        eventScheduler.handleEvent(event);
+        eventScheduler.scheduleEvent(event);
     }
 
     // Registration should happen from the same thread within controller
     @Override
-    public void registerEventProducer(CustomResource customResource, EventProducer eventProducer) {
-        List<EventProducer> eventSourceList = eventSources.get(customResource);
+    public void registerEventProducer(String customResourceUid, EventProducer eventProducer) {
+        List<EventProducer> eventSourceList = eventSources.get(customResourceUid);
         if (eventSourceList == null) {
             eventSourceList = new ArrayList<>(1);
-            eventSources.put(customResource, eventSourceList);
+            eventSources.put(customResourceUid, eventSourceList);
         }
         eventSourceList.add(eventProducer);
         eventProducer.setEventHandler(this);
-        eventProducer.eventProducerRegistered(customResource);
+        eventProducer.eventProducerRegistered(customResourceUid);
     }
 
     // todo think about concurrency when async de-registration happens
     @Override
-    public void deRegisterEventProducer(CustomResource customResource, EventProducer eventProducer) {
-        List<EventProducer> eventSourceList = eventSources.get(customResource);
+    public void deRegisterEventProducer(String customResourceUid, EventProducer eventProducer) {
+        List<EventProducer> eventSourceList = eventSources.get(customResourceUid);
         if (eventSourceList == null || !eventSourceList.contains(eventProducer)) {
-            log.warn("Event producer: {} not found for custom resource: ", eventProducer, customResource);
+            log.warn("Event producer: {} not found for custom resource: {}", eventProducer, customResourceUid);
         } else {
             eventSourceList.remove(eventProducer);
-            eventProducer.eventProducerDeRegistered(customResource);
+            eventProducer.eventProducerDeRegistered(customResourceUid);
         }
     }
 
     @Override
-    public List<EventProducer> getRegisteredEventSources(CustomResource customResource) {
-        List<EventProducer> eventSourceList = eventSources.get(customResource);
+    public List<EventProducer> getRegisteredEventSources(String customResourceUid) {
+        List<EventProducer> eventSourceList = eventSources.get(customResourceUid);
         if (eventSourceList == null) {
             return Collections.emptyList();
         }

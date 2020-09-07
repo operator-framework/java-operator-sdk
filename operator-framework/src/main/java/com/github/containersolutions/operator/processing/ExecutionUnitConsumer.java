@@ -1,18 +1,19 @@
 package com.github.containersolutions.operator.processing;
 
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
-class EventConsumer implements Runnable {
+class ExecutionUnitConsumer implements Runnable {
 
-    private final static Logger log = LoggerFactory.getLogger(EventConsumer.class);
+    private final static Logger log = LoggerFactory.getLogger(ExecutionUnitConsumer.class);
 
-    private final CustomResourceEvent event;
+    private final ExecutionUnit event;
     private final EventDispatcher eventDispatcher;
     private final EventScheduler eventScheduler;
 
-    EventConsumer(CustomResourceEvent event, EventDispatcher eventDispatcher, EventScheduler eventScheduler) {
+    ExecutionUnitConsumer(ExecutionUnit event, EventDispatcher eventDispatcher, EventScheduler eventScheduler) {
         this.event = event;
         this.eventDispatcher = eventDispatcher;
         this.eventScheduler = eventScheduler;
