@@ -2,9 +2,7 @@ package com.github.containersolutions.operator.processing;
 
 import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.api.*;
-import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import org.slf4j.Logger;
@@ -45,13 +43,10 @@ public class EventDispatcher {
         }
     }
 
-    private DispatchControl handDispatch(CustomResourceEvent event) {
+    private DispatchControl handDispatch(ExecutionUnit event) {
         CustomResource resource = event.getCustomResource();
-        log.info("Handling {} event for resource {}", event.getAction(), resource.getMetadata());
-        if (Watcher.Action.ERROR == event.getAction()) {
-            log.error("Received error for resource: {}", resource.getMetadata().getName());
-            return DispatchControl.defaultDispatch();
-        }
+//        log.info("Handling {} event for resource {}", event.getAction(), resource.getMetadata());
+
         if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
             log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", event);
             return DispatchControl.defaultDispatch();
@@ -64,7 +59,7 @@ public class EventDispatcher {
         }
     }
 
-    private DispatchControl handleCreateOrUpdate(CustomResourceEvent event, CustomResource resource, Context context) {
+    private DispatchControl handleCreateOrUpdate(ExecutionUnit event, CustomResource resource, Context context) {
         if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
             /*  We always add the default finalizer if missing and not marked for deletion.
                 We execute the controller processing only for processing the event sent as a results

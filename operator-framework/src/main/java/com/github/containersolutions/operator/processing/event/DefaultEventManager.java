@@ -1,7 +1,6 @@
 package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.EventScheduler;
-import io.fabric8.kubernetes.client.CustomResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultEventManager implements EventHandler, EventManager {
+public class DefaultEventManager implements EventHandler, EventProducerManager {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultEventManager.class);
 
@@ -54,7 +53,7 @@ public class DefaultEventManager implements EventHandler, EventManager {
     }
 
     @Override
-    public List<EventProducer> getRegisteredEventSources(String customResourceUid) {
+    public List<EventProducer> getRegisteredEventProducers(String customResourceUid) {
         List<EventProducer> eventSourceList = eventSources.get(customResourceUid);
         if (eventSourceList == null) {
             return Collections.emptyList();

@@ -2,17 +2,12 @@ package com.github.containersolutions.operator.processing.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
-public abstract class EventProducer {
+public interface EventProducer {
 
-    protected EventHandler eventHandler;
+    void setEventHandler(EventHandler eventHandler);
 
-    public void setEventHandler(EventHandler eventHandler) {
-        this.eventHandler = eventHandler;
-    }
+    void eventProducerRegistered(String customResourceUid);
 
-    protected void eventProducerRegistered(String customResourceUid) {
-    }
+    void eventProducerDeRegistered(String customResourceUid);
 
-    protected void eventProducerDeRegistered(String customResourceUid) {
-    }
 }
