@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <junit-jupiter.version>5.6.2</junit-jupiter.version>
+        <junit-jupiter.version>5.7.0</junit-jupiter.version>
         <java.version>8</java.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
