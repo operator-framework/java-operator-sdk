@@ -7,17 +7,17 @@ import java.util.List;
 
 public class ExecutionScope {
 
-    private List<Event> list;
-    // the latest custom resource
+    private List<Event> events;
+    // the latest custom resource from cache
     private CustomResource customResource;
 
     public ExecutionScope(List<Event> list, CustomResource customResource) {
-        this.list = list;
+        this.events = list;
         this.customResource = customResource;
     }
 
-    public List<Event> getList() {
-        return list;
+    public List<Event> getEvents() {
+        return events;
     }
 
     public CustomResource getCustomResource() {

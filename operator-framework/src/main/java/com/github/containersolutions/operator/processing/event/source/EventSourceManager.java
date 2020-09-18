@@ -1,10 +1,12 @@
-package com.github.containersolutions.operator.processing.event;
+package com.github.containersolutions.operator.processing.event.source;
+
+import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.List;
 
 public interface EventSourceManager {
 
-    void registerEventProducer(String customResourceUid, EventSource eventSource);
+    void registerEventSource(CustomResource customResource, EventSource eventSource);
 
     void deRegisterEventProducer(String customResourceUid, EventSource eventSource);
 

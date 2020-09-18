@@ -53,7 +53,7 @@ public class EventDispatcher {
         }
         // todo
 //        new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution())
-        Context context = new DefaultContext(null);
+        Context context = new DefaultContext(executionScope.getCustomResource(), null,executionScope.getEvents());
         if (markedForDeletion(resource)) {
             return handleDelete(resource, context);
         } else {

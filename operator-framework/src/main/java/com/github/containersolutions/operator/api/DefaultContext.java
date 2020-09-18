@@ -1,18 +1,21 @@
 package com.github.containersolutions.operator.api;
 
 import com.github.containersolutions.operator.processing.event.Event;
-import com.github.containersolutions.operator.processing.event.EventSourceManager;
+import com.github.containersolutions.operator.processing.event.source.EventSourceManager;
 import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.List;
 
 public class DefaultContext<T extends CustomResource> implements Context<T> {
 
+    private final CustomResource customResource;
     private final RetryInfo retryInfo;
     private final List<Event> events;
 
-    public DefaultContext(RetryInfo retryInfo) {
+    public DefaultContext(CustomResource customResource, RetryInfo retryInfo, List<Event> events) {
+        this.customResource = customResource;
         this.retryInfo = retryInfo;
+        this.events = events;
     }
 
     @Override
@@ -21,7 +24,7 @@ public class DefaultContext<T extends CustomResource> implements Context<T> {
     }
 
     @Override
-    public EventSourceManager getEventManager() {
+    public EventSourceManager getEventSourceManager() {
         return null;
     }
 

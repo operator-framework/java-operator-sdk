@@ -10,7 +10,6 @@ public class UpdateControl<T extends CustomResource> extends ReprocessControl {
     private final boolean updateStatusSubResource;
     private final boolean updateCustomResource;
 
-
     private UpdateControl(T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
         if ((updateCustomResource || updateStatusSubResource) && customResource == null) {
             throw new IllegalArgumentException("CustomResource cannot be null in case of update");

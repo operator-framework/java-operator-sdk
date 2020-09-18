@@ -1,6 +1,10 @@
 package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.EventScheduler;
+import com.github.containersolutions.operator.processing.ProcessingUtils;
+import com.github.containersolutions.operator.processing.event.source.EventSource;
+import com.github.containersolutions.operator.processing.event.source.EventSourceManager;
+import io.fabric8.kubernetes.client.CustomResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,34 +14,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class EventManager implements EventHandler, EventSourceManager {
+public class DefaultEventSourceManager implements EventSourceManager {
 
-    private static final Logger log = LoggerFactory.getLogger(EventManager.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
     private Map<String, List<EventSource>> eventSources = new ConcurrentHashMap<>();
 
     private EventScheduler eventScheduler;
 
-    public EventManager(EventScheduler eventScheduler) {
+    public DefaultEventSourceManager(EventScheduler eventScheduler) {
         this.eventScheduler = eventScheduler;
-    }
-
-    @Override
-    public void handleEvent(Event event, EventSource eventSource) {
-        eventScheduler.scheduleEvent(event);
     }
 
     // Registration should happen from the same thread within controller
     @Override
-    public void registerEventProducer(String customResourceUid, EventSource eventSource) {
-        List<EventSource> eventSourceList = eventSources.get(customResourceUid);
+    public void registerEventSource(CustomResource resource, EventSource eventSource) {
+        List<EventSource> eventSourceList = eventSources.get(ProcessingUtils.getUID(resource));
         if (eventSourceList == null) {
             eventSourceList = new ArrayList<>(1);
-            eventSources.put(customResourceUid, eventSourceList);
+            eventSources.put(ProcessingUtils.getUID(resource), eventSourceList);
         }
         eventSourceList.add(eventSource);
-        eventSource.setEventHandler(this);
-        eventSource.eventSourceRegistered(customResourceUid);
+        eventSource.setEventHandler(eventScheduler);
+        eventSource.eventSourceRegisteredForResource(resource);
     }
 
     // todo think about concurrency when async de-registration happens
@@ -48,7 +47,7 @@ public class EventManager implements EventHandler, EventSourceManager {
             log.warn("Event producer: {} not found for custom resource: {}", eventSource, customResourceUid);
         } else {
             eventSourceList.remove(eventSource);
-            eventSource.eventSourceDeRegistered(customResourceUid);
+            eventSource.eventSourceDeRegisteredForResource(customResourceUid);
         }
     }
 
@@ -61,7 +60,7 @@ public class EventManager implements EventHandler, EventSourceManager {
         return eventSourceList;
     }
 
-    public void eventProcessingFinished(ExecutionDescriptor executionDescriptor) {
+    public void publishEventProcessingFinished(ExecutionDescriptor executionDescriptor) {
 
     }
 }

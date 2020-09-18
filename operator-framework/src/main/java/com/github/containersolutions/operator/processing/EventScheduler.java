@@ -2,13 +2,7 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
-import com.github.containersolutions.operator.processing.event.AbstractEventSource;
-import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.event.PreviousProcessingCompletedEvent;
-import com.github.containersolutions.operator.processing.retry.Retry;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,43 +30,29 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>
  */
 
-public class EventScheduler extends AbstractEventSource {
+public class EventScheduler implements EventHandler {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
-    //    private final EventStore eventStore = new EventStore();
     private final ResourceCache resourceCache = new ResourceCache();
     private final Set<String> underProcessing = new HashSet<>();
     private final EventBuffer eventBuffer;
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
-    private final Retry retry;
-    private final EventManager eventManager;
+    private final DefaultEventSourceManager defaultEventSourceManager;
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, EventManager eventManager) {
+    public EventScheduler(EventDispatcher eventDispatcher, DefaultEventSourceManager defaultEventSourceManager) {
         this.eventDispatcher = eventDispatcher;
-        this.retry = retry;
-        this.eventManager = eventManager;
+        this.defaultEventSourceManager = defaultEventSourceManager;
         eventBuffer = new EventBuffer();
         executor = new ScheduledThreadPoolExecutor(1);
     }
 
+    // todo cleanup on delete CustomResourceEvent?!
     @Override
-    public void eventReceived(Watcher.Action action, CustomResource resource) {
-        log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
-                resource.getMetadata().getName());
-        resourceCache.cacheResource(resource); // always store the latest event. Outside the sync block is intentional.
-        // todo cleanup on delete?!
-        if (action == Action.DELETED || action == Action.ERROR) {
-            log.debug("Skipping {} event for custom resource: {}", action, resource);
-            return;
-        }
-        scheduleEvent(new CustomResourceEvent(action, resource, retry));
-    }
-
-    public void scheduleEvent(Event event) {
+    public void handleEvent(Event event) {
         try {
             lock.lock();
             if (!(event instanceof PreviousProcessingCompletedEvent)) {
@@ -86,7 +66,6 @@ public class EventScheduler extends AbstractEventSource {
             lock.unlock();
         }
     }
-
 
     private void executeEvents(String customResourceUid) {
         try {
@@ -107,7 +86,7 @@ public class EventScheduler extends AbstractEventSource {
         try {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
-            eventManager.eventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
+            defaultEventSourceManager.publishEventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
         } finally {
             lock.unlock();
         }
@@ -125,15 +104,7 @@ public class EventScheduler extends AbstractEventSource {
         underProcessing.remove(customResourceUid);
     }
 
-    @Override
-    public void onClose(KubernetesClientException e) {
-        log.error("Error: ", e);
-        // we will exit the application if there was a watching exception, because of the bug in fabric8 client
-        // see https://github.com/fabric8io/kubernetes-client/issues/1318
-        // Note that this should not happen normally, since fabric8 client handles reconnect.
-        // In case it tries to reconnect this method is not called.
-        System.exit(1);
-    }
+
 }
 
 

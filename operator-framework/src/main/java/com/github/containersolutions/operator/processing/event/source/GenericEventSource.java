@@ -1,16 +1,11 @@
-package com.github.containersolutions.operator.processing.event;
+package com.github.containersolutions.operator.processing.event.source;
 
 import com.github.containersolutions.operator.processing.event.EventHandler;
 import com.github.containersolutions.operator.processing.event.ExecutionDescriptor;
-import io.fabric8.kubernetes.client.CustomResource;
 
-public interface EventSource {
+public interface GenericEventSource {
 
     void setEventHandler(EventHandler eventHandler);
-
-    void eventSourceRegistered(String customResourceUid);
-
-    void eventSourceDeRegistered(String customResourceUid);
 
     void eventProcessingFinished(ExecutionDescriptor executionDescriptor);
 }
