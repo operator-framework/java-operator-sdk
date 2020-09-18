@@ -34,32 +34,34 @@ public class EventDispatcher {
         this.generationAware = generationAware;
     }
 
-    public DispatchControl handleEvent(ExecutionUnit event) {
+    public PostExecutionControl handleEvent(ExecutionScope event) {
         try {
             return handDispatch(event);
         } catch (RuntimeException e) {
             log.error("Error during event processing {} failed.", event, e);
-            return DispatchControl.errorDuringDispatch();
+            return PostExecutionControl.errorDuringDispatch();
         }
     }
 
-    private DispatchControl handDispatch(ExecutionUnit event) {
-        CustomResource resource = event.getCustomResource();
+    private PostExecutionControl handDispatch(ExecutionScope executionScope) {
+        CustomResource resource = executionScope.getCustomResource();
 //        log.info("Handling {} event for resource {}", event.getAction(), resource.getMetadata());
 
         if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
-            log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", event);
-            return DispatchControl.defaultDispatch();
+            log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", executionScope);
+            return PostExecutionControl.defaultDispatch();
         }
-        Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
+        // todo
+//        new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution())
+        Context context = new DefaultContext(null);
         if (markedForDeletion(resource)) {
             return handleDelete(resource, context);
         } else {
-            return handleCreateOrUpdate(event, resource, context);
+            return handleCreateOrUpdate(executionScope, resource, context);
         }
     }
 
-    private DispatchControl handleCreateOrUpdate(ExecutionUnit event, CustomResource resource, Context context) {
+    private PostExecutionControl handleCreateOrUpdate(ExecutionScope event, CustomResource resource, Context context) {
         if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
             /*  We always add the default finalizer if missing and not marked for deletion.
                 We execute the controller processing only for processing the event sent as a results
@@ -67,27 +69,23 @@ public class EventDispatcher {
                 there is a finalizer.
              */
             updateCustomResourceWithFinalizer(resource);
-            return DispatchControl.defaultDispatch();
+            return PostExecutionControl.onlyFinalizerAdded();
         } else {
             // todo generation awareness on rescheduled event
             // todo test regardless generation
-            if (!generationAware || largerGenerationThenProcessedBefore(resource) || event.isProcessRegardlessOfGeneration()) {
-                UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
-                if (updateControl.isUpdateStatusSubResource()) {
-                    customResourceFacade.updateStatus(updateControl.getCustomResource());
-                } else if (updateControl.isUpdateCustomResource()) {
-                    updateCustomResource(updateControl.getCustomResource());
-                }
-                markLastGenerationProcessed(resource);
-                return reprocessControlToDispatchControl(updateControl);
-            } else {
-                log.debug("Skipping processing since generation not increased. Event: {}", event);
-                return DispatchControl.defaultDispatch();
+
+            UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
+            if (updateControl.isUpdateStatusSubResource()) {
+                customResourceFacade.updateStatus(updateControl.getCustomResource());
+            } else if (updateControl.isUpdateCustomResource()) {
+                updateCustomResource(updateControl.getCustomResource());
             }
+//            markLastGenerationProcessed(resource);
+            return reprocessControlToDispatchControl(updateControl);
         }
     }
 
-    private DispatchControl handleDelete(CustomResource resource, Context context) {
+    private PostExecutionControl handleDelete(CustomResource resource, Context context) {
         // todo unit test new cases
         DeleteControl deleteControl = controller.deleteResource(resource, context);
         boolean hasDefaultFinalizer = ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer);
@@ -101,11 +99,11 @@ public class EventDispatcher {
         return reprocessControlToDispatchControl(deleteControl);
     }
 
-    private DispatchControl reprocessControlToDispatchControl(ReprocessControl updateControl) {
+    private PostExecutionControl reprocessControlToDispatchControl(ReprocessControl updateControl) {
         if (updateControl.isForReprocess()) {
-            return DispatchControl.reprocessAfter(updateControl.getReprocessDelay());
+            return PostExecutionControl.reprocessAfter(updateControl.getReprocessDelay());
         } else {
-            return DispatchControl.defaultDispatch();
+            return PostExecutionControl.defaultDispatch();
         }
     }
 

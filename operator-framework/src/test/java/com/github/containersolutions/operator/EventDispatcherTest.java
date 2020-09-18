@@ -2,7 +2,7 @@ package com.github.containersolutions.operator;
 
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.api.UpdateControl;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.sample.TestCustomResource;

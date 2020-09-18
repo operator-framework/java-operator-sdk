@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
@@ -205,7 +205,7 @@ class EventSchedulerTest {
 
 
     private EventScheduler initScheduler() {
-        return new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry());
+        return new EventScheduler(eventDispatcher, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry(), eventManager);
     }
 
     private Object exceptionInExecution(InvocationOnMock invocation) {

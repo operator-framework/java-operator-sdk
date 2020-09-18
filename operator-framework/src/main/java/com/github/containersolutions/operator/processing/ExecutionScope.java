@@ -5,13 +5,13 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.List;
 
-public class ExecutionUnit {
+public class ExecutionScope {
 
     private List<Event> list;
     // the latest custom resource
     private CustomResource customResource;
 
-    public ExecutionUnit(List<Event> list, CustomResource customResource) {
+    public ExecutionScope(List<Event> list, CustomResource customResource) {
         this.list = list;
         this.customResource = customResource;
     }

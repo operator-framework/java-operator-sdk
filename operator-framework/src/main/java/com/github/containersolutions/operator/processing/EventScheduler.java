@@ -2,8 +2,9 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
-import com.github.containersolutions.operator.processing.event.internal.PreviousProcessingCompletedEvent;
+import com.github.containersolutions.operator.processing.event.AbstractEventSource;
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
+import com.github.containersolutions.operator.processing.event.PreviousProcessingCompletedEvent;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -35,7 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>
  */
 
-public class EventScheduler extends AbstractEventProducer implements Watcher<CustomResource> {
+public class EventScheduler extends AbstractEventSource {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
@@ -46,12 +47,14 @@ public class EventScheduler extends AbstractEventProducer implements Watcher<Cus
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
     private final Retry retry;
+    private final EventManager eventManager;
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, Retry retry) {
+    public EventScheduler(EventDispatcher eventDispatcher, Retry retry, EventManager eventManager) {
         this.eventDispatcher = eventDispatcher;
         this.retry = retry;
+        this.eventManager = eventManager;
         eventBuffer = new EventBuffer();
         executor = new ScheduledThreadPoolExecutor(1);
     }
@@ -89,23 +92,22 @@ public class EventScheduler extends AbstractEventProducer implements Watcher<Cus
         try {
             lock.lock();
             setUnderExecutionProcessing(customResourceUid);
-            ExecutionUnit executionUnit =
-                    new ExecutionUnit(eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
+            ExecutionScope executionScope =
+                    new ExecutionScope(eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
                             resourceCache.getLatestResource(customResourceUid).get());
             ExecutionConsumer executionConsumer =
-                    new ExecutionConsumer(executionUnit, eventDispatcher, this);
+                    new ExecutionConsumer(executionScope, eventDispatcher, this);
             executor.execute(executionConsumer);
         } finally {
             lock.unlock();
         }
     }
 
-    void eventProcessingFinished(ExecutionUnit executionUnit, DispatchControl dispatchControl) {
-//      todo dispatch control checking for retry etc.
+    void eventProcessingFinished(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
         try {
             lock.lock();
-            unsetUnderExecution(executionUnit.getCustomResourceUid());
-            eventHandler.handleEvent(new PreviousProcessingCompletedEvent(executionUnit.getCustomResourceUid()), this);
+            unsetUnderExecution(executionScope.getCustomResourceUid());
+            eventManager.eventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
         } finally {
             lock.unlock();
         }

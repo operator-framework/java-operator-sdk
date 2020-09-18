@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing.event.internal;
+package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.event.Event;
 import com.github.containersolutions.operator.processing.retry.Retry;

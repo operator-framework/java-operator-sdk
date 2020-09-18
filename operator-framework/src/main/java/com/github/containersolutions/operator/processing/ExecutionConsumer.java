@@ -7,20 +7,20 @@ public class ExecutionConsumer implements Runnable {
     
     private final static Logger log = LoggerFactory.getLogger(ExecutionConsumer.class);
 
-    private final ExecutionUnit executionUnit;
+    private final ExecutionScope executionScope;
     private final EventDispatcher eventDispatcher;
     private final EventScheduler eventScheduler;
 
-    public ExecutionConsumer(ExecutionUnit executionUnit, EventDispatcher eventDispatcher, EventScheduler eventScheduler) {
-        this.executionUnit = executionUnit;
+    public ExecutionConsumer(ExecutionScope executionScope, EventDispatcher eventDispatcher, EventScheduler eventScheduler) {
+        this.executionScope = executionScope;
         this.eventDispatcher = eventDispatcher;
         this.eventScheduler = eventScheduler;
     }
 
     @Override
     public void run() {
-        DispatchControl dispatchControl = eventDispatcher.handleEvent(executionUnit);
-        eventScheduler.eventProcessingFinished(executionUnit,dispatchControl);
+        PostExecutionControl postExecutionControl = eventDispatcher.handleEvent(executionScope);
+        eventScheduler.eventProcessingFinished(executionScope, postExecutionControl);
     }
 
 }

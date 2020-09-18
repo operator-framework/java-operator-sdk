@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.processing.event;
 
-public abstract class AbstractEventProducer implements EventProducer {
+public abstract class AbstractEventSource implements EventSource {
 
     protected EventHandler eventHandler;
 
@@ -10,8 +10,8 @@ public abstract class AbstractEventProducer implements EventProducer {
     }
 
     @Override
-    public void eventProducerRegistered(String customResourceUid) {}
+    public void eventSourceRegistered(String customResourceUid) {}
 
     @Override
-    public void eventProducerDeRegistered(String customResourceUid) {}
+    public void eventSourceDeRegistered(String customResourceUid) {}
 }
