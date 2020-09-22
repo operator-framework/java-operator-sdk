@@ -1,0 +1,14 @@
+---
+# this ensures Jekyll reads the file to be transformed into CSS later
+---
+
+$baseurl: "{{ site.baseurl }}";
+
+@import 'components/buttons';
+@import 'components/content';
+@import 'components/footer';
+@import 'components/header';
+@import 'components/logo';
+@import 'components/main-menu';
+@import 'components/page';
+@import 'components/title';

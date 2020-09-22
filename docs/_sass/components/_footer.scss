@@ -1,0 +1,49 @@
+.footer-strip {
+  background-image: url("#{$baseurl}/assets/images/bg.png");
+  background-size: cover;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.footer-menu {
+  align-items: center;
+  display: block;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 940px;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+
+    li {
+      display: inline-block;
+      padding: 20px;
+
+      a {
+        color: #ffffff;
+        text-decoration: none;
+      }
+    }
+  }
+}
+
+.footer-title {
+  align-items: center;
+  display: block;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 940px;
+  text-align: right;
+
+  img {
+    height: 40px
+  }
+}
