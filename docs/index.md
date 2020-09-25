@@ -7,26 +7,26 @@ layout: homepage
 Whether you want to build applications that operate themselves or provision infrastructure from Java code, Kubernetes
 Operators are the way to go. This SDK will make it easy for Java developers to embrace this new way of automation.
 
-#### Features
+# Features
 * Framework for handling Kubernetes API events
 * Registering Custom Resource watches
 * Retry action on failure
 * Smart event scheduling (only handle latest event for the same resource)
 
-#### Why build your own Operator?
+# Why build your own Operator?
 * Infrastructure automation using the power and flexibility of Java. See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators).
 * Provisioning of complex applications - avoiding Helm chart hell
 * Integration with Cloud services - e.g. Secret stores
 * Safer deployment of applications - only expose cluster to users by Custom Resources
 
-#### Roadmap
+# Roadmap
 * Testing of the framework and all samples while running on a real cluster.
 * Generate a project skeleton
 * Generate Java classes from CRD definion (and/or the other way around)
 * Integrate with Quarkus (including native image build)
 * Integrate with OLM (Operator Lifecycle Manager)
 
-#### Contributing
+# Contributing
 
 We are a friendly team of Java and Kubernetes enthusiasts and welcome everyone to contribute in any way to the framework!
 Get in touch either on GitHub or our [Discord server](https://discord.gg/DacEhAy), we are always happy to chat and help
