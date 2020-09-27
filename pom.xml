@@ -34,6 +34,10 @@
         <url>https://github.com/ContainerSolutions/java-operator-sdk/tree/master</url>
     </scm>
 
+    <properties>
+        <junit.version>5.7.0</junit.version>
+    </properties>
+
     <modules>
         <module>operator-framework</module>
         <module>spring-boot-starter</module>
@@ -60,8 +64,20 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.7.0</version>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
