@@ -61,6 +61,8 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
 
     public void publishEventProcessingFinished(ExecutionDescriptor executionDescriptor) {
-
+        String uid = executionDescriptor.getExecutionScope().getCustomResourceUid();
+        List<EventSource> sources = eventSources.get(uid);
+        sources.forEach(es -> es.controllerExecuted(executionDescriptor));
     }
 }

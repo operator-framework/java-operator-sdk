@@ -9,34 +9,16 @@ import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CustomResourceEventSource extends AbstractEventSource implements Watcher<CustomResource> {
+public class CustomResourceEventSource implements Watcher<CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
+    private final EventHandler eventHandler;
     private final ResourceCache resourceCache;
 
-    public CustomResourceEventSource(ResourceCache resourceCache) {
+    public CustomResourceEventSource(EventHandler eventHandler, ResourceCache resourceCache) {
+        this.eventHandler = eventHandler;
         this.resourceCache = resourceCache;
-    }
-
-    @Override
-    public void setEventHandler(EventHandler eventHandler) {
-
-    }
-
-    @Override
-    public void eventSourceRegisteredForResource(CustomResource customResourceUid) {
-
-    }
-
-    @Override
-    public void eventSourceDeRegisteredForResource(String customResourceUid) {
-
-    }
-
-    @Override
-    public void eventProcessingFinished(ExecutionDescriptor executionDescriptor) {
-
     }
 
     @Override
@@ -53,6 +35,7 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
 
     @Override
     public void onClose(KubernetesClientException e) {
+        // todo handle the fabric8 issue
         log.error("Error: ", e);
         // we will exit the application if there was a watching exception, because of the bug in fabric8 client
         // see https://github.com/fabric8io/kubernetes-client/issues/1318
