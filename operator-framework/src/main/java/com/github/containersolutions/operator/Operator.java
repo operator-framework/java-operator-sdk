@@ -77,6 +77,9 @@ public class Operator {
                 eventScheduler, eventSourceManager);
 
         eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+
+        log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
+                resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
 
     private CustomResourceEventSource createCustomResourceEventSource(MixedOperation client,

@@ -59,6 +59,7 @@ public class EventScheduler implements EventHandler {
     public void handleEvent(Event event) {
         try {
             lock.lock();
+            log.debug("Received event: {}", event);
             if (!(event instanceof PreviousProcessingCompletedEvent)) {
                 eventBuffer.addEvent(event);
             }
@@ -72,8 +73,6 @@ public class EventScheduler implements EventHandler {
     }
 
     private void executeEvents(String customResourceUid) {
-        try {
-            lock.lock();
             setUnderExecutionProcessing(customResourceUid);
             ExecutionScope executionScope =
                     new ExecutionScope(eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
@@ -81,9 +80,6 @@ public class EventScheduler implements EventHandler {
             ExecutionConsumer executionConsumer =
                     new ExecutionConsumer(executionScope, eventDispatcher, this);
             executor.execute(executionConsumer);
-        } finally {
-            lock.unlock();
-        }
     }
 
     void eventProcessingFinished(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {

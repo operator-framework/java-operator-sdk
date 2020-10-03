@@ -3,30 +3,30 @@ package com.github.containersolutions.operator.processing;
 public final class PostExecutionControl {
 
     private final long reprocessDelay;
-    private final boolean error;
+    private final RuntimeException exception;
     private final boolean onlyFinalizerHandled;
 
     // todo validate state on setters
 
     public static PostExecutionControl onlyFinalizerAdded() {
-        return new PostExecutionControl(-1L, false, true);
+        return new PostExecutionControl(-1L, null, true);
     }
 
-    public static PostExecutionControl errorDuringDispatch() {
-        return new PostExecutionControl(-1L, true, false);
+    public static PostExecutionControl errorDuringDispatch(RuntimeException exception) {
+        return new PostExecutionControl(-1L, exception, false);
     }
 
     public static PostExecutionControl reprocessAfter(long milliseconds) {
-        return new PostExecutionControl(milliseconds, false, false);
+        return new PostExecutionControl(milliseconds, null, false);
     }
 
     public static PostExecutionControl defaultDispatch() {
-        return new PostExecutionControl(-1L, false, false);
+        return new PostExecutionControl(-1L, null, false);
     }
 
-    private PostExecutionControl(long reprocessDelay, boolean error, boolean onlyFinalizerHandled) {
+    private PostExecutionControl(long reprocessDelay, RuntimeException exception, boolean onlyFinalizerHandled) {
         this.reprocessDelay = reprocessDelay;
-        this.error = error;
+        this.exception = exception;
         this.onlyFinalizerHandled = onlyFinalizerHandled;
     }
 
@@ -39,10 +39,14 @@ public final class PostExecutionControl {
     }
 
     public boolean isError() {
-        return error;
+        return exception != null;
     }
 
     public boolean isOnlyFinalizerHandled() {
         return onlyFinalizerHandled;
+    }
+
+    public RuntimeException getException() {
+        return exception;
     }
 }

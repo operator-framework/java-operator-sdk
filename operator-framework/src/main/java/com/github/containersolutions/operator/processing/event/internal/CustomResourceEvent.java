@@ -53,11 +53,6 @@ public class CustomResourceEvent extends AbstractEvent<CustomResourceEventSource
         return retryCount;
     }
 
-    @Override
-    public String getRelatedCustomResourceUid() {
-        return null;
-    }
-
     public CustomResource getCustomResource() {
         return customResource;
     }

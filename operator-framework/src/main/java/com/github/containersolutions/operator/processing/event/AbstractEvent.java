@@ -20,4 +20,13 @@ public abstract class AbstractEvent<T extends EventSource> implements Event<T> {
     public T getEventSource() {
         return eventSource;
     }
+
+    @Override
+    public String toString() {
+        return "AbstractEvent{" +
+                "class='" + this.getClass().getName() + "', " +
+                "relatedCustomResourceUid='" + relatedCustomResourceUid + '\'' +
+                ", eventSource=" + eventSource +
+                '}';
+    }
 }

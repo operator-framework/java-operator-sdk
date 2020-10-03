@@ -2,7 +2,10 @@ package com.github.containersolutions.operator.processing;
 
 import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.api.*;
+import com.github.containersolutions.operator.processing.event.Event;
+import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import org.slf4j.Logger;
@@ -10,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,21 +43,22 @@ public class EventDispatcher {
             return handDispatch(event);
         } catch (RuntimeException e) {
             log.error("Error during event processing {} failed.", event, e);
-            return PostExecutionControl.errorDuringDispatch();
+            return PostExecutionControl.errorDuringDispatch(e);
         }
     }
 
     private PostExecutionControl handDispatch(ExecutionScope executionScope) {
         CustomResource resource = executionScope.getCustomResource();
-//        log.info("Handling {} event for resource {}", event.getAction(), resource.getMetadata());
+        log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
-        if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
+        if ((markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) ||
+                hasCustomResourceEventWithDeleteAction(executionScope)) {
             log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", executionScope);
             return PostExecutionControl.defaultDispatch();
         }
         // todo
 //        new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution())
-        Context context = new DefaultContext(executionScope.getCustomResource(), null,executionScope.getEvents());
+        Context context = new DefaultContext(executionScope.getCustomResource(), null, executionScope.getEvents());
         if (markedForDeletion(resource)) {
             return handleDelete(resource, context);
         } else {
@@ -61,7 +66,18 @@ public class EventDispatcher {
         }
     }
 
-    private PostExecutionControl handleCreateOrUpdate(ExecutionScope event, CustomResource resource, Context context) {
+    private boolean hasCustomResourceEventWithDeleteAction(ExecutionScope executionScope) {
+        Optional<Event> deleteEvent = executionScope.getEvents().stream().filter(e -> {
+            if (e instanceof CustomResourceEvent) {
+                return ((CustomResourceEvent) e).getAction() == Watcher.Action.DELETED;
+            } else {
+                return false;
+            }
+        }).findAny();
+        return deleteEvent.isPresent();
+    }
+
+    private PostExecutionControl handleCreateOrUpdate(ExecutionScope executionScope, CustomResource resource, Context context) {
         if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
             /*  We always add the default finalizer if missing and not marked for deletion.
                 We execute the controller processing only for processing the event sent as a results
@@ -80,7 +96,7 @@ public class EventDispatcher {
             } else if (updateControl.isUpdateCustomResource()) {
                 updateCustomResource(updateControl.getCustomResource());
             }
-//            markLastGenerationProcessed(resource);
+//          markLastGenerationProcessed(resource);
             return reprocessControlToDispatchControl(updateControl);
         }
     }
