@@ -45,7 +45,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
 
     // todo think about concurrency when async de-registration happens
     @Override
-    public void deRegisterEventProducer(String customResourceUid, EventSource eventSource) {
+    public void deRegisterEventSource(String customResourceUid, EventSource eventSource) {
         List<EventSource> eventSourceList = eventSources.get(customResourceUid);
         if (eventSourceList == null || !eventSourceList.contains(eventSource)) {
             log.warn("Event producer: {} not found for custom resource: {}", eventSource, customResourceUid);
@@ -64,7 +64,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
         return eventSourceList;
     }
 
-    public void publishEventProcessingFinished(ExecutionDescriptor executionDescriptor) {
+    public void eventProcessingFinished(ExecutionDescriptor executionDescriptor) {
         String uid = executionDescriptor.getExecutionScope().getCustomResourceUid();
         List<EventSource> sources = eventSources.get(uid);
         sources.forEach(es -> es.controllerExecuted(executionDescriptor));

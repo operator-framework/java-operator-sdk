@@ -8,7 +8,7 @@ public interface EventSourceManager {
 
     void registerEventSource(CustomResource customResource, EventSource eventSource);
 
-    void deRegisterEventProducer(String customResourceUid, EventSource eventSource);
+    void deRegisterEventSource(String customResourceUid, EventSource eventSource);
 
     List<EventSource> getRegisteredEventSources(String customResource);
 

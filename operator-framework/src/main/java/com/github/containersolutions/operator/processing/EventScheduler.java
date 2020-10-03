@@ -2,7 +2,6 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
-import com.github.containersolutions.operator.processing.event.internal.PreviousProcessingCompletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,19 +59,16 @@ public class EventScheduler implements EventHandler {
         try {
             lock.lock();
             log.debug("Received event: {}", event);
-            if (!(event instanceof PreviousProcessingCompletedEvent)) {
-                eventBuffer.addEvent(event);
-            }
-            if (!isControllerUnderExecution(event.getRelatedCustomResourceUid())
-                    && eventBuffer.containsEvents(event.getRelatedCustomResourceUid())) {
-                executeEvents(event.getRelatedCustomResourceUid());
-            }
+            eventBuffer.addEvent(event);
+            executeBufferedEvents(event.getRelatedCustomResourceUid());
         } finally {
             lock.unlock();
         }
     }
 
-    private void executeEvents(String customResourceUid) {
+    private void executeBufferedEvents(String customResourceUid) {
+        if (!isControllerUnderExecution(customResourceUid)
+                && eventBuffer.containsEvents(customResourceUid)) {
             setUnderExecutionProcessing(customResourceUid);
             ExecutionScope executionScope =
                     new ExecutionScope(eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
@@ -80,13 +76,15 @@ public class EventScheduler implements EventHandler {
             ExecutionConsumer executionConsumer =
                     new ExecutionConsumer(executionScope, eventDispatcher, this);
             executor.execute(executionConsumer);
+        }
     }
 
     void eventProcessingFinished(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
         try {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
-            defaultEventSourceManager.publishEventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
+            defaultEventSourceManager.eventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
+            executeBufferedEvents(executionScope.getCustomResourceUid());
         } finally {
             lock.unlock();
         }
@@ -103,8 +101,6 @@ public class EventScheduler implements EventHandler {
     private void unsetUnderExecution(String customResourceUid) {
         underProcessing.remove(customResourceUid);
     }
-
-
 }
 
 
