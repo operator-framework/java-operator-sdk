@@ -51,8 +51,11 @@ public class EventDispatcher {
         CustomResource resource = executionScope.getCustomResource();
         log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
-        if ((markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) ||
-                hasCustomResourceEventWithDeleteAction(executionScope)) {
+        if (hasCustomResourceEventWithDeleteAction(executionScope)) {
+            // todo cleanup ?
+            return PostExecutionControl.defaultDispatch();
+        }
+        if ((markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer))) {
             log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", executionScope);
             return PostExecutionControl.defaultDispatch();
         }
