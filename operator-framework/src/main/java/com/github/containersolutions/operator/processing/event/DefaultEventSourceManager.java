@@ -2,8 +2,6 @@ package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.EventScheduler;
 import com.github.containersolutions.operator.processing.ProcessingUtils;
-import com.github.containersolutions.operator.processing.event.source.EventSource;
-import com.github.containersolutions.operator.processing.event.source.EventSourceManager;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

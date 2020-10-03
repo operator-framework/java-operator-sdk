@@ -1,7 +1,5 @@
-package com.github.containersolutions.operator.processing.event.source;
+package com.github.containersolutions.operator.processing.event;
 
-import com.github.containersolutions.operator.processing.event.EventHandler;
-import com.github.containersolutions.operator.processing.event.ExecutionDescriptor;
 import io.fabric8.kubernetes.client.CustomResource;
 
 public abstract class AbstractEventSource implements EventSource {
@@ -21,16 +19,17 @@ public abstract class AbstractEventSource implements EventSource {
 
     @Override
     public void eventSourceRegisteredForResource(CustomResource customResource) {
-
     }
 
     @Override
     public void eventSourceDeRegisteredForResource(String customResourceUid) {
-
     }
 
     @Override
     public void controllerExecuted(ExecutionDescriptor executionDescriptor) {
+    }
 
+    @Override
+    public void eventProcessingFinished(ExecutionDescriptor executionDescriptor) {
     }
 }

@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing.event.source;
+package com.github.containersolutions.operator.processing.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
 

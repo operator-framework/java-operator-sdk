@@ -1,7 +1,5 @@
-package com.github.containersolutions.operator.processing.event.source;
+package com.github.containersolutions.operator.processing.event;
 
-import com.github.containersolutions.operator.processing.event.EventHandler;
-import com.github.containersolutions.operator.processing.event.ExecutionDescriptor;
 import io.fabric8.kubernetes.client.CustomResource;
 
 public interface EventSource {

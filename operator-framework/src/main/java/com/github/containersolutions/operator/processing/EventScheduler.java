@@ -39,15 +39,18 @@ public class EventScheduler implements EventHandler {
     private final EventBuffer eventBuffer;
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
-    private final DefaultEventSourceManager defaultEventSourceManager;
+    private DefaultEventSourceManager defaultEventSourceManager;
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher, DefaultEventSourceManager defaultEventSourceManager) {
+    public EventScheduler(EventDispatcher eventDispatcher) {
         this.eventDispatcher = eventDispatcher;
-        this.defaultEventSourceManager = defaultEventSourceManager;
         eventBuffer = new EventBuffer();
         executor = new ScheduledThreadPoolExecutor(1);
+    }
+
+    public void setDefaultEventSourceManager(DefaultEventSourceManager defaultEventSourceManager) {
+        this.defaultEventSourceManager = defaultEventSourceManager;
     }
 
     // todo cleanup on delete CustomResourceEvent?!

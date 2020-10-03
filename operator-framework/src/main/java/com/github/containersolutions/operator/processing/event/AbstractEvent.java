@@ -1,14 +1,12 @@
 package com.github.containersolutions.operator.processing.event;
 
-import com.github.containersolutions.operator.processing.event.source.EventSource;
-
-public abstract class AbstractEvent implements Event {
+public abstract class AbstractEvent<T extends EventSource> implements Event {
 
     private final String relatedCustomResourceUid;
 
-    private final EventSource eventSource;
+    private final T eventSource;
 
-    public AbstractEvent(String relatedCustomResourceUid, EventSource eventSource) {
+    public AbstractEvent(String relatedCustomResourceUid, T eventSource) {
         this.relatedCustomResourceUid = relatedCustomResourceUid;
         this.eventSource = eventSource;
     }
@@ -19,7 +17,7 @@ public abstract class AbstractEvent implements Event {
     }
 
     @Override
-    public EventSource getEventSource() {
+    public T getEventSource() {
         return eventSource;
     }
 }

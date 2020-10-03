@@ -3,6 +3,8 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
+import com.github.containersolutions.operator.processing.event.DefaultEventSourceManager;
+import com.github.containersolutions.operator.processing.event.EventSourceManager;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
@@ -60,7 +62,13 @@ public class Operator {
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
-        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry, eventManager);
+
+        EventScheduler eventScheduler = new EventScheduler(eventDispatcher);
+        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(eventScheduler);
+        eventScheduler.setDefaultEventSourceManager(eventSourceManager);
+
+
+
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
 

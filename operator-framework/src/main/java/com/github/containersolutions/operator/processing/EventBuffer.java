@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.processing;
 
-import com.github.containersolutions.operator.processing.event.source.CustomResourceEvent;
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.event.Event;
 
 import java.util.*;

@@ -1,24 +1,32 @@
-package com.github.containersolutions.operator.processing.event.source;
+package com.github.containersolutions.operator.processing.event.internal;
 
 import com.github.containersolutions.operator.processing.ResourceCache;
-import com.github.containersolutions.operator.processing.event.EventHandler;
-import com.github.containersolutions.operator.processing.event.ExecutionDescriptor;
+import com.github.containersolutions.operator.processing.event.AbstractEventSource;
+import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CustomResourceEventSource implements Watcher<CustomResource> {
+/**
+ * This is a special case since does not bounds to a single custom resource
+ */
+public class CustomResourceEventSource extends AbstractEventSource implements Watcher<CustomResource> {
 
     private final static Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-    private final EventHandler eventHandler;
     private final ResourceCache resourceCache;
+    private MixedOperation client;
 
-    public CustomResourceEventSource(EventHandler eventHandler, ResourceCache resourceCache) {
-        this.eventHandler = eventHandler;
+    public CustomResourceEventSource(ResourceCache resourceCache, MixedOperation client) {
         this.resourceCache = resourceCache;
+        this.client = client;
+    }
+
+    public void addedToEventManager() {
+        client.watch(this);
     }
 
     @Override

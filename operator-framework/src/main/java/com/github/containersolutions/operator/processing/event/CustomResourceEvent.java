@@ -1,9 +1,7 @@
-package com.github.containersolutions.operator.processing.event.source;
+package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.ProcessingUtils;
-import com.github.containersolutions.operator.processing.event.AbstractEvent;
-import com.github.containersolutions.operator.processing.event.Event;
-import com.github.containersolutions.operator.processing.retry.Retry;
+import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 
