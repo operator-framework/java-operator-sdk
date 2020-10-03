@@ -2,7 +2,7 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
-import com.github.containersolutions.operator.processing.event.PreviousProcessingCompletedEvent;
+import com.github.containersolutions.operator.processing.event.internal.PreviousProcessingCompletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

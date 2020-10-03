@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator.processing.event;
 
-public abstract class AbstractEvent<T extends EventSource> implements Event {
+public abstract class AbstractEvent<T extends EventSource> implements Event<T> {
 
     private final String relatedCustomResourceUid;
 

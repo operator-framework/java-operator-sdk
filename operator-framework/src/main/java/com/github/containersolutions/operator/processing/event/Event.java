@@ -1,8 +1,8 @@
 package com.github.containersolutions.operator.processing.event;
 
-public interface Event {
+public interface Event<T extends EventSource> {
 
     String getRelatedCustomResourceUid();
 
-    EventSource getEventSource();
+    T getEventSource();
 }

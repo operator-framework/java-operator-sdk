@@ -2,7 +2,6 @@ package com.github.containersolutions.operator.processing.event.internal;
 
 import com.github.containersolutions.operator.processing.ResourceCache;
 import com.github.containersolutions.operator.processing.event.AbstractEventSource;
-import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;

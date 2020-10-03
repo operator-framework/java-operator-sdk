@@ -20,4 +20,8 @@ public class ExecutionDescriptor {
     public PostExecutionControl getPostExecutionControl() {
         return postExecutionControl;
     }
+
+    public String getCustomResourceUid() {
+        return executionScope.getCustomResourceUid();
+    }
 }

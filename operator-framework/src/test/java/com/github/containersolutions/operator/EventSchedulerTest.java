@@ -1,6 +1,6 @@
 package com.github.containersolutions.operator;
 
-import com.github.containersolutions.operator.processing.event.CustomResourceEvent;
+import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;

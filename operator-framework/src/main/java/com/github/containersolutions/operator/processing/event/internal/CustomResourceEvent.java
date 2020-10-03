@@ -1,11 +1,12 @@
-package com.github.containersolutions.operator.processing.event;
+package com.github.containersolutions.operator.processing.event.internal;
 
 import com.github.containersolutions.operator.processing.ProcessingUtils;
+import com.github.containersolutions.operator.processing.event.AbstractEvent;
 import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 
-public class CustomResourceEvent extends AbstractEvent {
+public class CustomResourceEvent extends AbstractEvent<CustomResourceEventSource> {
 
     private final Watcher.Action action;
     private final CustomResource customResource;
