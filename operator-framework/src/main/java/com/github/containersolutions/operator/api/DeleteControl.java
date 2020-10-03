@@ -2,6 +2,16 @@ package com.github.containersolutions.operator.api;
 
 public class DeleteControl extends ReprocessControl {
 
+    public static DeleteControl defaultDelete() {
+        return new DeleteControl();
+    }
+
+    public static DeleteControl noFinalizerRemoval() {
+        DeleteControl deleteControl = new DeleteControl();
+        deleteControl.setRemoveFinalizer(false);
+        return deleteControl;
+    }
+
     private boolean removeFinalizer = true;
 
     public boolean getRemoveFinalizer() {

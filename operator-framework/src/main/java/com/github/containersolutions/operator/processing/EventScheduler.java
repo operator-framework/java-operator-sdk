@@ -34,7 +34,7 @@ public class EventScheduler implements EventHandler {
 
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
-    private final ResourceCache resourceCache = new ResourceCache();
+    private final ResourceCache resourceCache;
     private final Set<String> underProcessing = new HashSet<>();
     private final EventBuffer eventBuffer;
     private final ScheduledThreadPoolExecutor executor;
@@ -43,10 +43,11 @@ public class EventScheduler implements EventHandler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(EventDispatcher eventDispatcher) {
+    public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher) {
+        this.resourceCache = resourceCache;
         this.eventDispatcher = eventDispatcher;
         eventBuffer = new EventBuffer();
-        executor = new ScheduledThreadPoolExecutor(1);
+        executor = new ScheduledThreadPoolExecutor(5);
     }
 
     public void setDefaultEventSourceManager(DefaultEventSourceManager defaultEventSourceManager) {

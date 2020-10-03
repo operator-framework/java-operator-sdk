@@ -1,9 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import com.github.containersolutions.operator.api.*;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -90,7 +87,7 @@ public class SchemaController implements ResourceController<Schema> {
     }
 
     @Override
-    public boolean deleteResource(Schema schema, Context<Schema> context) {
+    public DeleteControl deleteResource(Schema schema, Context<Schema> context) {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
 
         try (Connection connection = getConnection()) {
@@ -111,10 +108,10 @@ public class SchemaController implements ResourceController<Schema> {
                 log.info("Delete event ignored for schema '{}', real schema doesn't exist",
                         schema.getMetadata().getName());
             }
-            return true;
+            return DeleteControl.defaultDelete();
         } catch (SQLException e) {
             log.error("Error while trying to delete Schema", e);
-            return false;
+            return DeleteControl.noFinalizerRemoval();
         }
     }
 

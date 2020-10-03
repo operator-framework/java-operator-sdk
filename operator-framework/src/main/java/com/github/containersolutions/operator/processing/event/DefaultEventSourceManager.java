@@ -2,6 +2,7 @@ package com.github.containersolutions.operator.processing.event;
 
 import com.github.containersolutions.operator.processing.EventScheduler;
 import com.github.containersolutions.operator.processing.ProcessingUtils;
+import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +18,16 @@ public class DefaultEventSourceManager implements EventSourceManager {
     private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
     private Map<String, List<EventSource>> eventSources = new ConcurrentHashMap<>();
-
+    private CustomResourceEventSource customResourceEventSource;
     private EventScheduler eventScheduler;
 
     public DefaultEventSourceManager(EventScheduler eventScheduler) {
         this.eventScheduler = eventScheduler;
+    }
+
+    public void registerCustomResourceEventSource(CustomResourceEventSource customResourceEventSource) {
+        this.customResourceEventSource = customResourceEventSource;
+        this.customResourceEventSource.addedToEventManager();
     }
 
     // Registration should happen from the same thread within controller

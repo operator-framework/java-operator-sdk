@@ -1,10 +1,7 @@
 package com.github.containersolutions.operator.sample;
 
 import com.github.containersolutions.operator.TestExecutionInfoProvider;
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import com.github.containersolutions.operator.api.*;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -40,7 +37,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
     }
 
     @Override
-    public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+    public DeleteControl deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
         Boolean delete = kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).delete();
         if (delete) {
@@ -48,7 +45,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
         } else {
             log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
         }
-        return true;
+        return new DeleteControl();
     }
 
     @Override

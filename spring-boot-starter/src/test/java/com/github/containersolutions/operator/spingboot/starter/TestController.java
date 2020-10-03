@@ -1,9 +1,6 @@
 package com.github.containersolutions.operator.spingboot.starter;
 
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import com.github.containersolutions.operator.api.*;
 import com.github.containersolutions.operator.spingboot.starter.model.TestResource;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.springframework.stereotype.Component;
@@ -14,8 +11,8 @@ import org.springframework.stereotype.Component;
 public class TestController implements ResourceController {
 
     @Override
-    public boolean deleteResource(CustomResource resource, Context context) {
-        return true;
+    public DeleteControl deleteResource(CustomResource resource, Context context) {
+        return new DeleteControl();
     }
 
     @Override

@@ -1,10 +1,7 @@
 package com.github.containersolutions.operator.sample.subresource;
 
 import com.github.containersolutions.operator.TestExecutionInfoProvider;
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import com.github.containersolutions.operator.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +19,8 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     private AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
     @Override
-    public boolean deleteResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
-        return true;
+    public DeleteControl deleteResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
+        return new DeleteControl();
     }
 
     @Override

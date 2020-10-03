@@ -18,7 +18,6 @@ public class DefaultContext<T extends CustomResource> implements Context<T> {
         this.events = events;
     }
 
-    @Override
     public RetryInfo retryInfo() {
         return retryInfo;
     }

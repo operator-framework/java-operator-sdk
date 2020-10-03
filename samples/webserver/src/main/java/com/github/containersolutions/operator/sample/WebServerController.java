@@ -1,9 +1,7 @@
 package com.github.containersolutions.operator.sample;
 
+import com.github.containersolutions.operator.api.*;
 import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
@@ -95,7 +93,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public boolean deleteResource(WebServer nginx, Context<WebServer> context) {
+    public DeleteControl deleteResource(WebServer nginx, Context<WebServer> context) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));
@@ -121,7 +119,7 @@ public class WebServerController implements ResourceController<WebServer> {
         if (service.get() != null) {
             service.delete();
         }
-        return true;
+        return new DeleteControl();
     }
 
     private static String configMapName(WebServer nginx) {

@@ -3,8 +3,9 @@ package com.github.containersolutions.operator;
 import com.github.containersolutions.operator.api.ResourceController;
 import com.github.containersolutions.operator.processing.EventDispatcher;
 import com.github.containersolutions.operator.processing.EventScheduler;
+import com.github.containersolutions.operator.processing.ResourceCache;
 import com.github.containersolutions.operator.processing.event.DefaultEventSourceManager;
-import com.github.containersolutions.operator.processing.event.EventSourceManager;
+import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
@@ -63,34 +64,35 @@ public class Operator {
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
 
-        EventScheduler eventScheduler = new EventScheduler(eventDispatcher);
+
+        ResourceCache resourceCache = new ResourceCache();
+        EventScheduler eventScheduler = new EventScheduler(resourceCache, eventDispatcher);
         DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(eventScheduler);
         eventScheduler.setDefaultEventSourceManager(eventSourceManager);
 
+        customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 
+        CustomResourceEventSource customResourceEventSource
+                = createCustomResourceEventSource(client, resourceCache, watchAllNamespaces, targetNamespaces,
+                eventScheduler, eventSourceManager);
 
-        registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
+        eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
     }
 
+    private CustomResourceEventSource createCustomResourceEventSource(MixedOperation client,
+                                                                      ResourceCache resourceCache,
+                                                                      boolean watchAllNamespaces,
+                                                                      String[] targetNamespaces,
+                                                                      EventScheduler eventScheduler,
+                                                                      DefaultEventSourceManager eventSourceManager) {
+        CustomResourceEventSource customResourceEventSource = watchAllNamespaces ?
+                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(resourceCache, client) :
+                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(resourceCache, client, targetNamespaces);
 
-    private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
-                                                            Class<R> resClass,
-                                                            boolean watchAllNamespaces, String[] targetNamespaces, EventScheduler eventScheduler) {
+        customResourceEventSource.setEventHandler(eventScheduler);
+        customResourceEventSource.setEventSourceManager(eventSourceManager);
 
-        CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
-        if (watchAllNamespaces) {
-            crClient.inAnyNamespace().watch(eventScheduler);
-        } else if (targetNamespaces.length == 0) {
-            client.watch(eventScheduler);
-        } else {
-            for (String targetNamespace : targetNamespaces) {
-                crClient.inNamespace(targetNamespace).watch(eventScheduler);
-                log.debug("Registered controller for namespace: {}", targetNamespace);
-            }
-        }
-        customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
-        log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
-                resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
+        return customResourceEventSource;
     }
 
     private CustomResourceDefinition getCustomResourceDefinitionForController(ResourceController controller) {

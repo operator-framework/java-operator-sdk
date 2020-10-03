@@ -6,8 +6,11 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 /**
  * This is a special case since does not bounds to a single custom resource
@@ -18,14 +21,45 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
 
     private final ResourceCache resourceCache;
     private MixedOperation client;
+    private final String[] targetNamespaces;
 
-    public CustomResourceEventSource(ResourceCache resourceCache, MixedOperation client) {
+    public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(ResourceCache resourceCache,
+                                                                                      MixedOperation client) {
+        return new CustomResourceEventSource(resourceCache, client, null);
+    }
+
+    public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(ResourceCache resourceCache,
+                                                                                         MixedOperation client,
+                                                                                         String[] namespaces) {
+        return new CustomResourceEventSource(resourceCache, client, namespaces);
+    }
+
+    private CustomResourceEventSource(ResourceCache resourceCache, MixedOperation client, String[] targetNamespaces) {
         this.resourceCache = resourceCache;
         this.client = client;
+        this.targetNamespaces = targetNamespaces;
+    }
+
+    private boolean isWatchAllNamespaces() {
+        return targetNamespaces == null;
     }
 
     public void addedToEventManager() {
-        client.watch(this);
+        registerWatch();
+    }
+
+    private void registerWatch() {
+        CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
+        if (isWatchAllNamespaces()) {
+            crClient.inAnyNamespace().watch(this);
+        } else if (targetNamespaces.length == 0) {
+            client.watch(this);
+        } else {
+            for (String targetNamespace : targetNamespaces) {
+                crClient.inNamespace(targetNamespace).watch(this);
+                log.debug("Registered controller for namespace: {}", targetNamespace);
+            }
+        }
     }
 
     @Override
