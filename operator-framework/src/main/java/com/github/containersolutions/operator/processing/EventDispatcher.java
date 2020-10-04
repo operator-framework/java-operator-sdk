@@ -52,7 +52,7 @@ public class EventDispatcher {
         CustomResource resource = executionScope.getCustomResource();
         log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
-        if (hasCustomResourceEventWithDeleteAction(executionScope)) {
+        if (ProcessingUtils.containsDeletedEvent(executionScope.getEvents())) {
             cleanup(executionScope.getCustomResource());
             return PostExecutionControl.defaultDispatch();
         }
@@ -68,17 +68,6 @@ public class EventDispatcher {
         } else {
             return handleCreateOrUpdate(executionScope, resource, context);
         }
-    }
-
-    private boolean hasCustomResourceEventWithDeleteAction(ExecutionScope executionScope) {
-        Optional<Event> deleteEvent = executionScope.getEvents().stream().filter(e -> {
-            if (e instanceof CustomResourceEvent) {
-                return ((CustomResourceEvent) e).getAction() == Watcher.Action.DELETED;
-            } else {
-                return false;
-            }
-        }).findAny();
-        return deleteEvent.isPresent();
     }
 
     private PostExecutionControl handleCreateOrUpdate(ExecutionScope executionScope, CustomResource resource, Context context) {

@@ -39,8 +39,8 @@ public class EventScheduler implements EventHandler {
     private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
 
     private final ResourceCache resourceCache;
-    private final Set<String> underProcessing = new HashSet<>();
     private final EventBuffer eventBuffer;
+    private final Set<String> underProcessing = new HashSet<>();
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
     private DefaultEventSourceManager defaultEventSourceManager;
@@ -88,7 +88,9 @@ public class EventScheduler implements EventHandler {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
             // todo on error put back the events on the beginning of buffer list
+
             defaultEventSourceManager.eventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
+
             if (containsDeletedEvent(executionScope.getEvents())) {
                 cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
             } else {
