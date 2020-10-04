@@ -2,13 +2,18 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
+import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
+import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.github.containersolutions.operator.processing.ProcessingUtils.containsDeletedEvent;
 
 /**
  * Requirements:
@@ -53,7 +58,6 @@ public class EventScheduler implements EventHandler {
         this.defaultEventSourceManager = defaultEventSourceManager;
     }
 
-    // todo cleanup on delete CustomResourceEvent?!
     @Override
     public void handleEvent(Event event) {
         try {
@@ -83,12 +87,24 @@ public class EventScheduler implements EventHandler {
         try {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
+            // todo on error put back the events on the beginning of buffer list
             defaultEventSourceManager.eventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
-            executeBufferedEvents(executionScope.getCustomResourceUid());
+            if (containsDeletedEvent(executionScope.getEvents())) {
+                cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
+            } else {
+                executeBufferedEvents(executionScope.getCustomResourceUid());
+            }
         } finally {
             lock.unlock();
         }
     }
+
+    private void cleanupAfterDeletedEvent(String customResourceUid) {
+        defaultEventSourceManager.cleanup(customResourceUid);
+        eventBuffer.cleanup(customResourceUid);
+        resourceCache.cleanup(customResourceUid);
+    }
+
 
     private boolean isControllerUnderExecution(String customResourceUid) {
         return underProcessing.contains(customResourceUid);

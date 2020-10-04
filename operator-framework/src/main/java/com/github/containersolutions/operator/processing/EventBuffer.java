@@ -41,4 +41,9 @@ public class EventBuffer {
         }
         return result;
     }
+
+    public void cleanup(String resourceUid) {
+        events.remove(resourceUid);
+        latestCustomResourceEvent.remove(resourceUid);
+    }
 }

@@ -17,4 +17,8 @@ public class ResourceCache {
     public Optional<CustomResource> getLatestResource(String uuid) {
         return Optional.ofNullable(resources.get(uuid));
     }
+
+    public void cleanup(String customResourceUid) {
+        resources.remove(customResourceUid);
+    }
 }

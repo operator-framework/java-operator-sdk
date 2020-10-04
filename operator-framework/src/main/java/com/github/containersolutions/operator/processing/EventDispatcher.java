@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
@@ -52,7 +53,7 @@ public class EventDispatcher {
         log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
         if (hasCustomResourceEventWithDeleteAction(executionScope)) {
-            // todo cleanup ?
+            cleanup(executionScope.getCustomResource());
             return PostExecutionControl.defaultDispatch();
         }
         if ((markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer))) {

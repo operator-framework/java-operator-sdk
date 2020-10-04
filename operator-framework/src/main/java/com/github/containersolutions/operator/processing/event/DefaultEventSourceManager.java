@@ -12,14 +12,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DefaultEventSourceManager implements EventSourceManager {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
+    private final ReentrantLock lock = new ReentrantLock();
     private Map<String, List<EventSource>> eventSources = new ConcurrentHashMap<>();
     private CustomResourceEventSource customResourceEventSource;
     private EventScheduler eventScheduler;
+
 
     public DefaultEventSourceManager(EventScheduler eventScheduler) {
         this.eventScheduler = eventScheduler;
@@ -33,25 +36,34 @@ public class DefaultEventSourceManager implements EventSourceManager {
     // Registration should happen from the same thread within controller
     @Override
     public void registerEventSource(CustomResource resource, EventSource eventSource) {
-        List<EventSource> eventSourceList = eventSources.get(ProcessingUtils.getUID(resource));
-        if (eventSourceList == null) {
-            eventSourceList = new ArrayList<>(1);
-            eventSources.put(ProcessingUtils.getUID(resource), eventSourceList);
+        try {
+            lock.lock();
+            List<EventSource> eventSourceList = eventSources.get(ProcessingUtils.getUID(resource));
+            if (eventSourceList == null) {
+                eventSourceList = new ArrayList<>(1);
+                eventSources.put(ProcessingUtils.getUID(resource), eventSourceList);
+            }
+            eventSourceList.add(eventSource);
+            eventSource.setEventHandler(eventScheduler);
+            eventSource.eventSourceRegisteredForResource(resource);
+        } finally {
+            lock.unlock();
         }
-        eventSourceList.add(eventSource);
-        eventSource.setEventHandler(eventScheduler);
-        eventSource.eventSourceRegisteredForResource(resource);
     }
 
-    // todo think about concurrency when async de-registration happens
     @Override
     public void deRegisterEventSource(String customResourceUid, EventSource eventSource) {
-        List<EventSource> eventSourceList = eventSources.get(customResourceUid);
-        if (eventSourceList == null || !eventSourceList.contains(eventSource)) {
-            log.warn("Event producer: {} not found for custom resource: {}", eventSource, customResourceUid);
-        } else {
-            eventSourceList.remove(eventSource);
-            eventSource.eventSourceDeRegisteredForResource(customResourceUid);
+        try {
+            lock.lock();
+            List<EventSource> eventSourceList = eventSources.get(customResourceUid);
+            if (eventSourceList == null || !eventSourceList.contains(eventSource)) {
+                log.warn("Event producer: {} not found for custom resource: {}", eventSource, customResourceUid);
+            } else {
+                eventSourceList.remove(eventSource);
+                eventSource.eventSourceDeRegisteredForResource(customResourceUid);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -68,5 +80,10 @@ public class DefaultEventSourceManager implements EventSourceManager {
         String uid = executionDescriptor.getExecutionScope().getCustomResourceUid();
         List<EventSource> sources = eventSources.get(uid);
         sources.forEach(es -> es.controllerExecuted(executionDescriptor));
+    }
+
+    public void cleanup(String customResourceUid) {
+        getRegisteredEventSources(customResourceUid).forEach(es -> deRegisterEventSource(customResourceUid, es));
+        eventSources.remove(customResourceUid);
     }
 }

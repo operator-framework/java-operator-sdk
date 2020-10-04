@@ -6,6 +6,7 @@ public final class PostExecutionControl {
     private final RuntimeException exception;
     private final boolean onlyFinalizerHandled;
 
+    // todo nicer class hierarchy?
     // todo validate state on setters
 
     public static PostExecutionControl onlyFinalizerAdded() {
