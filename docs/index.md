@@ -27,14 +27,15 @@ Operators are the way to go. This SDK will make it easy for Java developers to e
 * Integrate with OLM (Operator Lifecycle Manager)
 
 # Contributing
-
 We are a friendly team of Java and Kubernetes enthusiasts and welcome everyone to contribute in any way to the framework!
 Get in touch either on GitHub or our [Discord server](https://discord.gg/DacEhAy), we are always happy to chat and help
-you find the right issue to get started. We have a [code of conduct](https://github.com/ContainerSolutions/java-operator-sdk/blob/master/CODE_OF_CONDUCT.md) 
-which we strictly enforce, as well as [issues marked for new joiners](https://github.com/ContainerSolutions/java-operator-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+you find the right issue to get started. Feel free to stop by for questions, comments or just saying hi.
+We have a [code of conduct](https://github.com/ContainerSolutions/java-operator-sdk/blob/master/CODE_OF_CONDUCT.md)
+which we strictly enforce, as well as [issues marked for new joiners](https://github.com/ContainerSolutions/java-operator-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
 We are also supporting [#HacktoberFest](https://hacktoberfest.digitalocean.com/) and have several issues marked as [good
 candidates](https://github.com/ContainerSolutions/java-operator-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22hacktoberfest%22+) to pick up during the event. 
 
 [Maven](https://mvnrepository.com/artifact/com.github.containersolutions/java-operator-sdk){:.button-text}
 [GitHub](https://github.com/ContainerSolutions/java-operator-sdk){:.button-text}
+[Discord](https://discord.gg/DacEhAy){:.button-text}
