@@ -1,0 +1,8 @@
+apiVersion: "tomcatoperator.io/v1"
+kind: Webapp
+metadata:
+  name: sample-webapp2
+spec:
+  tomcat: test-tomcat2
+  url: charlottemach.com/assets/jax.war
+  contextPath: mysample

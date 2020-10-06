@@ -1,0 +1,7 @@
+apiVersion: "tomcatoperator.io/v1"
+kind: Tomcat
+metadata:
+  name: test-tomcat1
+spec:
+  version: 9.0
+  replicas: 2
