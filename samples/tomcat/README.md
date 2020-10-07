@@ -36,7 +36,7 @@ When the Operator is running you can create some Tomcat Custom Resources. You ca
 If you want the Operator to be running as a deployment in your cluster, follow the below steps.
 
 ## Build
-You can build the sample using `mvn dockerfile:build` this will produce a Docker image you can push to the registry of your choice. The jar file is built using your local Maven and JDK and then copied into the Docker image.
+You can build the sample using `mvn install jib:dockerBuild` this will produce a Docker image you can push to the registry of your choice. The jar file is built using your local Maven and JDK and then copied into the Docker image.
 
 ## Install Operator into cluster
 
