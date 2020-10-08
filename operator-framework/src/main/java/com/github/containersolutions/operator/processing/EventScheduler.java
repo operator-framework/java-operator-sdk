@@ -2,13 +2,12 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
-import io.fabric8.kubernetes.client.Watcher;
+import com.github.containersolutions.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
@@ -44,12 +43,14 @@ public class EventScheduler implements EventHandler {
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
     private DefaultEventSourceManager defaultEventSourceManager;
+    private final Retry retry;
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher) {
+    public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher, Retry retry) {
         this.resourceCache = resourceCache;
         this.eventDispatcher = eventDispatcher;
+        this.retry = retry;
         eventBuffer = new EventBuffer();
         executor = new ScheduledThreadPoolExecutor(5);
     }
@@ -88,8 +89,9 @@ public class EventScheduler implements EventHandler {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
             // todo on error put back the events on the beginning of buffer list
-
-            defaultEventSourceManager.eventProcessingFinished(new ExecutionDescriptor(executionScope, postExecutionControl));
+            handleEventSourceRegistration(executionScope,postExecutionControl);
+            defaultEventSourceManager.eventProcessingFinished(
+                    new ExecutionDescriptor(executionScope, postExecutionControl, LocalDateTime.now()));
 
             if (containsDeletedEvent(executionScope.getEvents())) {
                 cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
@@ -98,6 +100,15 @@ public class EventScheduler implements EventHandler {
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void handleEventSourceRegistration(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
+        if (postExecutionControl.isError()) {
+            // todo handle retry
+        }
+        if (postExecutionControl.reprocessEvent()) {
+            // todo handle reprocess
         }
     }
 

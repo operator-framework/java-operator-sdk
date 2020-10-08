@@ -66,7 +66,7 @@ public class Operator {
 
 
         ResourceCache resourceCache = new ResourceCache();
-        EventScheduler eventScheduler = new EventScheduler(resourceCache, eventDispatcher);
+        EventScheduler eventScheduler = new EventScheduler(resourceCache, eventDispatcher, retry);
         DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(eventScheduler);
         eventScheduler.setDefaultEventSourceManager(eventSourceManager);
 
