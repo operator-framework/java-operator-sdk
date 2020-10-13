@@ -1,4 +1,4 @@
-package com.example.jaxdemo;
+package com.github.containersolutions.operator.sample;
 
 import com.github.containersolutions.operator.Operator;
 import io.fabric8.kubernetes.client.Config;

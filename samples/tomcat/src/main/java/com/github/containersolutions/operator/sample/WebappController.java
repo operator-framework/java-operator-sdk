@@ -1,4 +1,4 @@
-package com.example.jaxdemo;
+package com.github.containersolutions.operator.sample;
 
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;

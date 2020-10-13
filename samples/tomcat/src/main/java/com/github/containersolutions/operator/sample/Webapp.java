@@ -1,4 +1,4 @@
-package com.example.jaxdemo;
+package com.github.containersolutions.operator.sample;
 
 import io.fabric8.kubernetes.client.CustomResource;
 

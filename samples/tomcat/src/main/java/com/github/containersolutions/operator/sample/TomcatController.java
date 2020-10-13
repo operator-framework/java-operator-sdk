@@ -1,4 +1,4 @@
-package com.example.jaxdemo;
+package com.github.containersolutions.operator.sample;
 
 import com.github.containersolutions.operator.api.Context;
 import com.github.containersolutions.operator.api.Controller;
@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Controller(customResourceClass = Tomcat.class,
         crdName = "tomcats.tomcatoperator.io")
@@ -42,7 +43,9 @@ public class TomcatController implements ResourceController<Tomcat> {
     }
 
     private void updateTomcatStatus(Context<Tomcat> context, Tomcat tomcat, Deployment deployment) {
-        int readyReplicas = Objects.requireNonNullElse(deployment.getStatus().getReadyReplicas(), 0);
+        int readyReplicas = Optional.ofNullable(deployment.getStatus().getReadyReplicas()).orElse(0);
+        // Java 9+
+        // int readyReplicas = Objects.requireNonNullElse(deployment.getStatus().getReadyReplicas(), 0);
         log.info("Updating status of Tomcat {} in namespace {} to {} ready replicas", tomcat.getMetadata().getName(),
                 tomcat.getMetadata().getNamespace(), readyReplicas);
 
