@@ -1,0 +1,8 @@
+apiVersion: "tomcatoperator.io/v1"
+kind: Webapp
+metadata:
+  name: sample-webapp1
+spec:
+  tomcat: test-tomcat1
+  url: http://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war
+  contextPath: mysample
