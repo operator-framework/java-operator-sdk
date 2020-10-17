@@ -2,5 +2,10 @@ target/
 *.iml
 .idea/
 
+# Eclipse
+.settings/
+.classpath
+.project
+
 #  VSCode
 .factorypath
