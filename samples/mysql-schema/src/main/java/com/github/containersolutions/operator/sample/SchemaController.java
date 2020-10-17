@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -140,17 +141,22 @@ public class SchemaController implements ResourceController<Schema> {
     }
 
     private boolean schemaExists(Connection connection, String schemaName) throws SQLException {
-        ResultSet resultSet = connection.createStatement().executeQuery(
-                format("SELECT schema_name FROM information_schema.schemata WHERE schema_name = \"%1$s\"",
-                        schemaName));
-        return resultSet.first();
+        try (PreparedStatement ps =
+                     connection.prepareStatement("SELECT schema_name FROM information_schema.schemata WHERE schema_name = ?")) {
+            ps.setString(1, schemaName);
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return resultSet.first();
+            }
+        }
     }
 
     private boolean userExists(Connection connection, String userName) throws SQLException {
-        try (Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery(format("SELECT User FROM mysql.user WHERE User='%1$s'",
-                userName));
-            return resultSet.first();
+        try (PreparedStatement ps =
+                     connection.prepareStatement("SELECT User FROM mysql.user WHERE User = ?")) {
+            ps.setString(1, userName);
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return resultSet.first();
+            }
         }
     }
 }
