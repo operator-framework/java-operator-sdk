@@ -1,6 +1,8 @@
 package com.github.containersolutions.operator.api;
 
+import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,6 +19,8 @@ public @interface Controller {
 
     Class<? extends CustomResource> customResourceClass();
 
+    Class<? extends CustomResourceDoneable<? extends CustomResource>> customResourceDoneableClass() default EMPTY_DONEABLE.class;
+
     String finalizerName() default DEFAULT_FINALIZER;
 
     /**
@@ -26,4 +30,10 @@ public @interface Controller {
      * <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource">here</a>
      */
     boolean generationAwareEventProcessing() default true;
+
+    static final class EMPTY_DONEABLE extends CustomResourceDoneable<CustomResource> {
+        public EMPTY_DONEABLE(CustomResource resource, Function function) {
+            super(resource, function);
+        }
+    }
 }

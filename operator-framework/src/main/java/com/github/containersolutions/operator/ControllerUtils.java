@@ -50,6 +50,11 @@ public class ControllerUtils {
             if (doneableClassCache.containsKey(customResourceClass)) {
                 return (Class<? extends CustomResourceDoneable<T>>) doneableClassCache.get(customResourceClass);
             }
+            if (!getAnnotation(controller).customResourceDoneableClass().equals(Controller.EMPTY_DONEABLE.class)) {
+                Class<? extends CustomResourceDoneable<T>> doneableClass = (Class<? extends CustomResourceDoneable<T>>) getAnnotation(controller).customResourceDoneableClass();
+                doneableClassCache.put(customResourceClass, doneableClass);
+                return doneableClass;
+            }
 
             ClassPool pool = ClassPool.getDefault();
             pool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));

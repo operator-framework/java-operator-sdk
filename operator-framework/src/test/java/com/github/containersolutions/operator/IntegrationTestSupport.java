@@ -6,14 +6,13 @@ import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +41,11 @@ public class IntegrationTestSupport {
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
         this.k8sClient = k8sClient;
         CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
-        CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
         this.controller = controller;
 
         Class doneableClass = getCustomResourceDoneableClass(controller);
         Class customResourceClass = getCustomResourceClass(controller);
-        crOperations = k8sClient.customResources(crdContext, customResourceClass, CustomResourceList.class, doneableClass);
+        crOperations = k8sClient.customResources(crd, customResourceClass, CustomResourceList.class, doneableClass);
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
