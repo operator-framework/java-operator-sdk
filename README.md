@@ -14,7 +14,7 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
   </tr>
   <tr>
     <td><a href="#2">2.</a></td>
-    <td><a href="#Operators">Why build your own Operator</a></td>
+    <td><a href="#Operator">Why build your own Operator</a></td>
   </tr>
   <tr>
     <td><a href="#3">3.</a></td>
@@ -53,23 +53,23 @@ about the non-trivial yet common problems needs to be solved for every operator.
 * Integration with Cloud services - e.g. Secret stores
 * Safer deployment of applications - only expose cluster to users by Custom Resources
 
-#### Roadmap
+#### <a id="Roadmap"><a id="3">Roadmap</a></a>
 * Testing of the framework and all samples while running on a real cluster.
 * Generate a project skeleton
 * Generate Java classes from CRD definion (and/or the other way around)
 * Integrate with Quarkus (including native image build)
 * Integrate with OLM (Operator Lifecycle Manager)
 
-#### Join us on Discord!
+#### <a id="Discord"><a id="4">Join us on Discord!</a></a>
 
 [Discord Invite Link](https://discord.gg/DacEhAy)
 
-#### User Guide
+#### <a id="Guide"><a id="5">User Guide</a></a>
 
 You can (will) find detailed documentation [here](docs/DOCS.md). 
 Note that these docs are currently in progress. 
 
-#### Usage
+#### <a id="Usage"><a id="6">Usage</a></a>
 
 We have several sample Operators under the samples directory:
 * *basic*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
@@ -162,7 +162,7 @@ public class WebServerSpec {
 }
 ```
 
-#### Spring Boot
+#### <a id="Boot"><a id="7">Spring Boot</a></a>
 
 You can also let Spring Boot wire your application together and automatically register the controllers.
 
