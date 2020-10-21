@@ -3,7 +3,42 @@
 
 Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 
-#### Features
+<table>
+  <tr>
+    <th>S.No.</th>
+    <th>Content</th>
+  </tr>
+  <tr>
+    <td><a href="#1">1.</a></td>
+    <td><a href="#Features">Features</a></td>
+  </tr>
+  <tr>
+    <td><a href="#2">2.</a></td>
+    <td><a href="#Operators">Why build your own Operator</a></td>
+  </tr>
+  <tr>
+    <td><a href="#3">3.</a></td>
+    <td><a href="#Roadmap">Roadmap</a></td>
+  </tr>
+  <tr>
+    <td><a href="#4">4.</a></td>
+    <td><a href="#Discord">Join us on Discord!</a></td>
+  </tr>
+  <tr>
+    <td><a href="#5">5.</a></td>
+    <td><a href="#Guide">User Guide</a></td>
+  </tr>
+  <tr>
+    <td><a href="#6">6.</a></td>
+    <td><a href="#Usage">Usage</a></td>
+  </tr>
+  <tr>
+    <td><a href="#7">7.</a></td>
+    <td><a href="#Boot">Spring Boot</a></td>
+  </tr>
+ </table>
+
+#### <a id="Features"><a id="1">Features</a></a>
 * Framework for handling Kubernetes API events
 * Registering Custom Resource watches
 * Retry action on failure
@@ -12,7 +47,7 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
 about the non-trivial yet common problems needs to be solved for every operator. 
 
-#### Why build your own Operator?
+#### <a id="Operator"><a id="2">Why build your own Operator?</a></a>
 * Infrastructure automation using the power and flexibility of Java. See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators).
 * Provisioning of complex applications - avoiding Helm chart hell
 * Integration with Cloud services - e.g. Secret stores
