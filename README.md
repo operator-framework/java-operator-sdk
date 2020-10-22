@@ -5,13 +5,13 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 
 | S.No. | Contents |
 | ----- | -------- |
-| [1.] | [Features](#Features) |
-| [2.] | [Why build your own Operator?](#Why build your own Operator?) |
-| [3.] | [Roadmap](#Roadmap) |
-| [4.] | [Join us on Discord!](#Join-us-on-Discord-!) |
-| [5.] | [User Guide](#User-Guide) |
-| [6.] | [Usage](#Usage) |
-| [7.] | [Spring Boot](#Spring-Boot) |
+| [1.](#Features) | [Features](#Features) |
+| [2.](#Why-build-your-own-Operator-?) | [Why build your own Operator?](#Why-build-your-own-Operator-?) |
+| [3.](#Roadmap) | [Roadmap](#Roadmap) |
+| [4.](#Join-us-on-Discord-!) | [Join us on Discord!](#Join-us-on-Discord-!) |
+| [5.](#User-Guide) | [User Guide](#User-Guide) |
+| [6.](#Usage) | [Usage](#Usage) |
+| [7.](#Spring-Boot) | [Spring Boot](#Spring-Boot) |
 
 #### Features
 * Framework for handling Kubernetes API events
