@@ -3,42 +3,17 @@
 
 Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 
-<table>
-  <tr>
-    <th>S.No.</th>
-    <th>Content</th>
-  </tr>
-  <tr>
-    <td><a href="#1">1.</a></td>
-    <td><a href="#Features">Features</a></td>
-  </tr>
-  <tr>
-    <td><a href="#2">2.</a></td>
-    <td><a href="#Operator">Why build your own Operator</a></td>
-  </tr>
-  <tr>
-    <td><a href="#3">3.</a></td>
-    <td><a href="#Roadmap">Roadmap</a></td>
-  </tr>
-  <tr>
-    <td><a href="#4">4.</a></td>
-    <td><a href="#Discord">Join us on Discord!</a></td>
-  </tr>
-  <tr>
-    <td><a href="#5">5.</a></td>
-    <td><a href="#Guide">User Guide</a></td>
-  </tr>
-  <tr>
-    <td><a href="#6">6.</a></td>
-    <td><a href="#Usage">Usage</a></td>
-  </tr>
-  <tr>
-    <td><a href="#7">7.</a></td>
-    <td><a href="#Boot">Spring Boot</a></td>
-  </tr>
- </table>
+| S.No. | Contents |
+| ----- | -------- |
+| 1. | Features |
+| 2. | Why build your own Operator? |
+| 3. | Roadmap |
+| 4. | Join us on Discord! |
+| 5. | User Guide |
+| 6. | Usage |
+| 7. | Spring Boot |
 
-#### <a id="Features"><a id="1">Features</a></a>
+#### Features
 * Framework for handling Kubernetes API events
 * Registering Custom Resource watches
 * Retry action on failure
@@ -47,29 +22,29 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
 about the non-trivial yet common problems needs to be solved for every operator. 
 
-#### <a id="Operator"><a id="2">Why build your own Operator?</a></a>
+#### Why build your own Operator?
 * Infrastructure automation using the power and flexibility of Java. See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators).
 * Provisioning of complex applications - avoiding Helm chart hell
 * Integration with Cloud services - e.g. Secret stores
 * Safer deployment of applications - only expose cluster to users by Custom Resources
 
-#### <a id="Roadmap"><a id="3">Roadmap</a></a>
+#### Roadmap
 * Testing of the framework and all samples while running on a real cluster.
 * Generate a project skeleton
 * Generate Java classes from CRD definion (and/or the other way around)
 * Integrate with Quarkus (including native image build)
 * Integrate with OLM (Operator Lifecycle Manager)
 
-#### <a id="Discord"><a id="4">Join us on Discord!</a></a>
+#### Join us on Discord!
 
 [Discord Invite Link](https://discord.gg/DacEhAy)
 
-#### <a id="Guide"><a id="5">User Guide</a></a>
+#### User Guide
 
 You can (will) find detailed documentation [here](docs/DOCS.md). 
 Note that these docs are currently in progress. 
 
-#### <a id="Usage"><a id="6">Usage</a></a>
+#### Usage
 
 We have several sample Operators under the samples directory:
 * *basic*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
@@ -162,7 +137,7 @@ public class WebServerSpec {
 }
 ```
 
-#### <a id="Boot"><a id="7">Spring Boot</a></a>
+#### Spring Boot
 
 You can also let Spring Boot wire your application together and automatically register the controllers.
 
