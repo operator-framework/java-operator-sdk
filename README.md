@@ -13,7 +13,7 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 | [6.] | [Usage] |
 | [7.] | [Spring Boot] |
 
-#### Features
+#### Features(#Features)
 * Framework for handling Kubernetes API events
 * Registering Custom Resource watches
 * Retry action on failure
