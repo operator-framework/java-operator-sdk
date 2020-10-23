@@ -1,9 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import com.github.containersolutions.operator.api.*;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
@@ -86,10 +83,10 @@ public class TomcatController implements ResourceController<Tomcat> {
     }
 
     @Override
-    public boolean deleteResource(Tomcat tomcat, Context<Tomcat> context) {
+    public DeleteControl deleteResource(Tomcat tomcat, Context<Tomcat> context) {
         deleteDeployment(tomcat);
         deleteService(tomcat);
-        return true;
+        return DeleteControl.defaultDelete();
     }
 
     private Deployment createOrUpdateDeployment(Tomcat tomcat) {

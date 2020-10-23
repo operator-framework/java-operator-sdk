@@ -1,9 +1,6 @@
 package com.github.containersolutions.operator.sample;
 
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import com.github.containersolutions.operator.api.*;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -44,11 +41,11 @@ public class WebappController implements ResourceController<Webapp> {
     }
 
     @Override
-    public boolean deleteResource(Webapp webapp, Context<Webapp> context) {
+    public DeleteControl deleteResource(Webapp webapp, Context<Webapp> context) {
         String fileName = fileNameFromWebapp(webapp);
         String[] command = new String[]{"rm", "/data/" + fileName};
         executeCommandInAllPods(kubernetesClient, webapp, command);
-        return true;
+        return DeleteControl.defaultDelete();
     }
 
     private void executeCommandInAllPods(KubernetesClient kubernetesClient, Webapp webapp, String[] command) {
