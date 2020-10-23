@@ -26,6 +26,6 @@ public interface ResourceController<R extends CustomResource> {
      * this update can be skipped.
      * <b>However we will always call an update if there is no finalizer on object and its not marked for deletion.</b>
      */
-    UpdateControl createOrUpdateResource(R resource, Context<R> context);
+    UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
 
 }
