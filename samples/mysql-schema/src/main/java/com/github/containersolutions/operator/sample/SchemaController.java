@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Base64;
 
 import static java.lang.String.format;
@@ -35,21 +37,27 @@ public class SchemaController implements ResourceController<Schema> {
     public UpdateControl<Schema> createOrUpdateResource(Schema schema, Context<Schema> context) {
         try (Connection connection = getConnection()) {
             if (!schemaExists(connection, schema.getMetadata().getName())) {
-                connection.createStatement().execute(format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute(format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
                         schema.getMetadata().getName(),
                         schema.getSpec().getEncoding()));
+                }
 
                 String password = RandomStringUtils.randomAlphanumeric(16);
                 String userName = String.format(USERNAME_FORMAT,
                         schema.getMetadata().getName());
                 String secretName = String.format(SECRET_FORMAT,
                         schema.getMetadata().getName());
-                connection.createStatement().execute(format(
-                        "CREATE USER '%1$s' IDENTIFIED BY '%2$s'",
-                        userName, password));
-                connection.createStatement().execute(format(
-                        "GRANT ALL ON `%1$s`.* TO '%2$s'",
-                        schema.getMetadata().getName(), userName));
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute(format("CREATE USER '%1$s' IDENTIFIED BY '%2$s'",
+                            userName,
+                            password));
+                }
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute(format("GRANT ALL ON `%1$s`.* TO '%2$s'",
+                        schema.getMetadata().getName(),
+                        userName));
+                }
                 Secret credentialsSecret = new SecretBuilder()
                         .withNewMetadata().withName(secretName).endMetadata()
                         .addToData("MYSQL_USERNAME", Base64.getEncoder().encodeToString(userName.getBytes()))
@@ -92,11 +100,17 @@ public class SchemaController implements ResourceController<Schema> {
 
         try (Connection connection = getConnection()) {
             if (schemaExists(connection, schema.getMetadata().getName())) {
-                connection.createStatement().execute("DROP DATABASE `" + schema.getMetadata().getName() + "`");
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute(format("DROP DATABASE `%1$s`",
+                        schema.getMetadata().getName()));
+                }
                 log.info("Deleted Schema '{}'", schema.getMetadata().getName());
 
                 if (userExists(connection, schema.getStatus().getUserName())) {
-                    connection.createStatement().execute("DROP USER '" + schema.getStatus().getUserName() + "'");
+                    try (Statement statement = connection.createStatement()) {
+                        statement.execute(format("DROP USER '%1$s'",
+                            schema.getStatus().getUserName()));
+                    }
                     log.info("Deleted User '{}'", schema.getStatus().getUserName());
                 }
 
@@ -124,16 +138,22 @@ public class SchemaController implements ResourceController<Schema> {
     }
 
     private boolean schemaExists(Connection connection, String schemaName) throws SQLException {
-        ResultSet resultSet = connection.createStatement().executeQuery(
-                format("SELECT schema_name FROM information_schema.schemata WHERE schema_name = \"%1$s\"",
-                        schemaName));
-        return resultSet.first();
+        try (PreparedStatement ps =
+                     connection.prepareStatement("SELECT schema_name FROM information_schema.schemata WHERE schema_name = ?")) {
+            ps.setString(1, schemaName);
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return resultSet.first();
+            }
+        }
     }
 
     private boolean userExists(Connection connection, String userName) throws SQLException {
-        ResultSet resultSet = connection.createStatement().executeQuery(
-                format("SELECT User FROM mysql.user WHERE User='%1$s'", userName)
-        );
-        return resultSet.first();
+        try (PreparedStatement ps =
+                     connection.prepareStatement("SELECT User FROM mysql.user WHERE User = ?")) {
+            ps.setString(1, userName);
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return resultSet.first();
+            }
+        }
     }
 }

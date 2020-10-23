@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title | escape }}{% endif %}</title>
+  {% include links.html %}
+</head>
+<body class="page">
+  {% include header.html %}
+  <div class="title-strip {{ page.collection }} {{ page.name | split: "." | first }}">
+  <div class="title">
+    <h1><img class="homepage-logo" src="{{ site.baseurl }}/assets/images/logo-white.png" width="90%"></h1>
+    <h3>{{ page.description }}</h3>
+  </div>
+  </div>
+  <div id="content" class="content">
+    {{ content }}
+  </div>
+  {% include footer.html %}
+  {% include scripts.html %}
+</body>
+</html>

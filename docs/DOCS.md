@@ -35,8 +35,6 @@ the cluster's API server.
 Controllers are where you implement the business logic of the Operator. An Operator can host multiple Controllers, 
 each handling a different type of Custom Resource. In our samples each Operator has a single Controller. 
 
-### Generation Awareness
-
 ## Automatic Retries
 
 ## Running The Operator
@@ -53,3 +51,37 @@ TODO: explain running operator locally against a cluster
 ### Generation Awareness
 
 ## Spring Boot Support
+
+## Dealing with Consistency 
+
+### Run Single Instance
+
+There should be always just one instance of an operator running at a time (think process). If there there would be 
+two ore more, in general it could lead to concurrency issues. Note that we are also doing optimistic locking when we update a resource.
+In this way the operator is not highly available. However for operators this not necessary an issue, 
+if the operator just gets restarted after it went down. 
+
+### At Least Once
+
+To implement controller logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
+These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
+called just once, but in some rare cases can happen that are called more then once. In practice this means that the 
+implementation needs to be **idempotent**.    
+
+### Smart Scheduling
+
+In our scheduling algorithm we make sure, that no events are processed concurrently for a resource. In addition we provide
+a customizable retry mechanism to deal with temporal errors.
+
+### Operator Restarts
+
+When an operator is started we got events for every resource (of a type we listen to) already on the cluster. Even if the resource is not changed 
+(We use `kubectl get ... --watch` in the background). This can be a huge amount of resources depending on your use case.
+So it could be a good case just have a status field on the resource which is checked, if there anything needs to be done.
+
+### Deleting a Resource
+
+During deletion process we use [Kubernetes finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers 
+"Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running while the delete 
+of resource is executed (think `oc delete`). In this case we would not catch the delete event. So we automatically add a
+finalizer first time we update the resource if its not there. 

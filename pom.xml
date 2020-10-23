@@ -34,6 +34,11 @@
         <url>https://github.com/ContainerSolutions/java-operator-sdk/tree/master</url>
     </scm>
 
+    <properties>
+        <junit.version>5.7.0</junit.version>
+        <surefire.version>3.0.0-M5</surefire.version>
+    </properties>
+
     <modules>
         <module>operator-framework</module>
         <module>spring-boot-starter</module>
@@ -46,7 +51,7 @@
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
-                <version>4.10.3</version>
+                <version>4.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -60,8 +65,26 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.6.2</version>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>1.7.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -72,13 +95,13 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>3.5.5</version>
+                <version>3.5.15</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-core</artifactId>
-                <version>5.2.8.RELEASE</version>
+                <version>5.2.9.RELEASE</version>
                 <scope>compile</scope>
             </dependency>
         </dependencies>
@@ -96,7 +119,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
+                <version>${surefire.version}</version>
                 <configuration>
                     <includes>
                         <include>**/*IT.java</include>
@@ -115,7 +138,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.22.2</version>
+                        <version>${surefire.version}</version>
                         <configuration>
                             <includes>
                                 <include>**/*Test.java</include>
@@ -135,7 +158,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.22.2</version>
+                        <version>${surefire.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>**/*IT.java</exclude>

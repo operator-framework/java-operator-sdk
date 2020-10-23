@@ -17,7 +17,7 @@ public class ControllerUtils {
 
     private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
 
-    private final static Logger log = LoggerFactory.getLogger(Operator.class);
+    private final static Logger log = LoggerFactory.getLogger(ControllerUtils.class);
 
     // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
     // note that other solution is to add a random string to doneable class name

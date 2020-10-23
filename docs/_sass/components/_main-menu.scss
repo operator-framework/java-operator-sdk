@@ -1,0 +1,32 @@
+.main-menu {
+  justify-content: flex-end;
+
+  a {
+    color: inherit;
+    margin: 10px 20px;
+    text-decoration: none;
+  }
+
+  button {
+    background-color: inherit;
+    border: none;
+    color: inherit;
+    margin: 0 20px 0 0;
+  }
+}
+
+.dropdown-menu {
+  background-color: #fff;
+  color: #000;
+}
+
+.dropdown-item {
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 20px;
+
+  &:hover {
+    background-color: inherit;
+    color: inherit;
+  }
+}

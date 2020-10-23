@@ -1,0 +1,26 @@
+.title-strip {
+  background-image: url("#{$baseurl}/assets/images/bg.png");
+  background-size: cover;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 30px;
+}
+
+.title {
+  align-items: center;
+  justify-content: space-between;
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+
+  h1 {
+    font-size: 60px;
+    font-weight: bold;
+    text-transform: uppercase;
+    max-height: 300px;
+  }
+  h3 {
+    line-height: 50px;
+  }
+}

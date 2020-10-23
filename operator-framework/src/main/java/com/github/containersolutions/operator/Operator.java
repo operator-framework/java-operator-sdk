@@ -8,12 +8,13 @@ import com.github.containersolutions.operator.processing.event.DefaultEventSourc
 import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
 import com.github.containersolutions.operator.processing.retry.GenericRetry;
 import com.github.containersolutions.operator.processing.retry.Retry;
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import org.slf4j.Logger;
@@ -57,8 +58,8 @@ public class Operator {
     private <R extends CustomResource> void registerController(ResourceController<R> controller,
                                                                boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
-        CustomResourceDefinition crd = getCustomResourceDefinitionForController(controller);
-        KubernetesDeserializer.registerCustomKind(getApiVersion(crd), getKind(crd), resClass);
+        CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
+        KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
         String finalizer = getDefaultFinalizer(controller);
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
@@ -98,13 +99,14 @@ public class Operator {
         return customResourceEventSource;
     }
 
-    private CustomResourceDefinition getCustomResourceDefinitionForController(ResourceController controller) {
+    private CustomResourceDefinitionContext getCustomResourceDefinitionForController(ResourceController controller) {
         String crdName = getCrdName(controller);
         CustomResourceDefinition customResourceDefinition = k8sClient.customResourceDefinitions().withName(crdName).get();
         if (customResourceDefinition == null) {
             throw new OperatorException("Cannot find Custom Resource Definition with name: " + crdName);
         }
-        return customResourceDefinition;
+        CustomResourceDefinitionContext context = CustomResourceDefinitionContext.fromCrd(customResourceDefinition);
+        return context;
     }
 
     public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {
