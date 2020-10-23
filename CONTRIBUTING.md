@@ -36,7 +36,7 @@ discussing it first to avoid wasting effort. We do commit to listening to all pr
 our best to work something out!
 
 Once you've got the go ahead to work on a feature, you can start work. Feel free to communicate with
-team via updates on the issue tracker or the Discord channel and ask for feedback, pointers etc.
+team via updates on the issue tracker or the [Discord channel](https://discord.gg/DacEhAy) and ask for feedback, pointers etc.
 Once you're happy with your code, go ahead and open a Pull Request.
 
 ## Pull Request Process
