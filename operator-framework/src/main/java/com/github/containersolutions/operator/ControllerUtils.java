@@ -28,7 +28,7 @@ public class ControllerUtils {
         if(getAnnotation(controller).finalizerName().equals(DEFAULT_FINALIZER))
         {
             //[package+"."+classNameOfController]
-            return getAnnotation(controller).customResourceClass.getPackage().getName() + "." + getAnnotation(controller).customResourceClass.getSimpleName();
+            return getAnnotation(controller).getPackage().getName() + "." + getAnnotation(controller).getClass();
         }
         
         return getAnnotation(controller).finalizerName();
