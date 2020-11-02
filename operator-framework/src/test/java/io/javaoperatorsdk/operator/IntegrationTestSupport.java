@@ -1,8 +1,8 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.sample.TestCustomResource;
-import com.github.containersolutions.operator.sample.TestCustomResourceSpec;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceClass;
-import static com.github.containersolutions.operator.ControllerUtils.getCustomResourceDoneableClass;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -45,8 +43,8 @@ public class IntegrationTestSupport {
         CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
         this.controller = controller;
 
-        Class doneableClass = getCustomResourceDoneableClass(controller);
-        Class customResourceClass = getCustomResourceClass(controller);
+        Class doneableClass = ControllerUtils.getCustomResourceDoneableClass(controller);
+        Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
         crOperations = k8sClient.customResources(crdContext, customResourceClass, CustomResourceList.class, doneableClass);
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {

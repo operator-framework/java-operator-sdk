@@ -1,10 +1,10 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.processing.CustomResourceEvent;
-import com.github.containersolutions.operator.processing.EventDispatcher;
-import com.github.containersolutions.operator.processing.EventScheduler;
-import com.github.containersolutions.operator.processing.retry.GenericRetry;
-import com.github.containersolutions.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.processing.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.EventScheduler;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.github.containersolutions.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.atIndex;
 import static org.mockito.Mockito.*;
@@ -242,7 +241,7 @@ class EventSchedulerTest {
     private void waitTimeForExecution(int numberOfEvents, int retries) {
         try {
             Thread.sleep(200 + ((INVOCATION_DURATION + 30) * numberOfEvents) + (retries * (INVOCATION_DURATION + 100)) +
-                    retries * (DEFAULT_INITIAL_INTERVAL + 100));
+                    retries * (GenericRetry.DEFAULT_INITIAL_INTERVAL + 100));
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }

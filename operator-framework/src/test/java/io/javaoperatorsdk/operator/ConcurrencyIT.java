@@ -1,7 +1,7 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.sample.TestCustomResource;
-import com.github.containersolutions.operator.sample.TestCustomResourceController;
+import io.javaoperatorsdk.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -48,13 +47,13 @@ public class ConcurrencyIT {
             log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
             for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
                 TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
-                integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).create(tcr);
+                integrationTest.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).create(tcr);
             }
 
             Awaitility.await().atMost(1, TimeUnit.MINUTES)
                     .untilAsserted(() -> {
                         List<ConfigMap> items = integrationTest.getK8sClient().configMaps()
-                                .inNamespace(TEST_NAMESPACE)
+                                .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                                 .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
                                 .list().getItems();
                         assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
@@ -64,11 +63,11 @@ public class ConcurrencyIT {
             // update some resources
             for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
                 TestCustomResource tcr = (TestCustomResource) integrationTest.getCrOperations()
-                        .inNamespace(TEST_NAMESPACE)
+                        .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                         .withName(IntegrationTestSupport.TEST_CUSTOM_RESOURCE_PREFIX + i)
                         .get();
                 tcr.getSpec().setValue(i + UPDATED_SUFFIX);
-                integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).createOrReplace(tcr);
+                integrationTest.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).createOrReplace(tcr);
             }
             // sleep for a short time to make variability to the test, so some updates are not executed before delete
             Thread.sleep(300);
@@ -76,13 +75,13 @@ public class ConcurrencyIT {
             log.info("Deleting {} resources", NUMBER_OF_RESOURCES_DELETED);
             for (int i = 0; i < NUMBER_OF_RESOURCES_DELETED; i++) {
                 TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
-                integrationTest.getCrOperations().inNamespace(TEST_NAMESPACE).delete(tcr);
+                integrationTest.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).delete(tcr);
             }
 
             Awaitility.await().atMost(1, TimeUnit.MINUTES)
                     .untilAsserted(() -> {
                         List<ConfigMap> items = integrationTest.getK8sClient().configMaps()
-                                .inNamespace(TEST_NAMESPACE)
+                                .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                                 .withLabel("managedBy", TestCustomResourceController.class.getSimpleName())
                                 .list().getItems();
                         //reducing configmaps to names only - better for debugging
@@ -90,7 +89,7 @@ public class ConcurrencyIT {
                         assertThat(itemDescs).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
                         List<TestCustomResource> crs = integrationTest.getCrOperations()
-                                .inNamespace(TEST_NAMESPACE)
+                                .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                                 .list().getItems();
                         assertThat(crs).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
                     });

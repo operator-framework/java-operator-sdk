@@ -1,10 +1,10 @@
-package com.github.containersolutions.operator.sample.subresource;
+package io.javaoperatorsdk.operator.sample.subresource;
 
-import com.github.containersolutions.operator.TestExecutionInfoProvider;
-import com.github.containersolutions.operator.api.Context;
-import com.github.containersolutions.operator.api.Controller;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

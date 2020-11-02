@@ -1,11 +1,9 @@
-package com.github.containersolutions.operator.processing.retry;
+package io.javaoperatorsdk.operator.processing.retry;
 
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static com.github.containersolutions.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
-import static com.github.containersolutions.operator.processing.retry.GenericRetry.DEFAULT_MULTIPLIER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GenericRetryExecutionTest {
@@ -20,13 +18,13 @@ public class GenericRetryExecutionTest {
         RetryExecution retryExecution = getDefaultRetryExecution();
 
         Optional<Long> res = callNextDelayNTimes(retryExecution, 2);
-        assertThat(res.get()).isEqualTo(DEFAULT_INITIAL_INTERVAL);
+        assertThat(res.get()).isEqualTo(GenericRetry.DEFAULT_INITIAL_INTERVAL);
 
         res = retryExecution.nextDelay();
-        assertThat(res.get()).isEqualTo((long) (DEFAULT_INITIAL_INTERVAL * DEFAULT_MULTIPLIER));
+        assertThat(res.get()).isEqualTo((long) (GenericRetry.DEFAULT_INITIAL_INTERVAL * GenericRetry.DEFAULT_MULTIPLIER));
 
         res = retryExecution.nextDelay();
-        assertThat(res.get()).isEqualTo((long) (DEFAULT_INITIAL_INTERVAL * DEFAULT_MULTIPLIER * DEFAULT_MULTIPLIER));
+        assertThat(res.get()).isEqualTo((long) (GenericRetry.DEFAULT_INITIAL_INTERVAL * GenericRetry.DEFAULT_MULTIPLIER * GenericRetry.DEFAULT_MULTIPLIER));
     }
 
     @Test

@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.sample.subresource;
+package io.javaoperatorsdk.operator.sample.subresource;
 
 public class SubResourceTestCustomResourceStatus {
 

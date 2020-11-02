@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
 public interface TestExecutionInfoProvider {
 

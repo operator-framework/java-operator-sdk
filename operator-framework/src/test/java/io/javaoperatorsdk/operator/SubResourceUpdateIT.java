@@ -1,20 +1,20 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.sample.subresource.SubResourceTestCustomResource;
-import com.github.containersolutions.operator.sample.subresource.SubResourceTestCustomResourceController;
-import com.github.containersolutions.operator.sample.subresource.SubResourceTestCustomResourceSpec;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.github.containersolutions.operator.IntegrationTestSupport.TEST_NAMESPACE;
-import static com.github.containersolutions.operator.api.Controller.DEFAULT_FINALIZER;
-import static com.github.containersolutions.operator.sample.subresource.SubResourceTestCustomResourceStatus.State.SUCCESS;
+import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -95,7 +95,7 @@ public class SubResourceUpdateIT {
                     assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
                     assertThat(cr).isNotNull();
                     assertThat(cr.getStatus()).isNotNull();
-                    assertThat(cr.getStatus().getState()).isEqualTo(SUCCESS);
+                    assertThat(cr.getStatus().getState()).isEqualTo(SubResourceTestCustomResourceStatus.State.SUCCESS);
                 });
     }
 
@@ -104,7 +104,7 @@ public class SubResourceUpdateIT {
         resource.setMetadata(new ObjectMetaBuilder()
                 .withName("subresource-" + id)
                 .withNamespace(TEST_NAMESPACE)
-                .withFinalizers(DEFAULT_FINALIZER)
+                .withFinalizers(Controller.DEFAULT_FINALIZER)
                 .build());
         resource.setKind("SubresourceSample");
         resource.setSpec(new SubResourceTestCustomResourceSpec());
