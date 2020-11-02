@@ -1,6 +1,6 @@
-package com.github.containersolutions.operator.sample;
+package io.javaoperatorsdk.operator.sample;
 
-import com.github.containersolutions.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.Controller;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;

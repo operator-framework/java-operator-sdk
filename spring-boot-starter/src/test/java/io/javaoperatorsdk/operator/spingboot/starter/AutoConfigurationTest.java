@@ -1,7 +1,7 @@
-package com.github.containersolutions.operator.spingboot.starter;
+package io.javaoperatorsdk.operator.spingboot.starter;
 
-import com.github.containersolutions.operator.Operator;
-import com.github.containersolutions.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.ResourceController;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.spingboot.starter;
+package io.javaoperatorsdk.operator.spingboot.starter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

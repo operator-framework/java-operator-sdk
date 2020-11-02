@@ -1,9 +1,9 @@
-package com.github.containersolutions.operator.spingboot.starter;
+package io.javaoperatorsdk.operator.spingboot.starter;
 
-import com.github.containersolutions.operator.Operator;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.processing.retry.GenericRetry;
-import com.github.containersolutions.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;

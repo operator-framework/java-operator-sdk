@@ -1,6 +1,6 @@
-package com.github.containersolutions.operator.sample;
+package io.javaoperatorsdk.operator.sample;
 
-import com.github.containersolutions.operator.Operator;
+import io.javaoperatorsdk.operator.Operator;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;

@@ -14,7 +14,7 @@ unacceptable behaviour to any of the project admins or adam.sandor@container-sol
 
 ## Bugs
 
-If you find a bug, please [open an issue](https://github.com/ContainerSolutions/java-operator-sdk/issues)! Do try
+If you find a bug, please [open an issue](https://github.com/java-operator-sdk/java-operator-sdk/issues)! Do try
 to include all the details needed to recreate your problem. This is likely to include:
 
  - The version of the Operator SDK being used
@@ -24,7 +24,7 @@ to include all the details needed to recreate your problem. This is likely to in
 ## Building Features and Documentation
 
 If you're looking for something to work on, take look at the issue tracker, in particular any items
-labelled [good first issue](https://github.com/ContainerSolutions/java-operator-sdk/labels/good%20first%20issue).
+labelled [good first issue](https://github.com/java-operator-sdk/java-operator-sdk/labels/good%20first%20issue).
 Please leave a comment on the issue to mention that you have started work, in order to avoid
 multiple people working on the same issue.
 

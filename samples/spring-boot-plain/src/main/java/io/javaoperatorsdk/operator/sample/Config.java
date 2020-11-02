@@ -1,8 +1,8 @@
-package com.github.containersolutions.operator.sample;
+package io.javaoperatorsdk.operator.sample;
 
-import com.github.containersolutions.operator.Operator;
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.context.annotation.Bean;

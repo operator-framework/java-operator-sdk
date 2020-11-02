@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.sample;
+package io.javaoperatorsdk.operator.sample;
 
 public class WebServerSpec {
 

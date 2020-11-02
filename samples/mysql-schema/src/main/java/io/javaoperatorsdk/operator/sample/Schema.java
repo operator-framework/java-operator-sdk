@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.sample;
+package io.javaoperatorsdk.operator.sample;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
