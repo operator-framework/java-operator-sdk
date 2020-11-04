@@ -1,5 +1,5 @@
 # ![java-operator-sdk](docs/assets/images/logo.png) 
-![Java CI with Maven](https://github.com/ContainerSolutions/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
+![Java CI with Maven](https://github.com/java-operator-sdk/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 
@@ -57,7 +57,7 @@ Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your
 
 ```xml
 <dependency>
-  <groupId>com.github.containersolutions</groupId>
+  <groupId>io.javaoperatorsdk</groupId>
   <artifactId>operator-framework</artifactId>
   <version>{see https://search.maven.org/search?q=a:operator-framework for latest version}</version>
 </dependency>
@@ -145,7 +145,7 @@ Add [this dependency](https://search.maven.org/search?q=a:spring-boot-operator-f
 
 ```xml
 <dependency>
- <groupId>com.github.containersolutions</groupId>
+ <groupId>io.javaoperatorsdk</groupId>
  <artifactId>spring-boot-operator-framework-starter</artifactId>
  <version>{see https://search.maven.org/search?q=a:spring-boot-operator-framework-starter for latest version}</version>
 </dependency>

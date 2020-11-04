@@ -13,7 +13,7 @@ You can read about the common problems what is this operator framework is solvin
 ## Getting Started
 
 The easiest way to get started with SDK is start [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) and 
-execute one of our [examples](https://github.com/ContainerSolutions/java-operator-sdk/tree/master/samples/mysql-schema)
+execute one of our [examples](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/samples/mysql-schema)
 
 Here are the main steps to develop the code and deploy the operator to a Kubernetes cluster. A more detailed and specific
 version can be found under `samples/mysql-schema/README.md`.
