@@ -2,6 +2,7 @@ package com.github.containersolutions.operator.processing;
 
 
 import com.github.containersolutions.operator.processing.event.*;
+import com.github.containersolutions.operator.processing.event.internal.DelayedEventSource;
 import com.github.containersolutions.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ public class EventScheduler implements EventHandler {
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
     private DefaultEventSourceManager defaultEventSourceManager;
+    // todo remove?
     private final Retry retry;
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -88,9 +90,10 @@ public class EventScheduler implements EventHandler {
         try {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
-            // todo on error put back the events on the beginning of buffer list
-            handleEventSourceRegistration(executionScope,postExecutionControl);
-            defaultEventSourceManager.eventProcessingFinished(
+            // todo on retry error put back the events on the beginning of buffer list
+
+            handleEventSourceRegistration(executionScope, postExecutionControl);
+            defaultEventSourceManager.controllerExecuted(
                     new ExecutionDescriptor(executionScope, postExecutionControl, LocalDateTime.now()));
 
             if (containsDeletedEvent(executionScope.getEvents())) {
@@ -104,11 +107,12 @@ public class EventScheduler implements EventHandler {
     }
 
     private void handleEventSourceRegistration(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
-        if (postExecutionControl.isError()) {
-            // todo handle retry
-        }
         if (postExecutionControl.reprocessEvent()) {
-            // todo handle reprocess
+            DelayedEventSource delayedEventSource = defaultEventSourceManager.registerEventSourceIfNotRegistered(
+                    executionScope.getCustomResource(), DelayedEventSource.DEFAULT_NAME,
+                    defaultEventSourceManager.getDelayedReprocessEventSource());
+            delayedEventSource.scheduleDelayedEvent(executionScope.getCustomResourceUid(),
+                    postExecutionControl.getReprocessDelay());
         }
     }
 

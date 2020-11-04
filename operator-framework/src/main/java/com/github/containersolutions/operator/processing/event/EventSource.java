@@ -8,8 +8,6 @@ public interface EventSource {
 
     void setEventSourceManager(EventSourceManager eventSourceManager);
 
-    void eventProcessingFinished(ExecutionDescriptor executionDescriptor);
-
     void eventSourceRegisteredForResource(CustomResource customResource);
 
     void eventSourceDeRegisteredForResource(String customResourceUid);

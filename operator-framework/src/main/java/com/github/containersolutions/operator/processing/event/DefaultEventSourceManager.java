@@ -3,6 +3,7 @@ package com.github.containersolutions.operator.processing.event;
 import com.github.containersolutions.operator.processing.EventScheduler;
 import com.github.containersolutions.operator.processing.ProcessingUtils;
 import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
+import com.github.containersolutions.operator.processing.event.internal.DelayedEventSource;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class DefaultEventSourceManager implements EventSourceManager {
 
@@ -21,6 +21,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
     private CustomResourceEventSource customResourceEventSource;
     private EventScheduler eventScheduler;
 
+    private DelayedEventSource delayedEventSource = new DelayedEventSource();
 
     public DefaultEventSourceManager(EventScheduler eventScheduler) {
         this.eventScheduler = eventScheduler;
@@ -33,17 +34,36 @@ public class DefaultEventSourceManager implements EventSourceManager {
 
     // Registration should happen from the same thread within controller
     @Override
-    public void registerEventSource(CustomResource resource, String name, EventSource eventSource) {
+    public <T extends EventSource> void registerEventSource(CustomResource customResource, String name, T eventSource) {
         try {
             lock.lock();
-            Map<String, EventSource> eventSourceList = eventSources.get(ProcessingUtils.getUID(resource));
+            Map<String, EventSource> eventSourceList = eventSources.get(ProcessingUtils.getUID(customResource));
             if (eventSourceList == null) {
                 eventSourceList = new HashMap<>(1);
-                eventSources.put(ProcessingUtils.getUID(resource), eventSourceList);
+                eventSources.put(ProcessingUtils.getUID(customResource), eventSourceList);
+            }
+            if (eventSourceList.get(name) != null) {
+                throw new IllegalStateException("Event source with name already registered. Resource id: "
+                        + ProcessingUtils.getUID(customResource) + ", event source name: " + name);
             }
             eventSourceList.put(name, eventSource);
             eventSource.setEventHandler(eventScheduler);
-            eventSource.eventSourceRegisteredForResource(resource);
+            eventSource.eventSourceRegisteredForResource(customResource);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public <T extends EventSource> T registerEventSourceIfNotRegistered(CustomResource customResource, String name, T eventSource) {
+        try {
+            lock.lock();
+            if (eventSources.get(ProcessingUtils.getUID(customResource)) == null ||
+                    eventSources.get(ProcessingUtils.getUID(customResource)).get(name) == null) {
+                registerEventSource(customResource, name, eventSource);
+                return eventSource;
+            }
+            return (T) eventSources.get(ProcessingUtils.getUID(customResource)).get(name);
         } finally {
             lock.unlock();
         }
@@ -73,7 +93,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
         return eventSourceMap != null ? eventSourceMap : Collections.EMPTY_MAP;
     }
 
-    public void eventProcessingFinished(ExecutionDescriptor executionDescriptor) {
+    public void controllerExecuted(ExecutionDescriptor executionDescriptor) {
         String uid = executionDescriptor.getExecutionScope().getCustomResourceUid();
         Map<String, EventSource> sources = getRegisteredEventSources(uid);
         sources.values().forEach(es -> es.controllerExecuted(executionDescriptor));
@@ -82,5 +102,9 @@ public class DefaultEventSourceManager implements EventSourceManager {
     public void cleanup(String customResourceUid) {
         getRegisteredEventSources(customResourceUid).keySet().forEach(k -> deRegisterEventSource(customResourceUid, k));
         eventSources.remove(customResourceUid);
+    }
+
+    public DelayedEventSource getDelayedReprocessEventSource() {
+        return delayedEventSource;
     }
 }

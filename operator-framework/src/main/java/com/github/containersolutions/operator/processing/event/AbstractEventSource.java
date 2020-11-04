@@ -29,7 +29,4 @@ public abstract class AbstractEventSource implements EventSource {
     public void controllerExecuted(ExecutionDescriptor executionDescriptor) {
     }
 
-    @Override
-    public void eventProcessingFinished(ExecutionDescriptor executionDescriptor) {
-    }
 }
