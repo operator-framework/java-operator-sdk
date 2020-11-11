@@ -13,7 +13,7 @@ public class ProcessingUtils {
         return customResource.getMetadata().getUid();
     }
 
-    public static boolean containsDeletedEvent(List<Event> events) {
+    public static boolean containsCustomResourceDeletedEvent(List<Event> events) {
         return events.stream().anyMatch(e -> {
             if (e instanceof CustomResourceEvent) {
                 return ((CustomResourceEvent) e).getAction() == Watcher.Action.DELETED;

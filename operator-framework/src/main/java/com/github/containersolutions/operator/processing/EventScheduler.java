@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.github.containersolutions.operator.processing.ProcessingUtils.containsDeletedEvent;
+import static com.github.containersolutions.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
 
 /**
  * Requirements:
@@ -92,27 +92,16 @@ public class EventScheduler implements EventHandler {
             unsetUnderExecution(executionScope.getCustomResourceUid());
             // todo on retry error put back the events on the beginning of buffer list
 
-            handleEventSourceRegistration(executionScope, postExecutionControl);
             defaultEventSourceManager.controllerExecuted(
                     new ExecutionDescriptor(executionScope, postExecutionControl, LocalDateTime.now()));
 
-            if (containsDeletedEvent(executionScope.getEvents())) {
+            if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
                 cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
             } else {
                 executeBufferedEvents(executionScope.getCustomResourceUid());
             }
         } finally {
             lock.unlock();
-        }
-    }
-
-    private void handleEventSourceRegistration(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
-        if (postExecutionControl.reprocessEvent()) {
-            DelayedEventSource delayedEventSource = defaultEventSourceManager.registerEventSourceIfNotRegistered(
-                    executionScope.getCustomResource(), DelayedEventSource.DEFAULT_NAME,
-                    defaultEventSourceManager.getDelayedReprocessEventSource());
-            delayedEventSource.scheduleDelayedEvent(executionScope.getCustomResourceUid(),
-                    postExecutionControl.getReprocessDelay());
         }
     }
 

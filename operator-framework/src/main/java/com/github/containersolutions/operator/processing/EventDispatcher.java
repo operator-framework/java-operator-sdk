@@ -2,10 +2,7 @@ package com.github.containersolutions.operator.processing;
 
 import com.github.containersolutions.operator.ControllerUtils;
 import com.github.containersolutions.operator.api.*;
-import com.github.containersolutions.operator.processing.event.Event;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import org.slf4j.Logger;
@@ -13,9 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
@@ -44,7 +39,7 @@ public class EventDispatcher {
             return handDispatch(event);
         } catch (RuntimeException e) {
             log.error("Error during event processing {} failed.", event, e);
-            return PostExecutionControl.errorDuringDispatch(e);
+            return PostExecutionControl.defaultDispatch();
         }
     }
 
@@ -52,7 +47,7 @@ public class EventDispatcher {
         CustomResource resource = executionScope.getCustomResource();
         log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
-        if (ProcessingUtils.containsDeletedEvent(executionScope.getEvents())) {
+        if (ProcessingUtils.containsCustomResourceDeletedEvent(executionScope.getEvents())) {
             cleanup(executionScope.getCustomResource());
             return PostExecutionControl.defaultDispatch();
         }
@@ -90,7 +85,7 @@ public class EventDispatcher {
                 updateCustomResource(updateControl.getCustomResource());
             }
 //          markLastGenerationProcessed(resource);
-            return reprocessControlToDispatchControl(updateControl);
+            return PostExecutionControl.defaultDispatch();
         }
     }
 
@@ -105,15 +100,7 @@ public class EventDispatcher {
             log.debug("Skipping finalizer remove. removeFinalizer: {}, hasDefaultFinalizer: {} ",
                     deleteControl.getRemoveFinalizer(), hasDefaultFinalizer);
         }
-        return reprocessControlToDispatchControl(deleteControl);
-    }
-
-    private PostExecutionControl reprocessControlToDispatchControl(ReprocessControl updateControl) {
-        if (updateControl.isForReprocess()) {
-            return PostExecutionControl.reprocessAfter(updateControl.getReprocessDelay());
-        } else {
-            return PostExecutionControl.defaultDispatch();
-        }
+        return PostExecutionControl.defaultDispatch();
     }
 
     public boolean largerGenerationThenProcessedBefore(CustomResource resource) {

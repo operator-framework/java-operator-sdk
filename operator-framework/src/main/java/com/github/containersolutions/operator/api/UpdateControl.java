@@ -2,9 +2,7 @@ package com.github.containersolutions.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
-import java.util.concurrent.TimeUnit;
-
-public class UpdateControl<T extends CustomResource> extends ReprocessControl {
+public class UpdateControl<T extends CustomResource> {
 
     private final T customResource;
     private final boolean updateStatusSubResource;
