@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.EventScheduler;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.ProcessingUtils;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.DelayedEventSource;
@@ -19,11 +19,11 @@ public class DefaultEventSourceManager implements EventSourceManager {
     private final ReentrantLock lock = new ReentrantLock();
     private Map<String, Map<String, EventSource>> eventSources = new ConcurrentHashMap<>();
     private CustomResourceEventSource customResourceEventSource;
-    private EventScheduler eventScheduler;
+    private DefaultEventHandler defaultEventHandler;
     private DelayedEventSource delayedEventSource = new DelayedEventSource();
 
-    public DefaultEventSourceManager(EventScheduler eventScheduler) {
-        this.eventScheduler = eventScheduler;
+    public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler) {
+        this.defaultEventHandler = defaultEventHandler;
     }
 
     public void registerCustomResourceEventSource(CustomResourceEventSource customResourceEventSource) {
@@ -46,7 +46,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
                         + ProcessingUtils.getUID(customResource) + ", event source name: " + name);
             }
             eventSourceList.put(name, eventSource);
-            eventSource.setEventHandler(eventScheduler);
+            eventSource.setEventHandler(defaultEventHandler);
             eventSource.eventSourceRegisteredForResource(customResource);
         } finally {
             lock.unlock();

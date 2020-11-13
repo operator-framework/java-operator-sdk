@@ -9,18 +9,18 @@ public class ExecutionConsumer implements Runnable {
 
     private final ExecutionScope executionScope;
     private final EventDispatcher eventDispatcher;
-    private final EventScheduler eventScheduler;
+    private final DefaultEventHandler defaultEventHandler;
 
-    public ExecutionConsumer(ExecutionScope executionScope, EventDispatcher eventDispatcher, EventScheduler eventScheduler) {
+    public ExecutionConsumer(ExecutionScope executionScope, EventDispatcher eventDispatcher, DefaultEventHandler defaultEventHandler) {
         this.executionScope = executionScope;
         this.eventDispatcher = eventDispatcher;
-        this.eventScheduler = eventScheduler;
+        this.defaultEventHandler = defaultEventHandler;
     }
 
     @Override
     public void run() {
         PostExecutionControl postExecutionControl = eventDispatcher.handleEvent(executionScope);
-        eventScheduler.eventProcessingFinished(executionScope, postExecutionControl);
+        defaultEventHandler.eventProcessingFinished(executionScope, postExecutionControl);
     }
 
 }

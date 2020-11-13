@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.processing;
 
 
-import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ExecutionDescriptor;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,27 +17,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import static io.javaoperatorsdk.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
 
 /**
- * Requirements:
- * <ul>
- *   <li>Only 1 event should be processed at a time for same custom resource
- *   (metadata.name is the id, but kind and api should be taken into account)</li>
- *   <li>If event processing fails it should be rescheduled with retry - with limited number of retried
- *   and exponential time slacks (pluggable reschedule strategy in future?)</li>
- *   <li>if there are multiple events received for the same resource process only the last one. (Others can be discarded)
- *   User resourceVersion to check which is the latest. Put the new one at the and of the queue?
- *   </li>
- *   <li>Done - Avoid starvation, so on retry put back resource at the end of the queue.</li>
- *   <li>The selecting event from a queue should not be naive. So for example:
- *     If we cannot pick the last event because an event for that resource is currently processing just gor for the next one.
- *   </li>
- *   <li>Threading approach thus thread pool size and/or implementation should be configurable</li>
- * </ul>
- * <p>
+ * Event handler that makes sure that events are processed in a "single threaded" way, while buffering
+ * events which are received during an execution.
  */
 
-public class EventScheduler implements EventHandler {
+public class DefaultEventHandler implements EventHandler {
 
-    private final static Logger log = LoggerFactory.getLogger(EventScheduler.class);
+    private final static Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
     private final ResourceCache resourceCache;
     private final EventBuffer eventBuffer;
@@ -50,7 +34,7 @@ public class EventScheduler implements EventHandler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher) {
+    public DefaultEventHandler(ResourceCache resourceCache, EventDispatcher eventDispatcher) {
         this.resourceCache = resourceCache;
         this.eventDispatcher = eventDispatcher;
         eventBuffer = new EventBuffer();

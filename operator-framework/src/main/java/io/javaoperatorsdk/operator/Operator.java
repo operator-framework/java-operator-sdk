@@ -9,16 +9,12 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
-import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
-import io.javaoperatorsdk.operator.processing.EventScheduler;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,15 +58,15 @@ public class Operator {
 
 
         ResourceCache resourceCache = new ResourceCache();
-        EventScheduler eventScheduler = new EventScheduler(resourceCache, eventDispatcher);
-        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(eventScheduler);
-        eventScheduler.setDefaultEventSourceManager(eventSourceManager);
+        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcher);
+        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler);
+        defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
 
         customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 
         CustomResourceEventSource customResourceEventSource
                 = createCustomResourceEventSource(client, resourceCache, watchAllNamespaces, targetNamespaces,
-                eventScheduler, eventSourceManager);
+                defaultEventHandler, eventSourceManager);
 
         eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
 
@@ -82,13 +78,13 @@ public class Operator {
                                                                       ResourceCache resourceCache,
                                                                       boolean watchAllNamespaces,
                                                                       String[] targetNamespaces,
-                                                                      EventScheduler eventScheduler,
+                                                                      DefaultEventHandler defaultEventHandler,
                                                                       DefaultEventSourceManager eventSourceManager) {
         CustomResourceEventSource customResourceEventSource = watchAllNamespaces ?
                 CustomResourceEventSource.customResourceEventSourceForAllNamespaces(resourceCache, client) :
                 CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(resourceCache, client, targetNamespaces);
 
-        customResourceEventSource.setEventHandler(eventScheduler);
+        customResourceEventSource.setEventHandler(defaultEventHandler);
         customResourceEventSource.setEventSourceManager(eventSourceManager);
 
         return customResourceEventSource;
