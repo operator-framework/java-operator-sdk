@@ -1,9 +1,12 @@
-package com.github.containersolutions.operator.processing;
+package io.javaoperatorsdk.operator.processing;
 
 
-import com.github.containersolutions.operator.processing.event.*;
-import com.github.containersolutions.operator.processing.event.internal.DelayedEventSource;
-import com.github.containersolutions.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ExecutionDescriptor;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.github.containersolutions.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
 
 /**
  * Requirements:
@@ -44,15 +47,12 @@ public class EventScheduler implements EventHandler {
     private final ScheduledThreadPoolExecutor executor;
     private final EventDispatcher eventDispatcher;
     private DefaultEventSourceManager defaultEventSourceManager;
-    // todo remove?
-    private final Retry retry;
 
     private final ReentrantLock lock = new ReentrantLock();
 
     public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher, Retry retry) {
         this.resourceCache = resourceCache;
         this.eventDispatcher = eventDispatcher;
-        this.retry = retry;
         eventBuffer = new EventBuffer();
         executor = new ScheduledThreadPoolExecutor(5);
     }

@@ -1,7 +1,7 @@
-package com.github.containersolutions.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event;
 
-import com.github.containersolutions.operator.processing.PostExecutionControl;
-import com.github.containersolutions.operator.processing.ExecutionScope;
+import io.javaoperatorsdk.operator.processing.ExecutionScope;
+import io.javaoperatorsdk.operator.processing.PostExecutionControl;
 
 import java.time.LocalDateTime;
 

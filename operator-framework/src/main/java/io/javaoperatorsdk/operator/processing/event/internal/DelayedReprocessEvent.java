@@ -1,7 +1,8 @@
-package com.github.containersolutions.operator.processing.event.internal;
+package io.javaoperatorsdk.operator.processing.event.internal;
 
-import com.github.containersolutions.operator.processing.event.AbstractEvent;
-import com.github.containersolutions.operator.processing.event.EventSource;
+
+import io.javaoperatorsdk.operator.processing.event.AbstractEvent;
+import io.javaoperatorsdk.operator.processing.event.EventSource;
 
 public class DelayedReprocessEvent extends AbstractEvent {
 

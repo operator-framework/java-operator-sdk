@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing;
+package io.javaoperatorsdk.operator.processing;
 
 public final class PostExecutionControl {
 

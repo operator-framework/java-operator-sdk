@@ -1,7 +1,5 @@
-package com.github.containersolutions.operator.sample;
+package io.javaoperatorsdk.operator.sample;
 
-import com.github.containersolutions.operator.api.*;
-import com.github.containersolutions.operator.api.Context;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
@@ -10,6 +8,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +93,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public DeleteControl deleteResource(WebServer nginx, Context<WebServer> context) {
+    public DeleteControl deleteResource(WebServer nginx, io.javaoperatorsdk.operator.api.Context<WebServer> context) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));

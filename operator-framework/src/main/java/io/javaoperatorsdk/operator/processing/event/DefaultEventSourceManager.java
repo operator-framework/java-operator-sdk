@@ -1,10 +1,10 @@
-package com.github.containersolutions.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event;
 
-import com.github.containersolutions.operator.processing.EventScheduler;
-import com.github.containersolutions.operator.processing.ProcessingUtils;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
-import com.github.containersolutions.operator.processing.event.internal.DelayedEventSource;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.EventScheduler;
+import io.javaoperatorsdk.operator.processing.ProcessingUtils;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.DelayedEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,6 @@ public class DefaultEventSourceManager implements EventSourceManager {
     private Map<String, Map<String, EventSource>> eventSources = new ConcurrentHashMap<>();
     private CustomResourceEventSource customResourceEventSource;
     private EventScheduler eventScheduler;
-
     private DelayedEventSource delayedEventSource = new DelayedEventSource();
 
     public DefaultEventSourceManager(EventScheduler eventScheduler) {

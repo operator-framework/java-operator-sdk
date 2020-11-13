@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.api;
 
-import com.github.containersolutions.operator.processing.event.Event;
-import com.github.containersolutions.operator.processing.event.EventSourceManager;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 import java.util.List;
 

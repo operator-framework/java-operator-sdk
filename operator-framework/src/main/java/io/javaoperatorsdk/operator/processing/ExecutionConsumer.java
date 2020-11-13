@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing;
+package io.javaoperatorsdk.operator.processing;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

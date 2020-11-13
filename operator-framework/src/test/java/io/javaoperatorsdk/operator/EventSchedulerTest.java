@@ -1,10 +1,5 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
-import com.github.containersolutions.operator.processing.EventDispatcher;
-import com.github.containersolutions.operator.processing.EventScheduler;
-import com.github.containersolutions.operator.processing.retry.GenericRetry;
-import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -21,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.github.containersolutions.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.atIndex;
 import static org.mockito.Mockito.*;

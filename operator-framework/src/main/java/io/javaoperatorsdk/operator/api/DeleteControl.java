@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.api;
+package io.javaoperatorsdk.operator.api;
 
 public class DeleteControl {
 

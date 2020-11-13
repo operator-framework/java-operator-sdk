@@ -1,13 +1,5 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.processing.EventDispatcher;
-import com.github.containersolutions.operator.processing.EventScheduler;
-import com.github.containersolutions.operator.processing.ResourceCache;
-import com.github.containersolutions.operator.processing.event.DefaultEventSourceManager;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEventSource;
-import com.github.containersolutions.operator.processing.retry.GenericRetry;
-import com.github.containersolutions.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
@@ -17,6 +9,16 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.EventScheduler;
+import io.javaoperatorsdk.operator.processing.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +26,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.github.containersolutions.operator.ControllerUtils.*;
+import static io.javaoperatorsdk.operator.ControllerUtils.*;
+
 
 @SuppressWarnings("rawtypes")
 public class Operator {

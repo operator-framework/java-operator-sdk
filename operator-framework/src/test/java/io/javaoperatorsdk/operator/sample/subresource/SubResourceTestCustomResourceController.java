@@ -1,7 +1,7 @@
-package com.github.containersolutions.operator.sample.subresource;
+package io.javaoperatorsdk.operator.sample.subresource;
 
-import com.github.containersolutions.operator.TestExecutionInfoProvider;
-import com.github.containersolutions.operator.api.*;
+import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

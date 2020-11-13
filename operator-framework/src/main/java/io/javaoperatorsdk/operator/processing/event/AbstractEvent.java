@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event;
 
 public abstract class AbstractEvent<T extends EventSource> implements Event<T> {
 

@@ -1,16 +1,14 @@
-package com.github.containersolutions.operator.processing.event.internal;
+package io.javaoperatorsdk.operator.processing.event.internal;
 
-import com.github.containersolutions.operator.processing.ResourceCache;
-import com.github.containersolutions.operator.processing.event.AbstractEventSource;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.javaoperatorsdk.operator.processing.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
 
 /**
  * This is a special case since does not bounds to a single custom resource

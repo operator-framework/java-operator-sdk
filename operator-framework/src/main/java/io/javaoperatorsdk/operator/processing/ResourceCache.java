@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing;
+package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.client.CustomResource;
 

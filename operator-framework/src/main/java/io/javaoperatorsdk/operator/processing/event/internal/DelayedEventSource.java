@@ -1,6 +1,6 @@
-package com.github.containersolutions.operator.processing.event.internal;
+package io.javaoperatorsdk.operator.processing.event.internal;
 
-import com.github.containersolutions.operator.processing.event.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;

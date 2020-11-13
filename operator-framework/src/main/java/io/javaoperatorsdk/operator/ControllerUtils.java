@@ -24,19 +24,19 @@ public class ControllerUtils {
     private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable<? extends CustomResource>>>
             doneableClassCache = new HashMap<>();
 
-    static String getDefaultFinalizer(ResourceController controller) {
+    public static String getDefaultFinalizer(ResourceController controller) {
         return getAnnotation(controller).finalizerName();
     }
 
-    static boolean getGenerationEventProcessing(ResourceController controller) {
+    public static boolean getGenerationEventProcessing(ResourceController controller) {
         return getAnnotation(controller).generationAwareEventProcessing();
     }
 
-    static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {
+    public static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }
 
-    static String getCrdName(ResourceController controller) {
+    public static String getCrdName(ResourceController controller) {
         return getAnnotation(controller).crdName();
     }
 

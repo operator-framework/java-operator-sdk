@@ -1,11 +1,5 @@
-package com.github.containersolutions.operator;
+package io.javaoperatorsdk.operator;
 
-import com.github.containersolutions.operator.api.ResourceController;
-import com.github.containersolutions.operator.api.UpdateControl;
-import com.github.containersolutions.operator.processing.event.internal.CustomResourceEvent;
-import com.github.containersolutions.operator.processing.EventDispatcher;
-import com.github.containersolutions.operator.processing.retry.GenericRetry;
-import com.github.containersolutions.operator.sample.TestCustomResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -14,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
-import static com.github.containersolutions.operator.api.Controller.DEFAULT_FINALIZER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 

@@ -1,7 +1,8 @@
-package com.github.containersolutions.operator.processing;
+package io.javaoperatorsdk.operator.processing;
 
-import com.github.containersolutions.operator.processing.event.Event;
+
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.event.Event;
 
 import java.util.List;
 

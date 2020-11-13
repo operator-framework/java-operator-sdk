@@ -1,4 +1,4 @@
-package com.github.containersolutions.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event;
 
 public interface EventHandler {
 

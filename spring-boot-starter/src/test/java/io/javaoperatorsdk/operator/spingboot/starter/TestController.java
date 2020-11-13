@@ -1,8 +1,8 @@
-package com.github.containersolutions.operator.spingboot.starter;
+package io.javaoperatorsdk.operator.spingboot.starter;
 
-import com.github.containersolutions.operator.api.*;
-import com.github.containersolutions.operator.spingboot.starter.model.TestResource;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.spingboot.starter.model.TestResource;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,9 +17,6 @@ public class TestController implements ResourceController {
 
     @Override
     public UpdateControl createOrUpdateResource(CustomResource resource, Context context) {
-
-
-
         return UpdateControl.noUpdate();
     }
 }
