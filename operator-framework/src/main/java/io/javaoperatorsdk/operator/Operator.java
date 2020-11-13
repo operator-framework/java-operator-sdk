@@ -42,24 +42,16 @@ public class Operator {
 
 
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true, GenericRetry.defaultLimitedExponentialRetry());
+        registerController(controller, true);
     }
 
-    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
-        registerController(controller, true, retry);
-    }
-
-    public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, GenericRetry.defaultLimitedExponentialRetry(), targetNamespaces);
-    }
-
-    public <R extends CustomResource> void registerController(ResourceController<R> controller, Retry retry, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, retry, targetNamespaces);
+    public <R extends CustomResource> void registerController(ResourceController<R> controller,  String... targetNamespaces) throws OperatorException {
+        registerController(controller, false, targetNamespaces);
     }
 
     @SuppressWarnings("rawtypes")
     private <R extends CustomResource> void registerController(ResourceController<R> controller,
-                                                               boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
+                                                               boolean watchAllNamespaces, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
@@ -70,7 +62,7 @@ public class Operator {
 
 
         ResourceCache resourceCache = new ResourceCache();
-        EventScheduler eventScheduler = new EventScheduler(resourceCache, eventDispatcher, retry);
+        EventScheduler eventScheduler = new EventScheduler(resourceCache, eventDispatcher);
         DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(eventScheduler);
         eventScheduler.setDefaultEventSourceManager(eventSourceManager);
 

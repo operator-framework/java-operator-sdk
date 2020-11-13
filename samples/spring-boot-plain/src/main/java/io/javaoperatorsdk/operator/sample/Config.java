@@ -27,8 +27,7 @@ public class Config {
     @Bean
     public Operator operator(KubernetesClient client, List<ResourceController> controllers) {
         Operator operator = new Operator(client);
-        controllers.forEach(c -> operator.registerControllerForAllNamespaces(c,
-                GenericRetry.defaultLimitedExponentialRetry()));
+        controllers.forEach(c -> operator.registerControllerForAllNamespaces(c));
         return operator;
     }
 

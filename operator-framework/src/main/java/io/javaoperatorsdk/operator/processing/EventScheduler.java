@@ -50,7 +50,7 @@ public class EventScheduler implements EventHandler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher, Retry retry) {
+    public EventScheduler(ResourceCache resourceCache, EventDispatcher eventDispatcher) {
         this.resourceCache = resourceCache;
         this.eventDispatcher = eventDispatcher;
         eventBuffer = new EventBuffer();
@@ -90,11 +90,8 @@ public class EventScheduler implements EventHandler {
         try {
             lock.lock();
             unsetUnderExecution(executionScope.getCustomResourceUid());
-            // todo on retry error put back the events on the beginning of buffer list
-
             defaultEventSourceManager.controllerExecuted(
                     new ExecutionDescriptor(executionScope, postExecutionControl, LocalDateTime.now()));
-
             if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
                 cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
             } else {
@@ -110,7 +107,6 @@ public class EventScheduler implements EventHandler {
         eventBuffer.cleanup(customResourceUid);
         resourceCache.cleanup(customResourceUid);
     }
-
 
     private boolean isControllerUnderExecution(String customResourceUid) {
         return underProcessing.contains(customResourceUid);
