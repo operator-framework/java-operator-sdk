@@ -17,7 +17,7 @@ public @interface Controller {
 
     Class<? extends CustomResource> customResourceClass();
 
-    String finalizerName() default DEFAULT_FINALIZER;
+    String finalizerName();
 
     /**
      * If true, will dispatch new event to the controller if generation increased since the last processing, otherwise will
