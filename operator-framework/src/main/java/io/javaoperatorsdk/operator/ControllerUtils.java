@@ -24,15 +24,25 @@ public class ControllerUtils {
     private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable<? extends CustomResource>>>
             doneableClassCache = new HashMap<>();
 
-    static String getDefaultFinalizer(ResourceController controller) {
-        return getAnnotation(controller).finalizerName();
+    static String getFinalizer(ResourceController controller) {
+        final String annotationFinalizerName = getAnnotation(controller).finalizerName();
+        final String finalizerName;
+        if (Controller.NULL.equals(annotationFinalizerName)) {
+            finalizerName = controller.getDefaultFinalizerName();
+            if (finalizerName == null) {
+                throw new IllegalStateException("Controller annotation cannot be used on Local, Anonymous or Hidden classes");
+            }
+        } else {
+            finalizerName = annotationFinalizerName;
+        }
+        return finalizerName;
     }
 
     static boolean getGenerationEventProcessing(ResourceController controller) {
         return getAnnotation(controller).generationAwareEventProcessing();
     }
 
-    static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {
+    static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }
 
