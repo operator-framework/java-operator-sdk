@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         java: [8, 11, 15]
-        kubernetes: ['v1.17','v1.18','v1.19.3']
+        kubernetes: ['v1.17.13','v1.18.12','v1.19.4']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
