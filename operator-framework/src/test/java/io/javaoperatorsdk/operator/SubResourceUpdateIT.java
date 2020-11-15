@@ -104,7 +104,7 @@ public class SubResourceUpdateIT {
         resource.setMetadata(new ObjectMetaBuilder()
                 .withName("subresource-" + id)
                 .withNamespace(TEST_NAMESPACE)
-                .withFinalizers(Controller.DEFAULT_FINALIZER)
+                .withFinalizers("finalizer")
                 .build());
         resource.setKind("SubresourceSample");
         resource.setSpec(new SubResourceTestCustomResourceSpec());

@@ -19,7 +19,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
 
     public static final String CRD_NAME = "subresourcesample.sample.javaoperatorsdk";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
-    private AtomicInteger numberOfExecutions = new AtomicInteger(0);
+    private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
     @Override
     public boolean deleteResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
@@ -30,7 +30,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     public UpdateControl<SubResourceTestCustomResource> createOrUpdateResource(SubResourceTestCustomResource resource,
                                                                                Context<SubResourceTestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
-        if (!resource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)) {
+        if (!resource.getMetadata().getFinalizers().contains(this.getDefaultFinalizerName())) {
             throw new IllegalStateException("Finalizer is not present.");
         }
         log.info("Value: " + resource.getSpec().getValue());

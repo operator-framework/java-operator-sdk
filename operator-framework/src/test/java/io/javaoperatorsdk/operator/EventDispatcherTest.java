@@ -28,7 +28,7 @@ class EventDispatcherTest {
     @BeforeEach
     void setup() {
         eventDispatcher = new EventDispatcher(controller,
-                Controller.DEFAULT_FINALIZER, customResourceFacade, false);
+                controller.getDefaultFinalizerName(), customResourceFacade, false);
 
         testCustomResource = getResource();
 
@@ -45,7 +45,7 @@ class EventDispatcherTest {
 
     @Test
     void updatesOnlyStatusSubResource() {
-        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+        testCustomResource.getMetadata().getFinalizers().add(controller.getDefaultFinalizerName());
         when(controller.createOrUpdateResource(eq(testCustomResource), any()))
                 .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
 
@@ -67,13 +67,13 @@ class EventDispatcherTest {
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(controller, times(1))
                 .createOrUpdateResource(argThat(testCustomResource ->
-                        testCustomResource.getMetadata().getFinalizers().contains(Controller.DEFAULT_FINALIZER)), any());
+                        testCustomResource.getMetadata().getFinalizers().contains(controller.getDefaultFinalizerName())), any());
     }
 
     @Test
     void callsDeleteIfObjectHasFinalizerAndMarkedForDelete() {
         testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
-        testCustomResource.getMetadata().getFinalizers().add(Controller.DEFAULT_FINALIZER);
+        testCustomResource.getMetadata().getFinalizers().add(controller.getDefaultFinalizerName());
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -183,7 +183,7 @@ class EventDispatcherTest {
 
     void generationAwareMode() {
         eventDispatcher = new EventDispatcher(controller,
-                Controller.DEFAULT_FINALIZER, customResourceFacade, true);
+                controller.getDefaultFinalizerName(), customResourceFacade, true);
     }
 
     private void markForDeletion(CustomResource customResource) {
@@ -202,7 +202,7 @@ class EventDispatcherTest {
                 .withDeletionGracePeriodSeconds(10L)
                 .withGeneration(10L)
                 .withName("name")
-                .withFinalizers(Controller.DEFAULT_FINALIZER)
+                .withFinalizers(controller.getDefaultFinalizerName())
                 .withNamespace("namespace")
                 .withResourceVersion("resourceVersion")
                 .withSelfLink("selfLink")
