@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         java: [8, 11, 15]
+        kubernetes: ['v1.17','v1.18','v1.19.3']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -27,7 +28,7 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.0.1
         with:
           minikube version: 'v1.15.0'
-          kubernetes version: 'v1.19.2'
+          kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
       - name: Build with Maven
         run: mvn -B package --file pom.xml
