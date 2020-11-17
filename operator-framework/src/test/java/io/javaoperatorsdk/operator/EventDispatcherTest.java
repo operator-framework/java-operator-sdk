@@ -64,7 +64,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    void adsDefaultFinalizerOnCreateIfNotThere() {
+    void addsFinalizerOnCreateIfNotThere() {
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(controller, times(1))
                 .createOrUpdateResource(argThat(testCustomResource ->
@@ -85,7 +85,7 @@ class EventDispatcherTest {
      * Note that there could be more finalizers. Out of our control.
      */
     @Test
-    void callDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
+    void callDeleteOnControllerIfMarkedForDeletionButThereIsNoFinalizer() {
         markForDeletion(testCustomResource);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
@@ -94,7 +94,7 @@ class EventDispatcherTest {
     }
 
     @Test
-    void removesDefaultFinalizerOnDelete() {
+    void removesFinalizerOnDelete() {
         markForDeletion(testCustomResource);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
