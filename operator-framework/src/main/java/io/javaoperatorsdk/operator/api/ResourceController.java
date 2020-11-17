@@ -6,7 +6,7 @@ public interface ResourceController<R extends CustomResource> {
 
     /**
      * The implementation should delete the associated component(s). Note that this is method is called when an object
-     * is marked for deletion. After its executed the default finalizer is automatically removed by the framework;
+     * is marked for deletion. After its executed the custom resource finalizer is automatically removed by the framework;
      * unless the return value is false - note that this is almost never the case.
      * Its important to have the implementation also idempotent, in the current implementation to cover all edge cases
      * actually will be executed mostly twice.

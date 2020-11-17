@@ -60,7 +60,7 @@ public class EventDispatcher {
             cleanup(resource);
         } else {
             if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
-                /*  We always add the default finalizer if missing and not marked for deletion.
+                /*  We always add a finalizer if missing and not marked for deletion.
                     We execute the controller processing only for processing the event sent as a results
                     of the finalizer add. This will make sure that the resources are not created before
                     there is a finalizer.
@@ -131,7 +131,7 @@ public class EventDispatcher {
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
         if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
-            log.info("Adding default finalizer to {}", resource.getMetadata());
+            log.info("Adding finalizer {} to {}", resourceFinalizer, resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
                 resource.getMetadata().setFinalizers(new ArrayList<>(1));
             }
