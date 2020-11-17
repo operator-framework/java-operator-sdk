@@ -84,10 +84,7 @@ public class ControllerUtils {
         return controller.getClass().getAnnotation(Controller.class);
     }
 
-    public static boolean hasDefaultFinalizer(CustomResource resource, String finalizer) {
-        if (resource.getMetadata().getFinalizers() != null) {
-            return resource.getMetadata().getFinalizers().contains(finalizer);
-        }
-        return false;
+    public static boolean hasGivenFinalizer(CustomResource resource, String finalizer) {
+        return resource.getMetadata().getFinalizers() != null && resource.getMetadata().getFinalizers().contains(finalizer);
     }
 }
