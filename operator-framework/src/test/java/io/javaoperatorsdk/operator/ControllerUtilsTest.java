@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerUtilsTest {
 
@@ -19,10 +18,10 @@ class ControllerUtilsTest {
 
     @Test
     public void returnsValuesFromControllerAnnotationFinalizer() {
-        Assertions.assertEquals(TestCustomResourceController.class.getCanonicalName(), ControllerUtils.getFinalizer(new TestCustomResourceController(null)));
+        Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getFinalizer(new TestCustomResourceController(null)));
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController(null)));
         Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
-        assertEquals(false, ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));
+        assertFalse(ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));
         assertTrue(CustomResourceDoneable.class.isAssignableFrom(ControllerUtils.getCustomResourceDoneableClass(new TestCustomResourceController(null))));
     }
 
