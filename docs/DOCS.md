@@ -56,16 +56,16 @@ TODO: explain running operator locally against a cluster
 
 ### Run Single Instance
 
-There should be always just one instance of an operator running at a time (think process). If there there would be 
+There should be always just one instance of an operator running at a time (think process). If there would be 
 two ore more, in general it could lead to concurrency issues. Note that we are also doing optimistic locking when we update a resource.
-In this way the operator is not highly available. However for operators this not necessary an issue, 
+In this way the operator is not highly available. However for operators this is not necessarily an issue, 
 if the operator just gets restarted after it went down. 
 
 ### At Least Once
 
 To implement controller logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
-These methods are called if a resource is create/changed or marked for deletion. In most cases these methods will be
-called just once, but in some rare cases can happen that are called more then once. In practice this means that the 
+These methods are called if a resource is created/changed or marked for deletion. In most cases these methods will be
+called just once, but in some rare cases, it can happen that they are called more then once. In practice this means that the 
 implementation needs to be **idempotent**.    
 
 ### Smart Scheduling
@@ -77,11 +77,11 @@ a customizable retry mechanism to deal with temporal errors.
 
 When an operator is started we got events for every resource (of a type we listen to) already on the cluster. Even if the resource is not changed 
 (We use `kubectl get ... --watch` in the background). This can be a huge amount of resources depending on your use case.
-So it could be a good case just have a status field on the resource which is checked, if there anything needs to be done.
+So it could be a good case to just have a status field on the resource which is checked, if there is anything needed to be done.
 
 ### Deleting a Resource
 
 During deletion process we use [Kubernetes finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers 
 "Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running while the delete 
 of resource is executed (think `oc delete`). In this case we would not catch the delete event. So we automatically add a
-finalizer first time we update the resource if its not there. 
+finalizer first time we update the resource if it's not there. 
