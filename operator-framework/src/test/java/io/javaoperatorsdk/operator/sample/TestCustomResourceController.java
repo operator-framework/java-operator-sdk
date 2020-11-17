@@ -55,7 +55,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource,
                                                                     Context<TestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
-        if (!resource.getMetadata().getFinalizers().contains(this.getDefaultFinalizerName())) {
+        if (!resource.getMetadata().getFinalizers().contains(CRD_NAME)) {
             throw new IllegalStateException("Finalizer is not present.");
         }
 

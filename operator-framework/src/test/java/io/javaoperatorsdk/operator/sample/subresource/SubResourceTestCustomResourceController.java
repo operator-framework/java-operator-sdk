@@ -30,7 +30,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     public UpdateControl<SubResourceTestCustomResource> createOrUpdateResource(SubResourceTestCustomResource resource,
                                                                                Context<SubResourceTestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
-        if (!resource.getMetadata().getFinalizers().contains(this.getDefaultFinalizerName())) {
+        if (!resource.getMetadata().getFinalizers().contains(CRD_NAME)) {
             throw new IllegalStateException("Finalizer is not present.");
         }
         log.info("Value: " + resource.getSpec().getValue());

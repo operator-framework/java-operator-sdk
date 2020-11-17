@@ -26,16 +26,11 @@ public class ControllerUtils {
 
     static String getFinalizer(ResourceController controller) {
         final String annotationFinalizerName = getAnnotation(controller).finalizerName();
-        final String finalizerName;
-        if (Controller.NULL.equals(annotationFinalizerName)) {
-            finalizerName = controller.getDefaultFinalizerName();
-            if (finalizerName == null) {
-                throw new IllegalStateException("Controller annotation cannot be used on Local, Anonymous or Hidden classes");
-            }
-        } else {
-            finalizerName = annotationFinalizerName;
+        if (!Controller.NULL.equals(annotationFinalizerName)) {
+            return annotationFinalizerName;
         }
-        return finalizerName;
+        final String crdName = getAnnotation(controller).crdName();
+        return crdName;
     }
 
     static boolean getGenerationEventProcessing(ResourceController controller) {
