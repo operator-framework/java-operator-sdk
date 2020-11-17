@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -15,12 +16,12 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.config.Configuration;
+import io.javaoperatorsdk.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -35,24 +36,29 @@ public class IntegrationTestSupport {
             Resource<CustomResource, CustomResourceDoneable>> crOperations;
     private Operator operator;
     private ResourceController controller;
-
-    public void initialize(KubernetesClient k8sClient, ResourceController controller, String crdPath) {
+    
+    public void initialize(ResourceController controller, String crdPath) {
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
-        this.k8sClient = k8sClient;
+        final Configuration configuration = Configuration.defaultConfiguration();
+        configuration.getOperatorConfiguration().addWatchedNamespaces(TEST_NAMESPACE);
+        operator = new Operator(configuration);
+        k8sClient = operator.getClient();
+        
         CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
         CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
         this.controller = controller;
-
+        
         Class doneableClass = ControllerUtils.getCustomResourceDoneableClass(controller);
         Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
         crOperations = k8sClient.customResources(crdContext, customResourceClass, CustomResourceList.class, doneableClass);
-
+        
+        // create test namespace if it doesn't already exist
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
-                    .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());
+                .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());
         }
-        operator = new Operator(k8sClient);
-        operator.registerController(controller, TEST_NAMESPACE);
+        
+        operator.registerController(controller);
         log.info("Operator is running with {}", controller.getClass().getCanonicalName());
     }
 

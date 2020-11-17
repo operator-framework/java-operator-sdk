@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,10 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,9 +29,7 @@ public class ConcurrencyIT {
 
     @BeforeAll
     public void setup() {
-        KubernetesClient k8sClient = new DefaultKubernetesClient();
-        integrationTest.initialize(k8sClient, new TestCustomResourceController(k8sClient, true),
-                "test-crd.yaml");
+        integrationTest.initialize(new TestCustomResourceController(true), "test-crd.yaml");
     }
 
     @BeforeEach

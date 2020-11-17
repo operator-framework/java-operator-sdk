@@ -18,11 +18,11 @@ class ControllerUtilsTest {
 
     @Test
     public void returnsValuesFromControllerAnnotationFinalizer() {
-        Assertions.assertEquals(TestCustomResourceController.CRD_NAME + "/finalizer", ControllerUtils.getFinalizer(new TestCustomResourceController(null)));
-        assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController(null)));
-        Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
-        assertFalse(ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));
-        assertTrue(CustomResourceDoneable.class.isAssignableFrom(ControllerUtils.getCustomResourceDoneableClass(new TestCustomResourceController(null))));
+        Assertions.assertEquals(TestCustomResourceController.CRD_NAME + "/finalizer", ControllerUtils.getFinalizer(new TestCustomResourceController()));
+        assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController()));
+        Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController()));
+        assertFalse(ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController()));
+        assertTrue(CustomResourceDoneable.class.isAssignableFrom(ControllerUtils.getCustomResourceDoneableClass(new TestCustomResourceController())));
     }
 
     @Controller(crdName = "test.crd", customResourceClass = TestCustomResource.class, finalizerName = CUSTOM_FINALIZER_NAME)

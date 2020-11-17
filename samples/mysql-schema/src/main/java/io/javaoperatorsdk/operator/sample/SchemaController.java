@@ -1,16 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,23 +8,34 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Base64;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static java.lang.String.format;
 
 @Controller(
-        crdName = "schemas.mysql.sample.javaoperatorsdk",
-        customResourceClass = Schema.class)
+    crdName = "schemas.mysql.sample.javaoperatorsdk",
+    customResourceClass = Schema.class)
 public class SchemaController implements ResourceController<Schema> {
     static final String USERNAME_FORMAT = "%s-user";
     static final String SECRET_FORMAT = "%s-secret";
-
+    
     private final Logger log = LoggerFactory.getLogger(getClass());
-
-    private final KubernetesClient kubernetesClient;
-
-    public SchemaController(KubernetesClient kubernetesClient) {
-        this.kubernetesClient = kubernetesClient;
+    
+    private KubernetesClient kubernetesClient;
+    
+    public SchemaController() {
+        
     }
-
+    
     @Override
     public UpdateControl<Schema> createOrUpdateResource(Schema schema, Context<Schema> context) {
         try (Connection connection = getConnection()) {
@@ -85,22 +85,27 @@ public class SchemaController implements ResourceController<Schema> {
             return UpdateControl.noUpdate();
         } catch (SQLException e) {
             log.error("Error while creating Schema", e);
-
+            
             SchemaStatus status = new SchemaStatus();
             status.setUrl(null);
             status.setUserName(null);
             status.setSecretName(null);
             status.setStatus("ERROR");
             schema.setStatus(status);
-
+            
             return UpdateControl.updateCustomResource(schema);
         }
     }
-
+    
+    @Override
+    public void setClient(KubernetesClient client) {
+        this.kubernetesClient = client;
+    }
+    
     @Override
     public boolean deleteResource(Schema schema, Context<Schema> context) {
         log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
-
+        
         try (Connection connection = getConnection()) {
             if (schemaExists(connection, schema.getMetadata().getName())) {
                 try (Statement statement = connection.createStatement()) {

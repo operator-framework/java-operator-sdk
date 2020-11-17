@@ -1,49 +1,53 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
         generationAwareEventProcessing = false,
         crdName = TestCustomResourceController.CRD_NAME,
         customResourceClass = TestCustomResource.class)
 public class TestCustomResourceController implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
-
+    
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
-
+    
     public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
     public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
 
-    private final KubernetesClient kubernetesClient;
+    private KubernetesClient kubernetesClient;
     private final boolean updateStatus;
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-
-    public TestCustomResourceController(KubernetesClient kubernetesClient) {
-        this(kubernetesClient, true);
+    
+    public TestCustomResourceController() {
+        this(true);
     }
-
-    public TestCustomResourceController(KubernetesClient kubernetesClient, boolean updateStatus) {
-        this.kubernetesClient = kubernetesClient;
+    
+    public TestCustomResourceController(boolean updateStatus) {
         this.updateStatus = updateStatus;
     }
-
+    
+    @Override
+    public void setClient(KubernetesClient client) {
+        this.kubernetesClient = client;
+    }
+    
     @Override
     public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
         Boolean delete = kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
-                .withName(resource.getSpec().getConfigMapName()).delete();
+            .withName(resource.getSpec().getConfigMapName()).delete();
         if (delete) {
             log.info("Deleted ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
         } else {

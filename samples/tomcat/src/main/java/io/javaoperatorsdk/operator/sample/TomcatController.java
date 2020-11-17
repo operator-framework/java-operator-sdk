@@ -1,24 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.fabric8.kubernetes.api.model.DoneableService;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.client.*;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -26,29 +7,52 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Controller(customResourceClass = Tomcat.class,
         crdName = "tomcats.tomcatoperator.io")
 public class TomcatController implements ResourceController<Tomcat> {
-
+    
     private final Logger log = LoggerFactory.getLogger(getClass());
-
-    private final KubernetesClient kubernetesClient;
-
+    
+    private KubernetesClient kubernetesClient;
+    
     private MixedOperation<Tomcat, CustomResourceList<Tomcat>, CustomResourceDoneable<Tomcat>, Resource<Tomcat, CustomResourceDoneable<Tomcat>>> tomcatOperations;
-
+    
     private final List<Object> watchedResources = new ArrayList<>();
-
-    public TomcatController(KubernetesClient client) {
-        this.kubernetesClient = client;
+    
+    public TomcatController() {
+        
     }
-
+    
     private void updateTomcatStatus(Context<Tomcat> context, Tomcat tomcat, Deployment deployment) {
         int readyReplicas = Optional.ofNullable(deployment.getStatus().getReadyReplicas()).orElse(0);
         // Java 9+
         // int readyReplicas = Objects.requireNonNullElse(deployment.getStatus().getReadyReplicas(), 0);
         log.info("Updating status of Tomcat {} in namespace {} to {} ready replicas", tomcat.getMetadata().getName(),
-                tomcat.getMetadata().getNamespace(), readyReplicas);
-
+            tomcat.getMetadata().getNamespace(), readyReplicas);
+        
         tomcatOperations
                 .inNamespace(tomcat.getMetadata().getNamespace())
                 .withName(tomcat.getMetadata().getName())
@@ -73,25 +77,30 @@ public class TomcatController implements ResourceController<Tomcat> {
                         log.error(ex.getMessage());
                     }
                 }
-
+    
                 @Override
                 public void onClose(KubernetesClientException cause) {
                 }
             });
             watchedResources.add(WatchedResource.fromResource(deployment));
         }
-
-
+    
+    
         return UpdateControl.noUpdate();
     }
-
+    
+    @Override
+    public void setClient(KubernetesClient client) {
+        this.kubernetesClient = client;
+    }
+    
     @Override
     public boolean deleteResource(Tomcat tomcat, Context<Tomcat> context) {
         deleteDeployment(tomcat);
         deleteService(tomcat);
         return true;
     }
-
+    
     private Deployment createOrUpdateDeployment(Tomcat tomcat) {
         String ns = tomcat.getMetadata().getNamespace();
         Deployment existingDeployment = kubernetesClient.apps().deployments()
