@@ -27,11 +27,4 @@ public interface ResourceController<R extends CustomResource> {
      * <b>However we will always call an update if there is no finalizer on object and its not marked for deletion.</b>
      */
     UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
-
-    // What about we let developer to set the finalizer Name through overriding
-    // this method rather than setting it as attribute in annotation?
-    default String getDefaultFinalizerName() {
-        return this.getClass().getCanonicalName();
-    }
-
 }
