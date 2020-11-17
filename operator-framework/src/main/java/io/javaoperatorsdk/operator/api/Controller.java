@@ -18,7 +18,7 @@ public @interface Controller {
 
     /**
      * Optional finalizer name, if it is not,
-     * the canonical name of the Controller class will be used as the name of the finalizer.
+     * the crdName will be used as the name of the finalizer too.
      */
     String finalizerName() default NULL;
 
