@@ -25,7 +25,7 @@ public class AutoConfigurationTest {
     private RetryProperties retryProperties;
 
     @Autowired
-    private OperatorProperties operatorProperties;
+    private ClientProperties operatorProperties;
 
     @MockBean
     private Operator operator;

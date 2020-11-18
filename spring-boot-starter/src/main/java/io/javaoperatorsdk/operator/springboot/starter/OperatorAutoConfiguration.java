@@ -19,25 +19,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({OperatorProperties.class, RetryProperties.class})
+@EnableConfigurationProperties({ClientProperties.class, RetryProperties.class})
 public class OperatorAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(OperatorAutoConfiguration.class);
-
+    
     @Bean
     @ConditionalOnMissingBean
-    public KubernetesClient kubernetesClient(OperatorProperties operatorProperties) {
+    public KubernetesClient kubernetesClient(ClientProperties clientProperties) {
         ConfigBuilder config = new ConfigBuilder();
-        config.withTrustCerts(operatorProperties.isTrustSelfSignedCertificates());
-        if (StringUtils.isNotBlank(operatorProperties.getUsername())) {
-            config.withUsername(operatorProperties.getUsername());
+        config.withTrustCerts(clientProperties.isTrustSelfSignedCertificates());
+        if (StringUtils.isNotBlank(clientProperties.getUsername())) {
+            config.withUsername(clientProperties.getUsername());
         }
-        if (StringUtils.isNotBlank(operatorProperties.getPassword())) {
-            config.withUsername(operatorProperties.getPassword());
+        if (StringUtils.isNotBlank(clientProperties.getPassword())) {
+            config.withUsername(clientProperties.getPassword());
         }
-        if (StringUtils.isNotBlank(operatorProperties.getMasterUrl())) {
-            config.withMasterUrl(operatorProperties.getMasterUrl());
+        if (StringUtils.isNotBlank(clientProperties.getMasterUrl())) {
+            config.withMasterUrl(clientProperties.getMasterUrl());
         }
-        return operatorProperties.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
+        return clientProperties.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
     }
 
     @Bean
