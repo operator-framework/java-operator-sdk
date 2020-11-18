@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
 import org.awaitility.Awaitility;
@@ -29,7 +30,9 @@ public class ConcurrencyIT {
 
     @BeforeAll
     public void setup() {
-        integrationTest.initialize(new TestCustomResourceController(true), "test-crd.yaml");
+        final TestCustomResourceController controller = new TestCustomResourceController(true);
+        controller.setClient(new DefaultKubernetesClient());
+        integrationTest.initialize(controller, "test-crd.yaml");
     }
 
     @BeforeEach

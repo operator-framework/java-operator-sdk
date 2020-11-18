@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
@@ -23,7 +24,9 @@ public class ControllerExecutionIT {
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     public void initAndCleanup(boolean controllerStatusUpdate) {
-        integrationTestSupport.initialize(new TestCustomResourceController(controllerStatusUpdate), "test-crd.yaml");
+        final TestCustomResourceController controller = new TestCustomResourceController(controllerStatusUpdate);
+        controller.setClient(new DefaultKubernetesClient());
+        integrationTestSupport.initialize(controller, "test-crd.yaml");
         integrationTestSupport.cleanup();
     }
 
