@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
@@ -37,12 +36,11 @@ public class IntegrationTestSupport {
     public void initialize(KubernetesClient k8sClient, ResourceController controller, String crdPath) {
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
         this.k8sClient = k8sClient;
-        CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
-        CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
+        loadCRDAndApplyToCluster(crdPath);
         this.controller = controller;
     
         Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
-        this.crOperations = k8sClient.customResources(customResourceClass);
+        this.crOperations = k8sClient.customResources(customResourceClass, CustomResourceList.class);
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
