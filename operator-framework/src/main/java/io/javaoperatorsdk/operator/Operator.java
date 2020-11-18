@@ -1,25 +1,23 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.processing.EventDispatcher;
-import io.javaoperatorsdk.operator.processing.EventScheduler;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.EventScheduler;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class Operator {
@@ -56,9 +54,9 @@ public class Operator {
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
         String finalizer = ControllerUtils.getFinalizer(controller);
-        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, ControllerUtils.getCustomResourceDoneableClass(controller));
+        MixedOperation client = k8sClient.customResources(resClass);
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
-                finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
+            finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
         EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);
         registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
     }
@@ -97,12 +95,7 @@ public class Operator {
     public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {
         return customResourceClients;
     }
-
-    public <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> CustomResourceOperationsImpl<T, L, D>
-    getCustomResourceClients(Class<T> customResourceClass) {
-        return customResourceClients.get(customResourceClass);
-    }
-
+    
     private String getKind(CustomResourceDefinition crd) {
         return crd.getSpec().getNames().getKind();
     }

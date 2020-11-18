@@ -1,16 +1,17 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.Collections;
+
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.ServiceSpec;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.ServiceSpec;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
 
 /**
  * A very simple sample controller that creates a service with a label.
@@ -39,19 +40,19 @@ public class CustomServiceController implements ResourceController<CustomService
     @Override
     public UpdateControl<CustomService> createOrUpdateResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
-
+    
         ServicePort servicePort = new ServicePort();
         servicePort.setPort(8080);
         ServiceSpec serviceSpec = new ServiceSpec();
         serviceSpec.setPorts(Collections.singletonList(servicePort));
-
-        kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace()).createOrReplaceWithNew()
-                .withNewMetadata()
-                .withName(resource.getSpec().getName())
-                .addToLabels("testLabel", resource.getSpec().getLabel())
-                .endMetadata()
-                .withSpec(serviceSpec)
-                .done();
+    
+        kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(new ServiceBuilder()
+            .withNewMetadata()
+            .withName(resource.getSpec().getName())
+            .addToLabels("testLabel", resource.getSpec().getLabel())
+            .endMetadata()
+            .withSpec(serviceSpec)
+            .build());
         return UpdateControl.updateCustomResource(resource);
     }
 }

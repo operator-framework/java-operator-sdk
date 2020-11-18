@@ -1,26 +1,25 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -31,8 +30,7 @@ public class IntegrationTestSupport {
     public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
     private final static Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
     private KubernetesClient k8sClient;
-    private MixedOperation<CustomResource, CustomResourceList, CustomResourceDoneable,
-            Resource<CustomResource, CustomResourceDoneable>> crOperations;
+    private MixedOperation<CustomResource, CustomResourceList, Resource<CustomResource>> crOperations;
     private Operator operator;
     private ResourceController controller;
 
@@ -42,10 +40,9 @@ public class IntegrationTestSupport {
         CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
         CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
         this.controller = controller;
-
-        Class doneableClass = ControllerUtils.getCustomResourceDoneableClass(controller);
+    
         Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
-        crOperations = k8sClient.customResources(crdContext, customResourceClass, CustomResourceList.class, doneableClass);
+        this.crOperations = k8sClient.customResources(customResourceClass);
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
@@ -145,8 +142,8 @@ public class IntegrationTestSupport {
     public KubernetesClient getK8sClient() {
         return k8sClient;
     }
-
-    public MixedOperation<CustomResource, CustomResourceList, CustomResourceDoneable, Resource<CustomResource, CustomResourceDoneable>> getCrOperations() {
+    
+    public MixedOperation<CustomResource, CustomResourceList, Resource<CustomResource>> getCrOperations() {
         return crOperations;
     }
 
