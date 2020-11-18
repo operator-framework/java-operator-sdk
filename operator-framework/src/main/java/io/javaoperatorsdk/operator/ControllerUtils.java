@@ -16,8 +16,7 @@ import java.util.Map;
 public class ControllerUtils {
 
     private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
-
-    private final static Logger log = LoggerFactory.getLogger(ControllerUtils.class);
+    private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
 
     // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
     // note that other solution is to add a random string to doneable class name
@@ -29,7 +28,7 @@ public class ControllerUtils {
         if (!Controller.NULL.equals(annotationFinalizerName)) {
             return annotationFinalizerName;
         }
-        final String crdName = getAnnotation(controller).crdName() + "/finalizer";
+        final String crdName = getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
         return crdName;
     }
 
