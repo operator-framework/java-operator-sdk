@@ -75,7 +75,6 @@ public class Operator {
     
     @SuppressWarnings("rawtypes")
     public <R extends CustomResource> void registerController(ResourceController<R> controller, Retry retry) throws OperatorException {
-        controller.setClient(this.k8sClient);
         Class<R> resClass = ControllerUtils.getCustomResourceClass(controller);
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);

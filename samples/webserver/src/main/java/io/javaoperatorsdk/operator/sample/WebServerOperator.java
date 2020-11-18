@@ -18,7 +18,7 @@ public class WebServerOperator {
         log.info("WebServer Operator starting!");
     
         Operator operator = new Operator();
-        operator.registerController(new WebServerController());
+        operator.registerController(new WebServerController(operator.getClient()));
     
         new FtBasic(
             new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080

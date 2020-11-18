@@ -18,7 +18,7 @@ public class MySQLSchemaOperator {
         log.info("MySQL Schema Operator starting");
     
         Operator operator = new Operator();
-        operator.registerController(new SchemaController());
+        operator.registerController(new SchemaController(operator.getClient()));
     
         new FtBasic(
             new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080

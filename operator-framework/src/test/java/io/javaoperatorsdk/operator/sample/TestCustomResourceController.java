@@ -39,7 +39,6 @@ public class TestCustomResourceController implements ResourceController<TestCust
         this.updateStatus = updateStatus;
     }
     
-    @Override
     public void setClient(KubernetesClient client) {
         this.kubernetesClient = client;
     }

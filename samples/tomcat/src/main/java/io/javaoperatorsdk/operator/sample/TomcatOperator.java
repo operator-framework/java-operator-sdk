@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +18,12 @@ public class TomcatOperator {
     public static void main(String[] args) throws IOException {
         Operator operator = new Operator();
     
-        TomcatController tomcatController = new TomcatController();
+        final KubernetesClient client = operator.getClient();
+        TomcatController tomcatController = new TomcatController(client);
         operator.registerController(tomcatController);
         tomcatController.setTomcatOperations(operator.getCustomResourceClients(Tomcat.class));
     
-        operator.registerController(new WebappController());
+        operator.registerController(new WebappController(client));
     
     
         new FtBasic(

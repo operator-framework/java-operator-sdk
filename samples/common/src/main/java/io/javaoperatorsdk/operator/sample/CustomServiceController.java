@@ -16,22 +16,23 @@ import org.slf4j.LoggerFactory;
  * A very simple sample controller that creates a service with a label.
  */
 @Controller(customResourceClass = CustomService.class,
-        crdName = "customservices.sample.javaoperatorsdk")
+    crdName = "customservices.sample.javaoperatorsdk")
 public class CustomServiceController implements ResourceController<CustomService> {
-
+    
     public static final String KIND = "CustomService";
     private final static Logger log = LoggerFactory.getLogger(CustomServiceController.class);
     
-    private KubernetesClient kubernetesClient;
+    private final KubernetesClient kubernetesClient;
     
-    public CustomServiceController() {
+    public CustomServiceController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
     }
-
+    
     @Override
     public boolean deleteResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
         kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace())
-                .withName(resource.getSpec().getName()).delete();
+            .withName(resource.getSpec().getName()).delete();
         return true;
     }
 
@@ -52,10 +53,5 @@ public class CustomServiceController implements ResourceController<CustomService
             .withSpec(serviceSpec)
             .done();
         return UpdateControl.updateCustomResource(resource);
-    }
-    
-    @Override
-    public void setClient(KubernetesClient client) {
-        this.kubernetesClient = client;
     }
 }

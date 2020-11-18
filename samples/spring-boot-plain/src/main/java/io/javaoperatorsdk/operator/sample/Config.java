@@ -20,7 +20,7 @@ public class Config {
 
     @Bean
     public CustomServiceController customServiceController(KubernetesClient client) {
-        return new CustomServiceController();
+        return new CustomServiceController(client);
     }
 
     //  Register all controller beans

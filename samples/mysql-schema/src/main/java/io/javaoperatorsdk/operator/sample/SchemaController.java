@@ -30,10 +30,10 @@ public class SchemaController implements ResourceController<Schema> {
     
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private KubernetesClient kubernetesClient;
+    private final KubernetesClient kubernetesClient;
     
-    public SchemaController() {
-        
+    public SchemaController(KubernetesClient kubernetesClient) {
+        this.kubernetesClient = kubernetesClient;
     }
     
     @Override
@@ -95,11 +95,6 @@ public class SchemaController implements ResourceController<Schema> {
             
             return UpdateControl.updateCustomResource(schema);
         }
-    }
-    
-    @Override
-    public void setClient(KubernetesClient client) {
-        this.kubernetesClient = client;
     }
     
     @Override

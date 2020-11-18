@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClient;
 
 public interface ResourceController<R extends CustomResource> {
 
@@ -28,6 +27,4 @@ public interface ResourceController<R extends CustomResource> {
      * <b>However we will always call an update if there is no finalizer on object and its not marked for deletion.</b>
      */
     UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
-    
-    void setClient(KubernetesClient client);
 }

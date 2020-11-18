@@ -36,14 +36,14 @@ public class TomcatController implements ResourceController<Tomcat> {
     
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private KubernetesClient kubernetesClient;
+    private final KubernetesClient kubernetesClient;
     
     private MixedOperation<Tomcat, CustomResourceList<Tomcat>, CustomResourceDoneable<Tomcat>, Resource<Tomcat, CustomResourceDoneable<Tomcat>>> tomcatOperations;
     
     private final List<Object> watchedResources = new ArrayList<>();
     
-    public TomcatController() {
-        
+    public TomcatController(KubernetesClient client) {
+        this.kubernetesClient = client;
     }
     
     private void updateTomcatStatus(Context<Tomcat> context, Tomcat tomcat, Deployment deployment) {
@@ -87,11 +87,6 @@ public class TomcatController implements ResourceController<Tomcat> {
     
     
         return UpdateControl.noUpdate();
-    }
-    
-    @Override
-    public void setClient(KubernetesClient client) {
-        this.kubernetesClient = client;
     }
     
     @Override

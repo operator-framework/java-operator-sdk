@@ -17,22 +17,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Controller(customResourceClass = Webapp.class,
-        crdName = "webapps.tomcatoperator.io")
+    crdName = "webapps.tomcatoperator.io")
 public class WebappController implements ResourceController<Webapp> {
-
-    private KubernetesClient kubernetesClient;
-
+    
+    private final KubernetesClient kubernetesClient;
+    
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    public WebappController() {
+    public WebappController(KubernetesClient client) {
+        this.kubernetesClient = client;
     }
-
+    
     @Override
     public UpdateControl createOrUpdateResource(Webapp webapp, Context<Webapp> context) {
         if (Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
             return UpdateControl.noUpdate();
         }
-    
+        
         String fileName = fileNameFromWebapp(webapp);
         String[] command = new String[]{"wget", "-O", "/data/" + fileName, webapp.getSpec().getUrl()};
     
@@ -40,11 +41,6 @@ public class WebappController implements ResourceController<Webapp> {
     
         webapp.getStatus().setDeployedArtifact(webapp.getSpec().getUrl());
         return UpdateControl.updateStatusSubResource(webapp);
-    }
-    
-    @Override
-    public void setClient(KubernetesClient client) {
-        this.kubernetesClient = client;
     }
     
     @Override

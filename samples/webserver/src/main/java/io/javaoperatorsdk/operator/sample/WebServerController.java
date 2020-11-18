@@ -28,22 +28,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Controller(customResourceClass = WebServer.class,
-        crdName = "webservers.sample.javaoperatorsdk")
+    crdName = "webservers.sample.javaoperatorsdk")
 public class WebServerController implements ResourceController<WebServer> {
-
+    
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private KubernetesClient kubernetesClient;
+    private final KubernetesClient kubernetesClient;
     
-    public WebServerController() {
+    public WebServerController(KubernetesClient client) {
+        this.kubernetesClient = client;
     }
-
+    
     @Override
     public UpdateControl<WebServer> createOrUpdateResource(WebServer webServer, Context<WebServer> context) {
         if (webServer.getSpec().getHtml().contains("error")) {
             throw new ErrorSimulationException("Simulating error");
         }
-
+        
         String ns = webServer.getMetadata().getNamespace();
 
         Map<String, String> data = new HashMap<>();
@@ -97,11 +98,6 @@ public class WebServerController implements ResourceController<WebServer> {
         webServer.setStatus(status);
 //        throw new RuntimeException("Creating object failed, because it failed");
         return UpdateControl.updateCustomResource(webServer);
-    }
-    
-    @Override
-    public void setClient(KubernetesClient client) {
-        this.kubernetesClient = client;
     }
     
     @Override

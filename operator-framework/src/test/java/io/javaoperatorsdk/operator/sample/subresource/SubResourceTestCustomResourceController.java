@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample.subresource;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -22,11 +21,6 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-    
-    @Override
-    public void setClient(KubernetesClient client) {
-        // do nothing
-    }
     
     @Override
     public boolean deleteResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
