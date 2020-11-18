@@ -14,11 +14,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerUtilsTest {
 
-    public static final String CUSTOM_FINALIZER_NAME = "a.customer.finalizer";
+    public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
 
     @Test
     public void returnsValuesFromControllerAnnotationFinalizer() {
-        Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getFinalizer(new TestCustomResourceController(null)));
+        Assertions.assertEquals(TestCustomResourceController.CRD_NAME + "/finalizer", ControllerUtils.getFinalizer(new TestCustomResourceController(null)));
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController(null)));
         Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
         assertFalse(ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));

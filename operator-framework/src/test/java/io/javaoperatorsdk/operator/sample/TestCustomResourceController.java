@@ -25,6 +25,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 
     public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
+    public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
 
     private final KubernetesClient kubernetesClient;
     private final boolean updateStatus;
@@ -55,7 +56,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
     public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource,
                                                                     Context<TestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
-        if (!resource.getMetadata().getFinalizers().contains(CRD_NAME)) {
+        if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
             throw new IllegalStateException("Finalizer is not present.");
         }
 

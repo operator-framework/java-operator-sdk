@@ -18,6 +18,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
         TestExecutionInfoProvider {
 
     public static final String CRD_NAME = "subresourcesample.sample.javaoperatorsdk";
+    public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -30,7 +31,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     public UpdateControl<SubResourceTestCustomResource> createOrUpdateResource(SubResourceTestCustomResource resource,
                                                                                Context<SubResourceTestCustomResource> context) {
         numberOfExecutions.addAndGet(1);
-        if (!resource.getMetadata().getFinalizers().contains(CRD_NAME)) {
+        if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
             throw new IllegalStateException("Finalizer is not present.");
         }
         log.info("Value: " + resource.getSpec().getValue());
