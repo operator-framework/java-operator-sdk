@@ -29,7 +29,7 @@ public class ControllerUtils {
         if (!Controller.NULL.equals(annotationFinalizerName)) {
             return annotationFinalizerName;
         }
-        final String crdName = getAnnotation(controller).crdName();
+        final String crdName = getAnnotation(controller).crdName() + "/finalizer";
         return crdName;
     }
 
