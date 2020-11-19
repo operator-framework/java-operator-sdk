@@ -1,26 +1,32 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
-import io.javaoperatorsdk.operator.api.Controller;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EventDispatcherTest {
-
-    public static final String FINALIZER_NAME = "finalizer";
+    
+    public static final String FINALIZER_NAME = "example.com/finalizer";
     private CustomResource testCustomResource;
     private EventDispatcher eventDispatcher;
     private final ResourceController<CustomResource> controller = mock(ResourceController.class);
@@ -28,8 +34,7 @@ class EventDispatcherTest {
 
     @BeforeEach
     void setup() {
-        eventDispatcher = new EventDispatcher(controller,
-                FINALIZER_NAME, customResourceFacade, false);
+        eventDispatcher = new EventDispatcher(controller, FINALIZER_NAME, customResourceFacade, false);
 
         testCustomResource = getResource();
 
@@ -46,9 +51,9 @@ class EventDispatcherTest {
 
     @Test
     void updatesOnlyStatusSubResource() {
-        testCustomResource.getMetadata().getFinalizers().add(FINALIZER_NAME);
+        testCustomResource.addFinalizer(FINALIZER_NAME);
         when(controller.createOrUpdateResource(eq(testCustomResource), any()))
-                .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
+            .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.ADDED, testCustomResource));
 
@@ -67,14 +72,14 @@ class EventDispatcherTest {
     void addsFinalizerOnCreateIfNotThere() {
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
         verify(controller, times(1))
-                .createOrUpdateResource(argThat(testCustomResource ->
-                        testCustomResource.getMetadata().getFinalizers().contains(FINALIZER_NAME)), any());
+            .createOrUpdateResource(argThat(testCustomResource ->
+                testCustomResource.hasFinalizer(FINALIZER_NAME)), any());
     }
 
     @Test
     void callsDeleteIfObjectHasFinalizerAndMarkedForDelete() {
         testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
-        testCustomResource.getMetadata().getFinalizers().add(FINALIZER_NAME);
+        testCustomResource.addFinalizer(FINALIZER_NAME);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));
 
@@ -182,8 +187,7 @@ class EventDispatcherTest {
     }
 
     void generationAwareMode() {
-        eventDispatcher = new EventDispatcher(controller,
-                FINALIZER_NAME, customResourceFacade, true);
+        eventDispatcher = new EventDispatcher(controller, FINALIZER_NAME, customResourceFacade, true);
     }
 
     private void markForDeletion(CustomResource customResource) {
