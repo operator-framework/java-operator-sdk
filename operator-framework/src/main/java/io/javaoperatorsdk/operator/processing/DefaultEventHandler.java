@@ -58,15 +58,12 @@ public class DefaultEventHandler implements EventHandler {
     }
 
     private void executeBufferedEvents(String customResourceUid) {
-        if (!isControllerUnderExecution(customResourceUid)
-                && eventBuffer.containsEvents(customResourceUid)) {
+        if (!isControllerUnderExecution(customResourceUid) && eventBuffer.containsEvents(customResourceUid)) {
             setUnderExecutionProcessing(customResourceUid);
-            ExecutionScope executionScope =
-                    new ExecutionScope(eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
-                            resourceCache.getLatestResource(customResourceUid).get());
-            ExecutionConsumer executionConsumer =
-                    new ExecutionConsumer(executionScope, eventDispatcher, this);
-            executor.execute(executionConsumer);
+            ExecutionScope executionScope = new ExecutionScope(
+                    eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
+                    resourceCache.getLatestResource(customResourceUid).get());
+            executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
         }
     }
 

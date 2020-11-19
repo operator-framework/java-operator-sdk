@@ -15,7 +15,7 @@ public class TimerEventSource extends AbstractEventSource {
     private Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
     private final Timer timer = new Timer();
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     private Map<String, List<EvenProducerTimeTask>> timerTasks = new ConcurrentHashMap<>();
 
@@ -26,7 +26,7 @@ public class TimerEventSource extends AbstractEventSource {
         timer.schedule(task, delay, period);
     }
 
-    public void schedule(CustomResource customResource, long delay) {
+    public void scheduleOnce(CustomResource customResource, long delay) {
         String resourceUid = ProcessingUtils.getUID(customResource);
         OneTimeEventProducerTimerTask task = new OneTimeEventProducerTimerTask(resourceUid);
         storeTask(resourceUid, task);
@@ -65,7 +65,7 @@ public class TimerEventSource extends AbstractEventSource {
      * @param customResourceUid
      * @return
      */
-    public List<EvenProducerTimeTask> getEvenProducerTimeTask(String customResourceUid) {
+    private List<EvenProducerTimeTask> getEvenProducerTimeTask(String customResourceUid) {
         List<EvenProducerTimeTask> tasks = timerTasks.get(customResourceUid);
         if (tasks == null) {
             return Collections.EMPTY_LIST;

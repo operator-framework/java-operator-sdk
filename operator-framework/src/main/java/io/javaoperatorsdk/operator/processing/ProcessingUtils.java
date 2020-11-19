@@ -13,6 +13,10 @@ public class ProcessingUtils {
         return customResource.getMetadata().getUid();
     }
 
+    public static String getVersion(CustomResource customResource) {
+        return customResource.getMetadata().getResourceVersion();
+    }
+
     public static boolean containsCustomResourceDeletedEvent(List<Event> events) {
         return events.stream().anyMatch(e -> {
             if (e instanceof CustomResourceEvent) {

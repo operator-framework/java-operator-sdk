@@ -5,10 +5,13 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.javaoperatorsdk.operator.processing.ProcessingUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.javaoperatorsdk.operator.processing.ProcessingUtils.*;
 
 /**
  * This is a special case since does not bounds to a single custom resource
@@ -61,15 +64,16 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
     }
 
     @Override
-    public void eventReceived(Watcher.Action action, CustomResource resource) {
-        log.debug("Event received for action: {}, {}: {}", action.toString().toLowerCase(), resource.getClass().getSimpleName(),
-                resource.getMetadata().getName());
-        resourceCache.cacheResource(resource); // always store the latest event. Outside the sync block is intentional.
+    public void eventReceived(Watcher.Action action, CustomResource customResource) {
+        log.debug("Event received for action: {}, resource: {}",
+                customResource.getMetadata().getName(), customResource);
+        resourceCache.cacheResource(customResource); // always store the latest event. Outside the sync block is intentional.
         if (action == Action.ERROR) {
-            log.debug("Skipping {} event for custom resource: {}", action, resource);
+            log.debug("Skipping {} event for custom resource uid: {}, version: {}", action,
+                    getUID(customResource), getVersion(customResource));
             return;
         }
-        eventHandler.handleEvent(new CustomResourceEvent(action, resource, this));
+        eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
     }
 
     @Override
