@@ -53,7 +53,7 @@ public class EventDispatcher {
             cleanup(executionScope.getCustomResource());
             return PostExecutionControl.defaultDispatch();
         }
-        if ((markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer))) {
+        if ((markedForDeletion(resource) && !ControllerUtils.hasGivenFinalizer(resource, resourceDefaultFinalizer))) {
             log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", executionScope);
             return PostExecutionControl.defaultDispatch();
         }
@@ -66,7 +66,7 @@ public class EventDispatcher {
     }
 
     private PostExecutionControl handleCreateOrUpdate(ExecutionScope executionScope, CustomResource resource, Context context) {
-        if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
+        if (!ControllerUtils.hasGivenFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
             /*  We always add the default finalizer if missing and not marked for deletion.
                 We execute the controller processing only for processing the event sent as a results
                 of the finalizer add. This will make sure that the resources are not created before
@@ -101,7 +101,7 @@ public class EventDispatcher {
 
     private PostExecutionControl handleDelete(CustomResource resource, Context context) {
         DeleteControl deleteControl = controller.deleteResource(resource, context);
-        boolean hasDefaultFinalizer = ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer);
+        boolean hasDefaultFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceDefaultFinalizer);
         if (deleteControl.getRemoveFinalizer() && hasDefaultFinalizer) {
             removeDefaultFinalizer(resource);
             cleanup(resource);
@@ -160,7 +160,7 @@ public class EventDispatcher {
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
-        if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
+        if (!ControllerUtils.hasGivenFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
             log.info("Adding default finalizer to {}", resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
                 resource.getMetadata().setFinalizers(new ArrayList<>(1));
