@@ -26,32 +26,36 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                     = roundEnv.getElementsAnnotatedWith(annotation);
             annotatedElements.stream().filter(element -> element instanceof Symbol.ClassSymbol)
                     .map(e -> (Symbol.ClassSymbol) e)
-                    .forEach(e -> {
-                        JavaFileObject builderFile = null;
-                        try {
-                            final TypeMirror resourceType = ((DeclaredType) e.getInterfaces().head).getTypeArguments().get(0);
-                            Symbol.ClassSymbol ee = (Symbol.ClassSymbol) processingEnv.getElementUtils().getTypeElement(resourceType.toString());
-                            builderFile = processingEnv.getFiler()
-                                    .createSourceFile(ee.className() + "Doneable");
-                            try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
-                                out.println("package " + ee.packge().fullname + ";");
-                                out.println("import io.quarkus.runtime.annotations.RegisterForReflection;");
-                                out.println("import io.fabric8.kubernetes.api.builder.Function;");
-                                out.println("import io.fabric8.kubernetes.client.CustomResourceDoneable;");
-                                out.println();
-                                out.println("@RegisterForReflection");
-                                out.println("public class " + ee.name + "Doneable " + " extends CustomResourceDoneable<" + ee.name + "> {");
-                                out.println("public " + ee.name + "Doneable(" + ee.name + " resource, Function function){ super(resource,function);}");
-                                out.println("}");
-                            }
-                        } catch (IOException ioException) {
-                            ioException.printStackTrace();
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-
+                    .forEach(controllerClassSymbol -> {
+                        generateDoneableClass(controllerClassSymbol);
                     });
         }
         return false;
+    }
+
+    private void generateDoneableClass(Symbol.ClassSymbol controllerClassSymbol) {
+        JavaFileObject builderFile = null;
+        try {
+            // TODO: the resourceType retrieval logic is currently very fragile, done for testing purposes and need to be improved to cover all possible conditions
+            final TypeMirror resourceType = ((DeclaredType) controllerClassSymbol.getInterfaces().head).getTypeArguments().get(0);
+            Symbol.ClassSymbol customerResourceSymbol = (Symbol.ClassSymbol) processingEnv.getElementUtils().getTypeElement(resourceType.toString());
+            builderFile = processingEnv.getFiler()
+                    .createSourceFile(customerResourceSymbol.className() + "Doneable");
+            try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
+                out.println("package " + customerResourceSymbol.packge().fullname + ";");
+                out.println("import io.quarkus.runtime.annotations.RegisterForReflection;");
+                out.println("import io.fabric8.kubernetes.api.builder.Function;");
+                out.println("import io.fabric8.kubernetes.client.CustomResourceDoneable;");
+                out.println();
+                out.println("@RegisterForReflection");
+                out.println("public class " + customerResourceSymbol.name + "Doneable " + " extends CustomResourceDoneable<" + customerResourceSymbol.name + "> {");
+                out.println("public " + customerResourceSymbol.name + "Doneable(" + customerResourceSymbol.name + " resource, Function function){ super(resource,function);}");
+                out.println("}");
+            }
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }
