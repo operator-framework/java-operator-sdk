@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
         crdName = SubResourceTestCustomResourceController.CRD_NAME,
-        customResourceClass = SubResourceTestCustomResource.class,
         generationAwareEventProcessing = false)
 public class SubResourceTestCustomResourceController implements ResourceController<SubResourceTestCustomResource>,
         TestExecutionInfoProvider {
