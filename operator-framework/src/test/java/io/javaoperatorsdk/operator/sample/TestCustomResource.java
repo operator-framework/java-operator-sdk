@@ -34,6 +34,11 @@ public class TestCustomResource extends CustomResource {
     }
     
     @Override
+    public String getKind() {
+        return "CustomService";
+    }
+    
+    @Override
     public String getApiVersion() {
         return "sample.javaoperatorsdk/v1";
     }
