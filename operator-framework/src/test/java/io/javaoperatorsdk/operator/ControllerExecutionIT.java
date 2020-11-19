@@ -1,19 +1,17 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
+import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -106,7 +104,6 @@ public class ControllerExecutionIT {
                 .withNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                 .build());
         resource.getMetadata().setAnnotations(new HashMap<>());
-        resource.setKind("CustomService");
         resource.setSpec(new TestCustomResourceSpec());
         resource.getSpec().setConfigMapName("test-config-map");
         resource.getSpec().setKey("test-key");

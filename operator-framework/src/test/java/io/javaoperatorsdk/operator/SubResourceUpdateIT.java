@@ -1,18 +1,17 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
+import java.util.concurrent.TimeUnit;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.util.concurrent.TimeUnit;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,7 +105,6 @@ public class SubResourceUpdateIT {
                 .withNamespace(TEST_NAMESPACE)
                 .withFinalizers(SubResourceTestCustomResourceController.FINALIZER_NAME)
                 .build());
-        resource.setKind("SubresourceSample");
         resource.setSpec(new SubResourceTestCustomResourceSpec());
         resource.getSpec().setValue(id);
         return resource;

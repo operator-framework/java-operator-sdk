@@ -34,6 +34,11 @@ public class SubResourceTestCustomResource extends CustomResource {
     }
     
     @Override
+    public String getKind() {
+        return "SubresourceSample";
+    }
+    
+    @Override
     public String getApiVersion() {
         return "sample.javaoperatorsdk/v1";
     }
