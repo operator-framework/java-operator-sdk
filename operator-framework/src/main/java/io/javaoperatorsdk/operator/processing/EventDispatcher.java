@@ -5,6 +5,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,9 +57,7 @@ public class EventDispatcher {
             log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", executionScope);
             return PostExecutionControl.defaultDispatch();
         }
-        // todo
-//        new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution())
-        Context context = new DefaultContext(executionScope.getCustomResource(), null, executionScope.getEvents());
+        Context context = new DefaultContext(executionScope.getCustomResource(), executionScope.getEvents());
         if (markedForDeletion(resource)) {
             return handleDelete(resource, context);
         } else {
@@ -75,22 +75,31 @@ public class EventDispatcher {
             updateCustomResourceWithFinalizer(resource);
             return PostExecutionControl.onlyFinalizerAdded();
         } else {
-            // todo generation awareness on rescheduled event
-            // todo test regardless generation
-
-            UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
-            if (updateControl.isUpdateStatusSubResource()) {
-                customResourceFacade.updateStatus(updateControl.getCustomResource());
-            } else if (updateControl.isUpdateCustomResource()) {
-                updateCustomResource(updateControl.getCustomResource());
+            if (!skipBecauseOfGenerations(executionScope)) {
+                UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
+                if (updateControl.isUpdateStatusSubResource()) {
+                    customResourceFacade.updateStatus(updateControl.getCustomResource());
+                } else if (updateControl.isUpdateCustomResource()) {
+                    updateCustomResource(updateControl.getCustomResource());
+                }
+                markLastGenerationProcessed(resource);
             }
-//          markLastGenerationProcessed(resource);
             return PostExecutionControl.defaultDispatch();
         }
     }
 
+    private boolean skipBecauseOfGenerations(ExecutionScope executionScope) {
+        if (executionScope.getEvents().size() == 1) {
+            Event<?> event = executionScope.getEvents().get(0);
+            if (event instanceof CustomResourceEvent) {
+                Long actualGeneration = executionScope.getCustomResource().getMetadata().getGeneration();
+                return actualGeneration <= lastGenerationProcessedSuccessfully.get(executionScope.getCustomResourceUid());
+            }
+        }
+        return false;
+    }
+
     private PostExecutionControl handleDelete(CustomResource resource, Context context) {
-        // todo unit test new cases
         DeleteControl deleteControl = controller.deleteResource(resource, context);
         boolean hasDefaultFinalizer = ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer);
         if (deleteControl.getRemoveFinalizer() && hasDefaultFinalizer) {

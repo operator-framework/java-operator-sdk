@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.ProcessingUtils;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.DelayedEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,6 @@ public class DefaultEventSourceManager implements EventSourceManager {
     private Map<String, Map<String, EventSource>> eventSources = new ConcurrentHashMap<>();
     private CustomResourceEventSource customResourceEventSource;
     private DefaultEventHandler defaultEventHandler;
-    private DelayedEventSource delayedEventSource = new DelayedEventSource();
 
     public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler) {
         this.defaultEventHandler = defaultEventHandler;
@@ -103,7 +101,4 @@ public class DefaultEventSourceManager implements EventSourceManager {
         eventSources.remove(customResourceUid);
     }
 
-    public DelayedEventSource getDelayedReprocessEventSource() {
-        return delayedEventSource;
-    }
 }

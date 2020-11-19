@@ -9,17 +9,11 @@ import java.util.List;
 public class DefaultContext<T extends CustomResource> implements Context<T> {
 
     private final CustomResource customResource;
-    private final RetryInfo retryInfo;
     private final List<Event> events;
 
-    public DefaultContext(CustomResource customResource, RetryInfo retryInfo, List<Event> events) {
+    public DefaultContext(CustomResource customResource, List<Event> events) {
         this.customResource = customResource;
-        this.retryInfo = retryInfo;
         this.events = events;
-    }
-
-    public RetryInfo retryInfo() {
-        return retryInfo;
     }
 
     @Override
