@@ -6,6 +6,7 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
@@ -54,7 +55,7 @@ public class Operator {
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
         String finalizer = ControllerUtils.getFinalizer(controller);
-        MixedOperation client = k8sClient.customResources(resClass);
+        MixedOperation client = k8sClient.customResources(resClass, CustomResourceList.class);
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
             finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
         EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);

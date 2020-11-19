@@ -8,9 +8,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
@@ -35,13 +35,13 @@ public class TomcatController implements ResourceController<Tomcat> {
 
     private final KubernetesClient kubernetesClient;
     
-    private MixedOperation<Tomcat, KubernetesResourceList<Tomcat>, Resource<Tomcat>> tomcatOperations;
+    private MixedOperation<Tomcat, CustomResourceList, Resource<Tomcat>> tomcatOperations;
 
     private final List<Object> watchedResources = new ArrayList<>();
 
     public TomcatController(KubernetesClient client) {
         this.kubernetesClient = client;
-        this.tomcatOperations = client.customResources(Tomcat.class);
+        this.tomcatOperations = client.customResources(Tomcat.class, CustomResourceList.class);
     }
 
     private void updateTomcatStatus(Context<Tomcat> context, Tomcat tomcat, Deployment deployment) {
