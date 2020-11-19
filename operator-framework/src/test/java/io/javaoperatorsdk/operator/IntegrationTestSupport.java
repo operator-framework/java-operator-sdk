@@ -53,7 +53,7 @@ public class IntegrationTestSupport {
         }
         operator = new Operator(k8sClient);
         operator.registerController(controller, TEST_NAMESPACE);
-        log.info("Operator is running with TestCustomeResourceController");
+        log.info("Operator is running with {}", controller.getClass().getCanonicalName());
     }
 
     public CustomResourceDefinition loadCRDAndApplyToCluster(String classPathYaml) {
@@ -107,7 +107,7 @@ public class IntegrationTestSupport {
             if (namespace.getStatus().getPhase().equals("Active")) {
                 k8sClient.namespaces().withName(TEST_NAMESPACE).delete();
             }
-            await("namespace deleted").atMost(30, TimeUnit.SECONDS)
+            await("namespace deleted").atMost(45, TimeUnit.SECONDS)
                     .until(() -> k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null);
         } catch (Exception e) {
             throw new IllegalStateException(e);
