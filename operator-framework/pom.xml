@@ -82,5 +82,18 @@
             <artifactId>javassist</artifactId>
             <version>3.27.0-GA</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <version>1.0-rc2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-core</artifactId>
+            <version>1.9.2.Final</version>
+        </dependency>
+
     </dependencies>
 </project>
