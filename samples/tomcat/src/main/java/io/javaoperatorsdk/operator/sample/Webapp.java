@@ -15,15 +15,20 @@ public class Webapp extends CustomResource {
     public void setSpec(WebappSpec spec) {
         this.spec = spec;
     }
-
+    
     public WebappStatus getStatus() {
         if (status == null) {
             status = new WebappStatus();
         }
         return status;
     }
-
+    
     public void setStatus(WebappStatus status) {
         this.status = status;
+    }
+    
+    @Override
+    public String getApiVersion() {
+        return "tomcatoperator.io/v1";
     }
 }

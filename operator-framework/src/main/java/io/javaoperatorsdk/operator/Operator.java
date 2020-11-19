@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -11,7 +9,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.EventScheduler;
@@ -25,8 +22,7 @@ public class Operator {
 
     private final static Logger log = LoggerFactory.getLogger(Operator.class);
     private final KubernetesClient k8sClient;
-    private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
-
+    
     public Operator(KubernetesClient k8sClient) {
         this.k8sClient = k8sClient;
     }
@@ -52,8 +48,6 @@ public class Operator {
     private <R extends CustomResource> void registerController(ResourceController<R> controller,
                                                                boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = ControllerUtils.getCustomResourceClass(controller);
-        CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
-        KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
         String finalizer = ControllerUtils.getFinalizer(controller);
         MixedOperation client = k8sClient.customResources(resClass, CustomResourceList.class);
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
@@ -78,7 +72,6 @@ public class Operator {
                 log.debug("Registered controller for namespace: {}", targetNamespace);
             }
         }
-        customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
         log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
                 resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
@@ -91,17 +84,5 @@ public class Operator {
         }
         CustomResourceDefinitionContext context = CustomResourceDefinitionContext.fromCrd(customResourceDefinition);
         return context;
-    }
-
-    public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> getCustomResourceClients() {
-        return customResourceClients;
-    }
-    
-    private String getKind(CustomResourceDefinition crd) {
-        return crd.getSpec().getNames().getKind();
-    }
-
-    private String getApiVersion(CustomResourceDefinition crd) {
-        return crd.getSpec().getGroup() + "/" + crd.getSpec().getVersion();
     }
 }

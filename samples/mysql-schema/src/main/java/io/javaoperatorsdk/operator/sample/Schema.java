@@ -15,12 +15,17 @@ public class Schema extends CustomResource {
     public void setSpec(SchemaSpec spec) {
         this.spec = spec;
     }
-
+    
     public SchemaStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(SchemaStatus status) {
         this.status = status;
+    }
+    
+    @Override
+    public String getApiVersion() {
+        return "mysql.sample.javaoperatorsdk/v1";
     }
 }

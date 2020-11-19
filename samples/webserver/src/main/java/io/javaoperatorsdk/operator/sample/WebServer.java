@@ -15,12 +15,17 @@ public class WebServer extends CustomResource {
     public void setSpec(WebServerSpec spec) {
         this.spec = spec;
     }
-
+    
     public WebServerStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(WebServerStatus status) {
         this.status = status;
+    }
+    
+    @Override
+    public String getApiVersion() {
+        return "sample.javaoperatorsdk/v1";
     }
 }
