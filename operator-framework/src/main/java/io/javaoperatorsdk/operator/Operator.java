@@ -51,8 +51,8 @@ public class Operator {
         Class<R> resClass = getCustomResourceClass(controller);
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
-        String finalizer = getDefaultFinalizer(controller);
-        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, getCustomResourceDoneableClass(controller));
+        String finalizer = ControllerUtils.getFinalizer(controller);
+        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, ControllerUtils.getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
                 finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
 

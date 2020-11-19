@@ -68,7 +68,7 @@ public class SubResourceUpdateIT {
      * If this would not happen (no optimistic locking on status sub-resource)  we could receive and store an event
      * while processing the controller method. But this event would always fail since its resource version is outdated
      * already.
-     * */
+     */
     @Test
     public void updateCustomResourceAfterSubResourceChange() {
         integrationTestSupport.teardownIfSuccess(() -> {
@@ -104,7 +104,7 @@ public class SubResourceUpdateIT {
         resource.setMetadata(new ObjectMetaBuilder()
                 .withName("subresource-" + id)
                 .withNamespace(TEST_NAMESPACE)
-                .withFinalizers(Controller.DEFAULT_FINALIZER)
+                .withFinalizers(SubResourceTestCustomResourceController.FINALIZER_NAME)
                 .build());
         resource.setKind("SubresourceSample");
         resource.setSpec(new SubResourceTestCustomResourceSpec());
