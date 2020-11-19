@@ -15,7 +15,7 @@ import java.util.Collections;
 /**
  * A very simple sample controller that creates a service with a label.
  */
-@Controller(customResourceClass = CustomService.class,
+@Controller(
         crdName = "customservices.sample.javaoperatorsdk")
 public class CustomServiceController implements ResourceController<CustomService> {
 
