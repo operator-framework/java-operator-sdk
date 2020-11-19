@@ -20,7 +20,7 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 * Smart event scheduling (only handle latest event for the same resource)
 
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
-about the non-trivial yet common problems needs to be solved for every operator. 
+about the non-trivial yet common problems needed to be solved for every operator. 
 
 #### Why build your own Operator?
 * Infrastructure automation using the power and flexibility of Java. See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators).
@@ -31,7 +31,7 @@ about the non-trivial yet common problems needs to be solved for every operator.
 #### Roadmap
 * Testing of the framework and all samples while running on a real cluster.
 * Generate a project skeleton
-* Generate Java classes from CRD definion (and/or the other way around)
+* Generate Java classes from CRD defintion (and/or the other way around)
 * Integrate with Quarkus (including native image build)
 * Integrate with OLM (Operator Lifecycle Manager)
 

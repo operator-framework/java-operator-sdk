@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.spingboot.starter.model;
+package io.javaoperatorsdk.operator.springboot.starter.model;
 
 import io.fabric8.kubernetes.client.CustomResourceList;
 

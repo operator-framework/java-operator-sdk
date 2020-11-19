@@ -16,23 +16,27 @@ import java.util.Map;
 public class ControllerUtils {
 
     private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
-
-    private final static Logger log = LoggerFactory.getLogger(ControllerUtils.class);
+    private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
 
     // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
     // note that other solution is to add a random string to doneable class name
     private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable<? extends CustomResource>>>
             doneableClassCache = new HashMap<>();
 
-    static String getDefaultFinalizer(ResourceController controller) {
-        return getAnnotation(controller).finalizerName();
+    static String getFinalizer(ResourceController controller) {
+        final String annotationFinalizerName = getAnnotation(controller).finalizerName();
+        if (!Controller.NULL.equals(annotationFinalizerName)) {
+            return annotationFinalizerName;
+        }
+        final String crdName = getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
+        return crdName;
     }
 
     static boolean getGenerationEventProcessing(ResourceController controller) {
         return getAnnotation(controller).generationAwareEventProcessing();
     }
 
-    static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController controller) {
+    static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }
 
@@ -79,10 +83,7 @@ public class ControllerUtils {
         return controller.getClass().getAnnotation(Controller.class);
     }
 
-    public static boolean hasDefaultFinalizer(CustomResource resource, String finalizer) {
-        if (resource.getMetadata().getFinalizers() != null) {
-            return resource.getMetadata().getFinalizers().contains(finalizer);
-        }
-        return false;
+    public static boolean hasGivenFinalizer(CustomResource resource, String finalizer) {
+        return resource.getMetadata().getFinalizers() != null && resource.getMetadata().getFinalizers().contains(finalizer);
     }
 }

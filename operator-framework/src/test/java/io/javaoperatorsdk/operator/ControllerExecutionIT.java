@@ -21,7 +21,6 @@ import static org.awaitility.Awaitility.await;
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class ControllerExecutionIT {
 
-    private final static Logger log = LoggerFactory.getLogger(ControllerExecutionIT.class);
     public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 

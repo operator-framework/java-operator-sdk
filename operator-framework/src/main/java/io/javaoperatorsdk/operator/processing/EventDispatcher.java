@@ -21,17 +21,17 @@ public class EventDispatcher {
     private final static Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
     private final ResourceController controller;
-    private final String resourceDefaultFinalizer;
+    private final String resourceFinalizer;
     private final CustomResourceFacade customResourceFacade;
     private final boolean generationAware;
     private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
 
     public EventDispatcher(ResourceController controller,
-                           String defaultFinalizer,
+                           String finalizer,
                            CustomResourceFacade customResourceFacade, boolean generationAware) {
         this.controller = controller;
         this.customResourceFacade = customResourceFacade;
-        this.resourceDefaultFinalizer = defaultFinalizer;
+        this.resourceFinalizer = finalizer;
         this.generationAware = generationAware;
     }
 
@@ -43,24 +43,24 @@ public class EventDispatcher {
             log.error("Received error for resource: {}", resource.getMetadata().getName());
             return;
         }
-        if (markedForDeletion(resource) && !ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer)) {
-            log.debug("Skipping event dispatching since its marked for deletion but has no default finalizer: {}", event);
+        if (markedForDeletion(resource) && !ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer)) {
+            log.debug("Skipping event dispatching since its marked for deletion but does not have finalizer: {}", event);
             return;
         }
         Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
         if (markedForDeletion(resource)) {
             boolean removeFinalizer = controller.deleteResource(resource, context);
-            boolean hasDefaultFinalizer = ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer);
-            if (removeFinalizer && hasDefaultFinalizer) {
-                removeDefaultFinalizer(resource);
+            boolean hasFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer);
+            if (removeFinalizer && hasFinalizer) {
+                removeFinalizer(resource);
             } else {
-                log.debug("Skipping finalizer remove. removeFinalizer: {}, hasDefaultFinalizer: {} ",
-                        removeFinalizer, hasDefaultFinalizer);
+                log.debug("Skipping finalizer remove. removeFinalizer: {}, hasFinalizer: {} ",
+                        removeFinalizer, hasFinalizer);
             }
             cleanup(resource);
         } else {
-            if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
-                /*  We always add the default finalizer if missing and not marked for deletion.
+            if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
+                /*  We always add a finalizer if missing and not marked for deletion.
                     We execute the controller processing only for processing the event sent as a results
                     of the finalizer add. This will make sure that the resources are not created before
                     there is a finalizer.
@@ -118,9 +118,9 @@ public class EventDispatcher {
     }
 
 
-    private void removeDefaultFinalizer(CustomResource resource) {
+    private void removeFinalizer(CustomResource resource) {
         log.debug("Removing finalizer on resource {}:", resource);
-        resource.getMetadata().getFinalizers().remove(resourceDefaultFinalizer);
+        resource.getMetadata().getFinalizers().remove(resourceFinalizer);
         customResourceFacade.replaceWithLock(resource);
     }
 
@@ -130,12 +130,12 @@ public class EventDispatcher {
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
-        if (!ControllerUtils.hasDefaultFinalizer(resource, resourceDefaultFinalizer) && !markedForDeletion(resource)) {
-            log.info("Adding default finalizer to {}", resource.getMetadata());
+        if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
+            log.info("Adding finalizer {} to {}", resourceFinalizer, resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
                 resource.getMetadata().setFinalizers(new ArrayList<>(1));
             }
-            resource.getMetadata().getFinalizers().add(resourceDefaultFinalizer);
+            resource.getMetadata().getFinalizers().add(resourceFinalizer);
         }
     }
 

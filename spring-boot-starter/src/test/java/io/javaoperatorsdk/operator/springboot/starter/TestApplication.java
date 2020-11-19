@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.spingboot.starter;
+package io.javaoperatorsdk.operator.springboot.starter;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

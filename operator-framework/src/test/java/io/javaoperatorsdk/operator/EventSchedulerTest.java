@@ -1,16 +1,15 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.EventScheduler;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.slf4j.Logger;
@@ -31,12 +30,10 @@ class EventSchedulerTest {
 
     public static final int INVOCATION_DURATION = 80;
     public static final int MAX_RETRY_ATTEMPTS = 3;
-    @SuppressWarnings("unchecked")
-    private EventDispatcher eventDispatcher = mock(EventDispatcher.class);
 
-    private EventScheduler eventScheduler = initScheduler();
-
-    private List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
+    private final EventDispatcher eventDispatcher = mock(EventDispatcher.class);
+    private final EventScheduler eventScheduler = initScheduler();
+    private final List<EventProcessingDetail> eventProcessingList = Collections.synchronizedList(new ArrayList<>());
 
 
     @Test
@@ -54,7 +51,7 @@ class EventSchedulerTest {
     }
 
     @Test
-    public void eventsAreNotExecutedConcurrentlyForSameResource() throws InterruptedException {
+    public void eventsAreNotExecutedConcurrentlyForSameResource() {
         normalDispatcherExecution();
         CustomResource resource1 = sampleResource();
         CustomResource resource2 = sampleResource();
@@ -141,18 +138,8 @@ class EventSchedulerTest {
         CustomResource resource2 = sampleResource();
         resource2.getMetadata().setResourceVersion("2");
 
-        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
-            @Override
-            public boolean matches(CustomResourceEvent event) {
-                return event.getResource().equals(resource1);
-            }
-        }));
-        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(new ArgumentMatcher<CustomResourceEvent>() {
-            @Override
-            public boolean matches(CustomResourceEvent event) {
-                return event.getResource().equals(resource2);
-            }
-        }));
+        doAnswer(this::exceptionInExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(event -> event.getResource().equals(resource1)));
+        doAnswer(this::normalExecution).when(eventDispatcher).handleEvent(ArgumentMatchers.argThat(event -> event.getResource().equals(resource2)));
 
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource1);
         eventScheduler.eventReceived(Watcher.Action.MODIFIED, resource2);
@@ -201,9 +188,6 @@ class EventSchedulerTest {
             throw new IllegalStateException(e);
         }
     }
-
-
-
 
 
     private EventScheduler initScheduler() {
@@ -262,11 +246,11 @@ class EventSchedulerTest {
     }
 
     private static class EventProcessingDetail {
-        private Watcher.Action action;
-        private LocalDateTime startTime;
-        private LocalDateTime endTime;
-        private CustomResource customResource;
-        private Exception exception;
+        private final Watcher.Action action;
+        private final LocalDateTime startTime;
+        private final LocalDateTime endTime;
+        private final CustomResource customResource;
+        private final Exception exception;
 
         public EventProcessingDetail(Watcher.Action action, LocalDateTime startTime, LocalDateTime endTime, CustomResource customResource, Exception exception) {
             this.action = action;
@@ -281,40 +265,12 @@ class EventSchedulerTest {
             this(action, startTime, endTime, customResource, null);
         }
 
-        public LocalDateTime getStartTime() {
-            return startTime;
-        }
-
-        public EventProcessingDetail setStartTime(LocalDateTime startTime) {
-            this.startTime = startTime;
-            return this;
-        }
-
         public LocalDateTime getEndTime() {
             return endTime;
         }
 
-        public EventProcessingDetail setEndTime(LocalDateTime endTime) {
-            this.endTime = endTime;
-            return this;
-        }
-
         public CustomResource getCustomResource() {
             return customResource;
-        }
-
-        public EventProcessingDetail setCustomResource(CustomResource customResource) {
-            this.customResource = customResource;
-            return this;
-        }
-
-        public Watcher.Action getAction() {
-            return action;
-        }
-
-        public EventProcessingDetail setAction(Watcher.Action action) {
-            this.action = action;
-            return this;
         }
 
         public Exception getException() {
