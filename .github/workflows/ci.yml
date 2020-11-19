@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         java: [8, 11, 15]
+        kubernetes: ['v1.17.13','v1.18.12','v1.19.4']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -18,10 +19,19 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-maven-  
+            ${{ runner.os }}-maven-
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-      - name: Build with Maven
-        run: mvn -B package -P no-integration-tests --file pom.xml
+      - name: Run unit tests
+        run: mvn -B test -P no-integration-tests --file pom.xml
+      - name: Set up Minikube
+        uses: manusa/actions-setup-minikube@v2.0.1
+        with:
+          minikube version: 'v1.15.0'
+          kubernetes version: ${{ matrix.kubernetes }}
+          driver: 'docker'
+      - name: Run integration tests
+        run: mvn -B package -P no-unit-tests --file pom.xml
+

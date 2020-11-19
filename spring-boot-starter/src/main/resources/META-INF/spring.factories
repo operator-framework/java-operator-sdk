@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  io.javaoperatorsdk.operator.spingboot.starter.OperatorAutoConfiguration
+  io.javaoperatorsdk.operator.springboot.starter.OperatorAutoConfiguration
