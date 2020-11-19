@@ -33,5 +33,5 @@ jobs:
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
       - name: Run integration tests
-        run: mvn -B package -P no-unit-tests --file pom.xml
+        run: mvn -e -B package -P no-unit-tests --file pom.xml
 
