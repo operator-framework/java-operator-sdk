@@ -1,17 +1,18 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 
-public class Webapp extends CustomResource {
-
+public class Webapp extends CustomResource implements Namespaced {
+    
     private WebappSpec spec;
-
+    
     private WebappStatus status;
-
+    
     public WebappSpec getSpec() {
         return spec;
     }
-
+    
     public void setSpec(WebappSpec spec) {
         this.spec = spec;
     }

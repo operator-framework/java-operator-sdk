@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 
-public class CustomService extends CustomResource {
+public class CustomService extends CustomResource implements Namespaced {
     
     private ServiceSpec spec;
     

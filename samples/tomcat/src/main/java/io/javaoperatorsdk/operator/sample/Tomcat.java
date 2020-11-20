@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 
-public class Tomcat extends CustomResource {
-
+public class Tomcat extends CustomResource implements Namespaced {
+    
     private TomcatSpec spec;
-
+    
     private TomcatStatus status;
-
+    
     public TomcatSpec getSpec() {
         if (spec == null) {
             spec = new TomcatSpec();

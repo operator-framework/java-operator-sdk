@@ -1,17 +1,18 @@
 package io.javaoperatorsdk.operator.sample.subresource;
 
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 
-public class SubResourceTestCustomResource extends CustomResource {
-
+public class SubResourceTestCustomResource extends CustomResource implements Namespaced {
+    
     private SubResourceTestCustomResourceSpec spec;
-
+    
     private SubResourceTestCustomResourceStatus status;
-
+    
     public SubResourceTestCustomResourceSpec getSpec() {
         return spec;
     }
-
+    
     public void setSpec(SubResourceTestCustomResourceSpec spec) {
         this.spec = spec;
     }
@@ -36,10 +37,5 @@ public class SubResourceTestCustomResource extends CustomResource {
     @Override
     public String getKind() {
         return "SubresourceSample";
-    }
-    
-    @Override
-    public String getApiVersion() {
-        return "sample.javaoperatorsdk/v1";
     }
 }
