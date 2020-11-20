@@ -38,4 +38,9 @@ public class SubResourceTestCustomResource extends CustomResource implements Nam
     public String getKind() {
         return "SubresourceSample";
     }
+    
+    @Override
+    public String getApiVersion() {
+        return "sample.javaoperatorsdk/v1";
+    }
 }
