@@ -18,6 +18,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @SupportedAnnotationTypes(
@@ -32,27 +34,21 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                     = roundEnv.getElementsAnnotatedWith(annotation);
             annotatedElements.stream().filter(element -> element instanceof Symbol.ClassSymbol)
                     .map(e -> (Symbol.ClassSymbol) e)
-                    .forEach(controllerClassSymbol -> generateDoneableClass(controllerClassSymbol));
+                    .forEach(this::generateDoneableClass);
         }
         return false;
     }
 
     private void generateDoneableClass(Symbol.ClassSymbol controllerClassSymbol) {
         try {
-            // TODO: the resourceType retrieval logic is currently very fragile, done for testing purposes and need to be improved to cover all possible conditions
-            final Type controllerType = controllerClassSymbol
-                    .getInterfaces()
-                    .stream()
-                    .filter(i -> i.toString()
-                            .startsWith(ResourceController.class.getCanonicalName())
-                    )
-                    .findFirst()
-                    .orElseThrow(() -> new Exception("ResourceController is not implemented by " + controllerClassSymbol.toString()));
+            final TypeMirror resourceType = findResourceType(controllerClassSymbol);
+            Symbol.ClassSymbol customerResourceSymbol = (Symbol.ClassSymbol) processingEnv
+                    .getElementUtils()
+                    .getTypeElement(resourceType.toString());
 
-            final TypeMirror resourceType = controllerType.getTypeArguments().get(0);
-            Symbol.ClassSymbol customerResourceSymbol = (Symbol.ClassSymbol) processingEnv.getElementUtils().getTypeElement(resourceType.toString());
             JavaFileObject builderFile = processingEnv.getFiler()
                     .createSourceFile(customerResourceSymbol.className() + "Doneable");
+
             try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
                 final MethodSpec constructor = MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PUBLIC)
@@ -60,12 +56,14 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                         .addParameter(Function.class, "function")
                         .addStatement("super(resource,function)")
                         .build();
+
                 final TypeSpec typeSpec = TypeSpec.classBuilder(customerResourceSymbol.name + "Doneable")
                         .addAnnotation(RegisterForReflection.class)
                         .superclass(ParameterizedTypeName.get(ClassName.get(CustomResourceDoneable.class), TypeName.get(resourceType)))
                         .addModifiers(Modifier.PUBLIC)
                         .addMethod(constructor)
                         .build();
+
                 JavaFile file = JavaFile.builder(customerResourceSymbol.packge().fullname.toString(), typeSpec)
                         .build();
                 file.writeTo(out);
@@ -75,5 +73,30 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    private TypeMirror findResourceType(Symbol.ClassSymbol controllerClassSymbol) throws Exception {
+        final Type controllerType = collectAllInterfaces(controllerClassSymbol)
+                .stream()
+                .filter(i -> i.toString()
+                        .startsWith(ResourceController.class.getCanonicalName())
+                )
+                .findFirst()
+                .orElseThrow(() -> new Exception("ResourceController is not implemented by " + controllerClassSymbol.toString()));
+
+        final TypeMirror resourceType = controllerType.getTypeArguments().get(0);
+        return resourceType;
+    }
+
+    private List<Type> collectAllInterfaces(Symbol.ClassSymbol classSymbol) {
+        List<Type> interfaces = new ArrayList<>(classSymbol.getInterfaces());
+        Symbol.ClassSymbol superclass = (Symbol.ClassSymbol) processingEnv.getTypeUtils().asElement(classSymbol.getSuperclass());
+
+        while (superclass != null) {
+            interfaces.addAll(superclass.getInterfaces());
+            superclass = (Symbol.ClassSymbol) processingEnv.getTypeUtils().asElement(superclass.getSuperclass());
+        }
+
+        return interfaces;
     }
 }

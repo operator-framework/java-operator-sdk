@@ -19,18 +19,13 @@ import java.io.Serializable;
 import static java.lang.String.format;
 
 @Controller(crdName = "test.crd")
-public class ControllerImplemented2Interfaces implements Serializable, ResourceController<ControllerImplemented2Interfaces.MyCustomResource> {
+public class ControllerImplementedIntermediateAbstractClass extends AbstractController implements Serializable {
 
-    public static class MyCustomResource extends CustomResource {
-    }
-
-    @Override
-    public UpdateControl<MyCustomResource> createOrUpdateResource(MyCustomResource customResource, Context<MyCustomResource> context) {
+    public UpdateControl<AbstractController.MyCustomResource> createOrUpdateResource(AbstractController.MyCustomResource customResource, Context<AbstractController.MyCustomResource> context) {
         return UpdateControl.updateCustomResource(null);
     }
 
-    @Override
-    public boolean deleteResource(MyCustomResource customResource, Context<MyCustomResource> context) {
+    public boolean deleteResource(AbstractController.MyCustomResource customResource, Context<AbstractController.MyCustomResource> context) {
         return false;
     }
 }

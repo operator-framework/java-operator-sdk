@@ -18,19 +18,9 @@ import java.io.Serializable;
 
 import static java.lang.String.format;
 
-@Controller(crdName = "test.crd")
-public class ControllerImplemented2Interfaces implements Serializable, ResourceController<ControllerImplemented2Interfaces.MyCustomResource> {
 
+public abstract class AbstractController implements Serializable, ResourceController<AbstractController.MyCustomResource> {
     public static class MyCustomResource extends CustomResource {
-    }
 
-    @Override
-    public UpdateControl<MyCustomResource> createOrUpdateResource(MyCustomResource customResource, Context<MyCustomResource> context) {
-        return UpdateControl.updateCustomResource(null);
-    }
-
-    @Override
-    public boolean deleteResource(MyCustomResource customResource, Context<MyCustomResource> context) {
-        return false;
     }
 }
