@@ -11,9 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Controller(
-        crdName = SubResourceTestCustomResourceController.CRD_NAME,
-        customResourceClass = SubResourceTestCustomResource.class,
-        generationAwareEventProcessing = false)
+    crdName = SubResourceTestCustomResourceController.CRD_NAME,
+    finalizerName = SubResourceTestCustomResourceController.FINALIZER_NAME,
+    customResourceClass = SubResourceTestCustomResource.class,
+    generationAwareEventProcessing = false)
 public class SubResourceTestCustomResourceController implements ResourceController<SubResourceTestCustomResource>,
         TestExecutionInfoProvider {
     
@@ -21,7 +22,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
     public static final String FINALIZER_NAME = CRD_NAME + ".io/finalizer";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-
+    
     @Override
     public boolean deleteResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
         return true;

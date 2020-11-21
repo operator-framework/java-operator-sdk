@@ -17,9 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Controller(
-        generationAwareEventProcessing = false,
-        crdName = TestCustomResourceController.CRD_NAME,
-        customResourceClass = TestCustomResource.class)
+    generationAwareEventProcessing = false,
+    crdName = TestCustomResourceController.CRD_NAME,
+    finalizerName = TestCustomResourceController.FINALIZER_NAME,
+    customResourceClass = TestCustomResource.class)
 public class TestCustomResourceController implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
