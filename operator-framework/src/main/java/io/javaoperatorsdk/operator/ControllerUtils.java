@@ -3,13 +3,9 @@ package io.javaoperatorsdk.operator;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class ControllerUtils {
-
-    private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
     
     static String getFinalizer(ResourceController controller) {
@@ -17,8 +13,7 @@ public class ControllerUtils {
         if (!Controller.NULL.equals(annotationFinalizerName)) {
             return annotationFinalizerName;
         }
-        final String crdName = getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
-        return crdName;
+        return controller.getClass().getCanonicalName() + FINALIZER_NAME_SUFFIX;
     }
 
     static boolean getGenerationEventProcessing(ResourceController controller) {
@@ -35,9 +30,5 @@ public class ControllerUtils {
     
     private static Controller getAnnotation(ResourceController controller) {
         return controller.getClass().getAnnotation(Controller.class);
-    }
-
-    public static boolean hasGivenFinalizer(CustomResource resource, String finalizer) {
-        return resource.getMetadata().getFinalizers() != null && resource.getMetadata().getFinalizers().contains(finalizer);
     }
 }
