@@ -13,13 +13,17 @@ public class ControllerUtils {
         if (!Controller.NULL.equals(annotationFinalizerName)) {
             return annotationFinalizerName;
         }
+        return getDefaultFinalizerIdentifier(controller);
+    }
+    
+    static String getDefaultFinalizerIdentifier(ResourceController controller) {
         return controller.getClass().getCanonicalName() + FINALIZER_NAME_SUFFIX;
     }
-
+    
     static boolean getGenerationEventProcessing(ResourceController controller) {
         return getAnnotation(controller).generationAwareEventProcessing();
     }
-
+    
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }

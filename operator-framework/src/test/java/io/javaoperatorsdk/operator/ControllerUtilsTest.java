@@ -9,7 +9,8 @@ import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class ControllerUtilsTest {
 
@@ -17,10 +18,11 @@ class ControllerUtilsTest {
 
     @Test
     public void returnsValuesFromControllerAnnotationFinalizer() {
-        Assertions.assertEquals(TestCustomResourceController.CRD_NAME + "/finalizer", ControllerUtils.getFinalizer(new TestCustomResourceController(null)));
-        assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(new TestCustomResourceController(null)));
-        Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(new TestCustomResourceController(null)));
-        assertFalse(ControllerUtils.getGenerationEventProcessing(new TestCustomResourceController(null)));
+        final TestCustomResourceController controller = new TestCustomResourceController(null);
+        Assertions.assertEquals(ControllerUtils.getDefaultFinalizerIdentifier(controller), ControllerUtils.getFinalizer(controller));
+        assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(controller));
+        Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(controller));
+        assertFalse(ControllerUtils.getGenerationEventProcessing(controller));
     }
 
     @Controller(crdName = "test.crd", customResourceClass = TestCustomResource.class, finalizerName = CUSTOM_FINALIZER_NAME)
