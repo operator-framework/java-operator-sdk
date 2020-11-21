@@ -18,7 +18,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
         TestExecutionInfoProvider {
     
     public static final String CRD_NAME = "subresourcesamples.sample.javaoperatorsdk";
-    public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
+    public static final String FINALIZER_NAME = CRD_NAME + ".io/finalizer";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
