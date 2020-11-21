@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -19,7 +20,9 @@ class ControllerUtilsTest {
     @Test
     public void returnsValuesFromControllerAnnotationFinalizer() {
         final TestCustomResourceController controller = new TestCustomResourceController(null);
-        Assertions.assertEquals(ControllerUtils.getDefaultFinalizerIdentifier(controller), ControllerUtils.getFinalizer(controller));
+        final String finalizer = ControllerUtils.getFinalizer(controller);
+        Assertions.assertEquals(ControllerUtils.getDefaultFinalizerIdentifier(controller), finalizer);
+        Assertions.assertTrue(HasMetadata.DOMAIN_NAME_MATCHER.reset(finalizer).matches());
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(controller));
         Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(controller));
         assertFalse(ControllerUtils.getGenerationEventProcessing(controller));

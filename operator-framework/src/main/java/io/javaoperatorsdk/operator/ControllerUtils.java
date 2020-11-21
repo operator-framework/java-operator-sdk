@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 
 
 public class ControllerUtils {
-    private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+    private static final String FINALIZER_NAME_SUFFIX = ".javaoperatorsdk.io/finalizer";
     
     static String getFinalizer(ResourceController controller) {
         final String annotationFinalizerName = getAnnotation(controller).finalizerName();
@@ -17,7 +17,8 @@ public class ControllerUtils {
     }
     
     static String getDefaultFinalizerIdentifier(ResourceController controller) {
-        return controller.getClass().getCanonicalName() + FINALIZER_NAME_SUFFIX;
+        final Class<? extends ResourceController> controllerClass = controller.getClass();
+        return controllerClass.getSimpleName().toLowerCase() + FINALIZER_NAME_SUFFIX;
     }
     
     static boolean getGenerationEventProcessing(ResourceController controller) {
