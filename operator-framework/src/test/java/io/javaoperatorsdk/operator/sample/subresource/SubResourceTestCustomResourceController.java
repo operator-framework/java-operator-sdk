@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample.subresource;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -8,16 +10,14 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 @Controller(
         crdName = SubResourceTestCustomResourceController.CRD_NAME,
         customResourceClass = SubResourceTestCustomResource.class,
         generationAwareEventProcessing = false)
 public class SubResourceTestCustomResourceController implements ResourceController<SubResourceTestCustomResource>,
         TestExecutionInfoProvider {
-
-    public static final String CRD_NAME = "subresourcesample.sample.javaoperatorsdk";
+    
+    public static final String CRD_NAME = "subresourcesamples.sample.javaoperatorsdk";
     public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
