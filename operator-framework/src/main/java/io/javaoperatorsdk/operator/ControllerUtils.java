@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
@@ -14,7 +13,6 @@ import java.util.Map;
 
 public class ControllerUtils {
 
-    private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
 
     // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
@@ -36,7 +34,13 @@ public class ControllerUtils {
     }
 
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
-        final Class<R> type = Arrays.stream(controller.getClass().getGenericInterfaces()).filter(i -> i instanceof ParameterizedType).map(i -> (ParameterizedTypeImpl) i).findFirst().map(i -> (Class<R>) i.getActualTypeArguments()[0]).get();
+        final Class<R> type = Arrays
+                .stream(controller.getClass().getGenericInterfaces())
+                .filter(i -> i instanceof ParameterizedType)
+                .map(i -> (ParameterizedType) i)
+                .findFirst()
+                .map(i -> (Class<R>) i.getActualTypeArguments()[0])
+                .get();
         return type;
     }
 
