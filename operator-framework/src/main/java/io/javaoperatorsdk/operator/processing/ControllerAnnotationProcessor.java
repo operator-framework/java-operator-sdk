@@ -34,7 +34,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                     .map(e -> (TypeElement) e)
                     .forEach(this::generateDoneableClass);
         }
-        return false;
+        return true;
     }
 
     private void generateDoneableClass(TypeElement controllerClassSymbol) {
@@ -44,8 +44,9 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                     .getElementUtils()
                     .getTypeElement(resourceType.toString());
 
+            final String destinationClassFileName = customerResourceTypeElement.getQualifiedName() + "Doneable";
             JavaFileObject builderFile = processingEnv.getFiler()
-                    .createSourceFile(customerResourceTypeElement.getSimpleName() + "Doneable");
+                    .createSourceFile(destinationClassFileName);
 
             try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
                 final MethodSpec constructor = MethodSpec.constructorBuilder()
@@ -73,24 +74,34 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     }
 
     private TypeMirror findResourceType(TypeElement controllerClassSymbol) throws Exception {
-        final DeclaredType controllerType = collectAllInterfaces(controllerClassSymbol)
-                .stream()
-                .filter(i -> i.toString()
-                        .startsWith(ResourceController.class.getCanonicalName())
-                )
-                .findFirst()
-                .orElseThrow(() -> new Exception("ResourceController is not implemented by " + controllerClassSymbol.toString()));
+        try {
+            final DeclaredType controllerType = collectAllInterfaces(controllerClassSymbol)
+                    .stream()
+                    .filter(i -> i.toString()
+                            .startsWith(ResourceController.class.getCanonicalName())
+                    )
+                    .findFirst()
+                    .orElseThrow(() -> new Exception("ResourceController is not implemented by " + controllerClassSymbol.toString()));
 
-        return controllerType.getTypeArguments().get(0);
+            return controllerType.getTypeArguments().get(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private List<DeclaredType> collectAllInterfaces(TypeElement element) {
-        List<DeclaredType> interfaces = new ArrayList<>(element.getInterfaces()).stream().map(t -> (DeclaredType) t).collect(Collectors.toList());
-        TypeElement superclass = ((TypeElement) ((DeclaredType) element.getSuperclass()).asElement());
-        while (superclass.getSuperclass().getKind() != TypeKind.NONE) {
-            interfaces.addAll(superclass.getInterfaces().stream().map(t -> (DeclaredType) t).collect(Collectors.toList()));
-            superclass = ((TypeElement) ((DeclaredType) superclass.getSuperclass()).asElement());
+        try {
+            List<DeclaredType> interfaces = new ArrayList<>(element.getInterfaces()).stream().map(t -> (DeclaredType) t).collect(Collectors.toList());
+            TypeElement superclass = ((TypeElement) ((DeclaredType) element.getSuperclass()).asElement());
+            while (superclass.getSuperclass().getKind() != TypeKind.NONE) {
+                interfaces.addAll(superclass.getInterfaces().stream().map(t -> (DeclaredType) t).collect(Collectors.toList()));
+                superclass = ((TypeElement) ((DeclaredType) superclass.getSuperclass()).asElement());
+            }
+            return interfaces;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        return interfaces;
     }
 }
