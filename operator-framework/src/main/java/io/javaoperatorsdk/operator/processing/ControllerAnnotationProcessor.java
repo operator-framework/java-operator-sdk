@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
-
 import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
