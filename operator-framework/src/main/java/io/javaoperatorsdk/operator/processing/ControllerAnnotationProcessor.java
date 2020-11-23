@@ -2,8 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Type;
+
 import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -11,16 +10,16 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes(
         "io.javaoperatorsdk.operator.api.Controller")
@@ -32,22 +31,22 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedElements
                     = roundEnv.getElementsAnnotatedWith(annotation);
-            annotatedElements.stream().filter(element -> element instanceof Symbol.ClassSymbol)
-                    .map(e -> (Symbol.ClassSymbol) e)
+            annotatedElements.stream().filter(element -> element.getKind().equals(ElementKind.CLASS))
+                    .map(e -> (TypeElement) e)
                     .forEach(this::generateDoneableClass);
         }
         return false;
     }
 
-    private void generateDoneableClass(Symbol.ClassSymbol controllerClassSymbol) {
+    private void generateDoneableClass(TypeElement controllerClassSymbol) {
         try {
             final TypeMirror resourceType = findResourceType(controllerClassSymbol);
-            Symbol.ClassSymbol customerResourceSymbol = (Symbol.ClassSymbol) processingEnv
+            TypeElement customerResourceTypeElement = processingEnv
                     .getElementUtils()
                     .getTypeElement(resourceType.toString());
 
             JavaFileObject builderFile = processingEnv.getFiler()
-                    .createSourceFile(customerResourceSymbol.className() + "Doneable");
+                    .createSourceFile(customerResourceTypeElement.getSimpleName() + "Doneable");
 
             try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
                 final MethodSpec constructor = MethodSpec.constructorBuilder()
@@ -57,26 +56,25 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                         .addStatement("super(resource,function)")
                         .build();
 
-                final TypeSpec typeSpec = TypeSpec.classBuilder(customerResourceSymbol.name + "Doneable")
+                final TypeSpec typeSpec = TypeSpec.classBuilder(customerResourceTypeElement.getSimpleName() + "Doneable")
                         .addAnnotation(RegisterForReflection.class)
                         .superclass(ParameterizedTypeName.get(ClassName.get(CustomResourceDoneable.class), TypeName.get(resourceType)))
                         .addModifiers(Modifier.PUBLIC)
                         .addMethod(constructor)
                         .build();
 
-                JavaFile file = JavaFile.builder(customerResourceSymbol.packge().fullname.toString(), typeSpec)
+                final PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(customerResourceTypeElement);
+                JavaFile file = JavaFile.builder(packageElement.getQualifiedName().toString(), typeSpec)
                         .build();
                 file.writeTo(out);
             }
-        } catch (IOException ioException) {
+        } catch (Exception ioException) {
             ioException.printStackTrace();
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
-    private TypeMirror findResourceType(Symbol.ClassSymbol controllerClassSymbol) throws Exception {
-        final Type controllerType = collectAllInterfaces(controllerClassSymbol)
+    private TypeMirror findResourceType(TypeElement controllerClassSymbol) throws Exception {
+        final DeclaredType controllerType = collectAllInterfaces(controllerClassSymbol)
                 .stream()
                 .filter(i -> i.toString()
                         .startsWith(ResourceController.class.getCanonicalName())
@@ -84,19 +82,16 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                 .findFirst()
                 .orElseThrow(() -> new Exception("ResourceController is not implemented by " + controllerClassSymbol.toString()));
 
-        final TypeMirror resourceType = controllerType.getTypeArguments().get(0);
-        return resourceType;
+        return controllerType.getTypeArguments().get(0);
     }
 
-    private List<Type> collectAllInterfaces(Symbol.ClassSymbol classSymbol) {
-        List<Type> interfaces = new ArrayList<>(classSymbol.getInterfaces());
-        Symbol.ClassSymbol superclass = (Symbol.ClassSymbol) processingEnv.getTypeUtils().asElement(classSymbol.getSuperclass());
-
-        while (superclass != null) {
-            interfaces.addAll(superclass.getInterfaces());
-            superclass = (Symbol.ClassSymbol) processingEnv.getTypeUtils().asElement(superclass.getSuperclass());
+    private List<DeclaredType> collectAllInterfaces(TypeElement element) {
+        List<DeclaredType> interfaces = new ArrayList<>(element.getInterfaces()).stream().map(t -> (DeclaredType) t).collect(Collectors.toList());
+        TypeElement superclass = ((TypeElement) ((DeclaredType) element.getSuperclass()).asElement());
+        while (superclass.getSuperclass().getKind() != TypeKind.NONE) {
+            interfaces.addAll(superclass.getInterfaces().stream().map(t -> (DeclaredType) t).collect(Collectors.toList()));
+            superclass = ((TypeElement) ((DeclaredType) superclass.getSuperclass()).asElement());
         }
-
         return interfaces;
     }
 }
