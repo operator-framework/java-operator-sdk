@@ -1,10 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ExecutionDescriptor;
+import io.javaoperatorsdk.operator.processing.event.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +43,7 @@ public class DefaultEventHandler implements EventHandler {
     }
 
     @Override
-    public void handleEvent(Event event) {
+    public void handleEvent(Event<? extends EventSource> event) {
         try {
             lock.lock();
             log.debug("Received event: {}", event);
@@ -63,6 +60,7 @@ public class DefaultEventHandler implements EventHandler {
             ExecutionScope executionScope = new ExecutionScope(
                     eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
                     resourceCache.getLatestResource(customResourceUid).get());
+            log.debug("Executing events for custom resource. Scope: {}", executionScope);
             executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
         }
     }

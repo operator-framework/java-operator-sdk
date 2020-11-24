@@ -15,13 +15,14 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+import static io.javaoperatorsdk.operator.TestUtils.TEST_CUSTOM_RESOURCE_NAME;
+import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class ControllerExecutionIT {
 
-    public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     public void initAndCleanup(boolean controllerStatusUpdate) {
@@ -99,19 +100,6 @@ public class ControllerExecutionIT {
                 });
     }
 
-    private TestCustomResource testCustomResource() {
-        TestCustomResource resource = new TestCustomResource();
-        resource.setMetadata(new ObjectMetaBuilder()
-                .withName(TEST_CUSTOM_RESOURCE_NAME)
-                .withNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                .build());
-        resource.getMetadata().setAnnotations(new HashMap<>());
-        resource.setKind("CustomService");
-        resource.setSpec(new TestCustomResourceSpec());
-        resource.getSpec().setConfigMapName("test-config-map");
-        resource.getSpec().setKey("test-key");
-        resource.getSpec().setValue("test-value");
-        return resource;
-    }
+
 
 }

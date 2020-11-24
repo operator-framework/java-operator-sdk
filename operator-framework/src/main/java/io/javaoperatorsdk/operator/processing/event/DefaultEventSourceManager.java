@@ -29,7 +29,6 @@ public class DefaultEventSourceManager implements EventSourceManager {
         this.customResourceEventSource.addedToEventManager();
     }
 
-    // Registration should happen from the same thread within controller
     @Override
     public <T extends EventSource> void registerEventSource(CustomResource customResource, String name, T eventSource) {
         try {

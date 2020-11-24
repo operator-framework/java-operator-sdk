@@ -28,4 +28,13 @@ public class ExecutionScope {
     public String getCustomResourceUid() {
         return customResource.getMetadata().getUid();
     }
+
+    @Override
+    public String toString() {
+        return "ExecutionScope{" +
+                "events=" + events +
+                ", customResource uid: " + customResource.getMetadata().getUid() +
+                ", version: " + customResource.getMetadata().getResourceVersion() +
+                '}';
+    }
 }

@@ -93,7 +93,11 @@ public class EventDispatcher {
             Event<?> event = executionScope.getEvents().get(0);
             if (event instanceof CustomResourceEvent) {
                 Long actualGeneration = executionScope.getCustomResource().getMetadata().getGeneration();
-                return actualGeneration <= lastGenerationProcessedSuccessfully.get(executionScope.getCustomResourceUid());
+                Long lastGeneration = lastGenerationProcessedSuccessfully.get(executionScope.getCustomResourceUid());
+                if (lastGeneration == null) {
+                    return false;
+                }
+                return actualGeneration <= lastGeneration;
             }
         }
         return false;
