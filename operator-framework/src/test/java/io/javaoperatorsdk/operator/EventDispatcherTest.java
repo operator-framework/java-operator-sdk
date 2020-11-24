@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.api.DeleteControl;
@@ -9,7 +8,6 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.ExecutionScope;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;

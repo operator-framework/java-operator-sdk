@@ -58,23 +58,6 @@ public class ControllerExecutionIT {
         });
     }
 
-    @Test
-    public void retryConflict() {
-        initAndCleanup(true);
-        integrationTestSupport.teardownIfSuccess(() -> {
-            TestCustomResource resource = testCustomResource();
-            TestCustomResource resource2 = testCustomResource();
-            resource2.getMetadata().getAnnotations().put("test-annotation", "val");
-
-            integrationTestSupport.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).create(resource);
-            integrationTestSupport.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).createOrReplace(resource2);
-
-            awaitResourcesCreatedOrUpdated();
-            awaitStatusUpdated(5);
-        });
-    }
-
-
     void awaitResourcesCreatedOrUpdated() {
         await("config map created").atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
