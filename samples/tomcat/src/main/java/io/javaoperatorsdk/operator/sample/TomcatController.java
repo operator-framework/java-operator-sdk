@@ -12,8 +12,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
@@ -75,9 +75,9 @@ public class TomcatController implements ResourceController<Tomcat> {
                         log.error(ex.getMessage());
                     }
                 }
-
+    
                 @Override
-                public void onClose(KubernetesClientException cause) {
+                public void onClose(WatcherException e) {
                 }
             });
             watchedResources.add(WatchedResource.fromResource(deployment));

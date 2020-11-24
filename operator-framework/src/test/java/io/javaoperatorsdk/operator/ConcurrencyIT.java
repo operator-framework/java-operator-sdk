@@ -34,7 +34,7 @@ public class ConcurrencyIT {
     public void setup() {
         KubernetesClient k8sClient = new DefaultKubernetesClient();
         final TestCustomResourceController controller = new TestCustomResourceController(k8sClient, true);
-        assertThat(HasMetadata.DOMAIN_NAME_MATCHER.reset(ControllerUtils.getDefaultFinalizerIdentifier(controller)).matches()).isTrue();
+        assertThat(HasMetadata.FINALIZER_NAME_MATCHER.reset(ControllerUtils.getDefaultFinalizerIdentifier(controller)).matches()).isTrue();
         integrationTest.initialize(k8sClient, controller, "test-crd.yaml");
     }
 

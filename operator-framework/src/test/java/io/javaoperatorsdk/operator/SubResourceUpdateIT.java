@@ -26,7 +26,7 @@ public class SubResourceUpdateIT {
     
     @BeforeAll
     void checkFinalizer() {
-        assertThat(HasMetadata.DOMAIN_NAME_MATCHER.reset(ControllerUtils.getDefaultFinalizerIdentifier(new SubResourceTestCustomResourceController())).matches()).isTrue();
+        assertThat(HasMetadata.FINALIZER_NAME_MATCHER.reset(ControllerUtils.getDefaultFinalizerIdentifier(new SubResourceTestCustomResourceController())).matches()).isTrue();
     }
     
     @BeforeEach

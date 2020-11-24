@@ -22,7 +22,7 @@ class ControllerUtilsTest {
         final TestCustomResourceController controller = new TestCustomResourceController(null);
         final String finalizer = ControllerUtils.getFinalizer(controller);
         Assertions.assertEquals(TestCustomResourceController.FINALIZER_NAME, finalizer);
-        Assertions.assertTrue(HasMetadata.DOMAIN_NAME_MATCHER.reset(finalizer).matches());
+        Assertions.assertTrue(HasMetadata.FINALIZER_NAME_MATCHER.reset(finalizer).matches());
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(controller));
         Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(controller));
         assertFalse(ControllerUtils.getGenerationEventProcessing(controller));

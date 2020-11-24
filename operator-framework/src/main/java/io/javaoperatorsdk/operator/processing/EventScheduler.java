@@ -1,17 +1,17 @@
 package io.javaoperatorsdk.operator.processing;
 
 
-import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Requirements:
@@ -57,7 +57,7 @@ public class EventScheduler implements Watcher<CustomResource> {
         CustomResourceEvent event = new CustomResourceEvent(action, resource, retry);
         scheduleEventFromApi(event);
     }
-
+    
     void scheduleEventFromApi(CustomResourceEvent event) {
         try {
             lock.lock();
@@ -137,9 +137,9 @@ public class EventScheduler implements Watcher<CustomResource> {
         CustomResourceEvent notScheduledEvent = eventStore.removeEventNotScheduled(uuid);
         scheduleEventForExecution(notScheduledEvent);
     }
-
+    
     @Override
-    public void onClose(KubernetesClientException e) {
+    public void onClose(WatcherException e) {
         log.error("Error: ", e);
         // we will exit the application if there was a watching exception, because of the bug in fabric8 client
         // see https://github.com/fabric8io/kubernetes-client/issues/1318
