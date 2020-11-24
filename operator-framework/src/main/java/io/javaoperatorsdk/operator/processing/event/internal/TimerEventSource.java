@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-// todo tests
+
 public class TimerEventSource extends AbstractEventSource {
 
     private Logger log = LoggerFactory.getLogger(TimerEventSource.class);
@@ -17,7 +17,7 @@ public class TimerEventSource extends AbstractEventSource {
     private final Timer timer = new Timer();
     private final ReentrantLock lock = new ReentrantLock();
 
-    private Map<String, List<EvenProducerTimeTask>> timerTasks = new ConcurrentHashMap<>();
+    private final Map<String, List<EvenProducerTimeTask>> timerTasks = new ConcurrentHashMap<>();
 
     public void schedule(CustomResource customResource, long delay, long period) {
         String resourceUid = ProcessingUtils.getUID(customResource);

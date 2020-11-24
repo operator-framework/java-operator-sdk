@@ -14,7 +14,7 @@ public interface EventSourceManager {
 
     Optional<EventSource> deRegisterEventSource(String customResourceUid, String name);
 
-    Map<String, EventSource> getRegisteredEventSources(String customResource);
+    Map<String, EventSource> getRegisteredEventSources(String customResourceUid);
 
 
 }
