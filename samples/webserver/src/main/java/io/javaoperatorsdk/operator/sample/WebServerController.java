@@ -8,6 +8,7 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -114,7 +115,7 @@ public class WebServerController implements ResourceController<WebServer> {
             .inNamespace(nginx.getMetadata().getNamespace())
             .withName(deploymentName(nginx));
         if (deployment.get() != null) {
-            deployment.cascading(true).delete();
+            deployment.withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         }
         
         log.info("Deleting Service {}", serviceName(nginx));
