@@ -73,7 +73,7 @@ public class TimerEventSource extends AbstractEventSource {
         return tasks;
     }
 
-    public class EvenProducerTimeTask extends TimerTask {
+    public class EventProducerTimeTask extends TimerTask {
         protected final String customResourceUid;
 
         public EvenProducerTimeTask(String customResourceUid) {
