@@ -13,9 +13,13 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,40 +29,73 @@ import java.util.stream.Collectors;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
+    private FileObject resource;
+    PrintWriter printWriter = null;
+    private Set<String> generatedDoneableClassFiles = new HashSet<>();
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        try {
+            resource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk-custom-resources");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            printWriter = new PrintWriter(resource.openOutputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        for (TypeElement annotation : annotations) {
-            Set<? extends Element> annotatedElements
-                    = roundEnv.getElementsAnnotatedWith(annotation);
-            annotatedElements.stream().filter(element -> element.getKind().equals(ElementKind.CLASS))
-                    .map(e -> (TypeElement) e)
-                    .forEach(this::generateDoneableClass);
+
+        try {
+            for (TypeElement annotation : annotations) {
+                Set<? extends Element> annotatedElements
+                        = roundEnv.getElementsAnnotatedWith(annotation);
+                annotatedElements.stream().filter(element -> element.getKind().equals(ElementKind.CLASS))
+                        .map(e -> (TypeElement) e)
+                        .forEach(e -> this.generateDoneableClass(e, printWriter));
+            }
+        } finally {
+            printWriter.close();
         }
         return true;
     }
 
-    private void generateDoneableClass(TypeElement controllerClassSymbol) {
+    private void generateDoneableClass(TypeElement controllerClassSymbol, PrintWriter printWriter) {
         try {
             final TypeMirror resourceType = findResourceType(controllerClassSymbol);
+
             TypeElement customerResourceTypeElement = processingEnv
                     .getElementUtils()
                     .getTypeElement(resourceType.toString());
 
+            final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
             final String destinationClassFileName = customerResourceTypeElement.getQualifiedName() + "Doneable";
+            final TypeName customResourceType = TypeName.get(resourceType);
+            if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
+                printWriter.println(controllerClassSymbol.getQualifiedName() + "," + customResourceType.toString());
+                return;
+            }
             JavaFileObject builderFile = processingEnv.getFiler()
                     .createSourceFile(destinationClassFileName);
 
             try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
+                printWriter.println(controllerClassSymbol.getQualifiedName() + "," + customResourceType.toString());
                 final MethodSpec constructor = MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PUBLIC)
-                        .addParameter(TypeName.get(resourceType), "resource")
+                        .addParameter(customResourceType, "resource")
                         .addParameter(Function.class, "function")
                         .addStatement("super(resource,function)")
                         .build();
 
-                final TypeSpec typeSpec = TypeSpec.classBuilder(customerResourceTypeElement.getSimpleName() + "Doneable")
+
+                final TypeSpec typeSpec = TypeSpec.classBuilder(doneableClassName)
                         .addAnnotation(RegisterForReflection.class)
-                        .superclass(ParameterizedTypeName.get(ClassName.get(CustomResourceDoneable.class), TypeName.get(resourceType)))
+                        .superclass(ParameterizedTypeName.get(ClassName.get(CustomResourceDoneable.class), customResourceType))
                         .addModifiers(Modifier.PUBLIC)
                         .addMethod(constructor)
                         .build();
