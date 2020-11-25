@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.processing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExecutionConsumer implements Runnable {
+class ExecutionConsumer implements Runnable {
     
     private final static Logger log = LoggerFactory.getLogger(ExecutionConsumer.class);
 
