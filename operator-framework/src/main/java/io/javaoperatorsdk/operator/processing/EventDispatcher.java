@@ -106,12 +106,12 @@ public class EventDispatcher {
     private PostExecutionControl handleDelete(CustomResource resource, Context context) {
         DeleteControl deleteControl = controller.deleteResource(resource, context);
         boolean hasFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer);
-        if (deleteControl.getRemoveFinalizer() && hasFinalizer) {
+        if (deleteControl == DeleteControl.DEFAULT_DELETE && hasFinalizer) {
             removeFinalizer(resource);
             cleanup(resource);
         } else {
-            log.debug("Skipping finalizer remove. removeFinalizer: {}, hasFinalizer: {} ",
-                    deleteControl.getRemoveFinalizer(), hasFinalizer);
+            log.debug("Skipping finalizer remove. delete control: {}, hasFinalizer: {} ",
+                    deleteControl, hasFinalizer);
         }
         return PostExecutionControl.defaultDispatch();
     }
