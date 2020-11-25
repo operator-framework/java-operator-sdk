@@ -17,11 +17,11 @@ public class TimerEventSource extends AbstractEventSource {
     private final Timer timer = new Timer();
     private final ReentrantLock lock = new ReentrantLock();
 
-    private final Map<String, List<EvenProducerTimeTask>> timerTasks = new ConcurrentHashMap<>();
+    private final Map<String, List<EventProducerTimeTask>> timerTasks = new ConcurrentHashMap<>();
 
     public void schedule(CustomResource customResource, long delay, long period) {
         String resourceUid = ProcessingUtils.getUID(customResource);
-        EvenProducerTimeTask task = new EvenProducerTimeTask(resourceUid);
+        EventProducerTimeTask task = new EventProducerTimeTask(resourceUid);
         storeTask(resourceUid, task);
         timer.schedule(task, delay, period);
     }
@@ -33,18 +33,18 @@ public class TimerEventSource extends AbstractEventSource {
         timer.schedule(task, delay);
     }
 
-    private void storeTask(String resourceUid, EvenProducerTimeTask task) {
+    private void storeTask(String resourceUid, EventProducerTimeTask task) {
         try {
             lock.lock();
-            List<EvenProducerTimeTask> tasks = getOrInitResourceRelatedTimers(resourceUid);
+            List<EventProducerTimeTask> tasks = getOrInitResourceRelatedTimers(resourceUid);
             tasks.add(task);
         } finally {
             lock.unlock();
         }
     }
 
-    private List<EvenProducerTimeTask> getOrInitResourceRelatedTimers(String resourceUid) {
-        List<EvenProducerTimeTask> actualList = timerTasks.get(resourceUid);
+    private List<EventProducerTimeTask> getOrInitResourceRelatedTimers(String resourceUid) {
+        List<EventProducerTimeTask> actualList = timerTasks.get(resourceUid);
         if (actualList == null) {
             actualList = new ArrayList<>();
             timerTasks.put(resourceUid, actualList);
@@ -54,7 +54,7 @@ public class TimerEventSource extends AbstractEventSource {
 
     @Override
     public void eventSourceDeRegisteredForResource(String customResourceUid) {
-        List<EvenProducerTimeTask> tasks = getEvenProducerTimeTask(customResourceUid);
+        List<EventProducerTimeTask> tasks = getEventProducerTimeTask(customResourceUid);
         tasks.forEach(TimerTask::cancel);
         timerTasks.remove(customResourceUid);
     }
@@ -65,8 +65,8 @@ public class TimerEventSource extends AbstractEventSource {
      * @param customResourceUid
      * @return
      */
-    private List<EvenProducerTimeTask> getEvenProducerTimeTask(String customResourceUid) {
-        List<EvenProducerTimeTask> tasks = timerTasks.get(customResourceUid);
+    private List<EventProducerTimeTask> getEventProducerTimeTask(String customResourceUid) {
+        List<EventProducerTimeTask> tasks = timerTasks.get(customResourceUid);
         if (tasks == null) {
             return Collections.EMPTY_LIST;
         }
@@ -76,7 +76,7 @@ public class TimerEventSource extends AbstractEventSource {
     public class EventProducerTimeTask extends TimerTask {
         protected final String customResourceUid;
 
-        public EvenProducerTimeTask(String customResourceUid) {
+        public EventProducerTimeTask(String customResourceUid) {
             this.customResourceUid = customResourceUid;
         }
 
@@ -87,7 +87,7 @@ public class TimerEventSource extends AbstractEventSource {
         }
     }
 
-    public class OneTimeEventProducerTimerTask extends EvenProducerTimeTask {
+    public class OneTimeEventProducerTimerTask extends EventProducerTimeTask {
         public OneTimeEventProducerTimerTask(String customResourceUid) {
             super(customResourceUid);
         }
@@ -97,7 +97,7 @@ public class TimerEventSource extends AbstractEventSource {
             super.run();
             try {
                 lock.lock();
-                List<EvenProducerTimeTask> tasks = timerTasks.get(customResourceUid);
+                List<EventProducerTimeTask> tasks = timerTasks.get(customResourceUid);
                 tasks.remove(this);
                 if (tasks.isEmpty()) {
                     timerTasks.remove(customResourceUid);
