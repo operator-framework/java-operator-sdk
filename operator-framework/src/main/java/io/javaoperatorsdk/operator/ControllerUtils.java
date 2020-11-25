@@ -4,14 +4,49 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import org.apache.commons.lang3.ClassUtils;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class ControllerUtils {
 
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+    private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings = new HashMap();
+
+    static {
+        try {
+            final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources("javaoperatorsdk-custom-resources");
+            for (Iterator<URL> it = customResourcesMetadaList.asIterator(); it.hasNext(); ) {
+                URL url = it.next();
+                final List<String> classNamePairs = Files.lines(Path.of(url.getPath()))
+                        .collect(Collectors.toList());
+
+                classNamePairs.forEach(clazzPair -> {
+                    try {
+
+                        final String[] classNames = clazzPair.split(",");
+                        if (classNames.length != 2) {
+                            throw new IllegalStateException(String.format("%s is not custom-resource metadata defined in %s", url.toString()));
+                        }
+
+                        controllerToCustomResourceMappings.put((Class<? extends ResourceController>) ClassUtils.getClass(classNames[0]), (Class<? extends CustomResource>) ClassUtils.getClass(classNames[1]));
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //TODO: DEBUG log
+    }
 
     static String getFinalizer(ResourceController controller) {
         final String annotationFinalizerName = getAnnotation(controller).finalizerName();
@@ -26,13 +61,17 @@ public class ControllerUtils {
     }
 
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
-        return Arrays
-                .stream(controller.getClass().getGenericInterfaces())
-                .filter(i -> i instanceof ParameterizedType)
-                .map(i -> (ParameterizedType) i)
-                .findFirst()
-                .map(i -> (Class<R>) i.getActualTypeArguments()[0])
-                .get();
+        final Class<? extends CustomResource> customResourceClass = controllerToCustomResourceMappings
+                .get(controller.getClass());
+        if (customResourceClass == null) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "No custom resource has been found for controller %s",
+                            controller.getClass().getCanonicalName()
+                    )
+            );
+        }
+        return (Class<R>) customResourceClass;
     }
 
     static String getCrdName(ResourceController controller) {
