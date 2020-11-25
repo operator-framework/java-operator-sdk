@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.processing.ProcessingUtils.*;
+import static java.net.HttpURLConnection.HTTP_GONE;
 
 /**
  * This is a special case since is not bound to a single custom resource
@@ -78,12 +79,14 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
 
     @Override
     public void onClose(KubernetesClientException e) {
-        // todo handle the fabric8 issue
-        log.error("Error: ", e);
-        // we will exit the application if there was a watching exception, because of the bug in fabric8 client
-        // see https://github.com/fabric8io/kubernetes-client/issues/1318
-        // Note that this should not happen normally, since fabric8 client handles reconnect.
-        // In case it tries to reconnect this method is not called.
-        System.exit(1);
+        if (e.getCode() == HTTP_GONE) {
+            log.warn("Received error for watch, will try to reconnect.", e);
+            registerWatch();
+        } else {
+            // Note that this should not happen normally, since fabric8 client handles reconnect.
+            // In case it tries to reconnect this method is not called.
+            log.error("Unexpected error happened with watch. Will exit.", e);
+            System.exit(1);
+        }
     }
 }
