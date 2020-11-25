@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class SubResourceTestCustomResourceController implements ResourceController<SubResourceTestCustomResource>,
         TestExecutionInfoProvider {
     
-    public static final String CRD_NAME = "subresourcesamples.sample.javaoperatorsdk";
+    public static final String CRD_NAME = "subresourcesamples.sample.javaoperatorsdk.io";
     public static final String FINALIZER_NAME = CRD_NAME + ".io/finalizer";
     private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
     private final AtomicInteger numberOfExecutions = new AtomicInteger(0);

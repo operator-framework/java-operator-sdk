@@ -25,7 +25,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
     
-    public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
+    public static final String CRD_NAME = "customservices.sample.javaoperatorsdk.io";
     public static final String FINALIZER_NAME = CRD_NAME + ".io/finalizer";
 
     private final KubernetesClient kubernetesClient;

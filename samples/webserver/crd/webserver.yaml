@@ -1,4 +1,4 @@
-apiVersion: "sample.javaoperatorsdk/v1"
+apiVersion: "sample.javaoperatorsdk.io/v1"
 kind: WebServer
 metadata:
   name: hellows

@@ -27,6 +27,6 @@ public class Schema extends CustomResource implements Namespaced {
     
     @Override
     public String getApiVersion() {
-        return "mysql.sample.javaoperatorsdk/v1";
+        return "mysql.sample.javaoperatorsdk.io/v1";
     }
 }

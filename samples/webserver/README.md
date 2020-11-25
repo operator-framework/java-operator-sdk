@@ -7,7 +7,7 @@ the html.
 
 This is an example input:
 ```yaml
-apiVersion: "sample.javaoperatorsdk/v1"
+apiVersion: "sample.javaoperatorsdk.io/v1"
 kind: WebServer
 metadata:
   name: mynginx-hello

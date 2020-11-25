@@ -1,4 +1,4 @@
-apiVersion: "mysql.sample.javaoperatorsdk/v1"
+apiVersion: "mysql.sample.javaoperatorsdk.io/v1"
 kind: MySQLSchema
 metadata:
   name: mydb

@@ -17,6 +17,6 @@ public class CustomService extends CustomResource implements Namespaced {
     
     @Override
     public String getApiVersion() {
-        return "sample.javaoperatorsdk/v1";
+        return "sample.javaoperatorsdk.io/v1";
     }
 }

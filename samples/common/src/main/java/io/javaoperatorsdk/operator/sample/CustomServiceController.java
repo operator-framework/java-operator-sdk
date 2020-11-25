@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  * A very simple sample controller that creates a service with a label.
  */
 @Controller(customResourceClass = CustomService.class,
-        crdName = "customservices.sample.javaoperatorsdk")
+    crdName = "customservices.sample.javaoperatorsdk.io")
 public class CustomServiceController implements ResourceController<CustomService> {
 
     public static final String KIND = "CustomService";

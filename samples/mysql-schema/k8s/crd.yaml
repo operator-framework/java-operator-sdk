@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: schemas.mysql.sample.javaoperatorsdk
+  name: schemas.mysql.sample.javaoperatorsdk.io
 spec:
-  group: mysql.sample.javaoperatorsdk
+  group: mysql.sample.javaoperatorsdk.io
   version: v1
   subresources:
     status: {}

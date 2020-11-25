@@ -79,7 +79,7 @@ The Controller implements the business logic and describes all the classes neede
 
 ```java
 @Controller(customResourceClass = WebServer.class,
-        crdName = "webservers.sample.javaoperatorsdk")
+    crdName = "webservers.sample.javaoperatorsdk.io")
 public class WebServerController implements ResourceController<WebServer> {
 
     @Override

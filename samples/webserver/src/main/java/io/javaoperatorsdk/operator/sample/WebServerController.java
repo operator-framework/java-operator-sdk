@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Controller(customResourceClass = WebServer.class,
-    crdName = "webservers.sample.javaoperatorsdk")
+    crdName = "webservers.sample.javaoperatorsdk.io")
 public class WebServerController implements ResourceController<WebServer> {
     
     private final Logger log = LoggerFactory.getLogger(getClass());

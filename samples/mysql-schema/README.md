@@ -8,7 +8,7 @@ Access to the MySQL server is configured in the configuration of the operator, s
 
 This is an example input:
 ```yaml
-apiVersion: "mysql.sample.javaoperatorsdk/v1"
+apiVersion: "mysql.sample.javaoperatorsdk.io/v1"
 kind: MySQLSchema
 metadata:
   name: mydb

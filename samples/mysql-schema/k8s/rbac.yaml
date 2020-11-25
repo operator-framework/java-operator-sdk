@@ -4,13 +4,13 @@ metadata:
   name: mysql-schema-operator
 rules:
 - apiGroups:
-  - mysql.sample.javaoperatorsdk
+    - mysql.sample.javaoperatorsdk.io
   resources:
   - schemas
   verbs:
   - "*"
 - apiGroups:
-  - mysql.sample.javaoperatorsdk
+    - mysql.sample.javaoperatorsdk.io
   resources:
   - schemas/status
   verbs:
