@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static io.javaoperatorsdk.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
@@ -31,11 +32,16 @@ public class DefaultEventHandler implements EventHandler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public DefaultEventHandler(ResourceCache resourceCache, EventDispatcher eventDispatcher) {
+    public DefaultEventHandler(ResourceCache resourceCache, EventDispatcher eventDispatcher, String relatedControllerName) {
         this.resourceCache = resourceCache;
         this.eventDispatcher = eventDispatcher;
         eventBuffer = new EventBuffer();
-        executor = new ScheduledThreadPoolExecutor(5);
+        executor = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable runnable) {
+                return new Thread(runnable, "EventHandler-" + relatedControllerName);
+            }
+        });
     }
 
     public void setDefaultEventSourceManager(DefaultEventSourceManager defaultEventSourceManager) {

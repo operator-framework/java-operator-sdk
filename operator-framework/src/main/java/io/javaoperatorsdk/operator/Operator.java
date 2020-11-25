@@ -41,7 +41,7 @@ public class Operator {
         registerController(controller, true);
     }
 
-    public <R extends CustomResource> void registerController(ResourceController<R> controller,  String... targetNamespaces) throws OperatorException {
+    public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
         registerController(controller, false, targetNamespaces);
     }
 
@@ -58,7 +58,7 @@ public class Operator {
 
 
         ResourceCache resourceCache = new ResourceCache();
-        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcher);
+        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcher, controller.getClass().getName());
         DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler);
         defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
 

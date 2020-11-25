@@ -24,7 +24,7 @@ class DefaultEventHandlerTest {
     public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
     private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
     private ResourceCache resourceCache = new ResourceCache();
-    private DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcherMock);
+    private DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcherMock, "Test");
     private DefaultEventSourceManager defaultEventSourceManagerMock = mock(DefaultEventSourceManager.class);
 
     @BeforeEach
