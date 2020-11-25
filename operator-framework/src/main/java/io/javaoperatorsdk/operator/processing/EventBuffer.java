@@ -11,11 +11,7 @@ public class EventBuffer {
 
     public void addEvent(Event event) {
         String uid = event.getRelatedCustomResourceUid();
-        List<Event> crEvents = events.get(uid);
-        if (crEvents == null) {
-            crEvents = new ArrayList<>(1);
-            events.put(uid, crEvents);
-        }
+        List<Event> crEvents = events.computeIfAbsent(uid, (id) -> new ArrayList<>(1));
         crEvents.add(event);
     }
 
