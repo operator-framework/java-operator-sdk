@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static io.javaoperatorsdk.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
 
 /**
- * Event handler that makes sure that events are processed in a "single threaded" way, while buffering
+ * Event handler that makes sure that events are processed in a "single threaded" way per resource UID, while buffering
  * events which are received during an execution.
  */
 
@@ -99,5 +99,4 @@ public class DefaultEventHandler implements EventHandler {
         underProcessing.remove(customResourceUid);
     }
 }
-
 
