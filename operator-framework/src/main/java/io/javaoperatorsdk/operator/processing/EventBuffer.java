@@ -21,12 +21,7 @@ public class EventBuffer {
 
     public List<Event> getAndRemoveEventsForExecution(String resourceUid) {
         List<Event> crEvents = events.remove(resourceUid);
-        if (crEvents == null) {
-            crEvents = Collections.emptyList();
-        }
-        List<Event> result = new ArrayList<>(crEvents);
-        crEvents.clear();
-        return result;
+        return crEvents == null ? Collections.emptyList() : crEvents;
     }
 
     public void cleanup(String resourceUid) {
