@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import static io.javaoperatorsdk.operator.processing.ProcessingUtils.*;
 
 /**
- * This is a special case since does not bounds to a single custom resource
+ * This is a special case since is not bound to a single custom resource
  */
 public class CustomResourceEventSource extends AbstractEventSource implements Watcher<CustomResource> {
 
