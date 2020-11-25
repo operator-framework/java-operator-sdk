@@ -11,7 +11,7 @@ class ExecutionConsumer implements Runnable {
     private final EventDispatcher eventDispatcher;
     private final DefaultEventHandler defaultEventHandler;
 
-    public ExecutionConsumer(ExecutionScope executionScope, EventDispatcher eventDispatcher, DefaultEventHandler defaultEventHandler) {
+    ExecutionConsumer(ExecutionScope executionScope, EventDispatcher eventDispatcher, DefaultEventHandler defaultEventHandler) {
         this.executionScope = executionScope;
         this.eventDispatcher = eventDispatcher;
         this.defaultEventHandler = defaultEventHandler;
