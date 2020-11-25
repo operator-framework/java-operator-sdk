@@ -45,7 +45,7 @@ public class WebappController implements ResourceController<Webapp> {
         String fileName = fileNameFromWebapp(webapp);
         String[] command = new String[]{"rm", "/data/" + fileName};
         executeCommandInAllPods(kubernetesClient, webapp, command);
-        return DeleteControl.defaultDelete();
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     private void executeCommandInAllPods(KubernetesClient kubernetesClient, Webapp webapp, String[] command) {

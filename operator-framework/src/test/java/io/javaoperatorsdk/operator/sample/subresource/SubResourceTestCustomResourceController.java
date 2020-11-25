@@ -21,7 +21,7 @@ public class SubResourceTestCustomResourceController implements ResourceControll
 
     @Override
     public DeleteControl deleteResource(SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
-        return DeleteControl.defaultDelete();
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     @Override

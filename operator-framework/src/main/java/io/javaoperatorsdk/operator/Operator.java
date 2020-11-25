@@ -109,11 +109,4 @@ public class Operator {
         return customResourceClients.get(customResourceClass);
     }
 
-    private String getKind(CustomResourceDefinition crd) {
-        return crd.getSpec().getNames().getKind();
-    }
-
-    private String getApiVersion(CustomResourceDefinition crd) {
-        return crd.getSpec().getGroup() + "/" + crd.getSpec().getVersion();
-    }
 }

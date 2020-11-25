@@ -119,7 +119,7 @@ public class WebServerController implements ResourceController<WebServer> {
         if (service.get() != null) {
             service.delete();
         }
-        return new DeleteControl();
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     private static String configMapName(WebServer nginx) {

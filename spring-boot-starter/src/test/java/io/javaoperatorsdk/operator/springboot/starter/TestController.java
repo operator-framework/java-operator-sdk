@@ -12,7 +12,7 @@ public class TestController implements ResourceController {
 
     @Override
     public DeleteControl deleteResource(CustomResource resource, Context context) {
-        return new DeleteControl();
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     @Override

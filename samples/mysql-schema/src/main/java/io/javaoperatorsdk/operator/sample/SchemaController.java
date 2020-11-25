@@ -122,10 +122,10 @@ public class SchemaController implements ResourceController<Schema> {
                 log.info("Delete event ignored for schema '{}', real schema doesn't exist",
                         schema.getMetadata().getName());
             }
-            return DeleteControl.defaultDelete();
+            return DeleteControl.DEFAULT_DELETE;
         } catch (SQLException e) {
             log.error("Error while trying to delete Schema", e);
-            return DeleteControl.noFinalizerRemoval();
+            return DeleteControl.NO_FINALIZER_REMOVAL;
         }
     }
 

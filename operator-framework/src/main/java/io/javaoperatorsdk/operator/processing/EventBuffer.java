@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 
 import java.util.*;
 
-public class EventBuffer {
+class EventBuffer {
 
     private Map<String, List<Event>> events = new HashMap<>();
 

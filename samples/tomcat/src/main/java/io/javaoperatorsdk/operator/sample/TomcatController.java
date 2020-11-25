@@ -86,7 +86,7 @@ public class TomcatController implements ResourceController<Tomcat> {
     public DeleteControl deleteResource(Tomcat tomcat, Context<Tomcat> context) {
         deleteDeployment(tomcat);
         deleteService(tomcat);
-        return DeleteControl.defaultDelete();
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     private Deployment createOrUpdateDeployment(Tomcat tomcat) {

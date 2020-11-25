@@ -36,7 +36,7 @@ class EventDispatcherTest {
         testCustomResource.getMetadata().setFinalizers(new ArrayList<>(Collections.singletonList(DEFAULT_FINALIZER)));
 
         when(controller.createOrUpdateResource(eq(testCustomResource), any())).thenReturn(UpdateControl.updateCustomResource(testCustomResource));
-        when(controller.deleteResource(eq(testCustomResource), any())).thenReturn(DeleteControl.defaultDelete());
+        when(controller.deleteResource(eq(testCustomResource), any())).thenReturn(DeleteControl.DEFAULT_DELETE);
         when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
     }
 
@@ -106,7 +106,7 @@ class EventDispatcherTest {
 
     @Test
     void doesNotRemovesTheFinalizerIfTheDeleteNotMethodInstructsIt() {
-        when(controller.deleteResource(eq(testCustomResource), any())).thenReturn(DeleteControl.noFinalizerRemoval());
+        when(controller.deleteResource(eq(testCustomResource), any())).thenReturn(DeleteControl.NO_FINALIZER_REMOVAL);
         markForDeletion(testCustomResource);
 
         eventDispatcher.handleEvent(customResourceEvent(Watcher.Action.MODIFIED, testCustomResource));

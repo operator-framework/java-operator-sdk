@@ -46,7 +46,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
         } else {
             log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
         }
-        return new DeleteControl();
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     @Override

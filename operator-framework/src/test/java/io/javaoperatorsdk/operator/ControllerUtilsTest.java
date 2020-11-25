@@ -27,7 +27,7 @@ class ControllerUtilsTest {
 
         @Override
         public DeleteControl deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
-            return DeleteControl.defaultDelete();
+            return DeleteControl.DEFAULT_DELETE;
         }
 
         @Override

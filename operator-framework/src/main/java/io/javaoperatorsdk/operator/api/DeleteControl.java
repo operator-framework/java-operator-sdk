@@ -2,25 +2,17 @@ package io.javaoperatorsdk.operator.api;
 
 public class DeleteControl {
 
-    public static DeleteControl defaultDelete() {
-        return new DeleteControl();
-    }
+    public static final DeleteControl DEFAULT_DELETE = new DeleteControl(true);
+    public static final DeleteControl NO_FINALIZER_REMOVAL = new DeleteControl(false);
 
-    public static DeleteControl noFinalizerRemoval() {
-        DeleteControl deleteControl = new DeleteControl();
-        deleteControl.setRemoveFinalizer(false);
-        return deleteControl;
-    }
+    private final boolean removeFinalizer;
 
-    private boolean removeFinalizer = true;
+    private DeleteControl(boolean removeFinalizer) {
+        this.removeFinalizer = removeFinalizer;
+    }
 
     public boolean getRemoveFinalizer() {
         return removeFinalizer;
-    }
-
-    public DeleteControl setRemoveFinalizer(boolean removeFinalizer) {
-        this.removeFinalizer = removeFinalizer;
-        return this;
     }
 
 }
