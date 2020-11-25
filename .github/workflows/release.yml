@@ -10,7 +10,7 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: 11
       - name: change version to release version
         # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
         run: mvn versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
@@ -33,7 +33,7 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: 11
       - name: change version to release version
         run: |
           mvn versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
