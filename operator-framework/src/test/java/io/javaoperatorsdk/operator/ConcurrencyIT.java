@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.sample.TestCustomResource;
@@ -34,10 +33,9 @@ public class ConcurrencyIT {
     public void setup() {
         KubernetesClient k8sClient = new DefaultKubernetesClient();
         final TestCustomResourceController controller = new TestCustomResourceController(k8sClient, true);
-        assertThat(HasMetadata.FINALIZER_NAME_MATCHER.reset(ControllerUtils.getDefaultFinalizerIdentifier(controller)).matches()).isTrue();
         integrationTest.initialize(k8sClient, controller, "test-crd.yaml");
     }
-
+    
     @BeforeEach
     public void cleanup() {
         integrationTest.cleanup();

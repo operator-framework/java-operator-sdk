@@ -34,6 +34,8 @@ public class IntegrationTestSupport {
     private ResourceController controller;
 
     public void initialize(KubernetesClient k8sClient, ResourceController controller, String crdPath) {
+        assertThat(ControllerUtils.isFinalizerValid(ControllerUtils.getDefaultFinalizerIdentifier(controller))).isTrue();
+    
         log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
         this.k8sClient = k8sClient;
         loadCRDAndApplyToCluster(crdPath);
@@ -41,7 +43,7 @@ public class IntegrationTestSupport {
     
         Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
         this.crOperations = k8sClient.customResources(customResourceClass, CustomResourceList.class);
-
+    
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
             k8sClient.namespaces().create(new NamespaceBuilder()
                     .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());

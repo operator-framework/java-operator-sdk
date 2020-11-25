@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator;
 
 import java.util.concurrent.TimeUnit;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -10,7 +9,6 @@ import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResou
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -23,11 +21,6 @@ import static org.awaitility.Awaitility.await;
 public class SubResourceUpdateIT {
     
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
-    
-    @BeforeAll
-    void checkFinalizer() {
-        assertThat(HasMetadata.FINALIZER_NAME_MATCHER.reset(ControllerUtils.getDefaultFinalizerIdentifier(new SubResourceTestCustomResourceController())).matches()).isTrue();
-    }
     
     @BeforeEach
     public void initAndCleanup() {

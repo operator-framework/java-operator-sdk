@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -14,34 +13,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class ControllerUtilsTest {
-
+    
     public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
-
+    
     @Test
     public void returnsValuesFromControllerAnnotationFinalizer() {
         final TestCustomResourceController controller = new TestCustomResourceController(null);
         final String finalizer = ControllerUtils.getFinalizer(controller);
         Assertions.assertEquals(TestCustomResourceController.FINALIZER_NAME, finalizer);
-        Assertions.assertTrue(HasMetadata.FINALIZER_NAME_MATCHER.reset(finalizer).matches());
+        Assertions.assertTrue(ControllerUtils.isFinalizerValid(finalizer));
         assertEquals(TestCustomResource.class, ControllerUtils.getCustomResourceClass(controller));
         Assertions.assertEquals(TestCustomResourceController.CRD_NAME, ControllerUtils.getCrdName(controller));
         assertFalse(ControllerUtils.getGenerationEventProcessing(controller));
     }
-
+    
     @Controller(crdName = "test.crd", customResourceClass = TestCustomResource.class, finalizerName = CUSTOM_FINALIZER_NAME)
     static class TestCustomFinalizerController implements ResourceController<TestCustomResource> {
-
+        
         @Override
         public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
             return false;
         }
-
+        
         @Override
         public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
             return null;
         }
     }
-
+    
     @Test
     public void returnCustomerFinalizerNameIfSet() {
         assertEquals(CUSTOM_FINALIZER_NAME, ControllerUtils.getFinalizer(new TestCustomFinalizerController()));

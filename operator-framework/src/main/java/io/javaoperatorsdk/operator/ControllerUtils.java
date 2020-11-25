@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -20,6 +21,15 @@ public class ControllerUtils {
         return getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
     }
     
+    /**
+     * @param finalizer
+     * @return
+     * @deprecated this should be removed once k8s client provides that method on HasMetadata
+     */
+    static boolean isFinalizerValid(String finalizer) {
+        return HasMetadata.FINALIZER_NAME_MATCHER.reset(finalizer).matches();
+    }
+    
     static boolean getGenerationEventProcessing(ResourceController controller) {
         return getAnnotation(controller).generationAwareEventProcessing();
     }
@@ -27,7 +37,7 @@ public class ControllerUtils {
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
         return (Class<R>) getAnnotation(controller).customResourceClass();
     }
-
+    
     static String getCrdName(ResourceController controller) {
         return getAnnotation(controller).crdName();
     }
