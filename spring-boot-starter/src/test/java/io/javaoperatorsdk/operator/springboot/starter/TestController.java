@@ -5,12 +5,10 @@ import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.javaoperatorsdk.operator.springboot.starter.model.TestResource;
 import org.springframework.stereotype.Component;
 
 @Component
-@Controller(crdName = "name",
-        customResourceClass = TestResource.class)
+@Controller(crdName = "name")
 public class TestController implements ResourceController {
 
     @Override

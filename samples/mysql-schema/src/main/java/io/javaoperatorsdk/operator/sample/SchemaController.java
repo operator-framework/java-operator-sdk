@@ -21,9 +21,7 @@ import java.util.Base64;
 
 import static java.lang.String.format;
 
-@Controller(
-        crdName = "schemas.mysql.sample.javaoperatorsdk",
-        customResourceClass = Schema.class)
+@Controller(crdName = "schemas.mysql.sample.javaoperatorsdk")
 public class SchemaController implements ResourceController<Schema> {
     static final String USERNAME_FORMAT = "%s-user";
     static final String SECRET_FORMAT = "%s-secret";

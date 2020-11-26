@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api;
 
-import io.fabric8.kubernetes.client.CustomResource;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,8 +12,6 @@ public @interface Controller {
     String NULL = "";
 
     String crdName();
-
-    Class<? extends CustomResource> customResourceClass();
 
     /**
      * Optional finalizer name, if it is not,

@@ -1,43 +1,49 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import javassist.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.ResourceController;
 
-import java.util.HashMap;
 import java.util.Map;
 
 
 public class ControllerUtils {
 
-    private final static double JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version"));
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+    public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
+    private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
 
-    // this is just to support testing, this way we don't try to create class multiple times in memory with same name.
-    // note that other solution is to add a random string to doneable class name
-    private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable<? extends CustomResource>>>
-            doneableClassCache = new HashMap<>();
+    static {
+        controllerToCustomResourceMappings =
+                ControllerToCustomResourceMappingsProvider
+                        .provide(CONTROLLERS_RESOURCE_PATH);
+    }
 
     static String getFinalizer(ResourceController controller) {
         final String annotationFinalizerName = getAnnotation(controller).finalizerName();
         if (!Controller.NULL.equals(annotationFinalizerName)) {
             return annotationFinalizerName;
         }
-        final String crdName = getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
-        return crdName;
+        return getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
     }
 
-    static boolean getGenerationEventProcessing(ResourceController controller) {
+    static boolean getGenerationEventProcessing(ResourceController<?> controller) {
         return getAnnotation(controller).generationAwareEventProcessing();
     }
 
     static <R extends CustomResource> Class<R> getCustomResourceClass(ResourceController<R> controller) {
-        return (Class<R>) getAnnotation(controller).customResourceClass();
+        final Class<? extends CustomResource> customResourceClass = controllerToCustomResourceMappings
+                .get(controller.getClass());
+        if (customResourceClass == null) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "No custom resource has been found for controller %s",
+                            controller.getClass().getCanonicalName()
+                    )
+            );
+        }
+        return (Class<R>) customResourceClass;
     }
 
     static String getCrdName(ResourceController controller) {
@@ -48,38 +54,15 @@ public class ControllerUtils {
     public static <T extends CustomResource> Class<? extends CustomResourceDoneable<T>>
     getCustomResourceDoneableClass(ResourceController<T> controller) {
         try {
-            Class<? extends CustomResource> customResourceClass = getAnnotation(controller).customResourceClass();
-            String className = customResourceClass.getPackage().getName() + "." + customResourceClass.getSimpleName() + "CustomResourceDoneable";
-
-            if (doneableClassCache.containsKey(customResourceClass)) {
-                return (Class<? extends CustomResourceDoneable<T>>) doneableClassCache.get(customResourceClass);
-            }
-
-            ClassPool pool = ClassPool.getDefault();
-            pool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
-
-            CtClass superClass = pool.get(CustomResourceDoneable.class.getName());
-            CtClass function = pool.get(Function.class.getName());
-            CtClass customResource = pool.get(customResourceClass.getName());
-            CtClass[] argTypes = {customResource, function};
-            CtClass customDoneable = pool.makeClass(className, superClass);
-            CtConstructor ctConstructor = CtNewConstructor.make(argTypes, null, "super($1, $2);", customDoneable);
-            customDoneable.addConstructor(ctConstructor);
-
-            Class<? extends CustomResourceDoneable<T>> doneableClass;
-            if (JAVA_VERSION >= 9) {
-                doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass(customResourceClass);
-            } else {
-                doneableClass = (Class<? extends CustomResourceDoneable<T>>) customDoneable.toClass();
-            }
-            doneableClassCache.put(customResourceClass, doneableClass);
-            return doneableClass;
-        } catch (CannotCompileException | NotFoundException e) {
-            throw new IllegalStateException(e);
+            final Class<T> customResourceClass = getCustomResourceClass(controller);
+            return (Class<? extends CustomResourceDoneable<T>>) Class.forName(customResourceClass.getCanonicalName() + "Doneable");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
-    private static Controller getAnnotation(ResourceController controller) {
+    private static Controller getAnnotation(ResourceController<?> controller) {
         return controller.getClass().getAnnotation(Controller.class);
     }
 

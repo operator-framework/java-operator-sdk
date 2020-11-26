@@ -25,7 +25,7 @@ class ControllerUtilsTest {
         assertTrue(CustomResourceDoneable.class.isAssignableFrom(ControllerUtils.getCustomResourceDoneableClass(new TestCustomResourceController(null))));
     }
 
-    @Controller(crdName = "test.crd", customResourceClass = TestCustomResource.class, finalizerName = CUSTOM_FINALIZER_NAME)
+    @Controller(crdName = "test.crd", finalizerName = CUSTOM_FINALIZER_NAME)
     static class TestCustomFinalizerController implements ResourceController<TestCustomResource> {
 
         @Override
