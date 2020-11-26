@@ -6,7 +6,9 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import org.apache.commons.lang3.ClassUtils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,9 +27,12 @@ public class ControllerUtils {
             final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources(CONTROLLERS_RESOURCE_PATH);
             for (Iterator<URL> it = customResourcesMetadaList.asIterator(); it.hasNext(); ) {
                 URL url = it.next();
-                final List<String> classNamePairs = Files.lines(Path.of(url.getPath()))
-                        .collect(Collectors.toList());
 
+                List<String> classNamePairs = new BufferedReader(
+                        new InputStreamReader(
+                                url.openStream()
+                        )
+                ).lines().collect(Collectors.toList());
                 classNamePairs.forEach(clazzPair -> {
                     try {
 
