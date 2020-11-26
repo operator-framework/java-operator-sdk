@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Map;
 
@@ -11,15 +12,13 @@ public class ControllerUtils {
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
     
     public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
-  public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";
-  private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>>
-      controllerToCustomResourceMappings;
-  private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>>
+  public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";  private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
+   
+   private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>>
       resourceToDoneableMappings;
   static {
       controllerToCustomResourceMappings =
-          ClassMappingProvider.provide(
-            CONTROLLERS_RESOURCE_PATH, ResourceController.class, CustomResource.class);
+          ClassMappingProvider.provide(CONTROLLERS_RESOURCE_PATH, ResourceController.class, CustomResource.class);
     resourceToDoneableMappings =
         ClassMappingProvider.provide(
             DONEABLES_RESOURCE_PATH, CustomResource.class, CustomResourceDoneable.class);
@@ -55,11 +54,7 @@ public class ControllerUtils {
     }
     return doneableClass;
   }
-
-  private static Controller getAnnotation(ResourceController<?> controller) {
-    return controller.getClass().getAnnotation(Controller.class);
-  }
-
+  
   public static boolean hasGivenFinalizer(CustomResource resource, String finalizer) {
     return resource.getMetadata().getFinalizers() != null
         && resource.getMetadata().getFinalizers().contains(finalizer);

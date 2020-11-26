@@ -60,6 +60,6 @@ public class DefaultConfiguration<R extends CustomResource> implements Controlle
     
     @Override
     public Class<R> getCustomResourceClass() {
-        return (Class<R>) annotation.customResourceClass();
+        return ControllerUtils.getCustomResourceClass(controller);
     }
 }
