@@ -78,33 +78,22 @@
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.google.testing.compile</groupId>
             <artifactId>compile-testing</artifactId>
             <version>0.19</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>1.0-rc2</version>
-            <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>com.squareup</groupId>
             <artifactId>javapoet</artifactId>
             <version>1.13.0</version>
-            <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-core</artifactId>
-            <version>1.9.2.Final</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 </project>
