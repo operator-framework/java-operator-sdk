@@ -37,4 +37,8 @@ public interface ResourceController<R extends CustomResource> {
    * @param eventSourceManager
    */
   default void init(EventSourceManager eventSourceManager) {}
+  
+  default ControllerConfiguration<R> getConfiguration() {
+        return new DefaultConfiguration<>(this);
+    }
 }
