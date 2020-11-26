@@ -4,54 +4,20 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import org.apache.commons.lang3.ClassUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 
 public class ControllerUtils {
 
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
     public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
-    private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings = new HashMap();
+    private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
 
     static {
-        try {
-            final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources(CONTROLLERS_RESOURCE_PATH);
-            for (Iterator<URL> it = customResourcesMetadaList.asIterator(); it.hasNext(); ) {
-                URL url = it.next();
-
-                List<String> classNamePairs = new BufferedReader(
-                        new InputStreamReader(
-                                url.openStream()
-                        )
-                ).lines().collect(Collectors.toList());
-                classNamePairs.forEach(clazzPair -> {
-                    try {
-
-                        final String[] classNames = clazzPair.split(",");
-                        if (classNames.length != 2) {
-                            throw new IllegalStateException(String.format("%s is not custom-resource metadata defined in %s", url.toString()));
-                        }
-
-                        controllerToCustomResourceMappings.put((Class<? extends ResourceController>) ClassUtils.getClass(classNames[0]), (Class<? extends CustomResource>) ClassUtils.getClass(classNames[1]));
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        //TODO: DEBUG log
+        controllerToCustomResourceMappings =
+                ControllerToCustomResourceMappingsProvider
+                        .provide(CONTROLLERS_RESOURCE_PATH);
     }
 
     static String getFinalizer(ResourceController controller) {
