@@ -31,6 +31,5 @@ class ControllerAnnotationProcessorTest {
 
         final JavaFileObject expectedResource = JavaFileObjects.forResource("ControllerImplementedIntermediateAbstractClassExpected.java");
         JavaFileObjectSubject.assertThat(compilation.generatedSourceFiles().get(0)).hasSourceEquivalentTo(expectedResource);
-
     }
 }

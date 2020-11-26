@@ -5,6 +5,8 @@ import com.squareup.javapoet.*;
 import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
@@ -27,7 +29,7 @@ import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_P
 
 @SupportedAnnotationTypes(
         "io.javaoperatorsdk.operator.api.Controller")
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
     private FileObject resource;
@@ -102,6 +104,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
                 final TypeSpec typeSpec = TypeSpec.classBuilder(doneableClassName)
                         .superclass(ParameterizedTypeName.get(ClassName.get(CustomResourceDoneable.class), customResourceType))
+                        .addAnnotation(RegisterForReflection.class)
                         .addModifiers(Modifier.PUBLIC)
                         .addMethod(constructor)
                         .build();
