@@ -7,35 +7,40 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Map;
 
 public class ControllerUtils {
-
-  private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
-  public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
+    
+    
+    private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+    
+    public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
   public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";
   private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>>
       controllerToCustomResourceMappings;
   private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>>
       resourceToDoneableMappings;
-
   static {
-    controllerToCustomResourceMappings =
-        ClassMappingProvider.provide(
+      controllerToCustomResourceMappings =
+          ClassMappingProvider.provide(
             CONTROLLERS_RESOURCE_PATH, ResourceController.class, CustomResource.class);
     resourceToDoneableMappings =
         ClassMappingProvider.provide(
             DONEABLES_RESOURCE_PATH, CustomResource.class, CustomResourceDoneable.class);
-  }
-
-  static String getFinalizer(ResourceController controller) {
-    final String annotationFinalizerName = getAnnotation(controller).finalizerName();
-    if (!Controller.NULL.equals(annotationFinalizerName)) {
-      return annotationFinalizerName;
     }
-    return getAnnotation(controller).crdName() + FINALIZER_NAME_SUFFIX;
-  }
-
-  static boolean getGenerationEventProcessing(ResourceController<?> controller) {
-    return getAnnotation(controller).generationAwareEventProcessing();
-  }
+    
+    public static String getDefaultFinalizerName(String crdName) {
+        return crdName + FINALIZER_NAME_SUFFIX;
+    }
+    
+    static String getFinalizer(ResourceController controller) {
+        final String annotationFinalizerName = getAnnotation(controller).finalizerName();
+        if (!Controller.NULL.equals(annotationFinalizerName)) {
+            return annotationFinalizerName;
+        }
+        return getDefaultFinalizerName(getAnnotation(controller).crdName());
+    }
+    
+    static boolean getGenerationEventProcessing(ResourceController<?> controller) {
+        return getAnnotation(controller).generationAwareEventProcessing();
+    }
 
   static <R extends CustomResource> Class<R> getCustomResourceClass(
       ResourceController<R> controller) {
