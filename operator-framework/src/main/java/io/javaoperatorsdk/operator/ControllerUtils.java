@@ -21,7 +21,7 @@ public class ControllerUtils {
 
     static {
         try {
-            final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources("javaoperatorsdk-custom-resources");
+            final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources("javaoperatorsdk/controllers");
             for (Iterator<URL> it = customResourcesMetadaList.asIterator(); it.hasNext(); ) {
                 URL url = it.next();
                 final List<String> classNamePairs = Files.lines(Path.of(url.getPath()))

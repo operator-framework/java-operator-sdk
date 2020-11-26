@@ -37,7 +37,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         try {
-            resource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk-custom-resources");
+            resource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk/controllers");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -50,11 +50,13 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-
+        System.out.println("annotatedElements:");
         try {
             for (TypeElement annotation : annotations) {
                 Set<? extends Element> annotatedElements
                         = roundEnv.getElementsAnnotatedWith(annotation);
+                System.out.println("annotatedElements:");
+                System.out.println(annotatedElements);
                 annotatedElements.stream().filter(element -> element.getKind().equals(ElementKind.CLASS))
                         .map(e -> (TypeElement) e)
                         .forEach(e -> this.generateDoneableClass(e, printWriter));
