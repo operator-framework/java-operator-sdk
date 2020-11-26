@@ -65,10 +65,11 @@ public class Operator {
       Retry retry,
       String... targetNamespaces)
       throws OperatorException {
-    Class<R> resClass = getCustomResourceClass(controller);
+    final var configuration = controller.getConfiguration();
+        Class<R> resClass = configuration.getCustomResourceClass();
     CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
     KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
-    String finalizer = ControllerUtils.getFinalizer(controller);
+    String finalizer = configuration.getFinalizer();
     MixedOperation client =
         k8sClient.customResources(
             crd,
@@ -133,7 +134,7 @@ public class Operator {
 
   private CustomResourceDefinitionContext getCustomResourceDefinitionForController(
       ResourceController controller) {
-    String crdName = getCrdName(controller);
+    final var crdName = controller.getConfiguration().getCRDName();
     CustomResourceDefinition customResourceDefinition =
         k8sClient.customResourceDefinitions().withName(crdName).get();
     if (customResourceDefinition == null) {

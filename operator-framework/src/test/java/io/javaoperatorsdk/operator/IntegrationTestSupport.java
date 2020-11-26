@@ -52,9 +52,9 @@ public class IntegrationTestSupport {
     CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
     CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
     this.controller = controller;
-
+    
     Class doneableClass = ControllerUtils.getCustomResourceDoneableClass(controller);
-    Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
+    Class customResourceClass = controller.getConfiguration().getCustomResourceClass();
     crOperations =
         k8sClient.customResources(
             crdContext, customResourceClass, CustomResourceList.class, doneableClass);
