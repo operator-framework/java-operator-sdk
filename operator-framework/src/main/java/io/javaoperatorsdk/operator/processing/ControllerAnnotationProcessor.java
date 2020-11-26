@@ -13,6 +13,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -23,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
 
 @SupportedAnnotationTypes(
         "io.javaoperatorsdk.operator.api.Controller")
@@ -37,7 +40,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         try {
-            resource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk/controllers");
+            resource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", CONTROLLERS_RESOURCE_PATH);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -50,13 +53,10 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        System.out.println("annotatedElements:");
         try {
             for (TypeElement annotation : annotations) {
                 Set<? extends Element> annotatedElements
                         = roundEnv.getElementsAnnotatedWith(annotation);
-                System.out.println("annotatedElements:");
-                System.out.println(annotatedElements);
                 annotatedElements.stream().filter(element -> element.getKind().equals(ElementKind.CLASS))
                         .map(e -> (TypeElement) e)
                         .forEach(e -> this.generateDoneableClass(e, printWriter));
@@ -78,7 +78,14 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
             final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
             final String destinationClassFileName = customerResourceTypeElement.getQualifiedName() + "Doneable";
             final TypeName customResourceType = TypeName.get(resourceType);
+
             if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
+                        String.format(
+                                "%s already exist! adding the mapping to the %s",
+                                destinationClassFileName,
+                                CONTROLLERS_RESOURCE_PATH)
+                );
                 printWriter.println(controllerClassSymbol.getQualifiedName() + "," + customResourceType.toString());
                 return;
             }

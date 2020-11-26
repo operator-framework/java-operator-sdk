@@ -17,11 +17,12 @@ import java.util.stream.Collectors;
 public class ControllerUtils {
 
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+    public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
     private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings = new HashMap();
 
     static {
         try {
-            final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources("javaoperatorsdk/controllers");
+            final Enumeration<URL> customResourcesMetadaList = ControllerUtils.class.getClassLoader().getResources(CONTROLLERS_RESOURCE_PATH);
             for (Iterator<URL> it = customResourcesMetadaList.asIterator(); it.hasNext(); ) {
                 URL url = it.next();
                 final List<String> classNamePairs = Files.lines(Path.of(url.getPath()))
