@@ -69,7 +69,7 @@ public class DefaultEventHandler implements EventHandler {
             log.debug("Executing events for custom resource. Scope: {}", executionScope);
             executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
         } else {
-            log.debug("Not executing controller for {}, since currently under execution.", customResourceUid);
+            log.debug("Skipping executing controller for {}, since currently under execution.", customResourceUid);
         }
     }
 
