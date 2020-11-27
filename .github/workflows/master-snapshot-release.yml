@@ -1,12 +1,9 @@
-# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
-name: Java CI with Maven
+name: Test & Release Snapshot to Maven Central
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branchs: [ master ]
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,7 +17,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Set up JDK
+      - name: Set up Java and Maven
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
@@ -34,4 +31,20 @@ jobs:
           driver: 'docker'
       - name: Run integration tests
         run: mvn -B package -P no-unit-tests --file pom.xml
-
+  release-snapshot:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Release Maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          maven_profiles: "release"
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          nexus_username: ${{ secrets.OSSRH_USERNAME }}
+          nexus_password: ${{ secrets.OSSRH_TOKEN }}
