@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.config.ConfigurationService;
+import io.javaoperatorsdk.operator.config.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
@@ -28,30 +30,35 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("rawtypes")
 public class Operator {
 
-  private static final Logger log = LoggerFactory.getLogger(Operator.class);
+    private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
-  private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients =
-      new HashMap<>();
+  private final ConfigurationService configurationService;
+    private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
 
-  public Operator(KubernetesClient k8sClient) {
-    this.k8sClient = k8sClient;
-  }
+    public Operator(KubernetesClient k8sClient) {
+        this(k8sClient, DefaultConfigurationService.instance());
+    }
 
-  public <R extends CustomResource> void registerControllerForAllNamespaces(
-      ResourceController<R> controller, Retry retry) throws OperatorException {
+    public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
+        this.k8sClient = k8sClient;
+        this.configurationService = configurationService;
+    }
+
+
+    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
     registerController(controller, true, retry);
   }
 
   public <R extends CustomResource> void registerControllerForAllNamespaces(
       ResourceController<R> controller) throws OperatorException {
-    registerController(controller, true, null);
+        registerController(controller, true, null);
   }
 
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, Retry retry, String... targetNamespaces)
       throws OperatorException {
     registerController(controller, false, retry, targetNamespaces);
-  }
+    }
 
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
@@ -65,7 +72,7 @@ public class Operator {
       Retry retry,
       String... targetNamespaces)
       throws OperatorException {
-    final var configuration = controller.getConfiguration();
+    final var configuration = configurationService.getConfigurationFor(controller);
         Class<R> resClass = configuration.getCustomResourceClass();
     CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
     KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
@@ -99,7 +106,7 @@ public class Operator {
             watchAllNamespaces,
             targetNamespaces,
             defaultEventHandler,
-            ControllerUtils.getGenerationEventProcessing(controller),
+            configuration.isGenerationAware(),
             finalizer);
     eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
 
@@ -134,7 +141,7 @@ public class Operator {
 
   private CustomResourceDefinitionContext getCustomResourceDefinitionForController(
       ResourceController controller) {
-    final var crdName = controller.getConfiguration().getCRDName();
+    final var crdName = configurationService.getConfigurationFor(controller).getCRDName();
     CustomResourceDefinition customResourceDefinition =
         k8sClient.customResourceDefinitions().withName(crdName).get();
     if (customResourceDefinition == null) {

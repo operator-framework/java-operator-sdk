@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.api;
 
+import java.util.Locale;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public interface ResourceController<R extends CustomResource> {
-
+  
   /**
    * The implementation should delete the associated component(s). Note that this is method is
    * called when an object is marked for deletion. After its executed the custom resource finalizer
@@ -38,7 +40,19 @@ public interface ResourceController<R extends CustomResource> {
    */
   default void init(EventSourceManager eventSourceManager) {}
   
-  default ControllerConfiguration<R> getConfiguration() {
-        return new DefaultConfiguration<>(this);
+  default String getName() {
+        final var clazz = getClass();
+        
+        // if the controller annotation has a name attribute, use it
+        final var annotation = clazz.getAnnotation(Controller.class);
+        if (annotation != null) {
+            final var name = annotation.name();
+            if (!Controller.NULL.equals(name)) {
+                return name;
+            }
+        }
+        
+        // otherwise, use the lower-cased class name
+        return clazz.getSimpleName().toLowerCase(Locale.ROOT);
     }
 }
