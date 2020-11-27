@@ -79,6 +79,9 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
 
     @Override
     public void onClose(KubernetesClientException e) {
+        if (e == null) {
+            return;
+        }
         if (e.getCode() == HTTP_GONE) {
             log.warn("Received error for watch, will try to reconnect.", e);
             registerWatch();
