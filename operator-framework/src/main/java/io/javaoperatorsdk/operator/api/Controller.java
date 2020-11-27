@@ -26,4 +26,8 @@ public @interface Controller {
    * href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource">here</a>
    */
   boolean generationAwareEventProcessing() default true;
+    
+    boolean isClusterScoped() default false;
+    
+    String[] namespaces() default {};
 }

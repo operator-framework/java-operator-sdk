@@ -2,6 +2,7 @@
 package io.javaoperatorsdk.operator.config;
 
 import java.util.Locale;
+import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -45,5 +46,15 @@ public class AnnotationConfiguration<R extends CustomResource> implements Contro
     @Override
     public Class<R> getCustomResourceClass() {
         return ControllerUtils.getCustomResourceClass(controller);
+    }
+    
+    @Override
+    public boolean isClusterScoped() {
+        return annotation.isClusterScoped();
+    }
+    
+    @Override
+    public Set<String> getNamespaces() {
+        return Set.of(annotation.namespaces());
     }
 }
