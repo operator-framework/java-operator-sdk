@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.springboot.starter;
 
+import java.util.Collections;
 import java.util.Map;
 
 @org.springframework.boot.context.properties.ConfigurationProperties(prefix = "io.javaoperatorsdk")
 public class ConfigurationProperties {
-    private OperatorProperties client;
-    private Map<String, ControllerProperties> controllers;
+    private OperatorProperties client = new OperatorProperties();
+    private Map<String, ControllerProperties> controllers = Collections.emptyMap();
     
     // todo: figure out how to be able to use `.kubernetes.client` as prefix
     public OperatorProperties getClient() {
