@@ -1,7 +1,6 @@
 
 package io.javaoperatorsdk.operator.config;
 
-import java.util.Locale;
 import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
@@ -21,7 +20,7 @@ public class AnnotationConfiguration<R extends CustomResource> implements Contro
     @Override
     public String getName() {
         final var name = annotation.name();
-        return Controller.NULL.equals(name) ? controller.getClass().getSimpleName().toLowerCase(Locale.ROOT) : name;
+        return Controller.NULL.equals(name) ? ControllerUtils.getDefaultNameFor(controller) : name;
     }
     
     @Override

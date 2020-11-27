@@ -1,18 +1,19 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Locale;
 import java.util.Map;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import java.util.Map;
 
 public class ControllerUtils {
     
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
     
     public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
-  public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";  private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
+  public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";
+  private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
    
    private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>>
       resourceToDoneableMappings;
@@ -59,4 +60,12 @@ public class ControllerUtils {
     return resource.getMetadata().getFinalizers() != null
         && resource.getMetadata().getFinalizers().contains(finalizer);
   }
+    
+    public static String getDefaultNameFor(ResourceController controller) {
+        return getDefaultNameFor(controller.getClass());
+    }
+    
+    public static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
+        return controllerClass.getSimpleName().toLowerCase(Locale.ROOT);
+    }
 }
