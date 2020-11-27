@@ -6,6 +6,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.client.CustomResource;
 
 public interface ControllerConfiguration<R extends CustomResource> {
+    String WATCH_ALL_NAMESPACES_MARKER = "ALL_NAMESPACES";
     String getName();
     
     String getCRDName();
@@ -25,7 +26,7 @@ public interface ControllerConfiguration<R extends CustomResource> {
     }
     
     default boolean watchAllNamespaces() {
-        return false;
+        return getNamespaces().contains(WATCH_ALL_NAMESPACES_MARKER);
     }
     
     default RetryConfiguration getRetryConfiguration() {
