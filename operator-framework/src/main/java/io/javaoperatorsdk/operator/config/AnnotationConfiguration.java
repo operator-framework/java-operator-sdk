@@ -8,11 +8,11 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
-public class DefaultConfiguration<R extends CustomResource> implements ControllerConfiguration<R> {
+public class AnnotationConfiguration<R extends CustomResource> implements ControllerConfiguration<R> {
     private final ResourceController<R> controller;
     private final Controller annotation;
     
-    public DefaultConfiguration(ResourceController<R> controller) {
+    public AnnotationConfiguration(ResourceController<R> controller) {
         this.controller = controller;
         this.annotation = controller.getClass().getAnnotation(Controller.class);
     }

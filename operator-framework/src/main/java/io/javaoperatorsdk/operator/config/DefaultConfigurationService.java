@@ -22,7 +22,7 @@ public class DefaultConfigurationService implements ConfigurationService {
         final var name = controller.getName();
         var configuration = configurations.get(name);
         if (configuration == null) {
-            configuration = new DefaultConfiguration(controller);
+            configuration = new AnnotationConfiguration(controller);
             configurations.put(name, configuration);
         }
         return configuration;
