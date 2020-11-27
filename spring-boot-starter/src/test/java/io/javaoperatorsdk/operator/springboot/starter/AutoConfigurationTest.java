@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.List;
@@ -19,35 +20,40 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest
 public class AutoConfigurationTest {
 
-  @Autowired private RetryProperties retryProperties;
 
-  @Autowired private OperatorProperties operatorProperties;
+    @Autowired
+    private ConfigurationProperties config;
 
-  @MockBean private Operator operator;
+    @MockBean
+    private Operator operator;
 
-  @Autowired private KubernetesClient kubernetesClient;
+    @Autowired
+    private KubernetesClient kubernetesClient;
 
-  @Autowired private List<ResourceController> resourceControllers;
+    @Autowired
+    private List<ResourceController> resourceControllers;
 
-  @Test
-  public void loadsKubernetesClientPropertiesProperly() {
-    assertEquals("user", operatorProperties.getUsername());
-    assertEquals("password", operatorProperties.getPassword());
-    assertEquals("http://master.url", operatorProperties.getMasterUrl());
+    @Test
+    public void loadsKubernetesClientPropertiesProperly() {
+        final var operatorProperties = config.getClient();
+    assertEquals("user", operatorProperties.getUsername().get());
+    assertEquals("password", operatorProperties.getPassword().get());
+    assertEquals("http://master.url", operatorProperties.getMasterUrl().get());
   }
 
   @Test
   public void loadsRetryPropertiesProperly() {
-    assertEquals(3, retryProperties.getMaxAttempts().intValue());
-    assertEquals(1000, retryProperties.getInitialInterval().intValue());
-    assertEquals(1.5, retryProperties.getIntervalMultiplier().doubleValue());
-    assertEquals(50000, retryProperties.getMaxInterval().intValue());
-  }
+    final var retryProperties = config.getControllers().get(ControllerUtils.getDefaultNameFor(TestController.class)).getRetry();
+        assertEquals(3, retryProperties.getMaxAttempts());
+    assertEquals(1000, retryProperties.getInitialInterval());
+    assertEquals(1.5, retryProperties.getIntervalMultiplier());
+    assertEquals(50000, retryProperties.getMaxInterval());
+    }
 
-  @Test
-  public void beansCreated() {
-    assertNotNull(kubernetesClient);
-  }
+    @Test
+    public void beansCreated() {
+        assertNotNull(kubernetesClient);
+    }
 
   @Test
   public void resourceControllersAreDiscovered() {

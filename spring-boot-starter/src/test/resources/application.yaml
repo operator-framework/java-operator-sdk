@@ -1,12 +1,14 @@
-operator:
-  kubernetes.client:
+io.javaoperatorsdk:
+  client:
     username: user
     password: password
     masterUrl: http://master.url
 
-  controller.retry:
-    maxAttempts: 3
-    initialInterval: 1000
-    intervalMultiplier: 1.5
-    maxInterval: 50000
-    maxElapsedTime: 100000
+  controllers:
+    testcontroller:
+      retry:
+        maxAttempts: 3
+        initialInterval: 1000
+        intervalMultiplier: 1.5
+        maxInterval: 50000
+        maxElapsedTime: 100000
