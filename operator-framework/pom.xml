@@ -31,6 +31,7 @@
         </plugins>
     </build>
 
+
     <dependencies>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -77,10 +78,26 @@
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.27.0-GA</version>
+            <groupId>com.google.testing.compile</groupId>
+            <artifactId>compile-testing</artifactId>
+            <version>0.19</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <version>1.0-rc2</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>1.13.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

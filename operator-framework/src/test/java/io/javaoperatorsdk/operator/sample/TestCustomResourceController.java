@@ -15,8 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller(
         generationAwareEventProcessing = false,
-        crdName = TestCustomResourceController.CRD_NAME,
-        customResourceClass = TestCustomResource.class)
+        crdName = TestCustomResourceController.CRD_NAME)
 public class TestCustomResourceController implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
 
     private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);

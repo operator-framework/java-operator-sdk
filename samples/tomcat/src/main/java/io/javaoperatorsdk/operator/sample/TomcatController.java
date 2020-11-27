@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@Controller(customResourceClass = Tomcat.class,
-        crdName = "tomcats.tomcatoperator.io")
+@Controller(crdName = "tomcats.tomcatoperator.io")
 public class TomcatController implements ResourceController<Tomcat> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());

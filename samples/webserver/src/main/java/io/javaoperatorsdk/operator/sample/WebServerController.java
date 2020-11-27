@@ -19,7 +19,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-@Controller(customResourceClass = WebServer.class,
+@Controller(
         crdName = "webservers.sample.javaoperatorsdk")
 public class WebServerController implements ResourceController<WebServer> {
 

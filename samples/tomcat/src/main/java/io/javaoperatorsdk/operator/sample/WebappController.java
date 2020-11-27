@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Controller(customResourceClass = Webapp.class,
+@Controller(
         crdName = "webapps.tomcatoperator.io")
 public class WebappController implements ResourceController<Webapp> {
 
