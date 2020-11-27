@@ -53,8 +53,8 @@ class DefaultEventSourceManagerTest {
         EventSource eventSource = mock(EventSource.class);
         EventSource eventSource2 = mock(EventSource.class);
 
-        defaultEventSourceManager.registerEventSourceIfNotRegistered(customResource, CUSTOM_EVENT_SOURCE_NAME, eventSource);
-        defaultEventSourceManager.registerEventSourceIfNotRegistered(customResource, CUSTOM_EVENT_SOURCE_NAME, eventSource2);
+        defaultEventSourceManager.registerEventSourceIfNotRegistered(customResource, CUSTOM_EVENT_SOURCE_NAME, () -> eventSource);
+        defaultEventSourceManager.registerEventSourceIfNotRegistered(customResource, CUSTOM_EVENT_SOURCE_NAME, () -> eventSource2);
 
         Map<String, EventSource> registeredEventSources = defaultEventSourceManager
                 .getRegisteredEventSources(getUID(customResource));
@@ -65,7 +65,7 @@ class DefaultEventSourceManagerTest {
     public void deRegistersEventSources() {
         CustomResource customResource = TestUtils.testCustomResource();
         EventSource eventSource = mock(EventSource.class);
-        defaultEventSourceManager.registerEventSourceIfNotRegistered(customResource, CUSTOM_EVENT_SOURCE_NAME, eventSource);
+        defaultEventSourceManager.registerEventSourceIfNotRegistered(customResource, CUSTOM_EVENT_SOURCE_NAME, () -> eventSource);
 
         defaultEventSourceManager.deRegisterEventSource(getUID(customResource), CUSTOM_EVENT_SOURCE_NAME);
 

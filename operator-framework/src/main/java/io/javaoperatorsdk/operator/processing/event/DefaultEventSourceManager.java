@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 public class DefaultEventSourceManager implements EventSourceManager {
 
@@ -51,13 +52,14 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
 
     @Override
-    public <T extends EventSource> T registerEventSourceIfNotRegistered(CustomResource customResource, String name, T eventSource) {
+    public <T extends EventSource> T registerEventSourceIfNotRegistered(CustomResource customResource, String name, Supplier<T> eventSourceSupplier) {
         try {
             lock.lock();
             if (eventSources.get(ProcessingUtils.getUID(customResource)) == null ||
                     eventSources.get(ProcessingUtils.getUID(customResource)).get(name) == null) {
+                EventSource eventSource = eventSourceSupplier.get();
                 registerEventSource(customResource, name, eventSource);
-                return eventSource;
+                return (T) eventSource;
             }
             return (T) eventSources.get(ProcessingUtils.getUID(customResource)).get(name);
         } finally {
