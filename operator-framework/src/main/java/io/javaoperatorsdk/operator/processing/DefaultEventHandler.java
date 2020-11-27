@@ -68,12 +68,15 @@ public class DefaultEventHandler implements EventHandler {
                     resourceCache.getLatestResource(customResourceUid).get());
             log.debug("Executing events for custom resource. Scope: {}", executionScope);
             executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
+        } else {
+            log.debug("Not executing controller for {}, since currently under execution.", customResourceUid);
         }
     }
 
     void eventProcessingFinished(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
         try {
             lock.lock();
+            log.debug("Event processing finished. Scope: {}", executionScope);
             unsetUnderExecution(executionScope.getCustomResourceUid());
             defaultEventSourceManager.controllerExecuted(
                     new ExecutionDescriptor(executionScope, postExecutionControl, LocalDateTime.now()));
