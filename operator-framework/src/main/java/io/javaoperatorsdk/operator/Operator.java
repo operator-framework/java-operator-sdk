@@ -61,6 +61,7 @@ public class Operator {
         DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcher, controller.getClass().getName());
         DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler);
         defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
+        eventDispatcher.setEventSourceManager(eventSourceManager);
 
         customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 

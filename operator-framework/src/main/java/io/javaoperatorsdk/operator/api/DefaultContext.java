@@ -8,21 +8,22 @@ import java.util.List;
 
 public class DefaultContext<T extends CustomResource> implements Context<T> {
 
-    private final CustomResource customResource;
     private final List<Event> events;
+    private final EventSourceManager eventSourceManager;
 
-    public DefaultContext(CustomResource customResource, List<Event> events) {
-        this.customResource = customResource;
+    public DefaultContext(EventSourceManager eventSourceManager, List<Event> events) {
         this.events = events;
+        this.eventSourceManager = eventSourceManager;
     }
 
     @Override
     public EventSourceManager getEventSourceManager() {
-        return null;
+        return eventSourceManager;
     }
 
     @Override
     public List<Event> getEvents() {
-        return null;
+        return events;
     }
+
 }
