@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.ProcessingUtils;
+import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +41,7 @@ class TimerEventSourceTest {
         ArgumentCaptor<TimerEvent> argumentCaptor = ArgumentCaptor.forClass(TimerEvent.class);
         verify(eventHandlerMock, timeout(100).times(1)).handleEvent(argumentCaptor.capture());
         TimerEvent event = argumentCaptor.getValue();
-        assertThat(event.getRelatedCustomResourceUid()).isEqualTo(ProcessingUtils.getUID(customResource));
+        assertThat(event.getRelatedCustomResourceUid()).isEqualTo(getUID(customResource));
         assertThat(event.getEventSource()).isEqualTo(timerEventSource);
     }
 
@@ -54,7 +55,7 @@ class TimerEventSourceTest {
         verify(eventHandlerMock, timeout(INITIAL_DELAY + PERIOD + TESTING_TIME_SLACK).times(2))
                 .handleEvent(argumentCaptor.capture());
         List<TimerEvent> events = argumentCaptor.getAllValues();
-        assertThat(events).allMatch(e -> e.getRelatedCustomResourceUid().equals(ProcessingUtils.getUID(customResource)));
+        assertThat(events).allMatch(e -> e.getRelatedCustomResourceUid().equals(getUID(customResource)));
         assertThat(events).allMatch(e -> e.getEventSource().equals(timerEventSource));
     }
 
@@ -64,7 +65,7 @@ class TimerEventSourceTest {
 
         timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
         Thread.sleep(INITIAL_DELAY + PERIOD + TESTING_TIME_SLACK);
-        timerEventSource.eventSourceDeRegisteredForResource(ProcessingUtils.getUID(customResource));
+        timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
         Thread.sleep(PERIOD + TESTING_TIME_SLACK);
 
         verify(eventHandlerMock, times(2))
@@ -77,7 +78,7 @@ class TimerEventSourceTest {
 
         timerEventSource.scheduleOnce(customResource, INITIAL_DELAY);
         Thread.sleep(TESTING_TIME_SLACK);
-        timerEventSource.eventSourceDeRegisteredForResource(ProcessingUtils.getUID(customResource));
+        timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
         Thread.sleep(PERIOD + TESTING_TIME_SLACK);
 
         verify(eventHandlerMock, times(0))

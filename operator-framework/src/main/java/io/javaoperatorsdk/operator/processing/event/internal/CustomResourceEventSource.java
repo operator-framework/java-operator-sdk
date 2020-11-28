@@ -5,13 +5,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.javaoperatorsdk.operator.processing.ProcessingUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.javaoperatorsdk.operator.processing.ProcessingUtils.*;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 import static java.net.HttpURLConnection.HTTP_GONE;
 
 /**

@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.ProcessingUtils;
+import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +20,14 @@ public class TimerEventSource extends AbstractEventSource {
     private final Map<String, List<EventProducerTimeTask>> timerTasks = new ConcurrentHashMap<>();
 
     public void schedule(CustomResource customResource, long delay, long period) {
-        String resourceUid = ProcessingUtils.getUID(customResource);
+        String resourceUid = KubernetesResourceUtils.getUID(customResource);
         EventProducerTimeTask task = new EventProducerTimeTask(resourceUid);
         storeTask(resourceUid, task);
         timer.schedule(task, delay, period);
     }
 
     public void scheduleOnce(CustomResource customResource, long delay) {
-        String resourceUid = ProcessingUtils.getUID(customResource);
+        String resourceUid = KubernetesResourceUtils.getUID(customResource);
         OneTimeEventProducerTimerTask task = new OneTimeEventProducerTimerTask(resourceUid);
         storeTask(resourceUid, task);
         timer.schedule(task, delay);

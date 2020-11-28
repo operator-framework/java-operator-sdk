@@ -12,7 +12,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static io.javaoperatorsdk.operator.processing.ProcessingUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource UID, while buffering
