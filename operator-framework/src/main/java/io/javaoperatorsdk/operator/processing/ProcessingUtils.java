@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -9,11 +9,11 @@ import java.util.List;
 
 public class ProcessingUtils {
 
-    public static String getUID(CustomResource customResource) {
+    public static String getUID(HasMetadata customResource) {
         return customResource.getMetadata().getUid();
     }
 
-    public static String getVersion(CustomResource customResource) {
+    public static String getVersion(HasMetadata customResource) {
         return customResource.getMetadata().getResourceVersion();
     }
 
