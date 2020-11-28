@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.ProcessingUtils;
+import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +34,14 @@ public class DefaultEventSourceManager implements EventSourceManager {
     public <T extends EventSource> void registerEventSource(CustomResource customResource, String name, T eventSource) {
         try {
             lock.lock();
-            Map<String, EventSource> eventSourceList = eventSources.get(ProcessingUtils.getUID(customResource));
+            Map<String, EventSource> eventSourceList = eventSources.get(KubernetesResourceUtils.getUID(customResource));
             if (eventSourceList == null) {
                 eventSourceList = new HashMap<>(1);
-                eventSources.put(ProcessingUtils.getUID(customResource), eventSourceList);
+                eventSources.put(KubernetesResourceUtils.getUID(customResource), eventSourceList);
             }
             if (eventSourceList.get(name) != null) {
                 throw new IllegalStateException("Event source with name already registered. Resource id: "
-                        + ProcessingUtils.getUID(customResource) + ", event source name: " + name);
+                        + KubernetesResourceUtils.getUID(customResource) + ", event source name: " + name);
             }
             eventSourceList.put(name, eventSource);
             eventSource.setEventHandler(defaultEventHandler);
@@ -55,13 +55,13 @@ public class DefaultEventSourceManager implements EventSourceManager {
     public <T extends EventSource> T registerEventSourceIfNotRegistered(CustomResource customResource, String name, Supplier<T> eventSourceSupplier) {
         try {
             lock.lock();
-            if (eventSources.get(ProcessingUtils.getUID(customResource)) == null ||
-                    eventSources.get(ProcessingUtils.getUID(customResource)).get(name) == null) {
+            if (eventSources.get(KubernetesResourceUtils.getUID(customResource)) == null ||
+                    eventSources.get(KubernetesResourceUtils.getUID(customResource)).get(name) == null) {
                 EventSource eventSource = eventSourceSupplier.get();
                 registerEventSource(customResource, name, eventSource);
                 return (T) eventSource;
             }
-            return (T) eventSources.get(ProcessingUtils.getUID(customResource)).get(name);
+            return (T) eventSources.get(KubernetesResourceUtils.getUID(customResource)).get(name);
         } finally {
             lock.unlock();
         }

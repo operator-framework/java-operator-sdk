@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.javaoperatorsdk.operator.processing.ProcessingUtils.*;
+import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.

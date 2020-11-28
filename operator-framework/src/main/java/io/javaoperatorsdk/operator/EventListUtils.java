@@ -1,21 +1,13 @@
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 
 import java.util.List;
 
-public class ProcessingUtils {
-
-    public static String getUID(CustomResource customResource) {
-        return customResource.getMetadata().getUid();
-    }
-
-    public static String getVersion(CustomResource customResource) {
-        return customResource.getMetadata().getResourceVersion();
-    }
+public class EventListUtils {
 
     public static boolean containsCustomResourceDeletedEvent(List<Event> events) {
         return events.stream().anyMatch(e -> {
