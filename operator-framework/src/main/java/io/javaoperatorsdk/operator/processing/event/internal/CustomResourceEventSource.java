@@ -66,8 +66,8 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
 
     @Override
     public void eventReceived(Watcher.Action action, CustomResource customResource) {
-        log.debug("Event received for action: {}, resource: {}",
-                customResource.getMetadata().getName(), customResource);
+        log.debug("Event received for action: {}, resource: {}", action.name(), customResource.getMetadata().getName());
+
         resourceCache.cacheResource(customResource); // always store the latest event. Outside the sync block is intentional.
         if (action == Action.ERROR) {
             log.debug("Skipping {} event for custom resource uid: {}, version: {}", action,
