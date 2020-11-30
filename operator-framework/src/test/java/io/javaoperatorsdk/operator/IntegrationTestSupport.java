@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator;
 
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;

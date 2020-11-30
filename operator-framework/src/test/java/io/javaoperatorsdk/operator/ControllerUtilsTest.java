@@ -2,8 +2,8 @@ package io.javaoperatorsdk.operator;
 
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.*;
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

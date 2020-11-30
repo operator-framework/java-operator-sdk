@@ -1,18 +1,13 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import static io.javaoperatorsdk.operator.TestUtils.TEST_CUSTOM_RESOURCE_NAME;

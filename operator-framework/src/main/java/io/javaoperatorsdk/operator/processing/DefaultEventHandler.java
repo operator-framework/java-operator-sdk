@@ -61,7 +61,9 @@ public class DefaultEventHandler implements EventHandler {
     }
 
     private void executeBufferedEvents(String customResourceUid) {
-        if (!isControllerUnderExecution(customResourceUid) && eventBuffer.containsEvents(customResourceUid)) {
+        boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
+        boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
+        if (!controllerUnderExecution && newEventForResourceId) {
             setUnderExecutionProcessing(customResourceUid);
             ExecutionScope executionScope = new ExecutionScope(
                     eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
@@ -69,7 +71,8 @@ public class DefaultEventHandler implements EventHandler {
             log.debug("Executing events for custom resource. Scope: {}", executionScope);
             executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
         } else {
-            log.debug("Skipping executing controller for {}, since currently under execution.", customResourceUid);
+            log.debug("Skipping executing controller for resource id: {}. Events in queue: {}. Controller in execution: {}"
+                    , customResourceUid, newEventForResourceId, controllerUnderExecution);
         }
     }
 

@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 
 import java.util.HashMap;
 import java.util.UUID;
