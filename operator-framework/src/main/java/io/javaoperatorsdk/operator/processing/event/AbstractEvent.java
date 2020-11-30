@@ -1,12 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-public abstract class AbstractEvent<T extends EventSource> implements Event<T> {
+public abstract class AbstractEvent implements Event{
 
     private final String relatedCustomResourceUid;
 
-    private final T eventSource;
+    private final EventSource eventSource;
 
-    public AbstractEvent(String relatedCustomResourceUid, T eventSource) {
+    public AbstractEvent(String relatedCustomResourceUid, EventSource eventSource) {
         this.relatedCustomResourceUid = relatedCustomResourceUid;
         this.eventSource = eventSource;
     }
@@ -17,7 +17,7 @@ public abstract class AbstractEvent<T extends EventSource> implements Event<T> {
     }
 
     @Override
-    public T getEventSource() {
+    public EventSource getEventSource() {
         return eventSource;
     }
 

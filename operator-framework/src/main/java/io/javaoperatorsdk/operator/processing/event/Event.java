@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-public interface Event<T extends EventSource> {
+public interface Event {
 
     String getRelatedCustomResourceUid();
 
-    T getEventSource();
+    EventSource getEventSource();
 }
