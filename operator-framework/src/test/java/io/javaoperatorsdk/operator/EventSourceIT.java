@@ -44,7 +44,7 @@ public class EventSourceIT {
     public EventSourceTestCustomResource createTestCustomResource(String id) {
         EventSourceTestCustomResource resource = new EventSourceTestCustomResource();
         resource.setMetadata(new ObjectMetaBuilder()
-                .withName("subresource-" + id)
+                .withName("eventsource-" + id)
                 .withNamespace(TEST_NAMESPACE)
                 .withFinalizers(FINALIZER_NAME)
                 .build());
