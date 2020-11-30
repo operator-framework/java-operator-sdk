@@ -2,16 +2,17 @@ package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventList;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 import java.util.List;
 
 public class DefaultContext<T extends CustomResource> implements Context<T> {
 
-    private final List<Event> events;
+    private final EventList events;
     private final EventSourceManager eventSourceManager;
 
-    public DefaultContext(EventSourceManager eventSourceManager, List<Event> events) {
+    public DefaultContext(EventSourceManager eventSourceManager, EventList events) {
         this.events = events;
         this.eventSourceManager = eventSourceManager;
     }
@@ -22,7 +23,7 @@ public class DefaultContext<T extends CustomResource> implements Context<T> {
     }
 
     @Override
-    public List<Event> getEvents() {
+    public EventList getEvents() {
         return events;
     }
 
