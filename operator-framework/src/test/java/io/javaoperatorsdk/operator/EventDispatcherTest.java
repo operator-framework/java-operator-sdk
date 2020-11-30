@@ -7,7 +7,6 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.ExecutionScope;
-import io.javaoperatorsdk.operator.processing.ProcessingUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
@@ -20,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -226,7 +226,7 @@ class EventDispatcherTest {
     }
 
     public Event nonCREvent(CustomResource resource) {
-        return new TimerEvent(ProcessingUtils.getUID(resource), null);
+        return new TimerEvent(getUID(resource), null);
     }
 
 }
