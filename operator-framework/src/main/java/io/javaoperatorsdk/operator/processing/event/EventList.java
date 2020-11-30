@@ -11,7 +11,7 @@ public class EventList {
         this.eventList = eventList;
     }
 
-    List<Event> getEventList() {
+    public List<Event> getList() {
         return eventList;
     }
 
