@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ResourceCache {
+public class CustomResourceCache {
 
     private final Map<String, CustomResource> resources = new ConcurrentHashMap<>();
 

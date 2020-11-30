@@ -23,8 +23,8 @@ class DefaultEventHandlerTest {
     public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
     public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
     private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-    private ResourceCache resourceCache = new ResourceCache();
-    private DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcherMock, "Test");
+    private CustomResourceCache customResourceCache = new CustomResourceCache();
+    private DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcherMock, "Test");
     private DefaultEventSourceManager defaultEventSourceManagerMock = mock(DefaultEventSourceManager.class);
 
     @BeforeEach
@@ -37,6 +37,16 @@ class DefaultEventHandlerTest {
         defaultEventHandler.handleEvent(prepareCREvent());
 
         verify(eventDispatcherMock, timeout(50).times(1)).handleEvent(any());
+    }
+
+    @Test
+    public void skipProcessingIfLatestCustomResourceNotInCache() {
+        Event event = prepareCREvent();
+        customResourceCache.cleanup(event.getRelatedCustomResourceUid());
+
+        defaultEventHandler.handleEvent(event);
+
+        verify(eventDispatcherMock, timeout(50).times(0)).handleEvent(any());
     }
 
     @Test
@@ -66,7 +76,7 @@ class DefaultEventHandlerTest {
     @Test
     public void cleanUpAfterDeleteEvent() {
         TestCustomResource customResource = testCustomResource();
-        resourceCache.cacheResource(customResource);
+        customResourceCache.cacheResource(customResource);
         CustomResourceEvent event = new CustomResourceEvent(Watcher.Action.DELETED, customResource, null);
         String uid = customResource.getMetadata().getUid();
 
@@ -75,7 +85,7 @@ class DefaultEventHandlerTest {
         waitMinimalTime();
 
         verify(defaultEventSourceManagerMock, times(1)).cleanup(uid);
-        assertThat(resourceCache.getLatestResource(uid)).isNotPresent();
+        assertThat(customResourceCache.getLatestResource(uid)).isNotPresent();
     }
 
     private void waitMinimalTime() {
@@ -102,7 +112,7 @@ class DefaultEventHandlerTest {
 
     private CustomResourceEvent prepareCREvent(String uid) {
         TestCustomResource customResource = testCustomResource(uid);
-        resourceCache.cacheResource(customResource);
+        customResourceCache.cacheResource(customResource);
         return new CustomResourceEvent(Watcher.Action.MODIFIED, customResource, null);
     }
 

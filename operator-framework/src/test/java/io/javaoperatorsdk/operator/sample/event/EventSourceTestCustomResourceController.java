@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample.event;
 
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,11 @@ public class EventSourceTestCustomResourceController implements ResourceControll
     private final TimerEventSource timerEventSource = new TimerEventSource();
 
     @Override
+    public void init(EventSourceManager eventSourceManager) {
+        eventSourceManager.registerEventSource("Timer", timerEventSource);
+    }
+
+    @Override
     public DeleteControl deleteResource(EventSourceTestCustomResource resource, Context<EventSourceTestCustomResource> context) {
         return DeleteControl.DEFAULT_DELETE;
     }
@@ -30,10 +36,7 @@ public class EventSourceTestCustomResourceController implements ResourceControll
     public UpdateControl<EventSourceTestCustomResource> createOrUpdateResource(EventSourceTestCustomResource resource,
                                                                                Context<EventSourceTestCustomResource> context) {
 
-        context.getEventSourceManager().registerEventSourceIfNotRegistered(resource, "Timer", () -> {
-            timerEventSource.schedule(resource, TIMER_DELAY, TIMER_PERIOD);
-            return timerEventSource;
-        });
+        timerEventSource.schedule(resource, TIMER_DELAY, TIMER_PERIOD);
 
         log.info("Events:: " + context.getEvents());
         numberOfExecutions.addAndGet(1);

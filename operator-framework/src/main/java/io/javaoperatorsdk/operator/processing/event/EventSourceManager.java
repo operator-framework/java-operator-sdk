@@ -9,13 +9,10 @@ import java.util.function.Supplier;
 
 public interface EventSourceManager {
 
-    <T extends EventSource> void registerEventSource(CustomResource customResource, String name, T eventSource);
+    <T extends EventSource> void registerEventSource(String name, T eventSource);
 
-    <T extends EventSource> T registerEventSourceIfNotRegistered(CustomResource customResource, String name, Supplier<T> eventSource);
+    Optional<EventSource> deRegisterCustomResourceFromEventSource(String name, String customResourceUid);
 
-    Optional<EventSource> deRegisterEventSource(String customResourceUid, String name);
-
-    Map<String, EventSource> getRegisteredEventSources(String customResourceUid);
-
+    Map<String, EventSource> getRegisteredEventSources();
 
 }

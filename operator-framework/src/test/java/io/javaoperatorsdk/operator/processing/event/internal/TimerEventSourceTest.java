@@ -29,20 +29,6 @@ class TimerEventSourceTest {
     public void setup() {
         timerEventSource = new TimerEventSource();
         timerEventSource.setEventHandler(eventHandlerMock);
-        timerEventSource.setEventSourceManager(eventSourceManagerMock);
-    }
-
-    @Test
-    public void producesOneTimeEvent() {
-        CustomResource customResource = TestUtils.testCustomResource();
-
-        timerEventSource.scheduleOnce(customResource, INITIAL_DELAY);
-
-        ArgumentCaptor<TimerEvent> argumentCaptor = ArgumentCaptor.forClass(TimerEvent.class);
-        verify(eventHandlerMock, timeout(100).times(1)).handleEvent(argumentCaptor.capture());
-        TimerEvent event = argumentCaptor.getValue();
-        assertThat(event.getRelatedCustomResourceUid()).isEqualTo(getUID(customResource));
-        assertThat(event.getEventSource()).isEqualTo(timerEventSource);
     }
 
     @Test
@@ -69,19 +55,6 @@ class TimerEventSourceTest {
         Thread.sleep(PERIOD + TESTING_TIME_SLACK);
 
         verify(eventHandlerMock, times(2))
-                .handleEvent(any());
-    }
-
-    @Test
-    public void deRegistersOneTimeEventSource() throws InterruptedException {
-        CustomResource customResource = TestUtils.testCustomResource();
-
-        timerEventSource.scheduleOnce(customResource, INITIAL_DELAY);
-        Thread.sleep(TESTING_TIME_SLACK);
-        timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
-        Thread.sleep(PERIOD + TESTING_TIME_SLACK);
-
-        verify(eventHandlerMock, times(0))
                 .handleEvent(any());
     }
 

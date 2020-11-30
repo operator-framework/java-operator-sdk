@@ -6,7 +6,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceSpec;
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;

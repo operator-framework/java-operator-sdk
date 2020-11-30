@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.ResourceCache;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import org.slf4j.Logger;
@@ -57,8 +57,8 @@ public class Operator {
                 finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
 
 
-        ResourceCache resourceCache = new ResourceCache();
-        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(resourceCache, eventDispatcher, controller.getClass().getName());
+        CustomResourceCache customResourceCache = new CustomResourceCache();
+        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcher, controller.getClass().getName());
         DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler);
         defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
         eventDispatcher.setEventSourceManager(eventSourceManager);
@@ -66,27 +66,26 @@ public class Operator {
         customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 
         CustomResourceEventSource customResourceEventSource
-                = createCustomResourceEventSource(client, resourceCache, watchAllNamespaces, targetNamespaces,
-                defaultEventHandler, eventSourceManager);
+                = createCustomResourceEventSource(client, customResourceCache, watchAllNamespaces, targetNamespaces,
+                defaultEventHandler);
 
         eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+        controller.init(eventSourceManager);
 
         log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
                 resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
 
     private CustomResourceEventSource createCustomResourceEventSource(MixedOperation client,
-                                                                      ResourceCache resourceCache,
+                                                                      CustomResourceCache customResourceCache,
                                                                       boolean watchAllNamespaces,
                                                                       String[] targetNamespaces,
-                                                                      DefaultEventHandler defaultEventHandler,
-                                                                      DefaultEventSourceManager eventSourceManager) {
+                                                                      DefaultEventHandler defaultEventHandler) {
         CustomResourceEventSource customResourceEventSource = watchAllNamespaces ?
-                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(resourceCache, client) :
-                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(resourceCache, client, targetNamespaces);
+                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(customResourceCache, client) :
+                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(customResourceCache, client, targetNamespaces);
 
         customResourceEventSource.setEventHandler(defaultEventHandler);
-        customResourceEventSource.setEventSourceManager(eventSourceManager);
 
         return customResourceEventSource;
     }

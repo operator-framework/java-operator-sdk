@@ -5,7 +5,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.javaoperatorsdk.operator.processing.ResourceCache;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,23 +20,23 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
 
     private final static Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-    private final ResourceCache resourceCache;
+    private final CustomResourceCache resourceCache;
     private MixedOperation client;
     private final String[] targetNamespaces;
 
-    public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(ResourceCache resourceCache,
+    public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(CustomResourceCache customResourceCache,
                                                                                       MixedOperation client) {
-        return new CustomResourceEventSource(resourceCache, client, null);
+        return new CustomResourceEventSource(customResourceCache, client, null);
     }
 
-    public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(ResourceCache resourceCache,
+    public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(CustomResourceCache customResourceCache,
                                                                                          MixedOperation client,
                                                                                          String[] namespaces) {
-        return new CustomResourceEventSource(resourceCache, client, namespaces);
+        return new CustomResourceEventSource(customResourceCache, client, namespaces);
     }
 
-    private CustomResourceEventSource(ResourceCache resourceCache, MixedOperation client, String[] targetNamespaces) {
-        this.resourceCache = resourceCache;
+    private CustomResourceEventSource(CustomResourceCache customResourceCache, MixedOperation client, String[] targetNamespaces) {
+        this.resourceCache = customResourceCache;
         this.client = client;
         this.targetNamespaces = targetNamespaces;
     }

@@ -1,12 +1,14 @@
 package io.javaoperatorsdk.operator.processing;
 
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -23,7 +25,7 @@ public class DefaultEventHandler implements EventHandler {
 
     private final static Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
-    private final ResourceCache resourceCache;
+    private final CustomResourceCache customResourceCache;
     private final EventBuffer eventBuffer;
     private final Set<String> underProcessing = new HashSet<>();
     private final ScheduledThreadPoolExecutor executor;
@@ -32,8 +34,8 @@ public class DefaultEventHandler implements EventHandler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public DefaultEventHandler(ResourceCache resourceCache, EventDispatcher eventDispatcher, String relatedControllerName) {
-        this.resourceCache = resourceCache;
+    public DefaultEventHandler(CustomResourceCache customResourceCache, EventDispatcher eventDispatcher, String relatedControllerName) {
+        this.customResourceCache = customResourceCache;
         this.eventDispatcher = eventDispatcher;
         eventBuffer = new EventBuffer();
         executor = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
@@ -63,16 +65,19 @@ public class DefaultEventHandler implements EventHandler {
     private void executeBufferedEvents(String customResourceUid) {
         boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
         boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
-        if (!controllerUnderExecution && newEventForResourceId) {
+        Optional<CustomResource> latestCustomResource = customResourceCache.getLatestResource(customResourceUid);
+
+        if (!controllerUnderExecution && newEventForResourceId && latestCustomResource.isPresent()) {
             setUnderExecutionProcessing(customResourceUid);
             ExecutionScope executionScope = new ExecutionScope(
                     eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
-                    resourceCache.getLatestResource(customResourceUid).get());
+                    latestCustomResource.get());
             log.debug("Executing events for custom resource. Scope: {}", executionScope);
             executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
         } else {
-            log.debug("Skipping executing controller for resource id: {}. Events in queue: {}. Controller in execution: {}"
-                    , customResourceUid, newEventForResourceId, controllerUnderExecution);
+            log.debug("Skipping executing controller for resource id: {}. Events in queue: {}." +
+                            " Controller in execution: {}. Latest CustomResource present: {}"
+                    , customResourceUid, newEventForResourceId, controllerUnderExecution, latestCustomResource.isPresent());
         }
     }
 
@@ -96,7 +101,7 @@ public class DefaultEventHandler implements EventHandler {
     private void cleanupAfterDeletedEvent(String customResourceUid) {
         defaultEventSourceManager.cleanup(customResourceUid);
         eventBuffer.cleanup(customResourceUid);
-        resourceCache.cleanup(customResourceUid);
+        customResourceCache.cleanup(customResourceUid);
     }
 
     private boolean isControllerUnderExecution(String customResourceUid) {

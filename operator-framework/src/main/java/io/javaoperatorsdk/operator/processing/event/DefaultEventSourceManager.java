@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +15,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
     private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
     private final ReentrantLock lock = new ReentrantLock();
-    private Map<String, Map<String, EventSource>> eventSources = new ConcurrentHashMap<>();
+    private Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
     private CustomResourceEventSource customResourceEventSource;
     private DefaultEventHandler defaultEventHandler;
 
@@ -31,52 +29,29 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
 
     @Override
-    public <T extends EventSource> void registerEventSource(CustomResource customResource, String name, T eventSource) {
+    public <T extends EventSource> void registerEventSource(String name, T eventSource) {
         try {
             lock.lock();
-            Map<String, EventSource> eventSourceList = eventSources.get(KubernetesResourceUtils.getUID(customResource));
-            if (eventSourceList == null) {
-                eventSourceList = new HashMap<>(1);
-                eventSources.put(KubernetesResourceUtils.getUID(customResource), eventSourceList);
+            EventSource currentEventSource = eventSources.get(name);
+            if (currentEventSource != null) {
+                throw new IllegalStateException("Event source with name already registered. Event source name: " + name);
             }
-            if (eventSourceList.get(name) != null) {
-                throw new IllegalStateException("Event source with name already registered. Resource id: "
-                        + KubernetesResourceUtils.getUID(customResource) + ", event source name: " + name);
-            }
-            eventSourceList.put(name, eventSource);
+            eventSources.put(name,eventSource);
             eventSource.setEventHandler(defaultEventHandler);
-            eventSource.eventSourceRegisteredForResource(customResource);
         } finally {
             lock.unlock();
         }
     }
 
     @Override
-    public <T extends EventSource> T registerEventSourceIfNotRegistered(CustomResource customResource, String name, Supplier<T> eventSourceSupplier) {
+    public Optional<EventSource> deRegisterCustomResourceFromEventSource(String eventSourceName,String customResourceUid) {
         try {
             lock.lock();
-            if (eventSources.get(KubernetesResourceUtils.getUID(customResource)) == null ||
-                    eventSources.get(KubernetesResourceUtils.getUID(customResource)).get(name) == null) {
-                EventSource eventSource = eventSourceSupplier.get();
-                registerEventSource(customResource, name, eventSource);
-                return (T) eventSource;
-            }
-            return (T) eventSources.get(KubernetesResourceUtils.getUID(customResource)).get(name);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public Optional<EventSource> deRegisterEventSource(String customResourceUid, String name) {
-        try {
-            lock.lock();
-            Map<String, EventSource> eventSources = this.eventSources.get(customResourceUid);
-            if (eventSources == null || !eventSources.containsKey(name)) {
-                log.warn("Event producer: {} not found for custom resource: {}", name, customResourceUid);
+            EventSource eventSource = this.eventSources.get(eventSourceName);
+            if (eventSource == null) {
+                log.warn("Event producer: {} not found for custom resource: {}", eventSourceName, customResourceUid);
                 return Optional.empty();
             } else {
-                EventSource eventSource = eventSources.remove(name);
                 eventSource.eventSourceDeRegisteredForResource(customResourceUid);
                 return Optional.of(eventSource);
             }
@@ -86,19 +61,17 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
 
     @Override
-    public Map<String, EventSource> getRegisteredEventSources(String customResourceUid) {
-        Map<String, EventSource> eventSourceMap = eventSources.get(customResourceUid);
-        return eventSourceMap != null ? eventSourceMap : Collections.EMPTY_MAP;
+    public Map<String, EventSource> getRegisteredEventSources() {
+        return Collections.unmodifiableMap(eventSources);
     }
 
     public void controllerExecuted(ExecutionDescriptor executionDescriptor) {
         String uid = executionDescriptor.getExecutionScope().getCustomResourceUid();
-        Map<String, EventSource> sources = getRegisteredEventSources(uid);
-        sources.values().forEach(es -> es.controllerExecuted(executionDescriptor));
+        Map<String, EventSource> sources = getRegisteredEventSources();
     }
 
     public void cleanup(String customResourceUid) {
-        getRegisteredEventSources(customResourceUid).keySet().forEach(k -> deRegisterEventSource(customResourceUid, k));
+        getRegisteredEventSources().keySet().forEach(k -> deRegisterCustomResourceFromEventSource(k,customResourceUid));
         eventSources.remove(customResourceUid);
     }
 
