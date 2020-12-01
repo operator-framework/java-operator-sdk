@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
 
-public class ControllersResourceWriter {
+class ControllersResourceWriter {
     private Map<String, String> mappings = new ConcurrentHashMap<>();
     private final ProcessingEnvironment processingEnvironment;
 
@@ -26,7 +26,8 @@ public class ControllersResourceWriter {
                     .getFiler()
                     .getResource(StandardLocation.CLASS_OUTPUT, "", CONTROLLERS_RESOURCE_PATH);
 
-            final var existingLines = new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()))
+            final var bufferedReader = new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()));
+            final var existingLines = bufferedReader
                     .lines()
                     .map(l -> l.split(","))
                     .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
@@ -42,16 +43,24 @@ public class ControllersResourceWriter {
     }
 
     public void flush() {
+        PrintWriter printWriter = null;
         try {
             final var resource = processingEnvironment
                     .getFiler()
                     .createResource(StandardLocation.CLASS_OUTPUT, "", CONTROLLERS_RESOURCE_PATH);
-            final var printWriter = new PrintWriter(resource.openOutputStream());
+            printWriter = new PrintWriter(resource.openOutputStream());
+
+
             for (Map.Entry<String, String> entry : mappings.entrySet()) {
                 printWriter.println(entry.getKey() + "," + entry.getValue());
             }
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
+        } finally {
+            if (printWriter != null) {
+                printWriter.close();
+            }
         }
     }
 }
