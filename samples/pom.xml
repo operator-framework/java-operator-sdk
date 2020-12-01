@@ -17,6 +17,7 @@
     <modules>
         <module>common</module>
         <module>pure-java</module>
+        <module>quarkus</module>
         <module>spring-boot-plain</module>
         <module>spring-boot-auto-config</module>
         <module>webserver</module>
