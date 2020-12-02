@@ -10,8 +10,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>quarkus-extension</artifactId>
-    <name>Java Operator SDK Extension - Runtime</name>
+  <artifactId>quarkus-extension</artifactId>
+  <name>Operator SDK - Quarkus Extension - Runtime</name>
 
     <dependencies>
     </dependencies>
