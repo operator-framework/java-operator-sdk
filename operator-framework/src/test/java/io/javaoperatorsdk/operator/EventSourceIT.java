@@ -37,6 +37,8 @@ public class EventSourceIT {
             EventSourceTestCustomResource resource = createTestCustomResource("1");
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
 
+            Thread.sleep(TIMER_DELAY + EXPECTED_TIMER_EVENT_COUNT * TIMER_PERIOD);
+
             assertThat(integrationTestSupport.numberOfControllerExecutions()).isGreaterThanOrEqualTo(EXPECTED_TIMER_EVENT_COUNT + 1);
         });
     }
