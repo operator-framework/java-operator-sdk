@@ -23,7 +23,6 @@ class TimerEventSourceTest {
 
     private TimerEventSource timerEventSource;
     private EventHandler eventHandlerMock = mock(EventHandler.class);
-    private EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
 
     @BeforeEach
     public void setup() {
@@ -58,4 +57,53 @@ class TimerEventSourceTest {
                 .handleEvent(any());
     }
 
+    @Test
+    public void schedulesOnce() throws InterruptedException {
+        CustomResource customResource = TestUtils.testCustomResource();
+
+        timerEventSource.scheduleOnce(customResource, PERIOD);
+
+        Thread.sleep(2 * PERIOD + TESTING_TIME_SLACK);
+        verify(eventHandlerMock, times(1))
+                .handleEvent(any());
+    }
+
+    @Test
+    public void canCancelOnce() throws InterruptedException {
+        CustomResource customResource = TestUtils.testCustomResource();
+
+        timerEventSource.scheduleOnce(customResource, PERIOD);
+        timerEventSource.cancelOnceSchedule(KubernetesResourceUtils.getUID(customResource));
+
+        Thread.sleep(PERIOD + TESTING_TIME_SLACK);
+        verify(eventHandlerMock, never())
+                .handleEvent(any());
+    }
+
+    @Test
+    public void canRescheduleOnceEvent() throws InterruptedException {
+        CustomResource customResource = TestUtils.testCustomResource();
+
+        timerEventSource.scheduleOnce(customResource, PERIOD);
+        timerEventSource.scheduleOnce(customResource, 2 * PERIOD);
+
+        Thread.sleep(PERIOD + TESTING_TIME_SLACK);
+        verify(eventHandlerMock, never())
+                .handleEvent(any());
+        Thread.sleep(PERIOD + TESTING_TIME_SLACK);
+        verify(eventHandlerMock, times(1))
+                .handleEvent(any());
+    }
+
+    @Test
+    public void deRegistersOnceEventSources() throws InterruptedException {
+        CustomResource customResource = TestUtils.testCustomResource();
+
+        timerEventSource.scheduleOnce(customResource, PERIOD);
+        timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
+        Thread.sleep(PERIOD + TESTING_TIME_SLACK);
+
+        verify(eventHandlerMock, never())
+                .handleEvent(any());
+    }
 }

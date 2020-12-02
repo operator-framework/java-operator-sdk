@@ -16,6 +16,7 @@ public class TimerEventSource extends AbstractEventSource {
 
     private final Timer timer = new Timer();
 
+    private final Map<String, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
     private final Map<String, EventProducerTimeTask> timerTasks = new ConcurrentHashMap<>();
 
     public void schedule(CustomResource customResource, long delay, long period) {
@@ -28,14 +29,34 @@ public class TimerEventSource extends AbstractEventSource {
         timer.schedule(task, delay, period);
     }
 
+    public void scheduleOnce(CustomResource customResource, long delay) {
+        String resourceUid = KubernetesResourceUtils.getUID(customResource);
+        if (onceTasks.containsKey(resourceUid)) {
+            cancelOnceSchedule(resourceUid);
+        }
+        EventProducerTimeTask task = new EventProducerTimeTask(resourceUid);
+        onceTasks.put(resourceUid, task);
+        timer.schedule(task, delay);
+    }
+
     @Override
     public void eventSourceDeRegisteredForResource(String customResourceUid) {
         cancelSchedule(customResourceUid);
+        cancelOnceSchedule(customResourceUid);
     }
 
     public void cancelSchedule(String customResourceUid) {
         TimerTask timerTask = timerTasks.remove(customResourceUid);
-        timerTask.cancel();
+        if (timerTask != null) {
+            timerTask.cancel();
+        }
+    }
+
+    public void cancelOnceSchedule(String customResourceUid) {
+        TimerTask timerTask = onceTasks.remove(customResourceUid);
+        if (timerTask != null) {
+            timerTask.cancel();
+        }
     }
 
     public class EventProducerTimeTask extends TimerTask {

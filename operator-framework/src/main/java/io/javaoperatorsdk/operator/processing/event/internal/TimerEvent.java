@@ -7,4 +7,5 @@ public class TimerEvent extends AbstractEvent {
     public TimerEvent(String relatedCustomResourceUid, TimerEventSource eventSource) {
         super(relatedCustomResourceUid, eventSource);
     }
+
 }
