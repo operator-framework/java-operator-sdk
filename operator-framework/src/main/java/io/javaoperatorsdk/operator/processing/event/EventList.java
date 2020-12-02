@@ -16,21 +16,12 @@ public class EventList {
     }
 
     public <T extends Event> Optional<T> getLatestOfType(Class<T> eventType) {
-        ListIterator<Event> iterator = eventList.listIterator(eventList.size() - 1);
-        while (iterator.hasPrevious()) {
-            Event event = iterator.previous();
+        for (int i = eventList.size() - 1; i >= 0; i--){
+            Event event = eventList.get(i);
             if (event.getClass().isAssignableFrom(eventType)) {
-                return Optional.of((T)event);
+                return (Optional<T>) Optional.of(event);
             }
         }
-
-        List<Event> eventsOfType = eventList.stream()
-                .filter(event -> event.getClass().isAssignableFrom(eventType))
-                .collect(Collectors.toList());
-        if (eventsOfType.size() > 0) {
-            return Optional.of((T) eventsOfType.get(eventsOfType.size() - 1));
-        } else {
-            return Optional.empty();
-        }
+        return Optional.empty();
     }
 }
