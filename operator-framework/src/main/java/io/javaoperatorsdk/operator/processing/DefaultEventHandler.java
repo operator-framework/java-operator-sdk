@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.processing.event.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,13 +104,18 @@ public class DefaultEventHandler implements EventHandler {
      * If an execution is finished, where we updated a custom resource, but there are other events already buffered for next
      * execution we might not get the newest custom resource from CustomResource event source in time. Thus we execute
      * the next batch of events but with a non up to date CR. Here we cache the latest CustomResource from the update
-     * execution so we make sure its already used in the up-comming execution.
+     * execution so we make sure its already used in the up-coming execution.
      */
     private void cacheUpdatedResourceIfChanged(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
         if (postExecutionControl.customResourceUpdatedDuringExecution()) {
+
             CustomResource originalCustomResource = executionScope.getCustomResource();
             CustomResource customResourceAfterExecution = postExecutionControl.getUpdatedCustomResource().get();
-            if (!getVersion(originalCustomResource).equals(getVersion(customResourceAfterExecution))) {
+            CustomResource cachedVersion = this.customResourceCache.getLatestResource(getUID(customResourceAfterExecution)).get();
+            String originalResourceVersion = getVersion(originalCustomResource);
+            if (getVersion(cachedVersion).equals(originalResourceVersion) && !originalResourceVersion.equals(getVersion(customResourceAfterExecution))) {
+                log.debug("Updating custom resource cache from update response for resource uid: {} new version: {} old version: {}",
+                        getUID(originalCustomResource), getVersion(customResourceAfterExecution), getVersion(originalCustomResource));
                 this.customResourceCache.cacheResource(customResourceAfterExecution);
             }
         }
