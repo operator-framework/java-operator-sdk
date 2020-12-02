@@ -9,6 +9,8 @@ import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceSpe
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
 import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.*;
@@ -16,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EventSourceIT {
+    private static final Logger log = LoggerFactory.getLogger(EventSourceIT.class);
 
     public static final int EXPECTED_TIMER_EVENT_COUNT = 3;
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
@@ -34,9 +37,7 @@ public class EventSourceIT {
             EventSourceTestCustomResource resource = createTestCustomResource("1");
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
 
-            Thread.sleep(TIMER_DELAY + EXPECTED_TIMER_EVENT_COUNT * TIMER_PERIOD);
-
-            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(EXPECTED_TIMER_EVENT_COUNT + 1);
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isGreaterThanOrEqualTo(EXPECTED_TIMER_EVENT_COUNT + 1);
         });
     }
 
