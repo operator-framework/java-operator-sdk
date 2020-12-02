@@ -76,6 +76,18 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
         eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
     }
 
+    public void refreshCachedCustomResource(String resourceId) {
+        CustomResource customResource = resourceCache.getLatestResource(resourceId).get();
+        CustomResourceOperationsImpl client = (CustomResourceOperationsImpl) this.client;
+
+        CustomResource upToDateCR = (CustomResource)
+                ((CustomResourceOperationsImpl) client.inNamespace(customResource.getMetadata()
+                        .getNamespace())
+                        .withName(customResource.getMetadata().getName()))
+                        .fromServer().get();
+        resourceCache.cacheResource(upToDateCR);
+    }
+
     @Override
     public void onClose(KubernetesClientException e) {
         if (e == null) {

@@ -20,6 +20,8 @@ public interface ResourceController<R extends CustomResource> {
 
     /**
      * The implementation of this operation is required to be idempotent.
+     * Always use the UpdateControl object to make updates on custom resource if possible.
+     * Also always use the custom resource parameter (not the custom resource that might be in the events)
      *
      * @return The resource is updated in api server if the return value is present
      * within Optional. This the common use cases. However in cases, for example the operator is restarted,

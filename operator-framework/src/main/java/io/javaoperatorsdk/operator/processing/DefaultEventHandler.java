@@ -15,6 +15,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource UID, while buffering
@@ -89,10 +90,28 @@ public class DefaultEventHandler implements EventHandler {
             if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
                 cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
             } else {
+                cacheUpdatedResourceIfChanged(executionScope, postExecutionControl);
                 executeBufferedEvents(executionScope.getCustomResourceUid());
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Here we try to cache the latest resource after an update. The goal is to solve a concurrency issue we sometimes see:
+     * If an execution is finished, where we updated a custom resource, but there are other events already buffered for next
+     * execution we might not get the newest custom resource from CustomResource event source in time. Thus we execute
+     * the next batch of events but with a non up to date CR. Here we cache the latest CustomResource from the update
+     * execution so we make sure its already used in the up-comming execution.
+     */
+    private void cacheUpdatedResourceIfChanged(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
+        if (postExecutionControl.customResourceUpdatedDuringExecution()) {
+            CustomResource originalCustomResource = executionScope.getCustomResource();
+            CustomResource customResourceAfterExecution = postExecutionControl.getUpdatedCustomResource().get();
+            if (!getVersion(originalCustomResource).equals(getVersion(customResourceAfterExecution))) {
+                this.customResourceCache.cacheResource(customResourceAfterExecution);
+            }
         }
     }
 

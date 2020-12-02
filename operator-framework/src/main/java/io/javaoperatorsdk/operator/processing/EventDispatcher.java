@@ -91,17 +91,23 @@ public class EventDispatcher {
                 log.debug("Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
                         getUID(resource), getVersion(resource), executionScope);
                 UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
+                CustomResource updatedCustomResource = null;
                 if (updateControl.isUpdateStatusSubResource()) {
-                    customResourceFacade.updateStatus(updateControl.getCustomResource());
+                    updatedCustomResource = customResourceFacade.updateStatus(updateControl.getCustomResource());
                 } else if (updateControl.isUpdateCustomResource()) {
-                    updateCustomResource(updateControl.getCustomResource());
+                    updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
                 }
                 markLastGenerationProcessed(resource);
+                if (updatedCustomResource != null) {
+                    return PostExecutionControl.customResourceUpdated(updatedCustomResource);
+                } else {
+                    return PostExecutionControl.defaultDispatch();
+                }
             } else {
                 log.debug("Skipping event processing because generations: {} with version: {}",
                         getUID(resource), getVersion(resource));
+                return PostExecutionControl.defaultDispatch();
             }
-            return PostExecutionControl.defaultDispatch();
         }
     }
 
@@ -128,13 +134,14 @@ public class EventDispatcher {
         DeleteControl deleteControl = controller.deleteResource(resource, context);
         boolean hasFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer);
         if (deleteControl == DeleteControl.DEFAULT_DELETE && hasFinalizer) {
-            removeFinalizer(resource);
+            CustomResource customResource = removeFinalizer(resource);
             cleanup(resource);
+            return PostExecutionControl.customResourceUpdated(customResource);
         } else {
             log.debug("Skipping finalizer remove for resource: {} with version: {}. delete control: {}, hasFinalizer: {} ",
                     getUID(resource), getVersion(resource), deleteControl, hasFinalizer);
+            return PostExecutionControl.defaultDispatch();
         }
-        return PostExecutionControl.defaultDispatch();
     }
 
     public boolean largerGenerationThenProcessedBefore(CustomResource resource) {
@@ -165,23 +172,23 @@ public class EventDispatcher {
         replace(resource);
     }
 
-    private void updateCustomResource(CustomResource resource) {
+    private CustomResource updateCustomResource(CustomResource resource) {
         log.debug("Updating resource: {} with version: {}", getUID(resource),
                 getVersion(resource));
         log.trace("Resource before update: {}", resource);
-        replace(resource);
+        return replace(resource);
     }
 
 
-    private void removeFinalizer(CustomResource resource) {
+    private CustomResource removeFinalizer(CustomResource resource) {
         log.debug("Removing finalizer on resource: {} with version: {}", getUID(resource), getVersion(resource));
         resource.getMetadata().getFinalizers().remove(resourceFinalizer);
-        customResourceFacade.replaceWithLock(resource);
+        return customResourceFacade.replaceWithLock(resource);
     }
 
-    private void replace(CustomResource resource) {
+    private CustomResource replace(CustomResource resource) {
         log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
-        customResourceFacade.replaceWithLock(resource);
+        return customResourceFacade.replaceWithLock(resource);
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
@@ -207,9 +214,9 @@ public class EventDispatcher {
             this.resourceOperation = resourceOperation;
         }
 
-        public void updateStatus(CustomResource resource) {
+        public CustomResource updateStatus(CustomResource resource) {
             log.trace("Updating status for resource: {}", resource);
-            resourceOperation.inNamespace(resource.getMetadata().getNamespace())
+            return resourceOperation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .updateStatus(resource);
         }
