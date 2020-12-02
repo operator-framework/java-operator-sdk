@@ -86,8 +86,6 @@ public class DefaultEventHandler implements EventHandler {
             lock.lock();
             log.debug("Event processing finished. Scope: {}", executionScope);
             unsetUnderExecution(executionScope.getCustomResourceUid());
-            defaultEventSourceManager.controllerExecuted(
-                    new ExecutionDescriptor(executionScope, postExecutionControl, LocalDateTime.now()));
             if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
                 cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
             } else {

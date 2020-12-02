@@ -65,11 +65,6 @@ public class DefaultEventSourceManager implements EventSourceManager {
         return Collections.unmodifiableMap(eventSources);
     }
 
-    public void controllerExecuted(ExecutionDescriptor executionDescriptor) {
-        String uid = executionDescriptor.getExecutionScope().getCustomResourceUid();
-        Map<String, EventSource> sources = getRegisteredEventSources();
-    }
-
     public void cleanup(String customResourceUid) {
         getRegisteredEventSources().keySet().forEach(k -> deRegisterCustomResourceFromEventSource(k,customResourceUid));
         eventSources.remove(customResourceUid);
