@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
 public class EventList {
 
