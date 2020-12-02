@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventList;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import org.slf4j.Logger;
@@ -68,7 +69,7 @@ public class EventDispatcher {
             log.debug("Skipping event dispatching since its marked for deletion but has no finalizer: {}", executionScope);
             return PostExecutionControl.defaultDispatch();
         }
-        Context context = new DefaultContext(eventSourceManager, executionScope.getEvents());
+        Context context = new DefaultContext(eventSourceManager, new EventList(executionScope.getEvents()));
         if (markedForDeletion(resource)) {
             return handleDelete(resource, context);
         } else {
@@ -109,7 +110,7 @@ public class EventDispatcher {
             return false;
         }
         if (executionScope.getEvents().size() == 1) {
-            Event<?> event = executionScope.getEvents().get(0);
+            Event event = executionScope.getEvents().get(0);
             if (event instanceof CustomResourceEvent) {
                 Long actualGeneration = executionScope.getCustomResource().getMetadata().getGeneration();
                 Long lastGeneration = lastGenerationProcessedSuccessfully.get(executionScope.getCustomResourceUid());

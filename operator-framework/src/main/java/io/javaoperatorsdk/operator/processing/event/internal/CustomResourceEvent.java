@@ -5,7 +5,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEvent;
 
-public class CustomResourceEvent extends AbstractEvent<CustomResourceEventSource> {
+public class CustomResourceEvent extends AbstractEvent {
 
     private final Watcher.Action action;
     private final CustomResource customResource;

@@ -51,7 +51,7 @@ public class DefaultEventHandler implements EventHandler {
     }
 
     @Override
-    public void handleEvent(Event<? extends EventSource> event) {
+    public void handleEvent(Event event) {
         try {
             lock.lock();
             log.debug("Received event: {}", event);
