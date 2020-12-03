@@ -23,8 +23,8 @@ import org.jboss.jandex.Type;
 class QuarkusExtensionProcessor {
     
     private static final String FEATURE = "operator-sdk";
-    private static final DotName RESOURCE_CONTROLLER = DotName.createSimple("io.javaoperatorsdk.operator.api.ResourceController");
-    private static final DotName CONTROLLER = DotName.createSimple("io.javaoperatorsdk.operator.api.Controller");
+    private static final DotName RESOURCE_CONTROLLER = DotName.createSimple("io.javaoperatorsdk.api.ResourceController");
+    private static final DotName CONTROLLER = DotName.createSimple("io.javaoperatorsdk.api.Controller");
     private static final Supplier<String> EXCEPTION_SUPPLIER = () -> {
         throw new IllegalArgumentException();
     };

@@ -1,10 +1,12 @@
-package io.javaoperatorsdk.operator.api.config;
+package io.javaoperatorsdk.operator;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 public class DefaultConfigurationService implements ConfigurationService {
     private final static ConfigurationService instance = new DefaultConfigurationService();

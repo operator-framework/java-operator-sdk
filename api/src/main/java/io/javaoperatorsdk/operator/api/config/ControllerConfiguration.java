@@ -5,7 +5,6 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.ControllerUtils;
 
 public interface ControllerConfiguration<R extends CustomResource> {
     String WATCH_ALL_NAMESPACES_MARKER = "ALL_NAMESPACES";
@@ -20,9 +19,7 @@ public interface ControllerConfiguration<R extends CustomResource> {
     
     Class<R> getCustomResourceClass();
     
-    default Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
-        return ControllerUtils.getDoneableClassFor(getCustomResourceClass());
-    }
+    Class<? extends CustomResourceDoneable<R>> getDoneableClass();
     
     default boolean isClusterScoped() {
         return false;

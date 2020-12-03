@@ -1,12 +1,13 @@
 
-package io.javaoperatorsdk.operator.api.config;
+package io.javaoperatorsdk.operator;
 
 import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 public class AnnotationConfiguration<R extends CustomResource> implements ControllerConfiguration<R> {
     private final ResourceController<R> controller;
@@ -45,6 +46,11 @@ public class AnnotationConfiguration<R extends CustomResource> implements Contro
     @Override
     public Class<R> getCustomResourceClass() {
         return ControllerUtils.getCustomResourceClass(controller);
+    }
+    
+    @Override
+    public Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
+        return ControllerUtils.getDoneableClassFor(getCustomResourceClass());
     }
     
     @Override

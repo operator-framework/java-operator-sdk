@@ -45,6 +45,7 @@
         <module>spring-boot-starter</module>
         <module>samples</module>
         <module>quarkus-extension</module>
+        <module>api</module>
     </modules>
 
 
