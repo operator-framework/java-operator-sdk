@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import org.apache.commons.lang3.ClassUtils;
 
 import java.util.Map;
 
@@ -54,7 +55,7 @@ public class ControllerUtils {
     getCustomResourceDoneableClass(ResourceController<T> controller) {
         try {
             final Class<T> customResourceClass = getCustomResourceClass(controller);
-            return (Class<? extends CustomResourceDoneable<T>>) Class.forName(customResourceClass.getCanonicalName() + "Doneable");
+            return (Class<? extends CustomResourceDoneable<T>>) ClassUtils.getClass(customResourceClass.getCanonicalName() + "Doneable");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return null;

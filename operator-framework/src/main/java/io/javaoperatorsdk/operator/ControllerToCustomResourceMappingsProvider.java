@@ -20,7 +20,8 @@ class ControllerToCustomResourceMappingsProvider {
     static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> provide(final String resourcePath) {
         Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings = new HashMap();
         try {
-            final Enumeration<URL> customResourcesMetadataList = ControllerUtils.class.getClassLoader().getResources(resourcePath);
+            final var classLoader = Thread.currentThread().getContextClassLoader();
+            final Enumeration<URL> customResourcesMetadataList = classLoader.getResources(resourcePath);
             for (Iterator<URL> it = customResourcesMetadataList.asIterator(); it.hasNext(); ) {
                 URL url = it.next();
 
