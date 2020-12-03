@@ -65,12 +65,12 @@ public class Operator {
 
         customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 
+        controller.init(eventSourceManager);
         CustomResourceEventSource customResourceEventSource
                 = createCustomResourceEventSource(client, customResourceCache, watchAllNamespaces, targetNamespaces,
                 defaultEventHandler);
-
         eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
-        controller.init(eventSourceManager);
+
 
         log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
                 resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));

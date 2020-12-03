@@ -2,12 +2,12 @@ package io.javaoperatorsdk.operator.processing;
 
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.javaoperatorsdk.operator.processing.event.*;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -16,7 +16,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource UID, while buffering
@@ -108,7 +109,6 @@ public class DefaultEventHandler implements EventHandler {
      */
     private void cacheUpdatedResourceIfChanged(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
         if (postExecutionControl.customResourceUpdatedDuringExecution()) {
-
             CustomResource originalCustomResource = executionScope.getCustomResource();
             CustomResource customResourceAfterExecution = postExecutionControl.getUpdatedCustomResource().get();
             CustomResource cachedVersion = this.customResourceCache.getLatestResource(getUID(customResourceAfterExecution)).get();
