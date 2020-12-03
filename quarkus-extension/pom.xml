@@ -21,6 +21,7 @@
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <quarkus.version>1.10.2.Final</quarkus.version>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
+    <maven.surefire.version>3.0.0-M5</maven.surefire.version>
   </properties>
 
   <modules>

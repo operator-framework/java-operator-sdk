@@ -23,6 +23,14 @@
             <artifactId>quarkus-extension</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-arc-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-kubernetes-client-deployment</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
