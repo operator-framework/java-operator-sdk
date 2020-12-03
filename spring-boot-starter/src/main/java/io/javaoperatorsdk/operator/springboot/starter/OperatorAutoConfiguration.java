@@ -53,8 +53,7 @@ public class OperatorAutoConfiguration implements ConfigurationService {
     @ConditionalOnMissingBean(Operator.class)
     public Operator operator(KubernetesClient kubernetesClient, ConfigurationProperties config, List<ResourceController> resourceControllers) {
         Operator operator = new Operator(kubernetesClient);
-        // todo: create register method that takes the controller's configuration into account
-    resourceControllers.forEach(r -> operator.registerController(processController(r)));
+        resourceControllers.forEach(r -> operator.register(processController(r)));
         return operator;
     }
     
