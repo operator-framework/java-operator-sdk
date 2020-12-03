@@ -34,7 +34,7 @@ class EventDispatcherTest {
     @BeforeEach
     void setup() {
         eventDispatcher = new EventDispatcher(controller,
-                DEFAULT_FINALIZER, customResourceFacade, false);
+                DEFAULT_FINALIZER, customResourceFacade);
 
         testCustomResource = TestUtils.testCustomResource();
         testCustomResource.getMetadata().setFinalizers(new ArrayList<>(Collections.singletonList(DEFAULT_FINALIZER)));
@@ -158,57 +158,6 @@ class EventDispatcherTest {
         verify(controller, times(2)).createOrUpdateResource(eq(testCustomResource), any());
     }
 
-    @Test
-    void skipsControllerExecutionOnIfGenerationAwareModeIfNotLargerGeneration() {
-        generationAwareMode();
-
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-
-        verify(controller, times(1)).createOrUpdateResource(eq(testCustomResource), any());
-    }
-
-    @Test
-    void doNotSkipGenerationIfThereAreAdditionalEvents() {
-        generationAwareMode();
-
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource,
-                nonCREvent(testCustomResource)));
-
-        verify(controller, times(2)).createOrUpdateResource(eq(testCustomResource), any());
-    }
-
-    @Test
-    void notSkipsExecutionOnGenerationIncrease() {
-        generationAwareMode();
-
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-        testCustomResource.getMetadata().setGeneration(testCustomResource.getMetadata().getGeneration() + 1);
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-
-        verify(controller, times(2)).createOrUpdateResource(eq(testCustomResource), any());
-    }
-
-    @Test
-    void doesNotMarkNewGenerationInCaseOfException() {
-        generationAwareMode();
-        when(controller.createOrUpdateResource(any(), any()))
-                .thenThrow(new IllegalStateException("Exception for testing purposes"))
-                .thenReturn(UpdateControl.noUpdate());
-
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-        eventDispatcher.handleEvent(executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
-
-        verify(controller, times(2)).createOrUpdateResource(eq(testCustomResource), any());
-
-    }
-
-    void generationAwareMode() {
-        eventDispatcher = new EventDispatcher(controller,
-                DEFAULT_FINALIZER, customResourceFacade, true);
-    }
-
     private void markForDeletion(CustomResource customResource) {
         customResource.getMetadata().setDeletionTimestamp("2019-8-10");
     }
@@ -223,10 +172,6 @@ class EventDispatcherTest {
         eventList.add(event);
         eventList.addAll(Arrays.asList(otherEvents));
         return new ExecutionScope(eventList, resource);
-    }
-
-    public Event nonCREvent(CustomResource resource) {
-        return new TimerEvent(getUID(resource), null);
     }
 
 }

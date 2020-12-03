@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -101,23 +102,30 @@ public class DefaultEventHandler implements EventHandler {
     }
 
     /**
-     * Here we try to cache the latest resource after an update. The goal is to solve a concurrency issue we sometimes see:
+     * Here we try to cache the latest resource after an update. The goal is to solve a concurrency issue we've seen:
      * If an execution is finished, where we updated a custom resource, but there are other events already buffered for next
-     * execution we might not get the newest custom resource from CustomResource event source in time. Thus we execute
+     * execution, we might not get the newest custom resource from CustomResource event source in time. Thus we execute
      * the next batch of events but with a non up to date CR. Here we cache the latest CustomResource from the update
      * execution so we make sure its already used in the up-coming execution.
+     *
+     * Note that this is an improvement, not a bug fix. This situation can happen naturally, we just make the execution more
+     * efficient, and avoid questions about conflicts.
+     *
+     * Note that without the conditional locking in the cache, there is a very minor chance that we would override an
+     * additional change coming from a different client.
      */
     private void cacheUpdatedResourceIfChanged(ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
         if (postExecutionControl.customResourceUpdatedDuringExecution()) {
             CustomResource originalCustomResource = executionScope.getCustomResource();
             CustomResource customResourceAfterExecution = postExecutionControl.getUpdatedCustomResource().get();
-            CustomResource cachedVersion = this.customResourceCache.getLatestResource(getUID(customResourceAfterExecution)).get();
             String originalResourceVersion = getVersion(originalCustomResource);
-            if (getVersion(cachedVersion).equals(originalResourceVersion) && !originalResourceVersion.equals(getVersion(customResourceAfterExecution))) {
-                log.debug("Updating custom resource cache from update response for resource uid: {} new version: {} old version: {}",
-                        getUID(originalCustomResource), getVersion(customResourceAfterExecution), getVersion(originalCustomResource));
-                this.customResourceCache.cacheResource(customResourceAfterExecution);
-            }
+
+            log.debug("Trying to update resource cache from update response for resource uid: {} new version: {} old version: {}",
+                    getUID(originalCustomResource), getVersion(customResourceAfterExecution), getVersion(originalCustomResource));
+            this.customResourceCache.cacheResource(customResourceAfterExecution, customResource ->
+                    getVersion(customResource).equals(originalResourceVersion)
+                            && !originalResourceVersion.equals(getVersion(customResourceAfterExecution))
+            );
         }
     }
 

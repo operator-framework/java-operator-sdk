@@ -6,9 +6,13 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
+import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 import static java.net.HttpURLConnection.HTTP_GONE;
@@ -23,22 +27,25 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
     private final CustomResourceCache resourceCache;
     private MixedOperation client;
     private final String[] targetNamespaces;
+    private final boolean generationAware;
+    private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
 
     public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(CustomResourceCache customResourceCache,
-                                                                                      MixedOperation client) {
-        return new CustomResourceEventSource(customResourceCache, client, null);
+                                                                                      MixedOperation client, boolean generationAware) {
+        return new CustomResourceEventSource(customResourceCache, client, null, generationAware);
     }
 
     public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(CustomResourceCache customResourceCache,
                                                                                          MixedOperation client,
-                                                                                         String[] namespaces) {
-        return new CustomResourceEventSource(customResourceCache, client, namespaces);
+                                                                                         String[] namespaces, boolean generationAware) {
+        return new CustomResourceEventSource(customResourceCache, client, namespaces, generationAware);
     }
 
-    private CustomResourceEventSource(CustomResourceCache customResourceCache, MixedOperation client, String[] targetNamespaces) {
+    private CustomResourceEventSource(CustomResourceCache customResourceCache, MixedOperation client, String[] targetNamespaces, boolean generationAware) {
         this.resourceCache = customResourceCache;
         this.client = client;
         this.targetNamespaces = targetNamespaces;
+        this.generationAware = generationAware;
     }
 
     private boolean isWatchAllNamespaces() {
@@ -73,19 +80,48 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
                     getUID(customResource), getVersion(customResource));
             return;
         }
-        eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
+
+        if (!skipBecauseOfGenerations(customResource)) {
+            eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
+            markLastGenerationProcessed(customResource);
+        } else {
+            log.debug("Skipping event handling resource {} with version: {}", getUID(customResource),
+                    getVersion(customResource));
+        }
     }
 
-    public void refreshCachedCustomResource(String resourceId) {
-        CustomResource customResource = resourceCache.getLatestResource(resourceId).get();
-        CustomResourceOperationsImpl client = (CustomResourceOperationsImpl) this.client;
+    private void markLastGenerationProcessed(CustomResource resource) {
+        if (generationAware) {
+            lastGenerationProcessedSuccessfully.put(KubernetesResourceUtils.getUID(resource), resource.getMetadata().getGeneration());
+        }
+    }
 
-        CustomResource upToDateCR = (CustomResource)
-                ((CustomResourceOperationsImpl) client.inNamespace(customResource.getMetadata()
-                        .getNamespace())
-                        .withName(customResource.getMetadata().getName()))
-                        .fromServer().get();
-        resourceCache.cacheResource(upToDateCR);
+    private boolean skipBecauseOfGenerations(CustomResource customResource) {
+        if (!generationAware) {
+            return false;
+        }
+        // if CR being deleted generation is naturally not changing, so we process all the events
+        if (markedForDeletion(customResource)) {
+            return false;
+        }
+        if (!largerGenerationThenProcessedBefore(customResource)) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean largerGenerationThenProcessedBefore(CustomResource resource) {
+        Long lastGeneration = lastGenerationProcessedSuccessfully.get(resource.getMetadata().getUid());
+        if (lastGeneration == null) {
+            return true;
+        } else {
+            return resource.getMetadata().getGeneration() > lastGeneration;
+        }
+    }
+
+    @Override
+    public void eventSourceDeRegisteredForResource(String customResourceUid) {
+        lastGenerationProcessedSuccessfully.remove(customResourceUid);
     }
 
     @Override

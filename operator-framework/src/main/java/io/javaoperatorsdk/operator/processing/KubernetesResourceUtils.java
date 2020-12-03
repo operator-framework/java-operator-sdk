@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
 
 public class KubernetesResourceUtils {
 
@@ -12,4 +13,8 @@ public class KubernetesResourceUtils {
         return customResource.getMetadata().getResourceVersion();
     }
 
+
+    public static boolean markedForDeletion(CustomResource resource) {
+        return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
+    }
 }

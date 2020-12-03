@@ -54,7 +54,7 @@ public class Operator {
         String finalizer = ControllerUtils.getFinalizer(controller);
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, ControllerUtils.getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
-                finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
+                finalizer, new EventDispatcher.CustomResourceFacade(client));
 
 
         CustomResourceCache customResourceCache = new CustomResourceCache();
@@ -68,7 +68,7 @@ public class Operator {
         controller.init(eventSourceManager);
         CustomResourceEventSource customResourceEventSource
                 = createCustomResourceEventSource(client, customResourceCache, watchAllNamespaces, targetNamespaces,
-                defaultEventHandler);
+                defaultEventHandler, ControllerUtils.getGenerationEventProcessing(controller));
         eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
 
 
@@ -80,10 +80,11 @@ public class Operator {
                                                                       CustomResourceCache customResourceCache,
                                                                       boolean watchAllNamespaces,
                                                                       String[] targetNamespaces,
-                                                                      DefaultEventHandler defaultEventHandler) {
+                                                                      DefaultEventHandler defaultEventHandler,
+                                                                      boolean generationAware) {
         CustomResourceEventSource customResourceEventSource = watchAllNamespaces ?
-                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(customResourceCache, client) :
-                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(customResourceCache, client, targetNamespaces);
+                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(customResourceCache, client, generationAware) :
+                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(customResourceCache, client, targetNamespaces, generationAware);
 
         customResourceEventSource.setEventHandler(defaultEventHandler);
 
