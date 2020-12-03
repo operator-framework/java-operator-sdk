@@ -82,7 +82,7 @@ public class Operator {
             crd,
             resClass,
             CustomResourceList.class,
-            ControllerUtils.getCustomResourceDoneableClass(controller));
+            configuration.getDoneableClass());
     EventDispatcher eventDispatcher =
         new EventDispatcher(
             controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
