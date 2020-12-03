@@ -66,6 +66,14 @@ public class ControllerUtils {
     }
     
     public static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
-        return controllerClass.getSimpleName().toLowerCase(Locale.ROOT);
+        return getDefaultResourceControllerName(controllerClass.getSimpleName());
+    }
+    
+    public static String getDefaultResourceControllerName(String rcControllerClassName) {
+        final var lastDot = rcControllerClassName.lastIndexOf('.');
+        if (lastDot > 0) {
+            rcControllerClassName = rcControllerClassName.substring(lastDot);
+        }
+        return rcControllerClassName.toLowerCase(Locale.ROOT);
     }
 }
