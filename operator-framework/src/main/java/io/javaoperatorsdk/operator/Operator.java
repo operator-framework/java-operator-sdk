@@ -43,7 +43,13 @@ public class Operator {
         this.k8sClient = k8sClient;
         this.configurationService = configurationService;
     }
-
+    
+    public <R extends CustomResource> void register(ResourceController<R> controller) throws OperatorException {
+        final var configuration = configurationService.getConfigurationFor(controller);
+//        final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
+        final var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
+        registerController(controller, configuration.watchAllNamespaces(), targetNamespaces);
+    }
 
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
     registerController(controller, true, retry);
