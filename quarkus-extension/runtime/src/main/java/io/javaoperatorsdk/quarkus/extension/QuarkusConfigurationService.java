@@ -2,7 +2,6 @@ package io.javaoperatorsdk.quarkus.extension;
 
 import java.util.Optional;
 
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -10,9 +9,9 @@ import javax.inject.Singleton;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.config.ClientConfiguration;
-import io.javaoperatorsdk.operator.config.ConfigurationService;
-import io.javaoperatorsdk.operator.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ClientConfiguration;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.quarkus.arc.DefaultBean;
 
 @Singleton
@@ -20,8 +19,6 @@ import io.quarkus.arc.DefaultBean;
 public class QuarkusConfigurationService implements ConfigurationService {
     @Inject
     io.fabric8.kubernetes.client.KubernetesClient client;
-    
-    Instance<ResourceController> controllers;
     
     @Override
     public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(ResourceController<R> controller) {

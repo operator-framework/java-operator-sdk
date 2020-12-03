@@ -5,8 +5,8 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
 public class QuarkusControllerConfiguration<R extends CustomResource> implements ControllerConfiguration<R> {
     private final String name;

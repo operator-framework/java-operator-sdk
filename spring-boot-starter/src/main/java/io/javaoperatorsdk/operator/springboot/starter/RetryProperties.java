@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.springboot.starter;
 
-import io.javaoperatorsdk.operator.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
 public class RetryProperties {
 

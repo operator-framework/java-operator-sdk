@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.config;
+package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;

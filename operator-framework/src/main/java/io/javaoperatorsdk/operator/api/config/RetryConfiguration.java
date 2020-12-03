@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.config;
+package io.javaoperatorsdk.operator.api.config;
 
 public interface RetryConfiguration {
     RetryConfiguration DEFAULT = new RetryConfiguration() {
