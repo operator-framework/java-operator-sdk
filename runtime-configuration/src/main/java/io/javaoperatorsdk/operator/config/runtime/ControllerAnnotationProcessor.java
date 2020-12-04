@@ -168,8 +168,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
       ioException.printStackTrace();
     }
   }
-
-  private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
+    private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
     try {
 
             return typeParameterResolver.resolve(
