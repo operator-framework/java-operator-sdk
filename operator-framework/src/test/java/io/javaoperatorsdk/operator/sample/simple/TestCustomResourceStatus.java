@@ -2,20 +2,18 @@ package io.javaoperatorsdk.operator.sample.simple;
 
 public class TestCustomResourceStatus {
 
-    private String configMapStatus;
+  private String configMapStatus;
 
-    public String getConfigMapStatus() {
-        return configMapStatus;
-    }
+  public String getConfigMapStatus() {
+    return configMapStatus;
+  }
 
-    public void setConfigMapStatus(String configMapStatus) {
-        this.configMapStatus = configMapStatus;
-    }
+  public void setConfigMapStatus(String configMapStatus) {
+    this.configMapStatus = configMapStatus;
+  }
 
-    @Override
-    public String toString() {
-        return "TestCustomResourceStatus{" +
-                "configMapStatus='" + configMapStatus + '\'' +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "TestCustomResourceStatus{" + "configMapStatus='" + configMapStatus + '\'' + '}';
+  }
 }
