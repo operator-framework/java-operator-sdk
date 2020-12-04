@@ -1,10 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.processing.EventDispatcher;
-import io.javaoperatorsdk.operator.processing.EventScheduler;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
@@ -14,12 +9,21 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.javaoperatorsdk.operator.ControllerUtils.*;
+
 
 @SuppressWarnings("rawtypes")
 public class Operator {
@@ -34,58 +38,61 @@ public class Operator {
 
 
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true, GenericRetry.defaultLimitedExponentialRetry());
-    }
-
-    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
-        registerController(controller, true, retry);
+        registerController(controller, true);
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, GenericRetry.defaultLimitedExponentialRetry(), targetNamespaces);
-    }
-
-    public <R extends CustomResource> void registerController(ResourceController<R> controller, Retry retry, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, retry, targetNamespaces);
+        registerController(controller, false, targetNamespaces);
     }
 
     @SuppressWarnings("rawtypes")
     private <R extends CustomResource> void registerController(ResourceController<R> controller,
-                                                               boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
-        Class<R> resClass = ControllerUtils.getCustomResourceClass(controller);
+                                                               boolean watchAllNamespaces, String... targetNamespaces) throws OperatorException {
+        Class<R> resClass = getCustomResourceClass(controller);
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
         String finalizer = ControllerUtils.getFinalizer(controller);
         MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, ControllerUtils.getCustomResourceDoneableClass(controller));
         EventDispatcher eventDispatcher = new EventDispatcher(controller,
-                finalizer, new EventDispatcher.CustomResourceFacade(client), ControllerUtils.getGenerationEventProcessing(controller));
-        EventScheduler eventScheduler = new EventScheduler(eventDispatcher, retry);
-        registerWatches(controller, client, resClass, watchAllNamespaces, targetNamespaces, eventScheduler);
-    }
+                finalizer, new EventDispatcher.CustomResourceFacade(client));
 
 
-    private <R extends CustomResource> void registerWatches(ResourceController<R> controller, MixedOperation client,
-                                                            Class<R> resClass,
-                                                            boolean watchAllNamespaces, String[] targetNamespaces, EventScheduler eventScheduler) {
+        CustomResourceCache customResourceCache = new CustomResourceCache();
+        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcher, controller.getClass().getName());
+        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler);
+        defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
+        eventDispatcher.setEventSourceManager(eventSourceManager);
 
-        CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
-        if (watchAllNamespaces) {
-            crClient.inAnyNamespace().watch(eventScheduler);
-        } else if (targetNamespaces.length == 0) {
-            client.watch(eventScheduler);
-        } else {
-            for (String targetNamespace : targetNamespaces) {
-                crClient.inNamespace(targetNamespace).watch(eventScheduler);
-                log.debug("Registered controller for namespace: {}", targetNamespace);
-            }
-        }
         customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
+
+        controller.init(eventSourceManager);
+        CustomResourceEventSource customResourceEventSource
+                = createCustomResourceEventSource(client, customResourceCache, watchAllNamespaces, targetNamespaces,
+                defaultEventHandler, ControllerUtils.getGenerationEventProcessing(controller));
+        eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+
+
         log.info("Registered Controller: '{}' for CRD: '{}' for namespaces: {}", controller.getClass().getSimpleName(),
                 resClass, targetNamespaces.length == 0 ? "[all/client namespace]" : Arrays.toString(targetNamespaces));
     }
 
+    private CustomResourceEventSource createCustomResourceEventSource(MixedOperation client,
+                                                                      CustomResourceCache customResourceCache,
+                                                                      boolean watchAllNamespaces,
+                                                                      String[] targetNamespaces,
+                                                                      DefaultEventHandler defaultEventHandler,
+                                                                      boolean generationAware) {
+        CustomResourceEventSource customResourceEventSource = watchAllNamespaces ?
+                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(customResourceCache, client, generationAware) :
+                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(customResourceCache, client, targetNamespaces, generationAware);
+
+        customResourceEventSource.setEventHandler(defaultEventHandler);
+
+        return customResourceEventSource;
+    }
+
     private CustomResourceDefinitionContext getCustomResourceDefinitionForController(ResourceController controller) {
-        String crdName = ControllerUtils.getCrdName(controller);
+        String crdName = getCrdName(controller);
         CustomResourceDefinition customResourceDefinition = k8sClient.customResourceDefinitions().withName(crdName).get();
         if (customResourceDefinition == null) {
             throw new OperatorException("Cannot find Custom Resource Definition with name: " + crdName);
@@ -103,11 +110,4 @@ public class Operator {
         return customResourceClients.get(customResourceClass);
     }
 
-    private String getKind(CustomResourceDefinition crd) {
-        return crd.getSpec().getNames().getKind();
-    }
-
-    private String getApiVersion(CustomResourceDefinition crd) {
-        return crd.getSpec().getGroup() + "/" + crd.getSpec().getVersion();
-    }
 }

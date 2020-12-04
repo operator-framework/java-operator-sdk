@@ -42,9 +42,9 @@ public class OperatorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(Operator.class)
-    public Operator operator(KubernetesClient kubernetesClient, Retry retry, List<ResourceController> resourceControllers) {
+    public Operator operator(KubernetesClient kubernetesClient, List<ResourceController> resourceControllers) {
         Operator operator = new Operator(kubernetesClient);
-        resourceControllers.forEach(r -> operator.registerControllerForAllNamespaces(r, retry));
+        resourceControllers.forEach(r -> operator.registerControllerForAllNamespaces(r));
         return operator;
     }
 

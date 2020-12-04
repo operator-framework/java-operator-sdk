@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
@@ -15,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.*;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,10 +82,10 @@ public class TomcatController implements ResourceController<Tomcat> {
     }
 
     @Override
-    public boolean deleteResource(Tomcat tomcat, Context<Tomcat> context) {
+    public DeleteControl deleteResource(Tomcat tomcat, Context<Tomcat> context) {
         deleteDeployment(tomcat);
         deleteService(tomcat);
-        return true;
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     private Deployment createOrUpdateDeployment(Tomcat tomcat) {

@@ -1,14 +1,11 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.simple;
 
-import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +37,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
     }
 
     @Override
-    public boolean deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+    public DeleteControl deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
         Boolean delete = kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getConfigMapName()).delete();
         if (delete) {
@@ -48,7 +45,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
         } else {
             log.error("Failed to delete ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
         }
-        return true;
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     @Override

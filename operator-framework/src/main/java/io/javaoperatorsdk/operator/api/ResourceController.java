@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public interface ResourceController<R extends CustomResource> {
 
@@ -15,10 +16,12 @@ public interface ResourceController<R extends CustomResource> {
      * @return true - so the finalizer is automatically removed after the call.
      * false if you don't want to remove the finalizer. Note that this is ALMOST NEVER the case.
      */
-    boolean deleteResource(R resource, Context<R> context);
+    DeleteControl deleteResource(R resource, Context<R> context);
 
     /**
      * The implementation of this operation is required to be idempotent.
+     * Always use the UpdateControl object to make updates on custom resource if possible.
+     * Also always use the custom resource parameter (not the custom resource that might be in the events)
      *
      * @return The resource is updated in api server if the return value is present
      * within Optional. This the common use cases. However in cases, for example the operator is restarted,
@@ -27,4 +30,10 @@ public interface ResourceController<R extends CustomResource> {
      * <b>However we will always call an update if there is no finalizer on object and its not marked for deletion.</b>
      */
     UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
+
+    /**
+     * In init typically you might want to register event sources.
+     * @param eventSourceManager
+     */
+    default void init(EventSourceManager eventSourceManager) {}
 }

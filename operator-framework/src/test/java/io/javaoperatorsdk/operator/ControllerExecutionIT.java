@@ -1,27 +1,23 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.sample.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceController;
-import io.javaoperatorsdk.operator.sample.TestCustomResourceSpec;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+import static io.javaoperatorsdk.operator.TestUtils.TEST_CUSTOM_RESOURCE_NAME;
+import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class ControllerExecutionIT {
 
-    public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
     private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
     public void initAndCleanup(boolean controllerStatusUpdate) {
@@ -57,23 +53,6 @@ public class ControllerExecutionIT {
         });
     }
 
-    @Test
-    public void retryConflict() {
-        initAndCleanup(true);
-        integrationTestSupport.teardownIfSuccess(() -> {
-            TestCustomResource resource = testCustomResource();
-            TestCustomResource resource2 = testCustomResource();
-            resource2.getMetadata().getAnnotations().put("test-annotation", "val");
-
-            integrationTestSupport.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).create(resource);
-            integrationTestSupport.getCrOperations().inNamespace(IntegrationTestSupport.TEST_NAMESPACE).createOrReplace(resource2);
-
-            awaitResourcesCreatedOrUpdated();
-            awaitStatusUpdated(5);
-        });
-    }
-
-
     void awaitResourcesCreatedOrUpdated() {
         await("config map created").atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
@@ -99,19 +78,6 @@ public class ControllerExecutionIT {
                 });
     }
 
-    private TestCustomResource testCustomResource() {
-        TestCustomResource resource = new TestCustomResource();
-        resource.setMetadata(new ObjectMetaBuilder()
-                .withName(TEST_CUSTOM_RESOURCE_NAME)
-                .withNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                .build());
-        resource.getMetadata().setAnnotations(new HashMap<>());
-        resource.setKind("CustomService");
-        resource.setSpec(new TestCustomResourceSpec());
-        resource.getSpec().setConfigMapName("test-config-map");
-        resource.getSpec().setKey("test-key");
-        resource.getSpec().setValue("test-value");
-        return resource;
-    }
+
 
 }

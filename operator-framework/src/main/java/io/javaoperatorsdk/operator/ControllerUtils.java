@@ -51,7 +51,6 @@ public class ControllerUtils {
         return getAnnotation(controller).crdName();
     }
 
-
     public static <T extends CustomResource> Class<? extends CustomResourceDoneable<T>>
     getCustomResourceDoneableClass(ResourceController<T> controller) {
         try {

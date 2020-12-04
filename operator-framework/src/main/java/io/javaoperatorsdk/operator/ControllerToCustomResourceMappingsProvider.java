@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 
 class ControllerToCustomResourceMappingsProvider {
-    private static final Logger log = LoggerFactory.getLogger(ControllerUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(ControllerToCustomResourceMappingsProvider.class);
 
     static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> provide(final String resourcePath) {
         Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings = new HashMap();

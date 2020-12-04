@@ -1,12 +1,9 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +26,11 @@ public class CustomServiceController implements ResourceController<CustomService
     }
 
     @Override
-    public boolean deleteResource(CustomService resource, Context<CustomService> context) {
+    public DeleteControl deleteResource(CustomService resource, Context<CustomService> context) {
         log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
         kubernetesClient.services().inNamespace(resource.getMetadata().getNamespace())
                 .withName(resource.getSpec().getName()).delete();
-        return true;
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     @Override

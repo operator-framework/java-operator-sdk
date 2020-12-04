@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.simple;
 
 import io.fabric8.kubernetes.client.CustomResource;
 

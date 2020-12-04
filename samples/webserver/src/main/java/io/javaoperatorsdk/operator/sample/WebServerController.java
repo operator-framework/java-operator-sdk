@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
@@ -12,6 +8,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +93,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     @Override
-    public boolean deleteResource(WebServer nginx, Context<WebServer> context) {
+    public DeleteControl deleteResource(WebServer nginx, io.javaoperatorsdk.operator.api.Context<WebServer> context) {
         log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
         log.info("Deleting ConfigMap {}", configMapName(nginx));
@@ -121,7 +119,7 @@ public class WebServerController implements ResourceController<WebServer> {
         if (service.get() != null) {
             service.delete();
         }
-        return true;
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     private static String configMapName(WebServer nginx) {

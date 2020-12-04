@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.springboot.starter;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -12,12 +13,13 @@ import org.springframework.stereotype.Component;
 public class TestController implements ResourceController {
 
     @Override
-    public boolean deleteResource(CustomResource resource, Context context) {
-        return true;
+    public DeleteControl deleteResource(CustomResource resource, Context context) {
+        return DeleteControl.DEFAULT_DELETE;
     }
 
     @Override
     public UpdateControl createOrUpdateResource(CustomResource resource, Context context) {
         return UpdateControl.noUpdate();
     }
+
 }

@@ -2,16 +2,22 @@ package io.javaoperatorsdk.operator.processing;
 
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventList;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
@@ -23,124 +29,126 @@ public class EventDispatcher {
     private final ResourceController controller;
     private final String resourceFinalizer;
     private final CustomResourceFacade customResourceFacade;
-    private final boolean generationAware;
-    private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
+    private EventSourceManager eventSourceManager;
 
     public EventDispatcher(ResourceController controller,
                            String finalizer,
-                           CustomResourceFacade customResourceFacade, boolean generationAware) {
+                           CustomResourceFacade customResourceFacade) {
         this.controller = controller;
         this.customResourceFacade = customResourceFacade;
         this.resourceFinalizer = finalizer;
-        this.generationAware = generationAware;
     }
 
-    public void handleEvent(CustomResourceEvent event) {
-        Watcher.Action action = event.getAction();
-        CustomResource resource = event.getResource();
-        log.info("Handling {} event for resource {}", action, resource.getMetadata());
-        if (Watcher.Action.ERROR == action) {
-            log.error("Received error for resource: {}", resource.getMetadata().getName());
-            return;
+    public void setEventSourceManager(EventSourceManager eventSourceManager) {
+        this.eventSourceManager = eventSourceManager;
+    }
+
+    public PostExecutionControl handleEvent(ExecutionScope event) {
+        try {
+            return handDispatch(event);
+        } catch (RuntimeException e) {
+            log.error("Error during event processing {} failed.", event, e);
+            return PostExecutionControl.defaultDispatch();
         }
-        if (markedForDeletion(resource) && !ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer)) {
-            log.debug("Skipping event dispatching since its marked for deletion but does not have finalizer: {}", event);
-            return;
+    }
+
+    private PostExecutionControl handDispatch(ExecutionScope executionScope) {
+        CustomResource resource = executionScope.getCustomResource();
+        log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
+
+        if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
+            log.debug("Skipping dispatch processing because of a Delete event: {} with version: {}",
+                    getUID(resource), getVersion(resource));
+            return PostExecutionControl.defaultDispatch();
         }
-        Context context = new DefaultContext(new RetryInfo(event.getRetryCount(), event.getRetryExecution().isLastExecution()));
+        if ((markedForDeletion(resource) && !ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer))) {
+            log.debug("Skipping event dispatching since its marked for deletion but has no finalizer: {}", executionScope);
+            return PostExecutionControl.defaultDispatch();
+        }
+        Context context = new DefaultContext(eventSourceManager, new EventList(executionScope.getEvents()));
         if (markedForDeletion(resource)) {
-            boolean removeFinalizer = controller.deleteResource(resource, context);
-            boolean hasFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer);
-            if (removeFinalizer && hasFinalizer) {
-                removeFinalizer(resource);
-            } else {
-                log.debug("Skipping finalizer remove. removeFinalizer: {}, hasFinalizer: {} ",
-                        removeFinalizer, hasFinalizer);
-            }
-            cleanup(resource);
+            return handleDelete(resource, context);
         } else {
-            if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
-                /*  We always add a finalizer if missing and not marked for deletion.
-                    We execute the controller processing only for processing the event sent as a results
-                    of the finalizer add. This will make sure that the resources are not created before
-                    there is a finalizer.
-                 */
-                updateCustomResourceWithFinalizer(resource);
+            return handleCreateOrUpdate(executionScope, resource, context);
+        }
+    }
+
+    private PostExecutionControl handleCreateOrUpdate(ExecutionScope executionScope, CustomResource resource, Context context) {
+        if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
+            /*  We always add the finalizer if missing and not marked for deletion.
+                We execute the controller processing only for processing the event sent as a results
+                of the finalizer add. This will make sure that the resources are not created before
+                there is a finalizer.
+             */
+            updateCustomResourceWithFinalizer(resource);
+            return PostExecutionControl.onlyFinalizerAdded();
+        } else {
+            log.debug("Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
+                    getUID(resource), getVersion(resource), executionScope);
+            UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
+            CustomResource updatedCustomResource = null;
+            if (updateControl.isUpdateStatusSubResource()) {
+                updatedCustomResource = customResourceFacade.updateStatus(updateControl.getCustomResource());
+            } else if (updateControl.isUpdateCustomResource()) {
+                updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+            }
+            if (updatedCustomResource != null) {
+                return PostExecutionControl.customResourceUpdated(updatedCustomResource);
             } else {
-                if (!generationAware || largerGenerationThenProcessedBefore(resource)) {
-                    UpdateControl<? extends CustomResource> updateControl = controller.createOrUpdateResource(resource, context);
-                    if (updateControl.isUpdateStatusSubResource()) {
-                        customResourceFacade.updateStatus(updateControl.getCustomResource());
-                    } else if (updateControl.isUpdateCustomResource()) {
-                        updateCustomResource(updateControl.getCustomResource());
-                    }
-                    markLastGenerationProcessed(resource);
-                } else {
-                    log.debug("Skipping processing since generation not increased. Event: {}", event);
-                }
+                return PostExecutionControl.defaultDispatch();
             }
         }
     }
 
-    public boolean largerGenerationThenProcessedBefore(CustomResource resource) {
-        Long lastGeneration = lastGenerationProcessedSuccessfully.get(resource.getMetadata().getUid());
-        if (lastGeneration == null) {
-            return true;
+
+    private PostExecutionControl handleDelete(CustomResource resource, Context context) {
+        log.debug("Executing delete for resource: {} with version: {}", getUID(resource), getVersion(resource));
+        DeleteControl deleteControl = controller.deleteResource(resource, context);
+        boolean hasFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer);
+        if (deleteControl == DeleteControl.DEFAULT_DELETE && hasFinalizer) {
+            CustomResource customResource = removeFinalizer(resource);
+            return PostExecutionControl.customResourceUpdated(customResource);
         } else {
-            return resource.getMetadata().getGeneration() > lastGeneration;
-        }
-    }
-
-    private void cleanup(CustomResource resource) {
-        if (generationAware) {
-            lastGenerationProcessedSuccessfully.remove(resource.getMetadata().getUid());
-        }
-    }
-
-    private void markLastGenerationProcessed(CustomResource resource) {
-        if (generationAware) {
-            lastGenerationProcessedSuccessfully.put(resource.getMetadata().getUid(), resource.getMetadata().getGeneration());
+            log.debug("Skipping finalizer remove for resource: {} with version: {}. delete control: {}, hasFinalizer: {} ",
+                    getUID(resource), getVersion(resource), deleteControl, hasFinalizer);
+            return PostExecutionControl.defaultDispatch();
         }
     }
 
     private void updateCustomResourceWithFinalizer(CustomResource resource) {
-        log.debug("Adding finalizer for resource: {} version: {}", resource.getMetadata().getName(),
-                resource.getMetadata().getResourceVersion());
+        log.debug("Adding finalizer for resource: {} version: {}", getUID(resource),
+                getVersion(resource));
         addFinalizerIfNotPresent(resource);
         replace(resource);
     }
 
-    private void updateCustomResource(CustomResource updatedResource) {
-        log.debug("Updating resource: {} with version: {}", updatedResource.getMetadata().getName(),
-                updatedResource.getMetadata().getResourceVersion());
-        log.trace("Resource before update: {}", updatedResource);
-        replace(updatedResource);
+    private CustomResource updateCustomResource(CustomResource resource) {
+        log.debug("Updating resource: {} with version: {}", getUID(resource),
+                getVersion(resource));
+        log.trace("Resource before update: {}", resource);
+        return replace(resource);
     }
 
 
-    private void removeFinalizer(CustomResource resource) {
-        log.debug("Removing finalizer on resource {}:", resource);
+    private CustomResource removeFinalizer(CustomResource resource) {
+        log.debug("Removing finalizer on resource: {} with version: {}", getUID(resource), getVersion(resource));
         resource.getMetadata().getFinalizers().remove(resourceFinalizer);
-        customResourceFacade.replaceWithLock(resource);
+        return customResourceFacade.replaceWithLock(resource);
     }
 
-    private void replace(CustomResource resource) {
+    private CustomResource replace(CustomResource resource) {
         log.debug("Trying to replace resource {}, version: {}", resource.getMetadata().getName(), resource.getMetadata().getResourceVersion());
-        customResourceFacade.replaceWithLock(resource);
+        return customResourceFacade.replaceWithLock(resource);
     }
 
     private void addFinalizerIfNotPresent(CustomResource resource) {
         if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer) && !markedForDeletion(resource)) {
-            log.info("Adding finalizer {} to {}", resourceFinalizer, resource.getMetadata());
+            log.info("Adding finalizer to {}", resource.getMetadata());
             if (resource.getMetadata().getFinalizers() == null) {
                 resource.getMetadata().setFinalizers(new ArrayList<>(1));
             }
             resource.getMetadata().getFinalizers().add(resourceFinalizer);
         }
-    }
-
-    private boolean markedForDeletion(CustomResource resource) {
-        return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
     }
 
     // created to support unit testing
@@ -152,9 +160,9 @@ public class EventDispatcher {
             this.resourceOperation = resourceOperation;
         }
 
-        public void updateStatus(CustomResource resource) {
+        public CustomResource updateStatus(CustomResource resource) {
             log.trace("Updating status for resource: {}", resource);
-            resourceOperation.inNamespace(resource.getMetadata().getNamespace())
+            return resourceOperation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .updateStatus(resource);
         }
