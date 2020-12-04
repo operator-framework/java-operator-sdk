@@ -7,7 +7,7 @@ import java.util.*;
 
 class EventBuffer {
 
-    private Map<String, List<Event>> events = new HashMap<>();
+    private final Map<String, List<Event>> events = new HashMap<>();
 
     public void addEvent(Event event) {
         String uid = event.getRelatedCustomResourceUid();
