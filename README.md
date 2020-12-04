@@ -82,9 +82,9 @@ The Controller implements the business logic and describes all the classes neede
 public class WebServerController implements ResourceController<WebServer> {
 
     @Override
-    public boolean deleteResource(CustomService resource, Context<WebServer> context) {
+    public DeleteControl deleteResource(CustomService resource, Context<WebServer> context) {
         // ... your logic ...
-        return true;
+        return DeleteControl.DEFAULT_DELETE;
     }
     
     // Return the changed resource, so it gets updated. See javadoc for details.
