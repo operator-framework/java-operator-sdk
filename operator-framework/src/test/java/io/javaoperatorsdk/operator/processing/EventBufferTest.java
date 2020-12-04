@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.api.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 import java.util.List;
 import java.util.UUID;

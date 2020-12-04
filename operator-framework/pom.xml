@@ -94,6 +94,12 @@
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.testing.compile</groupId>
+            <artifactId>compile-testing</artifactId>
+            <version>0.19</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>io.javaoperatorsdk</groupId>

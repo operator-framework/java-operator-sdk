@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.api;
 import java.util.Locale;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public interface ResourceController<R extends CustomResource> {
   

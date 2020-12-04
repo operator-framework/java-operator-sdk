@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.api.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
