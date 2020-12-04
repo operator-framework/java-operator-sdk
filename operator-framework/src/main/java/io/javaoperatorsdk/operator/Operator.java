@@ -68,7 +68,7 @@ public class Operator {
         controller.init(eventSourceManager);
         CustomResourceEventSource customResourceEventSource
                 = createCustomResourceEventSource(client, customResourceCache, watchAllNamespaces, targetNamespaces,
-                defaultEventHandler, ControllerUtils.getGenerationEventProcessing(controller));
+                defaultEventHandler, ControllerUtils.getGenerationEventProcessing(controller), finalizer);
         eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
 
 
@@ -81,10 +81,11 @@ public class Operator {
                                                                       boolean watchAllNamespaces,
                                                                       String[] targetNamespaces,
                                                                       DefaultEventHandler defaultEventHandler,
-                                                                      boolean generationAware) {
+                                                                      boolean generationAware,
+                                                                      String finalizer) {
         CustomResourceEventSource customResourceEventSource = watchAllNamespaces ?
-                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(customResourceCache, client, generationAware) :
-                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(customResourceCache, client, targetNamespaces, generationAware);
+                CustomResourceEventSource.customResourceEventSourceForAllNamespaces(customResourceCache, client, generationAware, finalizer) :
+                CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(customResourceCache, client, targetNamespaces, generationAware, finalizer);
 
         customResourceEventSource.setEventHandler(defaultEventHandler);
 

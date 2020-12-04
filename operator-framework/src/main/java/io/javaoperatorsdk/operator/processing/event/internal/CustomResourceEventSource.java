@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
@@ -28,24 +29,28 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
     private MixedOperation client;
     private final String[] targetNamespaces;
     private final boolean generationAware;
+    private final String resourceFinalizer;
     private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
 
     public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(CustomResourceCache customResourceCache,
-                                                                                      MixedOperation client, boolean generationAware) {
-        return new CustomResourceEventSource(customResourceCache, client, null, generationAware);
+                                                                                      MixedOperation client, boolean generationAware,
+                                                                                      String resourceFinalizer) {
+        return new CustomResourceEventSource(customResourceCache, client, null, generationAware, resourceFinalizer);
     }
 
     public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(CustomResourceCache customResourceCache,
                                                                                          MixedOperation client,
-                                                                                         String[] namespaces, boolean generationAware) {
-        return new CustomResourceEventSource(customResourceCache, client, namespaces, generationAware);
+                                                                                         String[] namespaces, boolean generationAware,
+                                                                                         String resourceFinalizer) {
+        return new CustomResourceEventSource(customResourceCache, client, namespaces, generationAware, resourceFinalizer);
     }
 
-    private CustomResourceEventSource(CustomResourceCache customResourceCache, MixedOperation client, String[] targetNamespaces, boolean generationAware) {
+    private CustomResourceEventSource(CustomResourceCache customResourceCache, MixedOperation client, String[] targetNamespaces, boolean generationAware, String resourceFinalizer) {
         this.resourceCache = customResourceCache;
         this.client = client;
         this.targetNamespaces = targetNamespaces;
         this.generationAware = generationAware;
+        this.resourceFinalizer = resourceFinalizer;
     }
 
     private boolean isWatchAllNamespaces() {
@@ -91,7 +96,7 @@ public class CustomResourceEventSource extends AbstractEventSource implements Wa
     }
 
     private void markLastGenerationProcessed(CustomResource resource) {
-        if (generationAware) {
+        if (generationAware && ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer)) {
             lastGenerationProcessedSuccessfully.put(KubernetesResourceUtils.getUID(resource), resource.getMetadata().getGeneration());
         }
     }
