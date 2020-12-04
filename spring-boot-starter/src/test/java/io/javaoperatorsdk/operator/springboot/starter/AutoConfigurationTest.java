@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.ControllerUtils;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.List;
 import org.junit.jupiter.api.Test;

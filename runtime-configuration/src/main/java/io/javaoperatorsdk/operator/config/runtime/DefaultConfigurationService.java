@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator;
+package io.javaoperatorsdk.operator.config.runtime;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

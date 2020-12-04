@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.annotation;
+package io.javaoperatorsdk.operator.config.runtime;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.CompilationSubject;

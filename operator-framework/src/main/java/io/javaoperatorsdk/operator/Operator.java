@@ -35,10 +35,6 @@ public class Operator {
   private final ConfigurationService configurationService;
     private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
 
-    public Operator(KubernetesClient k8sClient) {
-        this(k8sClient, DefaultConfigurationService.instance());
-    }
-
     public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
         this.k8sClient = k8sClient;
         this.configurationService = configurationService;

@@ -11,13 +11,13 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.javaoperatorsdk.operator.AnnotationConfiguration;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ClientConfiguration;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.config.runtime.AnnotationConfiguration;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +52,7 @@ public class OperatorAutoConfiguration implements ConfigurationService {
     @Bean
     @ConditionalOnMissingBean(Operator.class)
     public Operator operator(KubernetesClient kubernetesClient, ConfigurationProperties config, List<ResourceController> resourceControllers) {
-        Operator operator = new Operator(kubernetesClient);
+        Operator operator = new Operator(kubernetesClient, this);
         resourceControllers.forEach(r -> operator.register(processController(r)));
         return operator;
     }

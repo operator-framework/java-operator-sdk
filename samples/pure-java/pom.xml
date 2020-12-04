@@ -26,6 +26,11 @@
             <artifactId>operator-framework-samples-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>runtime-configuration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -56,9 +57,10 @@ public class IntegrationTestSupport {
     this.controller = controller;
     
     final var configurationService = DefaultConfigurationService.instance();
-
-        Class doneableClass = ControllerUtils.getCustomResourceDoneableClass(controller);
-        Class customResourceClass = configurationService.getConfigurationFor(controller).getCustomResourceClass();
+    
+        final var config = configurationService.getConfigurationFor(controller);
+        Class doneableClass = config.getDoneableClass();
+        Class customResourceClass = config.getCustomResourceClass();
         crOperations = k8sClient.customResources(crdContext, customResourceClass, CustomResourceList.class, doneableClass);
 
         if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {

@@ -5,7 +5,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.api.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
