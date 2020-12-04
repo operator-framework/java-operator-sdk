@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -78,9 +77,6 @@ public class DefaultConfigurationServiceTest {
         public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
             return null;
         }
-    }
-    
-    static class TestCustomResource extends CustomResource {
     }
     
 }
