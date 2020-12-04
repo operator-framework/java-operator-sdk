@@ -36,8 +36,7 @@ import javax.tools.JavaFileObject;
 
 
 
-@SupportedAnnotationTypes(
-    "io.javaoperatorsdk.operator.api.Controller")
+@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
@@ -103,8 +102,8 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
   }
 
   private void generateDoneableClass(TypeElement controllerClassSymbol) {
-    try {
-      final TypeMirror resourceType = findResourceType(controllerClassSymbol);
+        try {
+            final TypeMirror resourceType = findResourceType(controllerClassSymbol);
       if (resourceType == null) {
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(),
@@ -112,21 +111,23 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         return;
       }
 
-      TypeElement customerResourceTypeElement =
-          processingEnv.getElementUtils().getTypeElement(resourceType.toString());
+            if (resourceType == null) {
+                System.out.println("No defined a resource type for '" + controllerClassSymbol.getQualifiedName() + "': ignoring!");
+                return;
+            }
 
-      final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
-      final String destinationClassFileName =
-          customerResourceTypeElement.getQualifiedName() + "Doneable";
-      final TypeName customResourceType = TypeName.get(resourceType);
+            TypeElement customerResourceTypeElement =
+          processingEnv.getElementUtils()
+                .getTypeElement(resourceType.toString());
 
-      if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
-        processingEnv
-            .getMessager()
-            .printMessage(
-                Diagnostic.Kind.NOTE,
-                String.format(
-                    "%s already exists! adding the mapping to the %s",
+            final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
+            final String destinationClassFileName = customerResourceTypeElement.getQualifiedName() + "Doneable";
+            final TypeName customResourceType = TypeName.get(resourceType);
+
+            if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
+                    String.format(
+                        "%s already exists! adding the mapping to the %s",
                     destinationClassFileName, CONTROLLERS_RESOURCE_PATH));
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(), customResourceType.toString());
