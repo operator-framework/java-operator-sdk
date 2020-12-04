@@ -2,14 +2,13 @@ package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ControllerUtils;
+import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import org.junit.jupiter.api.Test;
-import io.javaoperatorsdk.operator.api.config.DefaultConfigurationService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -69,7 +68,7 @@ public class DefaultConfigurationServiceTest {
         
         public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
         public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
-        
+    
         @Override
         public DeleteControl deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
             return DeleteControl.DEFAULT_DELETE;

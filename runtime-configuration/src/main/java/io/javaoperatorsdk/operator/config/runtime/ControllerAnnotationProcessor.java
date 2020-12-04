@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.annotation;
+package io.javaoperatorsdk.operator.config.runtime;
 
 import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
 import static io.javaoperatorsdk.operator.ControllerUtils.DONEABLES_RESOURCE_PATH;
@@ -34,7 +34,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.Controller")
+
+
+@SupportedAnnotationTypes(
+    "io.javaoperatorsdk.operator.api.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
@@ -168,9 +171,9 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
   private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
     try {
-      return typeParameterResolver.resolve(
-          processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
 
+            return typeParameterResolver.resolve(
+          processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
     } catch (Exception e) {
       e.printStackTrace();
       return null;
