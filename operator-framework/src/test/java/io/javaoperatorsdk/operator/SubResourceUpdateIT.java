@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
@@ -35,6 +36,22 @@ public class SubResourceUpdateIT {
     public void updatesSubResourceStatus() {
         integrationTestSupport.teardownIfSuccess(() -> {
             SubResourceTestCustomResource resource = createTestCustomResource("1");
+            integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
+
+            awaitStatusUpdated(resource.getMetadata().getName());
+            // wait for sure, there are no more events
+            waitXms(200);
+            // there is no event on status update processed
+            assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+        });
+    }
+
+    @Test
+    public void updatesSubResourceStatusNoFinalizer() {
+        integrationTestSupport.teardownIfSuccess(() -> {
+            SubResourceTestCustomResource resource = createTestCustomResource("1");
+            resource.getMetadata().setFinalizers(Collections.EMPTY_LIST);
+
             integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
 
             awaitStatusUpdated(resource.getMetadata().getName());
