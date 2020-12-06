@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -23,15 +24,18 @@ class ControllerUtilsTest {
     }
 
     @Controller(crdName = "test.crd", finalizerName = CUSTOM_FINALIZER_NAME)
-    static class TestCustomFinalizerController implements ResourceController<TestCustomResource> {
+    static class TestCustomFinalizerController implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
+        public class InnerCustomResource extends CustomResource {
+        }
 
         @Override
-        public DeleteControl deleteResource(TestCustomResource resource, Context<TestCustomResource> context) {
+        public DeleteControl deleteResource(TestCustomFinalizerController.InnerCustomResource resource, Context<InnerCustomResource> context) {
             return DeleteControl.DEFAULT_DELETE;
         }
 
         @Override
-        public UpdateControl<TestCustomResource> createOrUpdateResource(TestCustomResource resource, Context<TestCustomResource> context) {
+        public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(InnerCustomResource resource,
+                                                                                                       Context<InnerCustomResource> context) {
             return null;
         }
     }
@@ -39,5 +43,12 @@ class ControllerUtilsTest {
     @Test
     public void returnCustomerFinalizerNameIfSet() {
         assertEquals(CUSTOM_FINALIZER_NAME, ControllerUtils.getFinalizer(new TestCustomFinalizerController()));
+    }
+
+    @Test
+    public void supportsInnerClassCustomResources() {
+        assertDoesNotThrow(() -> {
+            ControllerUtils.getCustomResourceDoneableClass(new TestCustomFinalizerController());
+        });
     }
 }
