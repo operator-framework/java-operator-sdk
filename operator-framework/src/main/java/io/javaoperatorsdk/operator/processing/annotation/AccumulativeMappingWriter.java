@@ -10,21 +10,21 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
-
-class ControllersResourceWriter {
+class AccumulativeMappingWriter {
     private Map<String, String> mappings = new ConcurrentHashMap<>();
+    private final String resourcePath;
     private final ProcessingEnvironment processingEnvironment;
 
-    public ControllersResourceWriter(ProcessingEnvironment processingEnvironment) {
+    public AccumulativeMappingWriter(String resourcePath, ProcessingEnvironment processingEnvironment) {
+        this.resourcePath = resourcePath;
         this.processingEnvironment = processingEnvironment;
     }
 
-    public ControllersResourceWriter loadExistingMappings() {
+    public AccumulativeMappingWriter loadExistingMappings() {
         try {
             final var readonlyResource = processingEnvironment
                     .getFiler()
-                    .getResource(StandardLocation.CLASS_OUTPUT, "", CONTROLLERS_RESOURCE_PATH);
+                    .getResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
 
             final var bufferedReader = new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()));
             final var existingLines = bufferedReader
@@ -37,8 +37,8 @@ class ControllersResourceWriter {
         return this;
     }
 
-    public ControllersResourceWriter add(String controllerClassName, String customResourceTypeName) {
-        this.mappings.put(controllerClassName, customResourceTypeName);
+    public AccumulativeMappingWriter add(String key, String value) {
+        this.mappings.put(key, value);
         return this;
     }
 
@@ -47,7 +47,7 @@ class ControllersResourceWriter {
         try {
             final var resource = processingEnvironment
                     .getFiler()
-                    .createResource(StandardLocation.CLASS_OUTPUT, "", CONTROLLERS_RESOURCE_PATH);
+                    .createResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
             printWriter = new PrintWriter(resource.openOutputStream());
 
 
