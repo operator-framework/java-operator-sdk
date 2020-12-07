@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-
 import java.util.Map;
 import java.util.Optional;
 
