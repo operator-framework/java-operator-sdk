@@ -21,6 +21,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
+      - name: Check code format
+        run: mvn fmt:check --file pom.xml
       - name: Run unit tests
         run: mvn -B test -P no-integration-tests --file pom.xml
       - name: Set up Minikube
