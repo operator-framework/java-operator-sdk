@@ -109,7 +109,7 @@ class QuarkusExtensionProcessor {
             valueOrDefault(controllerAnnotation, "isClusterScoped", AnnotationValue::asBoolean, () -> false),
             valueOrDefault(controllerAnnotation, "namespaces", AnnotationValue::asStringArray, () -> new String[]{}),
             crClass,
-            null,  // todo: fix-me
+            doneableClassName,
             null // todo: fix-me
         );
     }

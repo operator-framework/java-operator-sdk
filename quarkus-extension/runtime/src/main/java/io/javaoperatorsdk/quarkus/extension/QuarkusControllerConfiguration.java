@@ -32,7 +32,11 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
         this.clusterScoped = clusterScoped;
         this.namespaces = namespaces == null || namespaces.length == 0 ? Collections.emptySet() : Set.of(namespaces);
         this.crClass = crClass;
-        this.doneableClass = doneableClass;
+        try {
+            this.doneableClass = (Class<CustomResourceDoneable<R>>) Thread.currentThread().getContextClassLoader().loadClass(doneableClass);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Couldn't find class " + doneableClass);
+        }
         this.watchAllNamespaces = this.namespaces.contains(WATCH_ALL_NAMESPACES_MARKER);
         this.retryConfiguration = retryConfiguration == null ? ControllerConfiguration.super.getRetryConfiguration() : retryConfiguration;
     }
