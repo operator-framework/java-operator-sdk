@@ -2,9 +2,7 @@ package io.javaoperatorsdk.operator.springboot.starter;
 
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.api.config.ClientConfiguration;
-
-public class OperatorProperties implements ClientConfiguration {
+public class OperatorProperties {
     
     private boolean openshift = false;
     private String username;

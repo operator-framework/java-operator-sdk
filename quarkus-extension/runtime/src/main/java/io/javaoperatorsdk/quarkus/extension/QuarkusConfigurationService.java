@@ -3,17 +3,16 @@ package io.javaoperatorsdk.quarkus.extension;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.ClientConfiguration;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.quarkus.arc.DefaultBean;
@@ -41,34 +40,8 @@ public class QuarkusConfigurationService implements ConfigurationService {
     }
     
     @Override
-    public ClientConfiguration getClientConfiguration() {
-        final var config = client.getConfiguration();
-        return new ClientConfiguration() {
-            @Override
-            public boolean isOpenshift() {
-                return false; // todo: fix
-            }
-            
-            @Override
-            public Optional<String> getUsername() {
-                return Optional.ofNullable(config.getUsername());
-            }
-            
-            @Override
-            public Optional<String> getPassword() {
-                return Optional.ofNullable(config.getPassword());
-            }
-            
-            @Override
-            public Optional<String> getMasterUrl() {
-                return Optional.ofNullable(config.getMasterUrl());
-            }
-            
-            @Override
-            public boolean isTrustSelfSignedCertificates() {
-                return config.isTrustCerts();
-            }
-        };
+    public Config getClientConfiguration() {
+        return client.getConfiguration();
     }
     
     @DefaultBean

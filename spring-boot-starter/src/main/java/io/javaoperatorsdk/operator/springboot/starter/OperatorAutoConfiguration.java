@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -13,7 +14,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.ClientConfiguration;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
@@ -40,13 +40,19 @@ public class OperatorAutoConfiguration implements ConfigurationService {
     @Bean
     @ConditionalOnMissingBean
     public KubernetesClient kubernetesClient() {
-        final var clientCfg = getClientConfiguration();
+        final var config = getClientConfiguration();
+        return configuration.getClient().isOpenshift() ? new DefaultOpenShiftClient(config) : new DefaultKubernetesClient(config);
+    }
+    
+    @Override
+    public Config getClientConfiguration() {
+        final var clientCfg = configuration.getClient();
     ConfigBuilder config = new ConfigBuilder();
     config.withTrustCerts(clientCfg.isTrustSelfSignedCertificates());
     clientCfg.getMasterUrl().ifPresent(config::withMasterUrl);
         clientCfg.getUsername().ifPresent(config::withUsername);
     clientCfg.getPassword().ifPresent(config::withPassword);
-    return clientCfg.isOpenshift() ? new DefaultOpenShiftClient(config.build()) : new DefaultKubernetesClient(config.build());
+    return config.build();
     }
     
     @Bean
@@ -68,11 +74,6 @@ public class OperatorAutoConfiguration implements ConfigurationService {
     @Override
     public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(ResourceController<R> controller) {
         return controllers.get(controller.getName());
-    }
-    
-    @Override
-  public ClientConfiguration getClientConfiguration() {
-        return configuration.getClient();
     }
     
     private static class ConfigurationWrapper<R extends CustomResource> extends AnnotationConfiguration<R> {
