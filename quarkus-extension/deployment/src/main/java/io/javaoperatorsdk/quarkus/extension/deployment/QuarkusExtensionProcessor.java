@@ -63,6 +63,7 @@ class QuarkusExtensionProcessor {
             .collect(Collectors.toList());
         syntheticBeanBuildItemBuildProducer.produce(SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
             .scope(Singleton.class)
+            .setRuntimeInit()
             .supplier(recorder.configurationServiceSupplier(controllerConfigs))
             .done());
     }
