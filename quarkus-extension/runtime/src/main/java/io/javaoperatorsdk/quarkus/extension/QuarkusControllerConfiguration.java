@@ -102,7 +102,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     }
     
     // For serialization
-    public void setFinalizer(String finalizer) {
+    void setFinalizer(String finalizer) {
         this.finalizer = finalizer;
     }
     

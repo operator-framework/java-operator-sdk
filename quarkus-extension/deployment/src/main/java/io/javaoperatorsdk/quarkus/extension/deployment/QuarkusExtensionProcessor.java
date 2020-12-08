@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -16,6 +17,8 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.ConfigurationServiceRecorder;
 import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
+import io.javaoperatorsdk.quarkus.extension.QuarkusOperator;
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -29,6 +32,7 @@ import io.quarkus.gizmo.ClassCreator;
 import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
+import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -51,24 +55,42 @@ class QuarkusExtensionProcessor {
     
     
     @BuildStep
-    @Record(ExecutionTime.RUNTIME_INIT)
-    void createDoneableClasses(CombinedIndexBuildItem combinedIndexBuildItem,
-                               BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
-                               BuildProducer<GeneratedClassBuildItem> generatedClass,
-                               ConfigurationServiceRecorder recorder) {
+    List<ControllerConfigurationBuildItem> createControllerBeans(CombinedIndexBuildItem combinedIndexBuildItem,
+                                                                 BuildProducer<GeneratedClassBuildItem> generatedClass,
+                                                                 BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
-        final var controllerConfigs = resourceControllers.stream()
-            .map(ci -> createControllerConfiguration(ci, new GeneratedClassGizmoAdaptor(generatedClass, true)))
+        
+        final var classOutput = new GeneratedClassGizmoAdaptor(generatedClass, true);
+        return resourceControllers.stream()
+            .map(ci -> createControllerConfiguration(ci, classOutput, additionalBeans))
             .collect(Collectors.toList());
+    }
+    
+    
+    @BuildStep
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void createConfigurationService(BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
+                                    List<ControllerConfigurationBuildItem> configurations,
+                                    KubernetesClientBuildItem clientBuildItem,
+                                    ConfigurationServiceRecorder recorder) {
+        final List<ControllerConfiguration> controllerConfigs = configurations.stream()
+            .map(ControllerConfigurationBuildItem::getConfiguration)
+            .collect(Collectors.toList());
+        final var supplier = recorder.configurationServiceSupplier(controllerConfigs, clientBuildItem.getClient());
         syntheticBeanBuildItemBuildProducer.produce(SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
             .scope(Singleton.class)
             .setRuntimeInit()
-            .supplier(recorder.configurationServiceSupplier(controllerConfigs))
+            .supplier(supplier)
             .done());
     }
     
-    private ControllerConfiguration createControllerConfiguration(ClassInfo info, ClassOutput classOutput) {
+    @BuildStep
+    void createOperator(BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(QuarkusOperator.class));
+    }
+    
+    private ControllerConfigurationBuildItem createControllerConfiguration(ClassInfo info, ClassOutput classOutput, BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         // first retrieve the custom resource class
         final var rcInterface = info.interfaceTypes().stream()
             .filter(t -> t.name().equals(RESOURCE_CONTROLLER))
@@ -83,6 +105,9 @@ class QuarkusExtensionProcessor {
             throw new IllegalArgumentException("Couldn't find class " + crType);
         }
         
+        // create ResourceController bean
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(crType));
+        
         // generate associated Doneable class
         final var doneableClassName = crType + "Doneable";
         try (ClassCreator cc = ClassCreator.builder()
@@ -96,12 +121,10 @@ class QuarkusExtensionProcessor {
             ctor.invokeSpecialMethod(MethodDescriptor.ofConstructor(CustomResourceDoneable.class, crClass, Function.class), ctor.getThis(), ctor.getMethodParam(0), ctor.invokeStaticMethod(MethodDescriptor.ofMethod(Function.class, "identity", Function.class)));
         }
         
-        // get Controller annotation
+        // generate configuration
         final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-        
-        
         final var crdName = valueOrDefault(controllerAnnotation, "crdName", AnnotationValue::asString, EXCEPTION_SUPPLIER);
-        return new QuarkusControllerConfiguration(
+        final var configuration = new QuarkusControllerConfiguration(
             valueOrDefault(controllerAnnotation, "name", AnnotationValue::asString, () -> ControllerUtils.getDefaultResourceControllerName(info.simpleName())),
             crdName,
             valueOrDefault(controllerAnnotation, "finalizerName", AnnotationValue::asString, () -> ControllerUtils.getDefaultFinalizerName(crdName)),
@@ -112,7 +135,10 @@ class QuarkusExtensionProcessor {
             doneableClassName,
             null // todo: fix-me
         );
+        
+        return new ControllerConfigurationBuildItem(configuration);
     }
+    
     
     private <T> T valueOrDefault(AnnotationInstance annotation, String name, Function<AnnotationValue, T> converter, Supplier<T> defaultValue) {
         return Optional.ofNullable(annotation.value(name)).map(converter).orElseGet(defaultValue);
