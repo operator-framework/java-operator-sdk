@@ -9,7 +9,9 @@ import java.util.stream.Collectors;
 import javax.inject.Singleton;
 
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ControllerUtils;
+import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.ConfigurationServiceRecorder;
 import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
@@ -36,8 +38,8 @@ import org.jboss.jandex.Type;
 class QuarkusExtensionProcessor {
     
     private static final String FEATURE = "operator-sdk";
-    private static final DotName RESOURCE_CONTROLLER = DotName.createSimple("io.javaoperatorsdk.api.ResourceController");
-    private static final DotName CONTROLLER = DotName.createSimple("io.javaoperatorsdk.api.Controller");
+    private static final DotName RESOURCE_CONTROLLER = DotName.createSimple(ResourceController.class.getName());
+    private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
     private static final Supplier<String> EXCEPTION_SUPPLIER = () -> {
         throw new IllegalArgumentException();
     };
