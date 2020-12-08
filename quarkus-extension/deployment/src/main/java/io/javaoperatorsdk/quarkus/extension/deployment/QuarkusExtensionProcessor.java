@@ -78,7 +78,7 @@ class QuarkusExtensionProcessor {
         final var crType = rcInterface.arguments().get(0).name().toString();
         final Class<?> crClass;
         try {
-            crClass = Class.forName(crType);
+            crClass = Thread.currentThread().getContextClassLoader().loadClass(crType);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("Couldn't find class " + crType);
         }
