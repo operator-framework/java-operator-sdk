@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +12,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-class ControllerToCustomResourceMappingsProvider {
-    private static final Logger log = LoggerFactory.getLogger(ControllerToCustomResourceMappingsProvider.class);
+class ClassMappingProvider {
+    private static final Logger log = LoggerFactory.getLogger(ClassMappingProvider.class);
 
-    static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> provide(final String resourcePath) {
-        Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings = new HashMap();
+    static <T, V> Map<T, V> provide(final String resourcePath, T key, V value) {
+        Map<T, V> result = new HashMap();
         try {
             final var classLoader = Thread.currentThread().getContextClassLoader();
             final Enumeration<URL> customResourcesMetadataList = classLoader.getResources(resourcePath);
@@ -30,20 +28,20 @@ class ControllerToCustomResourceMappingsProvider {
                     try {
                         final String[] classNames = clazzPair.split(",");
                         if (classNames.length != 2) {
-                            throw new IllegalStateException(String.format("%s is not valid CustomResource metadata defined in %s", clazzPair, url.toString()));
+                            throw new IllegalStateException(String.format("%s is not valid Mapping metadata, defined in %s", clazzPair, url.toString()));
                         }
 
-                        controllerToCustomResourceMappings.put(
-                                (Class<? extends ResourceController>) ClassUtils.getClass(classNames[0]),
-                                (Class<? extends CustomResource>) ClassUtils.getClass(classNames[1])
+                        result.put(
+                                (T) ClassUtils.getClass(classNames[0]),
+                                (V) ClassUtils.getClass(classNames[1])
                         );
                     } catch (ClassNotFoundException e) {
                         throw new RuntimeException(e);
                     }
                 });
             }
-            log.debug("Loaded Controller to CustomResource mappings {}", controllerToCustomResourceMappings);
-            return controllerToCustomResourceMappings;
+            log.debug("Loaded Controller to CustomResource mappings {}", result);
+            return result;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

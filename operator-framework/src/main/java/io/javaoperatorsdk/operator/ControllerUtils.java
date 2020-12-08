@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import org.apache.commons.lang3.ClassUtils;
 
 import java.util.Map;
 
@@ -13,12 +12,21 @@ public class ControllerUtils {
 
     private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
     public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
+    public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";
     private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
+    private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>> resourceToDoneableMappings;
+
 
     static {
-        controllerToCustomResourceMappings =
-                ControllerToCustomResourceMappingsProvider
-                        .provide(CONTROLLERS_RESOURCE_PATH);
+        controllerToCustomResourceMappings = ClassMappingProvider
+                .provide(CONTROLLERS_RESOURCE_PATH,
+                        ResourceController.class,
+                        CustomResource.class);
+        resourceToDoneableMappings = ClassMappingProvider
+                .provide(DONEABLES_RESOURCE_PATH,
+                        CustomResource.class,
+                        CustomResourceDoneable.class
+                );
     }
 
     static String getFinalizer(ResourceController controller) {
@@ -53,13 +61,12 @@ public class ControllerUtils {
 
     public static <T extends CustomResource> Class<? extends CustomResourceDoneable<T>>
     getCustomResourceDoneableClass(ResourceController<T> controller) {
-        try {
-            final Class<T> customResourceClass = getCustomResourceClass(controller);
-            return (Class<? extends CustomResourceDoneable<T>>) ClassUtils.getClass(customResourceClass.getCanonicalName() + "Doneable");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
+        final Class<T> customResourceClass = getCustomResourceClass(controller);
+        final Class<? extends CustomResourceDoneable<T>> doneableClass = (Class<? extends CustomResourceDoneable<T>>) resourceToDoneableMappings.get(customResourceClass);
+        if (doneableClass == null) {
+            throw new RuntimeException(String.format("No matching Doneable class found for %s", customResourceClass));
         }
+        return doneableClass;
     }
 
     private static Controller getAnnotation(ResourceController<?> controller) {

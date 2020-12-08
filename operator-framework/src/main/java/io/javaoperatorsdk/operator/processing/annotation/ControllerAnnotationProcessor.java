@@ -22,20 +22,24 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
+import static io.javaoperatorsdk.operator.ControllerUtils.DONEABLES_RESOURCE_PATH;
 
 @SupportedAnnotationTypes(
         "io.javaoperatorsdk.operator.api.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
-    private ControllersResourceWriter controllersResourceWriter;
+    private AccumulativeMappingWriter controllersResourceWriter;
+    private AccumulativeMappingWriter doneablesResourceWriter;
     private Set<String> generatedDoneableClassFiles = new HashSet<>();
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        controllersResourceWriter = new ControllersResourceWriter(processingEnv);
-        controllersResourceWriter.loadExistingMappings();
+        controllersResourceWriter = new AccumulativeMappingWriter(CONTROLLERS_RESOURCE_PATH, processingEnv)
+                .loadExistingMappings();
+        doneablesResourceWriter = new AccumulativeMappingWriter(DONEABLES_RESOURCE_PATH, processingEnv)
+                .loadExistingMappings();
     }
 
     @Override
@@ -51,6 +55,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         } finally {
             if (roundEnv.processingOver()) {
                 controllersResourceWriter.flush();
+                doneablesResourceWriter.flush();
             }
         }
         return true;
@@ -71,7 +76,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
             if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
                         String.format(
-                                "%s already exist! adding the mapping to the %s",
+                                "%s already exists! adding the mapping to the %s",
                                 destinationClassFileName,
                                 CONTROLLERS_RESOURCE_PATH)
                 );
@@ -98,9 +103,11 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                         .build();
 
                 final PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(customerResourceTypeElement);
-                JavaFile file = JavaFile.builder(packageElement.getQualifiedName().toString(), typeSpec)
+                final var packageQualifiedName = packageElement.getQualifiedName().toString();
+                JavaFile file = JavaFile.builder(packageQualifiedName, typeSpec)
                         .build();
                 file.writeTo(out);
+                doneablesResourceWriter.add(customResourceType.toString(), makeQualifiedClassName(packageQualifiedName, doneableClassName));
             }
         } catch (Exception ioException) {
             ioException.printStackTrace();
@@ -136,5 +143,12 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private String makeQualifiedClassName(String packageName, String className) {
+        if (packageName.equals("")) {
+            return className;
+        }
+        return packageName + "." + className;
     }
 }
