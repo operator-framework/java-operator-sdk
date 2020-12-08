@@ -5,16 +5,12 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.*;
-import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventList;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
@@ -43,16 +39,16 @@ public class EventDispatcher {
         this.eventSourceManager = eventSourceManager;
     }
 
-    public PostExecutionControl handleEvent(ExecutionScope event) {
+    public PostExecutionControl handleExecution(ExecutionScope executionScope) {
         try {
-            return handDispatch(event);
+            return handleDispatch(executionScope);
         } catch (RuntimeException e) {
-            log.error("Error during event processing {} failed.", event, e);
-            return PostExecutionControl.defaultDispatch();
+            log.error("Error during event processing {} failed.", executionScope, e);
+            return PostExecutionControl.exceptionDuringExecution(e);
         }
     }
 
-    private PostExecutionControl handDispatch(ExecutionScope executionScope) {
+    private PostExecutionControl handleDispatch(ExecutionScope executionScope) {
         CustomResource resource = executionScope.getCustomResource();
         log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 

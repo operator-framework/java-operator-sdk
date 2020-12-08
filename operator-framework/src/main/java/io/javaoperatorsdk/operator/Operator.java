@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,16 +39,16 @@ public class Operator {
 
 
     public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true);
+        registerController(controller, true, null);
     }
 
     public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, targetNamespaces);
+        registerController(controller, false, null, targetNamespaces);
     }
 
     @SuppressWarnings("rawtypes")
     private <R extends CustomResource> void registerController(ResourceController<R> controller,
-                                                               boolean watchAllNamespaces, String... targetNamespaces) throws OperatorException {
+                                                               boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
         Class<R> resClass = getCustomResourceClass(controller);
         CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
         KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
@@ -58,8 +59,8 @@ public class Operator {
 
 
         CustomResourceCache customResourceCache = new CustomResourceCache();
-        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcher, controller.getClass().getName());
-        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler);
+        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcher, controller.getClass().getName(), retry);
+        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler, retry != null);
         defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
         eventDispatcher.setEventSourceManager(eventSourceManager);
 

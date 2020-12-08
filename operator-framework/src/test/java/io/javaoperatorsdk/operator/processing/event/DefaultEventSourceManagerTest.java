@@ -18,7 +18,7 @@ class DefaultEventSourceManagerTest {
     public static final String CUSTOM_EVENT_SOURCE_NAME = "CustomEventSource";
 
     private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
-    private DefaultEventSourceManager defaultEventSourceManager = new DefaultEventSourceManager(defaultEventHandlerMock);
+    private DefaultEventSourceManager defaultEventSourceManager = new DefaultEventSourceManager(defaultEventHandlerMock, false);
 
     @Test
     public void registersEventSource() {

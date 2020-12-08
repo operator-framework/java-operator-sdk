@@ -24,7 +24,7 @@ class DefaultEventHandlerTest {
     public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
     private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
     private CustomResourceCache customResourceCache = new CustomResourceCache();
-    private DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcherMock, "Test");
+    private DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcherMock, "Test", null);
     private DefaultEventSourceManager defaultEventSourceManagerMock = mock(DefaultEventSourceManager.class);
 
     @BeforeEach
@@ -36,7 +36,7 @@ class DefaultEventHandlerTest {
     public void dispatchesEventsIfNoExecutionInProgress() {
         defaultEventHandler.handleEvent(prepareCREvent());
 
-        verify(eventDispatcherMock, timeout(50).times(1)).handleEvent(any());
+        verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
     }
 
     @Test
@@ -46,7 +46,7 @@ class DefaultEventHandlerTest {
 
         defaultEventHandler.handleEvent(event);
 
-        verify(eventDispatcherMock, timeout(50).times(0)).handleEvent(any());
+        verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
     }
 
     @Test
@@ -55,7 +55,7 @@ class DefaultEventHandlerTest {
 
         defaultEventHandler.handleEvent(nonCREvent(resourceUid));
 
-        verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1)).handleEvent(any());
+        verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1)).handleExecution(any());
     }
 
     @Test
@@ -66,7 +66,7 @@ class DefaultEventHandlerTest {
         defaultEventHandler.handleEvent(prepareCREvent(resourceUid));
 
         ArgumentCaptor<ExecutionScope> captor = ArgumentCaptor.forClass(ExecutionScope.class);
-        verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2)).handleEvent(captor.capture());
+        verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2)).handleExecution(captor.capture());
         List<Event> events = captor.getAllValues().get(1).getEvents();
         assertThat(events).hasSize(2);
         assertThat(events.get(0)).isInstanceOf(TimerEvent.class);
@@ -97,7 +97,7 @@ class DefaultEventHandlerTest {
     }
 
     private String eventAlreadyUnderProcessing() {
-        when(eventDispatcherMock.handleEvent(any())).then((Answer<PostExecutionControl>) invocationOnMock -> {
+        when(eventDispatcherMock.handleExecution(any())).then((Answer<PostExecutionControl>) invocationOnMock -> {
             Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION);
             return PostExecutionControl.defaultDispatch();
         });
