@@ -34,7 +34,6 @@ public interface ControllerConfiguration<R extends CustomResource> {
     }
     
     default RetryConfiguration getRetryConfiguration() {
-        return new RetryConfiguration() {
-        };
+        return RetryConfiguration.DEFAULT;
     }
 }
