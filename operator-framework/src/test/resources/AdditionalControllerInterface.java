@@ -5,10 +5,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import java.io.Serializable;
 
 
-public abstract class AbstractController<T extends CustomResource> implements Serializable,
+public interface AdditionalControllerInterface<R, T extends CustomResource> extends
+    Serializable,
     ResourceController<T> {
-
-  public static class MyCustomResource extends CustomResource {
-
-  }
 }

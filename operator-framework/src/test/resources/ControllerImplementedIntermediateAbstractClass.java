@@ -16,13 +16,17 @@ import java.io.Serializable;
 import static java.lang.String.format;
 
 @Controller(crdName = "test.crd")
-public class ControllerImplementedIntermediateAbstractClass extends AbstractController implements Serializable {
+public class ControllerImplementedIntermediateAbstractClass extends
+    AbstractController<AbstractController.MyCustomResource> implements Serializable {
 
-    public UpdateControl<AbstractController.MyCustomResource> createOrUpdateResource(AbstractController.MyCustomResource customResource, Context<AbstractController.MyCustomResource> context) {
-        return UpdateControl.updateCustomResource(null);
-    }
+  public UpdateControl<AbstractController.MyCustomResource> createOrUpdateResource(
+      AbstractController.MyCustomResource customResource,
+      Context<AbstractController.MyCustomResource> context) {
+    return UpdateControl.updateCustomResource(null);
+  }
 
-    public DeleteControl deleteResource(AbstractController.MyCustomResource customResource, Context<AbstractController.MyCustomResource> context) {
-        return DeleteControl.DEFAULT_DELETE;
-    }
+  public DeleteControl deleteResource(AbstractController.MyCustomResource customResource,
+      Context<AbstractController.MyCustomResource> context) {
+    return DeleteControl.DEFAULT_DELETE;
+  }
 }
