@@ -8,6 +8,7 @@ import io.javaoperatorsdk.operator.Operator;
 import java.io.IOException;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;

@@ -4,13 +4,14 @@ import java.util.List;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Event;
+import java.util.List;
 
 public class ExecutionScope {
 
   private List<Event> events;
   // the latest custom resource from cache
   private CustomResource customResource;
-  private RetryInfo retryInfo;
+private RetryInfo retryInfo;
 
   public ExecutionScope(List<Event> list, CustomResource customResource, RetryInfo retryInfo) {
     this.events = list;

@@ -45,27 +45,28 @@ public class RetryProperties {
     return this;
   }
 
-    public RetryConfiguration asRetryConfiguration() {
-        return new RetryConfiguration() {
-            @Override
-            public int getMaxAttempts() {
-                return maxAttempts != null ? maxAttempts : DEFAULT_MAX_ATTEMPTS;
-            }
+  public RetryConfiguration asRetryConfiguration() {
+    return new RetryConfiguration() {
+      @Override
+      public int getMaxAttempts() {
+        return maxAttempts != null ? maxAttempts : DEFAULT_MAX_ATTEMPTS;
+      }
 
-            @Override
-            public long getInitialInterval() {
-                return initialInterval != null ? initialInterval : DEFAULT_INITIAL_INTERVAL;
-            }
+      @Override
+      public long getInitialInterval() {
+        return initialInterval != null ? initialInterval : DEFAULT_INITIAL_INTERVAL;
+      }
 
-            @Override
-            public double getIntervalMultiplier() {
-                return intervalMultiplier != null ? intervalMultiplier : DEFAULT_MULTIPLIER;
-            }
+      @Override
+      public double getIntervalMultiplier() {
+        return intervalMultiplier != null ? intervalMultiplier : DEFAULT_MULTIPLIER;
+      }
 
-            @Override
-            public long getMaxInterval() {
-                return maxInterval != null ? maxInterval : RetryConfiguration.DEFAULT.getMaxInterval();
-            }
-        };
-    }
+      @Override
+      public long getMaxInterval() {
+        return maxInterval != null ? maxInterval : RetryConfiguration.DEFAULT.getMaxInterval();
+      }
+};
+
+  }
 }

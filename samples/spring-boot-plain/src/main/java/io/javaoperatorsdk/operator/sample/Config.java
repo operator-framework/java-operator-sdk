@@ -1,17 +1,10 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.List;
-
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
-import io.javaoperatorsdk.operator.DefaultConfigurationService;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

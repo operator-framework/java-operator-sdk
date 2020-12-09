@@ -32,101 +32,113 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({ConfigurationProperties.class})
 public class OperatorAutoConfiguration implements ConfigurationService {
-    private static final Logger log = LoggerFactory.getLogger(OperatorAutoConfiguration.class);
-    @Autowired
-    private ConfigurationProperties configuration;
-    private final Map<String, ControllerConfiguration> controllers = new ConcurrentHashMap<>();
-    
-    @Bean
-    @ConditionalOnMissingBean
-    public KubernetesClient kubernetesClient() {
-        final var config = getClientConfiguration();
-        return configuration.getClient().isOpenshift() ? new DefaultOpenShiftClient(config) : new DefaultKubernetesClient(config);
-    }
-    
-    @Override
-    public Config getClientConfiguration() {
-        final var clientCfg = configuration.getClient();
+  private static final Logger log = LoggerFactory.getLogger(OperatorAutoConfiguration.class);
+  @Autowired private ConfigurationProperties configuration;
+  private final Map<String, ControllerConfiguration> controllers = new ConcurrentHashMap<>();
+
+  @Bean
+  @ConditionalOnMissingBean
+  public KubernetesClient kubernetesClient() {
+    final var config = getClientConfiguration();
+    return configuration.getClient().isOpenshift()
+        ? new DefaultOpenShiftClient(config)
+        : new DefaultKubernetesClient(config);
+  }
+
+  @Override
+  public Config getClientConfiguration() {
+    final var clientCfg = configuration.getClient();
     ConfigBuilder config = new ConfigBuilder();
     config.withTrustCerts(clientCfg.isTrustSelfSignedCertificates());
     clientCfg.getMasterUrl().ifPresent(config::withMasterUrl);
-        clientCfg.getUsername().ifPresent(config::withUsername);
+    clientCfg.getUsername().ifPresent(config::withUsername);
     clientCfg.getPassword().ifPresent(config::withPassword);
     return config.build();
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(Operator.class)
+  public Operator operator(
+      KubernetesClient kubernetesClient,
+      ConfigurationProperties config,
+      List<ResourceController> resourceControllers) {
+    Operator operator = new Operator(kubernetesClient, this);
+    resourceControllers.forEach(r -> operator.register(processController(r)));
+    return operator;
+  }
+
+  private ResourceController processController(ResourceController controller) {
+    final var controllerPropertiesMap = configuration.getControllers();
+    var controllerProps = controllerPropertiesMap.get(controller.getName());
+    final var cfg = new ConfigurationWrapper(controller, controllerProps);
+    this.controllers.put(controller.getName(), cfg);
+    return controller;
+  }
+
+  @Override
+  public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
+      ResourceController<R> controller) {
+    return controllers.get(controller.getName());
+  }
+
+  private static class ConfigurationWrapper<R extends CustomResource>
+      extends AnnotationConfiguration<R> {
+    private final Optional<ControllerProperties> properties;
+
+    private ConfigurationWrapper(
+        ResourceController<R> controller, ControllerProperties properties) {
+      super(controller);
+      this.properties = Optional.ofNullable(properties);
     }
-    
-    @Bean
-    @ConditionalOnMissingBean(Operator.class)
-    public Operator operator(KubernetesClient kubernetesClient, ConfigurationProperties config, List<ResourceController> resourceControllers) {
-        Operator operator = new Operator(kubernetesClient, this);
-        resourceControllers.forEach(r -> operator.register(processController(r)));
-        return operator;
-    }
-    
-    private ResourceController processController(ResourceController controller) {
-        final var controllerPropertiesMap = configuration.getControllers();
-        var controllerProps = controllerPropertiesMap.get(controller.getName());
-        final var cfg = new ConfigurationWrapper(controller, controllerProps);
-        this.controllers.put(controller.getName(), cfg);
-        return controller;
-    }
-    
+
     @Override
-    public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(ResourceController<R> controller) {
-        return controllers.get(controller.getName());
+    public String getName() {
+      return super.getName();
     }
-    
-    private static class ConfigurationWrapper<R extends CustomResource> extends AnnotationConfiguration<R> {
-        private final Optional<ControllerProperties> properties;
-        
-        private ConfigurationWrapper(ResourceController<R> controller, ControllerProperties properties) {
-            super(controller);
-            this.properties = Optional.ofNullable(properties);
-        }
-        
-        @Override
-        public String getName() {
-            return super.getName();
-        }
-        
-        @Override
-        public String getCRDName() {
-            return properties.map(ControllerProperties::getCRDName).orElse(super.getCRDName());
-        }
-        
-        @Override
-        public String getFinalizer() {
-            return properties.map(ControllerProperties::getFinalizer).orElse(super.getFinalizer());
-        }
-        
-        @Override
-        public boolean isGenerationAware() {
-            return properties.map(ControllerProperties::isGenerationAware).orElse(super.isGenerationAware());
-        }
-        
-        @Override
-        public Class<R> getCustomResourceClass() {
-            return super.getCustomResourceClass();
+
+    @Override
+    public String getCRDName() {
+      return properties.map(ControllerProperties::getCRDName).orElse(super.getCRDName());
     }
-    
+
+    @Override
+    public String getFinalizer() {
+      return properties.map(ControllerProperties::getFinalizer).orElse(super.getFinalizer());
+    }
+
+    @Override
+    public boolean isGenerationAware() {
+      return properties
+          .map(ControllerProperties::isGenerationAware)
+          .orElse(super.isGenerationAware());
+    }
+
+    @Override
+    public Class<R> getCustomResourceClass() {
+      return super.getCustomResourceClass();
+    }
+
     @Override
     public boolean isClusterScoped() {
       return properties.map(ControllerProperties::isClusterScoped).orElse(super.isClusterScoped());
     }
-    
-        @Override
+
+    @Override
     public Set<String> getNamespaces() {
-            return properties.map(ControllerProperties::getNamespaces).orElse(super.getNamespaces());
-        }
-        
-        @Override
-        public boolean watchAllNamespaces() {
-            return super.watchAllNamespaces();
-        }
-        
-        @Override
-        public RetryConfiguration getRetryConfiguration() {
-            return properties.map(ControllerProperties::getRetry).map(RetryProperties::asRetryConfiguration).orElse(RetryConfiguration.DEFAULT);
-        }
+      return properties.map(ControllerProperties::getNamespaces).orElse(super.getNamespaces());
+    }
+
+    @Override
+    public boolean watchAllNamespaces() {
+      return super.watchAllNamespaces();
+    }
+
+    @Override
+    public RetryConfiguration getRetryConfiguration() {
+      return properties
+          .map(ControllerProperties::getRetry)
+          .map(RetryProperties::asRetryConfiguration)
+          .orElse(RetryConfiguration.DEFAULT);
+    }
   }
 }

@@ -4,23 +4,18 @@ import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceD
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.Event;
+import io.javaoperatorsdk.operator.api.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
-
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.Event;
-import io.javaoperatorsdk.operator.api.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource

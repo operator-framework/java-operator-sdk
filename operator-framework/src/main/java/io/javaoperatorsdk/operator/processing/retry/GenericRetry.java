@@ -13,37 +13,34 @@ public class GenericRetry implements Retry {
   private double intervalMultiplier = DEFAULT_MULTIPLIER;
   private long maxInterval = -1;
 
-    public static GenericRetry defaultLimitedExponentialRetry() {
-        return new GenericRetry();
-    }
+  public static GenericRetry defaultLimitedExponentialRetry() {
+    return new GenericRetry();
+  }
 
-    public static GenericRetry noRetry() {
-        return new GenericRetry().setMaxAttempts(0);
-    }
+  public static GenericRetry noRetry() {
+    return new GenericRetry().setMaxAttempts(0);
+  }
 
-    public static GenericRetry every10second10TimesRetry() {
-        return new GenericRetry()
-            .withLinearRetry()
-            .setMaxAttempts(10)
-            .setInitialInterval(10000);
-    }
+  public static GenericRetry every10second10TimesRetry() {
+    return new GenericRetry().withLinearRetry().setMaxAttempts(10).setInitialInterval(10000);
+  }
 
-    public static Retry fromConfiguration(RetryConfiguration configuration) {
-        return new GenericRetry()
-            .setInitialInterval(configuration.getInitialInterval())
-            .setMaxAttempts(configuration.getMaxAttempts())
-            .setIntervalMultiplier(configuration.getIntervalMultiplier())
-            .setMaxInterval(configuration.getMaxInterval());
-    }
+  public static Retry fromConfiguration(RetryConfiguration configuration) {
+    return new GenericRetry()
+        .setInitialInterval(configuration.getInitialInterval())
+        .setMaxAttempts(configuration.getMaxAttempts())
+        .setIntervalMultiplier(configuration.getIntervalMultiplier())
+        .setMaxInterval(configuration.getMaxInterval());
+  }
 
-    @Override
-    public GenericRetryExecution initExecution() {
-        return new GenericRetryExecution(this);
-    }
+  @Override
+  public GenericRetryExecution initExecution() {
+    return new GenericRetryExecution(this);
+  }
 
-    public int getMaxAttempts() {
-        return maxAttempts;
-    }
+  public int getMaxAttempts() {
+    return maxAttempts;
+  }
 
   public GenericRetry setMaxAttempts(int maxRetryAttempts) {
     this.maxAttempts = maxRetryAttempts;

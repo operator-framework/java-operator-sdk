@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
 public interface EventHandler {
-    
-    void handleEvent(Event event);
-    
+
+  void handleEvent(Event event);
 }

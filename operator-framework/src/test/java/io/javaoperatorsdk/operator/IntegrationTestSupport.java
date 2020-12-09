@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -20,11 +19,11 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 public class IntegrationTestSupport {
 
@@ -53,19 +52,25 @@ public class IntegrationTestSupport {
     CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
     CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
     this.controller = controller;
-    
-    final var configurationService = DefaultConfigurationService.instance();
-    
-        final var config = configurationService.getConfigurationFor(controller);
-        Class doneableClass = config.getDoneableClass();
-        Class customResourceClass = config.getCustomResourceClass();
-        crOperations = k8sClient.customResources(crdContext, customResourceClass, CustomResourceList.class, doneableClass);
 
-        if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
-            k8sClient.namespaces().create(new NamespaceBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build()).build());
-        }
-        operator = new Operator(k8sClient, configurationService);
+    final var configurationService = DefaultConfigurationService.instance();
+
+    final var config = configurationService.getConfigurationFor(controller);
+    Class doneableClass = config.getDoneableClass();
+    Class customResourceClass = config.getCustomResourceClass();
+    crOperations =
+        k8sClient.customResources(
+            crdContext, customResourceClass, CustomResourceList.class, doneableClass);
+
+    if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
+      k8sClient
+          .namespaces()
+          .create(
+              new NamespaceBuilder()
+                  .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build())
+                  .build());
+    }
+    operator = new Operator(k8sClient, configurationService);
     operator.registerController(controller, retry, TEST_NAMESPACE);
     log.info("Operator is running with {}", controller.getClass().getCanonicalName());
   }

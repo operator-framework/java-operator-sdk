@@ -30,38 +30,41 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("rawtypes")
 public class Operator {
 
-    private static final Logger log = LoggerFactory.getLogger(Operator.class);
+  private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-    private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients = new HashMap<>();
+  private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients =
+      new HashMap<>();
 
-    public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
-        this.k8sClient = k8sClient;
-        this.configurationService = configurationService;
-    }
-    
-    public <R extends CustomResource> void register(ResourceController<R> controller) throws OperatorException {
-        final var configuration = configurationService.getConfigurationFor(controller);
-//        final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-        final var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
-        registerController(controller, configuration.watchAllNamespaces(), targetNamespaces);
-    }
+  public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
+    this.k8sClient = k8sClient;
+    this.configurationService = configurationService;
+  }
 
-    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller, Retry retry) throws OperatorException {
+  public <R extends CustomResource> void register(ResourceController<R> controller)
+      throws OperatorException {
+    final var configuration = configurationService.getConfigurationFor(controller);
+    //        final var retry =
+    // GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
+    final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+    registerController(controller, configuration.watchAllNamespaces(), targetNamespaces);
+  }
+
+  public <R extends CustomResource> void registerControllerForAllNamespaces(
+      ResourceController<R> controller, Retry retry) throws OperatorException {
     registerController(controller, true, retry);
   }
 
   public <R extends CustomResource> void registerControllerForAllNamespaces(
       ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true, null);
+    registerController(controller, true, null);
   }
 
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, Retry retry, String... targetNamespaces)
       throws OperatorException {
     registerController(controller, false, retry, targetNamespaces);
-    }
-
+  }
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
     registerController(controller, false, null, targetNamespaces);
@@ -75,7 +78,7 @@ public class Operator {
       String... targetNamespaces)
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
-        Class<R> resClass = configuration.getCustomResourceClass();
+    Class<R> resClass = configuration.getCustomResourceClass();
     CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
     KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
     String finalizer = configuration.getFinalizer();
