@@ -5,16 +5,16 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 public class KubernetesResourceUtils {
 
-    public static String getUID(HasMetadata customResource) {
-        return customResource.getMetadata().getUid();
-    }
+  public static String getUID(HasMetadata customResource) {
+    return customResource.getMetadata().getUid();
+  }
 
-    public static String getVersion(HasMetadata customResource) {
-        return customResource.getMetadata().getResourceVersion();
-    }
+  public static String getVersion(HasMetadata customResource) {
+    return customResource.getMetadata().getResourceVersion();
+  }
 
-
-    public static boolean markedForDeletion(CustomResource resource) {
-        return resource.getMetadata().getDeletionTimestamp() != null && !resource.getMetadata().getDeletionTimestamp().isEmpty();
-    }
+  public static boolean markedForDeletion(CustomResource resource) {
+    return resource.getMetadata().getDeletionTimestamp() != null
+        && !resource.getMetadata().getDeletionTimestamp().isEmpty();
+  }
 }

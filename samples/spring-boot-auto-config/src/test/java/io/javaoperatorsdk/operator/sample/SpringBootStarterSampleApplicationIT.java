@@ -6,7 +6,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 public class SpringBootStarterSampleApplicationIT {
 
-    @Test
-    void contextLoads() {
-    }
+  @Test
+  void contextLoads() {}
 }
