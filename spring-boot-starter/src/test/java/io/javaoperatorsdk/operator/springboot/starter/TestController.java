@@ -12,14 +12,13 @@ import org.springframework.stereotype.Component;
 @Controller(crdName = "name")
 public class TestController implements ResourceController {
 
-    @Override
-    public DeleteControl deleteResource(CustomResource resource, Context context) {
-        return DeleteControl.DEFAULT_DELETE;
-    }
+  @Override
+  public DeleteControl deleteResource(CustomResource resource, Context context) {
+    return DeleteControl.DEFAULT_DELETE;
+  }
 
-    @Override
-    public UpdateControl createOrUpdateResource(CustomResource resource, Context context) {
-        return UpdateControl.noUpdate();
-    }
-
+  @Override
+  public UpdateControl createOrUpdateResource(CustomResource resource, Context context) {
+    return UpdateControl.noUpdate();
+  }
 }

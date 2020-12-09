@@ -9,7 +9,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultEventSourceManager implements EventSourceManager {
 
@@ -31,10 +32,11 @@ public class DefaultEventSourceManager implements EventSourceManager {
         }
     }
 
-    public void registerCustomResourceEventSource(CustomResourceEventSource customResourceEventSource) {
-        this.customResourceEventSource = customResourceEventSource;
-        this.customResourceEventSource.addedToEventManager();
-    }
+  public void registerCustomResourceEventSource(
+      CustomResourceEventSource customResourceEventSource) {
+    this.customResourceEventSource = customResourceEventSource;
+    this.customResourceEventSource.addedToEventManager();
+  }
 
     @Override
     public <T extends EventSource> void registerEventSource(String name, T eventSource) {

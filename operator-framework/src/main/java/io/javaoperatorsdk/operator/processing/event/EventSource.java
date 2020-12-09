@@ -2,8 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 public interface EventSource {
 
-    void setEventHandler(EventHandler eventHandler);
+  void setEventHandler(EventHandler eventHandler);
 
-    void eventSourceDeRegisteredForResource(String customResourceUid);
-
+  void eventSourceDeRegisteredForResource(String customResourceUid);
 }

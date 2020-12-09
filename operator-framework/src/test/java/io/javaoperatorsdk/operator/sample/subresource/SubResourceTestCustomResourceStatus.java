@@ -2,20 +2,19 @@ package io.javaoperatorsdk.operator.sample.subresource;
 
 public class SubResourceTestCustomResourceStatus {
 
-    private State state;
+  private State state;
 
-    public State getState() {
-        return state;
-    }
+  public State getState() {
+    return state;
+  }
 
-    public SubResourceTestCustomResourceStatus setState(State state) {
-        this.state = state;
-        return this;
-    }
+  public SubResourceTestCustomResourceStatus setState(State state) {
+    this.state = state;
+    return this;
+  }
 
-    public enum State {
-        SUCCESS,
-        ERROR
-    }
-
+  public enum State {
+    SUCCESS,
+    ERROR
+  }
 }

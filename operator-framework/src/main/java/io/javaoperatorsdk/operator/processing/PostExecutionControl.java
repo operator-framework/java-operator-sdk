@@ -6,9 +6,9 @@ import java.util.Optional;
 
 public final class PostExecutionControl {
 
-    private final boolean onlyFinalizerHandled;
+  private final boolean onlyFinalizerHandled;
 
-    private final CustomResource updatedCustomResource;
+  private final CustomResource updatedCustomResource;
 
     private final RuntimeException runtimeException;
 
@@ -34,13 +34,13 @@ public final class PostExecutionControl {
         return new PostExecutionControl(false, null, exception);
     }
 
-    public boolean isOnlyFinalizerHandled() {
-        return onlyFinalizerHandled;
-    }
+  public boolean isOnlyFinalizerHandled() {
+    return onlyFinalizerHandled;
+  }
 
-    public Optional<CustomResource> getUpdatedCustomResource() {
-        return Optional.ofNullable(updatedCustomResource);
-    }
+  public Optional<CustomResource> getUpdatedCustomResource() {
+    return Optional.ofNullable(updatedCustomResource);
+  }
 
     public boolean customResourceUpdatedDuringExecution() {
         return updatedCustomResource != null;
