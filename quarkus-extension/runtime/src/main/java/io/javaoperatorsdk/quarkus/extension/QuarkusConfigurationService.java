@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.inject.Inject;
+
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -14,10 +16,10 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 public class QuarkusConfigurationService implements ConfigurationService {
     private final Map<String, ControllerConfiguration> controllerConfigurations;
-    private final KubernetesClient client;
+    @Inject
+    KubernetesClient client;
     
-    public QuarkusConfigurationService(List<ControllerConfiguration> configurations, KubernetesClient client) {
-        this.client = client;
+    public QuarkusConfigurationService(List<ControllerConfiguration> configurations) {
         if (configurations != null && !configurations.isEmpty()) {
             controllerConfigurations = new ConcurrentHashMap<>(configurations.size());
             configurations.forEach(c -> controllerConfigurations.put(c.getName(), c));

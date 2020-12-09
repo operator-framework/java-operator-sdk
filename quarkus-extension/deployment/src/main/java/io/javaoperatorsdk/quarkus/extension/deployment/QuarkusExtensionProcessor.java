@@ -13,19 +13,18 @@ import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ControllerUtils;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.ConfigurationServiceRecorder;
+import io.javaoperatorsdk.quarkus.extension.OperatorProducer;
 import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
-import io.javaoperatorsdk.quarkus.extension.QuarkusOperator;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
-import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -57,45 +56,34 @@ class QuarkusExtensionProcessor {
     
     
     @BuildStep
-    List<ControllerConfigurationBuildItem> createControllerBeans(CombinedIndexBuildItem combinedIndexBuildItem,
-                                                                 BuildProducer<GeneratedClassBuildItem> generatedClass,
-                                                                 BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void createConfigurationServiceAndOperator(CombinedIndexBuildItem combinedIndexBuildItem,
+                                               BuildProducer<GeneratedClassBuildItem> generatedClass,
+                                               BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
+                                               BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+                                               KubernetesClientBuildItem clientBuildItem,
+                                               ConfigurationServiceRecorder recorder) {
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
         
         final var classOutput = new GeneratedClassGizmoAdaptor(generatedClass, true);
-        return resourceControllers.stream()
+        final List<ControllerConfiguration> controllerConfigs = resourceControllers.stream()
             .map(ci -> createControllerConfiguration(ci, classOutput, additionalBeans))
             .collect(Collectors.toList());
-    }
-    
-    
-    @BuildStep
-    @Record(ExecutionTime.RUNTIME_INIT)
-    @Produce(ConfigurationServiceDoneBuildItem.class)
-    void createConfigurationService(BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
-                                    List<ControllerConfigurationBuildItem> configurations,
-                                    KubernetesClientBuildItem clientBuildItem,
-                                    ConfigurationServiceRecorder recorder) {
-        final List<ControllerConfiguration> controllerConfigs = configurations.stream()
-            .map(ControllerConfigurationBuildItem::getConfiguration)
-            .collect(Collectors.toList());
-        final var supplier = recorder.configurationServiceSupplier(controllerConfigs, clientBuildItem.getClient());
+        
+        final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
         syntheticBeanBuildItemBuildProducer.produce(SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
             .scope(Singleton.class)
             .addType(ConfigurationService.class)
             .setRuntimeInit()
             .supplier(supplier)
             .done());
+        
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
     }
     
-    @BuildStep
-    @Consume(ConfigurationServiceDoneBuildItem.class)
-    void createOperator(BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(QuarkusOperator.class));
-    }
     
-    private ControllerConfigurationBuildItem createControllerConfiguration(ClassInfo info, ClassOutput classOutput, BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+    private ControllerConfiguration createControllerConfiguration(ClassInfo info, ClassOutput classOutput, BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         // first retrieve the custom resource class
         final var rcInterface = info.interfaceTypes().stream()
             .filter(t -> t.name().equals(RESOURCE_CONTROLLER))
@@ -142,7 +130,7 @@ class QuarkusExtensionProcessor {
             null // todo: fix-me
         );
         
-        return new ControllerConfigurationBuildItem(configuration);
+        return configuration;
     }
     
     
