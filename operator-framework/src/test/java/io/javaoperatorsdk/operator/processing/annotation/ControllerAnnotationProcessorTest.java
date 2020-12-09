@@ -12,8 +12,9 @@ class ControllerAnnotationProcessorTest {
     Compilation compilation =
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
-            .compile(JavaFileObjects.forResource(
-                "compile-fixtures/ControllerImplemented2Interfaces.java"));
+            .compile(
+                JavaFileObjects.forResource(
+                    "compile-fixtures/ControllerImplemented2Interfaces.java"));
     CompilationSubject.assertThat(compilation).succeeded();
 
     final JavaFileObject expectedResource =
