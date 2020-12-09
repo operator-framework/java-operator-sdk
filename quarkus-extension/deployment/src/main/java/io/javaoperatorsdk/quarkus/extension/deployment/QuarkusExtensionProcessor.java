@@ -23,7 +23,9 @@ import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -70,6 +72,7 @@ class QuarkusExtensionProcessor {
     
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
+    @Produce(ConfigurationServiceDoneBuildItem.class)
     void createConfigurationService(BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
                                     List<ControllerConfigurationBuildItem> configurations,
                                     KubernetesClientBuildItem clientBuildItem,
@@ -86,6 +89,7 @@ class QuarkusExtensionProcessor {
     }
     
     @BuildStep
+    @Consume(ConfigurationServiceDoneBuildItem.class)
     void createOperator(BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(QuarkusOperator.class));
     }
