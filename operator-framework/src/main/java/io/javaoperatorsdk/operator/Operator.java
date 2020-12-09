@@ -18,9 +18,6 @@ import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,32 +36,45 @@ public class Operator {
     this.k8sClient = k8sClient;
   }
 
+  public <R extends CustomResource> void registerControllerForAllNamespaces(
+      ResourceController<R> controller) throws OperatorException {
+    registerController(controller, true, null);
+  }
 
-    public <R extends CustomResource> void registerControllerForAllNamespaces(ResourceController<R> controller) throws OperatorException {
-        registerController(controller, true, null);
-    }
+  public <R extends CustomResource> void registerController(
+      ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
+    registerController(controller, false, null, targetNamespaces);
+  }
 
-    public <R extends CustomResource> void registerController(ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-        registerController(controller, false, null, targetNamespaces);
-    }
+  @SuppressWarnings("rawtypes")
+  private <R extends CustomResource> void registerController(
+      ResourceController<R> controller,
+      boolean watchAllNamespaces,
+      Retry retry,
+      String... targetNamespaces)
+      throws OperatorException {
+    Class<R> resClass = getCustomResourceClass(controller);
+    CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
+    KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
+    String finalizer = ControllerUtils.getFinalizer(controller);
+    MixedOperation client =
+        k8sClient.customResources(
+            crd,
+            resClass,
+            CustomResourceList.class,
+            ControllerUtils.getCustomResourceDoneableClass(controller));
+    EventDispatcher eventDispatcher =
+        new EventDispatcher(
+            controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
 
-    @SuppressWarnings("rawtypes")
-    private <R extends CustomResource> void registerController(ResourceController<R> controller,
-                                                               boolean watchAllNamespaces, Retry retry, String... targetNamespaces) throws OperatorException {
-        Class<R> resClass = getCustomResourceClass(controller);
-        CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
-        KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
-        String finalizer = ControllerUtils.getFinalizer(controller);
-        MixedOperation client = k8sClient.customResources(crd, resClass, CustomResourceList.class, ControllerUtils.getCustomResourceDoneableClass(controller));
-        EventDispatcher eventDispatcher = new EventDispatcher(controller,
-                finalizer, new EventDispatcher.CustomResourceFacade(client));
-
-
-        CustomResourceCache customResourceCache = new CustomResourceCache();
-        DefaultEventHandler defaultEventHandler = new DefaultEventHandler(customResourceCache, eventDispatcher, controller.getClass().getName(), retry);
-        DefaultEventSourceManager eventSourceManager = new DefaultEventSourceManager(defaultEventHandler, retry != null);
-        defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
-        eventDispatcher.setEventSourceManager(eventSourceManager);
+    CustomResourceCache customResourceCache = new CustomResourceCache();
+    DefaultEventHandler defaultEventHandler =
+        new DefaultEventHandler(
+            customResourceCache, eventDispatcher, controller.getClass().getName(), retry);
+    DefaultEventSourceManager eventSourceManager =
+        new DefaultEventSourceManager(defaultEventHandler, retry != null);
+    defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
+    eventDispatcher.setEventSourceManager(eventSourceManager);
 
     customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 

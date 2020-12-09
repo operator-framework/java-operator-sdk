@@ -10,13 +10,9 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.processing.event.EventList;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-
-import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
@@ -41,18 +37,19 @@ public class EventDispatcher {
     this.eventSourceManager = eventSourceManager;
   }
 
-    public PostExecutionControl handleExecution(ExecutionScope executionScope) {
-        try {
-            return handleDispatch(executionScope);
-        } catch (RuntimeException e) {
-            log.error("Error during event processing {} failed.", executionScope, e);
-            return PostExecutionControl.exceptionDuringExecution(e);
-        }
+  public PostExecutionControl handleExecution(ExecutionScope executionScope) {
+    try {
+      return handleDispatch(executionScope);
+    } catch (RuntimeException e) {
+      log.error("Error during event processing {} failed.", executionScope, e);
+      return PostExecutionControl.exceptionDuringExecution(e);
     }
+  }
 
-    private PostExecutionControl handleDispatch(ExecutionScope executionScope) {
-        CustomResource resource = executionScope.getCustomResource();
-        log.debug("Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
+  private PostExecutionControl handleDispatch(ExecutionScope executionScope) {
+    CustomResource resource = executionScope.getCustomResource();
+    log.debug(
+        "Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
     if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
       log.debug(
