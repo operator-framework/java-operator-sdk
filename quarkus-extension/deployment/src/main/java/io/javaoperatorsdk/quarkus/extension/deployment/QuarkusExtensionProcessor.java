@@ -106,7 +106,7 @@ class QuarkusExtensionProcessor {
         }
         
         // create ResourceController bean
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(crType));
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(info.name().toString()));
         
         // generate associated Doneable class
         final var doneableClassName = crType + "Doneable";
