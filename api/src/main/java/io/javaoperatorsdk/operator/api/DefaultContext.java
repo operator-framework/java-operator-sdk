@@ -1,12 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.EventList;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import java.util.Optional;
-
-import java.util.List;
 
 public class DefaultContext<T extends CustomResource> implements Context<T> {
 
