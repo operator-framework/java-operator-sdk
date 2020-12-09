@@ -12,11 +12,13 @@ class ControllerAnnotationProcessorTest {
     Compilation compilation =
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
-            .compile(JavaFileObjects.forResource("ControllerImplemented2Interfaces.java"));
+            .compile(JavaFileObjects.forResource(
+                "compile-fixtures/ControllerImplemented2Interfaces.java"));
     CompilationSubject.assertThat(compilation).succeeded();
 
     final JavaFileObject expectedResource =
-        JavaFileObjects.forResource("ControllerImplemented2InterfacesExpected.java");
+        JavaFileObjects.forResource(
+            "compile-fixtures/ControllerImplemented2InterfacesExpected.java");
     JavaFileObjectSubject.assertThat(compilation.generatedSourceFiles().get(0))
         .hasSourceEquivalentTo(expectedResource);
   }
@@ -27,12 +29,14 @@ class ControllerAnnotationProcessorTest {
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
             .compile(
-                JavaFileObjects.forResource("AbstractController.java"),
-                JavaFileObjects.forResource("ControllerImplementedIntermediateAbstractClass.java"));
+                JavaFileObjects.forResource("compile-fixtures/AbstractController.java"),
+                JavaFileObjects.forResource(
+                    "compile-fixtures/ControllerImplementedIntermediateAbstractClass.java"));
     CompilationSubject.assertThat(compilation).succeeded();
 
     final JavaFileObject expectedResource =
-        JavaFileObjects.forResource("ControllerImplementedIntermediateAbstractClassExpected.java");
+        JavaFileObjects.forResource(
+            "compile-fixtures/ControllerImplementedIntermediateAbstractClassExpected.java");
     JavaFileObjectSubject.assertThat(compilation.generatedSourceFiles().get(0))
         .hasSourceEquivalentTo(expectedResource);
   }
@@ -43,13 +47,13 @@ class ControllerAnnotationProcessorTest {
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
             .compile(
-                JavaFileObjects.forResource("AdditionalControllerInterface.java"),
-                JavaFileObjects.forResource("MultilevelAbstractController.java"),
-                JavaFileObjects.forResource("MultilevelController.java"));
+                JavaFileObjects.forResource("compile-fixtures/AdditionalControllerInterface.java"),
+                JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractController.java"),
+                JavaFileObjects.forResource("compile-fixtures/MultilevelController.java"));
     CompilationSubject.assertThat(compilation).succeeded();
 
     final JavaFileObject expectedResource =
-        JavaFileObjects.forResource("MultilevelControllerExpected.java");
+        JavaFileObjects.forResource("compile-fixtures/MultilevelControllerExpected.java");
     JavaFileObjectSubject.assertThat(compilation.generatedSourceFiles().get(0))
         .hasSourceEquivalentTo(expectedResource);
   }
