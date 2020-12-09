@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
@@ -84,10 +83,7 @@ public class Operator {
     String finalizer = configuration.getFinalizer();
     MixedOperation client =
         k8sClient.customResources(
-            crd,
-            resClass,
-            CustomResourceList.class,
-            configuration.getDoneableClass());
+            crd, resClass, CustomResourceList.class, configuration.getDoneableClass());
     EventDispatcher eventDispatcher =
         new EventDispatcher(
             controller, finalizer, new EventDispatcher.CustomResourceFacade(client));

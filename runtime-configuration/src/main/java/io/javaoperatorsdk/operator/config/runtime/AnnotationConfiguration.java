@@ -45,12 +45,12 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public Class<R> getCustomResourceClass() {
-    return ControllerToCustomResourceMappingsProvider.getCustomResourceClass(controller);
+    return RuntimeControllerMetadata.getCustomResourceClass(controller);
   }
 
   @Override
   public Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
-    return ControllerToCustomResourceMappingsProvider.getDoneableClassFor(getCustomResourceClass());
+    return RuntimeControllerMetadata.getCustomResourceDoneableClass(controller);
   }
 
   @Override

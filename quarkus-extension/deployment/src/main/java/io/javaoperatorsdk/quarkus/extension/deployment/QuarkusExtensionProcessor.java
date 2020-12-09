@@ -95,7 +95,7 @@ class QuarkusExtensionProcessor {
             .findFirst()
             .map(Type::asParameterizedType)
             .orElseThrow(); // shouldn't happen since we're only dealing with ResourceController
-                            // implementors already
+    // implementors already
     final var crType = rcInterface.arguments().get(0).name().toString();
 
     // create ResourceController bean

@@ -1,19 +1,7 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import static io.javaoperatorsdk.operator.config.runtime.ControllerToCustomResourceMappingsProvider.CONTROLLERS_RESOURCE_PATH;
-
-import com.google.auto.service.AutoService;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-import io.fabric8.kubernetes.api.builder.Function;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
-import static io.javaoperatorsdk.operator.ControllerUtils.DONEABLES_RESOURCE_PATH;
+import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.CONTROLLERS_RESOURCE_PATH;
+import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.DONEABLES_RESOURCE_PATH;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
@@ -45,19 +33,6 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-
-import com.google.auto.service.AutoService;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-import io.fabric8.kubernetes.api.builder.Function;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.api.ResourceController;
-
-import static io.javaoperatorsdk.operator.config.runtime.ControllerToCustomResourceMappingsProvider.CONTROLLERS_RESOURCE_PATH;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -101,7 +76,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         annotatedElements.stream()
             .filter(element -> element.getKind().equals(ElementKind.CLASS))
             .map(e -> (TypeElement) e)
-            .forEach(this::generateDoneableClass);
+            .forEach(e -> this.generateDoneableClass(e));
       }
     } finally {
       if (roundEnv.processingOver()) {

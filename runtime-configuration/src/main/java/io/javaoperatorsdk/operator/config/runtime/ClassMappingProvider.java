@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator;
+package io.javaoperatorsdk.operator.config.runtime;
 
 import java.io.BufferedReader;
 import java.io.IOException;

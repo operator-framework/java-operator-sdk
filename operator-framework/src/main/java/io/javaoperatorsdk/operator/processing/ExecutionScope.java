@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.List;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Event;
 import java.util.List;

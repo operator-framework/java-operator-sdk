@@ -1,9 +1,11 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -39,23 +41,23 @@ public class DefaultConfigurationServiceTest {
   }
 
   @Test
-    public void supportsInnerClassCustomResources() {
-        final var controller = new TestCustomFinalizerController();
-        assertDoesNotThrow(
-            () -> {
-                DefaultConfigurationService.instance().getConfigurationFor(controller).getCustomResourceDoneableClass();
-            });
-    }
-    
-    @Controller(crdName = "test.crd", finalizerName = CUSTOM_FINALIZER_NAME)
-  static class TestCustomFinalizerController implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
-        public class InnerCustomResource extends CustomResource {
-        }
+  public void supportsInnerClassCustomResources() {
+    final var controller = new TestCustomFinalizerController();
+    assertDoesNotThrow(
+        () -> {
+          DefaultConfigurationService.instance().getConfigurationFor(controller).getDoneableClass();
+        });
+  }
+
+  @Controller(crdName = "test.crd", finalizerName = CUSTOM_FINALIZER_NAME)
+  static class TestCustomFinalizerController
+      implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
+    public class InnerCustomResource extends CustomResource {}
 
     @Override
     public DeleteControl deleteResource(
         TestCustomFinalizerController.InnerCustomResource resource,
-            Context<InnerCustomResource> context) {
+        Context<InnerCustomResource> context) {
       return DeleteControl.DEFAULT_DELETE;
     }
 
@@ -63,9 +65,9 @@ public class DefaultConfigurationServiceTest {
     public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
         InnerCustomResource resource, Context<InnerCustomResource> context) {
       return null;
-    
+    }
   }
-}
+
   @Controller(
       generationAwareEventProcessing = false,
       crdName = TestCustomResourceController.CRD_NAME)
