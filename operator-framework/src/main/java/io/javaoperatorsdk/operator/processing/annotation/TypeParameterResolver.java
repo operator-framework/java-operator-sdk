@@ -20,9 +20,8 @@ class TypeParameterResolver {
     this.interestedTypeArgumentIndex = interestedTypeArgumentIndex;
   }
 
-
-  public List<DeclaredType> findChain(Types typeUtils, Elements elementUtils,
-      DeclaredType declaredType) {
+  public List<DeclaredType> findChain(
+      Types typeUtils, Elements elementUtils, DeclaredType declaredType) {
 
     final var result = new ArrayList<DeclaredType>();
     result.add(declaredType);
@@ -31,9 +30,7 @@ class TypeParameterResolver {
     boolean interfaceFound = false;
     final var matchingInterfaces =
         superElement.getInterfaces().stream()
-            .filter(
-                intface ->
-                    typeUtils.isAssignable(intface, interestedClass))
+            .filter(intface -> typeUtils.isAssignable(intface, interestedClass))
             .map(i -> (DeclaredType) i)
             .collect(Collectors.toList());
     if (!matchingInterfaces.isEmpty()) {
@@ -47,12 +44,9 @@ class TypeParameterResolver {
         final var marchingInterfaces =
             ((TypeElement) lastFoundInterface.asElement())
                 .getInterfaces().stream()
-                .filter(
-                    intface ->
-                        typeUtils
-                            .isAssignable(intface, interestedClass))
-                .map(i -> (DeclaredType) i)
-                .collect(Collectors.toList());
+                    .filter(intface -> typeUtils.isAssignable(intface, interestedClass))
+                    .map(i -> (DeclaredType) i)
+                    .collect(Collectors.toList());
 
         if (marchingInterfaces.size() > 0) {
           result.addAll(marchingInterfaces);
@@ -69,9 +63,7 @@ class TypeParameterResolver {
       superElement = (TypeElement) superclass.asElement();
       final var matchedInterfaces =
           superElement.getInterfaces().stream()
-              .filter(
-                  intface ->
-                      typeUtils.isAssignable(intface, interestedClass))
+              .filter(intface -> typeUtils.isAssignable(intface, interestedClass))
               .map(i -> (DeclaredType) i)
               .collect(Collectors.toList());
       if (matchedInterfaces.size() > 0) {
@@ -88,5 +80,4 @@ class TypeParameterResolver {
 
     return result;
   }
-
 }
