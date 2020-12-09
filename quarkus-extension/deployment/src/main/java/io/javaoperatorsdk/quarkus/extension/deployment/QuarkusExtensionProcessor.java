@@ -83,6 +83,7 @@ class QuarkusExtensionProcessor {
         final var supplier = recorder.configurationServiceSupplier(controllerConfigs, clientBuildItem.getClient());
         syntheticBeanBuildItemBuildProducer.produce(SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
             .scope(Singleton.class)
+            .addType(ConfigurationService.class)
             .setRuntimeInit()
             .supplier(supplier)
             .done());
