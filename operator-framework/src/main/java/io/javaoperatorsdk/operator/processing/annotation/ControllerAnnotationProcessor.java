@@ -49,7 +49,17 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
   private AccumulativeMappingWriter controllersResourceWriter;
   private AccumulativeMappingWriter doneablesResourceWriter;
-  private Set<String> generatedDoneableClassFiles = new HashSet<>();
+  final DeclaredType resourceControllerType =
+      processingEnv
+          .getTypeUtils()
+          .getDeclaredType(
+              processingEnv
+                  .getElementUtils()
+                  .getTypeElement(ResourceController.class.getCanonicalName()),
+              processingEnv.getTypeUtils().getWildcardType(null, null));
+  private final TypeParameterResolver typeParameterResolver = new TypeParameterResolver(
+      resourceControllerType, 0);
+  private final Set<String> generatedDoneableClassFiles = new HashSet<>();
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -147,7 +157,9 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
   private TypeMirror findResourceType(TypeElement controllerClassSymbol) throws Exception {
     try {
-      final var chain = findChain((DeclaredType) controllerClassSymbol.asType());
+      final var chain = typeParameterResolver
+          .findChain(processingEnv.getTypeUtils(), processingEnv.getElementUtils(),
+              (DeclaredType) controllerClassSymbol.asType());
       final var customResourceClass = getCustomResourceClass(chain);
       return customResourceClass;
     } catch (Exception e) {
@@ -161,81 +173,6 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
       return className;
     }
     return packageName + "." + className;
-  }
-
-  private List<DeclaredType> findChain(DeclaredType declaredType) {
-    final var resourceControllerType =
-        processingEnv
-            .getTypeUtils()
-            .getDeclaredType(
-                processingEnv
-                    .getElementUtils()
-                    .getTypeElement(ResourceController.class.getCanonicalName()),
-                processingEnv.getTypeUtils().getWildcardType(null, null));
-    final var result = new ArrayList<DeclaredType>();
-    result.add(declaredType);
-    var superElement = ((TypeElement) ((DeclaredType) declaredType).asElement());
-    var superclass = (DeclaredType) superElement.getSuperclass();
-    boolean interfaceFound = false;
-    final var matchingInterfaces =
-        superElement.getInterfaces().stream()
-            .filter(
-                intface ->
-                    processingEnv.getTypeUtils().isAssignable(intface, resourceControllerType))
-            .map(i -> (DeclaredType) i)
-            .collect(Collectors.toList());
-    if (!matchingInterfaces.isEmpty()) {
-      result.addAll(matchingInterfaces);
-      interfaceFound = true;
-    }
-
-    while (superclass.getKind() != TypeKind.NONE) {
-      if (interfaceFound) {
-        final var lastFoundInterface = result.get(result.size() - 1);
-        final var marchingInterfaces =
-            ((TypeElement) lastFoundInterface.asElement())
-                .getInterfaces().stream()
-                .filter(
-                    intface ->
-                        processingEnv
-                            .getTypeUtils()
-                            .isAssignable(intface, resourceControllerType))
-                .map(i -> (DeclaredType) i)
-                .collect(Collectors.toList());
-
-        if (marchingInterfaces.size() > 0) {
-          result.addAll(marchingInterfaces);
-          continue;
-        } else {
-          break;
-        }
-      }
-
-      if (processingEnv.getTypeUtils().isAssignable(superclass, resourceControllerType)) {
-        result.add(superclass);
-      }
-
-      superElement = (TypeElement) superclass.asElement();
-      final var matchedInterfaces =
-          superElement.getInterfaces().stream()
-              .filter(
-                  intface ->
-                      processingEnv.getTypeUtils().isAssignable(intface, resourceControllerType))
-              .map(i -> (DeclaredType) i)
-              .collect(Collectors.toList());
-      if (matchedInterfaces.size() > 0) {
-        result.addAll(matchedInterfaces);
-        interfaceFound = true;
-        continue;
-      }
-
-      if (superElement.getSuperclass().getKind() == TypeKind.NONE) {
-        break;
-      }
-      superclass = (DeclaredType) superElement.getSuperclass();
-    }
-
-    return result;
   }
 
   private TypeMirror getCustomResourceClass(List<DeclaredType> chain) {
