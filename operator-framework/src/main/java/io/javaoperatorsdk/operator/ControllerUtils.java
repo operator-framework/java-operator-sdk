@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Map;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import java.util.Map;
 
 public class ControllerUtils {
 
