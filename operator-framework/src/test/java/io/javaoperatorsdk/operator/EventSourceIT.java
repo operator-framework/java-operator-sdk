@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
-import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.*;
+import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.FINALIZER_NAME;
+import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.TIMER_DELAY;
+import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.TIMER_PERIOD;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;

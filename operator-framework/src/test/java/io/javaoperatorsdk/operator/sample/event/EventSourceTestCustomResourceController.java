@@ -1,7 +1,11 @@
 package io.javaoperatorsdk.operator.sample.event;
 
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
-import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.DeleteControl;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.concurrent.atomic.AtomicInteger;
