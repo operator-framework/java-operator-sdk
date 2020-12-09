@@ -17,22 +17,38 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     private final boolean clusterScoped;
     private final Set<String> namespaces;
     private final String crClass;
-    private final String doneableClass;
+    private final String doneableClassName;
     private final boolean watchAllNamespaces;
     private final RetryConfiguration retryConfiguration;
     
     @RecordableConstructor
-    public QuarkusControllerConfiguration(String name, String crdName, String finalizer, boolean generationAware, boolean clusterScoped, String[] namespaces, String crClass, String doneableClass, RetryConfiguration retryConfiguration) {
+    public QuarkusControllerConfiguration(String name, String crdName, String finalizer, boolean generationAware, boolean clusterScoped, Set<String> namespaces, String crClass, String doneableClassName, RetryConfiguration retryConfiguration) {
         this.name = name;
         this.crdName = crdName;
         this.finalizer = finalizer;
         this.generationAware = generationAware;
         this.clusterScoped = clusterScoped;
-        this.namespaces = namespaces == null || namespaces.length == 0 ? Collections.emptySet() : Set.of(namespaces);
+        this.namespaces = namespaces;
         this.crClass = crClass;
-        this.doneableClass = doneableClass;
+        this.doneableClassName = doneableClassName;
         this.watchAllNamespaces = this.namespaces.contains(WATCH_ALL_NAMESPACES_MARKER);
         this.retryConfiguration = retryConfiguration == null ? ControllerConfiguration.super.getRetryConfiguration() : retryConfiguration;
+    }
+    
+    public static Set<String> asSet(String[] namespaces) {
+        return namespaces == null || namespaces.length == 0 ? Collections.emptySet() : Set.of(namespaces);
+    }
+    
+    public String getCrdName() {
+        return getCRDName();
+    }
+    
+    public String getCrClass() {
+        return crClass;
+    }
+    
+    public String getDoneableClassName() {
+        return doneableClassName;
     }
     
     @Override
@@ -67,9 +83,9 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     @Override
     public Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
         try {
-            return (Class<CustomResourceDoneable<R>>) Thread.currentThread().getContextClassLoader().loadClass(doneableClass);
+            return (Class<CustomResourceDoneable<R>>) Thread.currentThread().getContextClassLoader().loadClass(doneableClassName);
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Couldn't find class " + doneableClass);
+            throw new IllegalArgumentException("Couldn't find class " + doneableClassName);
         }
     }
     

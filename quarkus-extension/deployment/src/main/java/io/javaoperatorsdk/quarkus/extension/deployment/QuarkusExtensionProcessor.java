@@ -135,7 +135,7 @@ class QuarkusExtensionProcessor {
             valueOrDefault(controllerAnnotation, "finalizerName", AnnotationValue::asString, () -> ControllerUtils.getDefaultFinalizerName(crdName)),
             valueOrDefault(controllerAnnotation, "generationAwareEventProcessing", AnnotationValue::asBoolean, () -> true),
             valueOrDefault(controllerAnnotation, "isClusterScoped", AnnotationValue::asBoolean, () -> false),
-            valueOrDefault(controllerAnnotation, "namespaces", AnnotationValue::asStringArray, () -> new String[]{}),
+            QuarkusControllerConfiguration.asSet(valueOrDefault(controllerAnnotation, "namespaces", AnnotationValue::asStringArray, () -> new String[]{})),
             crType,
             doneableClassName,
             null // todo: fix-me
