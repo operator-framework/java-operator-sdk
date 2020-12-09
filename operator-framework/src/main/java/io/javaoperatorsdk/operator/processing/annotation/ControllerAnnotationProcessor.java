@@ -53,15 +53,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         new AccumulativeMappingWriter(DONEABLES_RESOURCE_PATH, processingEnv)
             .loadExistingMappings();
 
-    final DeclaredType resourceControllerType =
-        processingEnv
-            .getTypeUtils()
-            .getDeclaredType(
-                processingEnv
-                    .getElementUtils()
-                    .getTypeElement(ResourceController.class.getCanonicalName()),
-                processingEnv.getTypeUtils().getWildcardType(null, null));
-    typeParameterResolver = new TypeParameterResolver(resourceControllerType, 0);
+    typeParameterResolver = initializeResolver(processingEnv);
   }
 
   @Override
@@ -81,6 +73,18 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
       }
     }
     return true;
+  }
+
+  private TypeParameterResolver initializeResolver(ProcessingEnvironment processingEnv) {
+    final DeclaredType resourceControllerType =
+        processingEnv
+            .getTypeUtils()
+            .getDeclaredType(
+                processingEnv
+                    .getElementUtils()
+                    .getTypeElement(ResourceController.class.getCanonicalName()),
+                processingEnv.getTypeUtils().getWildcardType(null, null));
+    return new TypeParameterResolver(resourceControllerType, 0);
   }
 
   private void generateDoneableClass(TypeElement controllerClassSymbol) {
