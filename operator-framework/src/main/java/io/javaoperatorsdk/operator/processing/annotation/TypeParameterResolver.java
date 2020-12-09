@@ -1,12 +1,18 @@
 package io.javaoperatorsdk.operator.processing.annotation;
 
+import static javax.lang.model.type.TypeKind.DECLARED;
+import static javax.lang.model.type.TypeKind.TYPEVAR;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.util.Elements;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
 
 class TypeParameterResolver {
@@ -20,8 +26,44 @@ class TypeParameterResolver {
     this.interestedTypeArgumentIndex = interestedTypeArgumentIndex;
   }
 
-  public List<DeclaredType> findChain(
-      Types typeUtils, Elements elementUtils, DeclaredType declaredType) {
+  public TypeMirror resolve(Types typeUtils, DeclaredType declaredType) {
+    final var chain = findChain(typeUtils, declaredType);
+    var lastIndex = chain.size() - 1;
+    String typeName;
+    final List<? extends TypeMirror> typeArguments = (chain.get(lastIndex)).getTypeArguments();
+    if (typeArguments.get(0).getKind() == TYPEVAR) {
+      typeName = ((TypeVariable) typeArguments.get(0)).asElement().getSimpleName().toString();
+    } else if (typeArguments.get(0).getKind() == DECLARED) {
+      return typeArguments.get(0);
+    } else {
+      typeName = "";
+    }
+
+    while (lastIndex > 0) {
+      lastIndex -= 1;
+      final List<? extends TypeMirror> tArguments = (chain.get(lastIndex)).getTypeArguments();
+      final List<? extends TypeParameterElement> typeParameters =
+          ((TypeElement) ((chain.get(lastIndex)).asElement())).getTypeParameters();
+      final String tName = typeName;
+      final var typeIndex =
+          IntStream.range(0, typeParameters.size())
+              .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(tName))
+              .findFirst()
+              .getAsInt();
+
+      final TypeMirror matchedType = tArguments.get(typeIndex);
+      if (matchedType.getKind() == TYPEVAR) {
+        typeName = ((TypeVariable) matchedType).asElement().getSimpleName().toString();
+      } else if (matchedType.getKind() == DECLARED) {
+        return matchedType;
+      } else {
+        typeName = "";
+      }
+    }
+    return null;
+  }
+
+  private List<DeclaredType> findChain(Types typeUtils, DeclaredType declaredType) {
 
     final var result = new ArrayList<DeclaredType>();
     result.add(declaredType);

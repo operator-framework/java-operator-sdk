@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.annotation;
 
 import static io.javaoperatorsdk.operator.ControllerUtils.CONTROLLERS_RESOURCE_PATH;
 import static io.javaoperatorsdk.operator.ControllerUtils.DONEABLES_RESOURCE_PATH;
-import static javax.lang.model.type.TypeKind.DECLARED;
-import static javax.lang.model.type.TypeKind.TYPEVAR;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
@@ -17,9 +15,7 @@ import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.io.PrintWriter;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.IntStream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -32,10 +28,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
@@ -78,7 +72,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         annotatedElements.stream()
             .filter(element -> element.getKind().equals(ElementKind.CLASS))
             .map(e -> (TypeElement) e)
-            .forEach(e -> this.generateDoneableClass(e));
+            .forEach(this::generateDoneableClass);
       }
     } finally {
       if (roundEnv.processingOver()) {
@@ -153,15 +147,10 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     }
   }
 
-  private TypeMirror findResourceType(TypeElement controllerClassSymbol) throws Exception {
+  private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
     try {
-      final var chain =
-          typeParameterResolver.findChain(
-              processingEnv.getTypeUtils(),
-              processingEnv.getElementUtils(),
-              (DeclaredType) controllerClassSymbol.asType());
-      final var customResourceClass = getCustomResourceClass(chain);
-      return customResourceClass;
+      return typeParameterResolver.resolve(
+          processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
     } catch (Exception e) {
       e.printStackTrace();
       return null;
@@ -173,41 +162,5 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
       return className;
     }
     return packageName + "." + className;
-  }
-
-  private TypeMirror getCustomResourceClass(List<DeclaredType> chain) {
-    var lastIndex = chain.size() - 1;
-    String typeName;
-    final List<? extends TypeMirror> typeArguments = (chain.get(lastIndex)).getTypeArguments();
-    if (typeArguments.get(0).getKind() == TYPEVAR) {
-      typeName = ((TypeVariable) typeArguments.get(0)).asElement().getSimpleName().toString();
-    } else if (typeArguments.get(0).getKind() == DECLARED) {
-      return typeArguments.get(0);
-    } else {
-      typeName = "";
-    }
-
-    while (lastIndex > 0) {
-      lastIndex -= 1;
-      final List<? extends TypeMirror> tArguments = (chain.get(lastIndex)).getTypeArguments();
-      final List<? extends TypeParameterElement> typeParameters =
-          ((TypeElement) ((chain.get(lastIndex)).asElement())).getTypeParameters();
-      final String tName = typeName;
-      final var typeIndex =
-          IntStream.range(0, typeParameters.size())
-              .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(tName))
-              .findFirst()
-              .getAsInt();
-
-      final TypeMirror matchedType = tArguments.get(typeIndex);
-      if (matchedType.getKind() == TYPEVAR) {
-        typeName = ((TypeVariable) matchedType).asElement().getSimpleName().toString();
-      } else if (matchedType.getKind() == DECLARED) {
-        return matchedType;
-      } else {
-        typeName = "";
-      }
-    }
-    return null;
   }
 }
