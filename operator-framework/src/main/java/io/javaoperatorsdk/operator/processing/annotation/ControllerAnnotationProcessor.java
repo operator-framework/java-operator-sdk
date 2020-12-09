@@ -156,23 +156,6 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     }
   }
 
-  private List<TypeMirror> collectAllInterfaces(TypeElement element) {
-    try {
-      List<TypeMirror> interfaces = new ArrayList<>(element.getInterfaces());
-      interfaces.add(element.getSuperclass());
-      TypeElement superclass = ((TypeElement) ((DeclaredType) element.getSuperclass()).asElement());
-      while (superclass.getSuperclass().getKind() != TypeKind.NONE) {
-        interfaces.addAll(superclass.getInterfaces());
-        superclass = ((TypeElement) ((DeclaredType) superclass.getSuperclass()).asElement());
-        interfaces.add(element.getSuperclass());
-      }
-      return interfaces;
-    } catch (Exception e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
-
   private String makeQualifiedClassName(String packageName, String className) {
     if (packageName.equals("")) {
       return className;
@@ -212,13 +195,13 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         final var marchingInterfaces =
             ((TypeElement) lastFoundInterface.asElement())
                 .getInterfaces().stream()
-                    .filter(
-                        intface ->
-                            processingEnv
-                                .getTypeUtils()
-                                .isAssignable(intface, resourceControllerType))
-                    .map(i -> (DeclaredType) i)
-                    .collect(Collectors.toList());
+                .filter(
+                    intface ->
+                        processingEnv
+                            .getTypeUtils()
+                            .isAssignable(intface, resourceControllerType))
+                .map(i -> (DeclaredType) i)
+                .collect(Collectors.toList());
 
         if (marchingInterfaces.size() > 0) {
           result.addAll(marchingInterfaces);
