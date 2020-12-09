@@ -37,8 +37,19 @@ public class Operator {
   }
 
   public <R extends CustomResource> void registerControllerForAllNamespaces(
+      ResourceController<R> controller, Retry retry) throws OperatorException {
+    registerController(controller, true, retry);
+  }
+
+  public <R extends CustomResource> void registerControllerForAllNamespaces(
       ResourceController<R> controller) throws OperatorException {
     registerController(controller, true, null);
+  }
+
+  public <R extends CustomResource> void registerController(
+      ResourceController<R> controller, Retry retry, String... targetNamespaces)
+      throws OperatorException {
+    registerController(controller, false, retry, targetNamespaces);
   }
 
   public <R extends CustomResource> void registerController(

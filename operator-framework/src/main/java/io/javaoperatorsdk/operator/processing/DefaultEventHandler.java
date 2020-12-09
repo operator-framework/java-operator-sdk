@@ -109,6 +109,7 @@ public class DefaultEventHandler implements EventHandler {
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope, postExecutionControl);
+        return;
       } else if (retry != null) {
         handleSuccessfulExecutionRegardingRetry(executionScope);
       }
