@@ -6,6 +6,7 @@ import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
 class ControllerAnnotationProcessorTest {
+
   @Test
   public void generateCorrectDoneableClassIfInterfaceIsSecond() {
     Compilation compilation =
@@ -22,7 +23,6 @@ class ControllerAnnotationProcessorTest {
 
   @Test
   public void generateCorrectDoneableClassIfThereIsAbstractBaseController() {
-
     Compilation compilation =
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
@@ -33,6 +33,23 @@ class ControllerAnnotationProcessorTest {
 
     final JavaFileObject expectedResource =
         JavaFileObjects.forResource("ControllerImplementedIntermediateAbstractClassExpected.java");
+    JavaFileObjectSubject.assertThat(compilation.generatedSourceFiles().get(0))
+        .hasSourceEquivalentTo(expectedResource);
+  }
+
+  @Test
+  public void generateDoneableClasswithMultilevelHierarchy() {
+    Compilation compilation =
+        Compiler.javac()
+            .withProcessors(new ControllerAnnotationProcessor())
+            .compile(
+                JavaFileObjects.forResource("AdditionalControllerInterface.java"),
+                JavaFileObjects.forResource("MultilevelAbstractController.java"),
+                JavaFileObjects.forResource("MultilevelController.java"));
+    CompilationSubject.assertThat(compilation).succeeded();
+
+    final JavaFileObject expectedResource =
+        JavaFileObjects.forResource("MultilevelControllerExpected.java");
     JavaFileObjectSubject.assertThat(compilation.generatedSourceFiles().get(0))
         .hasSourceEquivalentTo(expectedResource);
   }
