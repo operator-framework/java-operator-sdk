@@ -48,9 +48,22 @@ All PRs have to be reviewed and signed off by another developer before being mer
 branch. This review will likely ask for some changes to the code - please don't be alarmed or upset
 at this; it is expected that all PRs will need tweaks and a normal part of the process.
 
+The PRs are checked to be compliant with the Java Google code style.
+
 Be aware that all Operator SDK code is released under the [Apache 2.0 licence](LICENSE).
 
-### Thanks
+## Development environment setup
+
+### Code style
+
+The SDK modules and samples codes following the Java Google code style. 
+On every `compile` the code gets formatted automatically, 
+however to have less hassle you can import one of the following code style schemes based on the IDE you use:
+
+- for *Intellij IDEA* import [contributing/intellij-google-style.xml](contributing/intellij-google-style.xml)
+- for *Eclipse* import [contributing/eclipse-google-style.xml](contributing/eclipse-google-style.xml)
+
+## Thanks
 
 These guidelines were best on several sources, including
 [Atom](https://github.com/atom/atom/blob/master/CONTRIBUTING.md), [PurpleBooth's
