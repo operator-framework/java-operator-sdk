@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 public interface RetryConfiguration {
-    RetryConfiguration DEFAULT = new RetryConfiguration() {
-    };
+    RetryConfiguration DEFAULT = new DefaultRetryConfiguration();
     
     int DEFAULT_MAX_ATTEMPTS = 5;
     long DEFAULT_INITIAL_INTERVAL = 2000L;
