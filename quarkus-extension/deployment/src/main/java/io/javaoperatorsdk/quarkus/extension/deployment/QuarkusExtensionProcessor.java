@@ -102,27 +102,28 @@ class QuarkusExtensionProcessor {
             .map(Type::asParameterizedType)
             .orElseThrow(); // shouldn't happen since we're only dealing with ResourceController implementors already
         final var crType = rcInterface.arguments().get(0).name().toString();
-        final Class<?> crClass;
-        try {
-            crClass = Thread.currentThread().getContextClassLoader().loadClass(crType);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Couldn't find class " + crType);
-        }
         
         // create ResourceController bean
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(info.name().toString()));
+        final var resourceControllerClassName = info.name().toString();
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(resourceControllerClassName));
         
         // generate associated Doneable class
         final var doneableClassName = crType + "Doneable";
+        final var crDoneableClassName = CustomResourceDoneable.class.getName();
         try (ClassCreator cc = ClassCreator.builder()
             .classOutput(classOutput)
             .className(doneableClassName)
-            .superClass(CustomResourceDoneable.class)
+            .superClass(crDoneableClassName)
             .build()) {
             
-            MethodCreator ctor = cc.getMethodCreator("<init>", void.class, crClass);
+            MethodCreator ctor = cc.getMethodCreator("<init>", void.class.getName(), crType);
             ctor.setModifiers(Modifier.PUBLIC);
-            ctor.invokeSpecialMethod(MethodDescriptor.ofConstructor(CustomResourceDoneable.class, crClass, Function.class), ctor.getThis(), ctor.getMethodParam(0), ctor.invokeStaticMethod(MethodDescriptor.ofMethod(Function.class, "identity", Function.class)));
+            final var functionName = Function.class.getName();
+            ctor.invokeSpecialMethod(
+                MethodDescriptor.ofConstructor(crDoneableClassName, crType, functionName),
+                ctor.getThis(),
+                ctor.getMethodParam(0),
+                ctor.invokeStaticMethod(MethodDescriptor.ofMethod(functionName, "identity", functionName)));
         }
         
         // generate configuration
@@ -135,7 +136,7 @@ class QuarkusExtensionProcessor {
             valueOrDefault(controllerAnnotation, "generationAwareEventProcessing", AnnotationValue::asBoolean, () -> true),
             valueOrDefault(controllerAnnotation, "isClusterScoped", AnnotationValue::asBoolean, () -> false),
             valueOrDefault(controllerAnnotation, "namespaces", AnnotationValue::asStringArray, () -> new String[]{}),
-            crClass,
+            crType,
             doneableClassName,
             null // todo: fix-me
         );
