@@ -23,7 +23,6 @@ public class QuarkusOperator implements QuarkusApplication {
 
   @Override
   public int run(String... args) throws Exception {
-    System.out.println("operator = " + operator);
     final var config = configuration.getConfigurationFor(new CustomServiceController(client));
     System.out.println("CR class: " + config.getCustomResourceClass());
     System.out.println("Doneable class = " + config.getDoneableClass());
