@@ -11,6 +11,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import io.fabric8.kubernetes.api.builder.Function;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.io.PrintWriter;
@@ -42,6 +43,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
   private AccumulativeMappingWriter doneablesResourceWriter;
   private TypeParameterResolver typeParameterResolver;
   private final Set<String> generatedDoneableClassFiles = new HashSet<>();
+  private DeclaredType fallbackCustomResourceType;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -53,7 +55,17 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         new AccumulativeMappingWriter(DONEABLES_RESOURCE_PATH, processingEnv)
             .loadExistingMappings();
 
+    doneablesResourceWriter.add(
+        CustomResource.class.getCanonicalName(), CustomResourceDoneable.class.getCanonicalName());
+
     typeParameterResolver = initializeResolver(processingEnv);
+    fallbackCustomResourceType =
+        processingEnv
+            .getTypeUtils()
+            .getDeclaredType(
+                processingEnv
+                    .getElementUtils()
+                    .getTypeElement(CustomResourceDoneable.class.getCanonicalName()));
   }
 
   @Override
@@ -89,13 +101,16 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
 
   private void generateDoneableClass(TypeElement controllerClassSymbol) {
     try {
-      System.out.println(controllerClassSymbol.toString());
       final TypeMirror resourceType = findResourceType(controllerClassSymbol);
-      System.out.println("the resource type is " + resourceType);
+      if (resourceType == null) {
+        controllersResourceWriter.add(
+            controllerClassSymbol.getQualifiedName().toString(),
+            CustomResource.class.getCanonicalName());
+        return;
+      }
 
       TypeElement customerResourceTypeElement =
           processingEnv.getElementUtils().getTypeElement(resourceType.toString());
-      System.out.println("the customerResourceTypeElement  is " + customerResourceTypeElement);
 
       final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
       final String destinationClassFileName =
@@ -155,6 +170,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     try {
       return typeParameterResolver.resolve(
           processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
+
     } catch (Exception e) {
       e.printStackTrace();
       return null;

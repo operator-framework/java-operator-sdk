@@ -29,14 +29,19 @@ class TypeParameterResolver {
   public TypeMirror resolve(Types typeUtils, DeclaredType declaredType) {
     final var chain = findChain(typeUtils, declaredType);
     var lastIndex = chain.size() - 1;
-    String typeName;
+    String typeName = "";
     final List<? extends TypeMirror> typeArguments = (chain.get(lastIndex)).getTypeArguments();
-    if (typeArguments.get(0).getKind() == TYPEVAR) {
-      typeName = ((TypeVariable) typeArguments.get(0)).asElement().getSimpleName().toString();
-    } else if (typeArguments.get(0).getKind() == DECLARED) {
+    if (typeArguments.isEmpty()) {
+      return null;
+    }
+    if (typeArguments.get(interestedTypeArgumentIndex).getKind() == TYPEVAR) {
+      typeName =
+          ((TypeVariable) typeArguments.get(interestedTypeArgumentIndex))
+              .asElement()
+              .getSimpleName()
+              .toString();
+    } else if (typeArguments.get(interestedTypeArgumentIndex).getKind() == DECLARED) {
       return typeArguments.get(0);
-    } else {
-      typeName = "";
     }
 
     while (lastIndex > 0) {
@@ -44,23 +49,25 @@ class TypeParameterResolver {
       final List<? extends TypeMirror> tArguments = (chain.get(lastIndex)).getTypeArguments();
       final List<? extends TypeParameterElement> typeParameters =
           ((TypeElement) ((chain.get(lastIndex)).asElement())).getTypeParameters();
-      final String tName = typeName;
-      final var typeIndex =
-          IntStream.range(0, typeParameters.size())
-              .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(tName))
-              .findFirst()
-              .getAsInt();
+
+      final var typeIndex = getTypeIndexWithName(typeName, typeParameters);
 
       final TypeMirror matchedType = tArguments.get(typeIndex);
       if (matchedType.getKind() == TYPEVAR) {
         typeName = ((TypeVariable) matchedType).asElement().getSimpleName().toString();
       } else if (matchedType.getKind() == DECLARED) {
         return matchedType;
-      } else {
-        typeName = "";
       }
     }
     return null;
+  }
+
+  private int getTypeIndexWithName(
+      String typeName, List<? extends TypeParameterElement> typeParameters) {
+    return IntStream.range(0, typeParameters.size())
+        .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(typeName))
+        .findFirst()
+        .getAsInt();
   }
 
   private List<DeclaredType> findChain(Types typeUtils, DeclaredType declaredType) {
