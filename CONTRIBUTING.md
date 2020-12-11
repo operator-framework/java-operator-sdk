@@ -58,7 +58,7 @@ Be aware that all Operator SDK code is released under the [Apache 2.0 licence](L
 
 The SDK modules and samples are formatted to follow the Java Google code style. 
 On every `compile` the code gets formatted automatically, 
-however to have less hassle you can import one of the following code style schemes based on the IDE you use:
+however, to make things simpler (i.e. avoid getting a PR rejected simply because of code style issues), you can import one of the following code style schemes based on the IDE you use:
 
 - for *Intellij IDEA* import [contributing/intellij-google-style.xml](contributing/intellij-google-style.xml)
 - for *Eclipse* import [contributing/eclipse-google-style.xml](contributing/eclipse-google-style.xml)
