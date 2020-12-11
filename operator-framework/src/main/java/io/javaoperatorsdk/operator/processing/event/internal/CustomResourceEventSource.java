@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.markedForDeletion;
 import static java.net.HttpURLConnection.HTTP_GONE;
 
 import io.fabric8.kubernetes.client.CustomResource;

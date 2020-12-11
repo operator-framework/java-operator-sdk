@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;

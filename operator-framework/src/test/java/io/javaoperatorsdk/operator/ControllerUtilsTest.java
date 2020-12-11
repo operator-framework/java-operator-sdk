@@ -1,10 +1,17 @@
 package io.javaoperatorsdk.operator;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.DeleteControl;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import org.junit.jupiter.api.Assertions;
