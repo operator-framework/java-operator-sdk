@@ -6,7 +6,6 @@ import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjectSubject;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
 class ControllerAnnotationProcessorTest {
