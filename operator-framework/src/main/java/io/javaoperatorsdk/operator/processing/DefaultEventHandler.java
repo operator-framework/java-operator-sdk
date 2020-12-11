@@ -108,12 +108,13 @@ public class DefaultEventHandler implements EventHandler {
       unsetUnderExecution(executionScope.getCustomResourceUid());
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
-        handleRetryOnException(executionScope, postExecutionControl);
+        handleRetryOnException(executionScope);
         return;
-      } else if (retry != null) {
-        handleSuccessfulExecutionRegardingRetry(executionScope);
       }
 
+      if (retry != null) {
+        markSuccessfulExecutionRegardingRetry(executionScope);
+      }
       if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
         cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
       } else {
@@ -130,17 +131,16 @@ public class DefaultEventHandler implements EventHandler {
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(
-      ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
+  private void handleRetryOnException(ExecutionScope executionScope) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
     boolean newEventsExists = eventBuffer.newEventsExists(executionScope.getCustomResourceUid());
     eventBuffer.putBackEvents(executionScope.getCustomResourceUid(), executionScope.getEvents());
 
-    Optional<Long> nextDelay = execution.nextDelay();
     if (newEventsExists) {
       executeBufferedEvents(executionScope.getCustomResourceUid());
       return;
     }
+    Optional<Long> nextDelay = execution.nextDelay();
     nextDelay.ifPresent(
         delay ->
             defaultEventSourceManager
@@ -148,7 +148,7 @@ public class DefaultEventHandler implements EventHandler {
                 .scheduleOnce(executionScope.getCustomResource(), delay));
   }
 
-  private void handleSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
+  private void markSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
     retryState.remove(executionScope.getCustomResourceUid());
     defaultEventSourceManager
         .getRetryTimerEventSource()
