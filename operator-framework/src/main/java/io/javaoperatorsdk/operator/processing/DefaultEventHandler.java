@@ -5,6 +5,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -35,7 +36,7 @@ public class DefaultEventHandler implements EventHandler {
   private final EventDispatcher eventDispatcher;
   private final Retry retry;
   private final Map<String, RetryExecution> retryState = new HashMap<>();
-  private DefaultEventSourceManager defaultEventSourceManager;
+  private DefaultEventSourceManager eventSourceManager;
 
   private final ReentrantLock lock = new ReentrantLock();
 
@@ -59,8 +60,8 @@ public class DefaultEventHandler implements EventHandler {
             });
   }
 
-  public void setDefaultEventSourceManager(DefaultEventSourceManager defaultEventSourceManager) {
-    this.defaultEventSourceManager = defaultEventSourceManager;
+  public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
+    this.eventSourceManager = eventSourceManager;
   }
 
   @Override
@@ -86,7 +87,8 @@ public class DefaultEventHandler implements EventHandler {
       ExecutionScope executionScope =
           new ExecutionScope(
               eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
-              latestCustomResource.get());
+              latestCustomResource.get(),
+              retryInfo(customResourceUid));
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
     } else {
@@ -97,6 +99,15 @@ public class DefaultEventHandler implements EventHandler {
           newEventForResourceId,
           controllerUnderExecution,
           latestCustomResource.isPresent());
+    }
+  }
+
+  private RetryInfo retryInfo(String customResourceUid) {
+    RetryExecution retryExecution = retryState.get(customResourceUid);
+    if (retryExecution != null) {
+      return new RetryInfo(retryExecution.getCurrentAttemptIndex(), retryExecution.isLastAttempt());
+    } else {
+      return null;
     }
   }
 
@@ -143,14 +154,14 @@ public class DefaultEventHandler implements EventHandler {
     Optional<Long> nextDelay = execution.nextDelay();
     nextDelay.ifPresent(
         delay ->
-            defaultEventSourceManager
+            eventSourceManager
                 .getRetryTimerEventSource()
                 .scheduleOnce(executionScope.getCustomResource(), delay));
   }
 
   private void markSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
     retryState.remove(executionScope.getCustomResourceUid());
-    defaultEventSourceManager
+    eventSourceManager
         .getRetryTimerEventSource()
         .cancelOnceSchedule(executionScope.getCustomResourceUid());
   }
@@ -200,7 +211,7 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   private void cleanupAfterDeletedEvent(String customResourceUid) {
-    defaultEventSourceManager.cleanup(customResourceUid);
+    eventSourceManager.cleanup(customResourceUid);
     eventBuffer.cleanup(customResourceUid);
     customResourceCache.cleanup(customResourceUid);
   }

@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
-import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.ExecutionScope;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -18,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
 class EventDispatcherTest {
@@ -177,6 +177,20 @@ class EventDispatcherTest {
     verify(controller, times(2)).createOrUpdateResource(eq(testCustomResource), any());
   }
 
+  @Test
+  void propagatesRetryInfoToContext() {
+    eventDispatcher.handleExecution(
+        new ExecutionScope(Arrays.asList(), testCustomResource, new RetryInfo(2, true)));
+
+    ArgumentCaptor<Context<CustomResource>> contextArgumentCaptor =
+        ArgumentCaptor.forClass(Context.class);
+    verify(controller, times(1))
+        .createOrUpdateResource(eq(testCustomResource), contextArgumentCaptor.capture());
+    Context<CustomResource> context = contextArgumentCaptor.getValue();
+    assertThat(context.getRetryInfo().get().getAttemptIndex()).isEqualTo(2);
+    assertThat(context.getRetryInfo().get().isLastAttempt()).isEqualTo(true);
+  }
+
   private void markForDeletion(CustomResource customResource) {
     customResource.getMetadata().setDeletionTimestamp("2019-8-10");
   }
@@ -191,6 +205,6 @@ class EventDispatcherTest {
     List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
     eventList.add(event);
     eventList.addAll(Arrays.asList(otherEvents));
-    return new ExecutionScope(eventList, resource);
+    return new ExecutionScope(eventList, resource, null);
   }
 }

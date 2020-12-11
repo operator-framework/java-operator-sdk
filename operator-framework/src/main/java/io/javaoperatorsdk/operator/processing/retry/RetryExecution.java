@@ -16,5 +16,7 @@ public interface RetryExecution {
    * @return true, if the last returned delay is, the last returned values, thus there will be no
    *     further retry
    */
-  boolean isLastExecution();
+  boolean isLastAttempt();
+
+  int getCurrentAttemptIndex();
 }

@@ -44,8 +44,8 @@ class DefaultEventHandlerTest {
   public void setup() {
     when(defaultEventSourceManagerMock.getRetryTimerEventSource())
         .thenReturn(retryTimerEventSourceMock);
-    defaultEventHandler.setDefaultEventSourceManager(defaultEventSourceManagerMock);
-    defaultEventHandlerWithRetry.setDefaultEventSourceManager(defaultEventSourceManagerMock);
+    defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
+    defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
   }
 
   @Test
@@ -112,7 +112,7 @@ class DefaultEventHandlerTest {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource);
+    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -127,7 +127,7 @@ class DefaultEventHandlerTest {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     customResource.getMetadata().setUid(event.getRelatedCustomResourceUid());
-    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource);
+    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -149,6 +149,39 @@ class DefaultEventHandlerTest {
     assertThat(allValues.get(1).getEvents()).hasSize(2);
     verify(retryTimerEventSourceMock, never())
         .scheduleOnce(eq(customResource), eq(GenericRetry.DEFAULT_INITIAL_INTERVAL));
+  }
+
+  @Test
+  public void successfulExecutionResetsTheRetry() {
+    Event event = prepareCREvent();
+    TestCustomResource customResource = testCustomResource();
+    customResource.getMetadata().setUid(event.getRelatedCustomResourceUid());
+    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
+    PostExecutionControl postExecutionControlWithException =
+        PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
+    PostExecutionControl defaultDispatchControl = PostExecutionControl.defaultDispatch();
+
+    defaultEventHandlerWithRetry.handleEvent(event);
+    defaultEventHandlerWithRetry.eventProcessingFinished(
+        executionScope, postExecutionControlWithException);
+
+    defaultEventHandlerWithRetry.handleEvent(event);
+    defaultEventHandlerWithRetry.eventProcessingFinished(executionScope, defaultDispatchControl);
+
+    defaultEventHandlerWithRetry.handleEvent(event);
+
+    ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
+        ArgumentCaptor.forClass(ExecutionScope.class);
+    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
+        .handleExecution(executionScopeArgumentCaptor.capture());
+
+    List<ExecutionScope> executionScopes = executionScopeArgumentCaptor.getAllValues();
+
+    assertThat(executionScopes).hasSize(3);
+    assertThat(executionScopes.get(0).getRetryInfo()).isNull();
+    assertThat(executionScopes.get(2).getRetryInfo()).isNull();
+    assertThat(executionScopes.get(1).getRetryInfo().getAttemptIndex()).isEqualTo(1);
+    assertThat(executionScopes.get(1).getRetryInfo().isLastAttempt()).isEqualTo(false);
   }
 
   private void waitMinimalTime() {

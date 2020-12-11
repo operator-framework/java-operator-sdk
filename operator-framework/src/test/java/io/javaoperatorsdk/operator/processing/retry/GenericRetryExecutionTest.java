@@ -67,11 +67,20 @@ public class GenericRetryExecutionTest {
   @Test
   public void supportsIsLastExecution() {
     GenericRetryExecution execution = new GenericRetry().setMaxAttempts(2).initExecution();
-    assertThat(execution.isLastExecution()).isFalse();
+    assertThat(execution.isLastAttempt()).isFalse();
 
     execution.nextDelay();
     execution.nextDelay();
-    assertThat(execution.isLastExecution()).isTrue();
+    assertThat(execution.isLastAttempt()).isTrue();
+  }
+
+  @Test
+  public void returnAttemptIndex() {
+    RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().initExecution();
+
+    assertThat(retryExecution.getCurrentAttemptIndex()).isEqualTo(0);
+    retryExecution.nextDelay();
+    assertThat(retryExecution.getCurrentAttemptIndex()).isEqualTo(1);
   }
 
   private RetryExecution getDefaultRetryExecution() {

@@ -29,7 +29,12 @@ public class GenericRetryExecution implements RetryExecution {
   }
 
   @Override
-  public boolean isLastExecution() {
+  public boolean isLastAttempt() {
     return genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts();
+  }
+
+  @Override
+  public int getCurrentAttemptIndex() {
+    return lastAttemptIndex;
   }
 }

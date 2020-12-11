@@ -66,7 +66,10 @@ public class EventDispatcher {
       return PostExecutionControl.defaultDispatch();
     }
     Context context =
-        new DefaultContext(eventSourceManager, new EventList(executionScope.getEvents()));
+        new DefaultContext(
+            eventSourceManager,
+            new EventList(executionScope.getEvents()),
+            executionScope.getRetryInfo());
     if (markedForDeletion(resource)) {
       return handleDelete(resource, context);
     } else {

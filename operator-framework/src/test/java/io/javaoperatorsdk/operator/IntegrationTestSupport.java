@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import java.io.IOException;
@@ -41,6 +42,11 @@ public class IntegrationTestSupport {
 
   public void initialize(
       KubernetesClient k8sClient, ResourceController controller, String crdPath) {
+    initialize(k8sClient, controller, crdPath, null);
+  }
+
+  public void initialize(
+      KubernetesClient k8sClient, ResourceController controller, String crdPath, Retry retry) {
     log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
     this.k8sClient = k8sClient;
     CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
@@ -62,7 +68,7 @@ public class IntegrationTestSupport {
                   .build());
     }
     operator = new Operator(k8sClient);
-    operator.registerController(controller, TEST_NAMESPACE);
+    operator.registerController(controller, retry, TEST_NAMESPACE);
     log.info("Operator is running with {}", controller.getClass().getCanonicalName());
   }
 
