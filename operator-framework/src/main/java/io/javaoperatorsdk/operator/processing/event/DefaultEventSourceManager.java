@@ -2,7 +2,9 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;

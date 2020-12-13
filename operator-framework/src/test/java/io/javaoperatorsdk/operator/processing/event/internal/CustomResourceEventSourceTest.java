@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;

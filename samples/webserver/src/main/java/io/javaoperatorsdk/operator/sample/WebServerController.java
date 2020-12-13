@@ -1,6 +1,12 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -8,8 +14,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.DeleteControl;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;

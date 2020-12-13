@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.ControllerUtils.*;
+import static io.javaoperatorsdk.operator.ControllerUtils.getCrdName;
+import static io.javaoperatorsdk.operator.ControllerUtils.getCustomResourceClass;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;

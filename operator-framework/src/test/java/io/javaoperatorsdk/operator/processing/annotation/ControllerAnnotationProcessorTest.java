@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.processing.annotation;
 
-import com.google.testing.compile.*;
+import com.google.testing.compile.Compilation;
+import com.google.testing.compile.CompilationSubject;
 import com.google.testing.compile.Compiler;
+import com.google.testing.compile.JavaFileObjectSubject;
+import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
