@@ -55,4 +55,13 @@ public final class PostExecutionControl {
   public Optional<RuntimeException> getRuntimeException() {
     return Optional.ofNullable(runtimeException);
   }
+
+  @Override
+  public String toString() {
+    return "PostExecutionControl{" +
+            "onlyFinalizerHandled=" + onlyFinalizerHandled +
+            ", updatedCustomResource=" + updatedCustomResource +
+            ", runtimeException=" + runtimeException +
+            '}';
+  }
 }
