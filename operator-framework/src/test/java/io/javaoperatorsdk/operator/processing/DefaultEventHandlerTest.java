@@ -26,8 +26,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class DefaultEventHandlerTest {
+
+  private static final Logger log = LoggerFactory.getLogger(DefaultEventHandlerTest.class);
 
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
@@ -160,6 +164,8 @@ class DefaultEventHandlerTest {
 
   @Test
   public void successfulExecutionResetsTheRetry() {
+    log.info("Starting successfulExecutionResetsTheRetry");
+
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     customResource.getMetadata().setUid(event.getRelatedCustomResourceUid());
@@ -187,7 +193,7 @@ class DefaultEventHandlerTest {
     assertThat(executionScopes).hasSize(3);
     assertThat(executionScopes.get(0).getRetryInfo()).isNull();
     assertThat(executionScopes.get(2).getRetryInfo()).isNull();
-    assertThat(executionScopes.get(1).getRetryInfo().getAttemptIndex()).isEqualTo(1);
+    assertThat(executionScopes.get(1).getRetryInfo().getAttemptCount()).isEqualTo(1);
     assertThat(executionScopes.get(1).getRetryInfo().isLastAttempt()).isEqualTo(false);
   }
 

@@ -187,14 +187,27 @@ class EventDispatcherTest {
   @Test
   void propagatesRetryInfoToContext() {
     eventDispatcher.handleExecution(
-        new ExecutionScope(Arrays.asList(), testCustomResource, new RetryInfo(2, true)));
+        new ExecutionScope(
+            Arrays.asList(),
+            testCustomResource,
+            new RetryInfo() {
+              @Override
+              public int getAttemptCount() {
+                return 2;
+              }
+
+              @Override
+              public boolean isLastAttempt() {
+                return true;
+              }
+            }));
 
     ArgumentCaptor<Context<CustomResource>> contextArgumentCaptor =
         ArgumentCaptor.forClass(Context.class);
     verify(controller, times(1))
         .createOrUpdateResource(eq(testCustomResource), contextArgumentCaptor.capture());
     Context<CustomResource> context = contextArgumentCaptor.getValue();
-    assertThat(context.getRetryInfo().get().getAttemptIndex()).isEqualTo(2);
+    assertThat(context.getRetryInfo().get().getAttemptCount()).isEqualTo(2);
     assertThat(context.getRetryInfo().get().isLastAttempt()).isEqualTo(true);
   }
 

@@ -34,7 +34,7 @@ public class GenericRetryExecution implements RetryExecution {
   }
 
   @Override
-  public int getCurrentAttemptIndex() {
+  public int getAttemptCount() {
     return lastAttemptIndex;
   }
 }

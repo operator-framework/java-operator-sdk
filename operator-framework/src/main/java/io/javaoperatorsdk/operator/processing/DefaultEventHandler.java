@@ -103,12 +103,7 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   private RetryInfo retryInfo(String customResourceUid) {
-    RetryExecution retryExecution = retryState.get(customResourceUid);
-    if (retryExecution != null) {
-      return new RetryInfo(retryExecution.getCurrentAttemptIndex(), retryExecution.isLastAttempt());
-    } else {
-      return null;
-    }
+    return retryState.get(customResourceUid);
   }
 
   void eventProcessingFinished(

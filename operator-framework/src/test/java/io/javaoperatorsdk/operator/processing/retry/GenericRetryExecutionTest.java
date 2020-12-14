@@ -78,9 +78,9 @@ public class GenericRetryExecutionTest {
   public void returnAttemptIndex() {
     RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().initExecution();
 
-    assertThat(retryExecution.getCurrentAttemptIndex()).isEqualTo(0);
+    assertThat(retryExecution.getAttemptCount()).isEqualTo(0);
     retryExecution.nextDelay();
-    assertThat(retryExecution.getCurrentAttemptIndex()).isEqualTo(1);
+    assertThat(retryExecution.getAttemptCount()).isEqualTo(1);
   }
 
   private RetryExecution getDefaultRetryExecution() {
