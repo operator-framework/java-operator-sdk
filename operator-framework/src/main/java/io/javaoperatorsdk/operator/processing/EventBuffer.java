@@ -17,6 +17,16 @@ class EventBuffer {
     crEvents.add(event);
   }
 
+  public boolean newEventsExists(String resourceId) {
+    return events.get(resourceId) != null && !events.get(resourceId).isEmpty();
+  }
+
+  public void putBackEvents(String resourceUid, List<Event> oldEvents) {
+    List<Event> crEvents =
+        events.computeIfAbsent(resourceUid, (id) -> new ArrayList<>(oldEvents.size()));
+    crEvents.addAll(0, oldEvents);
+  }
+
   public boolean containsEvents(String customResourceId) {
     return events.get(customResourceId) != null;
   }

@@ -5,9 +5,13 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import java.util.*;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -30,16 +34,20 @@ public class DefaultEventHandler implements EventHandler {
   private final Set<String> underProcessing = new HashSet<>();
   private final ScheduledThreadPoolExecutor executor;
   private final EventDispatcher eventDispatcher;
-  private DefaultEventSourceManager defaultEventSourceManager;
+  private final Retry retry;
+  private final Map<String, RetryExecution> retryState = new HashMap<>();
+  private DefaultEventSourceManager eventSourceManager;
 
   private final ReentrantLock lock = new ReentrantLock();
 
   public DefaultEventHandler(
       CustomResourceCache customResourceCache,
       EventDispatcher eventDispatcher,
-      String relatedControllerName) {
+      String relatedControllerName,
+      Retry retry) {
     this.customResourceCache = customResourceCache;
     this.eventDispatcher = eventDispatcher;
+    this.retry = retry;
     eventBuffer = new EventBuffer();
     executor =
         new ScheduledThreadPoolExecutor(
@@ -52,8 +60,8 @@ public class DefaultEventHandler implements EventHandler {
             });
   }
 
-  public void setDefaultEventSourceManager(DefaultEventSourceManager defaultEventSourceManager) {
-    this.defaultEventSourceManager = defaultEventSourceManager;
+  public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
+    this.eventSourceManager = eventSourceManager;
   }
 
   @Override
@@ -79,7 +87,8 @@ public class DefaultEventHandler implements EventHandler {
       ExecutionScope executionScope =
           new ExecutionScope(
               eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
-              latestCustomResource.get());
+              latestCustomResource.get(),
+              retryInfo(customResourceUid));
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
     } else {
@@ -93,12 +102,28 @@ public class DefaultEventHandler implements EventHandler {
     }
   }
 
+  private RetryInfo retryInfo(String customResourceUid) {
+    return retryState.get(customResourceUid);
+  }
+
   void eventProcessingFinished(
       ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
     try {
       lock.lock();
-      log.debug("Event processing finished. Scope: {}", executionScope);
+      log.debug(
+          "Event processing finished. Scope: {}, PostExecutionControl: {}",
+          executionScope,
+          postExecutionControl);
       unsetUnderExecution(executionScope.getCustomResourceUid());
+
+      if (retry != null && postExecutionControl.exceptionDuringExecution()) {
+        handleRetryOnException(executionScope);
+        return;
+      }
+
+      if (retry != null) {
+        markSuccessfulExecutionRegardingRetry(executionScope);
+      }
       if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
         cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
       } else {
@@ -108,6 +133,53 @@ public class DefaultEventHandler implements EventHandler {
     } finally {
       lock.unlock();
     }
+  }
+
+  /**
+   * Regarding the events there are 2 approaches we can take. Either retry always when there are new
+   * events (received meanwhile retry is in place or already in buffer) instantly or always wait
+   * according to the retry timing if there was an exception.
+   */
+  private void handleRetryOnException(ExecutionScope executionScope) {
+    RetryExecution execution = getOrInitRetryExecution(executionScope);
+    boolean newEventsExists = eventBuffer.newEventsExists(executionScope.getCustomResourceUid());
+    eventBuffer.putBackEvents(executionScope.getCustomResourceUid(), executionScope.getEvents());
+
+    if (newEventsExists) {
+      log.debug("New events exists for for resource id: {}", executionScope.getCustomResourceUid());
+      executeBufferedEvents(executionScope.getCustomResourceUid());
+      return;
+    }
+    Optional<Long> nextDelay = execution.nextDelay();
+
+    nextDelay.ifPresent(
+        delay -> {
+          log.debug(
+              "Scheduling timer event for retry with delay:{} for resource: {}",
+              delay,
+              executionScope.getCustomResourceUid());
+          eventSourceManager
+              .getRetryTimerEventSource()
+              .scheduleOnce(executionScope.getCustomResource(), delay);
+        });
+  }
+
+  private void markSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
+    log.debug(
+        "Marking successful execution for resource: {}", executionScope.getCustomResourceUid());
+    retryState.remove(executionScope.getCustomResourceUid());
+    eventSourceManager
+        .getRetryTimerEventSource()
+        .cancelOnceSchedule(executionScope.getCustomResourceUid());
+  }
+
+  private RetryExecution getOrInitRetryExecution(ExecutionScope executionScope) {
+    RetryExecution retryExecution = retryState.get(executionScope.getCustomResourceUid());
+    if (retryExecution == null) {
+      retryExecution = retry.initExecution();
+      retryState.put(executionScope.getCustomResourceUid(), retryExecution);
+    }
+    return retryExecution;
   }
 
   /**
@@ -146,7 +218,7 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   private void cleanupAfterDeletedEvent(String customResourceUid) {
-    defaultEventSourceManager.cleanup(customResourceUid);
+    eventSourceManager.cleanup(customResourceUid);
     eventBuffer.cleanup(customResourceUid);
     customResourceCache.cleanup(customResourceUid);
   }

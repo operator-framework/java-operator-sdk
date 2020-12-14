@@ -21,7 +21,7 @@ class DefaultEventSourceManagerTest {
 
   private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
   private DefaultEventSourceManager defaultEventSourceManager =
-      new DefaultEventSourceManager(defaultEventHandlerMock);
+      new DefaultEventSourceManager(defaultEventHandlerMock, false);
 
   @Test
   public void registersEventSource() {

@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -12,15 +13,21 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultEventSourceManager implements EventSourceManager {
 
+  public static final String RETRY_TIMER_EVENT_SOURCE_NAME = "retry-timer-event-source";
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
   private Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
   private CustomResourceEventSource customResourceEventSource;
   private DefaultEventHandler defaultEventHandler;
+  private TimerEventSource retryTimerEventSource;
 
-  public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler) {
+  public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
     this.defaultEventHandler = defaultEventHandler;
+    if (supportRetry) {
+      this.retryTimerEventSource = new TimerEventSource();
+      registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
+    }
   }
 
   public void registerCustomResourceEventSource(
@@ -64,6 +71,10 @@ public class DefaultEventSourceManager implements EventSourceManager {
     } finally {
       lock.unlock();
     }
+  }
+
+  public TimerEventSource getRetryTimerEventSource() {
+    return retryTimerEventSource;
   }
 
   @Override

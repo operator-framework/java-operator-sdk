@@ -1,20 +1,8 @@
 package io.javaoperatorsdk.operator.api;
 
-public class RetryInfo {
+public interface RetryInfo {
 
-  private int retryNumber;
-  private boolean lastAttempt;
+  int getAttemptCount();
 
-  public RetryInfo(int retryNumber, boolean lastAttempt) {
-    this.retryNumber = retryNumber;
-    this.lastAttempt = lastAttempt;
-  }
-
-  public int getRetryNumber() {
-    return retryNumber;
-  }
-
-  public boolean isLastAttempt() {
-    return lastAttempt;
-  }
+  boolean isLastAttempt();
 }

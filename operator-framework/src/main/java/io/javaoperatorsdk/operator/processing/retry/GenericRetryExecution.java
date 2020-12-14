@@ -14,15 +14,7 @@ public class GenericRetryExecution implements RetryExecution {
     this.currentInterval = genericRetry.getInitialInterval();
   }
 
-  /**
-   * Note that first attempt is always 0. Since this implementation is tailored for event
-   * scheduling.
-   */
   public Optional<Long> nextDelay() {
-    if (lastAttemptIndex == 0) {
-      lastAttemptIndex++;
-      return Optional.of(0L);
-    }
     if (genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
       return Optional.empty();
     }
@@ -37,7 +29,12 @@ public class GenericRetryExecution implements RetryExecution {
   }
 
   @Override
-  public boolean isLastExecution() {
+  public boolean isLastAttempt() {
     return genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts();
+  }
+
+  @Override
+  public int getAttemptCount() {
+    return lastAttemptIndex;
   }
 }

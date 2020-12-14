@@ -22,7 +22,7 @@ class ExecutionConsumer implements Runnable {
 
   @Override
   public void run() {
-    PostExecutionControl postExecutionControl = eventDispatcher.handleEvent(executionScope);
+    PostExecutionControl postExecutionControl = eventDispatcher.handleExecution(executionScope);
     defaultEventHandler.eventProcessingFinished(executionScope, postExecutionControl);
   }
 }

@@ -18,6 +18,7 @@ import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,18 +38,32 @@ public class Operator {
   }
 
   public <R extends CustomResource> void registerControllerForAllNamespaces(
+      ResourceController<R> controller, Retry retry) throws OperatorException {
+    registerController(controller, true, retry);
+  }
+
+  public <R extends CustomResource> void registerControllerForAllNamespaces(
       ResourceController<R> controller) throws OperatorException {
-    registerController(controller, true);
+    registerController(controller, true, null);
+  }
+
+  public <R extends CustomResource> void registerController(
+      ResourceController<R> controller, Retry retry, String... targetNamespaces)
+      throws OperatorException {
+    registerController(controller, false, retry, targetNamespaces);
   }
 
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-    registerController(controller, false, targetNamespaces);
+    registerController(controller, false, null, targetNamespaces);
   }
 
   @SuppressWarnings("rawtypes")
   private <R extends CustomResource> void registerController(
-      ResourceController<R> controller, boolean watchAllNamespaces, String... targetNamespaces)
+      ResourceController<R> controller,
+      boolean watchAllNamespaces,
+      Retry retry,
+      String... targetNamespaces)
       throws OperatorException {
     Class<R> resClass = getCustomResourceClass(controller);
     CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
@@ -67,10 +82,10 @@ public class Operator {
     CustomResourceCache customResourceCache = new CustomResourceCache();
     DefaultEventHandler defaultEventHandler =
         new DefaultEventHandler(
-            customResourceCache, eventDispatcher, controller.getClass().getName());
+            customResourceCache, eventDispatcher, controller.getClass().getName(), retry);
     DefaultEventSourceManager eventSourceManager =
-        new DefaultEventSourceManager(defaultEventHandler);
-    defaultEventHandler.setDefaultEventSourceManager(eventSourceManager);
+        new DefaultEventSourceManager(defaultEventHandler, retry != null);
+    defaultEventHandler.setEventSourceManager(eventSourceManager);
     eventDispatcher.setEventSourceManager(eventSourceManager);
 
     customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);

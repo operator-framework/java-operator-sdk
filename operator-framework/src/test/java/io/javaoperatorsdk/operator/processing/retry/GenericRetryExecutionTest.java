@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
+import static io.javaoperatorsdk.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
@@ -8,27 +9,26 @@ import org.junit.jupiter.api.Test;
 public class GenericRetryExecutionTest {
 
   @Test
-  public void forFirstBackOffAlwaysReturnsZero() {
-    assertThat(getDefaultRetryExecution().nextDelay().get()).isEqualTo(0);
+  public void forFirstBackOffAlwaysReturnsInitialInterval() {
+    assertThat(getDefaultRetryExecution().nextDelay().get()).isEqualTo(DEFAULT_INITIAL_INTERVAL);
   }
 
   @Test
   public void delayIsMultipliedEveryNextDelayCall() {
     RetryExecution retryExecution = getDefaultRetryExecution();
 
-    Optional<Long> res = callNextDelayNTimes(retryExecution, 2);
-    assertThat(res.get()).isEqualTo(GenericRetry.DEFAULT_INITIAL_INTERVAL);
+    Optional<Long> res = callNextDelayNTimes(retryExecution, 1);
+    assertThat(res.get()).isEqualTo(DEFAULT_INITIAL_INTERVAL);
 
     res = retryExecution.nextDelay();
     assertThat(res.get())
-        .isEqualTo(
-            (long) (GenericRetry.DEFAULT_INITIAL_INTERVAL * GenericRetry.DEFAULT_MULTIPLIER));
+        .isEqualTo((long) (DEFAULT_INITIAL_INTERVAL * GenericRetry.DEFAULT_MULTIPLIER));
 
     res = retryExecution.nextDelay();
     assertThat(res.get())
         .isEqualTo(
             (long)
-                (GenericRetry.DEFAULT_INITIAL_INTERVAL
+                (DEFAULT_INITIAL_INTERVAL
                     * GenericRetry.DEFAULT_MULTIPLIER
                     * GenericRetry.DEFAULT_MULTIPLIER));
   }
@@ -37,7 +37,7 @@ public class GenericRetryExecutionTest {
   public void noNextDelayIfMaxAttemptLimitReached() {
     RetryExecution retryExecution =
         GenericRetry.defaultLimitedExponentialRetry().setMaxAttempts(3).initExecution();
-    Optional<Long> res = callNextDelayNTimes(retryExecution, 3);
+    Optional<Long> res = callNextDelayNTimes(retryExecution, 2);
     assertThat(res).isNotEmpty();
 
     res = retryExecution.nextDelay();
@@ -61,18 +61,26 @@ public class GenericRetryExecutionTest {
   @Test
   public void supportsNoRetry() {
     RetryExecution retryExecution = GenericRetry.noRetry().initExecution();
-    assertThat(retryExecution.nextDelay().get()).isZero();
     assertThat(retryExecution.nextDelay()).isEmpty();
   }
 
   @Test
   public void supportsIsLastExecution() {
     GenericRetryExecution execution = new GenericRetry().setMaxAttempts(2).initExecution();
-    assertThat(execution.isLastExecution()).isFalse();
+    assertThat(execution.isLastAttempt()).isFalse();
 
     execution.nextDelay();
     execution.nextDelay();
-    assertThat(execution.isLastExecution()).isTrue();
+    assertThat(execution.isLastAttempt()).isTrue();
+  }
+
+  @Test
+  public void returnAttemptIndex() {
+    RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().initExecution();
+
+    assertThat(retryExecution.getAttemptCount()).isEqualTo(0);
+    retryExecution.nextDelay();
+    assertThat(retryExecution.getAttemptCount()).isEqualTo(1);
   }
 
   private RetryExecution getDefaultRetryExecution() {
@@ -80,7 +88,7 @@ public class GenericRetryExecutionTest {
   }
 
   public Optional<Long> callNextDelayNTimes(RetryExecution retryExecution, int n) {
-    for (int i = 0; i < n - 1; i++) {
+    for (int i = 0; i < n; i++) {
       retryExecution.nextDelay();
     }
     return retryExecution.nextDelay();

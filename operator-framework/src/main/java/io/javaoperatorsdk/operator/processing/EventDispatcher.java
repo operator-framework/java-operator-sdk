@@ -43,16 +43,16 @@ public class EventDispatcher {
     this.eventSourceManager = eventSourceManager;
   }
 
-  public PostExecutionControl handleEvent(ExecutionScope event) {
+  public PostExecutionControl handleExecution(ExecutionScope executionScope) {
     try {
-      return handDispatch(event);
+      return handleDispatch(executionScope);
     } catch (RuntimeException e) {
-      log.error("Error during event processing {} failed.", event, e);
-      return PostExecutionControl.defaultDispatch();
+      log.error("Error during event processing {} failed.", executionScope, e);
+      return PostExecutionControl.exceptionDuringExecution(e);
     }
   }
 
-  private PostExecutionControl handDispatch(ExecutionScope executionScope) {
+  private PostExecutionControl handleDispatch(ExecutionScope executionScope) {
     CustomResource resource = executionScope.getCustomResource();
     log.debug(
         "Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
@@ -72,7 +72,10 @@ public class EventDispatcher {
       return PostExecutionControl.defaultDispatch();
     }
     Context context =
-        new DefaultContext(eventSourceManager, new EventList(executionScope.getEvents()));
+        new DefaultContext(
+            eventSourceManager,
+            new EventList(executionScope.getEvents()),
+            executionScope.getRetryInfo());
     if (markedForDeletion(resource)) {
       return handleDelete(resource, context);
     } else {
