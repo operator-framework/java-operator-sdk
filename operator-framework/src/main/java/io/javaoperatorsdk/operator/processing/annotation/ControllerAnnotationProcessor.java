@@ -11,14 +11,12 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import io.fabric8.kubernetes.api.builder.Function;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -32,7 +30,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -41,9 +38,12 @@ import javax.tools.JavaFileObject;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
+
   private AccumulativeMappingWriter controllersResourceWriter;
   private AccumulativeMappingWriter doneablesResourceWriter;
-  private Set<String> generatedDoneableClassFiles = new HashSet<>();
+  private TypeParameterResolver typeParameterResolver;
+  private final Set<String> generatedDoneableClassFiles = new HashSet<>();
+  private DeclaredType fallbackCustomResourceType;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -54,6 +54,18 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     doneablesResourceWriter =
         new AccumulativeMappingWriter(DONEABLES_RESOURCE_PATH, processingEnv)
             .loadExistingMappings();
+
+    doneablesResourceWriter.add(
+        CustomResource.class.getCanonicalName(), CustomResourceDoneable.class.getCanonicalName());
+
+    typeParameterResolver = initializeResolver(processingEnv);
+    fallbackCustomResourceType =
+        processingEnv
+            .getTypeUtils()
+            .getDeclaredType(
+                processingEnv
+                    .getElementUtils()
+                    .getTypeElement(CustomResourceDoneable.class.getCanonicalName()));
   }
 
   @Override
@@ -64,7 +76,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         annotatedElements.stream()
             .filter(element -> element.getKind().equals(ElementKind.CLASS))
             .map(e -> (TypeElement) e)
-            .forEach(e -> this.generateDoneableClass(e));
+            .forEach(this::generateDoneableClass);
       }
     } finally {
       if (roundEnv.processingOver()) {
@@ -75,9 +87,27 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     return true;
   }
 
+  private TypeParameterResolver initializeResolver(ProcessingEnvironment processingEnv) {
+    final DeclaredType resourceControllerType =
+        processingEnv
+            .getTypeUtils()
+            .getDeclaredType(
+                processingEnv
+                    .getElementUtils()
+                    .getTypeElement(ResourceController.class.getCanonicalName()),
+                processingEnv.getTypeUtils().getWildcardType(null, null));
+    return new TypeParameterResolver(resourceControllerType, 0);
+  }
+
   private void generateDoneableClass(TypeElement controllerClassSymbol) {
     try {
       final TypeMirror resourceType = findResourceType(controllerClassSymbol);
+      if (resourceType == null) {
+        controllersResourceWriter.add(
+            controllerClassSymbol.getQualifiedName().toString(),
+            CustomResource.class.getCanonicalName());
+        return;
+      }
 
       TypeElement customerResourceTypeElement =
           processingEnv.getElementUtils().getTypeElement(resourceType.toString());
@@ -136,38 +166,11 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
     }
   }
 
-  private TypeMirror findResourceType(TypeElement controllerClassSymbol) throws Exception {
+  private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
     try {
-      final DeclaredType controllerType =
-          collectAllInterfaces(controllerClassSymbol).stream()
-              .filter(i -> i.toString().startsWith(ResourceController.class.getCanonicalName()))
-              .findFirst()
-              .orElseThrow(
-                  () ->
-                      new Exception(
-                          "ResourceController is not implemented by "
-                              + controllerClassSymbol.toString()));
-      return controllerType.getTypeArguments().get(0);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
+      return typeParameterResolver.resolve(
+          processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
 
-  private List<DeclaredType> collectAllInterfaces(TypeElement element) {
-    try {
-      List<DeclaredType> interfaces =
-          new ArrayList<>(element.getInterfaces())
-              .stream().map(t -> (DeclaredType) t).collect(Collectors.toList());
-      TypeElement superclass = ((TypeElement) ((DeclaredType) element.getSuperclass()).asElement());
-      while (superclass.getSuperclass().getKind() != TypeKind.NONE) {
-        interfaces.addAll(
-            superclass.getInterfaces().stream()
-                .map(t -> (DeclaredType) t)
-                .collect(Collectors.toList()));
-        superclass = ((TypeElement) ((DeclaredType) superclass.getSuperclass()).asElement());
-      }
-      return interfaces;
     } catch (Exception e) {
       e.printStackTrace();
       return null;

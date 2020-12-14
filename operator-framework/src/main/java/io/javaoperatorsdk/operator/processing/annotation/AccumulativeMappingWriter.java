@@ -10,7 +10,13 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.StandardLocation;
 
+/**
+ * The writer is able to load an existing resource file as a Map and override it with the new
+ * mappings added to the existing mappings. Every entry corresponds to a line in the resource file
+ * where key and values are separated by comma.
+ */
 class AccumulativeMappingWriter {
+
   private Map<String, String> mappings = new ConcurrentHashMap<>();
   private final String resourcePath;
   private final ProcessingEnvironment processingEnvironment;
@@ -41,11 +47,16 @@ class AccumulativeMappingWriter {
     return this;
   }
 
+  /** Add a new mapping */
   public AccumulativeMappingWriter add(String key, String value) {
     this.mappings.put(key, value);
     return this;
   }
 
+  /**
+   * Generates or overrise the resource file with the given path
+   * ({@linkAccumulativeMappingWriter#resourcePath})
+   */
   public void flush() {
     PrintWriter printWriter = null;
     try {
