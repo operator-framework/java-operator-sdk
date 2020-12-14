@@ -183,6 +183,8 @@ class DefaultEventHandlerTest {
 
     defaultEventHandlerWithRetry.handleEvent(event);
 
+    log.info("Finished successfulExecutionResetsTheRetry");
+
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionScope.class);
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))

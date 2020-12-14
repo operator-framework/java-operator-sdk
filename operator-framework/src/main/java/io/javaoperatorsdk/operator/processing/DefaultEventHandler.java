@@ -110,7 +110,10 @@ public class DefaultEventHandler implements EventHandler {
       ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
     try {
       lock.lock();
-      log.debug("Event processing finished. Scope: {}", executionScope);
+      log.debug(
+          "Event processing finished. Scope: {}, PostExecutionControl: {}",
+          executionScope,
+          postExecutionControl);
       unsetUnderExecution(executionScope.getCustomResourceUid());
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
@@ -143,18 +146,27 @@ public class DefaultEventHandler implements EventHandler {
     eventBuffer.putBackEvents(executionScope.getCustomResourceUid(), executionScope.getEvents());
 
     if (newEventsExists) {
+      log.debug("New events exists for for resource id: {}", executionScope.getCustomResourceUid());
       executeBufferedEvents(executionScope.getCustomResourceUid());
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
+
     nextDelay.ifPresent(
-        delay ->
-            eventSourceManager
-                .getRetryTimerEventSource()
-                .scheduleOnce(executionScope.getCustomResource(), delay));
+        delay -> {
+          log.debug(
+              "Scheduling timer event for retry with delay:{} for resource: {}",
+              delay,
+              executionScope.getCustomResourceUid());
+          eventSourceManager
+              .getRetryTimerEventSource()
+              .scheduleOnce(executionScope.getCustomResource(), delay);
+        });
   }
 
   private void markSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
+    log.debug(
+        "Marking successful execution for resource: {}", executionScope.getCustomResourceUid());
     retryState.remove(executionScope.getCustomResourceUid());
     eventSourceManager
         .getRetryTimerEventSource()
