@@ -34,7 +34,7 @@ class DefaultEventHandlerTest {
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandlerTest.class);
 
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
-  public static final int SEPARATE_EXECUTION_TIMEOUT = 150;
+  public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
   private CustomResourceCache customResourceCache = new CustomResourceCache();
   private DefaultEventSourceManager defaultEventSourceManagerMock =
@@ -175,24 +175,24 @@ class DefaultEventHandlerTest {
     PostExecutionControl defaultDispatchControl = PostExecutionControl.defaultDispatch();
 
     when(eventDispatcherMock.handleExecution(any()))
-            .thenReturn(postExecutionControlWithException)
-            .thenReturn(defaultDispatchControl);
+        .thenReturn(postExecutionControlWithException)
+        .thenReturn(defaultDispatchControl);
 
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
-            ArgumentCaptor.forClass(ExecutionScope.class);
+        ArgumentCaptor.forClass(ExecutionScope.class);
 
     defaultEventHandlerWithRetry.handleEvent(event);
 
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
-            .handleExecution(any());
+        .handleExecution(any());
     defaultEventHandlerWithRetry.handleEvent(event);
 
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
-            .handleExecution(any());
+        .handleExecution(any());
     defaultEventHandlerWithRetry.handleEvent(event);
 
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
-            .handleExecution(executionScopeArgumentCaptor.capture());
+        .handleExecution(executionScopeArgumentCaptor.capture());
     log.info("Finished successfulExecutionResetsTheRetry");
 
     List<ExecutionScope> executionScopes = executionScopeArgumentCaptor.getAllValues();

@@ -58,10 +58,13 @@ public final class PostExecutionControl {
 
   @Override
   public String toString() {
-    return "PostExecutionControl{" +
-            "onlyFinalizerHandled=" + onlyFinalizerHandled +
-            ", updatedCustomResource=" + updatedCustomResource +
-            ", runtimeException=" + runtimeException +
-            '}';
+    return "PostExecutionControl{"
+        + "onlyFinalizerHandled="
+        + onlyFinalizerHandled
+        + ", updatedCustomResource="
+        + updatedCustomResource
+        + ", runtimeException="
+        + runtimeException
+        + '}';
   }
 }
