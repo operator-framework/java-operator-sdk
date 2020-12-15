@@ -103,12 +103,16 @@ public class EventDispatcher {
       UpdateControl<? extends CustomResource> updateControl =
           controller.createOrUpdateResource(resource, context);
       CustomResource updatedCustomResource = null;
-      if (updateControl.isUpdateStatusSubResource()) {
+      if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
+        updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+        updatedCustomResource = customResourceFacade.updateStatus(updatedCustomResource);
+      } else if (updateControl.isUpdateStatusSubResource()) {
         updatedCustomResource =
             customResourceFacade.updateStatus(updateControl.getCustomResource());
       } else if (updateControl.isUpdateCustomResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
       }
+
       if (updatedCustomResource != null) {
         return PostExecutionControl.customResourceUpdated(updatedCustomResource);
       } else {

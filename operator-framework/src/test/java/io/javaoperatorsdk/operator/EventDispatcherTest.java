@@ -73,6 +73,19 @@ class EventDispatcherTest {
   }
 
   @Test
+  void updatesBothResourceAndStatus() {
+    when(controller.createOrUpdateResource(eq(testCustomResource), any()))
+        .thenReturn(UpdateControl.updateCustomResourceAndStatusSubResource(testCustomResource));
+    when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
+
+    eventDispatcher.handleExecution(
+        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+
+    verify(customResourceFacade, times(1)).replaceWithLock(testCustomResource);
+    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+  }
+
+  @Test
   void callCreateOrUpdateOnModifiedResource() {
     eventDispatcher.handleExecution(
         executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
