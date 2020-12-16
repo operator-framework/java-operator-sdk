@@ -37,7 +37,7 @@ public class DoubleUpdateTestCustomResourceController
     ensureStatusExists(resource);
     resource.getStatus().setState(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
 
-    return UpdateControl.updateCustomResourceAndStatusSubResource(resource);
+    return UpdateControl.updateCustomResourceAndStatus(resource);
   }
 
   private void ensureStatusExists(DoubleUpdateTestCustomResource resource) {

@@ -32,7 +32,7 @@ public class UpdateControl<T extends CustomResource> {
    * updates then the status sub-resource.
    */
   public static <T extends CustomResource>
-      UpdateControl<T> updateCustomResourceAndStatusSubResource(T customResource) {
+      UpdateControl<T> updateCustomResourceAndStatus(T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }
 

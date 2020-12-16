@@ -75,7 +75,7 @@ class EventDispatcherTest {
   @Test
   void updatesBothResourceAndStatus() {
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.updateCustomResourceAndStatusSubResource(testCustomResource));
+        .thenReturn(UpdateControl.updateCustomResourceAndStatus(testCustomResource));
     when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
 
     eventDispatcher.handleExecution(
