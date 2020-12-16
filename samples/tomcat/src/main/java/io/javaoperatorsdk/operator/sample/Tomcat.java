@@ -4,29 +4,29 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 public class Tomcat extends CustomResource {
 
-  private TomcatSpec spec;
+    private TomcatSpec spec;
 
-  private TomcatStatus status;
+    private TomcatStatus status;
 
-  public TomcatSpec getSpec() {
-    if (spec == null) {
-      spec = new TomcatSpec();
+    public TomcatSpec getSpec() {
+        if (spec == null) {
+            spec = new TomcatSpec();
+        }
+        return spec;
     }
-    return spec;
-  }
 
-  public void setSpec(TomcatSpec spec) {
-    this.spec = spec;
-  }
-
-  public TomcatStatus getStatus() {
-    if (status == null) {
-      status = new TomcatStatus();
+    public void setSpec(TomcatSpec spec) {
+        this.spec = spec;
     }
-    return status;
-  }
 
-  public void setStatus(TomcatStatus status) {
-    this.status = status;
-  }
+    public TomcatStatus getStatus() {
+        if (status == null) {
+            status = new TomcatStatus();
+        }
+        return status;
+    }
+
+    public void setStatus(TomcatStatus status) {
+        this.status = status;
+    }
 }

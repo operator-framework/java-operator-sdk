@@ -2,33 +2,33 @@ package io.javaoperatorsdk.operator.sample;
 
 public class WebappSpec {
 
-  private String url;
+    private String url;
 
-  private String contextPath;
+    private String contextPath;
 
-  private String tomcat;
+    private String tomcat;
 
-  public String getUrl() {
-    return url;
-  }
+    public String getUrl() {
+        return url;
+    }
 
-  public void setUrl(String url) {
-    this.url = url;
-  }
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
-  public String getContextPath() {
-    return contextPath;
-  }
+    public String getContextPath() {
+        return contextPath;
+    }
 
-  public void setContextPath(String contextPath) {
-    this.contextPath = contextPath;
-  }
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+    }
 
-  public String getTomcat() {
-    return tomcat;
-  }
+    public String getTomcat() {
+        return tomcat;
+    }
 
-  public void setTomcat(String tomcat) {
-    this.tomcat = tomcat;
-  }
+    public void setTomcat(String tomcat) {
+        this.tomcat = tomcat;
+    }
 }
