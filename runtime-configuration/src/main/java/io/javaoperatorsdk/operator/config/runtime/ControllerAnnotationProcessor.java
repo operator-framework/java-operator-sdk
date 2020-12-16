@@ -100,8 +100,8 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
   }
 
   private void generateDoneableClass(TypeElement controllerClassSymbol) {
-        try {
-            final TypeMirror resourceType = findResourceType(controllerClassSymbol);
+    try {
+      final TypeMirror resourceType = findResourceType(controllerClassSymbol);
       if (resourceType == null) {
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(),
@@ -109,23 +109,29 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         return;
       }
 
-            if (resourceType == null) {
-                System.out.println("No defined a resource type for '" + controllerClassSymbol.getQualifiedName() + "': ignoring!");
-                return;
-            }
+      if (resourceType == null) {
+        System.out.println(
+            "No defined a resource type for '"
+                + controllerClassSymbol.getQualifiedName()
+                + "': ignoring!");
+        return;
+      }
 
-            TypeElement customerResourceTypeElement =
-          processingEnv.getElementUtils()
-                .getTypeElement(resourceType.toString());
+      TypeElement customerResourceTypeElement =
+          processingEnv.getElementUtils().getTypeElement(resourceType.toString());
 
-            final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
-            final String destinationClassFileName = customerResourceTypeElement.getQualifiedName() + "Doneable";
-            final TypeName customResourceType = TypeName.get(resourceType);
+      final String doneableClassName = customerResourceTypeElement.getSimpleName() + "Doneable";
+      final String destinationClassFileName =
+          customerResourceTypeElement.getQualifiedName() + "Doneable";
+      final TypeName customResourceType = TypeName.get(resourceType);
 
-            if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                    String.format(
-                        "%s already exists! adding the mapping to the %s",
+      if (!generatedDoneableClassFiles.add(destinationClassFileName)) {
+        processingEnv
+            .getMessager()
+            .printMessage(
+                Diagnostic.Kind.NOTE,
+                String.format(
+                    "%s already exists! adding the mapping to the %s",
                     destinationClassFileName, CONTROLLERS_RESOURCE_PATH));
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(), customResourceType.toString());
@@ -167,10 +173,11 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
       ioException.printStackTrace();
     }
   }
-    private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
+
+  private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
     try {
 
-            return typeParameterResolver.resolve(
+      return typeParameterResolver.resolve(
           processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
     } catch (Exception e) {
       e.printStackTrace();

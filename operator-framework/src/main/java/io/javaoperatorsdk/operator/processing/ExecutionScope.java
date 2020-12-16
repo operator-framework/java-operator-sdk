@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Event;
+import io.javaoperatorsdk.operator.api.RetryInfo;
 import java.util.List;
 
 public class ExecutionScope {
@@ -9,7 +10,7 @@ public class ExecutionScope {
   private List<Event> events;
   // the latest custom resource from cache
   private CustomResource customResource;
-private RetryInfo retryInfo;
+  private RetryInfo retryInfo;
 
   public ExecutionScope(List<Event> list, CustomResource customResource, RetryInfo retryInfo) {
     this.events = list;

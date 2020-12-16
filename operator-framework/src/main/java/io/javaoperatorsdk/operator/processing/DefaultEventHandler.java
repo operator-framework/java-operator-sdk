@@ -7,8 +7,13 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Event;
 import io.javaoperatorsdk.operator.api.EventHandler;
+import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

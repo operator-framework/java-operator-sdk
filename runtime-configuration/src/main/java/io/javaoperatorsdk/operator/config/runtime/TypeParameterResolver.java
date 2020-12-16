@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.annotation;
+package io.javaoperatorsdk.operator.config.runtime;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.type.TypeKind.TYPEVAR;

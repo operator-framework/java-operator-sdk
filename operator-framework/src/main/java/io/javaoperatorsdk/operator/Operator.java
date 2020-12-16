@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,10 +41,9 @@ public class Operator {
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
-    //        final var retry =
-    // GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
+    final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
     final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
-    registerController(controller, configuration.watchAllNamespaces(), targetNamespaces);
+    registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
   }
 
   public <R extends CustomResource> void registerControllerForAllNamespaces(
@@ -61,6 +61,7 @@ public class Operator {
       throws OperatorException {
     registerController(controller, false, retry, targetNamespaces);
   }
+
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
     registerController(controller, false, null, targetNamespaces);

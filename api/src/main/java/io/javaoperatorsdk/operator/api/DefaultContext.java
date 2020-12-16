@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import java.util.Optional;
 
 public class DefaultContext<T extends CustomResource> implements Context<T> {
 
