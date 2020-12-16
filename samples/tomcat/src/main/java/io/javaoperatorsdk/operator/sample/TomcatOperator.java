@@ -16,23 +16,20 @@ import java.io.IOException;
 
 public class TomcatOperator {
 
-    private static final Logger log = LoggerFactory.getLogger(TomcatOperator.class);
+  private static final Logger log = LoggerFactory.getLogger(TomcatOperator.class);
 
-    public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException {
 
-        Config config = new ConfigBuilder().withNamespace(null).build();
-        KubernetesClient client = new DefaultKubernetesClient(config);
-        Operator operator = new Operator(client);
+    Config config = new ConfigBuilder().withNamespace(null).build();
+    KubernetesClient client = new DefaultKubernetesClient(config);
+    Operator operator = new Operator(client);
 
-        TomcatController tomcatController = new TomcatController(client);
-        operator.registerControllerForAllNamespaces(tomcatController);
-        tomcatController.setTomcatOperations(operator.getCustomResourceClients(Tomcat.class));
+    TomcatController tomcatController = new TomcatController(client);
+    operator.registerControllerForAllNamespaces(tomcatController);
+    tomcatController.setTomcatOperations(operator.getCustomResourceClients(Tomcat.class));
 
-        operator.registerControllerForAllNamespaces(new WebappController(client));
+    operator.registerControllerForAllNamespaces(new WebappController(client));
 
-
-        new FtBasic(
-        new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080
-        ).start(Exit.NEVER);
-    }
+    new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);
+  }
 }

@@ -13,51 +13,67 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static java.net.HttpURLConnection.HTTP_GONE;
 
 public class DeploymentEventSource extends AbstractEventSource implements Watcher<Deployment> {
-    private final static Logger log = LoggerFactory.getLogger(DeploymentEventSource.class);
+  private static final Logger log = LoggerFactory.getLogger(DeploymentEventSource.class);
 
-    private final KubernetesClient client;
+  private final KubernetesClient client;
 
-    public static DeploymentEventSource createAndRegisterWatch(KubernetesClient client) {
-        DeploymentEventSource deploymentEventSource = new DeploymentEventSource(client);
-        deploymentEventSource.registerWatch();
-        return deploymentEventSource;
+  public static DeploymentEventSource createAndRegisterWatch(KubernetesClient client) {
+    DeploymentEventSource deploymentEventSource = new DeploymentEventSource(client);
+    deploymentEventSource.registerWatch();
+    return deploymentEventSource;
+  }
+
+  private DeploymentEventSource(KubernetesClient client) {
+    this.client = client;
+  }
+
+  private void registerWatch() {
+    client
+        .apps()
+        .deployments()
+        .inAnyNamespace()
+        .withLabel("managed-by", "tomcat-operator")
+        .watch(this);
+  }
+
+  @Override
+  public void eventReceived(Action action, Deployment deployment) {
+    log.info(
+        "Event received for action: {}, Deployment: {} (rr={})",
+        action.name(),
+        deployment.getMetadata().getName(),
+        deployment.getStatus().getReadyReplicas());
+
+    if (action == Action.ERROR) {
+      log.warn(
+          "Skipping {} event for custom resource uid: {}, version: {}",
+          action,
+          getUID(deployment),
+          getVersion(deployment));
+      return;
     }
 
-    private DeploymentEventSource(KubernetesClient client) {
-        this.client = client;
+    eventHandler.handleEvent(
+        new DeploymentEvent(
+            action,
+            deployment,
+            this,
+            deployment.getMetadata().getOwnerReferences().get(0).getUid()));
+  }
+
+  @Override
+  public void onClose(KubernetesClientException e) {
+    if (e == null) {
+      return;
     }
-
-    private void registerWatch() {
-        client.apps().deployments().inAnyNamespace().withLabel("managed-by", "tomcat-operator").watch(this);
+    if (e.getCode() == HTTP_GONE) {
+      log.warn("Received error for watch, will try to reconnect.", e);
+      registerWatch();
+    } else {
+      // Note that this should not happen normally, since fabric8 client handles reconnect.
+      // In case it tries to reconnect this method is not called.
+      log.error("Unexpected error happened with watch. Will exit.", e);
+      System.exit(1);
     }
-
-    @Override
-    public void eventReceived(Action action, Deployment deployment) {
-        log.info("Event received for action: {}, Deployment: {} (rr={})", action.name(), deployment.getMetadata().getName(), deployment.getStatus().getReadyReplicas());
-
-        if (action == Action.ERROR) {
-            log.warn("Skipping {} event for custom resource uid: {}, version: {}", action,
-                    getUID(deployment), getVersion(deployment));
-            return;
-        }
-
-        eventHandler.handleEvent(new DeploymentEvent(action, deployment, this,
-                deployment.getMetadata().getOwnerReferences().get(0).getUid()));
-    }
-
-    @Override
-    public void onClose(KubernetesClientException e) {
-        if (e == null) {
-            return;
-        }
-        if (e.getCode() == HTTP_GONE) {
-            log.warn("Received error for watch, will try to reconnect.", e);
-            registerWatch();
-        } else {
-            // Note that this should not happen normally, since fabric8 client handles reconnect.
-            // In case it tries to reconnect this method is not called.
-            log.error("Unexpected error happened with watch. Will exit.", e);
-            System.exit(1);
-        }
-    }
+  }
 }

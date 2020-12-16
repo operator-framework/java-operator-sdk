@@ -6,39 +6,49 @@ import io.javaoperatorsdk.operator.processing.event.AbstractEvent;
 
 public class DeploymentEvent extends AbstractEvent {
 
-    private final Watcher.Action action;
-    private final Deployment deployment;
+  private final Watcher.Action action;
+  private final Deployment deployment;
 
-    public DeploymentEvent(Watcher.Action action, Deployment deployment,
-                           DeploymentEventSource deploymentEventSource,
-                           String tomcatUid) {
-        //TODO: this mapping is really critical and should be made more explicit
-        super(tomcatUid, deploymentEventSource);
-        this.action = action;
-        this.deployment = deployment;
-    }
+  public DeploymentEvent(
+      Watcher.Action action,
+      Deployment deployment,
+      DeploymentEventSource deploymentEventSource,
+      String tomcatUid) {
+    // TODO: this mapping is really critical and should be made more explicit
+    super(tomcatUid, deploymentEventSource);
+    this.action = action;
+    this.deployment = deployment;
+  }
 
-    public Watcher.Action getAction() {
-        return action;
-    }
+  public Watcher.Action getAction() {
+    return action;
+  }
 
-    public String resourceUid() {
-        return getDeployment().getMetadata().getUid();
-    }
+  public String resourceUid() {
+    return getDeployment().getMetadata().getUid();
+  }
 
-    @Override
-    public String toString() {
-        return "CustomResourceEvent{" +
-                "action=" + action +
-                ", resource=[ name=" + getDeployment().getMetadata().getName() + ", kind=" + getDeployment().getKind() +
-                ", apiVersion=" + getDeployment().getApiVersion() + " ,resourceVersion=" + getDeployment().getMetadata().getResourceVersion() +
-                ", markedForDeletion: " + (getDeployment().getMetadata().getDeletionTimestamp() != null
-                && !getDeployment().getMetadata().getDeletionTimestamp().isEmpty()) +
-                " ]" +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "CustomResourceEvent{"
+        + "action="
+        + action
+        + ", resource=[ name="
+        + getDeployment().getMetadata().getName()
+        + ", kind="
+        + getDeployment().getKind()
+        + ", apiVersion="
+        + getDeployment().getApiVersion()
+        + " ,resourceVersion="
+        + getDeployment().getMetadata().getResourceVersion()
+        + ", markedForDeletion: "
+        + (getDeployment().getMetadata().getDeletionTimestamp() != null
+            && !getDeployment().getMetadata().getDeletionTimestamp().isEmpty())
+        + " ]"
+        + '}';
+  }
 
-    public Deployment getDeployment() {
-        return deployment;
-    }
+  public Deployment getDeployment() {
+    return deployment;
+  }
 }
