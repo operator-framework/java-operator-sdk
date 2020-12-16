@@ -183,6 +183,10 @@ public class IntegrationTestSupport {
     return crOperations;
   }
 
+  public CustomResource getCustomResource(String name) {
+    return getCrOperations().inNamespace(TEST_NAMESPACE).withName(name).get();
+  }
+
   public Operator getOperator() {
     return operator;
   }

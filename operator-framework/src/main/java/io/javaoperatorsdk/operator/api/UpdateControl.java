@@ -27,6 +27,10 @@ public class UpdateControl<T extends CustomResource> {
     return new UpdateControl<>(customResource, true, false);
   }
 
+  /**
+   * As a results of this there will be two call to K8S API. First the custom resource will be
+   * updates then the status sub-resource.
+   */
   public static <T extends CustomResource>
       UpdateControl<T> updateCustomResourceAndStatusSubResource(T customResource) {
     return new UpdateControl<>(customResource, true, true);
