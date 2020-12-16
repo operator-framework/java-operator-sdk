@@ -59,3 +59,9 @@ all Deployments managed by the Controller (identified by the `managed-by` label)
 When an event from a Deployment is received we have to identify which Tomcat object does the Deployment
 belong to. This is done when the DeploymentEventSource creates the DeploymentEvent.
 
+The TomcatController has to take care of setting the `managed-by` label on the Deployment so the 
+DeploymentEventSource can watch the right Deployments.
+The TomcatController also has to set `ownerReference` on the Deployment so later the DeploymentEventSource can 
+identify which Tomcat does the Deployment belong to. This is necessary so the frameowork can call the Controller
+`createOrUpdate` method correctly.
+
