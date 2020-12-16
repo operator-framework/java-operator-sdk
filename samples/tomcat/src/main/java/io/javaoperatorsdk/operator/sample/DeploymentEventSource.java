@@ -41,7 +41,8 @@ public class DeploymentEventSource extends AbstractEventSource implements Watche
             return;
         }
 
-        eventHandler.handleEvent(new DeploymentEvent(action, deployment, this));
+        eventHandler.handleEvent(new DeploymentEvent(action, deployment, this,
+                deployment.getMetadata().getOwnerReferences().get(0).getUid()));
     }
 
     @Override

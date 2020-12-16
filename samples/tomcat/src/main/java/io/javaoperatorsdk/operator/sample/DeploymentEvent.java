@@ -9,12 +9,13 @@ public class DeploymentEvent extends AbstractEvent {
     private final Watcher.Action action;
     private final Deployment deployment;
 
-    public DeploymentEvent(Watcher.Action action, Deployment resource,
-                           DeploymentEventSource deploymentEventSource) {
+    public DeploymentEvent(Watcher.Action action, Deployment deployment,
+                           DeploymentEventSource deploymentEventSource,
+                           String tomcatUid) {
         //TODO: this mapping is really critical and should be made more explicit
-        super(resource.getMetadata().getOwnerReferences().get(0).getUid(), deploymentEventSource);
+        super(tomcatUid, deploymentEventSource);
         this.action = action;
-        this.deployment = resource;
+        this.deployment = deployment;
     }
 
     public Watcher.Action getAction() {
