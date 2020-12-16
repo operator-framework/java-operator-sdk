@@ -54,5 +54,8 @@ Now you can create Tomcat instances with CRs (see examples above).
 
 ## EventSources
 The TomcatController is listening to events about Deployments created by the TomcatOperator by registering a
-DeploymentEventSource.
+DeploymentEventSource with the EventSourceManager. The DeploymentEventSource will in turn register a watch on
+all Deployments managed by the Controller (identified by the `managed-by` label). 
+When an event from a Deployment is received we have to identify which Tomcat object does the Deployment
+belong to. This is done when the DeploymentEventSource creates the DeploymentEvent.
 
