@@ -26,7 +26,7 @@ public class DoubleUpdateTestCustomResource extends CustomResource {
 
   @Override
   public String toString() {
-    return "TestCustomResource{"
+    return "DoubleUpdateTestCustomResource{"
         + "spec="
         + spec
         + ", status="
