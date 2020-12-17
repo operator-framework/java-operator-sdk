@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.doubleupdate.subresource;
+package io.javaoperatorsdk.operator.doubleupdate;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
