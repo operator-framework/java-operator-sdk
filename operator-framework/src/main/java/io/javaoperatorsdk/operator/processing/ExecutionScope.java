@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.Event;
 import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.processing.event.Event;
 import java.util.List;
 
 public class ExecutionScope {

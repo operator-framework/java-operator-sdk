@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import static org.mockito.Mockito.mock;
 
-import io.javaoperatorsdk.operator.api.Event;
-import io.javaoperatorsdk.operator.api.EventList;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 import java.util.Arrays;
 import org.assertj.core.api.Assertions;

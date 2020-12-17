@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.EventSource;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import java.util.Map;

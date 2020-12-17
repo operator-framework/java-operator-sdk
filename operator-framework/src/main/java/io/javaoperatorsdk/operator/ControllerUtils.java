@@ -1,6 +1,7 @@
-package io.javaoperatorsdk.operator.api;
+package io.javaoperatorsdk.operator;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Locale;
 
 public class ControllerUtils {

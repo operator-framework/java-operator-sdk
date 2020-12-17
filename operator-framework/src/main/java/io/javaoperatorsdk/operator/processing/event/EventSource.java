@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api;
+package io.javaoperatorsdk.operator.processing.event;
 
 public interface EventSource {
 

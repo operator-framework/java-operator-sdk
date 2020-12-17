@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ControllerUtils;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
