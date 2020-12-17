@@ -20,7 +20,7 @@
   <dependencies>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework</artifactId>
+      <artifactId>operator-framework-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -75,7 +75,7 @@
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework</artifactId>
+      <artifactId>operator-framework-core</artifactId>
       <version>${project.version}</version>
       <classifier>tests</classifier>
       <type>test-jar</type>

@@ -41,7 +41,7 @@
     </properties>
 
     <modules>
-        <module>operator-framework</module>
+        <module>operator-framework-core</module>
         <module>spring-boot-starter</module>
         <module>samples</module>
         <module>quarkus-extension</module>
