@@ -42,7 +42,6 @@ public class AutoConfigurationTest {
     assertEquals(1000, retryProperties.getInitialInterval().intValue());
     assertEquals(1.5, retryProperties.getIntervalMultiplier().doubleValue());
     assertEquals(50000, retryProperties.getMaxInterval().intValue());
-    assertEquals(100000, retryProperties.getMaxElapsedTime().intValue());
   }
 
   @Test
