@@ -3,11 +3,7 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.*;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +24,7 @@ public class WebappController implements ResourceController<Webapp> {
   }
 
   @Override
-  public UpdateControl createOrUpdateResource(Webapp webapp, Context<Webapp> context) {
+  public UpdateControl<Webapp> createOrUpdateResource(Webapp webapp, Context<Webapp> context) {
     if (Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();
     }
@@ -87,10 +83,14 @@ public class WebappController implements ResourceController<Webapp> {
 
   private String fileNameFromWebapp(Webapp webapp) {
     try {
-      Pattern regexpPattern = Pattern.compile("([^\\/]+$)");
-      Matcher regexpMatcher = regexpPattern.matcher(webapp.getSpec().getUrl());
-      regexpMatcher.find();
-      return regexpMatcher.group();
+      if (webapp.getSpec().getContextPath() == null) {
+        Pattern regexpPattern = Pattern.compile("([^\\/]+$)");
+        Matcher regexpMatcher = regexpPattern.matcher(webapp.getSpec().getUrl());
+        regexpMatcher.find();
+        return regexpMatcher.group();
+      } else {
+        return webapp.getSpec().getContextPath() + ".war";
+      }
     } catch (RuntimeException ex) {
       log.error("Failed to parse file name from URL {}", webapp.getSpec().getUrl());
       throw ex;

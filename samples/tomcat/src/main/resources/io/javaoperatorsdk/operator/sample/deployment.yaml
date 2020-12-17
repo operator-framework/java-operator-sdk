@@ -4,6 +4,12 @@ metadata:
   name: ""
   labels:
     created-by: ""
+    managed-by: "" # used for filtering of Deployments created by the controller
+  ownerReferences: # used for finding which Tomcat does this Deployment belong to
+    - apiVersion: apps/v1
+      kind: Tomcat
+      name: ""
+      uid: ""
 spec:
   selector:
     matchLabels:
