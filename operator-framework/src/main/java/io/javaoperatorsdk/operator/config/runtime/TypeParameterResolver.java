@@ -15,7 +15,9 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
 
-/** This class can resolve a type parameter in the given index to the actual type defined. */
+/**
+ * This class can resolve a type parameter in the given index to the actual type defined.
+ */
 class TypeParameterResolver {
 
   private final DeclaredType interestedClass;
@@ -28,12 +30,12 @@ class TypeParameterResolver {
   }
 
   /**
-   * @param typeUtils Type utilities, During the annotation processing processingEnv.getTypeUtils()
-   *     can be passed.
+   * @param typeUtils    Type utilities, During the annotation processing processingEnv.getTypeUtils()
+   *                     can be passed.
    * @param declaredType Class or Interface which extends or implements the interestedClass, and the
-   *     interest is getting the actual declared type is used.
+   *                     interest is getting the actual declared type is used.
    * @return the type of the parameter if it can be resolved from the the given declareType,
-   *     otherwise it returns null
+   * otherwise it returns null
    */
   public TypeMirror resolve(Types typeUtils, DeclaredType declaredType) {
     final var chain = findChain(typeUtils, declaredType);
@@ -137,18 +139,18 @@ class TypeParameterResolver {
     var matchingInterfaces =
         ((TypeElement) parentInterface.asElement())
             .getInterfaces().stream()
-                .filter(i -> typeUtils.isAssignable(i, interestedClass))
-                .map(i -> (DeclaredType) i)
-                .collect(Collectors.toList());
+            .filter(i -> typeUtils.isAssignable(i, interestedClass))
+            .map(i -> (DeclaredType) i)
+            .collect(Collectors.toList());
     while (matchingInterfaces.size() > 0) {
       result.addAll(matchingInterfaces);
       final var lastFoundInterface = matchingInterfaces.get(matchingInterfaces.size() - 1);
       matchingInterfaces =
           ((TypeElement) lastFoundInterface.asElement())
               .getInterfaces().stream()
-                  .filter(i -> typeUtils.isAssignable(i, interestedClass))
-                  .map(i -> (DeclaredType) i)
-                  .collect(Collectors.toList());
+              .filter(i -> typeUtils.isAssignable(i, interestedClass))
+              .map(i -> (DeclaredType) i)
+              .collect(Collectors.toList());
     }
     return result;
   }

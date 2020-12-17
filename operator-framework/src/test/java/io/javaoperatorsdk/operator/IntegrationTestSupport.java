@@ -32,10 +32,10 @@ public class IntegrationTestSupport {
   private static final Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
   private KubernetesClient k8sClient;
   private MixedOperation<
-          CustomResource,
-          CustomResourceList,
-          CustomResourceDoneable,
-          Resource<CustomResource, CustomResourceDoneable>>
+      CustomResource,
+      CustomResourceList,
+      CustomResourceDoneable,
+      Resource<CustomResource, CustomResourceDoneable>>
       crOperations;
   private Operator operator;
   private ResourceController controller;
@@ -179,11 +179,11 @@ public class IntegrationTestSupport {
   }
 
   public MixedOperation<
-          CustomResource,
-          CustomResourceList,
-          CustomResourceDoneable,
-          Resource<CustomResource, CustomResourceDoneable>>
-      getCrOperations() {
+      CustomResource,
+      CustomResourceList,
+      CustomResourceDoneable,
+      Resource<CustomResource, CustomResourceDoneable>>
+  getCrOperations() {
     return crOperations;
   }
 
@@ -196,6 +196,7 @@ public class IntegrationTestSupport {
   }
 
   public interface TestRun {
+
     void run() throws Exception;
   }
 }

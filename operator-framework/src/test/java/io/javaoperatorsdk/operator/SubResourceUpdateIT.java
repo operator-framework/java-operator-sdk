@@ -62,7 +62,9 @@ public class SubResourceUpdateIT {
         });
   }
 
-  /** Note that we check on controller impl if there is finalizer on execution. */
+  /**
+   * Note that we check on controller impl if there is finalizer on execution.
+   */
   @Test
   public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
     integrationTestSupport.teardownIfSuccess(

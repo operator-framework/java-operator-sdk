@@ -194,8 +194,7 @@ public class DefaultEventHandler implements EventHandler {
    * <p>Note that this is an improvement, not a bug fix. This situation can happen naturally, we
    * just make the execution more efficient, and avoid questions about conflicts.
    *
-   * <p>Note that without the conditional locking in the cache, there is a very minor chance that
-   * we
+   * <p>Note that without the conditional locking in the cache, there is a very minor chance that we
    * would override an additional change coming from a different client.
    */
   private void cacheUpdatedResourceIfChanged(

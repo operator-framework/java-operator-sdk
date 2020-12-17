@@ -10,6 +10,7 @@ import java.util.Set;
 
 public class AnnotationConfiguration<R extends CustomResource>
     implements ControllerConfiguration<R> {
+
   private final ResourceController<R> controller;
   private final Controller annotation;
 

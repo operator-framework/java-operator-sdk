@@ -42,10 +42,10 @@
 
     <modules>
         <module>operator-framework-core</module>
+        <module>operator-framework</module>
         <module>spring-boot-starter</module>
         <module>samples</module>
         <module>quarkus-extension</module>
-        <module>runtime-configuration</module>
     </modules>
 
 

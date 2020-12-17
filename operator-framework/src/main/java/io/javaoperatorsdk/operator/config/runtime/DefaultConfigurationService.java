@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultConfigurationService implements ConfigurationService {
+
   private static final ConfigurationService instance = new DefaultConfigurationService();
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
 

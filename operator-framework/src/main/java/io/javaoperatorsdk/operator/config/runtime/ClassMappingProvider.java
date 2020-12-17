@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class ClassMappingProvider {
+
   private static final Logger log = LoggerFactory.getLogger(ClassMappingProvider.class);
 
   static <T, V> Map<T, V> provide(final String resourcePath, T key, V value) {

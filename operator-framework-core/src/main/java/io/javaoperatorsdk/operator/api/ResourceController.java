@@ -15,7 +15,7 @@ public interface ResourceController<R extends CustomResource> {
    *
    * @param resource
    * @return true - so the finalizer is automatically removed after the call. false if you don't
-   * want to remove the finalizer. Note that this is ALMOST NEVER the case.
+   *     want to remove the finalizer. Note that this is ALMOST NEVER the case.
    */
   DeleteControl deleteResource(R resource, Context<R> context);
 
@@ -25,10 +25,10 @@ public interface ResourceController<R extends CustomResource> {
    * parameter (not the custom resource that might be in the events)
    *
    * @return The resource is updated in api server if the return value is present within Optional.
-   * This the common use cases. However in cases, for example the operator is restarted, and we
-   * don't want to have an update call to k8s api to be made unnecessarily, by returning an empty
-   * Optional this update can be skipped. <b>However we will always call an update if there is no
-   * finalizer on object and its not marked for deletion.</b>
+   *     This the common use cases. However in cases, for example the operator is restarted, and we
+   *     don't want to have an update call to k8s api to be made unnecessarily, by returning an
+   *     empty Optional this update can be skipped. <b>However we will always call an update if
+   *     there is no finalizer on object and its not marked for deletion.</b>
    */
   UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
 

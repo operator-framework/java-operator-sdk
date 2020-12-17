@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EventSourceIT {
+
   private static final Logger log = LoggerFactory.getLogger(EventSourceIT.class);
 
   public static final int EXPECTED_TIMER_EVENT_COUNT = 3;

@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 import org.junit.jupiter.api.Test;
 
 public class DefaultConfigurationServiceTest {
+
   public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
 
   @Test
@@ -52,7 +53,10 @@ public class DefaultConfigurationServiceTest {
   @Controller(crdName = "test.crd", finalizerName = CUSTOM_FINALIZER_NAME)
   static class TestCustomFinalizerController
       implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
-    public class InnerCustomResource extends CustomResource {}
+
+    public class InnerCustomResource extends CustomResource {
+
+    }
 
     @Override
     public DeleteControl deleteResource(

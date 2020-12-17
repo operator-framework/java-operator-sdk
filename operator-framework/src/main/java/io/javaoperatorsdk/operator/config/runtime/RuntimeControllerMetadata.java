@@ -38,8 +38,8 @@ public class RuntimeControllerMetadata {
   }
 
   public static <T extends CustomResource>
-      Class<? extends CustomResourceDoneable<T>> getCustomResourceDoneableClass(
-          ResourceController<T> controller) {
+  Class<? extends CustomResourceDoneable<T>> getCustomResourceDoneableClass(
+      ResourceController<T> controller) {
     final Class<T> customResourceClass = getCustomResourceClass(controller);
     final Class<? extends CustomResourceDoneable<T>> doneableClass =
         (Class<? extends CustomResourceDoneable<T>>)
