@@ -9,7 +9,6 @@ public class RetryProperties {
   private Long initialInterval;
   private Double intervalMultiplier;
   private Long maxInterval;
-  private Long maxElapsedTime;
 
   public Integer getMaxAttempts() {
     return maxAttempts;
@@ -44,15 +43,6 @@ public class RetryProperties {
 
   public RetryProperties setMaxInterval(Long maxInterval) {
     this.maxInterval = maxInterval;
-    return this;
-  }
-
-  public Long getMaxElapsedTime() {
-    return maxElapsedTime;
-  }
-
-  public RetryProperties setMaxElapsedTime(Long maxElapsedTime) {
-    this.maxElapsedTime = maxElapsedTime;
     return this;
   }
 }
