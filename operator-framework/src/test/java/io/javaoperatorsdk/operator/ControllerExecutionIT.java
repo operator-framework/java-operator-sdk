@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.awaitility.Awaitility.await;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import java.util.concurrent.TimeUnit;
-import org.assertj.core.api.Assertions;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -39,7 +40,7 @@ public class ControllerExecutionIT {
 
           awaitResourcesCreatedOrUpdated();
           awaitStatusUpdated();
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
   }
 
@@ -56,12 +57,12 @@ public class ControllerExecutionIT {
               .create(resource);
 
           awaitResourcesCreatedOrUpdated();
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
+          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
         });
   }
 
   void awaitResourcesCreatedOrUpdated() {
-    Awaitility.await("config map created")
+    await("config map created")
         .atMost(5, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
@@ -72,8 +73,8 @@ public class ControllerExecutionIT {
                       .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                       .withName("test-config-map")
                       .get();
-              Assertions.assertThat(configMap).isNotNull();
-              Assertions.assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
+              assertThat(configMap).isNotNull();
+              assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
             });
   }
 
@@ -82,7 +83,7 @@ public class ControllerExecutionIT {
   }
 
   void awaitStatusUpdated(int timeout) {
-    Awaitility.await("cr status updated")
+    await("cr status updated")
         .atMost(timeout, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
@@ -93,10 +94,9 @@ public class ControllerExecutionIT {
                           .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                           .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
                           .get();
-              Assertions.assertThat(cr).isNotNull();
-              Assertions.assertThat(cr.getStatus()).isNotNull();
-              Assertions.assertThat(cr.getStatus().getConfigMapStatus())
-                  .isEqualTo("ConfigMap Ready");
+              assertThat(cr).isNotNull();
+              assertThat(cr.getStatus()).isNotNull();
+              assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
             });
   }
 }

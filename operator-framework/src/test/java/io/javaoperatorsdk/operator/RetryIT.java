@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
+import static org.assertj.core.api.Assertions.*;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -11,7 +12,6 @@ import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceStatus;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ public class RetryIT {
           Thread.sleep(
               RETRY_INTERVAL * (RetryTestCustomResourceController.NUMBER_FAILED_EXECUTIONS + 2));
 
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions())
+          assertThat(integrationTestSupport.numberOfControllerExecutions())
               .isGreaterThanOrEqualTo(
                   RetryTestCustomResourceController.NUMBER_FAILED_EXECUTIONS + 1);
 
@@ -51,7 +51,7 @@ public class RetryIT {
                       .inNamespace(TEST_NAMESPACE)
                       .withName(resource.getMetadata().getName())
                       .get();
-          Assertions.assertThat(finalResource.getStatus().getState())
+          assertThat(finalResource.getStatus().getState())
               .isEqualTo(RetryTestCustomResourceStatus.State.SUCCESS);
         });
   }

@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomRes
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceStatus;
 import java.util.concurrent.TimeUnit;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -45,9 +44,9 @@ public class UpdatingResAndSubResIT {
               (DoubleUpdateTestCustomResource)
                   integrationTestSupport.getCustomResource(resource.getMetadata().getName());
           assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
-          Assertions.assertThat(customResource.getStatus().getState())
+          assertThat(customResource.getStatus().getState())
               .isEqualTo(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
-          Assertions.assertThat(
+          assertThat(
                   customResource
                       .getMetadata()
                       .getAnnotations()
@@ -68,10 +67,10 @@ public class UpdatingResAndSubResIT {
                           .inNamespace(TEST_NAMESPACE)
                           .withName(name)
                           .get();
-              Assertions.assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
-              Assertions.assertThat(cr).isNotNull();
-              Assertions.assertThat(cr.getStatus()).isNotNull();
-              Assertions.assertThat(cr.getStatus().getState())
+              assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
+              assertThat(cr).isNotNull();
+              assertThat(cr.getStatus()).isNotNull();
+              assertThat(cr.getStatus().getState())
                   .isEqualTo(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
             });
   }

@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -11,8 +13,6 @@ import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResou
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import org.assertj.core.api.Assertions;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -41,7 +41,7 @@ public class SubResourceUpdateIT {
           // wait for sure, there are no more events
           waitXms(200);
           // there is no event on status update processed
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
   }
 
@@ -58,7 +58,7 @@ public class SubResourceUpdateIT {
           // wait for sure, there are no more events
           waitXms(200);
           // there is no event on status update processed
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
   }
 
@@ -75,7 +75,7 @@ public class SubResourceUpdateIT {
           // wait for sure, there are no more events
           waitXms(200);
           // there is no event on status update processed
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
   }
 
@@ -103,12 +103,12 @@ public class SubResourceUpdateIT {
           // wait for sure, there are no more events
           waitXms(200);
           // there is no event on status update processed
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(3);
+          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(3);
         });
   }
 
   void awaitStatusUpdated(String name) {
-    Awaitility.await("cr status updated")
+    await("cr status updated")
         .atMost(5, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
@@ -119,10 +119,10 @@ public class SubResourceUpdateIT {
                           .inNamespace(TEST_NAMESPACE)
                           .withName(name)
                           .get();
-              Assertions.assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
-              Assertions.assertThat(cr).isNotNull();
-              Assertions.assertThat(cr.getStatus()).isNotNull();
-              Assertions.assertThat(cr.getStatus().getState())
+              assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
+              assertThat(cr).isNotNull();
+              assertThat(cr.getStatus()).isNotNull();
+              assertThat(cr.getStatus().getState())
                   .isEqualTo(SubResourceTestCustomResourceStatus.State.SUCCESS);
             });
   }

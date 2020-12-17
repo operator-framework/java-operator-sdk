@@ -1,12 +1,13 @@
 package io.javaoperatorsdk.operator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceSpec;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -44,7 +45,7 @@ public class EventSourceIT {
                   + EXPECTED_TIMER_EVENT_COUNT
                       * EventSourceTestCustomResourceController.TIMER_PERIOD);
 
-          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions())
+          assertThat(integrationTestSupport.numberOfControllerExecutions())
               .isGreaterThanOrEqualTo(EXPECTED_TIMER_EVENT_COUNT + 1);
         });
   }

@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -20,8 +23,6 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
-import org.assertj.core.api.Assertions;
-import org.awaitility.Awaitility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,13 +89,10 @@ public class IntegrationTestSupport {
     // resources from previous test runs
     crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
 
-    Awaitility.await("all CRs cleaned up")
+    await("all CRs cleaned up")
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> {
-              Assertions.assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems())
-                  .isEmpty();
-            });
+            () -> assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty());
 
     k8sClient
         .configMaps()
@@ -102,11 +100,11 @@ public class IntegrationTestSupport {
         .withLabel("managedBy", controller.getClass().getSimpleName())
         .delete();
 
-    Awaitility.await("all config maps cleaned up")
+    await("all config maps cleaned up")
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              Assertions.assertThat(
+              assertThat(
                   k8sClient
                       .configMaps()
                       .inNamespace(TEST_NAMESPACE)
@@ -137,7 +135,7 @@ public class IntegrationTestSupport {
       if (namespace.getStatus().getPhase().equals("Active")) {
         k8sClient.namespaces().withName(TEST_NAMESPACE).delete();
       }
-      Awaitility.await("namespace deleted")
+      await("namespace deleted")
           .atMost(45, TimeUnit.SECONDS)
           .until(() -> k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null);
     } catch (Exception e) {
