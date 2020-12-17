@@ -1,16 +1,13 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.TestUtils.TEST_CUSTOM_RESOURCE_NAME;
-import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import java.util.concurrent.TimeUnit;
+import org.assertj.core.api.Assertions;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -33,7 +30,7 @@ public class ControllerExecutionIT {
     initAndCleanup(true);
     integrationTestSupport.teardownIfSuccess(
         () -> {
-          TestCustomResource resource = testCustomResource();
+          TestCustomResource resource = TestUtils.testCustomResource();
 
           integrationTestSupport
               .getCrOperations()
@@ -42,7 +39,7 @@ public class ControllerExecutionIT {
 
           awaitResourcesCreatedOrUpdated();
           awaitStatusUpdated();
-          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
+          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
         });
   }
 
@@ -51,7 +48,7 @@ public class ControllerExecutionIT {
     initAndCleanup(false);
     integrationTestSupport.teardownIfSuccess(
         () -> {
-          TestCustomResource resource = testCustomResource();
+          TestCustomResource resource = TestUtils.testCustomResource();
 
           integrationTestSupport
               .getCrOperations()
@@ -59,12 +56,12 @@ public class ControllerExecutionIT {
               .create(resource);
 
           awaitResourcesCreatedOrUpdated();
-          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
+          Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
         });
   }
 
   void awaitResourcesCreatedOrUpdated() {
-    await("config map created")
+    Awaitility.await("config map created")
         .atMost(5, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
@@ -75,8 +72,8 @@ public class ControllerExecutionIT {
                       .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                       .withName("test-config-map")
                       .get();
-              assertThat(configMap).isNotNull();
-              assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
+              Assertions.assertThat(configMap).isNotNull();
+              Assertions.assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
             });
   }
 
@@ -85,7 +82,7 @@ public class ControllerExecutionIT {
   }
 
   void awaitStatusUpdated(int timeout) {
-    await("cr status updated")
+    Awaitility.await("cr status updated")
         .atMost(timeout, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
@@ -94,11 +91,12 @@ public class ControllerExecutionIT {
                       integrationTestSupport
                           .getCrOperations()
                           .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                          .withName(TEST_CUSTOM_RESOURCE_NAME)
+                          .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
                           .get();
-              assertThat(cr).isNotNull();
-              assertThat(cr.getStatus()).isNotNull();
-              assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
+              Assertions.assertThat(cr).isNotNull();
+              Assertions.assertThat(cr.getStatus()).isNotNull();
+              Assertions.assertThat(cr.getStatus().getConfigMapStatus())
+                  .isEqualTo("ConfigMap Ready");
             });
   }
 }

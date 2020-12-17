@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -10,6 +8,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +65,7 @@ public class ConcurrencyIT {
                                 "managedBy", TestCustomResourceController.class.getSimpleName())
                             .list()
                             .getItems();
-                    assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
+                    Assertions.assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
                   });
 
           log.info("Updating {} resources", NUMBER_OF_RESOURCES_UPDATED);
@@ -116,7 +115,7 @@ public class ConcurrencyIT {
                         items.stream()
                             .map(configMap -> configMap.getMetadata().getName())
                             .collect(Collectors.toList());
-                    assertThat(itemDescs)
+                    Assertions.assertThat(itemDescs)
                         .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
                     List<TestCustomResource> crs =
@@ -125,7 +124,7 @@ public class ConcurrencyIT {
                             .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                             .list()
                             .getItems();
-                    assertThat(crs)
+                    Assertions.assertThat(crs)
                         .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
                   });
         });

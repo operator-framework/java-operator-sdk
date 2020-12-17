@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -23,12 +20,14 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+import org.assertj.core.api.Assertions;
+import org.awaitility.Awaitility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class IntegrationTestSupport {
 
-  public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
+  public static final String TEST_NAMESPACE = io.javaoperatorsdk.operator.TestUtils.TEST_NAMESPACE;
   public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
   private static final Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
   private KubernetesClient k8sClient;
@@ -89,11 +88,12 @@ public class IntegrationTestSupport {
     // resources from previous test runs
     crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
 
-    await("all CRs cleaned up")
+    Awaitility.await("all CRs cleaned up")
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
+              Assertions.assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems())
+                  .isEmpty();
             });
 
     k8sClient
@@ -102,11 +102,11 @@ public class IntegrationTestSupport {
         .withLabel("managedBy", controller.getClass().getSimpleName())
         .delete();
 
-    await("all config maps cleaned up")
+    Awaitility.await("all config maps cleaned up")
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              assertThat(
+              Assertions.assertThat(
                   k8sClient
                       .configMaps()
                       .inNamespace(TEST_NAMESPACE)
@@ -137,7 +137,7 @@ public class IntegrationTestSupport {
       if (namespace.getStatus().getPhase().equals("Active")) {
         k8sClient.namespaces().withName(TEST_NAMESPACE).delete();
       }
-      await("namespace deleted")
+      Awaitility.await("namespace deleted")
           .atMost(45, TimeUnit.SECONDS)
           .until(() -> k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null);
     } catch (Exception e) {

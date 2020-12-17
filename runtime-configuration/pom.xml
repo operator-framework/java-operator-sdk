@@ -20,7 +20,7 @@
   <dependencies>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>api</artifactId>
+      <artifactId>operator-framework</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -56,10 +56,29 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.18.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>4.0.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.google.testing.compile</groupId>
       <artifactId>compile-testing</artifactId>
       <version>0.19</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.javaoperatorsdk</groupId>
+      <artifactId>operator-framework</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+      <type>test-jar</type>
     </dependency>
   </dependencies>
 
