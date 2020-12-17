@@ -105,7 +105,12 @@ public class EventDispatcher {
       CustomResource updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
-        updatedCustomResource = customResourceFacade.updateStatus(updatedCustomResource);
+        updateControl
+            .getCustomResource()
+            .getMetadata()
+            .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
+        updatedCustomResource =
+            customResourceFacade.updateStatus(updateControl.getCustomResource());
       } else if (updateControl.isUpdateStatusSubResource()) {
         updatedCustomResource =
             customResourceFacade.updateStatus(updateControl.getCustomResource());

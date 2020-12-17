@@ -13,7 +13,6 @@ import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCust
 import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceController;
 import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceStatus;
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,13 +40,13 @@ public class UpdatingResAndSubResIT {
 
           awaitStatusUpdated(resource.getMetadata().getName());
           // wait for sure, there are no more events
-          waitXms(200);
+          waitXms(300);
 
           DoubleUpdateTestCustomResource customResource =
               (DoubleUpdateTestCustomResource)
                   integrationTestSupport.getCustomResource(resource.getMetadata().getName());
           assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
-          assertThat(customResource.getStatus())
+          assertThat(customResource.getStatus().getState())
               .isEqualTo(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
           assertThat(customResource.getMetadata().getAnnotations().get(TEST_ANNOTATION))
               .isNotNull();
@@ -70,7 +69,7 @@ public class UpdatingResAndSubResIT {
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getState())
-                  .isEqualTo(SubResourceTestCustomResourceStatus.State.SUCCESS);
+                  .isEqualTo(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
             });
   }
 

@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.doubleupdate.subresource;
 
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.*;
-
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
