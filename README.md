@@ -63,14 +63,15 @@ Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your
 </dependency>
 ```
 
-Main method initializing the Operator and registering a controller..
+Main method initializing the Operator and registering a controller.
 
 ```java
 public class Runner {
 
    public static void main(String[] args) {
-       Operator operator = new Operator(new DefaultKubernetesClient());
-       operator.registerController(new WebServerController());
+       Operator operator = new Operator(new DefaultKubernetesClient(),
+           DefaultConfigurationService.instance());
+       operator.register(new WebServerController());
    }
 }
 ```
@@ -135,18 +136,62 @@ public class WebServerSpec {
     }
 }
 ```
+          
+#### Quarkus
+
+A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based operators.
+
+Add [this dependency] (https://search.maven.org/search?q=a:operator-framework-quarkus-extension)
+to your project:
+
+```xml
+<dependency>
+ <groupId>io.javaoperatorsdk</groupId>
+ <artifactId>operator-framework-quarkus-extension</artifactId>
+ <version>{see https://search.maven.org/search?q=a:operator-framework-quarkus-extension for latest version}</version>
+</dependency>
+```
+
+Create an Application, Quarkus will automatically create and inject a `KubernetesClient`, `Operator` 
+and `ConfigurationService` instances that your application can use, as shown below:
+
+```java
+@QuarkusMain
+public class QuarkusOperator implements QuarkusApplication {
+
+  @Inject KubernetesClient client;
+
+  @Inject Operator operator;
+
+  @Inject ConfigurationService configuration;
+
+  public static void main(String... args) {
+    Quarkus.run(QuarkusOperator.class, args);
+  }
+
+  @Override
+  public int run(String... args) throws Exception {
+    final var config = configuration.getConfigurationFor(new CustomServiceController(client));
+    System.out.println("CR class: " + config.getCustomResourceClass());
+    System.out.println("Doneable class = " + config.getDoneableClass());
+
+    Quarkus.waitForExit();
+    return 0;
+  }
+}
+```
 
 #### Spring Boot
 
 You can also let Spring Boot wire your application together and automatically register the controllers.
 
-Add [this dependency](https://search.maven.org/search?q=a:spring-boot-operator-framework-starter) to your project:
+Add [this dependency](https://search.maven.org/search?q=a:operator-framework-spring-boot-starter) to your project:
 
 ```xml
 <dependency>
  <groupId>io.javaoperatorsdk</groupId>
- <artifactId>spring-boot-operator-framework-starter</artifactId>
- <version>{see https://search.maven.org/search?q=a:spring-boot-operator-framework-starter for latest version}</version>
+ <artifactId>operator-framework-spring-boot-starter</artifactId>
+ <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for latest version}</version>
 </dependency>
 ```
 
