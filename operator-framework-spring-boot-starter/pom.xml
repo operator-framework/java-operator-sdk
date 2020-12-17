@@ -9,7 +9,7 @@
         <version>1.5.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>spring-boot-operator-framework-starter</artifactId>
+    <artifactId>operator-framework-spring-boot-starter</artifactId>
     <name>Operator SDK - Spring Boot Starter</name>
     <description>Spring Boot starter for framework</description>
     <packaging>jar</packaging>
