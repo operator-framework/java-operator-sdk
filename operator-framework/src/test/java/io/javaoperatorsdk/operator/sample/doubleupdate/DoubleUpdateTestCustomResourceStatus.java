@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.doubleupdate;
+package io.javaoperatorsdk.operator.sample.doubleupdate;
 
 public class DoubleUpdateTestCustomResourceStatus {
 

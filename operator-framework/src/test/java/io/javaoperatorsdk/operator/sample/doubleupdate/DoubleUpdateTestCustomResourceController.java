@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.doubleupdate;
+package io.javaoperatorsdk.operator.sample.doubleupdate;
 
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.*;

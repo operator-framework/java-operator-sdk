@@ -32,4 +32,12 @@ public class TestUtils {
     resource.getSpec().setValue("test-value");
     return resource;
   }
+
+  public static void waitXms(int x) {
+    try {
+      Thread.sleep(x);
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(e);
+    }
+  }
 }
