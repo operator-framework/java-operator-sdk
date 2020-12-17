@@ -1,5 +1,11 @@
 package io.javaoperatorsdk.operator;
 
+import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
+import static io.javaoperatorsdk.operator.TestUtils.waitXms;
+import static io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceController.TEST_ANNOTATION;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -8,17 +14,10 @@ import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCust
 import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceStatus;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import java.util.concurrent.TimeUnit;
-
-import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
-import static io.javaoperatorsdk.operator.TestUtils.waitXms;
-import static io.javaoperatorsdk.operator.doubleupdate.subresource.DoubleUpdateTestCustomResourceController.TEST_ANNOTATION;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UpdatingResAndSubResIT {
