@@ -46,11 +46,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.javaoperatorsdk</groupId>
-            <artifactId>api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-client</artifactId>
         </dependency>
