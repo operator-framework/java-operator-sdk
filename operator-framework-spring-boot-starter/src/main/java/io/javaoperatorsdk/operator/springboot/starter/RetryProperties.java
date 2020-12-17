@@ -66,7 +66,6 @@ public class RetryProperties {
       public long getMaxInterval() {
         return maxInterval != null ? maxInterval : RetryConfiguration.DEFAULT.getMaxInterval();
       }
-};
-
+    };
   }
 }

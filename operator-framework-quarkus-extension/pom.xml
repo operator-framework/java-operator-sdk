@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>quarkus-extension-parent</artifactId>
+  <artifactId>operator-framework-quarkus-extension-parent</artifactId>
   <name>Operator SDK - Quarkus Extension - Parent</name>
   <packaging>pom</packaging>
 

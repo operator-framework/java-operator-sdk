@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
-    <artifactId>quarkus-extension-parent</artifactId>
+    <artifactId>operator-framework-quarkus-extension-parent</artifactId>
     <version>1.5.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>quarkus-extension</artifactId>
+  <artifactId>operator-framework-quarkus-extension</artifactId>
   <name>Operator SDK - Quarkus Extension - Runtime</name>
 
   <dependencies>

@@ -37,19 +37,13 @@
   <dependencies>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>quarkus-extension</artifactId>
+      <artifactId>operator-framework-quarkus-extension</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-samples-common</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>quarkus-extension-deployment</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
