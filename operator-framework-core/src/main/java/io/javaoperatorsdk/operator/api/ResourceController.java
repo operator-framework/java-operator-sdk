@@ -37,8 +37,7 @@ public interface ResourceController<R extends CustomResource> {
    *
    * @param eventSourceManager
    */
-  default void init(EventSourceManager eventSourceManager) {
-  }
+  default void init(EventSourceManager eventSourceManager) {}
 
   default String getName() {
     final var clazz = getClass();

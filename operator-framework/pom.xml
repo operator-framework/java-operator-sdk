@@ -73,13 +73,6 @@
       <version>0.19</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-core</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <type>test-jar</type>
-    </dependency>
   </dependencies>
 
 </project>

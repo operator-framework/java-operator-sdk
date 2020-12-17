@@ -47,9 +47,7 @@ class AccumulativeMappingWriter {
     return this;
   }
 
-  /**
-   * Add a new mapping
-   */
+  /** Add a new mapping */
   public AccumulativeMappingWriter add(String key, String value) {
     this.mappings.put(key, value);
     return this;

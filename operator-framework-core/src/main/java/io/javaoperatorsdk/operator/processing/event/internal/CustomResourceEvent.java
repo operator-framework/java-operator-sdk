@@ -42,7 +42,7 @@ public class CustomResourceEvent extends AbstractEvent {
         + getCustomResource().getMetadata().getResourceVersion()
         + ", markedForDeletion: "
         + (getCustomResource().getMetadata().getDeletionTimestamp() != null
-        && !getCustomResource().getMetadata().getDeletionTimestamp().isEmpty())
+            && !getCustomResource().getMetadata().getDeletionTimestamp().isEmpty())
         + " ]}";
   }
 

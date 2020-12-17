@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
@@ -11,11 +12,13 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Controller(generationAwareEventProcessing = false, crdName = TestCustomResourceController.CRD_NAME)
-public class TestCustomResourceController implements ResourceController<TestCustomResource> {
+public class TestCustomResourceController
+    implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
 
   private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 
@@ -24,6 +27,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
   private final KubernetesClient kubernetesClient;
   private final boolean updateStatus;
+  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   public TestCustomResourceController(KubernetesClient kubernetesClient) {
     this(kubernetesClient, true);
@@ -60,6 +64,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
   @Override
   public UpdateControl<TestCustomResource> createOrUpdateResource(
       TestCustomResource resource, Context<TestCustomResource> context) {
+    numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
     }
@@ -110,5 +115,9 @@ public class TestCustomResourceController implements ResourceController<TestCust
     Map<String, String> data = new HashMap<>();
     data.put(resource.getSpec().getKey(), resource.getSpec().getValue());
     return data;
+  }
+
+  public int getNumberOfExecutions() {
+    return numberOfExecutions.get();
   }
 }

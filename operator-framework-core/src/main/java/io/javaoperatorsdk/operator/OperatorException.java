@@ -2,8 +2,7 @@ package io.javaoperatorsdk.operator;
 
 public class OperatorException extends RuntimeException {
 
-  public OperatorException() {
-  }
+  public OperatorException() {}
 
   public OperatorException(String message) {
     super(message);

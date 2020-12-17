@@ -27,15 +27,15 @@ import org.slf4j.LoggerFactory;
 
 public class IntegrationTestSupport {
 
-  public static final String TEST_NAMESPACE = io.javaoperatorsdk.operator.TestUtils.TEST_NAMESPACE;
+  public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
   public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
   private static final Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
   private KubernetesClient k8sClient;
   private MixedOperation<
-      CustomResource,
-      CustomResourceList,
-      CustomResourceDoneable,
-      Resource<CustomResource, CustomResourceDoneable>>
+          CustomResource,
+          CustomResourceList,
+          CustomResourceDoneable,
+          Resource<CustomResource, CustomResourceDoneable>>
       crOperations;
   private Operator operator;
   private ResourceController controller;
@@ -179,11 +179,11 @@ public class IntegrationTestSupport {
   }
 
   public MixedOperation<
-      CustomResource,
-      CustomResourceList,
-      CustomResourceDoneable,
-      Resource<CustomResource, CustomResourceDoneable>>
-  getCrOperations() {
+          CustomResource,
+          CustomResourceList,
+          CustomResourceDoneable,
+          Resource<CustomResource, CustomResourceDoneable>>
+      getCrOperations() {
     return crOperations;
   }
 

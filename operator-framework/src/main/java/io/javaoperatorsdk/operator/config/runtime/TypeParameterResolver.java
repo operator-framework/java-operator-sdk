@@ -15,9 +15,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
 
-/**
- * This class can resolve a type parameter in the given index to the actual type defined.
- */
+/** This class can resolve a type parameter in the given index to the actual type defined. */
 class TypeParameterResolver {
 
   private final DeclaredType interestedClass;
@@ -139,18 +137,18 @@ class TypeParameterResolver {
     var matchingInterfaces =
         ((TypeElement) parentInterface.asElement())
             .getInterfaces().stream()
-            .filter(i -> typeUtils.isAssignable(i, interestedClass))
-            .map(i -> (DeclaredType) i)
-            .collect(Collectors.toList());
+                .filter(i -> typeUtils.isAssignable(i, interestedClass))
+                .map(i -> (DeclaredType) i)
+                .collect(Collectors.toList());
     while (matchingInterfaces.size() > 0) {
       result.addAll(matchingInterfaces);
       final var lastFoundInterface = matchingInterfaces.get(matchingInterfaces.size() - 1);
       matchingInterfaces =
           ((TypeElement) lastFoundInterface.asElement())
               .getInterfaces().stream()
-              .filter(i -> typeUtils.isAssignable(i, interestedClass))
-              .map(i -> (DeclaredType) i)
-              .collect(Collectors.toList());
+                  .filter(i -> typeUtils.isAssignable(i, interestedClass))
+                  .map(i -> (DeclaredType) i)
+                  .collect(Collectors.toList());
     }
     return result;
   }

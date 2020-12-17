@@ -42,7 +42,7 @@ public class EventSourceIT {
           Thread.sleep(
               EventSourceTestCustomResourceController.TIMER_DELAY
                   + EXPECTED_TIMER_EVENT_COUNT
-                  * EventSourceTestCustomResourceController.TIMER_PERIOD);
+                      * EventSourceTestCustomResourceController.TIMER_PERIOD);
 
           Assertions.assertThat(integrationTestSupport.numberOfControllerExecutions())
               .isGreaterThanOrEqualTo(EXPECTED_TIMER_EVENT_COUNT + 1);

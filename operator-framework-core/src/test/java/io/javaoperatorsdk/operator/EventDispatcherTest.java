@@ -120,9 +120,7 @@ class EventDispatcherTest {
     verify(controller, times(1)).deleteResource(eq(testCustomResource), any());
   }
 
-  /**
-   * Note that there could be more finalizers. Out of our control.
-   */
+  /** Note that there could be more finalizers. Out of our control. */
   @Test
   void callDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
     markForDeletion(testCustomResource);

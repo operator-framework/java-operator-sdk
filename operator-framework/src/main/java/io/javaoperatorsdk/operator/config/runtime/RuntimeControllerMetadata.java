@@ -7,12 +7,11 @@ import java.util.Map;
 
 public class RuntimeControllerMetadata {
 
-  private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
   public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
   public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";
-  private static Map<Class<? extends ResourceController>, Class<? extends CustomResource>>
+  private static final Map<Class<? extends ResourceController>, Class<? extends CustomResource>>
       controllerToCustomResourceMappings;
-  private static Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>>
+  private static final Map<Class<? extends CustomResource>, Class<? extends CustomResourceDoneable>>
       resourceToDoneableMappings;
 
   static {
@@ -38,8 +37,8 @@ public class RuntimeControllerMetadata {
   }
 
   public static <T extends CustomResource>
-  Class<? extends CustomResourceDoneable<T>> getCustomResourceDoneableClass(
-      ResourceController<T> controller) {
+      Class<? extends CustomResourceDoneable<T>> getCustomResourceDoneableClass(
+          ResourceController<T> controller) {
     final Class<T> customResourceClass = getCustomResourceClass(controller);
     final Class<? extends CustomResourceDoneable<T>> doneableClass =
         (Class<? extends CustomResourceDoneable<T>>)

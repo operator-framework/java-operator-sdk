@@ -10,6 +10,5 @@ public abstract class AbstractEventSource implements EventSource {
   }
 
   @Override
-  public void eventSourceDeRegisteredForResource(String customResourceUid) {
-  }
+  public void eventSourceDeRegisteredForResource(String customResourceUid) {}
 }

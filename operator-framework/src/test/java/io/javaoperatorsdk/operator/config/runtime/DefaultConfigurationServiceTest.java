@@ -54,9 +54,7 @@ public class DefaultConfigurationServiceTest {
   static class TestCustomFinalizerController
       implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
 
-    public class InnerCustomResource extends CustomResource {
-
-    }
+    public class InnerCustomResource extends CustomResource {}
 
     @Override
     public DeleteControl deleteResource(

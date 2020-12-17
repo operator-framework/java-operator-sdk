@@ -42,7 +42,7 @@ public class Operator {
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
     final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-    final var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
+    final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
     registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
   }
 
@@ -129,7 +129,7 @@ public class Operator {
     CustomResourceEventSource customResourceEventSource =
         watchAllNamespaces
             ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, client, generationAware, finalizer)
+                customResourceCache, client, generationAware, finalizer)
             : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
                 customResourceCache, client, targetNamespaces, generationAware, finalizer);
 
@@ -152,15 +152,15 @@ public class Operator {
   }
 
   public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl>
-  getCustomResourceClients() {
+      getCustomResourceClients() {
     return customResourceClients;
   }
 
   public <
-      T extends CustomResource,
-      L extends CustomResourceList<T>,
-      D extends CustomResourceDoneable<T>>
-  CustomResourceOperationsImpl<T, L, D> getCustomResourceClients(Class<T> customResourceClass) {
+          T extends CustomResource,
+          L extends CustomResourceList<T>,
+          D extends CustomResourceDoneable<T>>
+      CustomResourceOperationsImpl<T, L, D> getCustomResourceClients(Class<T> customResourceClass) {
     return customResourceClients.get(customResourceClass);
   }
 }
