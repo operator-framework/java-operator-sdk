@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.sample;
 
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import static java.net.HttpURLConnection.HTTP_GONE;
+
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -7,10 +11,6 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static java.net.HttpURLConnection.HTTP_GONE;
 
 public class DeploymentEventSource extends AbstractEventSource implements Watcher<Deployment> {
   private static final Logger log = LoggerFactory.getLogger(DeploymentEventSource.class);
@@ -53,12 +53,7 @@ public class DeploymentEventSource extends AbstractEventSource implements Watche
       return;
     }
 
-    eventHandler.handleEvent(
-        new DeploymentEvent(
-            action,
-            deployment,
-            this,
-            deployment.getMetadata().getOwnerReferences().get(0).getUid()));
+    eventHandler.handleEvent(new DeploymentEvent(action, deployment, this));
   }
 
   @Override

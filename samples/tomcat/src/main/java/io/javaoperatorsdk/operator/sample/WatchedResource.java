@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.sample;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-
 import java.util.Objects;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 class WatchedResource {
   private final String type;
