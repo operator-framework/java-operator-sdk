@@ -122,7 +122,8 @@ class QuarkusExtensionProcessor {
           cc.getMethodCreator("<init>", void.class.getName(), crType, functionName);
       ctor.setModifiers(Modifier.PUBLIC);
       ctor.invokeSpecialMethod(
-          MethodDescriptor.ofConstructor(crDoneableClassName, crType, functionName),
+          MethodDescriptor.ofConstructor(
+              crDoneableClassName, CustomResource.class.getName(), functionName),
           ctor.getThis(),
           ctor.getMethodParam(0),
           ctor.getMethodParam(1));
