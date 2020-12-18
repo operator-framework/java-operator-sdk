@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -107,20 +108,26 @@ class QuarkusExtensionProcessor {
     final var crDoneableClassName = CustomResourceDoneable.class.getName();
     try (ClassCreator cc =
         ClassCreator.builder()
+            .signature(
+                String.format(
+                    "Lio/fabric8/kubernetes/client/CustomResourceDoneable<L%s;>;",
+                    crType.replace('.', '/')))
             .classOutput(classOutput)
             .className(doneableClassName)
             .superClass(crDoneableClassName)
             .build()) {
 
-      MethodCreator ctor = cc.getMethodCreator("<init>", void.class.getName(), crType);
+      final var functionName = io.fabric8.kubernetes.api.builder.Function.class.getName();
+      MethodCreator ctor =
+          cc.getMethodCreator("<init>", void.class.getName(), crType, functionName);
       ctor.setModifiers(Modifier.PUBLIC);
-      final var functionName = Function.class.getName();
       ctor.invokeSpecialMethod(
-          MethodDescriptor.ofConstructor(crDoneableClassName, crType, functionName),
+          MethodDescriptor.ofConstructor(
+              crDoneableClassName, CustomResource.class.getName(), functionName),
           ctor.getThis(),
           ctor.getMethodParam(0),
-          ctor.invokeStaticMethod(
-              MethodDescriptor.ofMethod(functionName, "identity", functionName)));
+          ctor.getMethodParam(1));
+      ctor.returnValue(null);
     }
 
     // generate configuration
