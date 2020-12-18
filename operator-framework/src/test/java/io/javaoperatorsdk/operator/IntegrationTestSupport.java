@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
@@ -53,8 +54,11 @@ public class IntegrationTestSupport {
     CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
     this.controller = controller;
 
-    Class doneableClass = ControllerUtils.getCustomResourceDoneableClass(controller);
-    Class customResourceClass = ControllerUtils.getCustomResourceClass(controller);
+    final var configurationService = DefaultConfigurationService.instance();
+
+    final var config = configurationService.getConfigurationFor(controller);
+    Class doneableClass = config.getDoneableClass();
+    Class customResourceClass = config.getCustomResourceClass();
     crOperations =
         k8sClient.customResources(
             crdContext, customResourceClass, CustomResourceList.class, doneableClass);
@@ -67,7 +71,7 @@ public class IntegrationTestSupport {
                   .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build())
                   .build());
     }
-    operator = new Operator(k8sClient);
+    operator = new Operator(k8sClient, configurationService);
     operator.registerController(controller, retry, TEST_NAMESPACE);
     log.info("Operator is running with {}", controller.getClass().getCanonicalName());
   }
@@ -88,9 +92,7 @@ public class IntegrationTestSupport {
     await("all CRs cleaned up")
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> {
-              assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty();
-            });
+            () -> assertThat(crOperations.inNamespace(TEST_NAMESPACE).list().getItems()).isEmpty());
 
     k8sClient
         .configMaps()
@@ -192,6 +194,7 @@ public class IntegrationTestSupport {
   }
 
   public interface TestRun {
+
     void run() throws Exception;
   }
 }

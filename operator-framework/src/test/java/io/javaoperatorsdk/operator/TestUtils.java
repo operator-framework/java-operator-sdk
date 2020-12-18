@@ -9,6 +9,7 @@ import java.util.UUID;
 public class TestUtils {
 
   public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
+  public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
 
   public static TestCustomResource testCustomResource() {
     return testCustomResource(UUID.randomUUID().toString());
@@ -21,7 +22,7 @@ public class TestUtils {
             .withName(TEST_CUSTOM_RESOURCE_NAME)
             .withUid(uid)
             .withGeneration(1L)
-            .withNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+            .withNamespace(TEST_NAMESPACE)
             .build());
     resource.getMetadata().setAnnotations(new HashMap<>());
     resource.setKind("CustomService");

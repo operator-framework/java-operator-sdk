@@ -6,7 +6,7 @@ spec:
   group: sample.javaoperatorsdk
   version: v1
   subresources:
-    status: {}
+    status: { }
   scope: Namespaced
   names:
     plural: retrysamples

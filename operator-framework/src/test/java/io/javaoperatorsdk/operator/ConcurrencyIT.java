@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -10,7 +11,6 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ public class ConcurrencyIT {
                 .create(tcr);
           }
 
-          Awaitility.await()
+          await()
               .atMost(1, TimeUnit.MINUTES)
               .untilAsserted(
                   () -> {
@@ -98,7 +98,7 @@ public class ConcurrencyIT {
                 .delete(tcr);
           }
 
-          Awaitility.await()
+          await()
               .atMost(1, TimeUnit.MINUTES)
               .untilAsserted(
                   () -> {

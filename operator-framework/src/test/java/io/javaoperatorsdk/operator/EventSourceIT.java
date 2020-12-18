@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
-import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.FINALIZER_NAME;
-import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.TIMER_DELAY;
-import static io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController.TIMER_PERIOD;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -20,10 +16,11 @@ import org.slf4j.LoggerFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EventSourceIT {
+
   private static final Logger log = LoggerFactory.getLogger(EventSourceIT.class);
 
   public static final int EXPECTED_TIMER_EVENT_COUNT = 3;
-  private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
+  private final IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
 
   @BeforeEach
   public void initAndCleanup() {
@@ -38,9 +35,15 @@ public class EventSourceIT {
     integrationTestSupport.teardownIfSuccess(
         () -> {
           EventSourceTestCustomResource resource = createTestCustomResource("1");
-          integrationTestSupport.getCrOperations().inNamespace(TEST_NAMESPACE).create(resource);
+          integrationTestSupport
+              .getCrOperations()
+              .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+              .create(resource);
 
-          Thread.sleep(TIMER_DELAY + EXPECTED_TIMER_EVENT_COUNT * TIMER_PERIOD);
+          Thread.sleep(
+              EventSourceTestCustomResourceController.TIMER_DELAY
+                  + EXPECTED_TIMER_EVENT_COUNT
+                      * EventSourceTestCustomResourceController.TIMER_PERIOD);
 
           assertThat(integrationTestSupport.numberOfControllerExecutions())
               .isGreaterThanOrEqualTo(EXPECTED_TIMER_EVENT_COUNT + 1);
@@ -52,8 +55,8 @@ public class EventSourceIT {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("eventsource-" + id)
-            .withNamespace(TEST_NAMESPACE)
-            .withFinalizers(FINALIZER_NAME)
+            .withNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+            .withFinalizers(EventSourceTestCustomResourceController.FINALIZER_NAME)
             .build());
     resource.setKind("Eventsourcesample");
     resource.setSpec(new EventSourceTestCustomResourceSpec());

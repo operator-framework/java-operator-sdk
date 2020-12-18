@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.TestUtils.TEST_CUSTOM_RESOURCE_NAME;
-import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -33,7 +31,7 @@ public class ControllerExecutionIT {
     initAndCleanup(true);
     integrationTestSupport.teardownIfSuccess(
         () -> {
-          TestCustomResource resource = testCustomResource();
+          TestCustomResource resource = TestUtils.testCustomResource();
 
           integrationTestSupport
               .getCrOperations()
@@ -51,7 +49,7 @@ public class ControllerExecutionIT {
     initAndCleanup(false);
     integrationTestSupport.teardownIfSuccess(
         () -> {
-          TestCustomResource resource = testCustomResource();
+          TestCustomResource resource = TestUtils.testCustomResource();
 
           integrationTestSupport
               .getCrOperations()
@@ -94,7 +92,7 @@ public class ControllerExecutionIT {
                       integrationTestSupport
                           .getCrOperations()
                           .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                          .withName(TEST_CUSTOM_RESOURCE_NAME)
+                          .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
                           .get();
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
