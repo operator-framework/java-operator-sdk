@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.AbstractOperator;
+import io.javaoperatorsdk.operator.DefaultOperator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
@@ -13,7 +13,7 @@ public class QuarkusOperator implements QuarkusApplication {
 
   @Inject KubernetesClient client;
 
-  @Inject AbstractOperator operator;
+  @Inject DefaultOperator operator;
 
   @Inject ConfigurationService configuration;
 

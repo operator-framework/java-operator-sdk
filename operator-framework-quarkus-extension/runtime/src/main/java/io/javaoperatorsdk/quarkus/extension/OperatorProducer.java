@@ -2,7 +2,7 @@ package io.javaoperatorsdk.quarkus.extension;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.AbstractOperator;
+import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.quarkus.arc.DefaultBean;
 import javax.enterprise.inject.Instance;
@@ -18,7 +18,7 @@ public class OperatorProducer {
   @Produces
   @DefaultBean
   @Singleton
-  AbstractOperator operator(KubernetesClient client, QuarkusConfigurationService configuration) {
+  Operator operator(KubernetesClient client, QuarkusConfigurationService configuration) {
     final var operator = new QuarkusOperator(client, configuration);
     controllers.stream().forEach(operator::register);
     return operator;

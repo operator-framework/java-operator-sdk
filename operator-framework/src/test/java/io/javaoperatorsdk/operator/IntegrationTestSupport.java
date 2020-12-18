@@ -71,7 +71,7 @@ public class IntegrationTestSupport {
                   .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build())
                   .build());
     }
-    operator = new Operator(k8sClient, configurationService);
+    operator = new DefaultOperator(k8sClient, configurationService);
     operator.registerController(controller, retry, TEST_NAMESPACE);
     log.info("Operator is running with {}", controller.getClass().getCanonicalName());
   }
@@ -189,7 +189,7 @@ public class IntegrationTestSupport {
     return getCrOperations().inNamespace(TEST_NAMESPACE).withName(name).get();
   }
 
-  public Operator getOperator() {
+  public DefaultOperator getOperator() {
     return operator;
   }
 

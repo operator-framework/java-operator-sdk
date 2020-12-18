@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
-public abstract class AbstractOperator {
+public abstract class AbstractOperator implements Operator {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractOperator.class);
   private final KubernetesClient k8sClient;
@@ -38,6 +38,7 @@ public abstract class AbstractOperator {
     this.configurationService = configurationService;
   }
 
+  @Override
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
@@ -46,22 +47,26 @@ public abstract class AbstractOperator {
     registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
   }
 
+  @Override
   public <R extends CustomResource> void registerControllerForAllNamespaces(
       ResourceController<R> controller, Retry retry) throws OperatorException {
     registerController(controller, true, retry);
   }
 
+  @Override
   public <R extends CustomResource> void registerControllerForAllNamespaces(
       ResourceController<R> controller) throws OperatorException {
     registerController(controller, true, null);
   }
 
+  @Override
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, Retry retry, String... targetNamespaces)
       throws OperatorException {
     registerController(controller, false, retry, targetNamespaces);
   }
 
+  @Override
   public <R extends CustomResource> void registerController(
       ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
     registerController(controller, false, null, targetNamespaces);
@@ -151,11 +156,13 @@ public abstract class AbstractOperator {
     return context;
   }
 
+  @Override
   public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl>
       getCustomResourceClients() {
     return customResourceClients;
   }
 
+  @Override
   public <
           T extends CustomResource,
           L extends CustomResourceList<T>,
