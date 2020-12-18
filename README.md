@@ -69,7 +69,7 @@ Main method initializing the Operator and registering a controller.
 public class Runner {
 
    public static void main(String[] args) {
-       Operator operator = new DefaultOperator(new DefaultKubernetesClient());
+       Operator operator = new StandaloneOperator(new DefaultKubernetesClient());
        operator.register(new WebServerController());
    }
 }
