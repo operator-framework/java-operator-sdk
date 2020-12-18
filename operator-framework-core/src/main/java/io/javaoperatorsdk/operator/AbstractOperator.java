@@ -25,15 +25,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
-public class Operator {
+public abstract class AbstractOperator {
 
-  private static final Logger log = LoggerFactory.getLogger(Operator.class);
+  private static final Logger log = LoggerFactory.getLogger(AbstractOperator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
   private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients =
       new HashMap<>();
 
-  public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
+  public AbstractOperator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
   }
