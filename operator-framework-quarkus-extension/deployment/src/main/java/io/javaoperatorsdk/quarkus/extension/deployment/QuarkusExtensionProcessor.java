@@ -127,6 +127,7 @@ class QuarkusExtensionProcessor {
           ctor.getThis(),
           ctor.getMethodParam(0),
           ctor.getMethodParam(1));
+      ctor.returnValue(null);
     }
 
     // generate configuration
