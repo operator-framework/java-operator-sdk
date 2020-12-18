@@ -4,7 +4,7 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.DefaultOperator;
+import io.javaoperatorsdk.operator.StandaloneOperator;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import java.io.IOException;
@@ -24,7 +24,7 @@ public class WebServerOperator {
 
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
-    Operator operator = new DefaultOperator(client, DefaultConfigurationService.instance());
+    Operator operator = new StandaloneOperator(client, DefaultConfigurationService.instance());
     operator.registerControllerForAllNamespaces(new WebServerController(client));
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);

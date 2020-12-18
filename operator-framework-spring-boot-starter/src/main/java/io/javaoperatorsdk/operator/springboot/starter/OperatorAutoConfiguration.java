@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.javaoperatorsdk.operator.DefaultOperator;
+import io.javaoperatorsdk.operator.StandaloneOperator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -53,10 +53,10 @@ public class OperatorAutoConfiguration implements ConfigurationService {
   }
 
   @Bean
-  @ConditionalOnMissingBean(DefaultOperator.class)
-  public DefaultOperator operator(
+  @ConditionalOnMissingBean(StandaloneOperator.class)
+  public StandaloneOperator operator(
       KubernetesClient kubernetesClient, List<ResourceController> resourceControllers) {
-    final var operator = new DefaultOperator(kubernetesClient, this);
+    final var operator = new StandaloneOperator(kubernetesClient, this);
     resourceControllers.forEach(r -> operator.register(processController(r)));
     return operator;
   }
