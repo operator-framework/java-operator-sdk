@@ -17,13 +17,15 @@ public class QuarkusOperator implements QuarkusApplication {
 
   @Inject ConfigurationService configuration;
 
+  @Inject CustomServiceController controller;
+
   public static void main(String... args) {
     Quarkus.run(QuarkusOperator.class, args);
   }
 
   @Override
   public int run(String... args) throws Exception {
-    final var config = configuration.getConfigurationFor(new CustomServiceController(client));
+    final var config = configuration.getConfigurationFor(controller);
     System.out.println("CR class: " + config.getCustomResourceClass());
     System.out.println("Doneable class = " + config.getDoneableClass());
     Quarkus.waitForExit();
