@@ -24,8 +24,10 @@ public class Config {
 
   //  Register all controller beans
   @Bean
-  public StandaloneOperator operator(KubernetesClient client, List<ResourceController> controllers) {
-    StandaloneOperator operator = new StandaloneOperator(client, DefaultConfigurationService.instance());
+  public StandaloneOperator operator(
+      KubernetesClient client, List<ResourceController> controllers) {
+    StandaloneOperator operator =
+        new StandaloneOperator(client, DefaultConfigurationService.instance());
     controllers.forEach(c -> operator.registerControllerForAllNamespaces(c));
     return operator;
   }
