@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -107,6 +108,10 @@ class QuarkusExtensionProcessor {
     final var crDoneableClassName = CustomResourceDoneable.class.getName();
     try (ClassCreator cc =
         ClassCreator.builder()
+            .signature(
+                String.format(
+                    "Lio/fabric8/kubernetes/client/CustomResourceDoneable<L%s;>;",
+                    crType.replace('.', '/')))
             .classOutput(classOutput)
             .className(doneableClassName)
             .superClass(crDoneableClassName)
