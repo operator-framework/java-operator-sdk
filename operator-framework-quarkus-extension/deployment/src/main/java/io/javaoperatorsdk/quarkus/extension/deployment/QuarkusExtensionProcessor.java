@@ -112,15 +112,15 @@ class QuarkusExtensionProcessor {
             .superClass(crDoneableClassName)
             .build()) {
 
-      MethodCreator ctor = cc.getMethodCreator("<init>", void.class.getName(), crType);
+      final var functionName = io.fabric8.kubernetes.api.builder.Function.class.getName();
+      MethodCreator ctor =
+          cc.getMethodCreator("<init>", void.class.getName(), crType, functionName);
       ctor.setModifiers(Modifier.PUBLIC);
-      final var functionName = Function.class.getName();
       ctor.invokeSpecialMethod(
           MethodDescriptor.ofConstructor(crDoneableClassName, crType, functionName),
           ctor.getThis(),
           ctor.getMethodParam(0),
-          ctor.invokeStaticMethod(
-              MethodDescriptor.ofMethod(functionName, "identity", functionName)));
+          ctor.getMethodParam(1));
     }
 
     // generate configuration
