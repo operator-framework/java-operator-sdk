@@ -45,10 +45,6 @@
       <artifactId>operator-framework-samples-common</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-core</artifactId>
-    </dependency>
   </dependencies>
 
   <build>
