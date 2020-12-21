@@ -9,6 +9,5 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class SpringBootStarterSampleApplicationTest {
 
   @Test
-  void contextLoads() {
-  }
+  void contextLoads() {}
 }

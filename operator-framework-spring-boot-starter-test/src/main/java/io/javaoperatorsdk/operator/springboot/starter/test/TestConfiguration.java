@@ -25,8 +25,13 @@ public class TestConfiguration {
 
   @Bean
   public KubernetesMockServer k8sMockServer() {
-    final var server = new KubernetesMockServer(new Context(), new MockWebServer(), new HashMap<>(),
-        new KubernetesCrudDispatcher(Collections.emptyList()), true);
+    final var server =
+        new KubernetesMockServer(
+            new Context(),
+            new MockWebServer(),
+            new HashMap<>(),
+            new KubernetesCrudDispatcher(Collections.emptyList()),
+            true);
     server.init();
     return server;
   }
@@ -36,20 +41,20 @@ public class TestConfiguration {
       throws FileNotFoundException {
     final var client = server.createClient();
 
-    crdPaths.forEach(crdPath -> {
-      CustomResourceDefinition crd = null;
-      try {
-        crd = Serialization
-            .unmarshal(new FileInputStream(ResourceUtils.getFile("classpath:test-crd.yaml")));
-      } catch (FileNotFoundException e) {
-        e.printStackTrace();
-        return;
-      }
+    crdPaths.forEach(
+        crdPath -> {
+          CustomResourceDefinition crd = null;
+          try {
+            crd =
+                Serialization.unmarshal(
+                    new FileInputStream(ResourceUtils.getFile("classpath:test-crd.yaml")));
+          } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
+          }
 
-      client.apiextensions().v1beta1()
-          .customResourceDefinitions()
-          .create(crd);
-    });
+          client.apiextensions().v1beta1().customResourceDefinitions().create(crd);
+        });
 
     return client;
   }
