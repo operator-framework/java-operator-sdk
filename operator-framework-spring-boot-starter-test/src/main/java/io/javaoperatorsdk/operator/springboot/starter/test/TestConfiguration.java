@@ -48,9 +48,7 @@ public class TestConfiguration {
         crdPath -> {
           CustomResourceDefinition crd = null;
           try {
-            crd =
-                Serialization.unmarshal(
-                    new FileInputStream(ResourceUtils.getFile(crdPath)));
+            crd = Serialization.unmarshal(new FileInputStream(ResourceUtils.getFile(crdPath)));
           } catch (FileNotFoundException e) {
             log.warn("CRD with path {} not found!", crdPath);
             e.printStackTrace();
