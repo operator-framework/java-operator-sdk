@@ -204,3 +204,28 @@ public class Application {
     }
 }
 ```
+
+#### Spring Boot test support
+
+Adding the following dependency would let you mock the operator for the 
+tests where loading the spring container is necessary, 
+but it doesn't need real access to a Kubernetes cluster.
+
+```xml
+<dependency>
+ <groupId>io.javaoperatorsdk</groupId>
+ <artifactId>operator-framework-spring-boot-starter-test</artifactId>
+ <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for latest version}</version>
+</dependency>
+``` 
+
+Mock the operator:
+```java
+@SpringBootTest
+@EnableMockOperator
+public class SpringBootStarterSampleApplicationTest {
+
+  @Test
+  void contextLoads() {}
+}
+```
