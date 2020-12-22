@@ -5,4 +5,4 @@ io.javaoperatorsdk:
         maxAttempts: 3
 
   test:
-    crdPaths: classpath:test-crd.yaml,bye.yaml
+    crdPaths: classpath:test-crd.yaml
