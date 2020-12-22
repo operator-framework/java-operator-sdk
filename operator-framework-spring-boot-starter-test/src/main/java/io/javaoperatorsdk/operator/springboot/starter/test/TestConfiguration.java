@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.springboot.starter.test;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesCrudDispatcher;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
@@ -53,7 +53,7 @@ public class TestConfiguration {
             return;
           }
 
-          client.apiextensions().v1beta1().customResourceDefinitions().create(crd);
+          client.apiextensions().v1().customResourceDefinitions().create(crd);
         });
 
     return client;
