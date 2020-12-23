@@ -41,10 +41,11 @@ public class TestConfiguration {
   }
 
   @Bean
-  public KubernetesClient kubernetesClient(KubernetesMockServer server, TestConfigurationProperties properties) {
+  public KubernetesClient kubernetesClient(KubernetesMockServer server,
+      TestConfigurationProperties properties) {
     final var client = server.createClient();
 
-      properties.getCrdPaths().forEach(
+    properties.getCrdPaths().forEach(
         crdPath -> {
           CustomResourceDefinition crd;
           try {

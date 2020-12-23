@@ -10,12 +10,14 @@ import org.springframework.context.annotation.Import;
 @PropertyMapping("io.javaoperatorsdk.test")
 public @interface EnableMockOperator {
 
-    /**
-     * Define a list of files that contain CustomResourceDefinitions for the tested operator.
-     * If the file to be loaded is shall be loaded from the classpath prefix it with 'classpath', otherwise provide a path relative to the work directory.
-     * @return List of files
-     */
-    @PropertyMapping("crd-paths")
-    String[] crdPaths() default {};
+  /**
+   * Define a list of files that contain CustomResourceDefinitions for the tested operator. If the
+   * file to be loaded is shall be loaded from the classpath prefix it with 'classpath', otherwise
+   * provide a path relative to the work directory.
+   *
+   * @return List of files
+   */
+  @PropertyMapping("crd-paths")
+  String[] crdPaths() default {};
 
 }
