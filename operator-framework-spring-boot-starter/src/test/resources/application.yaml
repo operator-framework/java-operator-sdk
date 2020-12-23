@@ -1,4 +1,4 @@
-io.javaoperatorsdk:
+javaoperatorsdk:
   client:
     username: user
     password: password

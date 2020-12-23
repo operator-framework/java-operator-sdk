@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.springboot.starter;
 
 import java.util.Optional;
 
-public class OperatorProperties {
+public class KubernetesClientProperties {
 
   private boolean openshift = false;
   private String username;
@@ -14,7 +14,7 @@ public class OperatorProperties {
     return openshift;
   }
 
-  public OperatorProperties setOpenshift(boolean openshift) {
+  public KubernetesClientProperties setOpenshift(boolean openshift) {
     this.openshift = openshift;
     return this;
   }
@@ -23,7 +23,7 @@ public class OperatorProperties {
     return Optional.ofNullable(username);
   }
 
-  public OperatorProperties setUsername(String username) {
+  public KubernetesClientProperties setUsername(String username) {
     this.username = username;
     return this;
   }
@@ -32,7 +32,7 @@ public class OperatorProperties {
     return Optional.ofNullable(password);
   }
 
-  public OperatorProperties setPassword(String password) {
+  public KubernetesClientProperties setPassword(String password) {
     this.password = password;
     return this;
   }
@@ -41,7 +41,7 @@ public class OperatorProperties {
     return Optional.ofNullable(masterUrl);
   }
 
-  public OperatorProperties setMasterUrl(String masterUrl) {
+  public KubernetesClientProperties setMasterUrl(String masterUrl) {
     this.masterUrl = masterUrl;
     return this;
   }
@@ -50,7 +50,8 @@ public class OperatorProperties {
     return trustSelfSignedCertificates;
   }
 
-  public OperatorProperties setTrustSelfSignedCertificates(boolean trustSelfSignedCertificates) {
+  public KubernetesClientProperties setTrustSelfSignedCertificates(
+      boolean trustSelfSignedCertificates) {
     this.trustSelfSignedCertificates = trustSelfSignedCertificates;
     return this;
   }
