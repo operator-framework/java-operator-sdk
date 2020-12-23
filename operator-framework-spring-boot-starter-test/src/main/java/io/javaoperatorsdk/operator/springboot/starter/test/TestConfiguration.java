@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.stream.Stream;
 import okhttp3.mockwebserver.MockWebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +46,7 @@ public class TestConfiguration {
       KubernetesMockServer server, TestConfigurationProperties properties) {
     final var client = server.createClient();
 
-    properties
-        .getCrdPaths()
+    Stream.concat(properties.getCrdPaths().stream(), properties.getGlobalCrdPaths().stream())
         .forEach(
             crdPath -> {
               CustomResourceDefinition crd;

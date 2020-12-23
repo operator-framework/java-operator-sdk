@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("io.javaoperatorsdk.test")
 public class TestConfigurationProperties {
 
+  private List<String> globalCrdPaths = new ArrayList<>();
+
   private List<String> crdPaths = new ArrayList<>();
 
   public List<String> getCrdPaths() {
@@ -15,5 +17,13 @@ public class TestConfigurationProperties {
 
   public void setCrdPaths(List<String> crdPaths) {
     this.crdPaths = crdPaths;
+  }
+
+  public List<String> getGlobalCrdPaths() {
+    return globalCrdPaths;
+  }
+
+  public void setGlobalCrdPaths(List<String> globalCrdPaths) {
+    this.globalCrdPaths = globalCrdPaths;
   }
 }

@@ -27,6 +27,12 @@ class EnableMockOperatorTests {
                 .withName("customservices.sample.javaoperatorsdk")
                 .get())
         .isNotNull();
+    assertThat(
+            client
+                .customResourceDefinitions()
+                .withName("customservices.global.sample.javaoperatorsdk")
+                .get())
+        .isNotNull();
   }
 
   @SpringBootApplication
