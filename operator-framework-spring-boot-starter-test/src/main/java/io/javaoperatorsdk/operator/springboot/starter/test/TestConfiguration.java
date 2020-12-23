@@ -24,7 +24,7 @@ public class TestConfiguration {
 
   private static final Logger log = LoggerFactory.getLogger(TestConfiguration.class);
 
-  @Value("${io.javaoperatorsdk.test.crdPaths}")
+  @Value("${javaoperatorsdk.test.crdPaths}")
   private List<String> crdPaths;
 
   @Bean
