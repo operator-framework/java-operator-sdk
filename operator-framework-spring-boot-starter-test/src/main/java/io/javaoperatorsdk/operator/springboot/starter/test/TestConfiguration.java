@@ -41,25 +41,26 @@ public class TestConfiguration {
   }
 
   @Bean
-  public KubernetesClient kubernetesClient(KubernetesMockServer server,
-      TestConfigurationProperties properties) {
+  public KubernetesClient kubernetesClient(
+      KubernetesMockServer server, TestConfigurationProperties properties) {
     final var client = server.createClient();
 
-    properties.getCrdPaths().forEach(
-        crdPath -> {
-          CustomResourceDefinition crd;
-          try {
-            crd = Serialization.unmarshal(new FileInputStream(ResourceUtils.getFile(crdPath)));
-          } catch (FileNotFoundException e) {
-            log.warn("CRD with path {} not found!", crdPath);
-            e.printStackTrace();
-            return;
-          }
+    properties
+        .getCrdPaths()
+        .forEach(
+            crdPath -> {
+              CustomResourceDefinition crd;
+              try {
+                crd = Serialization.unmarshal(new FileInputStream(ResourceUtils.getFile(crdPath)));
+              } catch (FileNotFoundException e) {
+                log.warn("CRD with path {} not found!", crdPath);
+                e.printStackTrace();
+                return;
+              }
 
-          client.apiextensions().v1().customResourceDefinitions().create(crd);
-        });
+              client.apiextensions().v1().customResourceDefinitions().create(crd);
+            });
 
     return client;
   }
-
 }

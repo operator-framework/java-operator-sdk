@@ -19,5 +19,4 @@ public @interface EnableMockOperator {
    */
   @PropertyMapping("crd-paths")
   String[] crdPaths() default {};
-
 }
