@@ -4,6 +4,7 @@ import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetada
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.DONEABLES_RESOURCE_PATH;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -149,6 +150,10 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                 .addParameter(customResourceType, "resource")
                 .addParameter(Function.class, "function")
                 .addStatement("super(resource,function)")
+                .addAnnotation(
+                    AnnotationSpec.builder(SuppressWarnings.class)
+                        .addMember("value", "$S", "unchecked")
+                        .build())
                 .build();
 
         final TypeSpec typeSpec =
