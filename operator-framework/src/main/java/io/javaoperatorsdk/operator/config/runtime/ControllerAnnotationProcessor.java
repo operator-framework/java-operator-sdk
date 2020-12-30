@@ -107,12 +107,8 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(),
             CustomResource.class.getCanonicalName());
-        return;
-      }
-
-      if (resourceType == null) {
         System.out.println(
-            "No defined a resource type for '"
+            "No defined resource type for '"
                 + controllerClassSymbol.getQualifiedName()
                 + "': ignoring!");
         return;
