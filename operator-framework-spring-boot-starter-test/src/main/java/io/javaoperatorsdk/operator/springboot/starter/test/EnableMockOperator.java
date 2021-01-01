@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Import;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Import(TestConfiguration.class)
-@PropertyMapping("io.javaoperatorsdk.test")
+@PropertyMapping("javaoperatorsdk.test")
 public @interface EnableMockOperator {
 
   /**

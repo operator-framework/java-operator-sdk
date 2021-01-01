@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("io.javaoperatorsdk.test")
+@ConfigurationProperties("javaoperatorsdk.test")
 public class TestConfigurationProperties {
 
   private List<String> globalCrdPaths = new ArrayList<>();
