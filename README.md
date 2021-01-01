@@ -70,7 +70,7 @@ public class Runner {
 
    public static void main(String[] args) {
        Operator operator = new Operator(new DefaultKubernetesClient(),
-           DefaultConfigurationService.instance());
+           DefaultConfigurationService.INSTANCE);
        operator.register(new WebServerController());
    }
 }
