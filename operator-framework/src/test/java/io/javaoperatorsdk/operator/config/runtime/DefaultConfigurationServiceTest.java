@@ -22,7 +22,8 @@ public class DefaultConfigurationServiceTest {
   @Test
   public void returnsValuesFromControllerAnnotationFinalizer() {
     final var controller = new TestCustomResourceController();
-    final var configuration = DefaultConfigurationService.INSTANCE.getConfigurationFor(controller);
+    final var configuration =
+        DefaultConfigurationService.instance().getConfigurationFor(controller);
     assertEquals(TestCustomResourceController.CRD_NAME, configuration.getCRDName());
     assertEquals(
         ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
@@ -35,7 +36,8 @@ public class DefaultConfigurationServiceTest {
   @Test
   public void returnCustomerFinalizerNameIfSet() {
     final var controller = new TestCustomFinalizerController();
-    final var configuration = DefaultConfigurationService.INSTANCE.getConfigurationFor(controller);
+    final var configuration =
+        DefaultConfigurationService.instance().getConfigurationFor(controller);
     assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizer());
   }
 
@@ -44,7 +46,7 @@ public class DefaultConfigurationServiceTest {
     final var controller = new TestCustomFinalizerController();
     assertDoesNotThrow(
         () -> {
-          DefaultConfigurationService.INSTANCE.getConfigurationFor(controller).getDoneableClass();
+          DefaultConfigurationService.instance().getConfigurationFor(controller).getDoneableClass();
         });
   }
 

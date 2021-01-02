@@ -54,7 +54,7 @@ public class IntegrationTestSupport {
     CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
     this.controller = controller;
 
-    final var configurationService = DefaultConfigurationService.INSTANCE;
+    final var configurationService = DefaultConfigurationService.instance();
 
     final var config = configurationService.getConfigurationFor(controller);
     Class doneableClass = config.getDoneableClass();

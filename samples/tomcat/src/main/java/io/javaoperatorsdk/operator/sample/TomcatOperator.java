@@ -22,7 +22,7 @@ public class TomcatOperator {
 
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
-    Operator operator = new Operator(client, DefaultConfigurationService.INSTANCE);
+    Operator operator = new Operator(client, DefaultConfigurationService.instance());
 
     TomcatController tomcatController = new TomcatController(client);
     operator.registerControllerForAllNamespaces(tomcatController);

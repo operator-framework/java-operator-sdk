@@ -9,9 +9,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultConfigurationService implements ConfigurationService {
 
+  private static final ConfigurationService instance = new DefaultConfigurationService();
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
 
-  public static final ConfigurationService INSTANCE = new DefaultConfigurationService();
+  public static ConfigurationService instance() {
+    return instance;
+  }
 
   @Override
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
