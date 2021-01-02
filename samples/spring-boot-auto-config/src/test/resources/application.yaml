@@ -3,3 +3,6 @@ javaoperatorsdk:
     customservicecontroller:
       retry:
         maxAttempts: 3
+
+  test:
+    crdPaths: classpath:test-crd.yaml

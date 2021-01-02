@@ -17,8 +17,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,10 +24,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({ConfigurationProperties.class})
+@EnableConfigurationProperties({OperatorConfigurationProperties.class})
 public class OperatorAutoConfiguration implements ConfigurationService {
-  private static final Logger log = LoggerFactory.getLogger(OperatorAutoConfiguration.class);
-  @Autowired private ConfigurationProperties configuration;
+  @Autowired private OperatorConfigurationProperties configuration;
   private final Map<String, ControllerConfiguration> controllers = new ConcurrentHashMap<>();
 
   @Bean
@@ -61,7 +58,7 @@ public class OperatorAutoConfiguration implements ConfigurationService {
     return operator;
   }
 
-  private ResourceController processController(ResourceController controller) {
+  private ResourceController<?> processController(ResourceController<?> controller) {
     final var controllerPropertiesMap = configuration.getControllers();
     var controllerProps = controllerPropertiesMap.get(controller.getName());
     final var cfg = new ConfigurationWrapper(controller, controllerProps);

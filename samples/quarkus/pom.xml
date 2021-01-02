@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk-samples</artifactId>
-    <version>1.5.1-SNAPSHOT</version>
+    <version>1.6.2-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -17,7 +17,7 @@
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <quarkus.version>1.10.3.Final</quarkus.version>
+    <quarkus.version>1.10.5.Final</quarkus.version>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>
   </properties>
@@ -44,10 +44,6 @@
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-samples-common</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-core</artifactId>
     </dependency>
   </dependencies>
 

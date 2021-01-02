@@ -20,7 +20,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest
 public class AutoConfigurationTest {
 
-  @Autowired private ConfigurationProperties config;
+  @Autowired private OperatorConfigurationProperties config;
 
   @MockBean private Operator operator;
 
