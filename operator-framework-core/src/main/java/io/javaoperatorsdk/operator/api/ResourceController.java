@@ -51,7 +51,7 @@ public interface ResourceController<R extends CustomResource> {
       }
     }
 
-    // otherwise, use the lower-cased class name
-    return clazz.getSimpleName().toLowerCase(Locale.ROOT);
+    // otherwise, use the lower-cased full class name
+    return clazz.getCanonicalName().toLowerCase(Locale.ROOT);
   }
 }
