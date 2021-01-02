@@ -4,6 +4,7 @@ import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetada
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.DONEABLES_RESOURCE_PATH;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -35,7 +36,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.Controller")
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
 
@@ -106,12 +107,8 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(),
             CustomResource.class.getCanonicalName());
-        return;
-      }
-
-      if (resourceType == null) {
         System.out.println(
-            "No defined a resource type for '"
+            "No defined resource type for '"
                 + controllerClassSymbol.getQualifiedName()
                 + "': ignoring!");
         return;
@@ -149,6 +146,10 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
                 .addParameter(customResourceType, "resource")
                 .addParameter(Function.class, "function")
                 .addStatement("super(resource,function)")
+                .addAnnotation(
+                    AnnotationSpec.builder(SuppressWarnings.class)
+                        .addMember("value", "$S", "unchecked")
+                        .build())
                 .build();
 
         final TypeSpec typeSpec =
