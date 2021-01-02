@@ -53,7 +53,7 @@ Implemented with and without Spring Boot support. The two samples share the comm
 * *mysql-schema*: Operator managing schemas in a MySQL database
 * *spring-boot-plain/auto-config*: Samples showing integration with Spring Boot.
 
-Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project:
+Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
 
 ```xml
 <dependency>
@@ -63,7 +63,17 @@ Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your
 </dependency>
 ```
 
-Main method initializing the Operator and registering a controller.
+Or alternatively with Gradle, which also requires declaring the SDK as an annotation processor to
+generate the mappings between controllers and custom resource classes:
+
+```groovy
+dependencies {
+    implementation "io.javaoperatorsdk:operator-framework:${javaOperatorVersion}"
+    annotationProcessor "io.javaoperatorsdk:operator-framework:${javaOperatorVersion}"
+}
+```
+
+Once you've added the dependency, define a main method initializing the Operator and registering a controller.
 
 ```java
 public class Runner {
