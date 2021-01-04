@@ -6,23 +6,6 @@ import java.util.Locale;
 
 public interface ResourceController<R extends CustomResource> {
 
-  static String getDefaultNameFor(ResourceController controller) {
-    return getDefaultNameFor(controller.getClass());
-  }
-
-  static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
-    return getDefaultResourceControllerName(controllerClass.getCanonicalName());
-  }
-
-  static String getDefaultResourceControllerName(String rcControllerClassName) {
-    if (rcControllerClassName.indexOf('.') < 0) {
-      throw new IllegalArgumentException(
-          "Must provide a fully-qualified resource controller class name, was: "
-              + rcControllerClassName);
-    }
-    return rcControllerClassName.toLowerCase(Locale.ROOT);
-  }
-
   /**
    * The implementation should delete the associated component(s). Note that this is method is
    * called when an object is marked for deletion. After its executed the custom resource finalizer
@@ -57,10 +40,12 @@ public interface ResourceController<R extends CustomResource> {
   default void init(EventSourceManager eventSourceManager) {}
 
   default String getName() {
-    final var clazz = getClass();
+    return getNameFor(this);
+  }
 
+  static String getNameFor(Class<? extends ResourceController> controllerClass) {
     // if the controller annotation has a name attribute, use it
-    final var annotation = clazz.getAnnotation(Controller.class);
+    final var annotation = controllerClass.getAnnotation(Controller.class);
     if (annotation != null) {
       final var name = annotation.name();
       if (!Controller.NULL.equals(name)) {
@@ -69,6 +54,27 @@ public interface ResourceController<R extends CustomResource> {
     }
 
     // otherwise, use the lower-cased full class name
-    return getDefaultNameFor(this);
+    return getDefaultNameFor(controllerClass);
+  }
+
+  static String getNameFor(ResourceController controller) {
+    return getNameFor(controller.getClass());
+  }
+
+  static String getDefaultNameFor(ResourceController controller) {
+    return getDefaultNameFor(controller.getClass());
+  }
+
+  static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
+    return getDefaultResourceControllerName(controllerClass.getCanonicalName());
+  }
+
+  static String getDefaultResourceControllerName(String rcControllerClassName) {
+    if (rcControllerClassName.indexOf('.') < 0) {
+      throw new IllegalArgumentException(
+          "Must provide a fully-qualified resource controller class name, was: "
+              + rcControllerClassName);
+    }
+    return rcControllerClassName.toLowerCase(Locale.ROOT);
   }
 }

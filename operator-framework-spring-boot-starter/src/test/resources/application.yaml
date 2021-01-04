@@ -5,7 +5,7 @@ javaoperatorsdk:
     masterUrl: http://master.url
 
   controllers:
-    testcontroller:
+    name_must_be_changed:
       retry:
         maxAttempts: 3
         initialInterval: 1000

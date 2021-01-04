@@ -38,10 +38,7 @@ public class AutoConfigurationTest {
   @Test
   public void loadsRetryPropertiesProperly() {
     final var retryProperties =
-        config
-            .getControllers()
-            .get(ResourceController.getDefaultNameFor(TestController.class))
-            .getRetry();
+        config.getControllers().get(ResourceController.getNameFor(TestController.class)).getRetry();
     assertEquals(3, retryProperties.getMaxAttempts());
     assertEquals(1000, retryProperties.getInitialInterval());
     assertEquals(1.5, retryProperties.getIntervalMultiplier());
