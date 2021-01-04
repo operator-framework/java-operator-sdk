@@ -151,7 +151,7 @@ public class WebServerSpec {
 
 A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based operators.
 
-Add [this dependency] (https://search.maven.org/search?q=a:operator-framework-quarkus-extension)
+Add [this dependency](https://search.maven.org/search?q=a:operator-framework-quarkus-extension)
 to your project:
 
 ```xml
