@@ -21,6 +21,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.gizmo.ClassCreator;
 import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
@@ -53,6 +54,12 @@ class QuarkusExtensionProcessor {
   @BuildStep
   FeatureBuildItem feature() {
     return new FeatureBuildItem(FEATURE);
+  }
+
+  @BuildStep
+  void indexSDKDependencies(BuildProducer<IndexDependencyBuildItem> indexDependency) {
+    indexDependency.produce(
+        new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
   }
 
   @BuildStep

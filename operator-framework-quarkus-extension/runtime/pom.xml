@@ -18,7 +18,6 @@
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-core</artifactId>
       <version>${project.version}</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
