@@ -6,6 +6,23 @@ import java.util.Locale;
 
 public interface ResourceController<R extends CustomResource> {
 
+  static String getDefaultNameFor(ResourceController controller) {
+    return getDefaultNameFor(controller.getClass());
+  }
+
+  static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
+    return getDefaultResourceControllerName(controllerClass.getCanonicalName());
+  }
+
+  static String getDefaultResourceControllerName(String rcControllerClassName) {
+    if (rcControllerClassName.indexOf('.') < 0) {
+      throw new IllegalArgumentException(
+          "Must provide a fully-qualified resource controller class name, was: "
+              + rcControllerClassName);
+    }
+    return rcControllerClassName.toLowerCase(Locale.ROOT);
+  }
+
   /**
    * The implementation should delete the associated component(s). Note that this is method is
    * called when an object is marked for deletion. After its executed the custom resource finalizer
@@ -52,6 +69,6 @@ public interface ResourceController<R extends CustomResource> {
     }
 
     // otherwise, use the lower-cased full class name
-    return clazz.getCanonicalName().toLowerCase(Locale.ROOT);
+    return getDefaultNameFor(this);
   }
 }

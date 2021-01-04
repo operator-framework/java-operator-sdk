@@ -22,7 +22,7 @@ public class AnnotationConfiguration<R extends CustomResource>
   @Override
   public String getName() {
     final var name = annotation.name();
-    return Controller.NULL.equals(name) ? ControllerUtils.getDefaultNameFor(controller) : name;
+    return Controller.NULL.equals(name) ? ResourceController.getDefaultNameFor(controller) : name;
   }
 
   @Override
