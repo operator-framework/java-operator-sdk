@@ -95,8 +95,9 @@ class QuarkusExtensionProcessor {
             .filter(t -> t.name().equals(RESOURCE_CONTROLLER))
             .findFirst()
             .map(Type::asParameterizedType)
-            .orElseThrow(); // shouldn't happen since we're only dealing with ResourceController
-    // implementors already
+            // shouldn't happen since we're only dealing with ResourceController implementors
+            // already
+            .orElseThrow();
     final var crType = rcInterface.arguments().get(0).name().toString();
 
     // create ResourceController bean
@@ -137,11 +138,13 @@ class QuarkusExtensionProcessor {
             controllerAnnotation, "crdName", AnnotationValue::asString, EXCEPTION_SUPPLIER);
     final var configuration =
         new QuarkusControllerConfiguration(
+            resourceControllerClassName,
             valueOrDefault(
                 controllerAnnotation,
                 "name",
                 AnnotationValue::asString,
-                () -> ResourceController.getDefaultResourceControllerName(info.name().toString())),
+                () -> ResourceController
+                    .getDefaultResourceControllerName(resourceControllerClassName)),
             crdName,
             valueOrDefault(
                 controllerAnnotation,
@@ -160,11 +163,11 @@ class QuarkusExtensionProcessor {
                     controllerAnnotation,
                     "namespaces",
                     AnnotationValue::asStringArray,
-                    () -> new String[] {})),
+                    () -> new String[]{})),
             crType,
             doneableClassName,
             null // todo: fix-me
-            );
+        );
 
     return configuration;
   }

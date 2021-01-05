@@ -21,8 +21,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public String getName() {
-    final var name = annotation.name();
-    return Controller.NULL.equals(name) ? ResourceController.getDefaultNameFor(controller) : name;
+    return controller.getName();
   }
 
   @Override
@@ -62,5 +61,10 @@ public class AnnotationConfiguration<R extends CustomResource>
   @Override
   public Set<String> getNamespaces() {
     return Set.of(annotation.namespaces());
+  }
+
+  @Override
+  public String getAssociatedControllerClassName() {
+    return controller.getClass().getCanonicalName();
   }
 }

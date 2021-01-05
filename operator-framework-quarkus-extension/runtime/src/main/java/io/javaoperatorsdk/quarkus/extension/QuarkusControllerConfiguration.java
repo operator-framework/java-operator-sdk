@@ -10,6 +10,7 @@ import java.util.Set;
 
 public class QuarkusControllerConfiguration<R extends CustomResource>
     implements ControllerConfiguration<R> {
+  private final String associatedControllerClassName;
   private final String name;
   private final String crdName;
   private final String finalizer;
@@ -23,6 +24,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
 
   @RecordableConstructor
   public QuarkusControllerConfiguration(
+      String associatedControllerClassName,
       String name,
       String crdName,
       String finalizer,
@@ -32,6 +34,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
       String crClass,
       String doneableClassName,
       RetryConfiguration retryConfiguration) {
+    this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
     this.finalizer = finalizer;
@@ -87,21 +90,25 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
 
   @Override
   public Class<R> getCustomResourceClass() {
-    try {
-      return (Class<R>) Thread.currentThread().getContextClassLoader().loadClass(crClass);
-    } catch (ClassNotFoundException e) {
-      throw new IllegalArgumentException("Couldn't find class " + crClass);
-    }
+    return (Class<R>) loadClass(crClass);
   }
 
   @Override
   public Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
+    return (Class<? extends CustomResourceDoneable<R>>) loadClass(doneableClassName);
+  }
+
+  private Class<?> loadClass(String className) {
     try {
-      return (Class<CustomResourceDoneable<R>>)
-          Thread.currentThread().getContextClassLoader().loadClass(doneableClassName);
+      return Thread.currentThread().getContextClassLoader().loadClass(className);
     } catch (ClassNotFoundException e) {
-      throw new IllegalArgumentException("Couldn't find class " + doneableClassName);
+      throw new IllegalArgumentException("Couldn't find class " + className);
     }
+  }
+
+  @Override
+  public String getAssociatedControllerClassName() {
+    return associatedControllerClassName;
   }
 
   @Override
