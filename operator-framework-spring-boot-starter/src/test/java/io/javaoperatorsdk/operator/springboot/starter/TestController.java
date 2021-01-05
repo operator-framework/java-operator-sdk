@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 import org.springframework.stereotype.Component;
 
 @Component
-@Controller(crdName = "name", name = "name_must_be_changed")
+@Controller(crdName = "name")
 public class TestController implements ResourceController {
 
   @Override

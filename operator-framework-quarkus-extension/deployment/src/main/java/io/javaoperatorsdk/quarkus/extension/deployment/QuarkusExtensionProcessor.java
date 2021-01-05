@@ -143,8 +143,9 @@ class QuarkusExtensionProcessor {
                 controllerAnnotation,
                 "name",
                 AnnotationValue::asString,
-                () -> ResourceController
-                    .getDefaultResourceControllerName(resourceControllerClassName)),
+                () ->
+                    ResourceController.getDefaultResourceControllerName(
+                        resourceControllerClassName)),
             crdName,
             valueOrDefault(
                 controllerAnnotation,
@@ -163,11 +164,11 @@ class QuarkusExtensionProcessor {
                     controllerAnnotation,
                     "namespaces",
                     AnnotationValue::asStringArray,
-                    () -> new String[]{})),
+                    () -> new String[] {})),
             crType,
             doneableClassName,
             null // todo: fix-me
-        );
+            );
 
     return configuration;
   }

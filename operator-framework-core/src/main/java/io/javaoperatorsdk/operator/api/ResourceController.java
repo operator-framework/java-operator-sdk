@@ -66,14 +66,14 @@ public interface ResourceController<R extends CustomResource> {
   }
 
   static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
-    return getDefaultResourceControllerName(controllerClass.getCanonicalName());
+    return getDefaultResourceControllerName(controllerClass.getSimpleName());
   }
 
   static String getDefaultResourceControllerName(String rcControllerClassName) {
-    if (rcControllerClassName.indexOf('.') < 0) {
-      throw new IllegalArgumentException(
-          "Must provide a fully-qualified resource controller class name, was: "
-              + rcControllerClassName);
+    // if the name is fully qualified, extract the simple class name
+    final var lastDot = rcControllerClassName.lastIndexOf('.');
+    if (lastDot > 0) {
+      rcControllerClassName = rcControllerClassName.substring(lastDot);
     }
     return rcControllerClassName.toLowerCase(Locale.ROOT);
   }
