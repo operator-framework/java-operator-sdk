@@ -1,12 +1,9 @@
-package io.javaoperatorsdk.quarkus.extension.deployment;
+package io.javaoperatorsdk.quarkus.it;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import io.javaoperatorsdk.quarkus.it.TestController;
-import io.javaoperatorsdk.quarkus.it.TestOperatorApp;
-import io.javaoperatorsdk.quarkus.it.TestResource;
 import io.quarkus.test.QuarkusProdModeTest;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -14,9 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
- * This tests creates an application based on the application code found in the {@code
- * operator-framework-quarkus-tests-support} module. The app is started and accessed over REST to
- * assess that injected values are present and what we expect.
+ * This tests creates and starts an application accessed over REST to assess that injected values
+ * are present and what we expect.
  */
 public class QuarkusExtensionProcessorTest {
 
@@ -26,7 +22,7 @@ public class QuarkusExtensionProcessorTest {
           .setArchiveProducer(
               () ->
                   ShrinkWrap.create(JavaArchive.class)
-                      .addClasses(TestOperatorApp.class, TestController.class))
+                      .addClasses(TestOperatorApp.class, TestController.class, TestResource.class))
           .setApplicationName("basic-app")
           .setApplicationVersion("0.1-SNAPSHOT")
           .setRun(true);
