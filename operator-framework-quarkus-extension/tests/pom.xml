@@ -9,8 +9,8 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>operator-framework-quarkus-tests-support</artifactId>
-  <name>Operator SDK - Quarkus Extension - Tests Support</name>
+  <artifactId>operator-framework-quarkus-tests</artifactId>
+  <name>Operator SDK - Quarkus Extension - Tests</name>
 
 
   <properties>
