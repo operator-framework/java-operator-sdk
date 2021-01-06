@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 
+@Controller(crdName = "test.example.com")
 public class TestController implements ResourceController<TestResource> {
 
   @Override
