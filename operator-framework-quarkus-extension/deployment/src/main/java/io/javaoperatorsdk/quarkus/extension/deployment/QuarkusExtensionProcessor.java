@@ -139,6 +139,13 @@ class QuarkusExtensionProcessor {
 
     // generate configuration
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+    if (controllerAnnotation == null) {
+      throw new IllegalArgumentException(
+          resourceControllerClassName
+              + " is missing the "
+              + Controller.class.getCanonicalName()
+              + " annotation");
+    }
     final var crdName =
         valueOrDefault(
             controllerAnnotation, "crdName", AnnotationValue::asString, EXCEPTION_SUPPLIER);
