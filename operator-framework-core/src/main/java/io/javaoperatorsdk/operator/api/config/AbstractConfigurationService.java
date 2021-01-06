@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,6 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   @Override
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
-    return configurations.get(controller.getName());
+    return configurations.get(ControllerUtils.getNameFor(controller));
   }
 }

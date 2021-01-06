@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
@@ -56,7 +57,7 @@ public class OperatorAutoConfiguration extends AbstractConfigurationService {
 
   private ResourceController<?> processController(ResourceController<?> controller) {
     final var controllerPropertiesMap = configuration.getControllers();
-    final var name = controller.getName();
+    final var name = ControllerUtils.getNameFor(controller);
     var controllerProps = controllerPropertiesMap.get(name);
     register(new ConfigurationWrapper(controller, controllerProps));
     return controller;

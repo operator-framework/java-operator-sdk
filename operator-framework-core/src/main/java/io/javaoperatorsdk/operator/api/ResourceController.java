@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public interface ResourceController<R extends CustomResource> {
@@ -38,8 +37,4 @@ public interface ResourceController<R extends CustomResource> {
    * @param eventSourceManager
    */
   default void init(EventSourceManager eventSourceManager) {}
-
-  default String getName() {
-    return ControllerUtils.getNameFor(this);
-  }
 }

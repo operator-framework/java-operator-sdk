@@ -21,7 +21,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public String getName() {
-    return controller.getName();
+    return ControllerUtils.getNameFor(controller);
   }
 
   @Override
