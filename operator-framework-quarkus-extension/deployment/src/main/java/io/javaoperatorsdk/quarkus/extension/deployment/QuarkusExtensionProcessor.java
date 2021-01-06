@@ -144,8 +144,7 @@ class QuarkusExtensionProcessor {
                 "name",
                 AnnotationValue::asString,
                 () ->
-                    ResourceController.getDefaultResourceControllerName(
-                        resourceControllerClassName)),
+                    ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName)),
             crdName,
             valueOrDefault(
                 controllerAnnotation,

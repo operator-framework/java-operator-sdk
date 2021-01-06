@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.List;
@@ -38,7 +39,7 @@ public class AutoConfigurationTest {
   @Test
   public void loadsRetryPropertiesProperly() {
     final var retryProperties =
-        config.getControllers().get(ResourceController.getNameFor(TestController.class)).getRetry();
+        config.getControllers().get(ControllerUtils.getNameFor(TestController.class)).getRetry();
     assertEquals(3, retryProperties.getMaxAttempts());
     assertEquals(1000, retryProperties.getInitialInterval());
     assertEquals(1.5, retryProperties.getIntervalMultiplier());

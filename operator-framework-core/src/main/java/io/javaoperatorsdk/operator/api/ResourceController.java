@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import java.util.Locale;
 
 public interface ResourceController<R extends CustomResource> {
 
@@ -40,41 +40,6 @@ public interface ResourceController<R extends CustomResource> {
   default void init(EventSourceManager eventSourceManager) {}
 
   default String getName() {
-    return getNameFor(this);
-  }
-
-  static String getNameFor(Class<? extends ResourceController> controllerClass) {
-    // if the controller annotation has a name attribute, use it
-    final var annotation = controllerClass.getAnnotation(Controller.class);
-    if (annotation != null) {
-      final var name = annotation.name();
-      if (!Controller.NULL.equals(name)) {
-        return name;
-      }
-    }
-
-    // otherwise, use the lower-cased full class name
-    return getDefaultNameFor(controllerClass);
-  }
-
-  static String getNameFor(ResourceController controller) {
-    return getNameFor(controller.getClass());
-  }
-
-  static String getDefaultNameFor(ResourceController controller) {
-    return getDefaultNameFor(controller.getClass());
-  }
-
-  static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
-    return getDefaultResourceControllerName(controllerClass.getSimpleName());
-  }
-
-  static String getDefaultResourceControllerName(String rcControllerClassName) {
-    // if the name is fully qualified, extract the simple class name
-    final var lastDot = rcControllerClassName.lastIndexOf('.');
-    if (lastDot > 0) {
-      rcControllerClassName = rcControllerClassName.substring(lastDot);
-    }
-    return rcControllerClassName.toLowerCase(Locale.ROOT);
+    return ControllerUtils.getNameFor(this);
   }
 }
