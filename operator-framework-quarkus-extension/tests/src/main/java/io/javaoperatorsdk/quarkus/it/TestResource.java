@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.quarkus.extension.deployment;
+package io.javaoperatorsdk.quarkus.it;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
