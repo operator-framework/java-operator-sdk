@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import java.util.Locale;
 
 public interface ResourceController<R extends CustomResource> {
 
@@ -38,20 +37,4 @@ public interface ResourceController<R extends CustomResource> {
    * @param eventSourceManager
    */
   default void init(EventSourceManager eventSourceManager) {}
-
-  default String getName() {
-    final var clazz = getClass();
-
-    // if the controller annotation has a name attribute, use it
-    final var annotation = clazz.getAnnotation(Controller.class);
-    if (annotation != null) {
-      final var name = annotation.name();
-      if (!Controller.NULL.equals(name)) {
-        return name;
-      }
-    }
-
-    // otherwise, use the lower-cased full class name
-    return clazz.getCanonicalName().toLowerCase(Locale.ROOT);
-  }
 }

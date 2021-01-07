@@ -21,6 +21,8 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   Class<? extends CustomResourceDoneable<R>> getDoneableClass();
 
+  String getAssociatedControllerClassName();
+
   default boolean isClusterScoped() {
     return false;
   }

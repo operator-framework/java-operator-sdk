@@ -6,17 +6,15 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.config.runtime.AnnotationConfiguration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,9 +23,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({OperatorConfigurationProperties.class})
-public class OperatorAutoConfiguration implements ConfigurationService {
+public class OperatorAutoConfiguration extends AbstractConfigurationService {
   @Autowired private OperatorConfigurationProperties configuration;
-  private final Map<String, ControllerConfiguration> controllers = new ConcurrentHashMap<>();
 
   @Bean
   @ConditionalOnMissingBean
@@ -60,16 +57,10 @@ public class OperatorAutoConfiguration implements ConfigurationService {
 
   private ResourceController<?> processController(ResourceController<?> controller) {
     final var controllerPropertiesMap = configuration.getControllers();
-    var controllerProps = controllerPropertiesMap.get(controller.getName());
-    final var cfg = new ConfigurationWrapper(controller, controllerProps);
-    this.controllers.put(controller.getName(), cfg);
+    final var name = ControllerUtils.getNameFor(controller);
+    var controllerProps = controllerPropertiesMap.get(name);
+    register(new ConfigurationWrapper(controller, controllerProps));
     return controller;
-  }
-
-  @Override
-  public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
-      ResourceController<R> controller) {
-    return controllers.get(controller.getName());
   }
 
   private static class ConfigurationWrapper<R extends CustomResource>
