@@ -49,8 +49,6 @@ public class QuarkusExtensionProcessorTest {
         .statusCode(200)
         .body(
             "customResourceClass", equalTo(resourceName),
-            "doneableClass", equalTo(resourceName + "Doneable"),
-            "name", equalTo(TestController.NAME),
-            "crdName", equalTo(TestController.CRD_NAME));
+            "name", equalTo(TestController.NAME));
   }
 }

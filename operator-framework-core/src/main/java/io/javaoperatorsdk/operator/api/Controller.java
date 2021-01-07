@@ -11,8 +11,6 @@ public @interface Controller {
 
   String NULL = "";
 
-  String crdName();
-
   String name() default NULL;
 
   /**

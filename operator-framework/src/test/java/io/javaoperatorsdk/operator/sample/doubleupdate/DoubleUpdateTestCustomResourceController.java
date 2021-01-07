@@ -7,11 +7,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(crdName = DoubleUpdateTestCustomResourceController.CRD_NAME)
+@Controller
 public class DoubleUpdateTestCustomResourceController
     implements ResourceController<DoubleUpdateTestCustomResource>, TestExecutionInfoProvider {
 
-  public static final String CRD_NAME = "doubleupdatesamples.sample.javaoperatorsdk";
   private static final Logger log =
       LoggerFactory.getLogger(DoubleUpdateTestCustomResourceController.class);
   public static final String TEST_ANNOTATION = "TestAnnotation";

@@ -21,7 +21,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(crdName = "schemas.mysql.sample.javaoperatorsdk")
+@Controller
 public class SchemaController implements ResourceController<Schema> {
   static final String USERNAME_FORMAT = "%s-user";
   static final String SECRET_FORMAT = "%s-secret";

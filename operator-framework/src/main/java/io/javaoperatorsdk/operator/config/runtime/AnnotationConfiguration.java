@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -26,7 +25,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public String getCRDName() {
-    return annotation.crdName();
+    return CustomResource.getCRDName(getCustomResourceClass());
   }
 
   @Override
@@ -35,7 +34,7 @@ public class AnnotationConfiguration<R extends CustomResource>
     if (!Controller.NULL.equals(annotationFinalizerName)) {
       return annotationFinalizerName;
     }
-    return ControllerUtils.getDefaultFinalizerName(annotation.crdName());
+    return ControllerUtils.getDefaultFinalizerName(getCRDName());
   }
 
   @Override
@@ -46,11 +45,6 @@ public class AnnotationConfiguration<R extends CustomResource>
   @Override
   public Class<R> getCustomResourceClass() {
     return RuntimeControllerMetadata.getCustomResourceClass(controller);
-  }
-
-  @Override
-  public Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
-    return RuntimeControllerMetadata.getCustomResourceDoneableClass(controller);
   }
 
   @Override

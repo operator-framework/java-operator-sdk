@@ -1,32 +1,9 @@
 package io.javaoperatorsdk.operator.sample;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 
-public class Tomcat extends CustomResource {
-
-  private TomcatSpec spec;
-
-  private TomcatStatus status;
-
-  public TomcatSpec getSpec() {
-    if (spec == null) {
-      spec = new TomcatSpec();
-    }
-    return spec;
-  }
-
-  public void setSpec(TomcatSpec spec) {
-    this.spec = spec;
-  }
-
-  public TomcatStatus getStatus() {
-    if (status == null) {
-      status = new TomcatStatus();
-    }
-    return status;
-  }
-
-  public void setStatus(TomcatStatus status) {
-    this.status = status;
-  }
-}
+@Group("tomcatoperator.io")
+@Version("v1")
+public class Tomcat extends CustomResource<TomcatSpec, TomcatStatus> {}

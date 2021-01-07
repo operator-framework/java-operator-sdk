@@ -121,7 +121,8 @@ public class ConcurrencyIT {
 
                     List<TestCustomResource> crs =
                         integrationTest
-                            .getCrOperations()
+                            .getK8sClient()
+                            .customResources(TestCustomResource.class)
                             .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
                             .list()
                             .getItems();

@@ -3,19 +3,15 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
-import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
@@ -27,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(crdName = "webservers.sample.javaoperatorsdk")
 public class WebServerController implements ResourceController<WebServer> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
@@ -129,7 +124,7 @@ public class WebServerController implements ResourceController<WebServer> {
     log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
     log.info("Deleting ConfigMap {}", configMapName(nginx));
-    Resource<ConfigMap, DoneableConfigMap> configMap =
+    Resource<ConfigMap> configMap =
         kubernetesClient
             .configMaps()
             .inNamespace(nginx.getMetadata().getNamespace())
@@ -139,7 +134,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     log.info("Deleting Deployment {}", deploymentName(nginx));
-    RollableScalableResource<Deployment, DoneableDeployment> deployment =
+    RollableScalableResource<Deployment> deployment =
         kubernetesClient
             .apps()
             .deployments()
@@ -150,7 +145,7 @@ public class WebServerController implements ResourceController<WebServer> {
     }
 
     log.info("Deleting Service {}", serviceName(nginx));
-    ServiceResource<Service, DoneableService> service =
+    ServiceResource<Service> service =
         kubernetesClient
             .services()
             .inNamespace(nginx.getMetadata().getNamespace())

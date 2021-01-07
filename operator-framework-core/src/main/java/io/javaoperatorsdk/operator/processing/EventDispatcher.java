@@ -191,10 +191,9 @@ public class EventDispatcher {
   // created to support unit testing
   public static class CustomResourceFacade {
 
-    private final MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation;
+    private final MixedOperation<?, ?, Resource<CustomResource>> resourceOperation;
 
-    public CustomResourceFacade(
-        MixedOperation<?, ?, ?, Resource<CustomResource, ?>> resourceOperation) {
+    public CustomResourceFacade(MixedOperation<?, ?, Resource<CustomResource>> resourceOperation) {
       this.resourceOperation = resourceOperation;
     }
 

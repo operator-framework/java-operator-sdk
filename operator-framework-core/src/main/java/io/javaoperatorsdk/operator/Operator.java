@@ -2,13 +2,11 @@ package io.javaoperatorsdk.operator;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
@@ -76,12 +74,10 @@ public class Operator {
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
     Class<R> resClass = configuration.getCustomResourceClass();
-    CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
-    KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);
+    /*CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
+    KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);*/
     String finalizer = configuration.getFinalizer();
-    MixedOperation client =
-        k8sClient.customResources(
-            crd, resClass, CustomResourceList.class, configuration.getDoneableClass());
+    MixedOperation client = k8sClient.customResources(resClass);
     EventDispatcher eventDispatcher =
         new EventDispatcher(
             controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
@@ -156,11 +152,8 @@ public class Operator {
     return customResourceClients;
   }
 
-  public <
-          T extends CustomResource,
-          L extends CustomResourceList<T>,
-          D extends CustomResourceDoneable<T>>
-      CustomResourceOperationsImpl<T, L, D> getCustomResourceClients(Class<T> customResourceClass) {
+  public <T extends CustomResource, L extends CustomResourceList<T>>
+      CustomResourceOperationsImpl<T, L> getCustomResourceClients(Class<T> customResourceClass) {
     return customResourceClients.get(customResourceClass);
   }
 }

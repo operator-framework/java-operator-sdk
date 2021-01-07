@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -13,21 +12,14 @@ import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
-import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
-import io.quarkus.gizmo.ClassCreator;
-import io.quarkus.gizmo.ClassOutput;
-import io.quarkus.gizmo.MethodCreator;
-import io.quarkus.gizmo.MethodDescriptor;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -66,7 +58,6 @@ class QuarkusExtensionProcessor {
   @Record(ExecutionTime.STATIC_INIT)
   void createConfigurationServiceAndOperator(
       CombinedIndexBuildItem combinedIndexBuildItem,
-      BuildProducer<GeneratedClassBuildItem> generatedClass,
       BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
       BuildProducer<AdditionalBeanBuildItem> additionalBeans,
       BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
@@ -74,13 +65,12 @@ class QuarkusExtensionProcessor {
     final var index = combinedIndexBuildItem.getIndex();
     final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
 
-    final var classOutput = new GeneratedClassGizmoAdaptor(generatedClass, true);
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
             .map(
                 ci ->
                     createControllerConfiguration(
-                        ci, classOutput, additionalBeans, reflectionClasses))
+                        ci, additionalBeans, reflectionClasses))
             .collect(Collectors.toList());
 
     final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
@@ -96,9 +86,7 @@ class QuarkusExtensionProcessor {
   }
 
   private ControllerConfiguration createControllerConfiguration(
-      ClassInfo info,
-      ClassOutput classOutput,
-      BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+      ClassInfo info, BuildProducer<AdditionalBeanBuildItem> additionalBeans,
       BuildProducer<ReflectiveClassBuildItem> reflectionClasses) {
     // first retrieve the custom resource class
     final var rcInterface =
@@ -114,33 +102,6 @@ class QuarkusExtensionProcessor {
     // create ResourceController bean
     final var resourceControllerClassName = info.name().toString();
     additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(resourceControllerClassName));
-
-    // generate associated Doneable class
-    final var doneableClassName = crType + "Doneable";
-    final var crDoneableClassName = CustomResourceDoneable.class.getName();
-    try (ClassCreator cc =
-        ClassCreator.builder()
-            .signature(
-                String.format(
-                    "Lio/fabric8/kubernetes/client/CustomResourceDoneable<L%s;>;",
-                    crType.replace('.', '/')))
-            .classOutput(classOutput)
-            .className(doneableClassName)
-            .superClass(crDoneableClassName)
-            .build()) {
-
-      final var functionName = io.fabric8.kubernetes.api.builder.Function.class.getName();
-      MethodCreator ctor =
-          cc.getMethodCreator("<init>", void.class.getName(), crType, functionName);
-      ctor.setModifiers(Modifier.PUBLIC);
-      ctor.invokeSpecialMethod(
-          MethodDescriptor.ofConstructor(
-              crDoneableClassName, CustomResource.class.getName(), functionName),
-          ctor.getThis(),
-          ctor.getMethodParam(0),
-          ctor.getMethodParam(1));
-      ctor.returnValue(null);
-    }
 
     // generate configuration
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
@@ -158,9 +119,8 @@ class QuarkusExtensionProcessor {
     // register CR class for introspection
     reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
 
-    final var crdName =
-        valueOrDefault(
-            controllerAnnotation, "crdName", AnnotationValue::asString, EXCEPTION_SUPPLIER);
+    // retrieve CRD name from CR type
+    final var crdName = CustomResource.getCRDName(crClass);
 
     // create the configuration
     final var configuration =
@@ -192,7 +152,6 @@ class QuarkusExtensionProcessor {
                     AnnotationValue::asStringArray,
                     () -> new String[] {})),
             crType,
-            doneableClassName,
             null // todo: fix-me
             );
 

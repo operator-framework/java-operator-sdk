@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 
-@Controller(crdName = "test.crd")
+@Controller
 public class MultilevelController extends
     MultilevelAbstractController<String, MultilevelController.MyCustomResource> {
 
