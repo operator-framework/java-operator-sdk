@@ -17,12 +17,13 @@ public class TestOperatorApp {
   @Path("{name}")
   //  @Produces(MediaType.TEXT_PLAIN)
   public boolean getController(@PathParam("name") String name) {
-    return name.equals(controller.getName());
+    return name.equals(configurationService.getConfigurationFor(controller).getName());
   }
 
   @GET
   @Path("{name}/config")
   public ControllerConfiguration getConfig(@PathParam("name") String name) {
-    return getController(name) ? configurationService.getConfigurationFor(controller) : null;
+    final var config = configurationService.getConfigurationFor(controller);
+    return name.equals(config.getName()) ? config : null;
   }
 }
