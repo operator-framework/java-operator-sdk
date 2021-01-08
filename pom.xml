@@ -39,6 +39,7 @@
         <surefire.version>3.0.0-M5</surefire.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <fabric8-client.version>5.0.0</fabric8-client.version>
+        <slf4j.version>1.7.30</slf4j.version>
     </properties>
 
     <modules>
@@ -61,7 +62,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.30</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
