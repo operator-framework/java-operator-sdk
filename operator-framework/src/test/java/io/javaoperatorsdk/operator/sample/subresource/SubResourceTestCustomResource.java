@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("SubResourceSample")
+@Kind("SubresourceSample")
 public class SubResourceTestCustomResource
     extends CustomResource<SubResourceTestCustomResourceSpec, SubResourceTestCustomResourceStatus>
     implements Namespaced {}

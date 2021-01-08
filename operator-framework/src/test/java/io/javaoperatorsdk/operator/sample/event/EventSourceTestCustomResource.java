@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("EventSourceSample")
+@Kind("Eventsourcesample")
 public class EventSourceTestCustomResource
     extends CustomResource<EventSourceTestCustomResourceSpec, EventSourceTestCustomResourceStatus>
     implements Namespaced {}

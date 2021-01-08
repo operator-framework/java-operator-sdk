@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("RetrySample")
+@Kind("retrysample")
 public class RetryTestCustomResource
     extends CustomResource<RetryTestCustomResourceSpec, RetryTestCustomResourceStatus>
     implements Namespaced {}
