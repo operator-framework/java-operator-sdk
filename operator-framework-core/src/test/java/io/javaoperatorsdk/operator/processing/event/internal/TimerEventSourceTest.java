@@ -22,7 +22,7 @@ class TimerEventSourceTest {
 
   public static final int INITIAL_DELAY = 50;
   public static final int PERIOD = 50;
-  public static final int TESTING_TIME_SLACK = 20;
+  public static final int TESTING_TIME_SLACK = 40;
 
   private TimerEventSource timerEventSource;
   private EventHandler eventHandlerMock = mock(EventHandler.class);
