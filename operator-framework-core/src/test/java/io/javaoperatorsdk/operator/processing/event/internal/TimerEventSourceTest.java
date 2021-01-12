@@ -15,9 +15,11 @@ import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+@Disabled("Currently very flaky, will fix in https://github.com/java-operator-sdk/java-operator-sdk/issues/293")
 class TimerEventSourceTest {
 
   public static final int INITIAL_DELAY = 50;
