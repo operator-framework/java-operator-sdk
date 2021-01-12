@@ -48,7 +48,7 @@ public class ControllerUtils {
     // if the name is fully qualified, extract the simple class name
     final var lastDot = rcControllerClassName.lastIndexOf('.');
     if (lastDot > 0) {
-      rcControllerClassName = rcControllerClassName.substring(lastDot);
+      rcControllerClassName = rcControllerClassName.substring(lastDot + 1);
     }
     return rcControllerClassName.toLowerCase(Locale.ROOT);
   }
