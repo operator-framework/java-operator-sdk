@@ -2,6 +2,8 @@ package io.javaoperatorsdk.quarkus.it;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -22,8 +24,59 @@ public class TestOperatorApp {
 
   @GET
   @Path("{name}/config")
-  public ControllerConfiguration getConfig(@PathParam("name") String name) {
-    final var config = configurationService.getConfigurationFor(controller);
-    return name.equals(config.getName()) ? config : null;
+  public JSONControllerConfiguration getConfig(@PathParam("name") String name) {
+    var config = configurationService.getConfigurationFor(controller);
+    if (config == null) {
+      return null;
+    }
+    return name.equals(config.getName()) ? new JSONControllerConfiguration(config) : null;
+  }
+
+  static class JSONControllerConfiguration {
+    private final ControllerConfiguration conf;
+
+    public JSONControllerConfiguration(ControllerConfiguration conf) {
+      this.conf = conf;
+    }
+
+    public String getName() {
+      return conf.getName();
+    }
+
+    public String getCRDName() {
+      return conf.getCRDName();
+    }
+
+    public String getFinalizer() {
+      return conf.getFinalizer();
+    }
+
+    public boolean isGenerationAware() {
+      return conf.isGenerationAware();
+    }
+
+    public String getCustomResourceClass() {
+      return conf.getCustomResourceClass().getCanonicalName();
+    }
+
+    public String getAssociatedControllerClassName() {
+      return conf.getAssociatedControllerClassName();
+    }
+
+    public boolean isClusterScoped() {
+      return conf.isClusterScoped();
+    }
+
+    public Set<String> getNamespaces() {
+      return conf.getNamespaces();
+    }
+
+    public boolean watchAllNamespaces() {
+      return conf.watchAllNamespaces();
+    }
+
+    public RetryConfiguration getRetryConfiguration() {
+      return conf.getRetryConfiguration();
+    }
   }
 }
