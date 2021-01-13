@@ -26,7 +26,7 @@ import io.quarkus.gizmo.ClassCreator;
 import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
-import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
@@ -63,13 +63,13 @@ class QuarkusExtensionProcessor {
   }
 
   @BuildStep
-  @Record(ExecutionTime.RUNTIME_INIT)
+  @Record(ExecutionTime.STATIC_INIT)
   void createConfigurationServiceAndOperator(
       CombinedIndexBuildItem combinedIndexBuildItem,
       BuildProducer<GeneratedClassBuildItem> generatedClass,
       BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
       BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-      KubernetesClientBuildItem clientBuildItem,
+      BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
       ConfigurationServiceRecorder recorder) {
     final var index = combinedIndexBuildItem.getIndex();
     final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
@@ -77,7 +77,7 @@ class QuarkusExtensionProcessor {
     final var classOutput = new GeneratedClassGizmoAdaptor(generatedClass, true);
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
-            .map(ci -> createControllerConfiguration(ci, classOutput, additionalBeans))
+            .map(ci -> createControllerConfiguration(ci, classOutput, additionalBeans, reflectionClasses))
             .collect(Collectors.toList());
 
     final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
@@ -95,7 +95,8 @@ class QuarkusExtensionProcessor {
   private ControllerConfiguration createControllerConfiguration(
       ClassInfo info,
       ClassOutput classOutput,
-      BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+      BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+      BuildProducer<ReflectiveClassBuildItem> reflectionClasses) {
     // first retrieve the custom resource class
     final var rcInterface =
         info.interfaceTypes().stream()
@@ -147,9 +148,18 @@ class QuarkusExtensionProcessor {
               + Controller.class.getCanonicalName()
               + " annotation");
     }
+
+    // load CR class
+    final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
+
+    // register CR class for introspection
+    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
+
     final var crdName =
         valueOrDefault(
             controllerAnnotation, "crdName", AnnotationValue::asString, EXCEPTION_SUPPLIER);
+
+    // create the configuration
     final var configuration =
         new QuarkusControllerConfiguration(
             resourceControllerClassName,
@@ -192,5 +202,13 @@ class QuarkusExtensionProcessor {
       Function<AnnotationValue, T> converter,
       Supplier<T> defaultValue) {
     return Optional.ofNullable(annotation.value(name)).map(converter).orElseGet(defaultValue);
+  }
+
+  private Class<?> loadClass(String className) {
+    try {
+      return Thread.currentThread().getContextClassLoader().loadClass(className);
+    } catch (ClassNotFoundException e) {
+      throw new IllegalArgumentException("Couldn't find class " + className);
+    }
   }
 }
