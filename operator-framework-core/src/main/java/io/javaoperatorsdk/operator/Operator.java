@@ -22,7 +22,7 @@ public class Operator {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  
+
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
