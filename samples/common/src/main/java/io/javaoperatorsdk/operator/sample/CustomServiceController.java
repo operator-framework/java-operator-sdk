@@ -28,11 +28,6 @@ public class CustomServiceController implements ResourceController<CustomService
   @Override
   public DeleteControl deleteResource(CustomService resource, Context<CustomService> context) {
     log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
-    kubernetesClient
-        .services()
-        .inNamespace(resource.getMetadata().getNamespace())
-        .withName(resource.getSpec().getName())
-        .delete();
     return DeleteControl.DEFAULT_DELETE;
   }
 
