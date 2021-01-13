@@ -32,8 +32,6 @@ public class TomcatController implements ResourceController<Tomcat> {
 
   private final KubernetesClient kubernetesClient;
 
-  private MixedOperation<Tomcat, CustomResourceList<Tomcat>, Resource<Tomcat>> tomcatOperations;
-
   private DeploymentEventSource deploymentEventSource;
 
   public TomcatController(KubernetesClient client) {
@@ -186,11 +184,6 @@ public class TomcatController implements ResourceController<Tomcat> {
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
     }
-  }
-
-  public void setTomcatOperations(
-      MixedOperation<Tomcat, CustomResourceList<Tomcat>, Resource<Tomcat>> tomcatOperations) {
-    this.tomcatOperations = tomcatOperations;
   }
 
   private static class WatchedResource {

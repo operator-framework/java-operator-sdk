@@ -1,12 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
@@ -17,8 +13,6 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +22,7 @@ public class Operator {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private Map<Class<? extends CustomResource>, CustomResourceOperationsImpl> customResourceClients =
-      new HashMap<>();
-
+  
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
@@ -74,8 +66,6 @@ public class Operator {
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
     Class<R> resClass = configuration.getCustomResourceClass();
-    /*CustomResourceDefinitionContext crd = getCustomResourceDefinitionForController(controller);
-    KubernetesDeserializer.registerCustomKind(crd.getVersion(), crd.getKind(), resClass);*/
     String finalizer = configuration.getFinalizer();
     MixedOperation client = k8sClient.customResources(resClass);
     EventDispatcher eventDispatcher =
@@ -90,8 +80,6 @@ public class Operator {
         new DefaultEventSourceManager(defaultEventHandler, retry != null);
     defaultEventHandler.setEventSourceManager(eventSourceManager);
     eventDispatcher.setEventSourceManager(eventSourceManager);
-
-    customResourceClients.put(resClass, (CustomResourceOperationsImpl) client);
 
     controller.init(eventSourceManager);
     CustomResourceEventSource customResourceEventSource =
@@ -132,28 +120,5 @@ public class Operator {
     customResourceEventSource.setEventHandler(defaultEventHandler);
 
     return customResourceEventSource;
-  }
-
-  private CustomResourceDefinitionContext getCustomResourceDefinitionForController(
-      ResourceController controller) {
-    final var crdName = configurationService.getConfigurationFor(controller).getCRDName();
-    CustomResourceDefinition customResourceDefinition =
-        k8sClient.customResourceDefinitions().withName(crdName).get();
-    if (customResourceDefinition == null) {
-      throw new OperatorException("Cannot find Custom Resource Definition with name: " + crdName);
-    }
-    CustomResourceDefinitionContext context =
-        CustomResourceDefinitionContext.fromCrd(customResourceDefinition);
-    return context;
-  }
-
-  public Map<Class<? extends CustomResource>, CustomResourceOperationsImpl>
-      getCustomResourceClients() {
-    return customResourceClients;
-  }
-
-  public <T extends CustomResource, L extends CustomResourceList<T>>
-      CustomResourceOperationsImpl<T, L> getCustomResourceClients(Class<T> customResourceClass) {
-    return customResourceClients.get(customResourceClass);
   }
 }
