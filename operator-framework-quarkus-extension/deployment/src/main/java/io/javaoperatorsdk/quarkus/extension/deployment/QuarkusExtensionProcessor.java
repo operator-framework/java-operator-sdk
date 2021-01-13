@@ -22,11 +22,11 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.gizmo.ClassCreator;
 import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
-import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
@@ -77,7 +77,10 @@ class QuarkusExtensionProcessor {
     final var classOutput = new GeneratedClassGizmoAdaptor(generatedClass, true);
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
-            .map(ci -> createControllerConfiguration(ci, classOutput, additionalBeans, reflectionClasses))
+            .map(
+                ci ->
+                    createControllerConfiguration(
+                        ci, classOutput, additionalBeans, reflectionClasses))
             .collect(Collectors.toList());
 
     final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
