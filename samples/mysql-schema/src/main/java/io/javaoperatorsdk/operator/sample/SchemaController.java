@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,7 +22,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller
+@Controller(namespaces = ControllerConfiguration.WATCH_ALL_NAMESPACES_MARKER)
 public class SchemaController implements ResourceController<Schema> {
   static final String USERNAME_FORMAT = "%s-user";
   static final String SECRET_FORMAT = "%s-secret";
