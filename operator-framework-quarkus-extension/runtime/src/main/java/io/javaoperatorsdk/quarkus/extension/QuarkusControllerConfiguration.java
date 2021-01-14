@@ -56,6 +56,21 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
         : Set.of(namespaces);
   }
 
+  // Needed for Quarkus to find the associated constructor parameter
+  public String getCrdName() {
+    return getCRDName();
+  }
+
+  // Needed for Quarkus to find the associated constructor parameter
+  public String getCrClass() {
+    return crClass;
+  }
+
+  // Needed for Quarkus to find the associated constructor parameter
+  public String getDoneableClassName() {
+    return doneableClassName;
+  }
+
   @Override
   public String getName() {
     return name;
