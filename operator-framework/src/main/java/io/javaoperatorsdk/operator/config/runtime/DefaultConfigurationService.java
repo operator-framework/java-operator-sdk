@@ -22,6 +22,12 @@ public class DefaultConfigurationService extends AbstractConfigurationService {
       // create the the configuration on demand and register it
       config = new AnnotationConfiguration(controller);
       register(config);
+    } else {
+      // check that we don't have a controller name collision
+      final var newControllerClassName = controller.getClass().getCanonicalName();
+      if (!config.getAssociatedControllerClassName().equals(newControllerClassName)) {
+        throwExceptionOnNameCollision(newControllerClassName, config);
+      }
     }
     return config;
   }

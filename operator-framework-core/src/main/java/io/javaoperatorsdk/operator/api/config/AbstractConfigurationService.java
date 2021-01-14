@@ -8,21 +8,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractConfigurationService implements ConfigurationService {
 
-  protected final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
+  private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
 
   protected <R extends CustomResource> void register(ControllerConfiguration<R> config) {
     final var name = config.getName();
     final var existing = configurations.get(name);
     if (existing != null) {
-      throw new IllegalArgumentException(
-          "Controller name '"
-              + name
-              + "' is used by both "
-              + existing.getAssociatedControllerClassName()
-              + " and "
-              + config.getAssociatedControllerClassName());
+      throwExceptionOnNameCollision(config.getAssociatedControllerClassName(), existing);
     }
     configurations.put(name, config);
+  }
+
+  protected void throwExceptionOnNameCollision(
+      String newControllerClassName, ControllerConfiguration existing) {
+    throw new IllegalArgumentException(
+        "Controller name '"
+            + existing.getName()
+            + "' is used by both "
+            + existing.getAssociatedControllerClassName()
+            + " and "
+            + newControllerClassName);
   }
 
   @Override
