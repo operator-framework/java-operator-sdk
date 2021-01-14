@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>quarkus</artifactId>
+  <artifactId>operator-framework-samples-quarkus</artifactId>
   <name>Operator SDK - Samples - Quarkus</name>
   <description>Sample usage with Quarkus</description>
   <packaging>jar</packaging>
