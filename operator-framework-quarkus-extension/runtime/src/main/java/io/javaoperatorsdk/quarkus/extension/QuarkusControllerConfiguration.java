@@ -55,7 +55,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
         ? Collections.emptySet()
         : Set.of(namespaces);
   }
-  
+
   @Override
   public String getName() {
     return name;
