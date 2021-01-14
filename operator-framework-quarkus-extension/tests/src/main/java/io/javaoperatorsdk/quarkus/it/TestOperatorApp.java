@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.quarkus.it;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
@@ -43,6 +44,7 @@ public class TestOperatorApp {
       return conf.getName();
     }
 
+    @JsonProperty("crdName")
     public String getCRDName() {
       return conf.getCRDName();
     }
@@ -61,6 +63,10 @@ public class TestOperatorApp {
 
     public String getAssociatedControllerClassName() {
       return conf.getAssociatedControllerClassName();
+    }
+
+    public String getDoneableClass() {
+      return conf.getDoneableClass().getCanonicalName();
     }
 
     public boolean isClusterScoped() {
