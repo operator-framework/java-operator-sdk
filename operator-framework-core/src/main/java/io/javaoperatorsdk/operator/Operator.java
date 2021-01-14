@@ -44,16 +44,15 @@ public class Operator {
       registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
     }
   }
-  
-  public <R extends CustomResource> void registerController(
+
+  // currently only used by IntegrationTestSupport but this should also disappear as by default the
+  // controllers should register into the current namespace the client is connected to which should
+  // work as expected for tests, in particular if we want to start testing using random namespace
+  // names
+  <R extends CustomResource> void registerController(
       ResourceController<R> controller, Retry retry, String... targetNamespaces)
       throws OperatorException {
     registerController(controller, false, retry, targetNamespaces);
-  }
-
-  public <R extends CustomResource> void registerController(
-      ResourceController<R> controller, String... targetNamespaces) throws OperatorException {
-    registerController(controller, false, null, targetNamespaces);
   }
 
   @SuppressWarnings("rawtypes")
