@@ -21,8 +21,11 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-      - name: Check code format
-        run: mvn fmt:check --file pom.xml
+      - name: Format code
+        uses: axel-op/googlejavaformat-action@v3
+        with:
+          commitMessage: "chore(format): re-format code"
+          args: "--replace"
       - name: Run unit tests
         run: mvn -B test -P no-integration-tests --file pom.xml
       - name: Set up Minikube
