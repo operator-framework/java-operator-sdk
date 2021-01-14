@@ -72,7 +72,8 @@ public class DefaultConfigurationServiceTest {
 
   @Controller(
       generationAwareEventProcessing = false,
-      crdName = TestCustomResourceController.CRD_NAME)
+      crdName = TestCustomResourceController.CRD_NAME,
+      name = "test")
   static class TestCustomResourceController implements ResourceController<TestCustomResource> {
 
     public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
