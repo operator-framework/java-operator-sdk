@@ -55,19 +55,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
         ? Collections.emptySet()
         : Set.of(namespaces);
   }
-
-  public String getCrdName() {
-    return getCRDName();
-  }
-
-  public String getCrClass() {
-    return crClass;
-  }
-
-  public String getDoneableClassName() {
-    return doneableClassName;
-  }
-
+  
   @Override
   public String getName() {
     return name;
