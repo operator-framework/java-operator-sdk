@@ -19,7 +19,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.parameters>true</maven.compiler.parameters>
-    <quarkus.version>1.11.0.CR1</quarkus.version>
+    <quarkus.version>1.11.0.Final</quarkus.version>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
     <maven.surefire.version>3.0.0-M5</maven.surefire.version>
   </properties>

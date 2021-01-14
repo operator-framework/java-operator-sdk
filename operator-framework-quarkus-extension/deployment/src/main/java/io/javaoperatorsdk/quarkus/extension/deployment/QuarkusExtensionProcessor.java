@@ -67,10 +67,7 @@ class QuarkusExtensionProcessor {
 
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
-            .map(
-                ci ->
-                    createControllerConfiguration(
-                        ci, additionalBeans, reflectionClasses))
+            .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses))
             .collect(Collectors.toList());
 
     final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
@@ -86,7 +83,8 @@ class QuarkusExtensionProcessor {
   }
 
   private ControllerConfiguration createControllerConfiguration(
-      ClassInfo info, BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+      ClassInfo info,
+      BuildProducer<AdditionalBeanBuildItem> additionalBeans,
       BuildProducer<ReflectiveClassBuildItem> reflectionClasses) {
     // first retrieve the custom resource class
     final var rcInterface =
