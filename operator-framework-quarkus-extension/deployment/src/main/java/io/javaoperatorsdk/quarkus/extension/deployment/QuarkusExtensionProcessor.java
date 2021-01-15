@@ -120,8 +120,13 @@ class QuarkusExtensionProcessor {
     // load CR class
     final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
-    // register CR class for introspection
-    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
+    // Instantiate CR to check that it's properly annotated
+    final CustomResource cr;
+    try {
+      cr = crClass.getConstructor().newInstance();
+    } catch (Exception e) {
+      throw new IllegalArgumentException(e.getCause());
+    }
 
     // retrieve CRD name from CR type
     final var crdName = CustomResource.getCRDName(crClass);
