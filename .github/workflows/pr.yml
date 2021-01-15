@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: ${{ github.head_ref }} // to avoid cloning in detached state (which would break committing)
+          ref: ${{ github.head_ref }} # to avoid cloning in detached state (which would break committing)
       - name: Format code
         uses: axel-op/googlejavaformat-action@v3
         with:
