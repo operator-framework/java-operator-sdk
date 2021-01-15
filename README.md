@@ -140,7 +140,7 @@ A sample custom resource POJO representation
 ```java
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> {}
+public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> implements Namespaced {}
 
 public class WebServerSpec {
 
