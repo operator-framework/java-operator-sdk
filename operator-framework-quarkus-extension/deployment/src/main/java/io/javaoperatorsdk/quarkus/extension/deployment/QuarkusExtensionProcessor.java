@@ -32,8 +32,11 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Type;
+import org.jboss.logging.Logger;
 
 class QuarkusExtensionProcessor {
+
+  private static final Logger log = Logger.getLogger(QuarkusExtensionProcessor.class.getName());
 
   private static final String FEATURE = "operator-sdk";
   private static final DotName RESOURCE_CONTROLLER =
@@ -112,7 +115,7 @@ class QuarkusExtensionProcessor {
     if (controllerAnnotation == null) {
       throw new IllegalArgumentException(
           resourceControllerClassName
-              + " is missing the "
+              + " is missing the @"
               + Controller.class.getCanonicalName()
               + " annotation");
     }
@@ -131,16 +134,21 @@ class QuarkusExtensionProcessor {
     // retrieve CRD name from CR type
     final var crdName = CustomResource.getCRDName(crClass);
 
+    // register CR class for introspection
+    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
+
+    final var name =
+        valueOrDefault(
+            controllerAnnotation,
+            "name",
+            AnnotationValue::asString,
+            () -> ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName));
+
     // create the configuration
     final var configuration =
         new QuarkusControllerConfiguration(
             resourceControllerClassName,
-            valueOrDefault(
-                controllerAnnotation,
-                "name",
-                AnnotationValue::asString,
-                () ->
-                    ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName)),
+            name,
             crdName,
             valueOrDefault(
                 controllerAnnotation,
@@ -163,6 +171,10 @@ class QuarkusExtensionProcessor {
             crType,
             null // todo: fix-me
             );
+
+    log.infov(
+        "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
+        info.name().toString(), name, cr.getCRDName(), cr.getApiVersion());
 
     return configuration;
   }
