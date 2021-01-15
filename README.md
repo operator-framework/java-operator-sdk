@@ -44,6 +44,33 @@ about the non-trivial yet common problems needed to be solved for every operator
 You can (will) find detailed documentation [here](docs/DOCS.md). 
 Note that these docs are currently in progress. 
 
+> :warning: 1.7.0 Upgrade
+> The 1.7.0 upgrade comes with big changes due to the update to the 5.0.0 version of the fabric8
+> Kubernetes client. While this should improve the user experience quite nicely, there are a couple
+> of things to be aware of when upgrading from a previous version as detailed below.
+
+##### Overview of the 1.7.0 changes
+
+- `Doneable` classes have been removed along with all the involved complexity
+- `Controller` annotation has been simplified: the `crdName` field has been removed as that value is
+  computed from the associated custom resource implementation
+- Custom Resource implementation classes now need to be annotated with `Group` and `Version`
+  annotations so that they can be identified properly. Optionally, they can also be annotated with
+  `Kind` (if the name of the implementation class doesn't match the desired kind) and `Plural` if
+  the plural version cannot be automatically computed (or the default computed version doesn't match
+  your expectations).
+- The `CustomResource` class that needs to be extended is now parameterized with spec and status
+  types, so you can have an empty default implementation that does what you'd expect. If you don't
+  need a status, using `Void` for the associated type should work.
+- Custom Resources that are namespace-scoped need to implement the `Namespaced` interface so that
+  the client can generate the proper URLs.
+
+Many of these changes might not be immediately apparent but will result in `404` errors when
+connecting to the cluster. Please check that the Custom Resource implementations are properly
+annotated and that the value corresponds to your CRD manifest. If the namespace appear to be missing
+in your request URL, don't forget that namespace-scoped Custom Resources need to implement
+the `Namescaped` interface.
+
 #### Usage
 
 We have several sample Operators under the [samples](samples) directory:
