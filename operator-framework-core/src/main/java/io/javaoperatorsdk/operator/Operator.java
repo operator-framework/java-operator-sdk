@@ -31,9 +31,18 @@ public class Operator {
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     final var configuration = configurationService.getConfigurationFor(controller);
-    final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-    final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
-    registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
+    if (configuration == null) {
+      log.warn(
+          "Skipping registration of {} controller named {} because its configuration cannot be found.\n"
+              + "Known controllers are: {}",
+          controller.getClass().getCanonicalName(),
+          ControllerUtils.getNameFor(controller),
+          configurationService.getKnownControllerNames());
+    } else {
+      final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
+      final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+      registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
+    }
   }
 
   public <R extends CustomResource> void registerControllerForAllNamespaces(

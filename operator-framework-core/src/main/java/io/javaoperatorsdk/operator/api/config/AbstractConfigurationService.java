@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractConfigurationService implements ConfigurationService {
@@ -34,5 +35,10 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
     return configurations.get(ControllerUtils.getNameFor(controller));
+  }
+
+  @Override
+  public Set<String> getKnownControllerNames() {
+    return configurations.keySet();
   }
 }
