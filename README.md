@@ -15,9 +15,9 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 
 #### Features
 * Framework for handling Kubernetes API events
-* Registering Custom Resource watches
+* Automatic registration of Custom Resource watches
 * Retry action on failure
-* Smart event scheduling (only handle latest event for the same resource)
+* Smart event scheduling (only handle the latest event for the same resource)
 
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
 about the non-trivial yet common problems needed to be solved for every operator. 
@@ -52,6 +52,7 @@ Implemented with and without Spring Boot support. The two samples share the comm
 * *webserver*: More realistic example creating an nginx webserver from a Custom Resource containing html code.
 * *mysql-schema*: Operator managing schemas in a MySQL database
 * *spring-boot-plain/auto-config*: Samples showing integration with Spring Boot.
+* *quarkus*: Minimal application showing automatic configuration / injection of Operator / Controllers.
 
 Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
 
@@ -89,7 +90,7 @@ public class Runner {
 The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
-@Controller(crdName = "webservers.sample.javaoperatorsdk")
+@Controller
 public class WebServerController implements ResourceController<WebServer> {
 
     @Override
@@ -110,28 +111,9 @@ public class WebServerController implements ResourceController<WebServer> {
 A sample custom resource POJO representation
 
 ```java
-public class WebServer extends CustomResource {
-
-    private WebServerSpec spec;
-
-    private WebServerStatus status;
-
-    public WebServerSpec getSpec() {
-        return spec;
-    }
-
-    public void setSpec(WebServerSpec spec) {
-        this.spec = spec;
-    }
-
-    public WebServerStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(WebServerStatus status) {
-        this.status = status;
-    }
-}
+@Group("sample.javaoperatorsdk")
+@Version("v1")
+public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> {}
 
 public class WebServerSpec {
 
@@ -183,7 +165,6 @@ public class QuarkusOperator implements QuarkusApplication {
   public int run(String... args) throws Exception {
     final var config = configuration.getConfigurationFor(new CustomServiceController(client));
     System.out.println("CR class: " + config.getCustomResourceClass());
-    System.out.println("Doneable class = " + config.getDoneableClass());
 
     Quarkus.waitForExit();
     return 0;
