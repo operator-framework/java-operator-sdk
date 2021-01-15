@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Singleton;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -38,6 +39,8 @@ class QuarkusExtensionProcessor {
   private static final DotName RESOURCE_CONTROLLER =
       DotName.createSimple(ResourceController.class.getName());
   private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
+  private static final DotName APPLICATION_SCOPED =
+      DotName.createSimple(ApplicationScoped.class.getName());
   private static final Supplier<String> EXCEPTION_SUPPLIER =
       () -> {
         throw new IllegalArgumentException();
@@ -99,7 +102,12 @@ class QuarkusExtensionProcessor {
 
     // create ResourceController bean
     final var resourceControllerClassName = info.name().toString();
-    additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(resourceControllerClassName));
+    additionalBeans.produce(
+        AdditionalBeanBuildItem.builder()
+            .addBeanClass(resourceControllerClassName)
+            .setUnremovable()
+            .setDefaultScope(APPLICATION_SCOPED)
+            .build());
 
     // generate configuration
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
