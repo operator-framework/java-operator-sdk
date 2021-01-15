@@ -47,12 +47,10 @@ class QuarkusExtensionProcessor {
       };
 
   @BuildStep
-  FeatureBuildItem feature() {
-    return new FeatureBuildItem(FEATURE);
-  }
-
-  @BuildStep
-  void indexSDKDependencies(BuildProducer<IndexDependencyBuildItem> indexDependency) {
+  void indexSDKDependencies(
+      BuildProducer<IndexDependencyBuildItem> indexDependency,
+      BuildProducer<FeatureBuildItem> features) {
+    features.produce(new FeatureBuildItem(FEATURE));
     indexDependency.produce(
         new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
   }
