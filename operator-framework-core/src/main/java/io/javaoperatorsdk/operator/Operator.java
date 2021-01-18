@@ -9,10 +9,13 @@ import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +25,7 @@ public class Operator {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
+  private List<EventSourceManager> eventSourceManagers = new ArrayList<>();
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
@@ -66,6 +70,10 @@ public class Operator {
     registerController(controller, false, null, targetNamespaces);
   }
 
+  public void close() {
+    eventSourceManagers.stream().forEach(EventSourceManager::close);
+  }
+
   @SuppressWarnings("rawtypes")
   private <R extends CustomResource> void registerController(
       ResourceController<R> controller,
@@ -101,6 +109,8 @@ public class Operator {
             configuration.isGenerationAware(),
             finalizer);
     eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+
+    eventSourceManagers.add(eventSourceManager);
 
     log.info(
         "Registered Controller: '{}' for CRD: '{}' for namespaces: {}",
