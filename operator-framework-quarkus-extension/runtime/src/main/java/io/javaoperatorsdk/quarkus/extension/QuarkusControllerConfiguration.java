@@ -14,7 +14,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final boolean clusterScoped;
   private final Set<String> namespaces;
   private final String crClass;
   private final boolean watchAllNamespaces;
@@ -27,7 +26,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
       String crdName,
       String finalizer,
       boolean generationAware,
-      boolean clusterScoped,
       Set<String> namespaces,
       String crClass,
       RetryConfiguration retryConfiguration) {
@@ -36,7 +34,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
     this.crdName = crdName;
     this.finalizer = finalizer;
     this.generationAware = generationAware;
-    this.clusterScoped = clusterScoped;
     this.namespaces = namespaces;
     this.crClass = crClass;
     this.watchAllNamespaces = this.namespaces.contains(WATCH_ALL_NAMESPACES_MARKER);
@@ -98,11 +95,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
   @Override
   public String getAssociatedControllerClassName() {
     return associatedControllerClassName;
-  }
-
-  @Override
-  public boolean isClusterScoped() {
-    return clusterScoped;
   }
 
   @Override

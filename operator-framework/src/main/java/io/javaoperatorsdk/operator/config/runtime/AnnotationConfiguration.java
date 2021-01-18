@@ -48,11 +48,6 @@ public class AnnotationConfiguration<R extends CustomResource>
   }
 
   @Override
-  public boolean isClusterScoped() {
-    return annotation.isClusterScoped();
-  }
-
-  @Override
   public Set<String> getNamespaces() {
     return Set.of(annotation.namespaces());
   }

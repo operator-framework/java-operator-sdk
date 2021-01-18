@@ -26,7 +26,15 @@ public @interface Controller {
    */
   boolean generationAwareEventProcessing() default true;
 
-  boolean isClusterScoped() default false;
-
+  /**
+   * Specified which namespaces this Controller monitors for custom resources events. If no
+   * namespace is specified then the controller will monitor the namespace it is deployed in (or the
+   * namespace to which the Kubernetes client is connected to). To specify that the controller needs
+   * to monitor all namespaces, add {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfiguration#WATCH_ALL_NAMESPACES_MARKER} to
+   * this field.
+   *
+   * @return the list of namespaces this controller monitors
+   */
   String[] namespaces() default {};
 }

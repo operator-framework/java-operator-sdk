@@ -160,8 +160,6 @@ class QuarkusExtensionProcessor {
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
                 () -> true),
-            valueOrDefault(
-                controllerAnnotation, "isClusterScoped", AnnotationValue::asBoolean, () -> false),
             QuarkusControllerConfiguration.asSet(
                 valueOrDefault(
                     controllerAnnotation,

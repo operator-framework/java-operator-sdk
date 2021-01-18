@@ -101,11 +101,6 @@ public class OperatorAutoConfiguration extends AbstractConfigurationService {
     }
 
     @Override
-    public boolean isClusterScoped() {
-      return properties.map(ControllerProperties::isClusterScoped).orElse(super.isClusterScoped());
-    }
-
-    @Override
     public Set<String> getNamespaces() {
       return properties.map(ControllerProperties::getNamespaces).orElse(super.getNamespaces());
     }

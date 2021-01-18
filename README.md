@@ -63,7 +63,11 @@ Note that these docs are currently in progress.
   types, so you can have an empty default implementation that does what you'd expect. If you don't
   need a status, using `Void` for the associated type should work.
 - Custom Resources that are namespace-scoped need to implement the `Namespaced` interface so that
-  the client can generate the proper URLs.
+  the client can generate the proper URLs. This means, in particular, that `CustomResource`
+  implementations that do **not** implement `Namespaced` are considered cluster-scoped. As a
+  consequence, the `isClusterScoped` method/field has been removed from the appropriate
+  classes (`Controller` annotation, in particular) as this is now inferred from the `CustomResource`
+  type associated with your `Controller`.
 
 Many of these changes might not be immediately apparent but will result in `404` errors when
 connecting to the cluster. Please check that the Custom Resource implementations are properly

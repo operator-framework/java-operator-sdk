@@ -65,10 +65,6 @@ public class TestOperatorApp {
       return conf.getAssociatedControllerClassName();
     }
 
-    public boolean isClusterScoped() {
-      return conf.isClusterScoped();
-    }
-
     public Set<String> getNamespaces() {
       return conf.getNamespaces();
     }

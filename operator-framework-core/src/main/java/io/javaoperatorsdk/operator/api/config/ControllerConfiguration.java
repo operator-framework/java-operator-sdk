@@ -20,10 +20,6 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   String getAssociatedControllerClassName();
 
-  default boolean isClusterScoped() {
-    return false;
-  }
-
   default Set<String> getNamespaces() {
     return Collections.emptySet();
   }
