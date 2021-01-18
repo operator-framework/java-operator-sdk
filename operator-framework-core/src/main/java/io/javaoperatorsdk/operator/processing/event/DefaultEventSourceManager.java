@@ -82,6 +82,11 @@ public class DefaultEventSourceManager implements EventSourceManager {
     return Collections.unmodifiableMap(eventSources);
   }
 
+  @Override
+  public void close() {
+    customResourceEventSource.close();
+  }
+
   public void cleanup(String customResourceUid) {
     getRegisteredEventSources()
         .keySet()

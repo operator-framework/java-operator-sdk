@@ -5,6 +5,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.markedForDeletion;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -30,6 +31,7 @@ public class CustomResourceEventSource extends AbstractEventSource
   private final boolean generationAware;
   private final String resourceFinalizer;
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
+  private Watch watch;
 
   public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(
       CustomResourceCache customResourceCache,
@@ -63,6 +65,10 @@ public class CustomResourceEventSource extends AbstractEventSource
     this.resourceFinalizer = resourceFinalizer;
   }
 
+  public Watch getWatch() {
+    return watch;
+  }
+
   private boolean isWatchAllNamespaces() {
     return targetNamespaces == null;
   }
@@ -74,12 +80,12 @@ public class CustomResourceEventSource extends AbstractEventSource
   private void registerWatch() {
     CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
     if (isWatchAllNamespaces()) {
-      crClient.inAnyNamespace().watch(this);
+      this.watch = crClient.inAnyNamespace().watch(this);
     } else if (targetNamespaces.length == 0) {
-      client.watch(this);
+      this.watch = client.watch(this);
     } else {
       for (String targetNamespace : targetNamespaces) {
-        crClient.inNamespace(targetNamespace).watch(this);
+        this.watch = crClient.inNamespace(targetNamespace).watch(this);
         log.debug("Registered controller for namespace: {}", targetNamespace);
       }
     }
@@ -147,6 +153,11 @@ public class CustomResourceEventSource extends AbstractEventSource
   @Override
   public void eventSourceDeRegisteredForResource(String customResourceUid) {
     lastGenerationProcessedSuccessfully.remove(customResourceUid);
+  }
+
+  @Override
+  public void close() {
+    watch.close();
   }
 
   @Override

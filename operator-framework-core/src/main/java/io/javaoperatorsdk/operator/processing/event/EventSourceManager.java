@@ -11,4 +11,7 @@ public interface EventSourceManager {
       String name, String customResourceUid);
 
   Map<String, EventSource> getRegisteredEventSources();
+
+  default void close() {}
+  ;
 }
