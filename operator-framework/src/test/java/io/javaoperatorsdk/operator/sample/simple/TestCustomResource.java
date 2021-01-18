@@ -1,38 +1,14 @@
 package io.javaoperatorsdk.operator.sample.simple;
 
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Kind;
+import io.fabric8.kubernetes.model.annotation.Version;
 
-public class TestCustomResource extends CustomResource {
-
-  private TestCustomResourceSpec spec;
-
-  private TestCustomResourceStatus status;
-
-  public TestCustomResourceSpec getSpec() {
-    return spec;
-  }
-
-  public void setSpec(TestCustomResourceSpec spec) {
-    this.spec = spec;
-  }
-
-  public TestCustomResourceStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(TestCustomResourceStatus status) {
-    this.status = status;
-  }
-
-  @Override
-  public String toString() {
-    return "TestCustomResource{"
-        + "spec="
-        + spec
-        + ", status="
-        + status
-        + ", extendedFrom="
-        + super.toString()
-        + '}';
-  }
-}
+@Group("sample.javaoperatorsdk")
+@Version("v1")
+@Kind("CustomService")
+public class TestCustomResource
+    extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus>
+    implements Namespaced {}

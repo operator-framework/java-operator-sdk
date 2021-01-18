@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -13,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** A very simple sample controller that creates a service with a label. */
-@Controller(crdName = "customservices.sample.javaoperatorsdk")
+@Controller
 public class CustomServiceController implements ResourceController<CustomService> {
 
   public static final String KIND = "CustomService";
@@ -44,13 +45,14 @@ public class CustomServiceController implements ResourceController<CustomService
     kubernetesClient
         .services()
         .inNamespace(resource.getMetadata().getNamespace())
-        .createOrReplaceWithNew()
-        .withNewMetadata()
-        .withName(resource.getSpec().getName())
-        .addToLabels("testLabel", resource.getSpec().getLabel())
-        .endMetadata()
-        .withSpec(serviceSpec)
-        .done();
+        .createOrReplace(
+            new ServiceBuilder()
+                .withNewMetadata()
+                .withName(resource.getSpec().getName())
+                .addToLabels("testLabel", resource.getSpec().getLabel())
+                .endMetadata()
+                .withSpec(serviceSpec)
+                .build());
     return UpdateControl.updateCustomResource(resource);
   }
 }

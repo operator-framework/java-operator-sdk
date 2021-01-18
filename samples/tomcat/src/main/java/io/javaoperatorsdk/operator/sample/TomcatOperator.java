@@ -26,7 +26,6 @@ public class TomcatOperator {
 
     TomcatController tomcatController = new TomcatController(client);
     operator.registerControllerForAllNamespaces(tomcatController);
-    tomcatController.setTomcatOperations(operator.getCustomResourceClients(Tomcat.class));
 
     operator.registerControllerForAllNamespaces(new WebappController(client));
 

@@ -3,13 +3,12 @@ package io.javaoperatorsdk.operator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -33,10 +32,7 @@ public class IntegrationTestSupport {
   private static final Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
   private KubernetesClient k8sClient;
   private MixedOperation<
-          CustomResource,
-          CustomResourceList,
-          CustomResourceDoneable,
-          Resource<CustomResource, CustomResourceDoneable>>
+          CustomResource, KubernetesResourceList<CustomResource>, Resource<CustomResource>>
       crOperations;
   private Operator operator;
   private ResourceController controller;
@@ -57,11 +53,8 @@ public class IntegrationTestSupport {
     final var configurationService = DefaultConfigurationService.instance();
 
     final var config = configurationService.getConfigurationFor(controller);
-    Class doneableClass = config.getDoneableClass();
-    Class customResourceClass = config.getCustomResourceClass();
-    crOperations =
-        k8sClient.customResources(
-            crdContext, customResourceClass, CustomResourceList.class, doneableClass);
+    final var customResourceClass = config.getCustomResourceClass();
+    this.crOperations = k8sClient.customResources(customResourceClass);
 
     if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
       k8sClient
@@ -177,10 +170,7 @@ public class IntegrationTestSupport {
   }
 
   public MixedOperation<
-          CustomResource,
-          CustomResourceList,
-          CustomResourceDoneable,
-          Resource<CustomResource, CustomResourceDoneable>>
+          CustomResource, KubernetesResourceList<CustomResource>, Resource<CustomResource>>
       getCrOperations() {
     return crOperations;
   }

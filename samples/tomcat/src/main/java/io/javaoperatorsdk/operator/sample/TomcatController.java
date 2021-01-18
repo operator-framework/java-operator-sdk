@@ -1,21 +1,18 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.DeleteControl;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import java.io.IOException;
@@ -26,19 +23,11 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(crdName = "tomcats.tomcatoperator.io")
 public class TomcatController implements ResourceController<Tomcat> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
-
-  private MixedOperation<
-          Tomcat,
-          CustomResourceList<Tomcat>,
-          CustomResourceDoneable<Tomcat>,
-          Resource<Tomcat, CustomResourceDoneable<Tomcat>>>
-      tomcatOperations;
 
   private DeploymentEventSource deploymentEventSource;
 
@@ -153,7 +142,7 @@ public class TomcatController implements ResourceController<Tomcat> {
 
   private void deleteDeployment(Tomcat tomcat) {
     log.info("Deleting Deployment {}", tomcat.getMetadata().getName());
-    RollableScalableResource<Deployment, DoneableDeployment> deployment =
+    RollableScalableResource<Deployment> deployment =
         kubernetesClient
             .apps()
             .deployments()
@@ -176,7 +165,7 @@ public class TomcatController implements ResourceController<Tomcat> {
 
   private void deleteService(Tomcat tomcat) {
     log.info("Deleting Service {}", tomcat.getMetadata().getName());
-    ServiceResource<Service, DoneableService> service =
+    ServiceResource<Service> service =
         kubernetesClient
             .services()
             .inNamespace(tomcat.getMetadata().getNamespace())
@@ -194,17 +183,8 @@ public class TomcatController implements ResourceController<Tomcat> {
     }
   }
 
-  public void setTomcatOperations(
-      MixedOperation<
-              Tomcat,
-              CustomResourceList<Tomcat>,
-              CustomResourceDoneable<Tomcat>,
-              Resource<Tomcat, CustomResourceDoneable<Tomcat>>>
-          tomcatOperations) {
-    this.tomcatOperations = tomcatOperations;
-  }
-
   private static class WatchedResource {
+
     private final String type;
     private final String name;
 
@@ -219,9 +199,13 @@ public class TomcatController implements ResourceController<Tomcat> {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
+      if (this == o) {
+        return true;
+      }
 
-      if (o == null || getClass() != o.getClass()) return false;
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
 
       WatchedResource that = (WatchedResource) o;
 

@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample.simple;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -14,12 +15,12 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(generationAwareEventProcessing = false, crdName = TestCustomResourceController.CRD_NAME)
+@Controller(generationAwareEventProcessing = false)
 public class TestCustomResourceController implements ResourceController<TestCustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 
-  public static final String CRD_NAME = "customservices.sample.javaoperatorsdk";
+  public static final String CRD_NAME = CustomResource.getCRDName(TestCustomResource.class);
   public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
 
   private final KubernetesClient kubernetesClient;

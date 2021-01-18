@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample.subresource;
 
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -10,14 +12,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(
-    crdName = SubResourceTestCustomResourceController.CRD_NAME,
-    generationAwareEventProcessing = false)
+@Controller(generationAwareEventProcessing = false)
 public class SubResourceTestCustomResourceController
     implements ResourceController<SubResourceTestCustomResource>, TestExecutionInfoProvider {
 
-  public static final String CRD_NAME = "subresourcesample.sample.javaoperatorsdk";
-  public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
+  public static final String FINALIZER_NAME =
+      ControllerUtils.getDefaultFinalizerName(
+          CustomResource.getCRDName(SubResourceTestCustomResource.class));
   private static final Logger log =
       LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);

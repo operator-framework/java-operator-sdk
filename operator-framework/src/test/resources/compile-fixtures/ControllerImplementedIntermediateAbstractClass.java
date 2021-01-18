@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import java.io.Serializable;
 
-@Controller(crdName = "test.crd")
+@Controller
 public class ControllerImplementedIntermediateAbstractClass extends
     AbstractController<AbstractController.MyCustomResource> implements Serializable {
 

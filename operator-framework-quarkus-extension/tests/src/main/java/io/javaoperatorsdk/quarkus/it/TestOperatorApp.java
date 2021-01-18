@@ -65,14 +65,6 @@ public class TestOperatorApp {
       return conf.getAssociatedControllerClassName();
     }
 
-    public String getDoneableClass() {
-      return conf.getDoneableClass().getCanonicalName();
-    }
-
-    public boolean isClusterScoped() {
-      return conf.isClusterScoped();
-    }
-
     public Set<String> getNamespaces() {
       return conf.getNamespaces();
     }

@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.quarkus.extension;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -15,10 +14,8 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final boolean clusterScoped;
   private final Set<String> namespaces;
   private final String crClass;
-  private final String doneableClassName;
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
 
@@ -29,20 +26,16 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
       String crdName,
       String finalizer,
       boolean generationAware,
-      boolean clusterScoped,
       Set<String> namespaces,
       String crClass,
-      String doneableClassName,
       RetryConfiguration retryConfiguration) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
     this.finalizer = finalizer;
     this.generationAware = generationAware;
-    this.clusterScoped = clusterScoped;
     this.namespaces = namespaces;
     this.crClass = crClass;
-    this.doneableClassName = doneableClassName;
     this.watchAllNamespaces = this.namespaces.contains(WATCH_ALL_NAMESPACES_MARKER);
     this.retryConfiguration =
         retryConfiguration == null
@@ -64,11 +57,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
   // Needed for Quarkus to find the associated constructor parameter
   public String getCrClass() {
     return crClass;
-  }
-
-  // Needed for Quarkus to find the associated constructor parameter
-  public String getDoneableClassName() {
-    return doneableClassName;
   }
 
   @Override
@@ -96,11 +84,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
     return (Class<R>) loadClass(crClass);
   }
 
-  @Override
-  public Class<? extends CustomResourceDoneable<R>> getDoneableClass() {
-    return (Class<? extends CustomResourceDoneable<R>>) loadClass(doneableClassName);
-  }
-
   private Class<?> loadClass(String className) {
     try {
       return Thread.currentThread().getContextClassLoader().loadClass(className);
@@ -112,11 +95,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
   @Override
   public String getAssociatedControllerClassName() {
     return associatedControllerClassName;
-  }
-
-  @Override
-  public boolean isClusterScoped() {
-    return clusterScoped;
   }
 
   @Override

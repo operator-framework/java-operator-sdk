@@ -6,10 +6,9 @@ import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 
-@Controller(crdName = TestController.CRD_NAME, name = TestController.NAME)
+@Controller(name = TestController.NAME)
 public class TestController implements ResourceController<TestResource> {
   public static final String NAME = "test";
-  public static final String CRD_NAME = "test.example.com";
 
   @Override
   public DeleteControl deleteResource(TestResource resource, Context<TestResource> context) {

@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import java.util.Collections;
 import java.util.Set;
 
@@ -19,13 +18,7 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   Class<R> getCustomResourceClass();
 
-  Class<? extends CustomResourceDoneable<R>> getDoneableClass();
-
   String getAssociatedControllerClassName();
-
-  default boolean isClusterScoped() {
-    return false;
-  }
 
   default Set<String> getNamespaces() {
     return Collections.emptySet();

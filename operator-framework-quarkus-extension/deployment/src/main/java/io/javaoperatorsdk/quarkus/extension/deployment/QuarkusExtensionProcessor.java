@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -13,51 +12,48 @@ import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
-import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.GeneratedClassBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
-import io.quarkus.gizmo.ClassCreator;
-import io.quarkus.gizmo.ClassOutput;
-import io.quarkus.gizmo.MethodCreator;
-import io.quarkus.gizmo.MethodDescriptor;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Singleton;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Type;
+import org.jboss.logging.Logger;
 
 class QuarkusExtensionProcessor {
+
+  private static final Logger log = Logger.getLogger(QuarkusExtensionProcessor.class.getName());
 
   private static final String FEATURE = "operator-sdk";
   private static final DotName RESOURCE_CONTROLLER =
       DotName.createSimple(ResourceController.class.getName());
   private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
+  private static final DotName APPLICATION_SCOPED =
+      DotName.createSimple(ApplicationScoped.class.getName());
   private static final Supplier<String> EXCEPTION_SUPPLIER =
       () -> {
         throw new IllegalArgumentException();
       };
 
   @BuildStep
-  FeatureBuildItem feature() {
-    return new FeatureBuildItem(FEATURE);
-  }
-
-  @BuildStep
-  void indexSDKDependencies(BuildProducer<IndexDependencyBuildItem> indexDependency) {
+  void indexSDKDependencies(
+      BuildProducer<IndexDependencyBuildItem> indexDependency,
+      BuildProducer<FeatureBuildItem> features) {
+    features.produce(new FeatureBuildItem(FEATURE));
     indexDependency.produce(
         new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
   }
@@ -66,7 +62,6 @@ class QuarkusExtensionProcessor {
   @Record(ExecutionTime.STATIC_INIT)
   void createConfigurationServiceAndOperator(
       CombinedIndexBuildItem combinedIndexBuildItem,
-      BuildProducer<GeneratedClassBuildItem> generatedClass,
       BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
       BuildProducer<AdditionalBeanBuildItem> additionalBeans,
       BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
@@ -74,13 +69,9 @@ class QuarkusExtensionProcessor {
     final var index = combinedIndexBuildItem.getIndex();
     final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
 
-    final var classOutput = new GeneratedClassGizmoAdaptor(generatedClass, true);
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
-            .map(
-                ci ->
-                    createControllerConfiguration(
-                        ci, classOutput, additionalBeans, reflectionClasses))
+            .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses))
             .collect(Collectors.toList());
 
     final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
@@ -97,7 +88,6 @@ class QuarkusExtensionProcessor {
 
   private ControllerConfiguration createControllerConfiguration(
       ClassInfo info,
-      ClassOutput classOutput,
       BuildProducer<AdditionalBeanBuildItem> additionalBeans,
       BuildProducer<ReflectiveClassBuildItem> reflectionClasses) {
     // first retrieve the custom resource class
@@ -113,41 +103,19 @@ class QuarkusExtensionProcessor {
 
     // create ResourceController bean
     final var resourceControllerClassName = info.name().toString();
-    additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(resourceControllerClassName));
-
-    // generate associated Doneable class
-    final var doneableClassName = crType + "Doneable";
-    final var crDoneableClassName = CustomResourceDoneable.class.getName();
-    try (ClassCreator cc =
-        ClassCreator.builder()
-            .signature(
-                String.format(
-                    "Lio/fabric8/kubernetes/client/CustomResourceDoneable<L%s;>;",
-                    crType.replace('.', '/')))
-            .classOutput(classOutput)
-            .className(doneableClassName)
-            .superClass(crDoneableClassName)
-            .build()) {
-
-      final var functionName = io.fabric8.kubernetes.api.builder.Function.class.getName();
-      MethodCreator ctor =
-          cc.getMethodCreator("<init>", void.class.getName(), crType, functionName);
-      ctor.setModifiers(Modifier.PUBLIC);
-      ctor.invokeSpecialMethod(
-          MethodDescriptor.ofConstructor(
-              crDoneableClassName, CustomResource.class.getName(), functionName),
-          ctor.getThis(),
-          ctor.getMethodParam(0),
-          ctor.getMethodParam(1));
-      ctor.returnValue(null);
-    }
+    additionalBeans.produce(
+        AdditionalBeanBuildItem.builder()
+            .addBeanClass(resourceControllerClassName)
+            .setUnremovable()
+            .setDefaultScope(APPLICATION_SCOPED)
+            .build());
 
     // generate configuration
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
     if (controllerAnnotation == null) {
       throw new IllegalArgumentException(
           resourceControllerClassName
-              + " is missing the "
+              + " is missing the @"
               + Controller.class.getCanonicalName()
               + " annotation");
     }
@@ -155,23 +123,32 @@ class QuarkusExtensionProcessor {
     // load CR class
     final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
+    // Instantiate CR to check that it's properly annotated
+    final CustomResource cr;
+    try {
+      cr = crClass.getConstructor().newInstance();
+    } catch (Exception e) {
+      throw new IllegalArgumentException(e.getCause());
+    }
+
+    // retrieve CRD name from CR type
+    final var crdName = CustomResource.getCRDName(crClass);
+
     // register CR class for introspection
     reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
 
-    final var crdName =
+    final var name =
         valueOrDefault(
-            controllerAnnotation, "crdName", AnnotationValue::asString, EXCEPTION_SUPPLIER);
+            controllerAnnotation,
+            "name",
+            AnnotationValue::asString,
+            () -> ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName));
 
     // create the configuration
     final var configuration =
         new QuarkusControllerConfiguration(
             resourceControllerClassName,
-            valueOrDefault(
-                controllerAnnotation,
-                "name",
-                AnnotationValue::asString,
-                () ->
-                    ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName)),
+            name,
             crdName,
             valueOrDefault(
                 controllerAnnotation,
@@ -183,8 +160,6 @@ class QuarkusExtensionProcessor {
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
                 () -> true),
-            valueOrDefault(
-                controllerAnnotation, "isClusterScoped", AnnotationValue::asBoolean, () -> false),
             QuarkusControllerConfiguration.asSet(
                 valueOrDefault(
                     controllerAnnotation,
@@ -192,9 +167,12 @@ class QuarkusExtensionProcessor {
                     AnnotationValue::asStringArray,
                     () -> new String[] {})),
             crType,
-            doneableClassName,
             null // todo: fix-me
             );
+
+    log.infov(
+        "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
+        info.name().toString(), name, cr.getCRDName(), cr.getApiVersion());
 
     return configuration;
   }

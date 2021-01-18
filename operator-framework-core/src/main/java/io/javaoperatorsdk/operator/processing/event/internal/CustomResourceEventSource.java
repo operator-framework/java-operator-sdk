@@ -3,11 +3,10 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.markedForDeletion;
-import static java.net.HttpURLConnection.HTTP_GONE;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -151,11 +150,11 @@ public class CustomResourceEventSource extends AbstractEventSource
   }
 
   @Override
-  public void onClose(KubernetesClientException e) {
+  public void onClose(WatcherException e) {
     if (e == null) {
       return;
     }
-    if (e.getCode() == HTTP_GONE) {
+    if (e.isHttpGone()) {
       log.warn("Received error for watch, will try to reconnect.", e);
       registerWatch();
     } else {

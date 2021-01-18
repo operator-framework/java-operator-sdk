@@ -15,9 +15,9 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 
 #### Features
 * Framework for handling Kubernetes API events
-* Registering Custom Resource watches
+* Automatic registration of Custom Resource watches
 * Retry action on failure
-* Smart event scheduling (only handle latest event for the same resource)
+* Smart event scheduling (only handle the latest event for the same resource)
 
 Check out this [blog post](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) 
 about the non-trivial yet common problems needed to be solved for every operator. 
@@ -44,6 +44,37 @@ about the non-trivial yet common problems needed to be solved for every operator
 You can (will) find detailed documentation [here](docs/DOCS.md). 
 Note that these docs are currently in progress. 
 
+> :warning: 1.7.0 Upgrade
+> The 1.7.0 upgrade comes with big changes due to the update to the 5.0.0 version of the fabric8
+> Kubernetes client. While this should improve the user experience quite nicely, there are a couple
+> of things to be aware of when upgrading from a previous version as detailed below.
+
+##### Overview of the 1.7.0 changes
+
+- `Doneable` classes have been removed along with all the involved complexity
+- `Controller` annotation has been simplified: the `crdName` field has been removed as that value is
+  computed from the associated custom resource implementation
+- Custom Resource implementation classes now need to be annotated with `Group` and `Version`
+  annotations so that they can be identified properly. Optionally, they can also be annotated with
+  `Kind` (if the name of the implementation class doesn't match the desired kind) and `Plural` if
+  the plural version cannot be automatically computed (or the default computed version doesn't match
+  your expectations).
+- The `CustomResource` class that needs to be extended is now parameterized with spec and status
+  types, so you can have an empty default implementation that does what you'd expect. If you don't
+  need a status, using `Void` for the associated type should work.
+- Custom Resources that are namespace-scoped need to implement the `Namespaced` interface so that
+  the client can generate the proper URLs. This means, in particular, that `CustomResource`
+  implementations that do **not** implement `Namespaced` are considered cluster-scoped. As a
+  consequence, the `isClusterScoped` method/field has been removed from the appropriate
+  classes (`Controller` annotation, in particular) as this is now inferred from the `CustomResource`
+  type associated with your `Controller`.
+
+Many of these changes might not be immediately apparent but will result in `404` errors when
+connecting to the cluster. Please check that the Custom Resource implementations are properly
+annotated and that the value corresponds to your CRD manifest. If the namespace appear to be missing
+in your request URL, don't forget that namespace-scoped Custom Resources need to implement
+the `Namescaped` interface.
+
 #### Usage
 
 We have several sample Operators under the [samples](samples) directory:
@@ -52,6 +83,7 @@ Implemented with and without Spring Boot support. The two samples share the comm
 * *webserver*: More realistic example creating an nginx webserver from a Custom Resource containing html code.
 * *mysql-schema*: Operator managing schemas in a MySQL database
 * *spring-boot-plain/auto-config*: Samples showing integration with Spring Boot.
+* *quarkus*: Minimal application showing automatic configuration / injection of Operator / Controllers.
 
 Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
 
@@ -89,7 +121,7 @@ public class Runner {
 The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
-@Controller(crdName = "webservers.sample.javaoperatorsdk")
+@Controller
 public class WebServerController implements ResourceController<WebServer> {
 
     @Override
@@ -110,28 +142,9 @@ public class WebServerController implements ResourceController<WebServer> {
 A sample custom resource POJO representation
 
 ```java
-public class WebServer extends CustomResource {
-
-    private WebServerSpec spec;
-
-    private WebServerStatus status;
-
-    public WebServerSpec getSpec() {
-        return spec;
-    }
-
-    public void setSpec(WebServerSpec spec) {
-        this.spec = spec;
-    }
-
-    public WebServerStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(WebServerStatus status) {
-        this.status = status;
-    }
-}
+@Group("sample.javaoperatorsdk")
+@Version("v1")
+public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> implements Namespaced {}
 
 public class WebServerSpec {
 
@@ -183,7 +196,6 @@ public class QuarkusOperator implements QuarkusApplication {
   public int run(String... args) throws Exception {
     final var config = configuration.getConfigurationFor(new CustomServiceController(client));
     System.out.println("CR class: " + config.getCustomResourceClass());
-    System.out.println("Doneable class = " + config.getDoneableClass());
 
     Quarkus.waitForExit();
     return 0;

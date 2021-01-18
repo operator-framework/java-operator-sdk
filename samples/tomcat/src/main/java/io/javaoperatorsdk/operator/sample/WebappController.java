@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(crdName = "webapps.tomcatoperator.io")
+@Controller
 public class WebappController implements ResourceController<Webapp> {
 
   private KubernetesClient kubernetesClient;

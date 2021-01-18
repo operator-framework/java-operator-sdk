@@ -2,12 +2,11 @@ package io.javaoperatorsdk.operator.sample;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static java.net.HttpURLConnection.HTTP_GONE;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,11 +56,11 @@ public class DeploymentEventSource extends AbstractEventSource implements Watche
   }
 
   @Override
-  public void onClose(KubernetesClientException e) {
+  public void onClose(WatcherException e) {
     if (e == null) {
       return;
     }
-    if (e.getCode() == HTTP_GONE) {
+    if (e.isHttpGone()) {
       log.warn("Received error for watch, will try to reconnect.", e);
       registerWatch();
     } else {

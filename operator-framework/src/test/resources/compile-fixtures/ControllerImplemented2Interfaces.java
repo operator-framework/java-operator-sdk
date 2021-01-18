@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import java.io.Serializable;
 
-@Controller(crdName = "test.crd")
+@Controller
 public class ControllerImplemented2Interfaces implements Serializable, ResourceController<ControllerImplemented2Interfaces.MyCustomResource> {
 
     public static class MyCustomResource extends CustomResource {

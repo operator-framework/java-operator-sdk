@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample.event;
 
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -12,12 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Controller(crdName = EventSourceTestCustomResourceController.CRD_NAME)
+@Controller
 public class EventSourceTestCustomResourceController
     implements ResourceController<EventSourceTestCustomResource>, TestExecutionInfoProvider {
 
-  public static final String CRD_NAME = "eventsourcesamples.sample.javaoperatorsdk";
-  public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
+  public static final String FINALIZER_NAME =
+      ControllerUtils.getDefaultFinalizerName(
+          CustomResource.getCRDName(EventSourceTestCustomResource.class));
   private static final Logger log =
       LoggerFactory.getLogger(EventSourceTestCustomResourceController.class);
   public static final int TIMER_DELAY = 300;

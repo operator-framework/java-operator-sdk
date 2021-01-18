@@ -1,38 +1,14 @@
 package io.javaoperatorsdk.operator.sample.doubleupdate;
 
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Kind;
+import io.fabric8.kubernetes.model.annotation.Version;
 
-public class DoubleUpdateTestCustomResource extends CustomResource {
-
-  private DoubleUpdateTestCustomResourceSpec spec;
-
-  private DoubleUpdateTestCustomResourceStatus status;
-
-  public DoubleUpdateTestCustomResourceSpec getSpec() {
-    return spec;
-  }
-
-  public void setSpec(DoubleUpdateTestCustomResourceSpec spec) {
-    this.spec = spec;
-  }
-
-  public DoubleUpdateTestCustomResourceStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(DoubleUpdateTestCustomResourceStatus status) {
-    this.status = status;
-  }
-
-  @Override
-  public String toString() {
-    return "DoubleUpdateTestCustomResource{"
-        + "spec="
-        + spec
-        + ", status="
-        + status
-        + ", extendedFrom="
-        + super.toString()
-        + '}';
-  }
-}
+@Group("sample.javaoperatorsdk")
+@Version("v1")
+@Kind("DoubleUpdateSample")
+public class DoubleUpdateTestCustomResource
+    extends CustomResource<DoubleUpdateTestCustomResourceSpec, DoubleUpdateTestCustomResourceStatus>
+    implements Namespaced {}
