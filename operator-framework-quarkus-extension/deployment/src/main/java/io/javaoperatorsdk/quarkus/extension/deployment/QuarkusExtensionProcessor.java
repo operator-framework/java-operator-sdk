@@ -194,6 +194,20 @@ class QuarkusExtensionProcessor {
       this.extContConfig = extContConfig;
     }
 
+    /**
+     * Extracts the appropriate configuration value for the controller checking first any annotation
+     * configuration, then potentially overriding it by a properties-provided value or returning a
+     * default value if neither is provided.
+     *
+     * @param extractor a Function extracting the optional value we're interested in from the
+     *     external configuration
+     * @param annotationField the name of the {@link Controller} annotation we're want to retrieve
+     *     if present
+     * @param converter a Function converting the annotation value to the type we're expecting
+     * @param defaultValue a Supplier that computes/retrieve a default value when needed
+     * @param <T> the expected type of the configuration value we're trying to extract
+     * @return the extracted configuration value
+     */
     <T> T extract(
         Function<ExternalControllerConfiguration, Optional<T>> extractor,
         String annotationField,
