@@ -10,16 +10,20 @@ class DelegatingRetryConfiguration implements RetryConfiguration {
 
   private final RetryConfiguration delegate;
 
-  public DelegatingRetryConfiguration(Optional<ExternalRetryConfiguration> retry) {
+  private DelegatingRetryConfiguration(Optional<ExternalRetryConfiguration> retry) {
     delegate =
         retry
             .<RetryConfiguration>map(ExternalRetryConfigurationAdapter::new)
             .orElse(RetryConfiguration.DEFAULT);
   }
 
-  public RetryConfiguration resolve() {
+  public static RetryConfiguration resolve(Optional<ExternalRetryConfiguration> retry) {
+    final var delegate = new DelegatingRetryConfiguration(retry);
     return new PlainRetryConfiguration(
-        getMaxAttempts(), getInitialInterval(), getIntervalMultiplier(), getMaxInterval());
+        delegate.getMaxAttempts(),
+        delegate.getInitialInterval(),
+        delegate.getIntervalMultiplier(),
+        delegate.getMaxInterval());
   }
 
   @Override
