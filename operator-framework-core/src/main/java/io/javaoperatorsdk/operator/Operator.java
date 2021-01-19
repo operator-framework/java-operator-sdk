@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
@@ -30,8 +31,14 @@ public class Operator {
 
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
-    final var configuration = configurationService.getConfigurationFor(controller);
-    if (configuration == null) {
+    register(controller, null);
+  }
+
+  public <R extends CustomResource> void register(
+      ResourceController<R> controller, ControllerConfiguration<R> configuration)
+      throws OperatorException {
+    final var existing = configurationService.getConfigurationFor(controller);
+    if (existing == null) {
       log.warn(
           "Skipping registration of {} controller named {} because its configuration cannot be found.\n"
               + "Known controllers are: {}",
@@ -39,20 +46,13 @@ public class Operator {
           ControllerUtils.getNameFor(controller),
           configurationService.getKnownControllerNames());
     } else {
+      if (configuration == null) {
+        configuration = existing;
+      }
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
       final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
       registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
     }
-  }
-
-  // currently only used by IntegrationTestSupport but this should also disappear as by default the
-  // controllers should register into the current namespace the client is connected to which should
-  // work as expected for tests, in particular if we want to start testing using random namespace
-  // names
-  <R extends CustomResource> void registerController(
-      ResourceController<R> controller, Retry retry, String... targetNamespaces)
-      throws OperatorException {
-    registerController(controller, false, retry, targetNamespaces);
   }
 
   @SuppressWarnings("rawtypes")

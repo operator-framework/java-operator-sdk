@@ -12,9 +12,9 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -46,8 +46,7 @@ public class IntegrationTestSupport {
       KubernetesClient k8sClient, ResourceController controller, String crdPath, Retry retry) {
     log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
     this.k8sClient = k8sClient;
-    CustomResourceDefinition crd = loadCRDAndApplyToCluster(crdPath);
-    CustomResourceDefinitionContext crdContext = CustomResourceDefinitionContext.fromCrd(crd);
+    loadCRDAndApplyToCluster(crdPath);
     this.controller = controller;
 
     final var configurationService = DefaultConfigurationService.instance();
@@ -56,16 +55,18 @@ public class IntegrationTestSupport {
     final var customResourceClass = config.getCustomResourceClass();
     this.crOperations = k8sClient.customResources(customResourceClass);
 
-    if (k8sClient.namespaces().withName(TEST_NAMESPACE).get() == null) {
-      k8sClient
-          .namespaces()
-          .create(
-              new NamespaceBuilder()
-                  .withMetadata(new ObjectMetaBuilder().withName(TEST_NAMESPACE).build())
-                  .build());
+    final var namespaces = k8sClient.namespaces();
+    if (namespaces.withName(TEST_NAMESPACE).get() == null) {
+      namespaces.create(
+          new NamespaceBuilder().withNewMetadata().withName(TEST_NAMESPACE).endMetadata().build());
     }
     operator = new Operator(k8sClient, configurationService);
-    operator.registerController(controller, retry, TEST_NAMESPACE);
+    final var overriddenConfig =
+        ControllerConfigurationOverrider.override(config).settingNamespace(TEST_NAMESPACE);
+    if (retry != null) {
+      overriddenConfig.withRetry(retry);
+    }
+    operator.register(controller, overriddenConfig.build());
     log.info("Operator is running with {}", controller.getClass().getCanonicalName());
   }
 
