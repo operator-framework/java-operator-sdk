@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.quarkus.it;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
-import java.util.Set;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -13,24 +15,26 @@ import javax.ws.rs.PathParam;
 @Path("/operator")
 public class TestOperatorApp {
 
-  @Inject TestController controller;
+  @Inject Instance<ResourceController<? extends CustomResource>> controllers;
   @Inject ConfigurationService configurationService;
 
   @GET
   @Path("{name}")
-  //  @Produces(MediaType.TEXT_PLAIN)
   public boolean getController(@PathParam("name") String name) {
-    return name.equals(configurationService.getConfigurationFor(controller).getName());
+    return configurationService.getKnownControllerNames().contains(name);
   }
 
   @GET
   @Path("{name}/config")
   public JSONControllerConfiguration getConfig(@PathParam("name") String name) {
-    var config = configurationService.getConfigurationFor(controller);
-    if (config == null) {
-      return null;
-    }
-    return name.equals(config.getName()) ? new JSONControllerConfiguration(config) : null;
+    final var configuration =
+        controllers.stream()
+            .map(c -> configurationService.getConfigurationFor(c))
+            .filter(c -> c.getName().equals(name))
+            .findFirst()
+            .map(JSONControllerConfiguration::new)
+            .orElse(null);
+    return configuration;
   }
 
   static class JSONControllerConfiguration {
@@ -65,8 +69,8 @@ public class TestOperatorApp {
       return conf.getAssociatedControllerClassName();
     }
 
-    public Set<String> getNamespaces() {
-      return conf.getNamespaces();
+    public String[] getNamespaces() {
+      return (String[]) conf.getNamespaces().toArray(new String[0]);
     }
 
     public boolean watchAllNamespaces() {

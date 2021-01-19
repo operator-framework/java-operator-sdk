@@ -6,7 +6,10 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.quarkus.extension.ConfigurationServiceRecorder;
+import io.javaoperatorsdk.quarkus.extension.ExternalConfiguration;
+import io.javaoperatorsdk.quarkus.extension.ExternalControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.OperatorProducer;
 import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
@@ -48,6 +51,8 @@ class QuarkusExtensionProcessor {
       () -> {
         throw new IllegalArgumentException();
       };
+
+  private ExternalConfiguration externalConfiguration;
 
   @BuildStep
   void indexSDKDependencies(
@@ -110,16 +115,6 @@ class QuarkusExtensionProcessor {
             .setDefaultScope(APPLICATION_SCOPED)
             .build());
 
-    // generate configuration
-    final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-    if (controllerAnnotation == null) {
-      throw new IllegalArgumentException(
-          resourceControllerClassName
-              + " is missing the @"
-              + Controller.class.getCanonicalName()
-              + " annotation");
-    }
-
     // load CR class
     final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
@@ -137,12 +132,20 @@ class QuarkusExtensionProcessor {
     // register CR class for introspection
     reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
 
+    // retrieve the Controller annotation if it exists
+    final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+
+    // retrieve the controller's name
+    final var defaultControllerName =
+        ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
     final var name =
-        valueOrDefault(
-            controllerAnnotation,
-            "name",
-            AnnotationValue::asString,
-            () -> ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName));
+        annotationValueOrDefault(
+            controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
+
+    // check if we have externalized configuration to provide values
+    final var extContConfig = externalConfiguration.controllers.get(name);
+
+    final var extractor = new ValueExtractor(controllerAnnotation, extContConfig);
 
     // create the configuration
     final var configuration =
@@ -150,25 +153,24 @@ class QuarkusExtensionProcessor {
             resourceControllerClassName,
             name,
             crdName,
-            valueOrDefault(
-                controllerAnnotation,
+            extractor.extract(
+                c -> c.finalizer,
                 "finalizerName",
                 AnnotationValue::asString,
                 () -> ControllerUtils.getDefaultFinalizerName(crdName)),
-            valueOrDefault(
-                controllerAnnotation,
+            extractor.extract(
+                c -> c.generationAware,
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
                 () -> true),
             QuarkusControllerConfiguration.asSet(
-                valueOrDefault(
-                    controllerAnnotation,
+                extractor.extract(
+                    c -> c.namespaces.map(l -> l.toArray(new String[0])),
                     "namespaces",
                     AnnotationValue::asStringArray,
                     () -> new String[] {})),
             crType,
-            null // todo: fix-me
-            );
+            retryConfiguration(extContConfig));
 
     log.infov(
         "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
@@ -177,12 +179,58 @@ class QuarkusExtensionProcessor {
     return configuration;
   }
 
-  private <T> T valueOrDefault(
+  private RetryConfiguration retryConfiguration(ExternalControllerConfiguration extConfig) {
+    return extConfig == null ? null : new DelegatingRetryConfiguration(extConfig.retry).resolve();
+  }
+
+  private static class ValueExtractor {
+
+    private final AnnotationInstance controllerAnnotation;
+    private final ExternalControllerConfiguration extContConfig;
+
+    ValueExtractor(
+        AnnotationInstance controllerAnnotation, ExternalControllerConfiguration extContConfig) {
+      this.controllerAnnotation = controllerAnnotation;
+      this.extContConfig = extContConfig;
+    }
+
+    <T> T extract(
+        Function<ExternalControllerConfiguration, Optional<T>> extractor,
+        String annotationField,
+        Function<AnnotationValue, T> converter,
+        Supplier<T> defaultValue) {
+      // first check if we have an external configuration
+      if (extContConfig != null) {
+        // extract value from config if present
+        return extractor
+            .apply(extContConfig)
+            // or get from the annotation or default
+            .orElse(annotationValueOrDefault(annotationField, converter, defaultValue));
+      } else {
+        // get from annotation or default
+        return annotationValueOrDefault(annotationField, converter, defaultValue);
+      }
+    }
+
+    private <T> T annotationValueOrDefault(
+        String name, Function<AnnotationValue, T> converter, Supplier<T> defaultValue) {
+      return QuarkusExtensionProcessor.annotationValueOrDefault(
+          controllerAnnotation, name, converter, defaultValue);
+    }
+  }
+
+  private static <T> T annotationValueOrDefault(
       AnnotationInstance annotation,
       String name,
       Function<AnnotationValue, T> converter,
       Supplier<T> defaultValue) {
-    return Optional.ofNullable(annotation.value(name)).map(converter).orElseGet(defaultValue);
+    return annotation != null
+        ?
+        // get converted annotation value of get default
+        Optional.ofNullable(annotation.value(name)).map(converter).orElseGet(defaultValue)
+        :
+        // get default
+        defaultValue.get();
   }
 
   private Class<?> loadClass(String className) {

@@ -2,6 +2,7 @@ package io.javaoperatorsdk.quarkus.it;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
 import io.quarkus.test.QuarkusProdModeTest;
@@ -22,7 +23,11 @@ public class QuarkusExtensionProcessorTest {
           .setArchiveProducer(
               () ->
                   ShrinkWrap.create(JavaArchive.class)
-                      .addClasses(TestOperatorApp.class, TestController.class, TestResource.class))
+                      .addClasses(
+                          TestOperatorApp.class,
+                          TestController.class,
+                          ConfiguredController.class,
+                          TestResource.class))
           .setApplicationName("basic-app")
           .setApplicationVersion("0.1-SNAPSHOT")
           .setRun(true);
@@ -50,5 +55,17 @@ public class QuarkusExtensionProcessorTest {
         .body(
             "customResourceClass", equalTo(resourceName),
             "name", equalTo(TestController.NAME));
+  }
+
+  @Test
+  void applicationPropertiesShouldOverrideDefaultAndAnnotation() {
+    given()
+        .when()
+        .get("/operator/" + ConfiguredController.NAME + "/config")
+        .then()
+        .statusCode(200)
+        .body(
+            "finalizer", equalTo("from-property/finalizer"),
+            "namespaces", hasItem("bar"));
   }
 }
