@@ -1,23 +1,17 @@
 package io.javaoperatorsdk.quarkus.extension;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.AbstractControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 import java.util.Collections;
 import java.util.Set;
 
 public class QuarkusControllerConfiguration<R extends CustomResource>
-    implements ControllerConfiguration<R> {
-  private final String associatedControllerClassName;
-  private final String name;
-  private final String crdName;
-  private final String finalizer;
-  private final boolean generationAware;
-  private final Set<String> namespaces;
+    extends AbstractControllerConfiguration<R> {
+
   private final String crClass;
-  private final boolean watchAllNamespaces;
-  private final RetryConfiguration retryConfiguration;
+  private Class<R> clazz;
 
   @RecordableConstructor
   public QuarkusControllerConfiguration(
@@ -29,18 +23,15 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
       Set<String> namespaces,
       String crClass,
       RetryConfiguration retryConfiguration) {
-    this.associatedControllerClassName = associatedControllerClassName;
-    this.name = name;
-    this.crdName = crdName;
-    this.finalizer = finalizer;
-    this.generationAware = generationAware;
-    this.namespaces = namespaces;
+    super(
+        associatedControllerClassName,
+        name,
+        crdName,
+        finalizer,
+        generationAware,
+        namespaces,
+        retryConfiguration);
     this.crClass = crClass;
-    this.watchAllNamespaces = this.namespaces.contains(WATCH_ALL_NAMESPACES_MARKER);
-    this.retryConfiguration =
-        retryConfiguration == null
-            ? ControllerConfiguration.super.getRetryConfiguration()
-            : retryConfiguration;
   }
 
   public static Set<String> asSet(String[] namespaces) {
@@ -60,28 +51,11 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
   }
 
   @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public String getCRDName() {
-    return crdName;
-  }
-
-  @Override
-  public String getFinalizer() {
-    return finalizer;
-  }
-
-  @Override
-  public boolean isGenerationAware() {
-    return generationAware;
-  }
-
-  @Override
   public Class<R> getCustomResourceClass() {
-    return (Class<R>) loadClass(crClass);
+    if (clazz == null) {
+      clazz = (Class<R>) loadClass(crClass);
+    }
+    return clazz;
   }
 
   private Class<?> loadClass(String className) {
@@ -90,25 +64,5 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
     } catch (ClassNotFoundException e) {
       throw new IllegalArgumentException("Couldn't find class " + className);
     }
-  }
-
-  @Override
-  public String getAssociatedControllerClassName() {
-    return associatedControllerClassName;
-  }
-
-  @Override
-  public Set<String> getNamespaces() {
-    return namespaces;
-  }
-
-  @Override
-  public boolean watchAllNamespaces() {
-    return watchAllNamespaces;
-  }
-
-  @Override
-  public RetryConfiguration getRetryConfiguration() {
-    return retryConfiguration;
   }
 }
