@@ -180,7 +180,7 @@ class QuarkusExtensionProcessor {
   }
 
   private RetryConfiguration retryConfiguration(ExternalControllerConfiguration extConfig) {
-    return extConfig == null ? null : DelegatingRetryConfiguration.resolve(extConfig.retry);
+    return extConfig == null ? null : RetryConfigurationResolver.resolve(extConfig.retry);
   }
 
   private static class ValueExtractor {

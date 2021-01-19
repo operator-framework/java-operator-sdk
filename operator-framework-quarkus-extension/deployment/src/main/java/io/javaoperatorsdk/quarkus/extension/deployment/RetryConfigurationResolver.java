@@ -6,11 +6,11 @@ import io.javaoperatorsdk.quarkus.extension.ExternalRetryConfiguration;
 import io.javaoperatorsdk.quarkus.extension.PlainRetryConfiguration;
 import java.util.Optional;
 
-class DelegatingRetryConfiguration implements RetryConfiguration {
+class RetryConfigurationResolver implements RetryConfiguration {
 
   private final RetryConfiguration delegate;
 
-  private DelegatingRetryConfiguration(Optional<ExternalRetryConfiguration> retry) {
+  private RetryConfigurationResolver(Optional<ExternalRetryConfiguration> retry) {
     delegate =
         retry
             .<RetryConfiguration>map(ExternalRetryConfigurationAdapter::new)
@@ -18,7 +18,7 @@ class DelegatingRetryConfiguration implements RetryConfiguration {
   }
 
   public static RetryConfiguration resolve(Optional<ExternalRetryConfiguration> retry) {
-    final var delegate = new DelegatingRetryConfiguration(retry);
+    final var delegate = new RetryConfigurationResolver(retry);
     return new PlainRetryConfiguration(
         delegate.getMaxAttempts(),
         delegate.getInitialInterval(),
