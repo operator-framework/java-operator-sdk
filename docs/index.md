@@ -19,14 +19,20 @@ This version marks another important step in bringing the Kubernetes Operator pa
 get much reduced boilerplate code. Metadata annotations move from the Controller to Custom Resource class leading to 
 more intuitive configuration.
 
+See: [Tomcat.java](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/samples/tomcat/src/main/java/io/javaoperatorsdk/operator/sample/Tomcat.java)
+
 ***Generalized event system*** - a Controller can be invoked because of events happening not only to the Custom Resource 
 it manages, but also to dependent resources. These dependent resources might be Kubernetes objects or anything else 
 (e.g. an RDS database created by the Operator). You can implement your own EventSource for any events needed and it 
 will all be handled by the system seamlessly while avoiding concurrency issues.
 
+See: [DeploymentEventSource.java](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/samples/tomcat/src/main/java/io/javaoperatorsdk/operator/sample/DeploymentEventSource.java)
+
 ***Full integration with the Quarkus framework*** - For those who like building cloud native Java apps with Quarkus, 
 we now provide full support in the form of a Quarkus extension. This means effortless Docker image building, fast 
 startup time and native executable compilation our of the box.
+
+See: [QuarkusOperator.java](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/samples/quarkus/src/main/java/io/javaoperatorsdk/operator/sample/QuarkusOperator.java)
 
 # Features
 * Framework for handling Kubernetes API events
