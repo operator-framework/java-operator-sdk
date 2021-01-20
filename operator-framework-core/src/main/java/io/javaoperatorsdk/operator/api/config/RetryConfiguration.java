@@ -6,7 +6,6 @@ public interface RetryConfiguration {
 
   int DEFAULT_MAX_ATTEMPTS = 5;
   long DEFAULT_INITIAL_INTERVAL = 2000L;
-
   double DEFAULT_MULTIPLIER = 1.5D;
 
   default int getMaxAttempts() {

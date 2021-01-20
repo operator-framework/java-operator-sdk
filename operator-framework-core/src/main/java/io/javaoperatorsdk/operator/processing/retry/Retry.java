@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
-public interface Retry {
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+
+public interface Retry extends RetryConfiguration {
 
   RetryExecution initExecution();
 }

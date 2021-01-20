@@ -25,7 +25,7 @@ public interface ControllerConfiguration<R extends CustomResource> {
   }
 
   default boolean watchAllNamespaces() {
-    return getNamespaces().contains(WATCH_ALL_NAMESPACES_MARKER);
+    return getNamespaces().isEmpty();
   }
 
   default RetryConfiguration getRetryConfiguration() {

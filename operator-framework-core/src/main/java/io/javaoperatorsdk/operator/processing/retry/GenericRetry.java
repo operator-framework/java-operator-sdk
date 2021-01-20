@@ -3,11 +3,6 @@ package io.javaoperatorsdk.operator.processing.retry;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
 public class GenericRetry implements Retry {
-
-  public static final int DEFAULT_MAX_ATTEMPTS = 5;
-  public static final long DEFAULT_INITIAL_INTERVAL = 2000L;
-  public static final double DEFAULT_MULTIPLIER = 1.5D;
-
   private int maxAttempts = DEFAULT_MAX_ATTEMPTS;
   private long initialInterval = DEFAULT_INITIAL_INTERVAL;
   private double intervalMultiplier = DEFAULT_MULTIPLIER;

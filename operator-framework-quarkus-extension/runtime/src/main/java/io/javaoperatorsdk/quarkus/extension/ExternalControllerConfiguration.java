@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.quarkus.extension;
 
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.runtime.annotations.ConfigItem;
 import java.util.List;
@@ -10,9 +9,8 @@ import java.util.Optional;
 public class ExternalControllerConfiguration {
 
   /**
-   * An optional list of comma-separated namespace names the controller should watch. If the list
-   * contains {@link ControllerConfiguration#WATCH_ALL_NAMESPACES_MARKER} then the controller will
-   * watch all namespaces.
+   * An optional list of comma-separated namespace names the controller should watch. If this
+   * property is left empty then the controller will watch all namespaces.
    */
   @ConfigItem public Optional<List<String>> namespaces;
 

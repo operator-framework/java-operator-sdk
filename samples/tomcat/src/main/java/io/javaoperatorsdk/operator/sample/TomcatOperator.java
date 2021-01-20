@@ -25,9 +25,9 @@ public class TomcatOperator {
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
 
     TomcatController tomcatController = new TomcatController(client);
-    operator.registerControllerForAllNamespaces(tomcatController);
+    operator.register(tomcatController);
 
-    operator.registerControllerForAllNamespaces(new WebappController(client));
+    operator.register(new WebappController(client));
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);
   }

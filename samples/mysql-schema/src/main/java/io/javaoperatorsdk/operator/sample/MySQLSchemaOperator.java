@@ -24,7 +24,7 @@ public class MySQLSchemaOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
-    operator.registerControllerForAllNamespaces(new SchemaController(client));
+    operator.register(new SchemaController(client));
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
   }
