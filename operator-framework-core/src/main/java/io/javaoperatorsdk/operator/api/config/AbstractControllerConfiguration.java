@@ -31,7 +31,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
     this.generationAware = generationAware;
     this.namespaces =
         namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
-    this.watchAllNamespaces = this.namespaces.contains(WATCH_ALL_NAMESPACES_MARKER);
+    this.watchAllNamespaces = this.namespaces.isEmpty();
     this.retryConfiguration =
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
