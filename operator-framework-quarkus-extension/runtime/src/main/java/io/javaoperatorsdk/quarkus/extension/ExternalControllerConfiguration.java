@@ -26,7 +26,8 @@ public class ExternalControllerConfiguration {
    * Whether the controller should only process events if the associated resource generation has
    * increased since last reconciliation, otherwise will process all events.
    */
-  @ConfigItem public Optional<Boolean> generationAware;
+  @ConfigItem(defaultValue = "true")
+  public Optional<Boolean> generationAware;
 
   /** The optional controller retry configuration */
   public Optional<ExternalRetryConfiguration> retry;
