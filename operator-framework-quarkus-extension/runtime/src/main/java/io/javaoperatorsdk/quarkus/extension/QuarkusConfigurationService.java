@@ -8,13 +8,14 @@ import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
 import java.util.List;
-import javax.inject.Inject;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
-  @Inject KubernetesClient client;
   private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
+  private final KubernetesClient client;
 
-  public QuarkusConfigurationService(List<ControllerConfiguration> configurations) {
+  public QuarkusConfigurationService(
+      List<ControllerConfiguration> configurations, KubernetesClient client) {
+    this.client = client;
     if (configurations != null && !configurations.isEmpty()) {
       configurations.forEach(this::register);
     }
