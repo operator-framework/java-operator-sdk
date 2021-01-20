@@ -8,7 +8,6 @@ policies:
         invalidLastCharacters: .
       spellcheck:
         locale: US
-      maximumOfOneCommit: true
       conventional:
         types:
           - "chore"
