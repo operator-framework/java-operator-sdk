@@ -25,6 +25,7 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import io.quarkus.deployment.util.JandexUtil;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,7 +37,7 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Type;
+import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 class QuarkusExtensionProcessor {
@@ -78,7 +79,7 @@ class QuarkusExtensionProcessor {
 
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
-            .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses))
+            .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, index))
             .collect(Collectors.toList());
 
     final var version = Utils.loadFromProperties();
@@ -101,17 +102,14 @@ class QuarkusExtensionProcessor {
   private ControllerConfiguration createControllerConfiguration(
       ClassInfo info,
       BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-      BuildProducer<ReflectiveClassBuildItem> reflectionClasses) {
+      BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+      IndexView index) {
     // first retrieve the custom resource class
-    final var rcInterface =
-        info.interfaceTypes().stream()
-            .filter(t -> t.name().equals(RESOURCE_CONTROLLER))
-            .findFirst()
-            .map(Type::asParameterizedType)
-            // shouldn't happen since we're only dealing with ResourceController implementors
-            // already
-            .orElseThrow();
-    final var crType = rcInterface.arguments().get(0).name().toString();
+    final var crType =
+        JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
+            .get(0)
+            .name()
+            .toString();
 
     // create ResourceController bean
     final var resourceControllerClassName = info.name().toString();
