@@ -33,7 +33,7 @@ import org.mockito.ArgumentMatchers;
 
 class EventDispatcherTest {
 
-  private static final String DEFAULT_FINALIZER = "finalizer";
+  private static final String DEFAULT_FINALIZER = "javaoperatorsdk.io/finalizer";
   private CustomResource testCustomResource;
   private EventDispatcher eventDispatcher;
   private ResourceController<CustomResource> controller = mock(ResourceController.class);
