@@ -67,9 +67,23 @@ public class Operator {
           new EventDispatcher(
               controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
 
+      // check that the custom resource is known by the cluster
+      final var crdName = configuration.getCRDName();
+      final var crd =
+          k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
+      final var controllerName = configuration.getName();
+      if (crd == null) {
+        log.warn(
+            "'{}' CRD was not found on the {} cluster, skipping '{}' controller registration",
+            crdName,
+            configurationService.getClientConfiguration().getMasterUrl(),
+            controllerName);
+        return;
+      }
+
       CustomResourceCache customResourceCache = new CustomResourceCache();
       DefaultEventHandler defaultEventHandler =
-          new DefaultEventHandler(customResourceCache, dispatcher, configuration.getName(), retry);
+          new DefaultEventHandler(customResourceCache, dispatcher, controllerName, retry);
       DefaultEventSourceManager eventSourceManager =
           new DefaultEventSourceManager(defaultEventHandler, retry != null);
       defaultEventHandler.setEventSourceManager(eventSourceManager);
