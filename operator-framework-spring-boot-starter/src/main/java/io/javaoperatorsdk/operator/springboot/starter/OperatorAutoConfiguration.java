@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.config.runtime.AnnotationConfiguration;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,10 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({OperatorConfigurationProperties.class})
 public class OperatorAutoConfiguration extends AbstractConfigurationService {
   @Autowired private OperatorConfigurationProperties configuration;
+
+  public OperatorAutoConfiguration() {
+    super(Utils.loadFromProperties());
+  }
 
   @Bean
   @ConditionalOnMissingBean

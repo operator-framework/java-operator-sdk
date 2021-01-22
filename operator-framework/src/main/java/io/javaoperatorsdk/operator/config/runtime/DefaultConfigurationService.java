@@ -5,10 +5,15 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Utils;
 
 public class DefaultConfigurationService extends AbstractConfigurationService {
 
   private static final ConfigurationService instance = new DefaultConfigurationService();
+
+  private DefaultConfigurationService() {
+    super(Utils.loadFromProperties());
+  }
 
   public static ConfigurationService instance() {
     return instance;

@@ -7,12 +7,14 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.quarkus.extension.ConfigurationServiceRecorder;
 import io.javaoperatorsdk.quarkus.extension.ExternalConfiguration;
 import io.javaoperatorsdk.quarkus.extension.ExternalControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.OperatorProducer;
 import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
+import io.javaoperatorsdk.quarkus.extension.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -79,7 +81,12 @@ class QuarkusExtensionProcessor {
             .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses))
             .collect(Collectors.toList());
 
-    final var supplier = recorder.configurationServiceSupplier(controllerConfigs);
+    final var version = Utils.loadFromProperties();
+
+    final var supplier =
+        recorder.configurationServiceSupplier(
+            new Version(version.getProject(), version.getCommit(), version.getBuiltTime()),
+            controllerConfigs);
     syntheticBeanBuildItemBuildProducer.produce(
         SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
             .scope(Singleton.class)

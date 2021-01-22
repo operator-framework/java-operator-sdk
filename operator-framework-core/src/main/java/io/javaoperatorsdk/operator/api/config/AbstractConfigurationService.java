@@ -10,6 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractConfigurationService implements ConfigurationService {
 
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
+  private final Version version;
+
+  public AbstractConfigurationService(Version version) {
+    this.version = version;
+  }
 
   protected <R extends CustomResource> void register(ControllerConfiguration<R> config) {
     final var name = config.getName();
@@ -40,5 +45,10 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   @Override
   public Set<String> getKnownControllerNames() {
     return configurations.keySet();
+  }
+
+  @Override
+  public Version getVersion() {
+    return version;
   }
 }

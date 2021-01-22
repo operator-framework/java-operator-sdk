@@ -15,4 +15,6 @@ public interface ConfigurationService {
   }
 
   Set<String> getKnownControllerNames();
+
+  Version getVersion();
 }
