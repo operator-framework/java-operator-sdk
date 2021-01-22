@@ -50,7 +50,7 @@ the [Container Registry](https://cloud.google.com/container-registry/) in Google
 
 1. The following Maven command will build the jar file, package it as a Docker image and push it to the registry.
 
-   `mvn -P no-integration-tests package dockerfile:build dockerfile:push` 
+   `mvn package dockerfile:build dockerfile:push` 
 
 1. Deploy the test MySQL on your cluster if you want to use it. Note that if you have an already running MySQL server
 you want to use, you can skip this step, but you will have to configure the operator to use that server.

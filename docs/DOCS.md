@@ -20,7 +20,7 @@ version can be found under `samples/mysql-schema/README.md`.
 
 1. Setup kubectl to work with your Kubernetes cluster of choice.
 1. Apply Custom Resource Definition
-1. Compile the whole project (framework + samples) using `mvn install -P no-integration-tests` in the root directory
+1. Compile the whole project (framework + samples) using `mvn install` in the root directory
 1. Run the main class of the sample you picked and check out the sample's README to see what it does.
 When run locally the framework will use your Kubernetes client configuration (in ~/.kube/config) to make the connection
 to the cluster. This is why it was important to set up kubectl up front.

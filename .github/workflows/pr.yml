@@ -24,7 +24,7 @@ jobs:
       - name: Check code format
         run: mvn fmt:check --file pom.xml
       - name: Run unit tests
-        run: mvn -B test -P no-integration-tests --file pom.xml
+        run: mvn -B test --file pom.xml
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.3.0
         with:
