@@ -50,7 +50,7 @@ public class Operator {
         configuration = existing;
       }
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-      final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+      final var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
       registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
     }
   }
@@ -66,18 +66,16 @@ public class Operator {
     Class<R> resClass = configuration.getCustomResourceClass();
     String finalizer = configuration.getFinalizer();
     MixedOperation client = k8sClient.customResources(resClass);
-    EventDispatcher eventDispatcher =
-        new EventDispatcher(
-            controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
+    EventDispatcher dispatcher = new EventDispatcher(controller, finalizer,
+        new EventDispatcher.CustomResourceFacade(client));
 
     CustomResourceCache customResourceCache = new CustomResourceCache();
     DefaultEventHandler defaultEventHandler =
-        new DefaultEventHandler(
-            customResourceCache, eventDispatcher, controller.getClass().getName(), retry);
+        new DefaultEventHandler(customResourceCache, dispatcher, configuration.getName(), retry);
     DefaultEventSourceManager eventSourceManager =
         new DefaultEventSourceManager(defaultEventHandler, retry != null);
     defaultEventHandler.setEventSourceManager(eventSourceManager);
-    eventDispatcher.setEventSourceManager(eventSourceManager);
+    dispatcher.setEventSourceManager(eventSourceManager);
 
     controller.init(eventSourceManager);
     CustomResourceEventSource customResourceEventSource =
@@ -111,7 +109,7 @@ public class Operator {
     CustomResourceEventSource customResourceEventSource =
         watchAllNamespaces
             ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-                customResourceCache, client, generationAware, finalizer)
+            customResourceCache, client, generationAware, finalizer)
             : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
                 customResourceCache, client, targetNamespaces, generationAware, finalizer);
 

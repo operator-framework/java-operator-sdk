@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,13 +51,7 @@ public class DefaultEventHandler implements EventHandler {
     eventBuffer = new EventBuffer();
     executor =
         new ScheduledThreadPoolExecutor(
-            5,
-            new ThreadFactory() {
-              @Override
-              public Thread newThread(Runnable runnable) {
-                return new Thread(runnable, "EventHandler-" + relatedControllerName);
-              }
-            });
+            5, runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
   }
 
   public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
