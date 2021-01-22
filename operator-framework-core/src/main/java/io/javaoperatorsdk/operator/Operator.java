@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,53 +48,43 @@ public class Operator {
       if (configuration == null) {
         configuration = existing;
       }
+
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-      final var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
-      registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
+      final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+      Class<R> resClass = configuration.getCustomResourceClass();
+      String finalizer = configuration.getFinalizer();
+      MixedOperation client = k8sClient.customResources(resClass);
+      EventDispatcher dispatcher =
+          new EventDispatcher(
+              controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
+
+      CustomResourceCache customResourceCache = new CustomResourceCache();
+      DefaultEventHandler defaultEventHandler =
+          new DefaultEventHandler(customResourceCache, dispatcher, configuration.getName(), retry);
+      DefaultEventSourceManager eventSourceManager =
+          new DefaultEventSourceManager(defaultEventHandler, retry != null);
+      defaultEventHandler.setEventSourceManager(eventSourceManager);
+      dispatcher.setEventSourceManager(eventSourceManager);
+
+      controller.init(eventSourceManager);
+      final boolean watchAllNamespaces = configuration.watchAllNamespaces();
+      CustomResourceEventSource customResourceEventSource =
+          createCustomResourceEventSource(
+              client,
+              customResourceCache,
+              watchAllNamespaces,
+              targetNamespaces,
+              defaultEventHandler,
+              configuration.isGenerationAware(),
+              finalizer);
+      eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+
+      log.info(
+          "Registered Controller: '{}' for CRD: '{}' for namespaces: {}",
+          controller.getClass().getSimpleName(),
+          resClass,
+          watchAllNamespaces ? "[all namespaces]" : Arrays.toString(targetNamespaces));
     }
-  }
-
-  @SuppressWarnings("rawtypes")
-  private <R extends CustomResource> void registerController(
-      ResourceController<R> controller,
-      boolean watchAllNamespaces,
-      Retry retry,
-      String... targetNamespaces)
-      throws OperatorException {
-    final var configuration = configurationService.getConfigurationFor(controller);
-    Class<R> resClass = configuration.getCustomResourceClass();
-    String finalizer = configuration.getFinalizer();
-    MixedOperation client = k8sClient.customResources(resClass);
-    EventDispatcher dispatcher = new EventDispatcher(controller, finalizer,
-        new EventDispatcher.CustomResourceFacade(client));
-
-    CustomResourceCache customResourceCache = new CustomResourceCache();
-    DefaultEventHandler defaultEventHandler =
-        new DefaultEventHandler(customResourceCache, dispatcher, configuration.getName(), retry);
-    DefaultEventSourceManager eventSourceManager =
-        new DefaultEventSourceManager(defaultEventHandler, retry != null);
-    defaultEventHandler.setEventSourceManager(eventSourceManager);
-    dispatcher.setEventSourceManager(eventSourceManager);
-
-    controller.init(eventSourceManager);
-    CustomResourceEventSource customResourceEventSource =
-        createCustomResourceEventSource(
-            client,
-            customResourceCache,
-            watchAllNamespaces,
-            targetNamespaces,
-            defaultEventHandler,
-            configuration.isGenerationAware(),
-            finalizer);
-    eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
-
-    log.info(
-        "Registered Controller: '{}' for CRD: '{}' for namespaces: {}",
-        controller.getClass().getSimpleName(),
-        resClass,
-        targetNamespaces.length == 0
-            ? "[all/client namespace]"
-            : Arrays.toString(targetNamespaces));
   }
 
   private CustomResourceEventSource createCustomResourceEventSource(
@@ -109,7 +98,7 @@ public class Operator {
     CustomResourceEventSource customResourceEventSource =
         watchAllNamespaces
             ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, client, generationAware, finalizer)
+                customResourceCache, client, generationAware, finalizer)
             : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
                 customResourceCache, client, targetNamespaces, generationAware, finalizer);
 
