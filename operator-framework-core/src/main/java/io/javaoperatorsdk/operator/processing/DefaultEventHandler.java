@@ -199,7 +199,9 @@ public class DefaultEventHandler implements EventHandler {
    */
   private void cacheUpdatedResourceIfChanged(
       ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
-    if (postExecutionControl.customResourceUpdatedDuringExecution()) {
+    // only update the cache if the execution didn't fail and the resource was updated
+    if (!postExecutionControl.exceptionDuringExecution()
+        && postExecutionControl.customResourceUpdatedDuringExecution()) {
       CustomResource originalCustomResource = executionScope.getCustomResource();
       CustomResource customResourceAfterExecution =
           postExecutionControl.getUpdatedCustomResource().get();
