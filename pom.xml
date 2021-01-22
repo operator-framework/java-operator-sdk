@@ -117,9 +117,11 @@
                 <version>${surefire.version}</version>
                 <configuration>
                     <includes>
-                        <include>**/*IT.java</include>
                         <include>**/*Test.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -143,7 +145,7 @@
 
     <profiles>
         <profile>
-            <id>no-integration-tests</id>
+            <id>all-tests</id>
             <build>
                 <plugins>
                     <plugin>
@@ -153,10 +155,8 @@
                         <configuration>
                             <includes>
                                 <include>**/*Test.java</include>
+                                <include>**/*IT.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/*IT.java</exclude>
-                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -172,10 +172,10 @@
                         <version>${surefire.version}</version>
                         <configuration>
                             <includes>
-                                <exclude>**/*IT.java</exclude>
+                                <include>**/*IT.java</include>
                             </includes>
                             <excludes>
-                                <include>**/*Test.java</include>
+                                <exclude>**/*Test.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
