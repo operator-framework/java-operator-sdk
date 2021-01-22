@@ -5,6 +5,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.markedForDeletion;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -189,15 +190,16 @@ public class EventDispatcher {
   }
 
   // created to support unit testing
-  public static class CustomResourceFacade {
+  public static class CustomResourceFacade<R extends CustomResource> {
 
-    private final MixedOperation<?, ?, Resource<CustomResource>> resourceOperation;
+    private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 
-    public CustomResourceFacade(MixedOperation<?, ?, Resource<CustomResource>> resourceOperation) {
+    public CustomResourceFacade(
+        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation) {
       this.resourceOperation = resourceOperation;
     }
 
-    public CustomResource updateStatus(CustomResource resource) {
+    public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
@@ -205,7 +207,7 @@ public class EventDispatcher {
           .updateStatus(resource);
     }
 
-    public CustomResource replaceWithLock(CustomResource resource) {
+    public R replaceWithLock(R resource) {
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(resource.getMetadata().getName())

@@ -53,7 +53,7 @@ public class Operator {
       final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
       Class<R> resClass = configuration.getCustomResourceClass();
       String finalizer = configuration.getFinalizer();
-      MixedOperation client = k8sClient.customResources(resClass);
+      final var client = k8sClient.customResources(resClass);
       EventDispatcher dispatcher =
           new EventDispatcher(
               controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
