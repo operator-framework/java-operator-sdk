@@ -28,6 +28,15 @@ public class Operator {
     this.configurationService = configurationService;
   }
 
+  public void start() {
+    final var version = configurationService.getVersion();
+    log.info(
+        "Operator {} (commit: {}) built on {} starting…",
+        version.getProject(),
+        version.getCommit(),
+        version.getBuiltTime());
+  }
+
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     register(controller, null);
