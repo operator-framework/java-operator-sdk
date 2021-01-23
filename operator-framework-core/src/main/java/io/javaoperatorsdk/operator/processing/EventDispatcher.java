@@ -151,7 +151,12 @@ public class EventDispatcher {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     addFinalizerIfNotPresent(resource);
-    replace(resource);
+    try {
+      replace(resource);
+    } catch (RuntimeException e) {
+      removeFinalizer(resource);
+      throw e;
+    }
   }
 
   private CustomResource updateCustomResource(CustomResource resource) {
