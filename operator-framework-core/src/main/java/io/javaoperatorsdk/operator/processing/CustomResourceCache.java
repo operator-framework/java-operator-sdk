@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.CustomResource;
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +16,7 @@ public class CustomResourceCache {
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceCache.class);
 
+  private ObjectMapper objectMapper = new ObjectMapper();
   private final Map<String, CustomResource> resources = new ConcurrentHashMap<>();
   private final Lock lock = new ReentrantLock();
 
@@ -38,8 +41,29 @@ public class CustomResourceCache {
     }
   }
 
+  /**
+   * We clone the object so the one in the cache is not changed by the controller or dispatcher.
+   * Therefore the cached object always represents the object coming from the API server.
+   *
+   * @param uuid
+   * @return
+   */
   public Optional<CustomResource> getLatestResource(String uuid) {
-    return Optional.ofNullable(resources.get(uuid));
+    return Optional.ofNullable(clone(resources.get(uuid)));
+  }
+
+  private CustomResource clone(CustomResource customResource) {
+    try {
+      if (customResource == null) {
+        return null;
+      }
+      CustomResource clonedObject =
+          objectMapper.readValue(
+              objectMapper.writeValueAsString(customResource), customResource.getClass());
+      return clonedObject;
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   public CustomResource cleanup(String customResourceUid) {
