@@ -6,17 +6,26 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
+
+  private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
   public static Version loadFromProperties() {
     final var is =
         Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");
+
     final var properties = new Properties();
-    try {
-      properties.load(is);
-    } catch (IOException e) {
-      e.printStackTrace();
+    if(is != null) {
+      try {
+        properties.load(is);
+      } catch (IOException e) {
+        log.warn("Couldn't load version information: {}", e.getMessage());
+      }
+    } else {
+      log.warn("Couldn't find version.properties file. Default version information will be used.");
     }
 
     Date builtTime;
