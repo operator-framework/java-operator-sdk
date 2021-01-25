@@ -28,6 +28,11 @@ public class Operator {
     this.configurationService = configurationService;
   }
 
+  /**
+   * Finishes the operator startup process. This is mostly used in injection-aware applications
+   * where there is no obvious entrypoint to the application which can trigger the injection process
+   * and start the cluster monitoring processes.
+   */
   public void start() {
     final var version = configurationService.getVersion();
     log.info(
@@ -37,11 +42,30 @@ public class Operator {
         version.getBuiltTime());
   }
 
+  /**
+   * Registers the specified controller with this operator.
+   *
+   * @param controller the controller to register
+   * @param <R> the {@code CustomResource} type associated with the controller
+   * @throws OperatorException if a problem occurred during the registration process
+   */
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     register(controller, null);
   }
 
+  /**
+   * Registers the specified controller with this operator, overriding its default configuration by
+   * the specified one (usually created via {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * passing it the controller's original configuration.
+   *
+   * @param controller the controller to register
+   * @param configuration the configuration with which we want to register the controller, if {@code
+   *     null}, the controller's orginal configuration is used
+   * @param <R> the {@code CustomResource} type associated with the controller
+   * @throws OperatorException if a problem occurred during the registration process
+   */
   public <R extends CustomResource> void register(
       ResourceController<R> controller, ControllerConfiguration<R> configuration)
       throws OperatorException {

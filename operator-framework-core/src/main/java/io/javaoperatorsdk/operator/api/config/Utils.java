@@ -13,12 +13,18 @@ public class Utils {
 
   private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
+  /**
+   * Attempts to load version information from a properties file produced at build time, currently
+   * via the {@code git-commit-id-plugin} maven plugin.
+   *
+   * @return a {@link Version} object encapsulating the version information
+   */
   public static Version loadFromProperties() {
     final var is =
         Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");
 
     final var properties = new Properties();
-    if(is != null) {
+    if (is != null) {
       try {
         properties.load(is);
       } catch (IOException e) {

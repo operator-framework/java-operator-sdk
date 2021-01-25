@@ -31,7 +31,9 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public String getFinalizer() {
-    return annotation.map(Controller::finalizerName).filter(String::isBlank)
+    return annotation
+        .map(Controller::finalizerName)
+        .filter(String::isBlank)
         .orElse(ControllerUtils.getDefaultFinalizerName(getCRDName()));
   }
 
@@ -47,7 +49,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public Set<String> getNamespaces() {
-    return Set.of(annotation.map(Controller::namespaces).orElse(new String[]{}));
+    return Set.of(annotation.map(Controller::namespaces).orElse(new String[] {}));
   }
 
   @Override
