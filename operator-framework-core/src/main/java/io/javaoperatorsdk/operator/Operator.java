@@ -46,7 +46,7 @@ public class Operator {
    * Registers the specified controller with this operator.
    *
    * @param controller the controller to register
-   * @param <R> the {@code CustomResource} type associated with the controller
+   * @param <R>        the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource> void register(ResourceController<R> controller)
@@ -56,14 +56,13 @@ public class Operator {
 
   /**
    * Registers the specified controller with this operator, overriding its default configuration by
-   * the specified one (usually created via {@link
-   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * the specified one (usually created via {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the controller's original configuration.
    *
-   * @param controller the controller to register
+   * @param controller    the controller to register
    * @param configuration the configuration with which we want to register the controller, if {@code
-   *     null}, the controller's orginal configuration is used
-   * @param <R> the {@code CustomResource} type associated with the controller
+   *                      null}, the controller's orginal configuration is used
+   * @param <R>           the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource> void register(
@@ -83,7 +82,7 @@ public class Operator {
       }
 
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-      final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+      final var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
       Class<R> resClass = configuration.getCustomResourceClass();
       String finalizer = configuration.getFinalizer();
       final var client = k8sClient.customResources(resClass);
@@ -97,12 +96,9 @@ public class Operator {
           k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
       final var controllerName = configuration.getName();
       if (crd == null) {
-        log.warn(
-            "'{}' CRD was not found on the {} cluster, skipping '{}' controller registration",
-            crdName,
-            configurationService.getClientConfiguration().getMasterUrl(),
-            controllerName);
-        return;
+        throw new OperatorException(
+            "'" + crdName + "' CRD was not found on the cluster, controller "
+                + controllerName + " cannot be registered");
       }
 
       CustomResourceCache customResourceCache = new CustomResourceCache();
@@ -145,7 +141,7 @@ public class Operator {
     CustomResourceEventSource customResourceEventSource =
         watchAllNamespaces
             ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-                customResourceCache, client, generationAware, finalizer)
+            customResourceCache, client, generationAware, finalizer)
             : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
                 customResourceCache, client, targetNamespaces, generationAware, finalizer);
 
