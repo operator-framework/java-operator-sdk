@@ -36,7 +36,7 @@ public class Operator {
   public void start() {
     final var version = configurationService.getVersion();
     log.info(
-        "Operator {} (commit: {}) built on {} starting…",
+        "Operator {} (commit: {}) built on {} starting...",
         version.getProject(),
         version.getCommit(),
         version.getBuiltTime());
