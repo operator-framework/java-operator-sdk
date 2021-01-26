@@ -2,6 +2,7 @@ package io.javaoperatorsdk.crd;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.auto.service.AutoService;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionBuilder;
 import io.fabric8.kubernetes.client.utils.Pluralize;
@@ -11,9 +12,13 @@ import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -32,6 +37,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
 
   private static final YAMLMapper mapper = new YAMLMapper();
   private static ProcessingEnvironment env;
+  private static final Map<String, CustomResourceDefinition> crds = new HashMap<>();
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -43,45 +49,75 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     try {
       for (TypeElement annotation : annotations) {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
-        annotatedElements.stream().map(e -> (TypeElement) e).forEach(this::generateCRD);
+        crds.putAll(
+            annotatedElements.stream()
+                .map(e -> (TypeElement) e)
+                .collect(
+                    Collectors.groupingBy(
+                        this::key,
+                        Collector.of(
+                            CustomResourceDefinitionBuilder::new,
+                            this::enrich,
+                            this::combine,
+                            CustomResourceDefinitionBuilder::build))));
       }
     } finally {
-      if (roundEnv.processingOver()) {}
+      if (roundEnv.processingOver()) {
+        crds.forEach(this::writeCRD);
+      }
     }
     return true;
   }
 
-  private void generateCRD(TypeElement customResource) {
+  private void writeCRD(String name, CustomResourceDefinition crd) {
     try {
-      final var group = customResource.getAnnotation(Group.class).value();
-      final var version = customResource.getAnnotation(Version.class).value();
-      final var crdName = crdName(customResource, group);
-      final var crd =
-          new CustomResourceDefinitionBuilder()
-              .withNewMetadata()
-              .withName(crdName)
-              .endMetadata()
-              .withNewSpec()
-              .withNewNames()
-              .withKind(kind(customResource))
-              .withPlural(plural(customResource))
-              .withSingular(singular(customResource))
-              .withShortNames(shortNames(customResource))
-              .endNames()
-              .withGroup(group)
-              .withVersions(new CustomResourceDefinitionVersionBuilder().withName(version).build())
-              .endSpec()
-              .build();
       final var crdFile =
           env.getFiler()
               .createResource(
-                  StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk/" + crdName + ".yml");
+                  StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk/" + name + ".yml");
       final var writer = crdFile.openWriter();
       writer.write(mapper.writeValueAsString(crd));
       writer.flush();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private CustomResourceDefinitionBuilder combine(
+      CustomResourceDefinitionBuilder initial, CustomResourceDefinitionBuilder toMerge) {
+    return initial
+        .withNewSpecLike(initial.getSpec())
+        .addAllToVersions(toMerge.getSpec().getVersions())
+        .endSpec();
+  }
+
+  private void enrich(CustomResourceDefinitionBuilder builder, TypeElement customResource) {
+    final var group = customResource.getAnnotation(Group.class).value();
+    final var crdName = crdName(customResource, group);
+    final var version = customResource.getAnnotation(Version.class).value();
+    if (!builder.hasSpec()) {
+      builder
+          .withNewMetadata()
+          .withName(crdName)
+          .endMetadata()
+          .withNewSpec()
+          .withNewNames()
+          .withKind(kind(customResource))
+          .withPlural(plural(customResource))
+          .withSingular(singular(customResource))
+          .withShortNames(shortNames(customResource))
+          .endNames()
+          .withGroup(group)
+          .endSpec();
+    }
+    builder
+        .editOrNewSpec()
+        .addToVersions(new CustomResourceDefinitionVersionBuilder().withName(version).build())
+        .endSpec();
+  }
+
+  private String key(TypeElement customResource) {
+    return crdName(customResource, customResource.getAnnotation(Group.class).value());
   }
 
   private String crdName(TypeElement customResource, String group) {
