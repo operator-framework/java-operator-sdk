@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.sundr.codegen.CodegenContext;
+import io.sundr.codegen.functions.ElementTo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -34,15 +36,8 @@ import javax.tools.StandardLocation;
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
-
   private static final YAMLMapper mapper = new YAMLMapper();
-  private static ProcessingEnvironment env;
   private static final Map<String, CustomResourceDefinition> crds = new HashMap<>();
-
-  @Override
-  public synchronized void init(ProcessingEnvironment processingEnv) {
-    env = processingEnv;
-  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -77,7 +72,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
   private void writeCRD(String name, CustomResourceDefinition crd) {
     try {
       final var crdFile =
-          env.getFiler()
+          processingEnv.getFiler()
               .createResource(
                   StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk/" + name + ".yml");
       final var writer = crdFile.openWriter();
@@ -117,7 +112,13 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     }
     builder
         .editOrNewSpec()
-        .addToVersions(new CustomResourceDefinitionVersionBuilder().withName(version).build())
+        .addToVersions(
+            new CustomResourceDefinitionVersionBuilder()
+                .withName(version)
+                .withNewSchema()
+                .withOpenAPIV3Schema(JsonSchema.from(ElementTo.TYPEDEF.apply(customResource)))
+                .endSchema()
+                .build())
         .endSpec();
   }
 
