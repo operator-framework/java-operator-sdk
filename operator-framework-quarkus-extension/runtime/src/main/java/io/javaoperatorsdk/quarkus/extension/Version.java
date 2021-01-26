@@ -7,7 +7,7 @@ import java.util.Date;
 public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
   @RecordableConstructor
-  public Version(String project, String commit, Date builtTime) {
-    super(project, commit, builtTime);
+  public Version(String sdkVersion, String commit, Date builtTime) {
+    super(sdkVersion, commit, builtTime);
   }
 }

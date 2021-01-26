@@ -5,12 +5,12 @@ import java.util.Date;
 /** A class encapsulating the version information associated with this SDK instance. */
 public class Version {
 
-  private final String project;
+  private final String sdk;
   private final String commit;
   private final Date builtTime;
 
-  public Version(String project, String commit, Date builtTime) {
-    this.project = project;
+  public Version(String sdkVersion, String commit, Date builtTime) {
+    this.sdk = sdkVersion;
     this.commit = commit;
     this.builtTime = builtTime;
   }
@@ -20,8 +20,8 @@ public class Version {
    *
    * @return the SDK project version
    */
-  public String getProject() {
-    return project;
+  public String getSdkVersion() {
+    return sdk;
   }
 
   /**
