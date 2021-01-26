@@ -52,6 +52,11 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
         crds.putAll(
             annotatedElements.stream()
                 .map(e -> (TypeElement) e)
+                .map(
+                    e -> {
+                      System.out.println("Generating CRD for " + e.getQualifiedName());
+                      return e;
+                    })
                 .collect(
                     Collectors.groupingBy(
                         this::key,
