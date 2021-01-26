@@ -2,14 +2,12 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.markedForDeletion;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
@@ -115,7 +113,7 @@ public class CustomResourceEventSource extends AbstractEventSource
   }
 
   private void markLastGenerationProcessed(CustomResource resource) {
-    if (generationAware && ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer)) {
+    if (generationAware && resource.hasFinalizer(resourceFinalizer)) {
       lastGenerationProcessedSuccessfully.put(
           KubernetesResourceUtils.getUID(resource), resource.getMetadata().getGeneration());
     }
@@ -126,7 +124,7 @@ public class CustomResourceEventSource extends AbstractEventSource
       return false;
     }
     // if CR being deleted generation is naturally not changing, so we process all the events
-    if (markedForDeletion(customResource)) {
+    if (customResource.isMarkedForDeletion()) {
       return false;
     }
     if (!largerGenerationThenProcessedBefore(customResource)) {

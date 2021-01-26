@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Version;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
 import java.util.List;
 
@@ -14,7 +15,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
   private final KubernetesClient client;
 
   public QuarkusConfigurationService(
-      List<ControllerConfiguration> configurations, KubernetesClient client) {
+      Version version, List<ControllerConfiguration> configurations, KubernetesClient client) {
+    super(version);
     this.client = client;
     if (configurations != null && !configurations.isEmpty()) {
       configurations.forEach(this::register);

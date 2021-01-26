@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +28,44 @@ public class Operator {
     this.configurationService = configurationService;
   }
 
+  /**
+   * Finishes the operator startup process. This is mostly used in injection-aware applications
+   * where there is no obvious entrypoint to the application which can trigger the injection process
+   * and start the cluster monitoring processes.
+   */
+  public void start() {
+    final var version = configurationService.getVersion();
+    log.info(
+        "Operator {} (commit: {}) built on {} starting...",
+        version.getSdkVersion(),
+        version.getCommit(),
+        version.getBuiltTime());
+  }
+
+  /**
+   * Registers the specified controller with this operator.
+   *
+   * @param controller the controller to register
+   * @param <R> the {@code CustomResource} type associated with the controller
+   * @throws OperatorException if a problem occurred during the registration process
+   */
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     register(controller, null);
   }
 
+  /**
+   * Registers the specified controller with this operator, overriding its default configuration by
+   * the specified one (usually created via {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * passing it the controller's original configuration.
+   *
+   * @param controller the controller to register
+   * @param configuration the configuration with which we want to register the controller, if {@code
+   *     null}, the controller's orginal configuration is used
+   * @param <R> the {@code CustomResource} type associated with the controller
+   * @throws OperatorException if a problem occurred during the registration process
+   */
   public <R extends CustomResource> void register(
       ResourceController<R> controller, ControllerConfiguration<R> configuration)
       throws OperatorException {
@@ -49,55 +81,57 @@ public class Operator {
       if (configuration == null) {
         configuration = existing;
       }
+
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
       final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
-      registerController(controller, configuration.watchAllNamespaces(), retry, targetNamespaces);
+      Class<R> resClass = configuration.getCustomResourceClass();
+      String finalizer = configuration.getFinalizer();
+      final var client = k8sClient.customResources(resClass);
+      EventDispatcher dispatcher =
+          new EventDispatcher(
+              controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
+
+      // check that the custom resource is known by the cluster
+      final var crdName = configuration.getCRDName();
+      final var crd =
+          k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
+      final var controllerName = configuration.getName();
+      if (crd == null) {
+        throw new OperatorException(
+            "'"
+                + crdName
+                + "' CRD was not found on the cluster, controller "
+                + controllerName
+                + " cannot be registered");
+      }
+
+      CustomResourceCache customResourceCache = new CustomResourceCache();
+      DefaultEventHandler defaultEventHandler =
+          new DefaultEventHandler(customResourceCache, dispatcher, controllerName, retry);
+      DefaultEventSourceManager eventSourceManager =
+          new DefaultEventSourceManager(defaultEventHandler, retry != null);
+      defaultEventHandler.setEventSourceManager(eventSourceManager);
+      dispatcher.setEventSourceManager(eventSourceManager);
+
+      controller.init(eventSourceManager);
+      final boolean watchAllNamespaces = configuration.watchAllNamespaces();
+      CustomResourceEventSource customResourceEventSource =
+          createCustomResourceEventSource(
+              client,
+              customResourceCache,
+              watchAllNamespaces,
+              targetNamespaces,
+              defaultEventHandler,
+              configuration.isGenerationAware(),
+              finalizer);
+      eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+
+      log.info(
+          "Registered Controller: '{}' for CRD: '{}' for namespaces: {}",
+          controller.getClass().getSimpleName(),
+          resClass,
+          watchAllNamespaces ? "[all namespaces]" : Arrays.toString(targetNamespaces));
     }
-  }
-
-  @SuppressWarnings("rawtypes")
-  private <R extends CustomResource> void registerController(
-      ResourceController<R> controller,
-      boolean watchAllNamespaces,
-      Retry retry,
-      String... targetNamespaces)
-      throws OperatorException {
-    final var configuration = configurationService.getConfigurationFor(controller);
-    Class<R> resClass = configuration.getCustomResourceClass();
-    String finalizer = configuration.getFinalizer();
-    MixedOperation client = k8sClient.customResources(resClass);
-    EventDispatcher eventDispatcher =
-        new EventDispatcher(
-            controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
-
-    CustomResourceCache customResourceCache = new CustomResourceCache();
-    DefaultEventHandler defaultEventHandler =
-        new DefaultEventHandler(
-            customResourceCache, eventDispatcher, controller.getClass().getName(), retry);
-    DefaultEventSourceManager eventSourceManager =
-        new DefaultEventSourceManager(defaultEventHandler, retry != null);
-    defaultEventHandler.setEventSourceManager(eventSourceManager);
-    eventDispatcher.setEventSourceManager(eventSourceManager);
-
-    controller.init(eventSourceManager);
-    CustomResourceEventSource customResourceEventSource =
-        createCustomResourceEventSource(
-            client,
-            customResourceCache,
-            watchAllNamespaces,
-            targetNamespaces,
-            defaultEventHandler,
-            configuration.isGenerationAware(),
-            finalizer);
-    eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
-
-    log.info(
-        "Registered Controller: '{}' for CRD: '{}' for namespaces: {}",
-        controller.getClass().getSimpleName(),
-        resClass,
-        targetNamespaces.length == 0
-            ? "[all/client namespace]"
-            : Arrays.toString(targetNamespaces));
   }
 
   private CustomResourceEventSource createCustomResourceEventSource(

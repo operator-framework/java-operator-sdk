@@ -3,12 +3,11 @@ package io.javaoperatorsdk.operator.processing;
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.markedForDeletion;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.DefaultContext;
 import io.javaoperatorsdk.operator.api.DeleteControl;
@@ -16,7 +15,6 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventList;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,8 +62,7 @@ public class EventDispatcher {
           getVersion(resource));
       return PostExecutionControl.defaultDispatch();
     }
-    if ((markedForDeletion(resource)
-        && !ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer))) {
+    if ((resource.isMarkedForDeletion() && !resource.hasFinalizer(resourceFinalizer))) {
       log.debug(
           "Skipping event dispatching since its marked for deletion but has no finalizer: {}",
           executionScope);
@@ -76,7 +73,7 @@ public class EventDispatcher {
             eventSourceManager,
             new EventList(executionScope.getEvents()),
             executionScope.getRetryInfo());
-    if (markedForDeletion(resource)) {
+    if (resource.isMarkedForDeletion()) {
       return handleDelete(resource, context);
     } else {
       return handleCreateOrUpdate(executionScope, resource, context);
@@ -85,8 +82,7 @@ public class EventDispatcher {
 
   private PostExecutionControl handleCreateOrUpdate(
       ExecutionScope executionScope, CustomResource resource, Context context) {
-    if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer)
-        && !markedForDeletion(resource)) {
+    if (!resource.hasFinalizer(resourceFinalizer) && !resource.isMarkedForDeletion()) {
       /*  We always add the finalizer if missing and not marked for deletion.
          We execute the controller processing only for processing the event sent as a results
          of the finalizer add. This will make sure that the resources are not created before
@@ -132,7 +128,7 @@ public class EventDispatcher {
         getUID(resource),
         getVersion(resource));
     DeleteControl deleteControl = controller.deleteResource(resource, context);
-    boolean hasFinalizer = ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer);
+    boolean hasFinalizer = resource.hasFinalizer(resourceFinalizer);
     if (deleteControl == DeleteControl.DEFAULT_DELETE && hasFinalizer) {
       CustomResource customResource = removeFinalizer(resource);
       return PostExecutionControl.customResourceUpdated(customResource);
@@ -150,7 +146,7 @@ public class EventDispatcher {
   private void updateCustomResourceWithFinalizer(CustomResource resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
-    addFinalizerIfNotPresent(resource);
+    resource.addFinalizer(resourceFinalizer);
     replace(resource);
   }
 
@@ -165,7 +161,7 @@ public class EventDispatcher {
         "Removing finalizer on resource: {} with version: {}",
         getUID(resource),
         getVersion(resource));
-    resource.getMetadata().getFinalizers().remove(resourceFinalizer);
+    resource.removeFinalizer(resourceFinalizer);
     return customResourceFacade.replaceWithLock(resource);
   }
 
@@ -177,27 +173,17 @@ public class EventDispatcher {
     return customResourceFacade.replaceWithLock(resource);
   }
 
-  private void addFinalizerIfNotPresent(CustomResource resource) {
-    if (!ControllerUtils.hasGivenFinalizer(resource, resourceFinalizer)
-        && !markedForDeletion(resource)) {
-      log.info("Adding finalizer to {}", resource.getMetadata());
-      if (resource.getMetadata().getFinalizers() == null) {
-        resource.getMetadata().setFinalizers(new ArrayList<>(1));
-      }
-      resource.getMetadata().getFinalizers().add(resourceFinalizer);
-    }
-  }
-
   // created to support unit testing
-  public static class CustomResourceFacade {
+  public static class CustomResourceFacade<R extends CustomResource> {
 
-    private final MixedOperation<?, ?, Resource<CustomResource>> resourceOperation;
+    private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 
-    public CustomResourceFacade(MixedOperation<?, ?, Resource<CustomResource>> resourceOperation) {
+    public CustomResourceFacade(
+        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation) {
       this.resourceOperation = resourceOperation;
     }
 
-    public CustomResource updateStatus(CustomResource resource) {
+    public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
@@ -205,7 +191,7 @@ public class EventDispatcher {
           .updateStatus(resource);
     }
 
-    public CustomResource replaceWithLock(CustomResource resource) {
+    public R replaceWithLock(R resource) {
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(resource.getMetadata().getName())

@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Locale;
@@ -11,11 +10,6 @@ public class ControllerUtils {
 
   public static String getDefaultFinalizerName(String crdName) {
     return crdName + FINALIZER_NAME_SUFFIX;
-  }
-
-  public static boolean hasGivenFinalizer(CustomResource resource, String finalizer) {
-    return resource.getMetadata().getFinalizers() != null
-        && resource.getMetadata().getFinalizers().contains(finalizer);
   }
 
   public static String getNameFor(Class<? extends ResourceController> controllerClass) {
