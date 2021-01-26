@@ -44,6 +44,18 @@
       <version>1.0-rc7</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>io.sundr</groupId>
+      <artifactId>sundr-codegen</artifactId>
+      <version>0.24.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.sundr</groupId>
+      <artifactId>builder-annotations</artifactId>
+      <version>0.24.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   

@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -41,6 +40,8 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    CodegenContext.create(processingEnv.getElementUtils(), processingEnv.getTypeUtils());
+
     try {
       for (TypeElement annotation : annotations) {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
@@ -72,7 +73,8 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
   private void writeCRD(String name, CustomResourceDefinition crd) {
     try {
       final var crdFile =
-          processingEnv.getFiler()
+          processingEnv
+              .getFiler()
               .createResource(
                   StandardLocation.CLASS_OUTPUT, "", "javaoperatorsdk/" + name + ".yml");
       final var writer = crdFile.openWriter();
