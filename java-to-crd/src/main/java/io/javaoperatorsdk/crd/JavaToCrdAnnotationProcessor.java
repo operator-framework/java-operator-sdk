@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.javaoperatorsdk.crd.CRD.Scope;
 import io.sundr.codegen.CodegenContext;
 import io.sundr.codegen.functions.ElementTo;
 import java.io.IOException;
@@ -135,6 +136,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
           .withName(crdName)
           .endMetadata()
           .withNewSpec()
+          .withScope(scope(customResource))
           .withNewNames()
           .withKind(kind(customResource))
           .withPlural(plural(customResource))
@@ -160,6 +162,12 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
   private String key(CRInfo info) {
     final var customResource = info.customResource;
     return crdName(customResource, customResource.getAnnotation(Group.class).value());
+  }
+
+  private String scope(TypeElement customResource) {
+    return Optional.ofNullable(customResource.getAnnotation(CRD.class))
+        .map(c -> c.scope().name())
+        .orElse(Scope.Namespaced.name());
   }
 
   private String crdName(TypeElement customResource, String group) {
