@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -86,7 +87,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
       }
       var spec = ((TypeElement) ((DeclaredType) typeArguments.get(0)).asElement());
       var status = ((TypeElement) ((DeclaredType) typeArguments.get(1)).asElement());
-      final var info = new CRInfo(e, spec, status);
+      final var info = new CRInfo(e, spec, status, processingEnv);
       System.out.println(
           "Generating '"
               + info.crdName()
@@ -178,6 +179,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     final var crdVersion =
         new CustomResourceDefinitionVersionBuilder()
             .withName(info.version)
+            .withDeprecated(info.deprecated())
             .withNewSchema()
             .withOpenAPIV3Schema(schema)
             .endSchema()
@@ -197,14 +199,20 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     private final CRD annotation;
     private final String group;
     private final String version;
+    private final ProcessingEnvironment env;
 
-    public CRInfo(TypeElement customResource, TypeElement spec, TypeElement status) {
+    public CRInfo(
+        TypeElement customResource,
+        TypeElement spec,
+        TypeElement status,
+        ProcessingEnvironment env) {
       this.customResource = customResource;
       this.spec = spec;
       this.status = status;
       this.annotation = customResource.getAnnotation(CRD.class);
       this.group = customResource.getAnnotation(Group.class).value();
       this.version = customResource.getAnnotation(Version.class).value();
+      this.env = env;
     }
 
     boolean preserveUnknownFields() {
@@ -252,6 +260,10 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
       return Optional.ofNullable(customResource.getAnnotation(Kind.class))
           .map(Kind::value)
           .orElse(customResource.getSimpleName().toString());
+    }
+
+    private boolean deprecated() {
+      return env.getElementUtils().isDeprecated(customResource);
     }
   }
 }
