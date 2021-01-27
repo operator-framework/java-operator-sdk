@@ -86,15 +86,20 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
       }
       var spec = ((TypeElement) ((DeclaredType) typeArguments.get(0)).asElement());
       var status = ((TypeElement) ((DeclaredType) typeArguments.get(1)).asElement());
+      final var info = new CRInfo(e, spec, status);
       System.out.println(
-          "Generating CRD for "
+          "Generating '"
+              + info.crdName()
+              + "' version '"
+              + info.version
+              + "' with "
               + crClassName
               + " (spec: "
               + spec.getQualifiedName()
               + " / status: "
               + status.getQualifiedName()
               + ")");
-      return new CRInfo(e, spec, status);
+      return info;
     } else {
       System.out.println(
           "Ignoring " + crClassName + " because it doesn't extend " + CUSTOM_RESOURCE_NAME);
@@ -112,6 +117,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
       final var writer = crdFile.openWriter();
       writer.write(mapper.writeValueAsString(crd));
       writer.flush();
+      System.out.println("Created " + crdFile.toUri());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
