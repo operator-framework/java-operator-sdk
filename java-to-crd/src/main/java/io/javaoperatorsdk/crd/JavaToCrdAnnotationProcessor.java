@@ -155,8 +155,13 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
                 .withNewSchema()
                 .withOpenAPIV3Schema(JsonSchema.from(typeDef))
                 .endSchema()
+                .withServed(served(customResource))
                 .build())
         .endSpec();
+  }
+
+  private boolean served(TypeElement customResource) {
+    return customResource.getAnnotation(CRD.class).served();
   }
 
   private String key(CRInfo info) {
