@@ -38,6 +38,13 @@ public @interface CRD {
    */
   Scope scope() default Scope.Namespaced;
 
+  /**
+   * Whether or not to preserve unknown fields
+   *
+   * @return {@code true} if unknown fields should be preserved, {@code false} otherwise
+   */
+  boolean preserveUnknownFields() default false;
+
   enum Scope {
     Namespaced,
     Cluster;

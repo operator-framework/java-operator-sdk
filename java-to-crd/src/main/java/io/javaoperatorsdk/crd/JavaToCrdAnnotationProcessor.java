@@ -148,10 +148,14 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     }
     final var typeDef = ElementTo.TYPEDEF.apply(info.spec);
     final var storage = storage(customResource);
+    final var schema = JsonSchema.from(typeDef);
+    if(preserveUnknownFields(customResource)) {
+      schema.setXKubernetesPreserveUnknownFields(true);
+    }
     final var crdVersion = new CustomResourceDefinitionVersionBuilder()
         .withName(version)
         .withNewSchema()
-        .withOpenAPIV3Schema(JsonSchema.from(typeDef))
+        .withOpenAPIV3Schema(schema)
         .endSchema()
         .withServed(served(customResource))
         .withStorage(storage)
@@ -166,6 +170,10 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
       }
     }
     spec.addToVersions(crdVersion).endSpec();
+  }
+
+  private boolean preserveUnknownFields(TypeElement customResource) {
+    return customResource.getAnnotation(CRD.class).preserveUnknownFields();
   }
 
   private boolean storage(TypeElement customResource) {
