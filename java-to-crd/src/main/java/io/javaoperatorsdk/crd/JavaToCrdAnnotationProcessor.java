@@ -5,6 +5,7 @@ import com.google.auto.service.AutoService;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Pluralize;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Kind;
@@ -15,8 +16,10 @@ import io.sundr.codegen.CodegenContext;
 import io.sundr.codegen.functions.ElementTo;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -29,14 +32,18 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.StandardLocation;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.crd.CRD")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
+
   private static final YAMLMapper mapper = new YAMLMapper();
   private static final Map<String, CustomResourceDefinition> crds = new HashMap<>();
+  public static final String CUSTOM_RESOURCE_NAME = CustomResource.class.getCanonicalName();
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -48,11 +55,8 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
         crds.putAll(
             annotatedElements.stream()
                 .map(e -> (TypeElement) e)
-                .map(
-                    e -> {
-                      System.out.println("Generating CRD for " + e.getQualifiedName());
-                      return e;
-                    })
+                .map(this::crInfo)
+                .filter(Objects::nonNull)
                 .collect(
                     Collectors.groupingBy(
                         this::key,
@@ -68,6 +72,33 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
       }
     }
     return true;
+  }
+
+  private CRInfo crInfo(TypeElement e) {
+    final var superclass = (DeclaredType) e.getSuperclass();
+    final var crClassName = e.getQualifiedName();
+    if (superclass.asElement().toString().equals(CUSTOM_RESOURCE_NAME)) {
+      final List<? extends TypeMirror> typeArguments = superclass.getTypeArguments();
+      if (typeArguments.size() != 2) {
+        System.out.println("Ignoring " + crClassName + " because it isn't parameterized");
+        return null;
+      }
+      var spec = ((TypeElement) ((DeclaredType) typeArguments.get(0)).asElement());
+      var status = ((TypeElement) ((DeclaredType) typeArguments.get(1)).asElement());
+      System.out.println(
+          "Generating CRD for "
+              + crClassName
+              + " (spec: "
+              + spec.getQualifiedName()
+              + " / status: "
+              + status.getQualifiedName()
+              + ")");
+      return new CRInfo(e, spec, status);
+    } else {
+      System.out.println(
+          "Ignoring " + crClassName + " because it doesn't extend " + CUSTOM_RESOURCE_NAME);
+      return null;
+    }
   }
 
   private void writeCRD(String name, CustomResourceDefinition crd) {
@@ -93,7 +124,8 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
         .endSpec();
   }
 
-  private void enrich(CustomResourceDefinitionBuilder builder, TypeElement customResource) {
+  private void enrich(CustomResourceDefinitionBuilder builder, CRInfo info) {
+    final var customResource = info.customResource;
     final var group = customResource.getAnnotation(Group.class).value();
     final var crdName = crdName(customResource, group);
     final var version = customResource.getAnnotation(Version.class).value();
@@ -112,19 +144,21 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
           .withGroup(group)
           .endSpec();
     }
+    final var typeDef = ElementTo.TYPEDEF.apply(info.spec);
     builder
         .editOrNewSpec()
         .addToVersions(
             new CustomResourceDefinitionVersionBuilder()
                 .withName(version)
                 .withNewSchema()
-                .withOpenAPIV3Schema(JsonSchema.from(ElementTo.TYPEDEF.apply(customResource)))
+                .withOpenAPIV3Schema(JsonSchema.from(typeDef))
                 .endSchema()
                 .build())
         .endSpec();
   }
 
-  private String key(TypeElement customResource) {
+  private String key(CRInfo info) {
+    final var customResource = info.customResource;
     return crdName(customResource, customResource.getAnnotation(Group.class).value());
   }
 
@@ -155,5 +189,18 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     return Optional.ofNullable(customResource.getAnnotation(Kind.class))
         .map(Kind::value)
         .orElse(customResource.getSimpleName().toString());
+  }
+
+  private static class CRInfo {
+
+    private final TypeElement customResource;
+    private final TypeElement spec;
+    private final TypeElement status;
+
+    public CRInfo(TypeElement customResource, TypeElement spec, TypeElement status) {
+      this.customResource = customResource;
+      this.spec = spec;
+      this.status = status;
+    }
   }
 }
