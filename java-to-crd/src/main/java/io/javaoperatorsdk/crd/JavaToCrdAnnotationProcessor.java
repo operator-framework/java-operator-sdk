@@ -60,7 +60,7 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
                 .filter(Objects::nonNull)
                 .collect(
                     Collectors.groupingBy(
-                        this::key,
+                        CRInfo::key,
                         Collector.of(
                             CustomResourceDefinitionBuilder::new,
                             this::enrich,
@@ -126,56 +126,56 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
   }
 
   private void enrich(CustomResourceDefinitionBuilder builder, CRInfo info) {
-    final var customResource = info.customResource;
-    final var group = customResource.getAnnotation(Group.class).value();
-    final var crdName = crdName(customResource, group);
-    final var version = customResource.getAnnotation(Version.class).value();
+    final var crdName = info.crdName();
+
+    // if we don't already have processed this CR before, initialize it
     if (!builder.hasSpec()) {
       builder
           .withNewMetadata()
           .withName(crdName)
           .endMetadata()
           .withNewSpec()
-          .withScope(scope(customResource))
+          .withScope(info.scope())
           .withNewNames()
-          .withKind(kind(customResource))
-          .withPlural(plural(customResource))
-          .withSingular(singular(customResource))
-          .withShortNames(shortNames(customResource))
+          .withKind(info.kind())
+          .withPlural(info.plural())
+          .withSingular(info.singular())
+          .withShortNames(info.shortNames())
           .endNames()
-          .withGroup(group)
+          .withGroup(info.group)
           .endSpec();
     }
 
     // first check that we only have one version with storage set to true
     final var spec = builder.editOrNewSpec();
-    final var storage = storage(customResource);
+    final var storage = info.storage();
     if (storage) {
       final var existing =
           spec.buildMatchingVersion(CustomResourceDefinitionVersionFluentImpl::hasStorage);
       if (existing != null) {
         throw new IllegalArgumentException(
             "Only one version can be stored but both "
-                + version
+                + info.version
                 + " and "
                 + existing.getName()
-                + " are currently setting storage to true for " + crdName);
+                + " are currently setting storage to true for "
+                + crdName);
       }
     }
 
     // validation schema
     final var typeDef = ElementTo.TYPEDEF.apply(info.spec);
     final var schema = JsonSchema.from(typeDef);
-    if (preserveUnknownFields(customResource)) {
+    if (info.preserveUnknownFields()) {
       schema.setXKubernetesPreserveUnknownFields(true);
     }
     final var crdVersion =
         new CustomResourceDefinitionVersionBuilder()
-            .withName(version)
+            .withName(info.version)
             .withNewSchema()
             .withOpenAPIV3Schema(schema)
             .endSchema()
-            .withServed(served(customResource))
+            .withServed(info.served())
             .withStorage(storage)
             .build();
 
@@ -183,64 +183,69 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
     spec.addToVersions(crdVersion).endSpec();
   }
 
-  private boolean preserveUnknownFields(TypeElement customResource) {
-    return customResource.getAnnotation(CRD.class).preserveUnknownFields();
-  }
-
-  private boolean storage(TypeElement customResource) {
-    return customResource.getAnnotation(CRD.class).storage();
-  }
-
-  private boolean served(TypeElement customResource) {
-    return customResource.getAnnotation(CRD.class).served();
-  }
-
-  private String key(CRInfo info) {
-    final var customResource = info.customResource;
-    return crdName(customResource, customResource.getAnnotation(Group.class).value());
-  }
-
-  private String scope(TypeElement customResource) {
-    return customResource.getAnnotation(CRD.class).scope().name();
-  }
-
-  private String crdName(TypeElement customResource, String group) {
-    return plural(customResource) + "." + group;
-  }
-
-  private String[] shortNames(TypeElement customResource) {
-    return customResource.getAnnotation(CRD.class).shortNames();
-  }
-
-  private String singular(TypeElement customResource) {
-    return Optional.ofNullable(customResource.getAnnotation(Singular.class))
-        .map(Singular::value)
-        .orElse(kind(customResource).toLowerCase(Locale.ROOT));
-  }
-
-  private String plural(TypeElement customResource) {
-    return Optional.ofNullable(customResource.getAnnotation(Plural.class))
-        .map(Plural::value)
-        .map(s -> s.toLowerCase(Locale.ROOT))
-        .orElse(Pluralize.toPlural(singular(customResource)));
-  }
-
-  private String kind(TypeElement customResource) {
-    return Optional.ofNullable(customResource.getAnnotation(Kind.class))
-        .map(Kind::value)
-        .orElse(customResource.getSimpleName().toString());
-  }
-
   private static class CRInfo {
 
     private final TypeElement customResource;
     private final TypeElement spec;
     private final TypeElement status;
+    private final CRD annotation;
+    private final String group;
+    private final String version;
 
     public CRInfo(TypeElement customResource, TypeElement spec, TypeElement status) {
       this.customResource = customResource;
       this.spec = spec;
       this.status = status;
+      this.annotation = customResource.getAnnotation(CRD.class);
+      this.group = customResource.getAnnotation(Group.class).value();
+      this.version = customResource.getAnnotation(Version.class).value();
+    }
+
+    boolean preserveUnknownFields() {
+      return annotation.preserveUnknownFields();
+    }
+
+    private boolean storage() {
+      return annotation.storage();
+    }
+
+    private boolean served() {
+      return annotation.served();
+    }
+
+    private String key() {
+      return crdName();
+    }
+
+    private String scope() {
+      return annotation.scope().name();
+    }
+
+    private String crdName() {
+      return plural() + "." + group;
+    }
+
+    private String[] shortNames() {
+      return annotation.shortNames();
+    }
+
+    private String singular() {
+      return Optional.ofNullable(customResource.getAnnotation(Singular.class))
+          .map(Singular::value)
+          .orElse(kind().toLowerCase(Locale.ROOT));
+    }
+
+    private String plural() {
+      return Optional.ofNullable(customResource.getAnnotation(Plural.class))
+          .map(Plural::value)
+          .map(s -> s.toLowerCase(Locale.ROOT))
+          .orElse(Pluralize.toPlural(singular()));
+    }
+
+    private String kind() {
+      return Optional.ofNullable(customResource.getAnnotation(Kind.class))
+          .map(Kind::value)
+          .orElse(customResource.getSimpleName().toString());
     }
   }
 }
