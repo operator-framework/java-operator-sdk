@@ -5,6 +5,7 @@ import com.google.auto.service.AutoService;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionFluentImpl;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Pluralize;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -146,17 +147,29 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
           .endSpec();
     }
     final var typeDef = ElementTo.TYPEDEF.apply(info.spec);
-    builder
-        .editOrNewSpec()
-        .addToVersions(
-            new CustomResourceDefinitionVersionBuilder()
-                .withName(version)
-                .withNewSchema()
-                .withOpenAPIV3Schema(JsonSchema.from(typeDef))
-                .endSchema()
-                .withServed(served(customResource))
-                .build())
-        .endSpec();
+    final var storage = storage(customResource);
+    final var crdVersion = new CustomResourceDefinitionVersionBuilder()
+        .withName(version)
+        .withNewSchema()
+        .withOpenAPIV3Schema(JsonSchema.from(typeDef))
+        .endSchema()
+        .withServed(served(customResource))
+        .withStorage(storage)
+        .build();
+    final var spec = builder.editOrNewSpec();
+    if(storage) {
+      final var existing = spec
+          .buildMatchingVersion(CustomResourceDefinitionVersionFluentImpl::hasStorage);
+      if (existing != null) {
+        throw new IllegalArgumentException("Only one version can be stored but both " + version
+            + " and " + existing.getName() + " are currently setting storage to true");
+      }
+    }
+    spec.addToVersions(crdVersion).endSpec();
+  }
+
+  private boolean storage(TypeElement customResource) {
+    return customResource.getAnnotation(CRD.class).storage();
   }
 
   private boolean served(TypeElement customResource) {
