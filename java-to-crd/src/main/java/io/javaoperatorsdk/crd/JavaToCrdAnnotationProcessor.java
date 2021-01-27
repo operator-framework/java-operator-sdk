@@ -146,29 +146,40 @@ public class JavaToCrdAnnotationProcessor extends AbstractProcessor {
           .withGroup(group)
           .endSpec();
     }
-    final var typeDef = ElementTo.TYPEDEF.apply(info.spec);
-    final var storage = storage(customResource);
-    final var schema = JsonSchema.from(typeDef);
-    if(preserveUnknownFields(customResource)) {
-      schema.setXKubernetesPreserveUnknownFields(true);
-    }
-    final var crdVersion = new CustomResourceDefinitionVersionBuilder()
-        .withName(version)
-        .withNewSchema()
-        .withOpenAPIV3Schema(schema)
-        .endSchema()
-        .withServed(served(customResource))
-        .withStorage(storage)
-        .build();
+
+    // first check that we only have one version with storage set to true
     final var spec = builder.editOrNewSpec();
-    if(storage) {
-      final var existing = spec
-          .buildMatchingVersion(CustomResourceDefinitionVersionFluentImpl::hasStorage);
+    final var storage = storage(customResource);
+    if (storage) {
+      final var existing =
+          spec.buildMatchingVersion(CustomResourceDefinitionVersionFluentImpl::hasStorage);
       if (existing != null) {
-        throw new IllegalArgumentException("Only one version can be stored but both " + version
-            + " and " + existing.getName() + " are currently setting storage to true");
+        throw new IllegalArgumentException(
+            "Only one version can be stored but both "
+                + version
+                + " and "
+                + existing.getName()
+                + " are currently setting storage to true for " + crdName);
       }
     }
+
+    // validation schema
+    final var typeDef = ElementTo.TYPEDEF.apply(info.spec);
+    final var schema = JsonSchema.from(typeDef);
+    if (preserveUnknownFields(customResource)) {
+      schema.setXKubernetesPreserveUnknownFields(true);
+    }
+    final var crdVersion =
+        new CustomResourceDefinitionVersionBuilder()
+            .withName(version)
+            .withNewSchema()
+            .withOpenAPIV3Schema(schema)
+            .endSchema()
+            .withServed(served(customResource))
+            .withStorage(storage)
+            .build();
+
+    // add new version to the CRD
     spec.addToVersions(crdVersion).endSpec();
   }
 
