@@ -93,8 +93,7 @@ public class Operator {
 
       // check that the custom resource is known by the cluster
       final var crdName = configuration.getCRDName();
-      final var crd =
-          k8sClient.customResourceDefinitions().withName(crdName).get();
+      final var crd = k8sClient.customResourceDefinitions().withName(crdName).get();
       final var controllerName = configuration.getName();
       if (crd == null) {
         throw new OperatorException(
