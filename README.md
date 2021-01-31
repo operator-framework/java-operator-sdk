@@ -78,12 +78,15 @@ the `Namescaped` interface.
 #### Usage
 
 We have several sample Operators under the [samples](samples) directory:
-* *basic*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
+* *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
 Implemented with and without Spring Boot support. The two samples share the common module.
-* *webserver*: More realistic example creating an nginx webserver from a Custom Resource containing html code.
-* *mysql-schema*: Operator managing schemas in a MySQL database
 * *spring-boot-plain/auto-config*: Samples showing integration with Spring Boot.
 * *quarkus*: Minimal application showing automatic configuration / injection of Operator / Controllers.
+
+And there are more samples in the standalone [samples repo](https://github.com/java-operator-sdk/samples):
+* *webserver*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code.
+* *mysql-schema*: Operator managing schemas in a MySQL database.
+* *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps for these.
 
 Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
 
