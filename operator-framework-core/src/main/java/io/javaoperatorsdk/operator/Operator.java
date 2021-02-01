@@ -62,7 +62,7 @@ public class Operator {
    *
    * @param controller the controller to register
    * @param configuration the configuration with which we want to register the controller, if {@code
-   *     null}, the controller's orginal configuration is used
+   *     null}, the controller's original configuration is used
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
