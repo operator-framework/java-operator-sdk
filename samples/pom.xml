@@ -20,9 +20,6 @@
         <module>quarkus</module>
         <module>spring-boot-plain</module>
         <module>spring-boot-auto-config</module>
-        <module>webserver</module>
-        <module>tomcat</module>
-        <module>mysql-schema</module>
     </modules>
 
     <build>

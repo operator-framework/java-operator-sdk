@@ -1,6 +1,0 @@
-apiVersion: "mysql.sample.javaoperatorsdk/v1"
-kind: MySQLSchema
-metadata:
-  name: mydb
-spec:
-  encoding: utf8
