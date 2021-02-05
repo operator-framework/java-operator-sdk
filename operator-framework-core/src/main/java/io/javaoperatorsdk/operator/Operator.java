@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Version;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -40,6 +41,14 @@ public class Operator {
         version.getSdkVersion(),
         version.getCommit(),
         version.getBuiltTime());
+    log.info("Client version: {}", Version.clientVersion());
+    try {
+      final var k8sVersion = k8sClient.getVersion();
+      log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+    } catch (Exception e) {
+      log.error("Not connected to any cluster. Exiting!");
+      System.exit(1);
+    }
   }
 
   /**
