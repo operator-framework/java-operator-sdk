@@ -135,7 +135,11 @@ class QuarkusExtensionProcessor {
     final var crdName = CustomResource.getCRDName(crClass);
 
     // register CR class for introspection
-    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
+    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crType));
+
+    // register spec and status for introspection
+    registerForReflection(reflectionClasses, cr.getSpec());
+    registerForReflection(reflectionClasses, cr.getStatus());
 
     // retrieve the Controller annotation if it exists
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
@@ -182,6 +186,17 @@ class QuarkusExtensionProcessor {
         info.name().toString(), name, cr.getCRDName(), cr.getApiVersion());
 
     return configuration;
+  }
+
+  private void registerForReflection(
+      BuildProducer<ReflectiveClassBuildItem> reflectionClasses, Object specOrStatus) {
+    Optional.ofNullable(specOrStatus)
+        .map(s -> specOrStatus.getClass().getCanonicalName())
+        .ifPresent(
+            cn -> {
+              reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
+              System.out.println("Registered " + cn);
+            });
   }
 
   private RetryConfiguration retryConfiguration(ExternalControllerConfiguration extConfig) {
