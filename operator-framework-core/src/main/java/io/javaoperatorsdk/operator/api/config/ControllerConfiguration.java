@@ -5,9 +5,6 @@ import java.util.Collections;
 import java.util.Set;
 
 public interface ControllerConfiguration<R extends CustomResource> {
-
-  String WATCH_ALL_NAMESPACES_MARKER = "ALL_NAMESPACES";
-
   String getName();
 
   String getCRDName();
