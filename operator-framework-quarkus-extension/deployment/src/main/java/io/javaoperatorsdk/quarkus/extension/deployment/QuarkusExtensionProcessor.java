@@ -50,10 +50,6 @@ class QuarkusExtensionProcessor {
   private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
   private static final DotName APPLICATION_SCOPED =
       DotName.createSimple(ApplicationScoped.class.getName());
-  private static final Supplier<String> EXCEPTION_SUPPLIER =
-      () -> {
-        throw new IllegalArgumentException();
-      };
 
   private ExternalConfiguration externalConfiguration;
 
