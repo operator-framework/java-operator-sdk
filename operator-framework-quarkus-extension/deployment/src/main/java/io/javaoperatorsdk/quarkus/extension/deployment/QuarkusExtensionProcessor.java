@@ -25,6 +25,7 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import io.quarkus.deployment.util.JandexUtil;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,7 +37,7 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Type;
+import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 class QuarkusExtensionProcessor {
@@ -49,10 +50,6 @@ class QuarkusExtensionProcessor {
   private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
   private static final DotName APPLICATION_SCOPED =
       DotName.createSimple(ApplicationScoped.class.getName());
-  private static final Supplier<String> EXCEPTION_SUPPLIER =
-      () -> {
-        throw new IllegalArgumentException();
-      };
 
   private ExternalConfiguration externalConfiguration;
 
@@ -78,7 +75,7 @@ class QuarkusExtensionProcessor {
 
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
-            .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses))
+            .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, index))
             .collect(Collectors.toList());
 
     final var version = Utils.loadFromProperties();
@@ -101,17 +98,14 @@ class QuarkusExtensionProcessor {
   private ControllerConfiguration createControllerConfiguration(
       ClassInfo info,
       BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-      BuildProducer<ReflectiveClassBuildItem> reflectionClasses) {
+      BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+      IndexView index) {
     // first retrieve the custom resource class
-    final var rcInterface =
-        info.interfaceTypes().stream()
-            .filter(t -> t.name().equals(RESOURCE_CONTROLLER))
-            .findFirst()
-            .map(Type::asParameterizedType)
-            // shouldn't happen since we're only dealing with ResourceController implementors
-            // already
-            .orElseThrow();
-    final var crType = rcInterface.arguments().get(0).name().toString();
+    final var crType =
+        JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
+            .get(0)
+            .name()
+            .toString();
 
     // create ResourceController bean
     final var resourceControllerClassName = info.name().toString();
@@ -137,7 +131,11 @@ class QuarkusExtensionProcessor {
     final var crdName = CustomResource.getCRDName(crClass);
 
     // register CR class for introspection
-    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crClass));
+    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crType));
+
+    // register spec and status for introspection
+    registerForReflection(reflectionClasses, cr.getSpec());
+    registerForReflection(reflectionClasses, cr.getStatus());
 
     // retrieve the Controller annotation if it exists
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
@@ -184,6 +182,17 @@ class QuarkusExtensionProcessor {
         info.name().toString(), name, cr.getCRDName(), cr.getApiVersion());
 
     return configuration;
+  }
+
+  private void registerForReflection(
+      BuildProducer<ReflectiveClassBuildItem> reflectionClasses, Object specOrStatus) {
+    Optional.ofNullable(specOrStatus)
+        .map(s -> specOrStatus.getClass().getCanonicalName())
+        .ifPresent(
+            cn -> {
+              reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
+              System.out.println("Registered " + cn);
+            });
   }
 
   private RetryConfiguration retryConfiguration(ExternalControllerConfiguration extConfig) {
