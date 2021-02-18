@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -36,20 +35,14 @@ import io.quarkus.gizmo.ResultHandle;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Singleton;
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Type;
-import org.jboss.jandex.Type.Kind;
 import org.jboss.logging.Logger;
 
 class QuarkusExtensionProcessor {
@@ -90,63 +83,59 @@ class QuarkusExtensionProcessor {
       // retrieve the Controller annotation if it exists
       final var controllerAnnotation = info.classAnnotation(CONTROLLER);
 
-      if (controllerAnnotation != null) {
-        AnnotationValue value = controllerAnnotation.value("delayRegistrationUntilEvent");
-        if (value != null) {
-          Type type = value.asClass();
-          if (type.kind() != Kind.VOID) {
-            ObserverConfigurator configurator =
-                observerRegistrationPhase
-                    .getContext()
-                    .configure()
-                    .observedType(type)
-                    .beanClass(
-                        DotName.createSimple(info.name().toString() + "_registration_observer"))
-                    .notify(
-                        mc -> {
-                          MethodDescriptor cdiMethod =
-                              MethodDescriptor.ofMethod(CDI.class, "current", CDI.class);
-                          MethodDescriptor selectMethod =
-                              MethodDescriptor.ofMethod(
-                                  CDI.class,
-                                  "select",
-                                  Instance.class,
-                                  Class.class,
-                                  Annotation[].class);
-                          MethodDescriptor getMethod =
-                              MethodDescriptor.ofMethod(Instance.class, "get", Object.class);
-                          AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
-                          mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
-                          ResultHandle operatorInstance =
-                              mc.invokeVirtualMethod(
-                                  selectMethod,
-                                  cdiVar,
-                                  mc.loadClass(Operator.class),
-                                  mc.newArray(Annotation.class, 0));
-                          ResultHandle operator =
-                              mc.checkCast(
-                                  mc.invokeInterfaceMethod(getMethod, operatorInstance),
-                                  Operator.class);
-                          ResultHandle resourceInstance =
-                              mc.invokeVirtualMethod(
-                                  selectMethod,
-                                  cdiVar,
-                                  mc.loadClass(info.name().toString()),
-                                  mc.newArray(Annotation.class, 0));
-                          ResultHandle resource =
-                              mc.checkCast(
-                                  mc.invokeInterfaceMethod(getMethod, resourceInstance),
-                                  ResourceController.class);
+      final var controllerClassName = info.name().toString();
+
+      // extract the configuration from annotation and/or external configuration
+      final var configExtractor =
+          new HybridControllerConfiguration(
+              controllerClassName, externalConfiguration, controllerAnnotation);
+
+      if (configExtractor.delayedRegistration()) {
+        ObserverConfigurator configurator =
+            observerRegistrationPhase
+                .getContext()
+                .configure()
+                .observedType(configExtractor.eventType())
+                .beanClass(DotName.createSimple(controllerClassName + "_registration_observer"))
+                .notify(
+                    mc -> {
+                      MethodDescriptor cdiMethod =
+                          MethodDescriptor.ofMethod(CDI.class, "current", CDI.class);
+                      MethodDescriptor selectMethod =
+                          MethodDescriptor.ofMethod(
+                              CDI.class, "select", Instance.class, Class.class, Annotation[].class);
+                      MethodDescriptor getMethod =
+                          MethodDescriptor.ofMethod(Instance.class, "get", Object.class);
+                      AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
+                      mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
+                      ResultHandle operatorInstance =
                           mc.invokeVirtualMethod(
-                              MethodDescriptor.ofMethod(
-                                  Operator.class, "register", void.class, ResourceController.class),
-                              operator,
-                              resource);
-                          mc.returnValue(null);
-                        });
-            observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
-          }
-        }
+                              selectMethod,
+                              cdiVar,
+                              mc.loadClass(Operator.class),
+                              mc.newArray(Annotation.class, 0));
+                      ResultHandle operator =
+                          mc.checkCast(
+                              mc.invokeInterfaceMethod(getMethod, operatorInstance),
+                              Operator.class);
+                      ResultHandle resourceInstance =
+                          mc.invokeVirtualMethod(
+                              selectMethod,
+                              cdiVar,
+                              mc.loadClass(controllerClassName),
+                              mc.newArray(Annotation.class, 0));
+                      ResultHandle resource =
+                          mc.checkCast(
+                              mc.invokeInterfaceMethod(getMethod, resourceInstance),
+                              ResourceController.class);
+                      mc.invokeVirtualMethod(
+                          MethodDescriptor.ofMethod(
+                              Operator.class, "register", void.class, ResourceController.class),
+                          operator,
+                          resource);
+                      mc.returnValue(null);
+                    });
+        observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
       }
     }
   }
@@ -229,54 +218,24 @@ class QuarkusExtensionProcessor {
     // retrieve the Controller annotation if it exists
     final var controllerAnnotation = info.classAnnotation(CONTROLLER);
 
-    // retrieve the controller's name
-    final var defaultControllerName =
-        ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
-    final var name =
-        ValueExtractor.annotationValueOrDefault(
-            controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
-
-    boolean delayedRegistration = false;
-    if (controllerAnnotation != null) {
-      AnnotationValue value = controllerAnnotation.value("delayRegistrationUntilEvent");
-      if (value != null) {
-        Type type = value.asClass();
-        if (type.kind() != Kind.VOID) {
-          delayedRegistration = true;
-        }
-      }
-    }
-
-    // check if we have externalized configuration to provide values
-    final var extContConfig = externalConfiguration.controllers.get(name);
-
-    final var extractor = new ValueExtractor(controllerAnnotation, extContConfig);
+    // extract the configuration from annotation and/or external configuration
+    final var configExtractor =
+        new HybridControllerConfiguration(
+            resourceControllerClassName, externalConfiguration, controllerAnnotation);
 
     // create the configuration
+    final var name = configExtractor.name();
     final var configuration =
         new QuarkusControllerConfiguration(
             resourceControllerClassName,
             name,
             crdName,
-            extractor.extract(
-                c -> c.finalizer,
-                "finalizerName",
-                AnnotationValue::asString,
-                () -> ControllerUtils.getDefaultFinalizerName(crdName)),
-            extractor.extract(
-                c -> c.generationAware,
-                "generationAwareEventProcessing",
-                AnnotationValue::asBoolean,
-                () -> true),
-            QuarkusControllerConfiguration.asSet(
-                extractor.extract(
-                    c -> c.namespaces.map(l -> l.toArray(new String[0])),
-                    "namespaces",
-                    AnnotationValue::asStringArray,
-                    () -> new String[] {})),
+            configExtractor.finalizer(crdName),
+            configExtractor.generationAware(),
+            QuarkusControllerConfiguration.asSet(configExtractor.namespaces()),
             crType,
-            retryConfiguration(extContConfig),
-            delayedRegistration);
+            configExtractor.retryConfiguration(),
+            configExtractor.delayedRegistration());
 
     log.infov(
         "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
@@ -300,7 +259,7 @@ class QuarkusExtensionProcessor {
     return extConfig == null ? null : RetryConfigurationResolver.resolve(extConfig.retry);
   }
 
-  private Class<?> loadClass(String className) {
+  static Class<?> loadClass(String className) {
     try {
       return Thread.currentThread().getContextClassLoader().loadClass(className);
     } catch (ClassNotFoundException e) {

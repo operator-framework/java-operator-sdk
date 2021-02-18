@@ -29,4 +29,10 @@ public class ExternalControllerConfiguration {
 
   /** The optional controller retry configuration */
   public Optional<ExternalRetryConfiguration> retry;
+
+  /**
+   * The optional fully qualified name of a CDI event class that the controller will wait for before
+   * registering with the Operator.
+   */
+  public Optional<String> delayRegistrationUntilEvent;
 }
