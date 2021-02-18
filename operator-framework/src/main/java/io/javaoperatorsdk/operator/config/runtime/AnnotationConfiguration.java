@@ -57,4 +57,9 @@ public class AnnotationConfiguration<R extends CustomResource>
   public String getAssociatedControllerClassName() {
     return controller.getClass().getCanonicalName();
   }
+
+  @Override
+  public boolean isRegistrationDelayed() {
+    return annotation.map(annot -> annot.delayRegistrationUntilEvent() != void.class).orElse(false);
+  }
 }

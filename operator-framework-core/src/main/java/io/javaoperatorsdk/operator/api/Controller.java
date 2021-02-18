@@ -33,4 +33,7 @@ public @interface Controller {
    * @return the list of namespaces this controller monitors
    */
   String[] namespaces() default {};
+
+  /** Delay registration until specified CDI event is fired. */
+  Class<?> delayRegistrationUntilEvent() default void.class;
 }

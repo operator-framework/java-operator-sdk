@@ -65,7 +65,8 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
         finalizer,
         generationAware,
         namespaces,
-        retry) {
+        retry,
+        original.isRegistrationDelayed()) {
       @Override
       public Class<R> getCustomResourceClass() {
         return original.getCustomResourceClass();

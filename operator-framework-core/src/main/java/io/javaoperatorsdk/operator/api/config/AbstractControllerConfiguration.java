@@ -15,6 +15,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
   private final Set<String> namespaces;
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
+  private final boolean delayedRegistration;
 
   public AbstractControllerConfiguration(
       String associatedControllerClassName,
@@ -23,7 +24,8 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
       String finalizer,
       boolean generationAware,
       Set<String> namespaces,
-      RetryConfiguration retryConfiguration) {
+      RetryConfiguration retryConfiguration,
+      boolean delayedRegistration) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -36,6 +38,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
+    this.delayedRegistration = delayedRegistration;
   }
 
   @Override
@@ -76,5 +79,10 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
   @Override
   public RetryConfiguration getRetryConfiguration() {
     return retryConfiguration;
+  }
+
+  @Override
+  public boolean isRegistrationDelayed() {
+    return delayedRegistration;
   }
 }

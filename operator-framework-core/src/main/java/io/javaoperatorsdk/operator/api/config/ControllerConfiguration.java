@@ -28,4 +28,8 @@ public interface ControllerConfiguration<R extends CustomResource> {
   default RetryConfiguration getRetryConfiguration() {
     return RetryConfiguration.DEFAULT;
   }
+
+  default boolean isRegistrationDelayed() {
+    return false;
+  }
 }

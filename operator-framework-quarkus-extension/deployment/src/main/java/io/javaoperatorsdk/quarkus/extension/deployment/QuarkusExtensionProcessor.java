@@ -2,6 +2,7 @@ package io.javaoperatorsdk.quarkus.extension.deployment;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -16,7 +17,10 @@ import io.javaoperatorsdk.quarkus.extension.QuarkusConfigurationService;
 import io.javaoperatorsdk.quarkus.extension.QuarkusControllerConfiguration;
 import io.javaoperatorsdk.quarkus.extension.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
+import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
+import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem.ObserverConfiguratorBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.arc.processor.ObserverConfigurator;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -26,18 +30,26 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
+import io.quarkus.gizmo.AssignableResultHandle;
+import io.quarkus.gizmo.MethodDescriptor;
+import io.quarkus.gizmo.ResultHandle;
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Singleton;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.Type;
+import org.jboss.jandex.Type.Kind;
 import org.jboss.logging.Logger;
 
 class QuarkusExtensionProcessor {
@@ -60,6 +72,83 @@ class QuarkusExtensionProcessor {
     features.produce(new FeatureBuildItem(FEATURE));
     indexDependency.produce(
         new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
+  }
+
+  /**
+   * This looks for all resource controllers, to find those that want a delayed registration, and
+   * creates one CDI observer for each, that will call operator.register on them when the event is
+   * fired.
+   */
+  @BuildStep
+  void createDelayedRegistrationObservers(
+      CombinedIndexBuildItem combinedIndexBuildItem,
+      ObserverRegistrationPhaseBuildItem observerRegistrationPhase,
+      BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
+
+    final var index = combinedIndexBuildItem.getIndex();
+    for (ClassInfo info : index.getAllKnownImplementors(RESOURCE_CONTROLLER)) {
+      // retrieve the Controller annotation if it exists
+      final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+
+      if (controllerAnnotation != null) {
+        AnnotationValue value = controllerAnnotation.value("delayRegistrationUntilEvent");
+        if (value != null) {
+          Type type = value.asClass();
+          if (type.kind() != Kind.VOID) {
+            ObserverConfigurator configurator =
+                observerRegistrationPhase
+                    .getContext()
+                    .configure()
+                    .observedType(type)
+                    .beanClass(
+                        DotName.createSimple(info.name().toString() + "_registration_observer"))
+                    .notify(
+                        mc -> {
+                          MethodDescriptor cdiMethod =
+                              MethodDescriptor.ofMethod(CDI.class, "current", CDI.class);
+                          MethodDescriptor selectMethod =
+                              MethodDescriptor.ofMethod(
+                                  CDI.class,
+                                  "select",
+                                  Instance.class,
+                                  Class.class,
+                                  Annotation[].class);
+                          MethodDescriptor getMethod =
+                              MethodDescriptor.ofMethod(Instance.class, "get", Object.class);
+                          AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
+                          mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
+                          ResultHandle operatorInstance =
+                              mc.invokeVirtualMethod(
+                                  selectMethod,
+                                  cdiVar,
+                                  mc.loadClass(Operator.class),
+                                  mc.newArray(Annotation.class, 0));
+                          ResultHandle operator =
+                              mc.checkCast(
+                                  mc.invokeInterfaceMethod(getMethod, operatorInstance),
+                                  Operator.class);
+                          ResultHandle resourceInstance =
+                              mc.invokeVirtualMethod(
+                                  selectMethod,
+                                  cdiVar,
+                                  mc.loadClass(info.name().toString()),
+                                  mc.newArray(Annotation.class, 0));
+                          ResultHandle resource =
+                              mc.checkCast(
+                                  mc.invokeInterfaceMethod(getMethod, resourceInstance),
+                                  ResourceController.class);
+                          mc.invokeVirtualMethod(
+                              MethodDescriptor.ofMethod(
+                                  Operator.class, "register", void.class, ResourceController.class),
+                              operator,
+                              resource);
+                          mc.returnValue(null);
+                        });
+            observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
+          }
+        }
+      }
+    }
   }
 
   @BuildStep
@@ -147,6 +236,17 @@ class QuarkusExtensionProcessor {
         annotationValueOrDefault(
             controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
 
+    boolean delayedRegistration = false;
+    if (controllerAnnotation != null) {
+      AnnotationValue value = controllerAnnotation.value("delayRegistrationUntilEvent");
+      if (value != null) {
+        Type type = value.asClass();
+        if (type.kind() != Kind.VOID) {
+          delayedRegistration = true;
+        }
+      }
+    }
+
     // check if we have externalized configuration to provide values
     final var extContConfig = externalConfiguration.controllers.get(name);
 
@@ -175,7 +275,8 @@ class QuarkusExtensionProcessor {
                     AnnotationValue::asStringArray,
                     () -> new String[] {})),
             crType,
-            retryConfiguration(extContConfig));
+            retryConfiguration(extContConfig),
+            delayedRegistration);
 
     log.infov(
         "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",

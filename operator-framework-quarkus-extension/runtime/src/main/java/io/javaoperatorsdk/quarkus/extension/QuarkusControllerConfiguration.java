@@ -22,7 +22,8 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
       boolean generationAware,
       Set<String> namespaces,
       String crClass,
-      RetryConfiguration retryConfiguration) {
+      RetryConfiguration retryConfiguration,
+      boolean registrationDelayed) {
     super(
         associatedControllerClassName,
         name,
@@ -30,7 +31,8 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
         finalizer,
         generationAware,
         namespaces,
-        retryConfiguration);
+        retryConfiguration,
+        registrationDelayed);
     this.crClass = crClass;
   }
 
