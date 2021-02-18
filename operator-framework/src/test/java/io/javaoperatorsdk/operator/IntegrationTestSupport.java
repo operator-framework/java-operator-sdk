@@ -7,7 +7,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -72,7 +72,7 @@ public class IntegrationTestSupport {
 
   public CustomResourceDefinition loadCRDAndApplyToCluster(String classPathYaml) {
     CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, classPathYaml);
-    k8sClient.customResourceDefinitions().createOrReplace(crd);
+    k8sClient.apiextensions().v1().customResourceDefinitions().createOrReplace(crd);
     return crd;
   }
 
