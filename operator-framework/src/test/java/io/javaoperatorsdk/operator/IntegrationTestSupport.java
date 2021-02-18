@@ -70,10 +70,17 @@ public class IntegrationTestSupport {
     log.info("Operator is running with {}", controller.getClass().getCanonicalName());
   }
 
-  public CustomResourceDefinition loadCRDAndApplyToCluster(String classPathYaml) {
-    CustomResourceDefinition crd = loadYaml(CustomResourceDefinition.class, classPathYaml);
-    k8sClient.apiextensions().v1().customResourceDefinitions().createOrReplace(crd);
-    return crd;
+  public void loadCRDAndApplyToCluster(String classPathYaml) {
+    var crd = loadYaml(CustomResourceDefinition.class, classPathYaml);
+    if ("apiextensions.k8s.io/v1".equals(crd.getApiVersion())) {
+      k8sClient.apiextensions().v1().customResourceDefinitions().createOrReplace(crd);
+    } else {
+      var crd2 =
+          loadYaml(
+              io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition.class,
+              classPathYaml);
+      k8sClient.apiextensions().v1beta1().customResourceDefinitions().createOrReplace(crd2);
+    }
   }
 
   public void cleanup() {
