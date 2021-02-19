@@ -4,16 +4,28 @@ metadata:
   name: eventsourcesamples.sample.javaoperatorsdk
 spec:
   group: sample.javaoperatorsdk
+  names:
+    kind: Eventsourcesample
+    plural: eventsourcesamples
+    singular: eventsourcesample
+  scope: Namespaced
   versions:
     - name: v1
+      schema:
+        openAPIV3Schema:
+          properties:
+            status:
+              properties:
+                state:
+                  type: object
+              type: object
+            spec:
+              properties:
+                value:
+                  type: string
+              type: object
+          type: object
       served: true
       storage: true
       subresources:
         status: { }
-  scope: Namespaced
-  names:
-    plural: eventsourcesamples
-    singular: eventsourcesample
-    kind: Eventsourcesample
-    shortNames:
-      - es

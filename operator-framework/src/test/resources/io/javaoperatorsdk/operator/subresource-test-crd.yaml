@@ -4,16 +4,28 @@ metadata:
   name: subresourcesample.sample.javaoperatorsdk
 spec:
   group: sample.javaoperatorsdk
+  names:
+    kind: SubresourceSample
+    plural: subresourcesample
+    singular: subresourcesample
+  scope: Namespaced
   versions:
     - name: v1
+      schema:
+        openAPIV3Schema:
+          properties:
+            status:
+              properties:
+                state:
+                  type: object
+              type: object
+            spec:
+              properties:
+                value:
+                  type: string
+              type: object
+          type: object
       served: true
       storage: true
       subresources:
         status: { }
-  scope: Namespaced
-  names:
-    plural: subresourcesample
-    singular: subresourcesample
-    kind: SubresourceSample
-    shortNames:
-      - ss
