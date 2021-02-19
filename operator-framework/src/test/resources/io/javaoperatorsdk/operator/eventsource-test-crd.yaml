@@ -17,7 +17,10 @@ spec:
             status:
               properties:
                 state:
-                  type: object
+                  type: string
+                  enum:
+                    - "SUCCESS"
+                    - "ERROR"
               type: object
             spec:
               properties:
