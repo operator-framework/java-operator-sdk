@@ -110,7 +110,7 @@ public class TestCustomResourceController
       }
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
     }
-    return UpdateControl.updateCustomResource(resource);
+    return UpdateControl.updateStatusSubResource(resource);
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {
