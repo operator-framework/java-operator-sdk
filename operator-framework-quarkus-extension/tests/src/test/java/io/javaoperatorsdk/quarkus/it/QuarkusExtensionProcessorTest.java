@@ -5,32 +5,18 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
-import io.quarkus.test.QuarkusProdModeTest;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.kubernetes.client.KubernetesMockServerTestResource;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * This tests creates and starts an application accessed over REST to assess that injected values
  * are present and what we expect.
  */
+@QuarkusTest
+@QuarkusTestResource(KubernetesMockServerTestResource.class)
 public class QuarkusExtensionProcessorTest {
-
-  @RegisterExtension
-  static final QuarkusProdModeTest config =
-      new QuarkusProdModeTest()
-          .setArchiveProducer(
-              () ->
-                  ShrinkWrap.create(JavaArchive.class)
-                      .addClasses(
-                          TestOperatorApp.class,
-                          TestController.class,
-                          ConfiguredController.class,
-                          TestResource.class))
-          .setApplicationName("basic-app")
-          .setApplicationVersion("0.1-SNAPSHOT")
-          .setRun(true);
 
   @Test
   void controllerShouldExist() {
@@ -46,7 +32,7 @@ public class QuarkusExtensionProcessorTest {
   void configurationForControllerShouldExist() {
     // check that the config for the test controller can be retrieved and is conform to our
     // expectations
-    final var resourceName = TestResource.class.getCanonicalName();
+    final var resourceName = ChildTestResource.class.getCanonicalName();
     given()
         .when()
         .get("/operator/" + TestController.NAME + "/config")
