@@ -23,12 +23,16 @@ class EnableMockOperatorTests {
     assertThat(applicationContext.getBean(Operator.class)).isNotNull();
     assertThat(
             client
+                .apiextensions()
+                .v1()
                 .customResourceDefinitions()
                 .withName("customservices.sample.javaoperatorsdk")
                 .get())
         .isNotNull();
     assertThat(
             client
+                .apiextensions()
+                .v1()
                 .customResourceDefinitions()
                 .withName("customservices.global.sample.javaoperatorsdk")
                 .get())
