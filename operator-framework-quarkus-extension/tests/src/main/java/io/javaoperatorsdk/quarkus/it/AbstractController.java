@@ -16,19 +16,4 @@ public abstract class AbstractController<T extends TestResource> implements Reso
   public UpdateControl<T> createOrUpdateResource(T resource, Context<T> context) {
     return null;
   }
-
-  /*
-
-      public abstract class AbstractPipelineRunController<T extends AbstractPipelineRun> implements ResourceController<T> {}
-      @Controller public class ClusterPipelineRunController extends AbstractPipelineRunController<ClusterPipelineRunResource> {}
-      @Controller public class PipelineRunController extends AbstractPipelineRunController<PipelineRunResource> {}
-
-  And for model classes:
-
-      public abstract class AbstractPipelineRun extends CustomResource<RunSpec, RunStatus> {}
-      public class PipelineRunResource extends AbstractPipelineRun implements Namespaced {}
-      public class ClusterPipelineRunResource extends AbstractPipelineRun {}
-
-     */
-
 }
