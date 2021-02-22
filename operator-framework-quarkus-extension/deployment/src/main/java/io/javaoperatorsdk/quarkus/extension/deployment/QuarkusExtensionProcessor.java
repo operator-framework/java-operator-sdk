@@ -26,6 +26,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -75,6 +76,7 @@ class QuarkusExtensionProcessor {
 
     final List<ControllerConfiguration> controllerConfigs =
         resourceControllers.stream()
+            .filter(ci -> !Modifier.isAbstract(ci.flags()))
             .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, index))
             .collect(Collectors.toList());
 
@@ -124,7 +126,7 @@ class QuarkusExtensionProcessor {
     try {
       cr = crClass.getConstructor().newInstance();
     } catch (Exception e) {
-      throw new IllegalArgumentException(e.getCause());
+      throw new IllegalArgumentException("Cannot instantiate '" + crType + "' CR class", e);
     }
 
     // retrieve CRD name from CR type
