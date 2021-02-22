@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import java.util.HashMap;
@@ -13,6 +15,17 @@ public class TestUtils {
 
   public static TestCustomResource testCustomResource() {
     return testCustomResource(UUID.randomUUID().toString());
+  }
+
+  public static CustomResourceDefinition testCRD(String scope) {
+    return new CustomResourceDefinitionBuilder()
+        .editOrNewSpec()
+        .withScope(scope)
+        .and()
+        .editOrNewMetadata()
+        .withName("test.operator.javaoperatorsdk.io")
+        .and()
+        .build();
   }
 
   public static TestCustomResource testCustomResource(String uid) {
