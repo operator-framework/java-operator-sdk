@@ -179,18 +179,13 @@ to your project:
 </dependency>
 ```
 
-Create an Application, Quarkus will automatically create and inject a `KubernetesClient`, `Operator` 
-and `ConfigurationService` instances that your application can use, as shown below:
+Create an Application, Quarkus will automatically create and inject a `KubernetesClient`, `Operator`, `ConfigurationService` and `ResourceController` instances that your application can use. Below, you can see the minimal code you need to write to get your operator and controllers up and running: 
 
 ```java
 @QuarkusMain
 public class QuarkusOperator implements QuarkusApplication {
 
-  @Inject KubernetesClient client;
-
   @Inject Operator operator;
-
-  @Inject ConfigurationService configuration;
 
   public static void main(String... args) {
     Quarkus.run(QuarkusOperator.class, args);
@@ -198,9 +193,7 @@ public class QuarkusOperator implements QuarkusApplication {
 
   @Override
   public int run(String... args) throws Exception {
-    final var config = configuration.getConfigurationFor(new CustomServiceController(client));
-    System.out.println("CR class: " + config.getCustomResourceClass());
-
+    operator.start();
     Quarkus.waitForExit();
     return 0;
   }
