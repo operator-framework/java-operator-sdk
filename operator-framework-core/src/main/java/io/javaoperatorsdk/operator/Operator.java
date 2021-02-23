@@ -95,10 +95,6 @@ public class Operator {
       final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
       Class<R> resClass = configuration.getCustomResourceClass();
       String finalizer = configuration.getFinalizer();
-      final var client = k8sClient.customResources(resClass);
-      EventDispatcher dispatcher =
-          new EventDispatcher(
-              controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
 
       // check that the custom resource is known by the cluster
       final var crdName = configuration.getCRDName();
@@ -113,6 +109,14 @@ public class Operator {
                 + controllerName
                 + " cannot be registered");
       }
+
+      // Apply validations that are not handled by fabric8
+      CustomResourceUtils.assertCustomResource(resClass, crd);
+
+      final var client = k8sClient.customResources(resClass);
+      EventDispatcher dispatcher =
+          new EventDispatcher(
+              controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
 
       CustomResourceCache customResourceCache = new CustomResourceCache();
       DefaultEventHandler defaultEventHandler =
