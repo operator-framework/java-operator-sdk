@@ -32,7 +32,7 @@ public class ConcurrencyIT {
   public void setup() {
     KubernetesClient k8sClient = new DefaultKubernetesClient();
     integrationTest.initialize(
-        k8sClient, new TestCustomResourceController(k8sClient, true), "test-crd.yaml");
+        k8sClient, new TestCustomResourceController(k8sClient, true));
   }
 
   @BeforeEach

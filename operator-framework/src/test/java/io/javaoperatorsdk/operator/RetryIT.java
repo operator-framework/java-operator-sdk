@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import static io.javaoperatorsdk.operator.IntegrationTestSupport.TEST_NAMESPACE;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -26,7 +26,7 @@ public class RetryIT {
         new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry().setMaxAttempts(5);
     KubernetesClient k8sClient = new DefaultKubernetesClient();
     integrationTestSupport.initialize(
-        k8sClient, new RetryTestCustomResourceController(), "retry-test-crd.yaml", retry);
+        k8sClient, new RetryTestCustomResourceController(), retry);
     integrationTestSupport.cleanup();
   }
 

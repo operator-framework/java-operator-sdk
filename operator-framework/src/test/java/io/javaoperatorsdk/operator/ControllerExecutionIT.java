@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -21,8 +21,8 @@ public class ControllerExecutionIT {
     KubernetesClient k8sClient = new DefaultKubernetesClient();
     integrationTestSupport.initialize(
         k8sClient,
-        new TestCustomResourceController(k8sClient, controllerStatusUpdate),
-        "test-crd.yaml");
+        new TestCustomResourceController(k8sClient, controllerStatusUpdate)
+    );
     integrationTestSupport.cleanup();
   }
 
