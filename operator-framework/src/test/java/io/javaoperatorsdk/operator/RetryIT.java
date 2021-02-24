@@ -25,8 +25,7 @@ public class RetryIT {
     Retry retry =
         new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry().setMaxAttempts(5);
     KubernetesClient k8sClient = new DefaultKubernetesClient();
-    integrationTestSupport.initialize(
-        k8sClient, new RetryTestCustomResourceController(), retry);
+    integrationTestSupport.initialize(k8sClient, new RetryTestCustomResourceController(), retry);
     integrationTestSupport.cleanup();
   }
 

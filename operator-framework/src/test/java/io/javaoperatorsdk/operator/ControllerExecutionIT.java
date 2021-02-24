@@ -20,9 +20,7 @@ public class ControllerExecutionIT {
   public void initAndCleanup(boolean controllerStatusUpdate) {
     KubernetesClient k8sClient = new DefaultKubernetesClient();
     integrationTestSupport.initialize(
-        k8sClient,
-        new TestCustomResourceController(k8sClient, controllerStatusUpdate)
-    );
+        k8sClient, new TestCustomResourceController(k8sClient, controllerStatusUpdate));
     integrationTestSupport.cleanup();
   }
 
