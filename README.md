@@ -33,7 +33,7 @@ handle more complex scenarios take a look on [event sources](https://csviri.medi
 #### Roadmap
 * Testing of the framework and all samples while running on a real cluster.
 * Generate a project skeleton
-* Generate Java classes from CRD defintion (and/or the other way around)
+* Generate Java classes from CRD
 * Integrate with Quarkus (including native image build)
 * Integrate with OLM (Operator Lifecycle Manager)
 
@@ -164,7 +164,29 @@ public class WebServerSpec {
     }
 }
 ```
-          
+
+#### Automatic generation of CRDs
+
+To automatically generate CRD manifests from your annotated Custom Resource classes, you only need
+to add the following dependency to your project:
+
+```xml
+<dependency>
+  <groupId>io.fabric8</groupId>
+  <artifactId>crd-generator</artifactId>
+  <scope>compile</scope>
+</dependency>
+```
+
+The CRD will be generated in `target/classes/META-INF/fabric8` (or
+in `target/test-classes/META-INF/fabric8`, if you use the `test` scope) with the CRD name suffixed
+by the generated spec version. For example, a CR using the `java-operator-sdk.io` group with
+a `mycrs` plural form will result in 2 files:
+
+- `mycrs.java-operator-sdk.io-v1.yml`
+- `mycrs.java-operator-sdk.io-v1beta1.yml`
+
+
 #### Quarkus
 
 A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based operators.
