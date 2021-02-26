@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.RepeatedTimerEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -98,7 +98,7 @@ class DefaultEventHandlerTest {
         .handleExecution(captor.capture());
     List<Event> events = captor.getAllValues().get(1).getEvents();
     assertThat(events).hasSize(2);
-    assertThat(events.get(0)).isInstanceOf(TimerEvent.class);
+    assertThat(events.get(0)).isInstanceOf(RepeatedTimerEvent.class);
     assertThat(events.get(1)).isInstanceOf(CustomResourceEvent.class);
   }
 
@@ -236,7 +236,7 @@ class DefaultEventHandlerTest {
   }
 
   private Event nonCREvent(String relatedCustomResourceUid) {
-    TimerEvent timerEvent = new TimerEvent(relatedCustomResourceUid, null);
-    return timerEvent;
+    RepeatedTimerEvent repeatedTimerEvent = new RepeatedTimerEvent(relatedCustomResourceUid, null);
+    return repeatedTimerEvent;
   }
 }
