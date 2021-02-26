@@ -42,7 +42,8 @@ class RepeatedTimerEventSourceTest {
 
     timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
 
-    ArgumentCaptor<RepeatedTimerEvent> argumentCaptor = ArgumentCaptor.forClass(RepeatedTimerEvent.class);
+    ArgumentCaptor<RepeatedTimerEvent> argumentCaptor =
+        ArgumentCaptor.forClass(RepeatedTimerEvent.class);
     verify(eventHandlerMock, timeout(INITIAL_DELAY + PERIOD + TESTING_TIME_SLACK).times(2))
         .handleEvent(argumentCaptor.capture());
     List<RepeatedTimerEvent> events = argumentCaptor.getAllValues();
