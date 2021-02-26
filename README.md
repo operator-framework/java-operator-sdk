@@ -168,13 +168,18 @@ public class WebServerSpec {
 #### Automatic generation of CRDs
 
 To automatically generate CRD manifests from your annotated Custom Resource classes, you only need
-to add the following dependency to your project:
+to add the following dependencies to your project:
 
 ```xml
 <dependency>
   <groupId>io.fabric8</groupId>
   <artifactId>crd-generator</artifactId>
   <scope>compile</scope>
+</dependency>
+<!-- This dependency will not be needed anymore in a future release of the kubernetes-client -->
+<dependency>
+  <groupId>io.fabric8</groupId>
+  <artifactId>kubernetes-model-common</artifactId>
 </dependency>
 ```
 
