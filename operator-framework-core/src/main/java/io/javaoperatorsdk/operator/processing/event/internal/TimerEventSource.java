@@ -84,7 +84,7 @@ public class TimerEventSource extends AbstractEventSource {
         eventHandler.handleEvent(new RepeatedTimerEvent(customResourceUid, TimerEventSource.this));
       } else {
         eventHandler.handleEvent(
-            new OneTimerEvent(customResourceUid, TimerEventSource.this, events));
+            new OnceTimerEvent(customResourceUid, TimerEventSource.this, events));
       }
     }
   }

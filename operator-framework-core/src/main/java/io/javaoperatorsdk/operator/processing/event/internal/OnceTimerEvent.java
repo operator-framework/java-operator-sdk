@@ -6,11 +6,11 @@ import io.javaoperatorsdk.operator.processing.event.EventSource;
 import java.util.Collections;
 import java.util.List;
 
-public class OneTimerEvent extends AbstractEvent {
+public class OnceTimerEvent extends AbstractEvent {
 
   private final List<Event> events;
 
-  public OneTimerEvent(
+  public OnceTimerEvent(
       String relatedCustomResourceUid, EventSource eventSource, List<Event> events) {
     super(relatedCustomResourceUid, eventSource);
     this.events = events;
