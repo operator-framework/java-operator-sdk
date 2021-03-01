@@ -37,21 +37,22 @@ public class IntegrationTestSupport {
   private Operator operator;
   private ResourceController controller;
 
-  public void initialize(
-      KubernetesClient k8sClient, ResourceController controller, String crdPath) {
-    initialize(k8sClient, controller, crdPath, null);
+  public void initialize(KubernetesClient k8sClient, ResourceController controller) {
+    initialize(k8sClient, controller, null);
   }
 
-  public void initialize(
-      KubernetesClient k8sClient, ResourceController controller, String crdPath, Retry retry) {
+  public void initialize(KubernetesClient k8sClient, ResourceController controller, Retry retry) {
     log.info("Initializing integration test in namespace {}", TEST_NAMESPACE);
     this.k8sClient = k8sClient;
-    loadCRDAndApplyToCluster(crdPath);
     this.controller = controller;
 
     final var configurationService = DefaultConfigurationService.instance();
 
     final var config = configurationService.getConfigurationFor(controller);
+    // load generated CRD
+    final var crdPath = "/META-INF/fabric8/" + config.getCRDName() + "-v1.yml";
+    loadCRDAndApplyToCluster(crdPath);
+
     final var customResourceClass = config.getCustomResourceClass();
     this.crOperations = k8sClient.customResources(customResourceClass);
 

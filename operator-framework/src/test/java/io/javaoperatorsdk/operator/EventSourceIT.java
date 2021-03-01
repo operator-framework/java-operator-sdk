@@ -25,8 +25,7 @@ public class EventSourceIT {
   @BeforeEach
   public void initAndCleanup() {
     KubernetesClient k8sClient = new DefaultKubernetesClient();
-    integrationTestSupport.initialize(
-        k8sClient, new EventSourceTestCustomResourceController(), "eventsource-test-crd.yaml");
+    integrationTestSupport.initialize(k8sClient, new EventSourceTestCustomResourceController());
     integrationTestSupport.cleanup();
   }
 

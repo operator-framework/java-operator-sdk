@@ -24,8 +24,7 @@ public class UpdatingResAndSubResIT {
   @BeforeEach
   public void initAndCleanup() {
     KubernetesClient k8sClient = new DefaultKubernetesClient();
-    integrationTestSupport.initialize(
-        k8sClient, new DoubleUpdateTestCustomResourceController(), "doubleupdate-test-crd.yaml");
+    integrationTestSupport.initialize(k8sClient, new DoubleUpdateTestCustomResourceController());
     integrationTestSupport.cleanup();
   }
 

@@ -25,8 +25,7 @@ public class SubResourceUpdateIT {
   @BeforeEach
   public void initAndCleanup() {
     KubernetesClient k8sClient = new DefaultKubernetesClient();
-    integrationTestSupport.initialize(
-        k8sClient, new SubResourceTestCustomResourceController(), "subresource-test-crd.yaml");
+    integrationTestSupport.initialize(k8sClient, new SubResourceTestCustomResourceController());
     integrationTestSupport.cleanup();
   }
 
