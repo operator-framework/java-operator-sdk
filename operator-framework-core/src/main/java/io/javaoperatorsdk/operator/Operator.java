@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
@@ -96,22 +97,25 @@ public class Operator {
       Class<R> resClass = configuration.getCustomResourceClass();
       String finalizer = configuration.getFinalizer();
 
-      // check that the custom resource is known by the cluster
-      final var crdName = configuration.getCRDName();
-      final var crd =
-          k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
-      final var controllerName = configuration.getName();
-      if (crd == null) {
-        throw new OperatorException(
-            "'"
-                + crdName
-                + "' CRD was not found on the cluster, controller "
-                + controllerName
-                + " cannot be registered");
-      }
+      final String controllerName = configuration.getName();
 
-      // Apply validations that are not handled by fabric8
-      CustomResourceUtils.assertCustomResource(resClass, crd);
+      // check that the custom resource is known by the cluster if configured that way
+      final CustomResourceDefinition crd;
+      if (configurationService.validateCustomResources()) {
+        final var crdName = configuration.getCRDName();
+        crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
+        if (crd == null) {
+          throw new OperatorException(
+              "'"
+                  + crdName
+                  + "' CRD was not found on the cluster, controller "
+                  + controllerName
+                  + " cannot be registered");
+        }
+
+        // Apply validations that are not handled by fabric8
+        CustomResourceUtils.assertCustomResource(resClass, crd);
+      }
 
       final var client = k8sClient.customResources(resClass);
       EventDispatcher dispatcher =

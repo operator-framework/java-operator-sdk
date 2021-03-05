@@ -81,11 +81,16 @@ class QuarkusExtensionProcessor {
             .collect(Collectors.toList());
 
     final var version = Utils.loadFromProperties();
+    final var validateCustomResources =
+        Utils.isValidateCustomResourcesEnvVarSet()
+            ? Utils.shouldValidateCustomResources()
+            : externalConfiguration.validateCustomResources.orElse(true);
 
     final var supplier =
         recorder.configurationServiceSupplier(
             new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
-            controllerConfigs);
+            controllerConfigs,
+            validateCustomResources);
     syntheticBeanBuildItemBuildProducer.produce(
         SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
             .scope(Singleton.class)

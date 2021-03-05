@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 public class Utils {
 
   private static final Logger log = LoggerFactory.getLogger(Utils.class);
+  public static final String VALIDATE_CR_ENV_KEY = "JAVA_OPERATOR_SDK_VALIDATE_CR";
 
   /**
    * Attempts to load version information from a properties file produced at build time, currently
@@ -47,5 +48,14 @@ public class Utils {
         properties.getProperty("git.build.version", "unknown"),
         properties.getProperty("git.commit.id.abbrev", "unknown"),
         builtTime);
+  }
+
+  public static boolean isValidateCustomResourcesEnvVarSet() {
+    return System.getProperty(VALIDATE_CR_ENV_KEY) != null;
+  }
+
+  public static boolean shouldValidateCustomResources() {
+    final var value = System.getProperty(VALIDATE_CR_ENV_KEY);
+    return value == null || Boolean.getBoolean(value);
   }
 }

@@ -13,9 +13,14 @@ import java.util.function.Supplier;
 public class ConfigurationServiceRecorder {
 
   public Supplier<ConfigurationService> configurationServiceSupplier(
-      Version version, List<ControllerConfiguration> controllerConfigs) {
+      Version version,
+      List<ControllerConfiguration> controllerConfigs,
+      boolean validateCustomResources) {
     return () ->
         new QuarkusConfigurationService(
-            version, controllerConfigs, Arc.container().instance(KubernetesClient.class).get());
+            version,
+            controllerConfigs,
+            Arc.container().instance(KubernetesClient.class).get(),
+            validateCustomResources);
   }
 }

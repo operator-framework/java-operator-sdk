@@ -165,6 +165,18 @@ public class WebServerSpec {
 }
 ```
 
+#### Deactivating CustomResource implementations validation
+
+The operator will, by default, query the deployed CRDs to check that the `CustomResource`
+implementations match what is known to the cluster. This requires an additional query to the cluster
+and, sometimes, elevated privileges for the operator to be able to read the CRDs from the cluster.
+This validation is mostly meant to help users new to operator development get started and avoid
+common mistakes. Advanced users or production deployments might want to skip this step. This is done
+by setting 
+the `JAVA_OPERATOR_SDK_VALIDATE_CR` environment variable to `false`. Quarkus users can also add 
+`quarkus.operator-sdk.validate-custom-resources=false` to their `application.properties` for the 
+same purpose.
+
 #### Automatic generation of CRDs
 
 To automatically generate CRD manifests from your annotated Custom Resource classes, you only need

@@ -19,6 +19,12 @@ public class TestOperatorApp {
   @Inject ConfigurationService configurationService;
 
   @GET
+  @Path("validateCR")
+  public boolean validateCR() {
+    return configurationService.validateCustomResources();
+  }
+
+  @GET
   @Path("{name}")
   public boolean getController(@PathParam("name") String name) {
     return configurationService.getKnownControllerNames().contains(name);
