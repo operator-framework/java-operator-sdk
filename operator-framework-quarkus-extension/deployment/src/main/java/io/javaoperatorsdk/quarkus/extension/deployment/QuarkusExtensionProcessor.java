@@ -83,8 +83,8 @@ class QuarkusExtensionProcessor {
     final var version = Utils.loadFromProperties();
     final var validateCustomResources =
         Utils.isValidateCustomResourcesEnvVarSet()
-            ? Utils.shouldValidateCustomResources()
-            : externalConfiguration.validateCustomResources.orElse(true);
+            ? Utils.shouldCheckCRDAndValidateLocalModel()
+            : externalConfiguration.checkCRDAndValidateLocalModel.orElse(true);
 
     final var supplier =
         recorder.configurationServiceSupplier(

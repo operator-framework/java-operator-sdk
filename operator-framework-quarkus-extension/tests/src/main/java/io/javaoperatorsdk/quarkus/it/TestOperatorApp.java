@@ -21,7 +21,7 @@ public class TestOperatorApp {
   @GET
   @Path("validateCR")
   public boolean validateCR() {
-    return configurationService.validateCustomResources();
+    return configurationService.checkCRDAndValidateLocalModel();
   }
 
   @GET

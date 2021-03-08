@@ -13,19 +13,19 @@ import java.util.List;
 public class QuarkusConfigurationService extends AbstractConfigurationService {
   private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
   private final KubernetesClient client;
-  private final boolean validateCustomResources;
+  private final boolean checkCRDAndValidateLocalModel;
 
   public QuarkusConfigurationService(
       Version version,
       List<ControllerConfiguration> configurations,
       KubernetesClient client,
-      boolean validateCustomResources) {
+      boolean checkCRDAndValidateLocalModel) {
     super(version);
     this.client = client;
     if (configurations != null && !configurations.isEmpty()) {
       configurations.forEach(this::register);
     }
-    this.validateCustomResources = validateCustomResources;
+    this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
   }
 
   @Override
@@ -41,8 +41,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
   }
 
   @Override
-  public boolean validateCustomResources() {
-    return validateCustomResources;
+  public boolean checkCRDAndValidateLocalModel() {
+    return checkCRDAndValidateLocalModel;
   }
 
   private static <R extends CustomResource> ResourceController<R> unwrap(
