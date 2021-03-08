@@ -38,7 +38,7 @@ public class DefaultConfigurationService extends AbstractConfigurationService {
   }
 
   @Override
-  public boolean validateCustomResources() {
-    return Utils.shouldValidateCustomResources();
+  public boolean checkCRDAndValidateLocalModel() {
+    return Utils.shouldCheckCRDAndValidateLocalModel();
   }
 }

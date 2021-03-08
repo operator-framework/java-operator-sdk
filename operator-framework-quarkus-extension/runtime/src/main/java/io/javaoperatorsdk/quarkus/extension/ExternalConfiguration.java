@@ -14,9 +14,10 @@ public class ExternalConfiguration {
   @ConfigItem public Map<String, ExternalControllerConfiguration> controllers;
 
   /**
-   * Whether the operator should validate the {@link CustomResource} implementation before
-   * registering the associated controller.
+   * Whether the operator should check that the CRD is properly deployed and that the associated
+   * {@link CustomResource} implementation matches its information before registering the associated
+   * controller.
    */
   @ConfigItem(defaultValue = "true")
-  public Optional<Boolean> validateCustomResources;
+  public Optional<Boolean> checkCRDAndValidateLocalModel;
 }

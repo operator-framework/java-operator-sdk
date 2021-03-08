@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class Utils {
 
   private static final Logger log = LoggerFactory.getLogger(Utils.class);
-  public static final String VALIDATE_CR_ENV_KEY = "JAVA_OPERATOR_SDK_VALIDATE_CR";
+  public static final String CHECK_CRD_ENV_KEY = "JAVA_OPERATOR_SDK_CHECK_CRD";
 
   /**
    * Attempts to load version information from a properties file produced at build time, currently
@@ -51,11 +51,11 @@ public class Utils {
   }
 
   public static boolean isValidateCustomResourcesEnvVarSet() {
-    return System.getProperty(VALIDATE_CR_ENV_KEY) != null;
+    return System.getProperty(CHECK_CRD_ENV_KEY) != null;
   }
 
-  public static boolean shouldValidateCustomResources() {
-    final var value = System.getProperty(VALIDATE_CR_ENV_KEY);
+  public static boolean shouldCheckCRDAndValidateLocalModel() {
+    final var value = System.getProperty(CHECK_CRD_ENV_KEY);
     return value == null || Boolean.getBoolean(value);
   }
 }

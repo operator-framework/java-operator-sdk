@@ -101,7 +101,7 @@ public class Operator {
 
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd;
-      if (configurationService.validateCustomResources()) {
+      if (configurationService.checkCRDAndValidateLocalModel()) {
         final var crdName = configuration.getCRDName();
         crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
         if (crd == null) {

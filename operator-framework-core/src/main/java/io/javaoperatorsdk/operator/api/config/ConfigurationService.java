@@ -52,7 +52,7 @@ public interface ConfigurationService {
    *
    * @return {@code true} if CRDs should be checked (default), {@code false} otherwise
    */
-  default boolean validateCustomResources() {
+  default boolean checkCRDAndValidateLocalModel() {
     return true;
   }
 }
