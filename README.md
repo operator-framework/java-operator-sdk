@@ -173,8 +173,8 @@ and, sometimes, elevated privileges for the operator to be able to read the CRDs
 This validation is mostly meant to help users new to operator development get started and avoid
 common mistakes. Advanced users or production deployments might want to skip this step. This is done
 by setting 
-the `JAVA_OPERATOR_SDK_VALIDATE_CR` environment variable to `false`. Quarkus users can also add 
-`quarkus.operator-sdk.validate-custom-resources=false` to their `application.properties` for the 
+the `CHECK_CRD_ENV_KEY` environment variable to `false`. Quarkus users can also add 
+`quarkus.operator-sdk.check-crd-and-validate-local-model=false` to their `application.properties` for the 
 same purpose.
 
 #### Automatic generation of CRDs
