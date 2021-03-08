@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
@@ -10,6 +11,7 @@ import javax.inject.Inject;
 public class QuarkusOperator implements QuarkusApplication {
 
   @Inject Operator operator;
+  @Inject OpenShiftClient client;
 
   public static void main(String... args) {
     Quarkus.run(QuarkusOperator.class, args);
