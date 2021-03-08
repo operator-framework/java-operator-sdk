@@ -36,4 +36,9 @@ public class DefaultConfigurationService extends AbstractConfigurationService {
     }
     return config;
   }
+
+  @Override
+  public boolean validateCustomResources() {
+    return Utils.shouldValidateCustomResources();
+  }
 }

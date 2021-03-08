@@ -28,5 +28,5 @@ public class ExternalControllerConfiguration {
   public Optional<Boolean> generationAware;
 
   /** The optional controller retry configuration */
-  public Optional<ExternalRetryConfiguration> retry;
+  @ConfigItem public Optional<ExternalRetryConfiguration> retry;
 }

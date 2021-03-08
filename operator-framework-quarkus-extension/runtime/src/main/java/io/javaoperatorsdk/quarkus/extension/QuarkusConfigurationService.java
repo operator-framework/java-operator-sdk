@@ -13,14 +13,19 @@ import java.util.List;
 public class QuarkusConfigurationService extends AbstractConfigurationService {
   private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
   private final KubernetesClient client;
+  private final boolean validateCustomResources;
 
   public QuarkusConfigurationService(
-      Version version, List<ControllerConfiguration> configurations, KubernetesClient client) {
+      Version version,
+      List<ControllerConfiguration> configurations,
+      KubernetesClient client,
+      boolean validateCustomResources) {
     super(version);
     this.client = client;
     if (configurations != null && !configurations.isEmpty()) {
       configurations.forEach(this::register);
     }
+    this.validateCustomResources = validateCustomResources;
   }
 
   @Override
@@ -33,6 +38,11 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
       ResourceController<R> controller) {
     final var unwrapped = unwrap(controller);
     return super.getConfigurationFor(unwrapped);
+  }
+
+  @Override
+  public boolean validateCustomResources() {
+    return validateCustomResources;
   }
 
   private static <R extends CustomResource> ResourceController<R> unwrap(
