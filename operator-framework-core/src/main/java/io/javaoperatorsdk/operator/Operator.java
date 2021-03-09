@@ -45,9 +45,11 @@ public class Operator {
     log.info("Client version: {}", Version.clientVersion());
     try {
       final var k8sVersion = k8sClient.getVersion();
-      log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+      if (k8sVersion != null) {
+        log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+      }
     } catch (Exception e) {
-      log.error("Not connected to any cluster. Exiting!");
+      log.error("Error retrieving the server version. Exiting!", e);
       System.exit(1);
     }
   }
