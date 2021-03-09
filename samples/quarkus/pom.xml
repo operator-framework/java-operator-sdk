@@ -43,9 +43,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-quarkus-extension</artifactId>
-      <version>${project.version}</version>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk</artifactId>
+      <version>1.8.0.CR1</version>
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
