@@ -51,6 +51,11 @@ Note that these docs are currently in progress.
 > Kubernetes client. While this should improve the user experience quite nicely, there are a couple
 > of things to be aware of when upgrading from a previous version as detailed below.
 
+#### Overview of the 1.8.0 changes
+
+- The quarkus extension has been moved to the quarkiverse and is now found at 
+https://github.com/quarkiverse/quarkus-operator-sdk
+
 ##### Overview of the 1.7.0 changes
 
 - `Doneable` classes have been removed along with all the involved complexity
@@ -208,18 +213,19 @@ a `mycrs` plural form will result in 2 files:
 
 A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based operators.
 
-Add [this dependency](https://search.maven.org/search?q=a:operator-framework-quarkus-extension)
+Add [this dependency](https://search.maven.org/search?q=a:quarkus-operator-sdk)
 to your project:
 
 ```xml
+
 <dependency>
- <groupId>io.javaoperatorsdk</groupId>
- <artifactId>operator-framework-quarkus-extension</artifactId>
- <version>{see https://search.maven.org/search?q=a:operator-framework-quarkus-extension for latest version}</version>
+  <groupId>io.quarkiverse.operatorsdk</groupId>
+  <artifactId>quarkus-operator-sdk</artifactId>
+  <version>{see https://search.maven.org/search?q=a:quarkus-operator-sdk for latest version}</version>
 </dependency>
 ```
 
-Create an Application, Quarkus will automatically create and inject a `KubernetesClient`, `Operator`, `ConfigurationService` and `ResourceController` instances that your application can use. Below, you can see the minimal code you need to write to get your operator and controllers up and running: 
+Create an Application, Quarkus will automatically create and inject a `KubernetesClient` (or `OpenShiftClient`), `Operator`, `ConfigurationService` and `ResourceController` instances that your application can use. Below, you can see the minimal code you need to write to get your operator and controllers up and running: 
 
 ```java
 @QuarkusMain

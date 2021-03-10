@@ -5,7 +5,7 @@
 
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>1.7.6-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
     <packaging>pom</packaging>
@@ -45,7 +45,6 @@
     <modules>
         <module>operator-framework-core</module>
         <module>operator-framework</module>
-        <module>operator-framework-quarkus-extension</module>
         <module>operator-framework-spring-boot-starter</module>
         <module>operator-framework-spring-boot-starter-test</module>
         <module>samples</module>
