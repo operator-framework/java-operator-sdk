@@ -58,7 +58,7 @@ public class Operator {
    * Registers the specified controller with this operator.
    *
    * @param controller the controller to register
-   * @param <R>        the {@code CustomResource} type associated with the controller
+   * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource> void register(ResourceController<R> controller)
@@ -68,13 +68,14 @@ public class Operator {
 
   /**
    * Registers the specified controller with this operator, overriding its default configuration by
-   * the specified one (usually created via {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * the specified one (usually created via {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the controller's original configuration.
    *
-   * @param controller    the controller to register
+   * @param controller the controller to register
    * @param configuration the configuration with which we want to register the controller, if {@code
-   *                      null}, the controller's original configuration is used
-   * @param <R>           the {@code CustomResource} type associated with the controller
+   *     null}, the controller's original configuration is used
+   * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource> void register(
@@ -96,11 +97,10 @@ public class Operator {
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
 
       // check if we only want to watch the current namespace
-      var targetNamespaces = configuration.getNamespaces().toArray(new String[]{});
+      var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
       if (configuration.watchCurrentNamespace()) {
-        targetNamespaces = new String[]{
-            configurationService.getClientConfiguration().getNamespace()
-        };
+        targetNamespaces =
+            new String[] {configurationService.getClientConfiguration().getNamespace()};
       }
 
       Class<R> resClass = configuration.getCustomResourceClass();
@@ -171,7 +171,7 @@ public class Operator {
     CustomResourceEventSource customResourceEventSource =
         watchAllNamespaces
             ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, client, generationAware, finalizer)
+                customResourceCache, client, generationAware, finalizer)
             : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
                 customResourceCache, client, targetNamespaces, generationAware, finalizer);
 
