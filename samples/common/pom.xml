@@ -25,10 +25,11 @@
             <groupId>io.javaoperatorsdk</groupId>
             <artifactId>operator-framework</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>crd-generator</artifactId>
+            <artifactId>crd-generator-apt</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
