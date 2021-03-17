@@ -146,8 +146,8 @@ public class Operator {
       eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
 
       log.info(
-          "Registered Controller: '{}' for CRD: '{}' for namespaces: {}",
-          controller.getClass().getSimpleName(),
+          "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
+          controllerName,
           resClass,
           watchAllNamespaces ? "[all namespaces]" : Arrays.toString(targetNamespaces));
     }
