@@ -180,7 +180,8 @@ common mistakes. Advanced users or production deployments might want to skip thi
 by setting 
 the `CHECK_CRD_ENV_KEY` environment variable to `false`. Quarkus users can also add 
 `quarkus.operator-sdk.check-crd-and-validate-local-model=false` to their `application.properties` for the 
-same purpose.
+same purpose. Spring Boot users can set the property `javaoperatorsdk.check-crd-and-validate-local-model` 
+to `false`.
 
 #### Automatic generation of CRDs
 

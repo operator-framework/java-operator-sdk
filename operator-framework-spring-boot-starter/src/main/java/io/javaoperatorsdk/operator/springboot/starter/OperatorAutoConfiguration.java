@@ -51,6 +51,11 @@ public class OperatorAutoConfiguration extends AbstractConfigurationService {
     return config.build();
   }
 
+  @Override
+  public boolean checkCRDAndValidateLocalModel() {
+    return configuration.getCheckCrdAndValidateLocalModel();
+  }
+
   @Bean
   @ConditionalOnMissingBean(Operator.class)
   public Operator operator(
