@@ -8,7 +8,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk-samples</artifactId>
-    <version>1.8.1-SNAPSHOT</version>
+    <version>1.8.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>operator-framework-samples-spring-boot-auto-configuration</artifactId>
