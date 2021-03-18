@@ -9,6 +9,7 @@ public class OperatorConfigurationProperties {
 
   private KubernetesClientProperties client = new KubernetesClientProperties();
   private Map<String, ControllerProperties> controllers = Collections.emptyMap();
+  private boolean checkCrdAndValidateLocalModel = true;
 
   public KubernetesClientProperties getClient() {
     return client;
@@ -24,5 +25,13 @@ public class OperatorConfigurationProperties {
 
   public void setControllers(Map<String, ControllerProperties> controllers) {
     this.controllers = controllers;
+  }
+
+  public boolean getCheckCrdAndValidateLocalModel() {
+    return checkCrdAndValidateLocalModel;
+  }
+
+  public void setCheckCrdAndValidateLocalModel(boolean checkCrdAndValidateLocalModel) {
+    this.checkCrdAndValidateLocalModel = checkCrdAndValidateLocalModel;
   }
 }
