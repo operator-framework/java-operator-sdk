@@ -95,7 +95,14 @@ public class Operator {
       }
 
       final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-      final var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+
+      // check if we only want to watch the current namespace
+      var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+      if (configuration.watchCurrentNamespace()) {
+        targetNamespaces =
+            new String[] {configurationService.getClientConfiguration().getNamespace()};
+      }
+
       Class<R> resClass = configuration.getCustomResourceClass();
       String finalizer = configuration.getFinalizer();
 

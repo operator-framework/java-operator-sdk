@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 public @interface Controller {
 
   String NULL = "";
+  String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";
 
   String name() default NULL;
 

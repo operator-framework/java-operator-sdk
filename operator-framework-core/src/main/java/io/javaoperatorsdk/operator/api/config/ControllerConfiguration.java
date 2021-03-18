@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.Controller;
 import java.util.Collections;
 import java.util.Set;
 
 public interface ControllerConfiguration<R extends CustomResource> {
+
   String getName();
 
   String getCRDName();
@@ -23,6 +25,11 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   default boolean watchAllNamespaces() {
     return getNamespaces().isEmpty();
+  }
+
+  default boolean watchCurrentNamespace() {
+    final var namespaces = getNamespaces();
+    return namespaces.size() == 1 && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
   }
 
   default RetryConfiguration getRetryConfiguration() {
