@@ -12,7 +12,8 @@ Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](ht
 | [4.](#Join-us-on-Discord) | [Join us on Discord!](#Join-us-on-Discord) |
 | [5.](#User-Guide) | [User Guide](#User-Guide) |
 | [6.](#Usage) | [Usage](#Usage) |
-| [7.](#Spring-Boot) | [Spring Boot](#Spring-Boot) |
+| [7.](#Quarkus) | [Quarkus](#Quarkus) |
+| [8.](#Spring-Boot) | [Spring Boot](#Spring-Boot) |
 
 #### Features
 * Framework for handling Kubernetes API events
