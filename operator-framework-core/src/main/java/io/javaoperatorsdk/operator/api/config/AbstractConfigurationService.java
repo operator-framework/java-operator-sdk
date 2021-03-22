@@ -39,7 +39,15 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   @Override
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
-    return configurations.get(ControllerUtils.getNameFor(controller));
+    return configurations.get(keyFor(controller));
+  }
+
+  protected String keyFor(ResourceController controller) {
+    return ControllerUtils.getNameFor(controller);
+  }
+
+  protected ControllerConfiguration getFor(String controllerName) {
+    return configurations.get(controllerName);
   }
 
   @Override
