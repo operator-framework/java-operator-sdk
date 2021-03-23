@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -24,10 +25,19 @@ public class Operator {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
+  private final ObjectMapper objectMapper;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
+    this(k8sClient, configurationService, new ObjectMapper());
+  }
+
+  public Operator(
+      KubernetesClient k8sClient,
+      ConfigurationService configurationService,
+      ObjectMapper objectMapper) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
+    this.objectMapper = objectMapper;
   }
 
   /**
@@ -131,7 +141,7 @@ public class Operator {
           new EventDispatcher(
               controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
 
-      CustomResourceCache customResourceCache = new CustomResourceCache();
+      CustomResourceCache customResourceCache = new CustomResourceCache(objectMapper);
       DefaultEventHandler defaultEventHandler =
           new DefaultEventHandler(customResourceCache, dispatcher, controllerName, retry);
       DefaultEventSourceManager eventSourceManager =

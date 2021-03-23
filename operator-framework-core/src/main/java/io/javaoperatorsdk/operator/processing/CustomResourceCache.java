@@ -3,22 +3,31 @@ package io.javaoperatorsdk.operator.processing;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.CustomResource;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("rawtypes")
 public class CustomResourceCache {
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceCache.class);
 
-  private ObjectMapper objectMapper = new ObjectMapper();
-  private final Map<String, CustomResource> resources = new ConcurrentHashMap<>();
+  private final ObjectMapper objectMapper;
+  private final ConcurrentMap<String, CustomResource> resources = new ConcurrentHashMap<>();
   private final Lock lock = new ReentrantLock();
+
+  public CustomResourceCache() {
+    this(new ObjectMapper());
+  }
+
+  public CustomResourceCache(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   public void cacheResource(CustomResource resource) {
     try {
@@ -49,18 +58,13 @@ public class CustomResourceCache {
    * @return
    */
   public Optional<CustomResource> getLatestResource(String uuid) {
-    return Optional.ofNullable(clone(resources.get(uuid)));
+    return Optional.ofNullable(resources.get(uuid)).map(this::clone);
   }
 
   private CustomResource clone(CustomResource customResource) {
     try {
-      if (customResource == null) {
-        return null;
-      }
-      CustomResource clonedObject =
-          objectMapper.readValue(
-              objectMapper.writeValueAsString(customResource), customResource.getClass());
-      return clonedObject;
+      return objectMapper.readValue(
+          objectMapper.writeValueAsString(customResource), customResource.getClass());
     } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
     }
