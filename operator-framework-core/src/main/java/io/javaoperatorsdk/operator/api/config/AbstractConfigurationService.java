@@ -6,6 +6,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public abstract class AbstractConfigurationService implements ConfigurationService {
 
@@ -17,10 +18,21 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   }
 
   protected <R extends CustomResource> void register(ControllerConfiguration<R> config) {
+    put(config, true);
+  }
+
+  protected <R extends CustomResource> void replace(ControllerConfiguration<R> config) {
+    put(config, false);
+  }
+
+  private <R extends CustomResource> void put(
+      ControllerConfiguration<R> config, boolean failIfExisting) {
     final var name = config.getName();
-    final var existing = configurations.get(name);
-    if (existing != null) {
-      throwExceptionOnNameCollision(config.getAssociatedControllerClassName(), existing);
+    if (failIfExisting) {
+      final var existing = configurations.get(name);
+      if (existing != null) {
+        throwExceptionOnNameCollision(config.getAssociatedControllerClassName(), existing);
+      }
     }
     configurations.put(name, config);
   }
@@ -39,7 +51,19 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   @Override
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
-    return configurations.get(ControllerUtils.getNameFor(controller));
+    return configurations.get(keyFor(controller));
+  }
+
+  protected String keyFor(ResourceController controller) {
+    return ControllerUtils.getNameFor(controller);
+  }
+
+  protected ControllerConfiguration getFor(String controllerName) {
+    return configurations.get(controllerName);
+  }
+
+  protected Stream<ControllerConfiguration> controllerConfigurations() {
+    return configurations.values().stream();
   }
 
   @Override
