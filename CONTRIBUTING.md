@@ -41,6 +41,8 @@ Once you're happy with your code, go ahead and open a Pull Request.
 
 ## Pull Request Process
 
+First, please format your commit messages so that they follow the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
+
 On opening a PR, a GitHub action will execute the test suite against the new code. All code is
 required to pass the tests, and new code must be accompanied by new tests. 
 
