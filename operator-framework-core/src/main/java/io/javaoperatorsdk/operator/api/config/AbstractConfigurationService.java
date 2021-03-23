@@ -6,6 +6,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public abstract class AbstractConfigurationService implements ConfigurationService {
 
@@ -24,8 +25,8 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
     put(config, false);
   }
 
-  private <R extends CustomResource> void put(ControllerConfiguration<R> config,
-      boolean failIfExisting) {
+  private <R extends CustomResource> void put(
+      ControllerConfiguration<R> config, boolean failIfExisting) {
     final var name = config.getName();
     if (failIfExisting) {
       final var existing = configurations.get(name);
@@ -59,6 +60,10 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
 
   protected ControllerConfiguration getFor(String controllerName) {
     return configurations.get(controllerName);
+  }
+
+  protected Stream<ControllerConfiguration> controllerConfigurations() {
+    return configurations.values().stream();
   }
 
   @Override
