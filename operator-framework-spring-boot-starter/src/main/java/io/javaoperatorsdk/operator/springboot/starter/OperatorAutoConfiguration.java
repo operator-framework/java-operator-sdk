@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.springboot.starter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -59,8 +60,13 @@ public class OperatorAutoConfiguration extends AbstractConfigurationService {
   @Bean
   @ConditionalOnMissingBean(Operator.class)
   public Operator operator(
-      KubernetesClient kubernetesClient, List<ResourceController<?>> resourceControllers) {
-    Operator operator = new Operator(kubernetesClient, this);
+      KubernetesClient kubernetesClient,
+      List<ResourceController<?>> resourceControllers,
+      Optional<ObjectMapper> objectMapper) {
+    Operator operator =
+        objectMapper
+            .map(x -> new Operator(kubernetesClient, this, x))
+            .orElse(new Operator(kubernetesClient, this));
     resourceControllers.forEach(r -> operator.register(processController(r)));
     return operator;
   }
