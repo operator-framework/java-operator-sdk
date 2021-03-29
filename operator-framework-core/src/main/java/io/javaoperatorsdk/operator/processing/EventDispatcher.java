@@ -30,11 +30,15 @@ public class EventDispatcher {
   private final CustomResourceFacade customResourceFacade;
   private EventSourceManager eventSourceManager;
 
-  public EventDispatcher(
+  EventDispatcher(
       ResourceController controller, String finalizer, CustomResourceFacade customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
     this.resourceFinalizer = finalizer;
+  }
+
+  public EventDispatcher(ResourceController controller, String finalizer, MixedOperation client) {
+    this(controller, finalizer, new CustomResourceFacade(client));
   }
 
   public void setEventSourceManager(EventSourceManager eventSourceManager) {
@@ -174,7 +178,7 @@ public class EventDispatcher {
   }
 
   // created to support unit testing
-  public static class CustomResourceFacade<R extends CustomResource> {
+  static class CustomResourceFacade<R extends CustomResource> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 
