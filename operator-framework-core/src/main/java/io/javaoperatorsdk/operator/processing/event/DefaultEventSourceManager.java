@@ -1,5 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
@@ -22,12 +29,40 @@ public class DefaultEventSourceManager implements EventSourceManager {
   private DefaultEventHandler defaultEventHandler;
   private TimerEventSource retryTimerEventSource;
 
-  public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
+  DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
     this.defaultEventHandler = defaultEventHandler;
+    defaultEventHandler.setEventSourceManager(this);
     if (supportRetry) {
       this.retryTimerEventSource = new TimerEventSource();
       registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
     }
+  }
+
+  public String[] getTargetNamespaces() {
+    return customResourceEventSource.getTargetNamespaces();
+  }
+
+  public <R extends CustomResource> DefaultEventSourceManager(
+      ResourceController<R> controller,
+      ControllerConfiguration<R> configuration,
+      CustomResourceCache customResourceCache,
+      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
+    this(new DefaultEventHandler(controller, configuration, customResourceCache, client), true);
+    // check if we only want to watch the current namespace
+    var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
+    if (configuration.watchCurrentNamespace()) {
+      targetNamespaces =
+          new String[] {
+            configuration.getConfigurationService().getClientConfiguration().getNamespace()
+          };
+    }
+    registerCustomResourceEventSource(
+        new CustomResourceEventSource(
+            customResourceCache,
+            client,
+            targetNamespaces,
+            configuration.isGenerationAware(),
+            configuration.getFinalizer()));
   }
 
   public void registerCustomResourceEventSource(

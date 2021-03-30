@@ -31,26 +31,7 @@ public class CustomResourceEventSource extends AbstractEventSource
   private final String resourceFinalizer;
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
 
-  public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(
-      CustomResourceCache customResourceCache,
-      MixedOperation client,
-      boolean generationAware,
-      String resourceFinalizer) {
-    return new CustomResourceEventSource(
-        customResourceCache, client, null, generationAware, resourceFinalizer);
-  }
-
-  public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(
-      CustomResourceCache customResourceCache,
-      MixedOperation client,
-      String[] namespaces,
-      boolean generationAware,
-      String resourceFinalizer) {
-    return new CustomResourceEventSource(
-        customResourceCache, client, namespaces, generationAware, resourceFinalizer);
-  }
-
-  private CustomResourceEventSource(
+  public CustomResourceEventSource(
       CustomResourceCache customResourceCache,
       MixedOperation client,
       String[] targetNamespaces,
@@ -63,8 +44,8 @@ public class CustomResourceEventSource extends AbstractEventSource
     this.resourceFinalizer = resourceFinalizer;
   }
 
-  private boolean isWatchAllNamespaces() {
-    return targetNamespaces == null;
+  public String[] getTargetNamespaces() {
+    return targetNamespaces;
   }
 
   public void addedToEventManager() {

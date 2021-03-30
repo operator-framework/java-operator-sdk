@@ -24,8 +24,7 @@ class CustomResourceEventSourceTest {
   EventHandler eventHandler = mock(EventHandler.class);
 
   private CustomResourceEventSource customResourceEventSource =
-      CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-          customResourceCache, mixedOperation, true, FINALIZER);
+      new CustomResourceEventSource(customResourceCache, mixedOperation, null, true, FINALIZER);
 
   @BeforeEach
   public void setup() {
@@ -72,8 +71,7 @@ class CustomResourceEventSourceTest {
   @Test
   public void handlesAllEventIfNotGenerationAware() {
     customResourceEventSource =
-        CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, mixedOperation, false, FINALIZER);
+        new CustomResourceEventSource(customResourceCache, mixedOperation, null, false, FINALIZER);
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
