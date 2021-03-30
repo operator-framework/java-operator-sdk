@@ -26,7 +26,7 @@ public interface ControllerConfiguration<R extends CustomResource> {
   default boolean watchAllNamespaces() {
     return allNamespacesWatched(getNamespaces());
   }
-  
+
   static boolean allNamespacesWatched(Set<String> namespaces) {
     return namespaces == null || namespaces.isEmpty();
   }
@@ -36,10 +36,16 @@ public interface ControllerConfiguration<R extends CustomResource> {
   }
 
   static boolean currentNamespaceWatched(Set<String> namespaces) {
-    return namespaces != null && namespaces.size() == 1 && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
+    return namespaces != null
+        && namespaces.size() == 1
+        && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
   }
 
   default RetryConfiguration getRetryConfiguration() {
     return RetryConfiguration.DEFAULT;
   }
+
+  ConfigurationService getConfigurationService();
+
+  void setConfigurationService(ConfigurationService service);
 }

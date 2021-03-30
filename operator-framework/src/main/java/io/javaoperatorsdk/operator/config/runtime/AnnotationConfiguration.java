@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import java.util.Optional;
 import java.util.Set;
@@ -14,6 +15,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   private final ResourceController<R> controller;
   private final Optional<Controller> annotation;
+  private ConfigurationService service;
 
   public AnnotationConfiguration(ResourceController<R> controller) {
     this.controller = controller;
@@ -51,6 +53,16 @@ public class AnnotationConfiguration<R extends CustomResource>
   @Override
   public Set<String> getNamespaces() {
     return Set.of(annotation.map(Controller::namespaces).orElse(new String[] {}));
+  }
+
+  @Override
+  public ConfigurationService getConfigurationService() {
+    return service;
+  }
+
+  @Override
+  public void setConfigurationService(ConfigurationService service) {
+    this.service = service;
   }
 
   @Override
