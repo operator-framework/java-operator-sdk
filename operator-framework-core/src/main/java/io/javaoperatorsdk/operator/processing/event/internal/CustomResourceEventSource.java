@@ -9,12 +9,14 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,14 +73,10 @@ public class CustomResourceEventSource extends AbstractEventSource
     this.resClass = resClass.getName();
   }
 
-  private boolean isWatchAllNamespaces() {
-    return targetNamespaces == null;
-  }
-
   @Override
   public void start() {
     CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
-    if (isWatchAllNamespaces()) {
+    if (ControllerConfiguration.allNamespacesWatched(Set.of(targetNamespaces))) {
       var w = crClient.inAnyNamespace().watch(this);
       watches.add(w);
       log.debug("Registered controller {} -> {} for any namespace", resClass, w);
