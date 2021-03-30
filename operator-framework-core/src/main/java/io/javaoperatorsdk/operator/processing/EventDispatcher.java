@@ -21,27 +21,36 @@ import org.slf4j.LoggerFactory;
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
  */
-public class EventDispatcher {
+public class EventDispatcher<R extends CustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-  private final ResourceController controller;
+  private final ResourceController<R> controller;
   private final String resourceFinalizer;
-  private final CustomResourceFacade customResourceFacade;
+  private final CustomResourceFacade<R> customResourceFacade;
   private EventSourceManager eventSourceManager;
 
-  public EventDispatcher(
-      ResourceController controller, String finalizer, CustomResourceFacade customResourceFacade) {
+  EventDispatcher(
+      ResourceController<R> controller,
+      String finalizer,
+      CustomResourceFacade<R> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
     this.resourceFinalizer = finalizer;
+  }
+
+  public EventDispatcher(
+      ResourceController<R> controller,
+      String finalizer,
+      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
+    this(controller, finalizer, new CustomResourceFacade<>(client));
   }
 
   public void setEventSourceManager(EventSourceManager eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
   }
 
-  public PostExecutionControl handleExecution(ExecutionScope executionScope) {
+  public PostExecutionControl handleExecution(ExecutionScope<R> executionScope) {
     try {
       return handleDispatch(executionScope);
     } catch (RuntimeException e) {
@@ -50,8 +59,8 @@ public class EventDispatcher {
     }
   }
 
-  private PostExecutionControl handleDispatch(ExecutionScope executionScope) {
-    CustomResource resource = executionScope.getCustomResource();
+  private PostExecutionControl handleDispatch(ExecutionScope<R> executionScope) {
+    R resource = executionScope.getCustomResource();
     log.debug(
         "Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
 
@@ -68,8 +77,8 @@ public class EventDispatcher {
           executionScope);
       return PostExecutionControl.defaultDispatch();
     }
-    Context context =
-        new DefaultContext(
+    Context<R> context =
+        new DefaultContext<>(
             eventSourceManager,
             new EventList(executionScope.getEvents()),
             executionScope.getRetryInfo());
@@ -81,7 +90,7 @@ public class EventDispatcher {
   }
 
   private PostExecutionControl handleCreateOrUpdate(
-      ExecutionScope executionScope, CustomResource resource, Context context) {
+      ExecutionScope<R> executionScope, R resource, Context<R> context) {
     if (!resource.hasFinalizer(resourceFinalizer) && !resource.isMarkedForDeletion()) {
       /*  We always add the finalizer if missing and not marked for deletion.
          We execute the controller processing only for processing the event sent as a results
@@ -96,9 +105,8 @@ public class EventDispatcher {
           getUID(resource),
           getVersion(resource),
           executionScope);
-      UpdateControl<? extends CustomResource> updateControl =
-          controller.createOrUpdateResource(resource, context);
-      CustomResource updatedCustomResource = null;
+      UpdateControl<R> updateControl = controller.createOrUpdateResource(resource, context);
+      R updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
         updateControl
@@ -122,7 +130,7 @@ public class EventDispatcher {
     }
   }
 
-  private PostExecutionControl handleDelete(CustomResource resource, Context context) {
+  private PostExecutionControl handleDelete(R resource, Context<R> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getUID(resource),
@@ -130,7 +138,7 @@ public class EventDispatcher {
     DeleteControl deleteControl = controller.deleteResource(resource, context);
     boolean hasFinalizer = resource.hasFinalizer(resourceFinalizer);
     if (deleteControl == DeleteControl.DEFAULT_DELETE && hasFinalizer) {
-      CustomResource customResource = removeFinalizer(resource);
+      R customResource = removeFinalizer(resource);
       return PostExecutionControl.customResourceUpdated(customResource);
     } else {
       log.debug(
@@ -143,20 +151,20 @@ public class EventDispatcher {
     }
   }
 
-  private void updateCustomResourceWithFinalizer(CustomResource resource) {
+  private void updateCustomResourceWithFinalizer(R resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(resourceFinalizer);
     replace(resource);
   }
 
-  private CustomResource updateCustomResource(CustomResource resource) {
+  private R updateCustomResource(R resource) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
     return replace(resource);
   }
 
-  private CustomResource removeFinalizer(CustomResource resource) {
+  private R removeFinalizer(R resource) {
     log.debug(
         "Removing finalizer on resource: {} with version: {}",
         getUID(resource),
@@ -165,7 +173,7 @@ public class EventDispatcher {
     return customResourceFacade.replaceWithLock(resource);
   }
 
-  private CustomResource replace(CustomResource resource) {
+  private R replace(R resource) {
     log.debug(
         "Trying to replace resource {}, version: {}",
         resource.getMetadata().getName(),
@@ -174,7 +182,7 @@ public class EventDispatcher {
   }
 
   // created to support unit testing
-  public static class CustomResourceFacade<R extends CustomResource> {
+  static class CustomResourceFacade<R extends CustomResource> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 

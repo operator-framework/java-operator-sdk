@@ -5,14 +5,14 @@ import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import java.util.List;
 
-public class ExecutionScope {
+public class ExecutionScope<R extends CustomResource> {
 
-  private List<Event> events;
+  private final List<Event> events;
   // the latest custom resource from cache
-  private CustomResource customResource;
-  private RetryInfo retryInfo;
+  private final R customResource;
+  private final RetryInfo retryInfo;
 
-  public ExecutionScope(List<Event> list, CustomResource customResource, RetryInfo retryInfo) {
+  public ExecutionScope(List<Event> list, R customResource, RetryInfo retryInfo) {
     this.events = list;
     this.customResource = customResource;
     this.retryInfo = retryInfo;
@@ -22,7 +22,7 @@ public class ExecutionScope {
     return events;
   }
 
-  public CustomResource getCustomResource() {
+  public R getCustomResource() {
     return customResource;
   }
 

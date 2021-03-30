@@ -137,9 +137,7 @@ public class Operator {
       }
 
       final var client = k8sClient.customResources(resClass);
-      EventDispatcher dispatcher =
-          new EventDispatcher(
-              controller, finalizer, new EventDispatcher.CustomResourceFacade(client));
+      EventDispatcher<R> dispatcher = new EventDispatcher<>(controller, finalizer, client);
 
       CustomResourceCache customResourceCache = new CustomResourceCache(objectMapper);
       DefaultEventHandler defaultEventHandler =
