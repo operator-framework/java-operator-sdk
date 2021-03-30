@@ -24,12 +24,19 @@ public interface ControllerConfiguration<R extends CustomResource> {
   }
 
   default boolean watchAllNamespaces() {
-    return getNamespaces().isEmpty();
+    return allNamespacesWatched(getNamespaces());
+  }
+  
+  static boolean allNamespacesWatched(Set<String> namespaces) {
+    return namespaces == null || namespaces.isEmpty();
   }
 
   default boolean watchCurrentNamespace() {
-    final var namespaces = getNamespaces();
-    return namespaces.size() == 1 && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
+    return currentNamespaceWatched(getNamespaces());
+  }
+
+  static boolean currentNamespaceWatched(Set<String> namespaces) {
+    return namespaces != null && namespaces.size() == 1 && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
   }
 
   default RetryConfiguration getRetryConfiguration() {
