@@ -8,10 +8,12 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +73,7 @@ public class CustomResourceEventSource extends AbstractEventSource
 
   private void registerWatch() {
     CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
-    if (isWatchAllNamespaces()) {
+    if (ControllerConfiguration.allNamespacesWatched(Set.of(targetNamespaces))) {
       crClient.inAnyNamespace().watch(this);
     } else if (targetNamespaces.length == 0) {
       client.watch(this);

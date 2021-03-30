@@ -15,6 +15,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
   private final Set<String> namespaces;
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
+  private ConfigurationService service;
 
   public AbstractControllerConfiguration(
       String associatedControllerClassName,
@@ -76,5 +77,15 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
   @Override
   public RetryConfiguration getRetryConfiguration() {
     return retryConfiguration;
+  }
+
+  @Override
+  public ConfigurationService getConfigurationService() {
+    return service;
+  }
+
+  @Override
+  public void setConfigurationService(ConfigurationService service) {
+    this.service = service;
   }
 }
