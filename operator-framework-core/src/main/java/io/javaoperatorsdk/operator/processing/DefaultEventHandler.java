@@ -72,7 +72,6 @@ public class DefaultEventHandler implements EventHandler {
 
   public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
-    eventDispatcher.setEventSourceManager(eventSourceManager);
   }
 
   @Override
