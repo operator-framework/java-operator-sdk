@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
  */
-public class EventDispatcher<R extends CustomResource> {
+class EventDispatcher<R extends CustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
