@@ -23,10 +23,6 @@ public class CustomResourceEvent extends AbstractEvent {
     return action;
   }
 
-  public String resourceUid() {
-    return getCustomResource().getMetadata().getUid();
-  }
-
   @Override
   public String toString() {
     return "CustomResourceEvent{"
