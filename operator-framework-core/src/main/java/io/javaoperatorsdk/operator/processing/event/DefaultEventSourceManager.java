@@ -68,6 +68,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
   public void registerCustomResourceEventSource(
       CustomResourceEventSource customResourceEventSource) {
     this.customResourceEventSource = customResourceEventSource;
+    customResourceEventSource.setEventHandler(defaultEventHandler);
     this.customResourceEventSource.addedToEventManager();
   }
 
