@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.Map;
@@ -24,7 +23,6 @@ public class CustomResourceEventSource extends AbstractEventSource
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-  private final CustomResourceCache resourceCache;
   private MixedOperation client;
   private final String[] targetNamespaces;
   private final boolean generationAware;
@@ -32,12 +30,10 @@ public class CustomResourceEventSource extends AbstractEventSource
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
 
   public CustomResourceEventSource(
-      CustomResourceCache customResourceCache,
       MixedOperation client,
       String[] targetNamespaces,
       boolean generationAware,
       String resourceFinalizer) {
-    this.resourceCache = customResourceCache;
     this.client = client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
@@ -73,8 +69,6 @@ public class CustomResourceEventSource extends AbstractEventSource
         action.name(),
         customResource.getMetadata().getName());
 
-    resourceCache.cacheResource(
-        customResource); // always store the latest event. Outside the sync block is intentional.
     if (action == Action.ERROR) {
       log.debug(
           "Skipping {} event for custom resource uid: {}, version: {}",

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
@@ -68,8 +69,18 @@ class DefaultEventHandlerTest {
 
   @Test
   public void skipProcessingIfLatestCustomResourceNotInCache() {
-    Event event = prepareCREvent();
-    customResourceCache.cleanup(event.getRelatedCustomResourceUid());
+    Event event =
+        new Event() {
+          @Override
+          public String getRelatedCustomResourceUid() {
+            return UUID.randomUUID().toString();
+          }
+
+          @Override
+          public EventSource getEventSource() {
+            return null;
+          }
+        };
 
     defaultEventHandler.handleEvent(event);
 

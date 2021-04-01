@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultEventSourceManager implements EventSourceManager {
+public class DefaultEventSourceManager implements EventSourceManager, EventHandler {
 
   public static final String RETRY_TIMER_EVENT_SOURCE_NAME = "retry-timer-event-source";
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
@@ -58,7 +58,6 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
     registerCustomResourceEventSource(
         new CustomResourceEventSource(
-            customResourceCache,
             client,
             targetNamespaces,
             configuration.isGenerationAware(),
@@ -124,4 +123,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
         .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
     eventSources.remove(customResourceUid);
   }
+
+  @Override
+  public void handleEvent(Event event) {}
 }
