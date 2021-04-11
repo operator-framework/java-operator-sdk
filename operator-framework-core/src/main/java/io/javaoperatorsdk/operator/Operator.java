@@ -12,6 +12,8 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.cache.CaffeinCacheAdaptor;
+import io.javaoperatorsdk.operator.processing.cache.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -28,13 +30,14 @@ public class Operator {
   private final ObjectMapper objectMapper;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
-    this(k8sClient, configurationService, new ObjectMapper());
+    this(k8sClient, configurationService, new ObjectMapper(), new CaffeinCacheAdaptor());
   }
 
   public Operator(
       KubernetesClient k8sClient,
       ConfigurationService configurationService,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      ResourceCache resourceCache) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
     this.objectMapper = objectMapper;
