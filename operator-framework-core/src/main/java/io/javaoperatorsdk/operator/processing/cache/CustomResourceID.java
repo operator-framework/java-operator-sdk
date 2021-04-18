@@ -1,16 +1,21 @@
 package io.javaoperatorsdk.operator.processing.cache;
 
+import io.fabric8.kubernetes.client.CustomResource;
+
 import java.util.Objects;
 
-// todo better naming
-
 /** Since we need to */
-class CustomResourceIdForClient {
+public class CustomResourceID {
 
   private final String namespace;
   private final String name;
 
-  CustomResourceIdForClient(String namespace, String name) {
+  public static CustomResourceID fromCustomResource(CustomResource customResource) {
+    var metadata = customResource.getMetadata();
+    return new CustomResourceID(metadata.getNamespace(),metadata.getName());
+  }
+
+  CustomResourceID(String namespace, String name) {
     this.namespace = namespace;
     this.name = name;
   }
@@ -24,10 +29,18 @@ class CustomResourceIdForClient {
   }
 
   @Override
+  public String toString() {
+    return "CustomResourceID{" +
+            "namespace='" + namespace + '\'' +
+            ", name='" + name + '\'' +
+            '}';
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    CustomResourceIdForClient that = (CustomResourceIdForClient) o;
+    CustomResourceID that = (CustomResourceID) o;
     return Objects.equals(namespace, that.namespace) && Objects.equals(name, that.name);
   }
 
