@@ -21,7 +21,6 @@ public class PassThroughResourceCache<R extends CustomResource> {
   private ResourceCache resourceCache;
   private MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
   private final ObjectMapper objectMapper;
-  private Map<String, CustomResourceID> customResourceNameId = new ConcurrentHashMap<>();
 
   public PassThroughResourceCache(
       ResourceCache resourceCache, MixedOperation client, ObjectMapper objectMapper) {
@@ -33,9 +32,6 @@ public class PassThroughResourceCache<R extends CustomResource> {
   public void cacheResource(CustomResource resource) {
     resourceCache.cacheResource(resource);
     // todo discuss  this + alternatives
-    customResourceNameId.put(
-        KubernetesResourceUtils.getUID(resource),
-        CustomResourceID.fromCustomResource(resource));
   }
 
   public void cacheResource(CustomResource resource, Predicate<CustomResource> predicate) {
@@ -48,7 +44,8 @@ public class PassThroughResourceCache<R extends CustomResource> {
   }
 
   public Optional<CustomResource> getLatestResource(CustomResourceID id) {
-    Optional<CustomResource> resource = resourceCache.getLatestResource(id.getCustomResourceUid());
+//     todo
+    Optional<CustomResource> resource = resourceCache.getLatestResource();
     if (resource.isPresent()) {
       return Optional.of(clone(resource.get()));
     } else {
