@@ -89,7 +89,9 @@ public class IntegrationTestSupport {
 
     // we depend on the actual operator from the startup to handle the finalizers and clean up
     // resources from previous test runs
-    crOperations.inNamespace(TEST_NAMESPACE).delete(crOperations.list().getItems());
+    crOperations
+        .inNamespace(TEST_NAMESPACE)
+        .delete(crOperations.inNamespace(TEST_NAMESPACE).list().getItems());
 
     await("all CRs cleaned up")
         .atMost(60, TimeUnit.SECONDS)
