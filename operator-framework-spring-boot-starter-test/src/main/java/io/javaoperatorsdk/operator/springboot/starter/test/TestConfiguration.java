@@ -46,6 +46,7 @@ public class TestConfiguration {
       KubernetesMockServer server, TestConfigurationProperties properties) {
     final var client = server.createClient();
 
+    System.setProperty("java.net.preferIPv4Stack", "true");
     Stream.concat(properties.getCrdPaths().stream(), properties.getGlobalCrdPaths().stream())
         .forEach(
             crdPath -> {
