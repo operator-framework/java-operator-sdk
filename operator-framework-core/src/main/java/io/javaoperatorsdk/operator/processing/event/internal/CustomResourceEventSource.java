@@ -154,12 +154,12 @@ public class CustomResourceEventSource extends AbstractEventSource
     }
     if (e.isHttpGone()) {
       log.warn("Received error for watch, will try to reconnect.", e);
-      try {
-        registerWatch();
+      registerWatch();
+      /*try {
       } catch (Throwable ex) {
         log.error("Unexpected error happened with watch reconnect. Will exit.", e);
         System.exit(1);
-      }
+      }*/
     } else {
       // Note that this should not happen normally, since fabric8 client handles reconnect.
       // In case it tries to reconnect this method is not called.
