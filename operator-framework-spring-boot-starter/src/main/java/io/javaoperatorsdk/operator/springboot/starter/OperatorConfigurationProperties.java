@@ -11,7 +11,8 @@ public class OperatorConfigurationProperties {
   private KubernetesClientProperties client = new KubernetesClientProperties();
   private Map<String, ControllerProperties> controllers = Collections.emptyMap();
   private boolean checkCrdAndValidateLocalModel = true;
-  private int concurrentReconciliationThreads = ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  private int concurrentReconciliationThreads =
+      ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
   public KubernetesClientProperties getClient() {
     return client;
