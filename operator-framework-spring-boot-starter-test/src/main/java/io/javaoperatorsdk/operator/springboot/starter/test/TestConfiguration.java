@@ -58,6 +58,7 @@ public class TestConfiguration {
                 return;
               }
 
+              System.out.println(Serialization.asYaml(crd));
               client.apiextensions().v1().customResourceDefinitions().create(crd);
             });
 
