@@ -55,4 +55,15 @@ public interface ConfigurationService {
   default boolean checkCRDAndValidateLocalModel() {
     return true;
   }
+
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 5;
+  /**
+   * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
+   * requests to controllers
+   *
+   * @return the maximum number of concurrent reconciliation threads
+   */
+  default int concurrentReconciliationThreads() {
+    return DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  }
 }

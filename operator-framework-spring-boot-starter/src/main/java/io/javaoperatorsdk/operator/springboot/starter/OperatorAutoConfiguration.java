@@ -134,4 +134,9 @@ public class OperatorAutoConfiguration extends AbstractConfigurationService {
           .orElse(RetryConfiguration.DEFAULT);
     }
   }
+
+  @Override
+  public int concurrentReconciliationThreads() {
+    return configuration.getConcurrentReconciliationThreads();
+  }
 }

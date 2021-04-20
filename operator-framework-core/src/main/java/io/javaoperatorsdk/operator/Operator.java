@@ -141,7 +141,12 @@ public class Operator {
 
       CustomResourceCache customResourceCache = new CustomResourceCache(objectMapper);
       DefaultEventHandler defaultEventHandler =
-          new DefaultEventHandler(customResourceCache, dispatcher, controllerName, retry);
+          new DefaultEventHandler(
+              customResourceCache,
+              dispatcher,
+              controllerName,
+              retry,
+              configurationService.concurrentReconciliationThreads());
       DefaultEventSourceManager eventSourceManager =
           new DefaultEventSourceManager(defaultEventHandler, retry != null);
       defaultEventHandler.setEventSourceManager(eventSourceManager);

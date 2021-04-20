@@ -6,6 +6,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -44,14 +45,29 @@ public class DefaultEventHandler implements EventHandler {
       CustomResourceCache customResourceCache,
       EventDispatcher eventDispatcher,
       String relatedControllerName,
-      Retry retry) {
+      Retry retry,
+      int concurrentReconciliationThreads) {
     this.customResourceCache = customResourceCache;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     eventBuffer = new EventBuffer();
     executor =
         new ScheduledThreadPoolExecutor(
-            5, runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
+            concurrentReconciliationThreads,
+            runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
+  }
+
+  public DefaultEventHandler(
+      CustomResourceCache customResourceCache,
+      EventDispatcher eventDispatcher,
+      String relatedControllerName,
+      Retry retry) {
+    this(
+        customResourceCache,
+        eventDispatcher,
+        relatedControllerName,
+        retry,
+        ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
   }
 
   public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
