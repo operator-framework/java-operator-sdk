@@ -36,7 +36,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
   }
 
   @Override
-  public void registerEventSource(String name, EventSource eventSource) {
+  public final void registerEventSource(String name, EventSource eventSource) {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
 
     try {
