@@ -18,9 +18,8 @@ public class DefaultEventSourceManager implements EventSourceManager {
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  private Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
-  private CustomResourceEventSource customResourceEventSource;
-  private DefaultEventHandler defaultEventHandler;
+  private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
+  private final DefaultEventHandler defaultEventHandler;
   private TimerEventSource retryTimerEventSource;
 
   public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
@@ -33,8 +32,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
 
   public void registerCustomResourceEventSource(
       CustomResourceEventSource customResourceEventSource) {
-    this.customResourceEventSource = customResourceEventSource;
-    this.customResourceEventSource.addedToEventManager();
+    customResourceEventSource.addedToEventManager();
   }
 
   @Override
