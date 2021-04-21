@@ -5,6 +5,7 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -37,7 +38,9 @@ public class DefaultEventSourceManager implements EventSourceManager {
   }
 
   @Override
-  public <T extends EventSource> void registerEventSource(String name, T eventSource) {
+  public void registerEventSource(String name, EventSource eventSource) {
+    Objects.requireNonNull(eventSource, "EventSource must not be null");
+
     try {
       lock.lock();
       EventSource currentEventSource = eventSources.get(name);
@@ -47,6 +50,22 @@ public class DefaultEventSourceManager implements EventSourceManager {
       }
       eventSources.put(name, eventSource);
       eventSource.setEventHandler(defaultEventHandler);
+      eventSource.start();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<EventSource> deRegisterEventSource(String name) {
+    try {
+      lock.lock();
+      EventSource currentEventSource = eventSources.remove(name);
+      if (currentEventSource != null) {
+        currentEventSource.close();
+      }
+
+      return Optional.ofNullable(currentEventSource);
     } finally {
       lock.unlock();
     }
