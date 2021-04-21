@@ -41,8 +41,7 @@ public class DefaultEventSourceManager implements EventSourceManager {
 
     try {
       lock.lock();
-      EventSource currentEventSource = eventSources.get(name);
-      if (currentEventSource != null) {
+      if (eventSources.containsKey(name)) {
         throw new IllegalStateException(
             "Event source with name already registered. Event source name: " + name);
       }
