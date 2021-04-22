@@ -15,17 +15,22 @@ import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
-public class Operator {
+public class Operator implements AutoCloseable {
 
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
   private final ObjectMapper objectMapper;
+  private final List<Closeable> closeables;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this(k8sClient, configurationService, new ObjectMapper());
@@ -38,6 +43,7 @@ public class Operator {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
     this.objectMapper = objectMapper;
+    this.closeables = new ArrayList<>();
   }
 
   /**
@@ -61,6 +67,21 @@ public class Operator {
     } catch (Exception e) {
       log.error("Error retrieving the server version. Exiting!", e);
       System.exit(1);
+    }
+  }
+
+  /** Stop the operator. */
+  @Override
+  public void close() {
+    log.info("Operator {} is shutting down...", configurationService.getVersion().getSdkVersion());
+
+    for (Closeable closeable : this.closeables) {
+      try {
+        log.debug("closing {}", closeable);
+        closeable.close();
+      } catch (IOException e) {
+        log.warn("Error closing {}", closeable, e);
+      }
     }
   }
 
@@ -160,10 +181,15 @@ public class Operator {
               customResourceCache,
               watchAllNamespaces,
               targetNamespaces,
-              defaultEventHandler,
               configuration.isGenerationAware(),
-              finalizer);
-      eventSourceManager.registerCustomResourceEventSource(customResourceEventSource);
+              finalizer,
+              resClass);
+
+      closeables.add(customResourceEventSource);
+      closeables.add(eventSourceManager);
+
+      customResourceEventSource.setEventHandler(defaultEventHandler);
+      customResourceEventSource.start();
 
       log.info(
           "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
@@ -178,18 +204,14 @@ public class Operator {
       CustomResourceCache customResourceCache,
       boolean watchAllNamespaces,
       String[] targetNamespaces,
-      DefaultEventHandler defaultEventHandler,
       boolean generationAware,
-      String finalizer) {
-    CustomResourceEventSource customResourceEventSource =
-        watchAllNamespaces
-            ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-                customResourceCache, client, generationAware, finalizer)
-            : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
-                customResourceCache, client, targetNamespaces, generationAware, finalizer);
+      String finalizer,
+      Class<?> resClass) {
 
-    customResourceEventSource.setEventHandler(defaultEventHandler);
-
-    return customResourceEventSource;
+    return watchAllNamespaces
+        ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
+            customResourceCache, client, generationAware, finalizer, resClass)
+        : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
+            customResourceCache, client, targetNamespaces, generationAware, finalizer, resClass);
   }
 }

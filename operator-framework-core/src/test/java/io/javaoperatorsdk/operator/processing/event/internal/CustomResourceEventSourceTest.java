@@ -25,7 +25,7 @@ class CustomResourceEventSourceTest {
 
   private CustomResourceEventSource customResourceEventSource =
       CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-          customResourceCache, mixedOperation, true, FINALIZER);
+          customResourceCache, mixedOperation, true, FINALIZER, TestCustomResource.class);
 
   @BeforeEach
   public void setup() {
@@ -73,7 +73,7 @@ class CustomResourceEventSourceTest {
   public void handlesAllEventIfNotGenerationAware() {
     customResourceEventSource =
         CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, mixedOperation, false, FINALIZER);
+            customResourceCache, mixedOperation, false, FINALIZER, TestCustomResource.class);
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();

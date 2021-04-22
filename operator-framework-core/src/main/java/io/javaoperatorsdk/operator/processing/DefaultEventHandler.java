@@ -37,6 +37,7 @@ public class DefaultEventHandler implements EventHandler {
   private final EventDispatcher eventDispatcher;
   private final Retry retry;
   private final Map<String, RetryExecution> retryState = new HashMap<>();
+  private final String controllerName;
   private DefaultEventSourceManager eventSourceManager;
 
   private final ReentrantLock lock = new ReentrantLock();
@@ -50,6 +51,7 @@ public class DefaultEventHandler implements EventHandler {
     this.customResourceCache = customResourceCache;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
+    this.controllerName = relatedControllerName;
     eventBuffer = new EventBuffer();
     executor =
         new ScheduledThreadPoolExecutor(
@@ -68,6 +70,16 @@ public class DefaultEventHandler implements EventHandler {
         relatedControllerName,
         retry,
         ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+  }
+
+  @Override
+  public void close() {
+    if (eventSourceManager != null) {
+      log.debug("Closing EventSourceManager {} -> {}", controllerName, eventSourceManager);
+      eventSourceManager.close();
+    }
+
+    executor.shutdownNow();
   }
 
   public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {

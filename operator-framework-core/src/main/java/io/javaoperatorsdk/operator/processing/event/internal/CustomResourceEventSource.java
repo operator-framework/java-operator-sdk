@@ -4,6 +4,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -11,6 +12,8 @@ import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -23,19 +26,22 @@ public class CustomResourceEventSource extends AbstractEventSource
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
   private final CustomResourceCache resourceCache;
-  private MixedOperation client;
+  private final MixedOperation client;
   private final String[] targetNamespaces;
   private final boolean generationAware;
   private final String resourceFinalizer;
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
+  private final List<Watch> watches;
+  private final String resClass;
 
   public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(
       CustomResourceCache customResourceCache,
       MixedOperation client,
       boolean generationAware,
-      String resourceFinalizer) {
+      String resourceFinalizer,
+      Class<?> resClass) {
     return new CustomResourceEventSource(
-        customResourceCache, client, null, generationAware, resourceFinalizer);
+        customResourceCache, client, null, generationAware, resourceFinalizer, resClass);
   }
 
   public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(
@@ -43,9 +49,10 @@ public class CustomResourceEventSource extends AbstractEventSource
       MixedOperation client,
       String[] namespaces,
       boolean generationAware,
-      String resourceFinalizer) {
+      String resourceFinalizer,
+      Class<?> resClass) {
     return new CustomResourceEventSource(
-        customResourceCache, client, namespaces, generationAware, resourceFinalizer);
+        customResourceCache, client, namespaces, generationAware, resourceFinalizer, resClass);
   }
 
   private CustomResourceEventSource(
@@ -53,32 +60,50 @@ public class CustomResourceEventSource extends AbstractEventSource
       MixedOperation client,
       String[] targetNamespaces,
       boolean generationAware,
-      String resourceFinalizer) {
+      String resourceFinalizer,
+      Class<?> resClass) {
     this.resourceCache = customResourceCache;
     this.client = client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
     this.resourceFinalizer = resourceFinalizer;
+    this.watches = new ArrayList<>();
+    this.resClass = resClass.getName();
   }
 
   private boolean isWatchAllNamespaces() {
     return targetNamespaces == null;
   }
 
-  public void addedToEventManager() {
-    registerWatch();
-  }
-
-  private void registerWatch() {
+  @Override
+  public void start() {
     CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
     if (isWatchAllNamespaces()) {
-      crClient.inAnyNamespace().watch(this);
+      var w = crClient.inAnyNamespace().watch(this);
+      watches.add(w);
+      log.debug("Registered controller {} -> {} for any namespace", resClass, w);
     } else if (targetNamespaces.length == 0) {
-      client.watch(this);
+      var w = client.watch(this);
+      watches.add(w);
+      log.debug(
+          "Registered controller {} -> {} for namespace {}", resClass, w, crClient.getNamespace());
     } else {
       for (String targetNamespace : targetNamespaces) {
-        crClient.inNamespace(targetNamespace).watch(this);
-        log.debug("Registered controller for namespace: {}", targetNamespace);
+        var w = crClient.inNamespace(targetNamespace).watch(this);
+        watches.add(w);
+        log.debug("Registered controller {} -> {} for namespace: {}", resClass, w, targetNamespace);
+      }
+    }
+  }
+
+  @Override
+  public void close() {
+    for (Watch watch : this.watches) {
+      try {
+        log.debug("Closing watch {} -> {}", resClass, watch);
+        watch.close();
+      } catch (Exception e) {
+        log.warn("Error closing watcher {} -> {}", resClass, watch, e);
       }
     }
   }
@@ -155,7 +180,8 @@ public class CustomResourceEventSource extends AbstractEventSource
     if (e.isHttpGone()) {
       log.warn("Received error for watch, will try to reconnect.", e);
       try {
-        registerWatch();
+        close();
+        start();
       } catch (Throwable ex) {
         log.error("Unexpected error happened with watch reconnect. Will exit.", e);
         System.exit(1);

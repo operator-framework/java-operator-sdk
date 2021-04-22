@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-public interface EventSource extends AutoCloseable {
+import java.io.Closeable;
+
+public interface EventSource extends Closeable {
 
   /**
    * This method is invoked when this {@link EventSource} instance is properly registered to a

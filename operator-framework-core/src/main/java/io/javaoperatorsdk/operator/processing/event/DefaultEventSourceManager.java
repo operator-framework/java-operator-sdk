@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;
 import java.util.Map;
@@ -30,9 +29,23 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
   }
 
-  public void registerCustomResourceEventSource(
-      CustomResourceEventSource customResourceEventSource) {
-    customResourceEventSource.addedToEventManager();
+  @Override
+  public void close() {
+    try {
+      lock.lock();
+      for (var entry : eventSources.entrySet()) {
+        try {
+          log.debug("Closing {} -> {}", entry.getKey(), entry.getValue());
+          entry.getValue().close();
+        } catch (Exception e) {
+          log.warn("Error closing {} -> {}", entry.getKey(), entry.getValue(), e);
+        }
+      }
+
+      eventSources.clear();
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override

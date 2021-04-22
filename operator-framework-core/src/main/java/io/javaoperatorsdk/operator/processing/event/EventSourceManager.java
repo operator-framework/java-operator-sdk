@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.Optional;
 
-public interface EventSourceManager {
+public interface EventSourceManager extends Closeable {
 
   /**
    * Add the {@link EventSource} identified by the given <code>name</code> to the event manager.
@@ -29,4 +30,7 @@ public interface EventSourceManager {
       String name, String customResourceUid);
 
   Map<String, EventSource> getRegisteredEventSources();
+
+  @Override
+  default void close() {}
 }
