@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,9 +17,8 @@ public class DefaultEventSourceManager implements EventSourceManager {
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  private Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
-  private CustomResourceEventSource customResourceEventSource;
-  private DefaultEventHandler defaultEventHandler;
+  private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
+  private final DefaultEventHandler defaultEventHandler;
   private TimerEventSource retryTimerEventSource;
 
   public DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
@@ -30,23 +29,53 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
   }
 
-  public void registerCustomResourceEventSource(
-      CustomResourceEventSource customResourceEventSource) {
-    this.customResourceEventSource = customResourceEventSource;
-    this.customResourceEventSource.addedToEventManager();
+  @Override
+  public void close() {
+    try {
+      lock.lock();
+      for (var entry : eventSources.entrySet()) {
+        try {
+          log.debug("Closing {} -> {}", entry.getKey(), entry.getValue());
+          entry.getValue().close();
+        } catch (Exception e) {
+          log.warn("Error closing {} -> {}", entry.getKey(), entry.getValue(), e);
+        }
+      }
+
+      eventSources.clear();
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
-  public <T extends EventSource> void registerEventSource(String name, T eventSource) {
+  public final void registerEventSource(String name, EventSource eventSource) {
+    Objects.requireNonNull(eventSource, "EventSource must not be null");
+
     try {
       lock.lock();
-      EventSource currentEventSource = eventSources.get(name);
-      if (currentEventSource != null) {
+      if (eventSources.containsKey(name)) {
         throw new IllegalStateException(
             "Event source with name already registered. Event source name: " + name);
       }
       eventSources.put(name, eventSource);
       eventSource.setEventHandler(defaultEventHandler);
+      eventSource.start();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<EventSource> deRegisterEventSource(String name) {
+    try {
+      lock.lock();
+      EventSource currentEventSource = eventSources.remove(name);
+      if (currentEventSource != null) {
+        currentEventSource.close();
+      }
+
+      return Optional.ofNullable(currentEventSource);
     } finally {
       lock.unlock();
     }
