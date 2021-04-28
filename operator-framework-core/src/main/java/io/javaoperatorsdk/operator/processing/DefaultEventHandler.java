@@ -174,7 +174,7 @@ public class DefaultEventHandler implements EventHandler {
     }
     Optional<Long> nextDelay = execution.nextDelay();
 
-    nextDelay.ifPresent(
+    nextDelay.ifPresentOrElse(
         delay -> {
           log.debug(
               "Scheduling timer event for retry with delay:{} for resource: {}",
@@ -183,6 +183,9 @@ public class DefaultEventHandler implements EventHandler {
           eventSourceManager
               .getRetryTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
+        },
+        () -> {
+          log.error("Exhausted retries for {}", executionScope);
         });
   }
 
