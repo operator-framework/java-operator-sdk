@@ -17,6 +17,8 @@ public @interface Controller {
   /**
    * Optional finalizer name, if it is not, the crdName will be used as the name of the finalizer
    * too.
+   *
+   * @return the finalizer name
    */
   String finalizerName() default NULL;
 
@@ -24,6 +26,8 @@ public @interface Controller {
    * If true, will dispatch new event to the controller if generation increased since the last
    * processing, otherwise will process all events. See generation meta attribute <a
    * href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource">here</a>
+   *
+   * @return whether the controller takes generation into account to process events
    */
   boolean generationAwareEventProcessing() default true;
 

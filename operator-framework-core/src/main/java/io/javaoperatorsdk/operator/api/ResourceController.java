@@ -13,7 +13,8 @@ public interface ResourceController<R extends CustomResource> {
    * to have the implementation also idempotent, in the current implementation to cover all edge
    * cases actually will be executed mostly twice.
    *
-   * @param resource
+   * @param resource the resource that is marked for deletion
+   * @param context the context with which the operation is executed
    * @return {@link DeleteControl#DEFAULT_DELETE} - so the finalizer is automatically removed after
    *     the call. {@link DeleteControl#NO_FINALIZER_REMOVAL} if you don't want to remove the
    *     finalizer. Note that this is ALMOST NEVER the case.
@@ -27,6 +28,8 @@ public interface ResourceController<R extends CustomResource> {
    * object to make updates on custom resource if possible. Also always use the custom resource
    * parameter (not the custom resource that might be in the events)
    *
+   * @param resource the resource that has been created or updated
+   * @param context the context with which the operation is executed
    * @return The resource is updated in api server if the return value is not {@link
    *     UpdateControl#noUpdate()}. This the common use cases. However in cases, for example the
    *     operator is restarted, and we don't want to have an update call to k8s api to be made
@@ -39,7 +42,8 @@ public interface ResourceController<R extends CustomResource> {
   /**
    * In init typically you might want to register event sources.
    *
-   * @param eventSourceManager
+   * @param eventSourceManager the {@link EventSourceManager} which handles this controller and with
+   *     which event sources can be registered
    */
   default void init(EventSourceManager eventSourceManager) {}
 }

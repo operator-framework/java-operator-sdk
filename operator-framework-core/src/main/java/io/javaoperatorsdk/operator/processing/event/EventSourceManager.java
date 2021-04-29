@@ -11,7 +11,7 @@ public interface EventSourceManager extends Closeable {
    *
    * @param name the name of the {@link EventSource} to add
    * @param eventSource the {@link EventSource} to register
-   * @thorw IllegalStateException if an {@link EventSource} with the same name is already
+   * @throws IllegalStateException if an {@link EventSource} with the same name is already
    *     registered.
    */
   void registerEventSource(String name, EventSource eventSource);
