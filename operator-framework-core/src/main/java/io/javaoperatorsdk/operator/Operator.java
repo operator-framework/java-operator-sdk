@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.cache.CaffeinCacheAdaptor;
@@ -145,7 +144,7 @@ public class Operator {
       final var client = k8sClient.customResources(resClass);
       EventDispatcher<R> dispatcher = new EventDispatcher<>(controller, finalizer, client);
 
-      PassThroughResourceCache passThroughResourceCache = new PassThroughResourceCache(resourceCache,client,objectMapper);
+      PassThroughResourceCache passThroughResourceCache = new PassThroughResourceCache(resourceCache,client,objectMapper, relatedKind);
       DefaultEventHandler defaultEventHandler =
           new DefaultEventHandler(passThroughResourceCache, dispatcher, controllerName, retry);
       DefaultEventSourceManager eventSourceManager =

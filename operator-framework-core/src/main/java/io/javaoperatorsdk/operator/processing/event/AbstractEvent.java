@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.javaoperatorsdk.operator.processing.cache.CustomResourceID;
-
 public abstract class AbstractEvent implements Event {
 
   private final CustomResourceID relatedCustomResourceUid;

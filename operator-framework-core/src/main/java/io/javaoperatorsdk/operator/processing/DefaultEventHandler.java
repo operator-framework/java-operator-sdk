@@ -6,7 +6,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
-import io.javaoperatorsdk.operator.processing.cache.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.cache.PassThroughResourceCache;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -75,11 +75,11 @@ public class DefaultEventHandler implements EventHandler {
   private void executeBufferedEvents(CustomResourceID customResourceID) {
     Optional<CustomResource> latestCustomResource =
         customResourceCache.getLatestResource(customResourceID);
-    if (!latestCustomResource.isPresent()) {
+    if (latestCustomResource.isEmpty()) {
        log.warn("Custom resource not present: {}", customResourceID);
        return;
     }
-    String customResourceUid = latestCustomResource.get().getMetadata().getUid();
+    String customResourceUid = KubernetesResourceUtils.getUID(latestCustomResource.get());
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
 

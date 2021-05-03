@@ -7,10 +7,11 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
-import java.util.Map;
+
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +22,14 @@ public class PassThroughResourceCache<R extends CustomResource> {
   private ResourceCache resourceCache;
   private MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
   private final ObjectMapper objectMapper;
+  private final String relatedKind;
 
   public PassThroughResourceCache(
-      ResourceCache resourceCache, MixedOperation client, ObjectMapper objectMapper) {
+          ResourceCache resourceCache, MixedOperation client, ObjectMapper objectMapper, String relatedKind) {
     this.resourceCache = resourceCache;
     this.client = client;
     this.objectMapper = objectMapper;
+    this.relatedKind = relatedKind;
   }
 
   public void cacheResource(CustomResource resource) {

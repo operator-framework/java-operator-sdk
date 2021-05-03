@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
-import io.javaoperatorsdk.operator.processing.cache.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.Map;
 import java.util.Timer;

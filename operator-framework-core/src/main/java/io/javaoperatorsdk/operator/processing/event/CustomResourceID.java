@@ -1,10 +1,9 @@
-package io.javaoperatorsdk.operator.processing.cache;
+package io.javaoperatorsdk.operator.processing.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.Objects;
 
-/** Since we need to */
 public class CustomResourceID {
 
   private final String namespace;
