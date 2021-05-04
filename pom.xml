@@ -46,8 +46,6 @@
     <modules>
         <module>operator-framework-core</module>
         <module>operator-framework</module>
-        <module>operator-framework-spring-boot-starter</module>
-        <module>operator-framework-spring-boot-starter-test</module>
         <module>samples</module>
     </modules>
 
