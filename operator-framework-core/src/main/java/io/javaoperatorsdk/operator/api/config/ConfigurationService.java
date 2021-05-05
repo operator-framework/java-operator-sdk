@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -57,6 +58,7 @@ public interface ConfigurationService {
   }
 
   int DEFAULT_RECONCILIATION_THREADS_NUMBER = 5;
+
   /**
    * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
    * requests to controllers
@@ -65,5 +67,16 @@ public interface ConfigurationService {
    */
   default int concurrentReconciliationThreads() {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  }
+
+  /**
+   * The {@link ObjectMapper} that the operator should use to de-/serialize resources. This is
+   * particularly useful when frameworks can configure a specific mapper that should also be used by
+   * the SDK.
+   *
+   * @return the ObjectMapper to use
+   */
+  default ObjectMapper getObjectMapper() {
+    return new ObjectMapper();
   }
 }

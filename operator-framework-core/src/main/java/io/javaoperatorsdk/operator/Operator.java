@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -29,20 +28,11 @@ public class Operator implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private final ObjectMapper objectMapper;
   private final List<Closeable> closeables;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
-    this(k8sClient, configurationService, new ObjectMapper());
-  }
-
-  public Operator(
-      KubernetesClient k8sClient,
-      ConfigurationService configurationService,
-      ObjectMapper objectMapper) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
-    this.objectMapper = objectMapper;
     this.closeables = new ArrayList<>();
   }
 
@@ -160,7 +150,8 @@ public class Operator implements AutoCloseable {
       final var client = k8sClient.customResources(resClass);
       EventDispatcher<R> dispatcher = new EventDispatcher<>(controller, finalizer, client);
 
-      CustomResourceCache customResourceCache = new CustomResourceCache(objectMapper);
+      CustomResourceCache customResourceCache =
+          new CustomResourceCache(configurationService.getObjectMapper());
       DefaultEventHandler defaultEventHandler =
           new DefaultEventHandler(
               customResourceCache,
