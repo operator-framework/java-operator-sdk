@@ -3,18 +3,19 @@
 [![Discord](https://img.shields.io/discord/723455000604573736.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.com/channels/723455000604573736)
 
 Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
+                 
 
-| S.No. | Contents |
-| ----- | -------- |
-| [1.](#Features) | [Features](#Features) |
-| [2.](#Why-build-your-own-Operator) | [Why build your own Operator?](#Why-build-your-own-Operator) |
-| [3.](#Roadmap) | [Roadmap](#Roadmap) |
-| [4.](#Join-us-on-Discord) | [Join us on Discord!](#Join-us-on-Discord) |
-| [5.](#User-Guide) | [User Guide](#User-Guide) |
-| [6.](#Usage) | [Usage](#Usage) |
-| [7.](#Spring-Boot) | [Spring Boot](#Spring-Boot) |
+Table of Contents
+==========
 
-#### Features
+1. [Features](#Features)
+1. [Why build your own Operator?](#Why-build-your-own-Operator)
+1. [Roadmap and Release Notes](#Roadmap-and-Release-Notes)
+1. [Join us on Discord!](#Join-us-on-Discord)
+1. [User Guide](#User-Guide)
+1. [Usage](#Usage)
+
+## Features
 * Framework for handling Kubernetes API events
 * Automatic registration of Custom Resource watches
 * Retry action on failure
@@ -24,37 +25,29 @@ Check out this [blog post](https://csviri.medium.com/deep-dive-building-a-kubern
 about the non-trivial yet common problems needed to be solved for every operator. In case you are interested how to
 handle more complex scenarios take a look on [event sources](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b).
 
-#### Why build your own Operator?
+## Why build your own Operator?
 * Infrastructure automation using the power and flexibility of Java. See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators).
 * Provisioning of complex applications - avoiding Helm chart hell
 * Integration with Cloud services - e.g. Secret stores
 * Safer deployment of applications - only expose cluster to users by Custom Resources
 
-#### Roadmap
+## Roadmap and Release Notes
+
 * Testing of the framework and all samples while running on a real cluster.
 * Generate a project skeleton
 * Generate Java classes from CRD
-* Integrate with Quarkus (including native image build)
 * Integrate with OLM (Operator Lifecycle Manager)
 
-#### Join us on Discord!
+#### Overview of the 1.9.0 changes
 
-[Discord Invite Link](https://discord.gg/DacEhAy)
-
-#### User Guide
-
-You can (will) find detailed documentation [here](docs/DOCS.md). 
-Note that these docs are currently in progress. 
-
-> :warning: 1.7.0 Upgrade
-> The 1.7.0 upgrade comes with big changes due to the update to the 5.0.0 version of the fabric8
-> Kubernetes client. While this should improve the user experience quite nicely, there are a couple
-> of things to be aware of when upgrading from a previous version as detailed below.
+- The Spring Boot starters have been moved to their own repositories and are now found at:
+  - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
+  - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter-test
 
 #### Overview of the 1.8.0 changes
 
-- The quarkus extension has been moved to the quarkiverse and is now found at 
-https://github.com/quarkiverse/quarkus-operator-sdk
+- The quarkus extension has been moved to the quarkiverse and is now found at
+  https://github.com/quarkiverse/quarkus-operator-sdk
 
 ##### Overview of the 1.7.0 changes
 
@@ -82,15 +75,18 @@ annotated and that the value corresponds to your CRD manifest. If the namespace 
 in your request URL, don't forget that namespace-scoped Custom Resources need to implement
 the `Namescaped` interface.
 
-#### Usage
+## Join us on Discord!
+
+[Discord Invite Link](https://discord.gg/DacEhAy)
+
+## Usage
 
 We have several sample Operators under the [samples](samples) directory:
 * *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
 Implemented with and without Spring Boot support. The two samples share the common module.
-* *spring-boot-plain/auto-config*: Samples showing integration with Spring Boot.
-* *quarkus*: Minimal application showing automatic configuration / injection of Operator / Controllers.
+* *spring-boot-plain*: Sample showing integration with Spring Boot.
 
-And there are more samples in the standalone [samples repo](https://github.com/java-operator-sdk/samples):
+There are also more samples in the standalone [samples repo](https://github.com/java-operator-sdk/samples):
 * *webserver*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code.
 * *mysql-schema*: Operator managing schemas in a MySQL database.
 * *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps for these.
@@ -133,13 +129,7 @@ The Controller implements the business logic and describes all the classes neede
 ```java
 @Controller
 public class WebServerController implements ResourceController<WebServer> {
-
-    @Override
-    public DeleteControl deleteResource(CustomService resource, Context<WebServer> context) {
-        // ... your logic ...
-        return DeleteControl.DEFAULT_DELETE;
-    }
-    
+   
     // Return the changed resource, so it gets updated. See javadoc for details.
     @Override
     public UpdateControl<CustomService> createOrUpdateResource(CustomService resource, Context<WebServer> context) {
@@ -170,20 +160,16 @@ public class WebServerSpec {
 }
 ```
 
-#### Deactivating CustomResource implementations validation
+### Deactivating CustomResource implementations validation
 
 The operator will, by default, query the deployed CRDs to check that the `CustomResource`
 implementations match what is known to the cluster. This requires an additional query to the cluster
 and, sometimes, elevated privileges for the operator to be able to read the CRDs from the cluster.
 This validation is mostly meant to help users new to operator development get started and avoid
 common mistakes. Advanced users or production deployments might want to skip this step. This is done
-by setting 
-the `CHECK_CRD_ENV_KEY` environment variable to `false`. Quarkus users can also add 
-`quarkus.operator-sdk.check-crd-and-validate-local-model=false` to their `application.properties` for the 
-same purpose. Spring Boot users can set the property `javaoperatorsdk.check-crd-and-validate-local-model` 
-to `false`.
+by setting the `CHECK_CRD_ENV_KEY` environment variable to `false`.
 
-#### Automatic generation of CRDs
+### Automatic generation of CRDs
 
 To automatically generate CRD manifests from your annotated Custom Resource classes, you only need
 to add the following dependencies to your project:
@@ -191,13 +177,8 @@ to add the following dependencies to your project:
 ```xml
 <dependency>
   <groupId>io.fabric8</groupId>
-  <artifactId>crd-generator</artifactId>
-  <scope>compile</scope>
-</dependency>
-<!-- This dependency will not be needed anymore in a future release of the kubernetes-client -->
-<dependency>
-  <groupId>io.fabric8</groupId>
-  <artifactId>kubernetes-model-common</artifactId>
+  <artifactId>crd-generator-apt</artifactId>
+  <scope>provided</scope>
 </dependency>
 ```
 
@@ -209,8 +190,10 @@ a `mycrs` plural form will result in 2 files:
 - `mycrs.java-operator-sdk.io-v1.yml`
 - `mycrs.java-operator-sdk.io-v1beta1.yml`
 
+**NOTE:**
+> Quarkus users using the `quarkus-operator-sdk` extension do not need to add any extra dependency to get their CRD generated as this is handled by the extension itself.
 
-#### Quarkus
+### Quarkus
 
 A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based operators.
 
@@ -247,7 +230,7 @@ public class QuarkusOperator implements QuarkusApplication {
 }
 ```
 
-#### Spring Boot
+### Spring Boot
 
 You can also let Spring Boot wire your application together and automatically register the controllers.
 

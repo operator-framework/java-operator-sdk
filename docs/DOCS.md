@@ -50,8 +50,6 @@ TODO: explain running operator locally against a cluster
 ### Event Dispatching 
 ### Generation Awareness
 
-## Spring Boot Support
-
 ## Dealing with Consistency 
 
 ### Run Single Instance
