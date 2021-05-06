@@ -27,7 +27,6 @@ public class DefaultEventSourceManager implements EventSourceManager {
   private final ReentrantLock lock = new ReentrantLock();
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
   private final DefaultEventHandler defaultEventHandler;
-  private String[] targetNamespaces;
   private TimerEventSource retryTimerEventSource;
 
   DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
@@ -39,28 +38,16 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
   }
 
-  public String[] getTargetNamespaces() {
-    return targetNamespaces;
-  }
-
   public <R extends CustomResource> DefaultEventSourceManager(
       ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
     this(new DefaultEventHandler(controller, configuration, client), true);
-    // check if we only want to watch the current namespace
-    targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
-    if (configuration.watchCurrentNamespace()) {
-      targetNamespaces =
-          new String[] {
-            configuration.getConfigurationService().getClientConfiguration().getNamespace()
-          };
-    }
     registerEventSource(
         CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
         new CustomResourceEventSource(
             client,
-            targetNamespaces,
+            configuration.getEffectiveNamespaces(),
             configuration.isGenerationAware(),
             configuration.getFinalizer(),
             configuration.getCustomResourceClass()));
