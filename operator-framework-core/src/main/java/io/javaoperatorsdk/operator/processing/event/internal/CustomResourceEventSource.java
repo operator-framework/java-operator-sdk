@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ public class CustomResourceEventSource extends AbstractEventSource
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-  private final CustomResourceCache resourceCache;
   private final MixedOperation client;
   private final String[] targetNamespaces;
   private final boolean generationAware;
@@ -36,41 +34,22 @@ public class CustomResourceEventSource extends AbstractEventSource
   private final List<Watch> watches;
   private final String resClass;
 
-  public static CustomResourceEventSource customResourceEventSourceForAllNamespaces(
-      CustomResourceCache customResourceCache,
-      MixedOperation client,
-      boolean generationAware,
-      String resourceFinalizer,
-      Class<?> resClass) {
-    return new CustomResourceEventSource(
-        customResourceCache, client, null, generationAware, resourceFinalizer, resClass);
-  }
-
-  public static CustomResourceEventSource customResourceEventSourceForTargetNamespaces(
-      CustomResourceCache customResourceCache,
-      MixedOperation client,
-      String[] namespaces,
-      boolean generationAware,
-      String resourceFinalizer,
-      Class<?> resClass) {
-    return new CustomResourceEventSource(
-        customResourceCache, client, namespaces, generationAware, resourceFinalizer, resClass);
-  }
-
-  private CustomResourceEventSource(
-      CustomResourceCache customResourceCache,
+  public CustomResourceEventSource(
       MixedOperation client,
       String[] targetNamespaces,
       boolean generationAware,
       String resourceFinalizer,
       Class<?> resClass) {
-    this.resourceCache = customResourceCache;
     this.client = client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
     this.resourceFinalizer = resourceFinalizer;
     this.watches = new ArrayList<>();
     this.resClass = resClass.getName();
+  }
+
+  public String[] getTargetNamespaces() {
+    return targetNamespaces;
   }
 
   @Override
@@ -113,8 +92,6 @@ public class CustomResourceEventSource extends AbstractEventSource
         action.name(),
         customResource.getMetadata().getName());
 
-    resourceCache.cacheResource(
-        customResource); // always store the latest event. Outside the sync block is intentional.
     if (action == Action.ERROR) {
       log.debug(
           "Skipping {} event for custom resource uid: {}, version: {}",

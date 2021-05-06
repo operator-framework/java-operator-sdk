@@ -4,16 +4,10 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.EventDispatcher;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -115,18 +109,7 @@ public class Operator implements AutoCloseable {
         configuration = existing;
       }
 
-      final var retry = GenericRetry.fromConfiguration(configuration.getRetryConfiguration());
-
-      // check if we only want to watch the current namespace
-      var targetNamespaces = configuration.getNamespaces().toArray(new String[] {});
-      if (configuration.watchCurrentNamespace()) {
-        targetNamespaces =
-            new String[] {configurationService.getClientConfiguration().getNamespace()};
-      }
-
       Class<R> resClass = configuration.getCustomResourceClass();
-      String finalizer = configuration.getFinalizer();
-
       final String controllerName = configuration.getName();
 
       // check that the custom resource is known by the cluster if configured that way
@@ -148,61 +131,18 @@ public class Operator implements AutoCloseable {
       }
 
       final var client = k8sClient.customResources(resClass);
-      EventDispatcher<R> dispatcher = new EventDispatcher<>(controller, finalizer, client);
-
-      CustomResourceCache customResourceCache =
-          new CustomResourceCache(configurationService.getObjectMapper());
-      DefaultEventHandler defaultEventHandler =
-          new DefaultEventHandler(
-              customResourceCache,
-              dispatcher,
-              controllerName,
-              retry,
-              configurationService.concurrentReconciliationThreads());
       DefaultEventSourceManager eventSourceManager =
-          new DefaultEventSourceManager(defaultEventHandler, retry != null);
-      defaultEventHandler.setEventSourceManager(eventSourceManager);
-      dispatcher.setEventSourceManager(eventSourceManager);
-
+          new DefaultEventSourceManager(controller, configuration, client);
       controller.init(eventSourceManager);
-      final boolean watchAllNamespaces = configuration.watchAllNamespaces();
-      CustomResourceEventSource customResourceEventSource =
-          createCustomResourceEventSource(
-              client,
-              customResourceCache,
-              watchAllNamespaces,
-              targetNamespaces,
-              configuration.isGenerationAware(),
-              finalizer,
-              resClass);
-
-      closeables.add(customResourceEventSource);
       closeables.add(eventSourceManager);
-
-      customResourceEventSource.setEventHandler(defaultEventHandler);
-      customResourceEventSource.start();
 
       log.info(
           "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
           controllerName,
           resClass,
-          watchAllNamespaces ? "[all namespaces]" : Arrays.toString(targetNamespaces));
+          configuration.watchAllNamespaces()
+              ? "[all namespaces]"
+              : Arrays.toString(eventSourceManager.getTargetNamespaces()));
     }
-  }
-
-  private CustomResourceEventSource createCustomResourceEventSource(
-      MixedOperation client,
-      CustomResourceCache customResourceCache,
-      boolean watchAllNamespaces,
-      String[] targetNamespaces,
-      boolean generationAware,
-      String finalizer,
-      Class<?> resClass) {
-
-    return watchAllNamespaces
-        ? CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, client, generationAware, finalizer, resClass)
-        : CustomResourceEventSource.customResourceEventSourceForTargetNamespaces(
-            customResourceCache, client, targetNamespaces, generationAware, finalizer, resClass);
   }
 }

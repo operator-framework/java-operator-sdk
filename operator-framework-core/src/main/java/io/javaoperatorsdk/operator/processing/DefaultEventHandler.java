@@ -5,11 +5,15 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.RetryInfo;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import java.util.HashMap;
@@ -43,6 +47,16 @@ public class DefaultEventHandler implements EventHandler {
   private final ReentrantLock lock = new ReentrantLock();
 
   public DefaultEventHandler(
+      ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
+    this(
+        new CustomResourceCache(configuration.getConfigurationService().getObjectMapper()),
+        new EventDispatcher(controller, configuration.getFinalizer(), client),
+        configuration.getName(),
+        GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
+        configuration.getConfigurationService().concurrentReconciliationThreads());
+  }
+
+  DefaultEventHandler(
       CustomResourceCache customResourceCache,
       EventDispatcher eventDispatcher,
       String relatedControllerName,
@@ -59,19 +73,6 @@ public class DefaultEventHandler implements EventHandler {
             runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
   }
 
-  public DefaultEventHandler(
-      CustomResourceCache customResourceCache,
-      EventDispatcher eventDispatcher,
-      String relatedControllerName,
-      Retry retry) {
-    this(
-        customResourceCache,
-        eventDispatcher,
-        relatedControllerName,
-        retry,
-        ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
-  }
-
   @Override
   public void close() {
     if (eventSourceManager != null) {
@@ -84,10 +85,17 @@ public class DefaultEventHandler implements EventHandler {
 
   public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
+    eventDispatcher.setEventSourceManager(eventSourceManager);
   }
 
   @Override
   public void handleEvent(Event event) {
+    // cache the latest version of the CR
+    if (event instanceof CustomResourceEvent) {
+      CustomResourceEvent crEvent = (CustomResourceEvent) event;
+      customResourceCache.cacheResource(crEvent.getCustomResource());
+    }
+
     try {
       lock.lock();
       log.debug("Received event: {}", event);
