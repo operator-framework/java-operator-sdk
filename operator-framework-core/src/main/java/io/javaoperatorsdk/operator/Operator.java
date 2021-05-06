@@ -28,6 +28,8 @@ public class Operator implements AutoCloseable {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
     this.closeables = new ArrayList<>();
+
+    Runtime.getRuntime().addShutdownHook(new Thread(this::close));
   }
 
   /**
