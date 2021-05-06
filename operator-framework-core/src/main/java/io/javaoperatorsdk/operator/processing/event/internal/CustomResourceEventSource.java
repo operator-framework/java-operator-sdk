@@ -27,7 +27,7 @@ public class CustomResourceEventSource extends AbstractEventSource
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
   private final MixedOperation client;
-  private final String[] targetNamespaces;
+  private final Set<String> targetNamespaces;
   private final boolean generationAware;
   private final String resourceFinalizer;
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
@@ -36,7 +36,7 @@ public class CustomResourceEventSource extends AbstractEventSource
 
   public CustomResourceEventSource(
       MixedOperation client,
-      String[] targetNamespaces,
+      Set<String> targetNamespaces,
       boolean generationAware,
       String resourceFinalizer,
       Class<?> resClass) {
@@ -48,28 +48,25 @@ public class CustomResourceEventSource extends AbstractEventSource
     this.resClass = resClass.getName();
   }
 
-  public String[] getTargetNamespaces() {
-    return targetNamespaces;
-  }
-
   @Override
   public void start() {
     CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
-    if (ControllerConfiguration.allNamespacesWatched(Set.of(targetNamespaces))) {
+    if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
       var w = crClient.inAnyNamespace().watch(this);
       watches.add(w);
       log.debug("Registered controller {} -> {} for any namespace", resClass, w);
-    } else if (targetNamespaces.length == 0) {
+    } else if (targetNamespaces.isEmpty()) {
       var w = client.watch(this);
       watches.add(w);
       log.debug(
           "Registered controller {} -> {} for namespace {}", resClass, w, crClient.getNamespace());
     } else {
-      for (String targetNamespace : targetNamespaces) {
-        var w = crClient.inNamespace(targetNamespace).watch(this);
-        watches.add(w);
-        log.debug("Registered controller {} -> {} for namespace: {}", resClass, w, targetNamespace);
-      }
+      targetNamespaces.forEach(
+          ns -> {
+            var w = crClient.inNamespace(ns).watch(this);
+            watches.add(w);
+            log.debug("Registered controller {} -> {} for namespace: {}", resClass, w, ns);
+          });
     }
   }
 

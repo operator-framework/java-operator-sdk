@@ -41,6 +41,15 @@ public interface ControllerConfiguration<R extends CustomResource> {
         && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
   }
 
+  default Set<String> getEffectiveNamespaces() {
+    var targetNamespaces = getNamespaces();
+    if (watchCurrentNamespace()) {
+      targetNamespaces =
+          Collections.singleton(getConfigurationService().getClientConfiguration().getNamespace());
+    }
+    return targetNamespaces;
+  }
+
   default RetryConfiguration getRetryConfiguration() {
     return RetryConfiguration.DEFAULT;
   }
