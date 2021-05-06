@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import java.time.LocalDateTime;
@@ -19,13 +18,12 @@ import org.junit.jupiter.api.Test;
 class CustomResourceEventSourceTest {
 
   public static final String FINALIZER = "finalizer";
-  CustomResourceCache customResourceCache = new CustomResourceCache();
   MixedOperation mixedOperation = mock(MixedOperation.class);
   EventHandler eventHandler = mock(EventHandler.class);
 
   private CustomResourceEventSource customResourceEventSource =
-      CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-          customResourceCache, mixedOperation, true, FINALIZER, TestCustomResource.class);
+      new CustomResourceEventSource(
+          mixedOperation, null, true, FINALIZER, TestCustomResource.class);
 
   @BeforeEach
   public void setup() {
@@ -72,8 +70,8 @@ class CustomResourceEventSourceTest {
   @Test
   public void handlesAllEventIfNotGenerationAware() {
     customResourceEventSource =
-        CustomResourceEventSource.customResourceEventSourceForAllNamespaces(
-            customResourceCache, mixedOperation, false, FINALIZER, TestCustomResource.class);
+        new CustomResourceEventSource(
+            mixedOperation, null, false, FINALIZER, TestCustomResource.class);
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
