@@ -35,6 +35,7 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
       }
     }
     configurations.put(name, config);
+    config.setConfigurationService(this);
   }
 
   protected void throwExceptionOnNameCollision(

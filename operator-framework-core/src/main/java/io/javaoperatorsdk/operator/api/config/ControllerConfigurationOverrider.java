@@ -70,6 +70,11 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
       public Class<R> getCustomResourceClass() {
         return original.getCustomResourceClass();
       }
+
+      @Override
+      public ConfigurationService getConfigurationService() {
+        return original.getConfigurationService();
+      }
     };
   }
 
