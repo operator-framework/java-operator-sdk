@@ -37,7 +37,7 @@ public class RetryTestCustomResourceController
     if (numberOfExecutions.get() < NUMBER_FAILED_EXECUTIONS + 1) {
       throw new RuntimeException("Testing Retry");
     }
-    if (context.getRetryInfo().isEmpty() || context.getRetryInfo().get().isLastAttempt() == true) {
+    if (context.getRetryInfo().isEmpty() || context.getRetryInfo().get().isLastAttempt()) {
       throw new IllegalStateException("Not expected retry info: " + context.getRetryInfo());
     }
 
