@@ -93,7 +93,7 @@ public class CustomResourceEventSource extends AbstractEventSource
       return;
     }
 
-    if (!skipBecauseOfGenerations(customResource)) {
+    if (!skipBecauseOfGeneration(customResource)) {
       eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
       markLastGenerationProcessed(customResource);
     } else {
@@ -111,7 +111,7 @@ public class CustomResourceEventSource extends AbstractEventSource
     }
   }
 
-  private boolean skipBecauseOfGenerations(CustomResource customResource) {
+  private boolean skipBecauseOfGeneration(CustomResource customResource) {
     if (!generationAware) {
       return false;
     }
@@ -119,13 +119,10 @@ public class CustomResourceEventSource extends AbstractEventSource
     if (customResource.isMarkedForDeletion()) {
       return false;
     }
-    if (!largerGenerationThenProcessedBefore(customResource)) {
-      return true;
-    }
-    return false;
+    return !hasGenerationAlreadyBeenProcessed(customResource);
   }
 
-  public boolean largerGenerationThenProcessedBefore(CustomResource resource) {
+  private boolean hasGenerationAlreadyBeenProcessed(CustomResource resource) {
     Long lastGeneration = lastGenerationProcessedSuccessfully.get(resource.getMetadata().getUid());
     if (lastGeneration == null) {
       return true;
