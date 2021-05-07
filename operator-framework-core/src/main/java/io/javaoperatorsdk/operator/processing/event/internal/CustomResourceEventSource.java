@@ -55,11 +55,6 @@ public class CustomResourceEventSource extends AbstractEventSource
       var w = crClient.inAnyNamespace().watch(this);
       watches.add(w);
       log.debug("Registered controller {} -> {} for any namespace", resClass, w);
-    } else if (targetNamespaces.isEmpty()) {
-      var w = client.watch(this);
-      watches.add(w);
-      log.debug(
-          "Registered controller {} -> {} for namespace {}", resClass, w, crClient.getNamespace());
     } else {
       targetNamespaces.forEach(
           ns -> {
