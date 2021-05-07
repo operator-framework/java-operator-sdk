@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import org.junit.jupiter.api.Test;
@@ -60,13 +59,6 @@ public class DefaultConfigurationServiceTest {
     public class InnerCustomResource extends CustomResource {}
 
     @Override
-    public DeleteControl deleteResource(
-        TestCustomFinalizerController.InnerCustomResource resource,
-        Context<InnerCustomResource> context) {
-      return DeleteControl.DEFAULT_DELETE;
-    }
-
-    @Override
     public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
         InnerCustomResource resource, Context<InnerCustomResource> context) {
       return null;
@@ -75,11 +67,6 @@ public class DefaultConfigurationServiceTest {
 
   @Controller(generationAwareEventProcessing = false, name = "test")
   static class TestCustomResourceController implements ResourceController<TestCustomResource> {
-    @Override
-    public DeleteControl deleteResource(
-        TestCustomResource resource, Context<TestCustomResource> context) {
-      return DeleteControl.DEFAULT_DELETE;
-    }
 
     @Override
     public UpdateControl<TestCustomResource> createOrUpdateResource(
