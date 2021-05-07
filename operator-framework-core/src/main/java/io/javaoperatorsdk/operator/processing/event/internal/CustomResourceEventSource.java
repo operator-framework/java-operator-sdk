@@ -79,9 +79,10 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public void close() {
+    eventHandler.close();
     for (Watch watch : this.watches) {
       try {
-        log.debug("Closing watch {} -> {}", resClass, watch);
+        log.info("Closing watch {} -> {}", resClass, watch);
         watch.close();
       } catch (Exception e) {
         log.warn("Error closing watcher {} -> {}", resClass, watch, e);

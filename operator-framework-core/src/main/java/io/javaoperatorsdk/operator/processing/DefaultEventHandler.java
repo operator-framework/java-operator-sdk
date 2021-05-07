@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,12 +76,12 @@ public class DefaultEventHandler implements EventHandler {
 
   @Override
   public void close() {
-    if (eventSourceManager != null) {
-      log.debug("Closing EventSourceManager {} -> {}", controllerName, eventSourceManager);
-      eventSourceManager.close();
+    try {
+      log.debug("Closing handler for {}", controllerName);
+      executor.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      log.debug("Exception closing handler for {}: {}", controllerName, e.getLocalizedMessage());
     }
-
-    executor.shutdownNow();
   }
 
   public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
