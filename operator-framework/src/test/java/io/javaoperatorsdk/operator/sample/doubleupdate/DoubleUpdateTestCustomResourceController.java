@@ -18,12 +18,6 @@ public class DoubleUpdateTestCustomResourceController
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public DeleteControl deleteResource(
-      DoubleUpdateTestCustomResource resource, Context<DoubleUpdateTestCustomResource> context) {
-    return DeleteControl.DEFAULT_DELETE;
-  }
-
-  @Override
   public UpdateControl<DoubleUpdateTestCustomResource> createOrUpdateResource(
       DoubleUpdateTestCustomResource resource, Context<DoubleUpdateTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);

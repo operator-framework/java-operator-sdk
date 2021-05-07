@@ -5,7 +5,6 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,12 +23,6 @@ public class RetryTestCustomResourceController
   private static final Logger log =
       LoggerFactory.getLogger(RetryTestCustomResourceController.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-
-  @Override
-  public DeleteControl deleteResource(
-      RetryTestCustomResource resource, Context<RetryTestCustomResource> context) {
-    return DeleteControl.DEFAULT_DELETE;
-  }
 
   @Override
   public UpdateControl<RetryTestCustomResource> createOrUpdateResource(
