@@ -12,7 +12,6 @@ Table of Contents
 1. [Why build your own Operator?](#Why-build-your-own-Operator)
 1. [Roadmap and Release Notes](#Roadmap-and-Release-Notes)
 1. [Join us on Discord!](#Join-us-on-Discord)
-1. [User Guide](#User-Guide)
 1. [Usage](#Usage)
 
 ## Features
