@@ -15,21 +15,19 @@ import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventList;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
  */
-public class EventDispatcher<R extends CustomResource> {
+class EventDispatcher<R extends CustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
   private final ResourceController<R> controller;
   private final String resourceFinalizer;
   private final CustomResourceFacade<R> customResourceFacade;
-  private EventSourceManager eventSourceManager;
 
   EventDispatcher(
       ResourceController<R> controller,
@@ -45,10 +43,6 @@ public class EventDispatcher<R extends CustomResource> {
       String finalizer,
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
     this(controller, finalizer, new CustomResourceFacade<>(client));
-  }
-
-  public void setEventSourceManager(EventSourceManager eventSourceManager) {
-    this.eventSourceManager = eventSourceManager;
   }
 
   public PostExecutionControl handleExecution(ExecutionScope<R> executionScope) {
@@ -87,9 +81,7 @@ public class EventDispatcher<R extends CustomResource> {
     }
     Context<R> context =
         new DefaultContext<>(
-            eventSourceManager,
-            new EventList(executionScope.getEvents()),
-            executionScope.getRetryInfo());
+            new EventList(executionScope.getEvents()), executionScope.getRetryInfo());
     if (resource.isMarkedForDeletion()) {
       return handleDelete(resource, context);
     } else {
