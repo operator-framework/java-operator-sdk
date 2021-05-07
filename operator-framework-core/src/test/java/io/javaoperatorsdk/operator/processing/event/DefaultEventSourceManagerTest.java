@@ -34,6 +34,20 @@ class DefaultEventSourceManagerTest {
     assertThat(registeredSources.entrySet()).hasSize(1);
     assertThat(registeredSources.get(CUSTOM_EVENT_SOURCE_NAME)).isEqualTo(eventSource);
     verify(eventSource, times(1)).setEventHandler(eq(defaultEventHandlerMock));
+    verify(eventSource, times(1)).start();
+  }
+
+  @Test
+  public void closeShouldCascadeToEventSources() {
+    EventSource eventSource = mock(EventSource.class);
+    EventSource eventSource2 = mock(EventSource.class);
+    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
+    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME + "2", eventSource2);
+
+    defaultEventSourceManager.close();
+
+    verify(eventSource, times(1)).close();
+    verify(eventSource2, times(1)).close();
   }
 
   @Test
