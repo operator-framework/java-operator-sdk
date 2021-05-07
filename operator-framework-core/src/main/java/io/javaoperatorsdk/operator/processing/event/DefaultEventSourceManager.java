@@ -38,19 +38,13 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
   }
 
-  public <R extends CustomResource> DefaultEventSourceManager(
+  public <R extends CustomResource<?, ?>> DefaultEventSourceManager(
       ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
     this(new DefaultEventHandler(controller, configuration, client), true);
     registerEventSource(
-        CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
-        new CustomResourceEventSource(
-            client,
-            configuration.getEffectiveNamespaces(),
-            configuration.isGenerationAware(),
-            configuration.getFinalizer(),
-            configuration.getCustomResourceClass()));
+        CUSTOM_RESOURCE_EVENT_SOURCE_NAME, new CustomResourceEventSource<>(client, configuration));
   }
 
   @Override

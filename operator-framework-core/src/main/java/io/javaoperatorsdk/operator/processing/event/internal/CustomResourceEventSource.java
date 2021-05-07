@@ -3,11 +3,13 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
@@ -21,12 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** This is a special case since is not bound to a single custom resource */
-public class CustomResourceEventSource extends AbstractEventSource
-    implements Watcher<CustomResource> {
+public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource
+    implements Watcher<T> {
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-  private final MixedOperation client;
+  private final CustomResourceOperationsImpl<T, KubernetesResourceList<T>> client;
   private final Set<String> targetNamespaces;
   private final boolean generationAware;
   private final String resourceFinalizer;
@@ -35,12 +37,23 @@ public class CustomResourceEventSource extends AbstractEventSource
   private final String resClass;
 
   public CustomResourceEventSource(
-      MixedOperation client,
+      MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+      ControllerConfiguration<T> configuration) {
+    this(
+        client,
+        configuration.getEffectiveNamespaces(),
+        configuration.isGenerationAware(),
+        configuration.getFinalizer(),
+        configuration.getCustomResourceClass());
+  }
+
+  CustomResourceEventSource(
+      MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
       Set<String> targetNamespaces,
       boolean generationAware,
       String resourceFinalizer,
-      Class<?> resClass) {
-    this.client = client;
+      Class<T> resClass) {
+    this.client = (CustomResourceOperationsImpl<T, KubernetesResourceList<T>>) client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
     this.resourceFinalizer = resourceFinalizer;
@@ -50,15 +63,14 @@ public class CustomResourceEventSource extends AbstractEventSource
 
   @Override
   public void start() {
-    CustomResourceOperationsImpl crClient = (CustomResourceOperationsImpl) client;
     if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-      var w = crClient.inAnyNamespace().watch(this);
+      var w = client.inAnyNamespace().watch(this);
       watches.add(w);
       log.debug("Registered controller {} -> {} for any namespace", resClass, w);
     } else {
       targetNamespaces.forEach(
           ns -> {
-            var w = crClient.inNamespace(ns).watch(this);
+            var w = client.inNamespace(ns).watch(this);
             watches.add(w);
             log.debug("Registered controller {} -> {} for namespace: {}", resClass, w, ns);
           });
@@ -78,7 +90,7 @@ public class CustomResourceEventSource extends AbstractEventSource
   }
 
   @Override
-  public void eventReceived(Watcher.Action action, CustomResource customResource) {
+  public void eventReceived(Watcher.Action action, T customResource) {
     log.debug(
         "Event received for action: {}, resource: {}",
         action.name(),
@@ -104,14 +116,14 @@ public class CustomResourceEventSource extends AbstractEventSource
     }
   }
 
-  private void markLastGenerationProcessed(CustomResource resource) {
+  private void markLastGenerationProcessed(T resource) {
     if (generationAware && resource.hasFinalizer(resourceFinalizer)) {
       lastGenerationProcessedSuccessfully.put(
           KubernetesResourceUtils.getUID(resource), resource.getMetadata().getGeneration());
     }
   }
 
-  private boolean skipBecauseOfGeneration(CustomResource customResource) {
+  private boolean skipBecauseOfGeneration(T customResource) {
     if (!generationAware) {
       return false;
     }
@@ -122,7 +134,7 @@ public class CustomResourceEventSource extends AbstractEventSource
     return !hasGenerationAlreadyBeenProcessed(customResource);
   }
 
-  private boolean hasGenerationAlreadyBeenProcessed(CustomResource resource) {
+  private boolean hasGenerationAlreadyBeenProcessed(T resource) {
     Long lastGeneration = lastGenerationProcessedSuccessfully.get(resource.getMetadata().getUid());
     if (lastGeneration == null) {
       return true;
