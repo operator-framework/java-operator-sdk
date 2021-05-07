@@ -132,8 +132,6 @@ public class IntegrationTestSupport {
     try {
       test.run();
 
-      operator.close();
-
       log.info("Deleting namespace {} and stopping operator", TEST_NAMESPACE);
       Namespace namespace = k8sClient.namespaces().withName(TEST_NAMESPACE).get();
       if (namespace.getStatus().getPhase().equals("Active")) {
