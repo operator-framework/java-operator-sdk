@@ -73,7 +73,7 @@ class DefaultEventHandlerTest {
     verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
   }
 
-  /*@Test
+  @Test
   public void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
     customResourceCache.cleanup(event.getRelatedCustomResourceUid());
@@ -81,7 +81,7 @@ class DefaultEventHandlerTest {
     defaultEventHandler.handleEvent(event);
 
     verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
-  }*/
+  }
 
   @Test
   public void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {

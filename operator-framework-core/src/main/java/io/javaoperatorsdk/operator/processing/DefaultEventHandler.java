@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -90,12 +89,6 @@ public class DefaultEventHandler implements EventHandler {
 
   @Override
   public void handleEvent(Event event) {
-    // cache the latest version of the CR
-    if (event instanceof CustomResourceEvent) {
-      CustomResourceEvent crEvent = (CustomResourceEvent) event;
-      customResourceCache.cacheResource(crEvent.getCustomResource());
-    }
-
     try {
       lock.lock();
       log.debug("Received event: {}", event);
