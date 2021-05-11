@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
@@ -15,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,5 +136,24 @@ public class DefaultEventSourceManager implements EventSourceManager {
         .keySet()
         .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
     eventSources.remove(customResourceUid);
+    getCache().cleanup(customResourceUid);
+  }
+
+  // todo: remove
+  public CustomResourceCache getCache() {
+    final var source =
+        (CustomResourceEventSource)
+            getRegisteredEventSources().get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
+    return source.getCache();
+  }
+
+  // todo: remove
+  public Optional<CustomResource> getLatestResource(String customResourceUid) {
+    return getCache().getLatestResource(customResourceUid);
+  }
+
+  // todo: remove
+  public void cacheResource(CustomResource resource, Predicate<CustomResource> predicate) {
+    getCache().cacheResource(resource, predicate);
   }
 }

@@ -34,7 +34,6 @@ public class DefaultEventHandler implements EventHandler {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
-  private final CustomResourceCache customResourceCache;
   private final EventBuffer eventBuffer;
   private final Set<String> underProcessing = new HashSet<>();
   private final ScheduledThreadPoolExecutor executor;
@@ -49,7 +48,6 @@ public class DefaultEventHandler implements EventHandler {
   public DefaultEventHandler(
       ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
     this(
-        new CustomResourceCache(configuration.getConfigurationService().getObjectMapper()),
         new EventDispatcher(controller, configuration.getFinalizer(), client),
         configuration.getName(),
         GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
@@ -57,12 +55,10 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   DefaultEventHandler(
-      CustomResourceCache customResourceCache,
       EventDispatcher eventDispatcher,
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads) {
-    this.customResourceCache = customResourceCache;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.controllerName = relatedControllerName;
@@ -103,7 +99,7 @@ public class DefaultEventHandler implements EventHandler {
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<CustomResource> latestCustomResource =
-        customResourceCache.getLatestResource(customResourceUid);
+        eventSourceManager.getLatestResource(customResourceUid);
 
     if (!controllerUnderExecution && newEventForResourceId && latestCustomResource.isPresent()) {
       setUnderExecutionProcessing(customResourceUid);
@@ -235,7 +231,7 @@ public class DefaultEventHandler implements EventHandler {
           getUID(originalCustomResource),
           getVersion(customResourceAfterExecution),
           getVersion(originalCustomResource));
-      this.customResourceCache.cacheResource(
+      eventSourceManager.cacheResource(
           customResourceAfterExecution,
           customResource ->
               getVersion(customResource).equals(originalResourceVersion)
@@ -246,7 +242,6 @@ public class DefaultEventHandler implements EventHandler {
   private void cleanupAfterDeletedEvent(String customResourceUid) {
     eventSourceManager.cleanup(customResourceUid);
     eventBuffer.cleanup(customResourceUid);
-    customResourceCache.cleanup(customResourceUid);
   }
 
   private boolean isControllerUnderExecution(String customResourceUid) {

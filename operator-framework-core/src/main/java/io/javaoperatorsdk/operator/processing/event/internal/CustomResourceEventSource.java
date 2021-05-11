@@ -193,4 +193,9 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       System.exit(1);
     }
   }
+
+  // todo: remove
+  public CustomResourceCache getCache() {
+    return customResourceCache;
+  }
 }

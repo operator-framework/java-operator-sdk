@@ -4,6 +4,8 @@ import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -40,11 +42,11 @@ class DefaultEventHandlerTest {
   private CustomResourceCache customResourceCache = new CustomResourceCache();
   private DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
+
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private DefaultEventHandler defaultEventHandler =
       new DefaultEventHandler(
-          customResourceCache,
           eventDispatcherMock,
           "Test",
           null,
@@ -52,7 +54,6 @@ class DefaultEventHandlerTest {
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
       new DefaultEventHandler(
-          customResourceCache,
           eventDispatcherMock,
           "Test",
           GenericRetry.defaultLimitedExponentialRetry(),
@@ -64,6 +65,19 @@ class DefaultEventHandlerTest {
         .thenReturn(retryTimerEventSourceMock);
     defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
     defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
+
+    // todo: remove
+    when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
+    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
+    doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
+    doAnswer(
+            invocation -> {
+              final var resourceId = (String) invocation.getArgument(0);
+              customResourceCache.cleanup(resourceId);
+              return null;
+            })
+        .when(defaultEventSourceManagerMock)
+        .cleanup(any());
   }
 
   @Test
