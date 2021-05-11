@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
   private final List<Watch> watches;
   private final String resClass;
+  private final CustomResourceCache customResourceCache;
 
   public CustomResourceEventSource(
       MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -44,7 +46,8 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
         configuration.getEffectiveNamespaces(),
         configuration.isGenerationAware(),
         configuration.getFinalizer(),
-        configuration.getCustomResourceClass());
+        configuration.getCustomResourceClass(),
+        new CustomResourceCache(configuration.getConfigurationService().getObjectMapper()));
   }
 
   CustomResourceEventSource(
@@ -53,12 +56,29 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       boolean generationAware,
       String resourceFinalizer,
       Class<T> resClass) {
+    this(
+        client,
+        targetNamespaces,
+        generationAware,
+        resourceFinalizer,
+        resClass,
+        new CustomResourceCache());
+  }
+
+  CustomResourceEventSource(
+      MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+      Set<String> targetNamespaces,
+      boolean generationAware,
+      String resourceFinalizer,
+      Class<T> resClass,
+      CustomResourceCache customResourceCache) {
     this.client = (CustomResourceOperationsImpl<T, KubernetesResourceList<T>>) client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
     this.resourceFinalizer = resourceFinalizer;
     this.watches = new ArrayList<>();
     this.resClass = resClass.getName();
+    this.customResourceCache = customResourceCache;
   }
 
   @Override
@@ -96,6 +116,9 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
         "Event received for action: {}, resource: {}",
         action.name(),
         customResource.getMetadata().getName());
+
+    // cache the latest version of the CR
+    customResourceCache.cacheResource(customResource);
 
     if (action == Action.ERROR) {
       log.debug(
