@@ -155,15 +155,14 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     if (customResource.isMarkedForDeletion()) {
       return false;
     }
-    return !hasGenerationAlreadyBeenProcessed(customResource);
-  }
 
-  private boolean hasGenerationAlreadyBeenProcessed(T resource) {
-    Long lastGeneration = lastGenerationProcessedSuccessfully.get(resource.getMetadata().getUid());
+    // only proceed if we haven't already seen this custom resource generation
+    Long lastGeneration =
+        lastGenerationProcessedSuccessfully.get(customResource.getMetadata().getUid());
     if (lastGeneration == null) {
-      return true;
+      return false;
     } else {
-      return resource.getMetadata().getGeneration() > lastGeneration;
+      return customResource.getMetadata().getGeneration() <= lastGeneration;
     }
   }
 
