@@ -2,6 +2,8 @@ package io.javaoperatorsdk.operator.processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.eq;
@@ -23,9 +25,9 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -44,9 +46,6 @@ class EventDispatcherTest {
     eventDispatcher = new EventDispatcher(controller, DEFAULT_FINALIZER, customResourceFacade);
 
     testCustomResource = TestUtils.testCustomResource();
-    testCustomResource
-        .getMetadata()
-        .setFinalizers(new ArrayList<>(Collections.singletonList(DEFAULT_FINALIZER)));
 
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateCustomResource(testCustomResource));
@@ -56,7 +55,19 @@ class EventDispatcherTest {
   }
 
   @Test
-  void callCreateOrUpdateOnNewResource() {
+  void addFinalizerOnNewResource() {
+    assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
+    eventDispatcher.handleExecution(
+        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+    verify(controller, never())
+        .createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).replaceWithLock(testCustomResource);
+    assertTrue(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
+  }
+
+  @Test
+  void callCreateOrUpdateOnNewResourceIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     eventDispatcher.handleExecution(
         executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
     verify(controller, times(1))
@@ -64,7 +75,9 @@ class EventDispatcherTest {
   }
 
   @Test
-  void updatesOnlyStatusSubResource() {
+  void updatesOnlyStatusSubResourceIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
 
@@ -76,7 +89,9 @@ class EventDispatcherTest {
   }
 
   @Test
-  void updatesBothResourceAndStatus() {
+  void updatesBothResourceAndStatusIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateCustomResourceAndStatus(testCustomResource));
     when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
@@ -89,7 +104,9 @@ class EventDispatcherTest {
   }
 
   @Test
-  void callCreateOrUpdateOnModifiedResource() {
+  void callCreateOrUpdateOnModifiedResourceIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
     eventDispatcher.handleExecution(
         executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
     verify(controller, times(1))
@@ -97,21 +114,22 @@ class EventDispatcherTest {
   }
 
   @Test
-  void adsDefaultFinalizerOnCreateIfNotThere() {
+  @Disabled(
+      "This test is wrong, if the finalizer is not present, it is added, bypassing calling the controller")
+  void addsDefaultFinalizerOnCreateIfNotThere() {
     eventDispatcher.handleExecution(
         executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
     verify(controller, times(1))
         .createOrUpdateResource(
-            argThat(
-                testCustomResource ->
-                    testCustomResource.getMetadata().getFinalizers().contains(DEFAULT_FINALIZER)),
+            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)),
             any());
   }
 
   @Test
   void callsDeleteIfObjectHasFinalizerAndMarkedForDelete() {
-    testCustomResource.getMetadata().setDeletionTimestamp("2019-8-10");
-    testCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
+    // we need to add the finalizer before marking it for deletion, as otherwise it won't get added
+    assertTrue(testCustomResource.addFinalizer(DEFAULT_FINALIZER));
+    markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
         executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
@@ -121,6 +139,8 @@ class EventDispatcherTest {
 
   /** Note that there could be more finalizers. Out of our control. */
   @Test
+  @Disabled(
+      "This test is wrong, it only passes if the finalizer is set despite what its name implies")
   void callDeleteOnControllerIfMarkedForDeletionButThereIsNoDefaultFinalizer() {
     markForDeletion(testCustomResource);
 
@@ -131,7 +151,8 @@ class EventDispatcherTest {
   }
 
   @Test
-  void removesDefaultFinalizerOnDelete() {
+  void removesDefaultFinalizerOnDeleteIfSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
@@ -142,7 +163,9 @@ class EventDispatcherTest {
   }
 
   @Test
-  void doesNotRemovesTheFinalizerIfTheDeleteNotMethodInstructsIt() {
+  void doesNotRemovesTheSetFinalizerIfTheDeleteNotMethodInstructsIt() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
     when(controller.deleteResource(eq(testCustomResource), any()))
         .thenReturn(DeleteControl.NO_FINALIZER_REMOVAL);
     markForDeletion(testCustomResource);
@@ -155,7 +178,9 @@ class EventDispatcherTest {
   }
 
   @Test
-  void doesNotUpdateTheResourceIfNoUpdateUpdateControl() {
+  void doesNotUpdateTheResourceIfNoUpdateUpdateControlIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.noUpdate());
 
@@ -191,7 +216,8 @@ class EventDispatcherTest {
   }
 
   @Test
-  void executeControllerRegardlessGenerationInNonGenerationAwareMode() {
+  void executeControllerRegardlessGenerationInNonGenerationAwareModeIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     eventDispatcher.handleExecution(
         executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
     eventDispatcher.handleExecution(
@@ -201,7 +227,9 @@ class EventDispatcherTest {
   }
 
   @Test
-  void propagatesRetryInfoToContext() {
+  void propagatesRetryInfoToContextIfFinalizerSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
     eventDispatcher.handleExecution(
         new ExecutionScope(
             Arrays.asList(),
@@ -223,8 +251,9 @@ class EventDispatcherTest {
     verify(controller, times(1))
         .createOrUpdateResource(eq(testCustomResource), contextArgumentCaptor.capture());
     Context<CustomResource> context = contextArgumentCaptor.getValue();
-    assertThat(context.getRetryInfo().get().getAttemptCount()).isEqualTo(2);
-    assertThat(context.getRetryInfo().get().isLastAttempt()).isEqualTo(true);
+    final var retryInfo = context.getRetryInfo().get();
+    assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
+    assertThat(retryInfo.isLastAttempt()).isEqualTo(true);
   }
 
   private void markForDeletion(CustomResource customResource) {
