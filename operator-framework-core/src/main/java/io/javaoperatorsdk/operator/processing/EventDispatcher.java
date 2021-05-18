@@ -91,8 +91,8 @@ class EventDispatcher<R extends CustomResource> {
 
   private PostExecutionControl handleCreateOrUpdate(
       ExecutionScope<R> executionScope, R resource, Context<R> context) {
-    if (!resource.hasFinalizer(resourceFinalizer) && !resource.isMarkedForDeletion()) {
-      /*  We always add the finalizer if missing and not marked for deletion.
+    if (!resource.hasFinalizer(resourceFinalizer)) {
+      /*  We always add the finalizer if missing.
          We execute the controller processing only for processing the event sent as a results
          of the finalizer add. This will make sure that the resources are not created before
          there is a finalizer.
