@@ -21,7 +21,7 @@ class ClassMappingProvider {
   static <T, V> Map<T, V> provide(final String resourcePath, T key, V value) {
     Map<T, V> result = new HashMap();
     try {
-      final var classLoader = Thread.currentThread().getContextClassLoader();
+      final var classLoader = ClassMappingProvider.class.getClassLoader();
       final Enumeration<URL> customResourcesMetadataList = classLoader.getResources(resourcePath);
       for (Iterator<URL> it = customResourcesMetadataList.asIterator(); it.hasNext(); ) {
         URL url = it.next();
@@ -39,7 +39,8 @@ class ClassMappingProvider {
                 }
 
                 result.put(
-                    (T) ClassUtils.getClass(classNames[0]), (V) ClassUtils.getClass(classNames[1]));
+                    (T) ClassUtils.getClass(classLoader, classNames[0]),
+                    (V) ClassUtils.getClass(classLoader, classNames[1]));
               } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
               }
