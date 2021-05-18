@@ -21,8 +21,7 @@ public class Utils {
    * @return a {@link Version} object encapsulating the version information
    */
   public static Version loadFromProperties() {
-    final var is =
-        Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");
+    final var is = Utils.class.getClassLoader().getResourceAsStream("version.properties");
 
     final var properties = new Properties();
     if (is != null) {
