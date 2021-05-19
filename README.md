@@ -1,9 +1,11 @@
-# ![java-operator-sdk](docs/assets/images/logo.png) 
+# ![java-operator-sdk](docs/assets/images/logo.png)
+
 ![Java CI with Maven](https://github.com/java-operator-sdk/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 [![Discord](https://img.shields.io/discord/723455000604573736.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.com/channels/723455000604573736)
 
-Build Kubernetes Operators in Java without hassle. Inspired by [operator-sdk](https://github.com/operator-framework/operator-sdk).
-                 
+Build Kubernetes Operators in Java without hassle. Inspired
+by [operator-sdk](https://github.com/operator-framework/operator-sdk).
+
 
 Table of Contents
 ==========
@@ -15,17 +17,24 @@ Table of Contents
 1. [Usage](#Usage)
 
 ## Features
+
 * Framework for handling Kubernetes API events
 * Automatic registration of Custom Resource watches
 * Retry action on failure
 * Smart event scheduling (only handle the latest event for the same resource)
 
-Check out this [blog post](https://csviri.medium.com/deep-dive-building-a-kubernetes-operator-sdk-for-java-developers-5008218822cb) 
-about the non-trivial yet common problems needed to be solved for every operator. In case you are interested how to
-handle more complex scenarios take a look on [event sources](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b).
+Check out
+this [blog post](https://csviri.medium.com/deep-dive-building-a-kubernetes-operator-sdk-for-java-developers-5008218822cb)
+about the non-trivial yet common problems needed to be solved for every operator. In case you are
+interested how to handle more complex scenarios take a look
+on [event sources](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b)
+.
 
 ## Why build your own Operator?
-* Infrastructure automation using the power and flexibility of Java. See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators).
+
+* Infrastructure automation using the power and flexibility of Java.
+  See [blog post](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators)
+  .
 * Provisioning of complex applications - avoiding Helm chart hell
 * Integration with Cloud services - e.g. Secret stores
 * Safer deployment of applications - only expose cluster to users by Custom Resources
@@ -40,9 +49,11 @@ handle more complex scenarios take a look on [event sources](https://csviri.medi
 #### Overview of the 1.9.0 changes
 
 - The Spring Boot starters have been moved to their own repositories and are now found at:
-  - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
-  - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter-test
+    - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
+    - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter-test
 - Updated Fabric8 client to version 5.4.0
+- It is now possible to configure the controllers to not automatically add finalizers to resources.
+  See the `Controller` annotation documentation for more details.
 
 #### Overview of the 1.8.0 changes
 
@@ -82,18 +93,23 @@ the `Namescaped` interface.
 ## Usage
 
 We have several sample Operators under the [samples](samples) directory:
-* *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout.
-Implemented with and without Spring Boot support. The two samples share the common module.
+
+* *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to
+  stdout. Implemented with and without Spring Boot support. The two samples share the common module.
 * *spring-boot-plain*: Sample showing integration with Spring Boot.
 
-There are also more samples in the standalone [samples repo](https://github.com/java-operator-sdk/samples):
-* *webserver*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code.
+There are also more samples in the
+standalone [samples repo](https://github.com/java-operator-sdk/samples):
+
+* *webserver*: Simple example creating an NGINX webserver from a Custom Resource containing HTML
+  code.
 * *mysql-schema*: Operator managing schemas in a MySQL database.
 * *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps for these.
 
 Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
 
 ```xml
+
 <dependency>
   <groupId>io.javaoperatorsdk</groupId>
   <artifactId>operator-framework</artifactId>
@@ -111,52 +127,59 @@ dependencies {
 }
 ```
 
-Once you've added the dependency, define a main method initializing the Operator and registering a controller.
+Once you've added the dependency, define a main method initializing the Operator and registering a
+controller.
 
 ```java
 public class Runner {
 
-   public static void main(String[] args) {
-       Operator operator = new Operator(new DefaultKubernetesClient(),
-           DefaultConfigurationService.instance());
-       operator.register(new WebServerController());
-   }
+  public static void main(String[] args) {
+    Operator operator = new Operator(new DefaultKubernetesClient(),
+        DefaultConfigurationService.instance());
+    operator.register(new WebServerController());
+  }
 }
 ```
 
 The Controller implements the business logic and describes all the classes needed to handle the CRD.
 
 ```java
+
 @Controller
 public class WebServerController implements ResourceController<WebServer> {
-   
-    // Return the changed resource, so it gets updated. See javadoc for details.
-    @Override
-    public UpdateControl<CustomService> createOrUpdateResource(CustomService resource, Context<WebServer> context) {
-        // ... your logic ...
-        return UpdateControl.updateStatusSubResource(resource);
-    }
+
+  // Return the changed resource, so it gets updated. See javadoc for details.
+  @Override
+  public UpdateControl<CustomService> createOrUpdateResource(CustomService resource,
+      Context<WebServer> context) {
+    // ... your logic ...
+    return UpdateControl.updateStatusSubResource(resource);
+  }
 }
 ```
 
 A sample custom resource POJO representation
 
 ```java
+
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> implements Namespaced {}
+public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> implements
+    Namespaced {
+
+}
 
 public class WebServerSpec {
 
-    private String html;
+  private String html;
 
-    public String getHtml() {
-        return html;
-    }
+  public String getHtml() {
+    return html;
+  }
 
-    public void setHtml(String html) {
-        this.html = html;
-    }
+  public void setHtml(String html) {
+    this.html = html;
+  }
 }
 ```
 
@@ -175,6 +198,7 @@ To automatically generate CRD manifests from your annotated Custom Resource clas
 to add the following dependencies to your project:
 
 ```xml
+
 <dependency>
   <groupId>io.fabric8</groupId>
   <artifactId>crd-generator-apt</artifactId>
@@ -195,7 +219,8 @@ a `mycrs` plural form will result in 2 files:
 
 ### Quarkus
 
-A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based operators.
+A [Quarkus](https://quarkus.io) extension is also provided to ease the development of Quarkus-based
+operators.
 
 Add [this dependency](https://search.maven.org/search?q=a:quarkus-operator-sdk)
 to your project:
@@ -205,17 +230,23 @@ to your project:
 <dependency>
   <groupId>io.quarkiverse.operatorsdk</groupId>
   <artifactId>quarkus-operator-sdk</artifactId>
-  <version>{see https://search.maven.org/search?q=a:quarkus-operator-sdk for latest version}</version>
+  <version>{see https://search.maven.org/search?q=a:quarkus-operator-sdk for latest version}
+  </version>
 </dependency>
 ```
 
-Create an Application, Quarkus will automatically create and inject a `KubernetesClient` (or `OpenShiftClient`), `Operator`, `ConfigurationService` and `ResourceController` instances that your application can use. Below, you can see the minimal code you need to write to get your operator and controllers up and running: 
+Create an Application, Quarkus will automatically create and inject a `KubernetesClient` (
+or `OpenShiftClient`), `Operator`, `ConfigurationService` and `ResourceController` instances that
+your application can use. Below, you can see the minimal code you need to write to get your operator
+and controllers up and running:
 
 ```java
+
 @QuarkusMain
 public class QuarkusOperator implements QuarkusApplication {
 
-  @Inject Operator operator;
+  @Inject
+  Operator operator;
 
   public static void main(String... args) {
     Quarkus.run(QuarkusOperator.class, args);
@@ -232,49 +263,62 @@ public class QuarkusOperator implements QuarkusApplication {
 
 ### Spring Boot
 
-You can also let Spring Boot wire your application together and automatically register the controllers.
+You can also let Spring Boot wire your application together and automatically register the
+controllers.
 
-Add [this dependency](https://search.maven.org/search?q=a:operator-framework-spring-boot-starter) to your project:
+Add [this dependency](https://search.maven.org/search?q=a:operator-framework-spring-boot-starter) to
+your project:
 
 ```xml
+
 <dependency>
- <groupId>io.javaoperatorsdk</groupId>
- <artifactId>operator-framework-spring-boot-starter</artifactId>
- <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for latest version}</version>
+  <groupId>io.javaoperatorsdk</groupId>
+  <artifactId>operator-framework-spring-boot-starter</artifactId>
+  <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for
+    latest version}
+  </version>
 </dependency>
 ```
 
 Create an Application
+
 ```java
+
 @SpringBootApplication
 public class Application {
-    public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
-    }
+
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
 }
 ```
 
 #### Spring Boot test support
 
-Adding the following dependency would let you mock the operator for the 
-tests where loading the spring container is necessary, 
-but it doesn't need real access to a Kubernetes cluster.
+Adding the following dependency would let you mock the operator for the tests where loading the
+spring container is necessary, but it doesn't need real access to a Kubernetes cluster.
 
 ```xml
+
 <dependency>
- <groupId>io.javaoperatorsdk</groupId>
- <artifactId>operator-framework-spring-boot-starter-test</artifactId>
- <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for latest version}</version>
+  <groupId>io.javaoperatorsdk</groupId>
+  <artifactId>operator-framework-spring-boot-starter-test</artifactId>
+  <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for
+    latest version}
+  </version>
 </dependency>
 ``` 
 
 Mock the operator:
+
 ```java
+
 @SpringBootTest
 @EnableMockOperator
 public class SpringBootStarterSampleApplicationTest {
 
   @Test
-  void contextLoads() {}
+  void contextLoads() {
+  }
 }
 ```
