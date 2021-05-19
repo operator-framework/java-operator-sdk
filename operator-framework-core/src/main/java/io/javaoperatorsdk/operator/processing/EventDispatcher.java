@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.api.DefaultContext;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,23 +27,21 @@ class EventDispatcher<R extends CustomResource> {
   private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
   private final ResourceController<R> controller;
-  private final String resourceFinalizer;
+  private final ControllerConfiguration<R> configuration;
   private final CustomResourceFacade<R> customResourceFacade;
 
   EventDispatcher(
       ResourceController<R> controller,
-      String finalizer,
+      ControllerConfiguration<R> configuration,
       CustomResourceFacade<R> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
-    this.resourceFinalizer = finalizer;
+    this.configuration = configuration;
   }
 
   public EventDispatcher(
-      ResourceController<R> controller,
-      String finalizer,
-      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
-    this(controller, finalizer, new CustomResourceFacade<>(client));
+      ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
+    this(controller, configuration, new CustomResourceFacade<>(client));
   }
 
   public PostExecutionControl handleExecution(ExecutionScope<R> executionScope) {
@@ -73,26 +72,44 @@ class EventDispatcher<R extends CustomResource> {
           getVersion(resource));
       return PostExecutionControl.defaultDispatch();
     }
-    if ((resource.isMarkedForDeletion() && !resource.hasFinalizer(resourceFinalizer))) {
+
+    final var markedForDeletion = resource.isMarkedForDeletion();
+    if (markedForDeletion && shouldNotDispatchToDelete(resource)) {
       log.debug(
-          "Skipping event dispatching since its marked for deletion but has no finalizer: {}",
-          executionScope);
+          "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
+          resource.getMetadata().getName(),
+          resource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
+
     Context<R> context =
         new DefaultContext<>(
             new EventList(executionScope.getEvents()), executionScope.getRetryInfo());
-    if (resource.isMarkedForDeletion()) {
+    if (markedForDeletion) {
       return handleDelete(resource, context);
     } else {
       return handleCreateOrUpdate(executionScope, resource, context);
     }
   }
 
+  /**
+   * Determines whether the given resource should be dispatched to the controller's {@link
+   * ResourceController#deleteResource(CustomResource, Context)} method
+   *
+   * @param resource the resource to be potentially deleted
+   * @return {@code true} if the resource should be handed to the controller's {@code
+   *     deleteResource} method, {@code false} otherwise
+   */
+  private boolean shouldNotDispatchToDelete(R resource) {
+    // we don't dispatch to delete if the controller is configured to use a finalizer but that
+    // finalizer is not present (which means it's already been removed)
+    return configuration.useFinalizer() && !resource.hasFinalizer(configuration.getFinalizer());
+  }
+
   private PostExecutionControl handleCreateOrUpdate(
       ExecutionScope<R> executionScope, R resource, Context<R> context) {
-    if (!resource.hasFinalizer(resourceFinalizer)) {
-      /*  We always add the finalizer if missing.
+    if (configuration.useFinalizer() && !resource.hasFinalizer(configuration.getFinalizer())) {
+      /*  We always add the finalizer if missing and the controller is configured to use a finalizer.
          We execute the controller processing only for processing the event sent as a results
          of the finalizer add. This will make sure that the resources are not created before
          there is a finalizer.
@@ -135,26 +152,30 @@ class EventDispatcher<R extends CustomResource> {
         "Executing delete for resource: {} with version: {}",
         getUID(resource),
         getVersion(resource));
+    // todo: this is be executed in a try-catch statement, in case this fails
     DeleteControl deleteControl = controller.deleteResource(resource, context);
-    boolean hasFinalizer = resource.hasFinalizer(resourceFinalizer);
-    if (deleteControl == DeleteControl.DEFAULT_DELETE && hasFinalizer) {
-      R customResource = removeFinalizer(resource);
-      return PostExecutionControl.customResourceUpdated(customResource);
-    } else {
-      log.debug(
-          "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, hasFinalizer: {} ",
-          getUID(resource),
-          getVersion(resource),
-          deleteControl,
-          hasFinalizer);
-      return PostExecutionControl.defaultDispatch();
+    final var useFinalizer = configuration.useFinalizer();
+    if (useFinalizer) {
+      if (deleteControl == DeleteControl.DEFAULT_DELETE
+          && resource.hasFinalizer(configuration.getFinalizer())) {
+        R customResource = removeFinalizer(resource);
+        // todo: should we patch the resource to remove the finalizer instead of updating it
+        return PostExecutionControl.customResourceUpdated(customResource);
+      }
     }
+    log.debug(
+        "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses finalizer: {} ",
+        getUID(resource),
+        getVersion(resource),
+        deleteControl,
+        useFinalizer);
+    return PostExecutionControl.defaultDispatch();
   }
 
   private void updateCustomResourceWithFinalizer(R resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
-    resource.addFinalizer(resourceFinalizer);
+    resource.addFinalizer(configuration.getFinalizer());
     replace(resource);
   }
 
@@ -169,7 +190,7 @@ class EventDispatcher<R extends CustomResource> {
         "Removing finalizer on resource: {} with version: {}",
         getUID(resource),
         getVersion(resource));
-    resource.removeFinalizer(resourceFinalizer);
+    resource.removeFinalizer(configuration.getFinalizer());
     return customResourceFacade.replaceWithLock(resource);
   }
 

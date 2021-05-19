@@ -48,7 +48,7 @@ public class DefaultEventHandler implements EventHandler {
   public DefaultEventHandler(
       ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
     this(
-        new EventDispatcher(controller, configuration.getFinalizer(), client),
+        new EventDispatcher(controller, configuration, client),
         configuration.getName(),
         GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
         configuration.getConfigurationService().concurrentReconciliationThreads());

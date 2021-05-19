@@ -11,12 +11,14 @@ public @interface Controller {
 
   String NULL = "";
   String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";
+  String NO_FINALIZER = "JOSDK_NO_FINALIZER";
 
   String name() default NULL;
 
   /**
-   * Optional finalizer name, if it is not, the crdName will be used as the name of the finalizer
-   * too.
+   * Optional finalizer name, if it is not provided, one will be automatically generated. If the
+   * provided value is the value specified by {@link #NO_FINALIZER}, then no finalizer will be added
+   * to custom resources.
    *
    * @return the finalizer name
    */

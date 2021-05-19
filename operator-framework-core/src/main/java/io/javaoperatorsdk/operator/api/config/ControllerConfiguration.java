@@ -61,4 +61,8 @@ public interface ControllerConfiguration<R extends CustomResource> {
   ConfigurationService getConfigurationService();
 
   void setConfigurationService(ConfigurationService service);
+
+  default boolean useFinalizer() {
+    return !Controller.NO_FINALIZER.equals(getFinalizer());
+  }
 }
