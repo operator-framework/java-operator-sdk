@@ -79,4 +79,16 @@ public interface ConfigurationService {
   default ObjectMapper getObjectMapper() {
     return new ObjectMapper();
   }
+
+  int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;
+
+  /**
+   * Retrieves the number of seconds the SDK waits for reconciliation threads to terminate before
+   * shutting down.
+   *
+   * @return the number of seconds to wait before terminating reconciliation threads
+   */
+  default int getTerminationTimeoutSeconds() {
+    return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
+  }
 }

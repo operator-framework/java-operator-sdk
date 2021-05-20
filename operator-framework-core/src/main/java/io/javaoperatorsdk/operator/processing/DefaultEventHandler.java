@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -41,6 +42,7 @@ public class DefaultEventHandler implements EventHandler {
   private final Retry retry;
   private final Map<String, RetryExecution> retryState = new HashMap<>();
   private final String controllerName;
+  private final int terminationTimeout;
   private DefaultEventSourceManager eventSourceManager;
 
   private final ReentrantLock lock = new ReentrantLock();
@@ -51,7 +53,8 @@ public class DefaultEventHandler implements EventHandler {
         new EventDispatcher(controller, configuration, client),
         configuration.getName(),
         GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
-        configuration.getConfigurationService().concurrentReconciliationThreads());
+        configuration.getConfigurationService().concurrentReconciliationThreads(),
+        configuration.getConfigurationService().getTerminationTimeoutSeconds());
   }
 
   DefaultEventHandler(
@@ -59,10 +62,25 @@ public class DefaultEventHandler implements EventHandler {
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads) {
+    this(
+        eventDispatcher,
+        relatedControllerName,
+        retry,
+        concurrentReconciliationThreads,
+        ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
+  }
+
+  private DefaultEventHandler(
+      EventDispatcher eventDispatcher,
+      String relatedControllerName,
+      Retry retry,
+      int concurrentReconciliationThreads,
+      int terminationTimeout) {
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.controllerName = relatedControllerName;
     eventBuffer = new EventBuffer();
+    this.terminationTimeout = terminationTimeout;
     executor =
         new ScheduledThreadPoolExecutor(
             concurrentReconciliationThreads,
@@ -73,7 +91,7 @@ public class DefaultEventHandler implements EventHandler {
   public void close() {
     try {
       log.debug("Closing handler for {}", controllerName);
-      executor.awaitTermination(10, TimeUnit.SECONDS);
+      executor.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       log.debug("Exception closing handler for {}: {}", controllerName, e.getLocalizedMessage());
     }
