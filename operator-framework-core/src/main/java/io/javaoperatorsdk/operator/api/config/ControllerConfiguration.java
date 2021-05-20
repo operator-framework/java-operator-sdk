@@ -44,8 +44,12 @@ public interface ControllerConfiguration<R extends CustomResource> {
   default Set<String> getEffectiveNamespaces() {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
-      targetNamespaces =
-          Collections.singleton(getConfigurationService().getClientConfiguration().getNamespace());
+      final var parent = getConfigurationService();
+      if (parent == null) {
+        throw new IllegalStateException(
+            "Parent ConfigurationService must be set before calling this method");
+      }
+      targetNamespaces = Collections.singleton(parent.getClientConfiguration().getNamespace());
     }
     return targetNamespaces;
   }
