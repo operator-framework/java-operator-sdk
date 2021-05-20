@@ -54,6 +54,7 @@ on [event sources](https://csviri.medium.com/java-operator-sdk-introduction-to-e
 - Updated Fabric8 client to version 5.4.0
 - It is now possible to configure the controllers to not automatically add finalizers to resources.
   See the `Controller` annotation documentation for more details.
+- Added the possibility to configure how many seconds the SDK will wait before terminating reconciliation threads when a shut down is requested
 
 #### Overview of the 1.8.0 changes
 
