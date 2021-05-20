@@ -42,6 +42,7 @@ handle more complex scenarios take a look on [event sources](https://csviri.medi
 - The Spring Boot starters have been moved to their own repositories and are now found at:
   - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
   - https://github.com/java-operator-sdk/operator-framework-spring-boot-starter-test
+- Updated Fabric8 client to version 5.4.0
 
 #### Overview of the 1.8.0 changes
 
