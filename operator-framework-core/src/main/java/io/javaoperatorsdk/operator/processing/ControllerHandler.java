@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event;
+package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -7,8 +7,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.event.EventSource;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;

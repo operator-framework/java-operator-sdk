@@ -15,7 +15,6 @@ import static org.mockito.Mockito.when;
 
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.processing.event.ControllerHandler;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;

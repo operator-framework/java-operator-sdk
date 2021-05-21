@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event;
+package io.javaoperatorsdk.operator.processing;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,8 +10,7 @@ import static org.mockito.Mockito.verify;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
+import io.javaoperatorsdk.operator.processing.event.EventSource;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 

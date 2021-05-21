@@ -7,7 +7,7 @@ import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.ControllerHandler;
+import io.javaoperatorsdk.operator.processing.ControllerHandler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
