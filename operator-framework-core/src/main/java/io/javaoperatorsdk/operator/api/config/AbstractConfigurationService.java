@@ -7,8 +7,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractConfigurationService implements ConfigurationService {
+
+  public static final String LOGGER_NAME = "Default ConfigurationService implementation";
+  protected static final Logger log = LoggerFactory.getLogger(LOGGER_NAME);
 
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
@@ -52,7 +57,19 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   @Override
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
-    return configurations.get(keyFor(controller));
+    final var key = keyFor(controller);
+    final var configuration = configurations.get(key);
+    if (configuration == null) {
+      log.warn(
+          "Configuration for controller '{}' was not found. {}", key, getControllersNameMessage());
+    }
+    return configuration;
+  }
+
+  private String getControllersNameMessage() {
+    return "Known controllers: "
+        + getKnownControllerNames().stream().reduce((s, s2) -> s + ", " + s2).orElse("None")
+        + ".";
   }
 
   protected String keyFor(ResourceController controller) {
