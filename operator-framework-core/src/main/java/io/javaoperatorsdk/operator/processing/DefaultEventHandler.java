@@ -60,16 +60,12 @@ public class DefaultEventHandler implements EventHandler {
             .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS));
   }
 
-  DefaultEventHandler(
-      EventDispatcher eventDispatcher,
-      String relatedControllerName,
-      Retry retry,
-      int concurrentReconciliationThreads) {
+  DefaultEventHandler(EventDispatcher eventDispatcher, String relatedControllerName, Retry retry) {
     this(
         eventDispatcher,
         relatedControllerName,
         retry,
-        concurrentReconciliationThreads,
+        ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
         ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
   }
 
