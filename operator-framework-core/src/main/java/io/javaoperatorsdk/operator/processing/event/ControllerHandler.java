@@ -50,6 +50,7 @@ public class ControllerHandler implements EventSourceManager {
     this(new DefaultEventHandler(controller, configuration, client), true);
     registerEventSource(
         CUSTOM_RESOURCE_EVENT_SOURCE_NAME, new CustomResourceEventSource<>(client, configuration));
+    controller.init(this);
   }
 
   @Override

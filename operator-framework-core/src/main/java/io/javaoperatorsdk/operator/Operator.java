@@ -139,7 +139,6 @@ public class Operator implements AutoCloseable {
 
       final var client = k8sClient.customResources(resClass);
       ControllerHandler handler = new ControllerHandler(controller, configuration, client);
-      controller.init(handler);
       closeables.add(handler);
 
       if (failOnMissingCurrentNS(configuration)) {
