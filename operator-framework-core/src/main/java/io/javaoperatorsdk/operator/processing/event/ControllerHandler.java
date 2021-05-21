@@ -23,27 +23,27 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultEventSourceManager implements EventSourceManager {
+public class ControllerHandler implements EventSourceManager {
 
   public static final String RETRY_TIMER_EVENT_SOURCE_NAME = "retry-timer-event-source";
   private static final String CUSTOM_RESOURCE_EVENT_SOURCE_NAME = "custom-resource-event-source";
-  private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
+  private static final Logger log = LoggerFactory.getLogger(ControllerHandler.class);
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
   private final DefaultEventHandler defaultEventHandler;
   private TimerEventSource retryTimerEventSource;
 
-  DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
+  ControllerHandler(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
     this.defaultEventHandler = defaultEventHandler;
-    defaultEventHandler.setEventSourceManager(this);
+    defaultEventHandler.setControllerHandler(this);
     if (supportRetry) {
       this.retryTimerEventSource = new TimerEventSource();
       registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
     }
   }
 
-  public <R extends CustomResource<?, ?>> DefaultEventSourceManager(
+  public <R extends CustomResource<?, ?>> ControllerHandler(
       ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {

@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.ControllerHandler;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
@@ -40,8 +40,7 @@ class DefaultEventHandlerTest {
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
   private CustomResourceCache customResourceCache = new CustomResourceCache();
-  private DefaultEventSourceManager defaultEventSourceManagerMock =
-      mock(DefaultEventSourceManager.class);
+  private ControllerHandler mockHandler = mock(ControllerHandler.class);
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
@@ -61,25 +60,24 @@ class DefaultEventHandlerTest {
 
   @BeforeEach
   public void setup() {
-    when(defaultEventSourceManagerMock.getRetryTimerEventSource())
-        .thenReturn(retryTimerEventSourceMock);
-    defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
-    defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
+    when(mockHandler.getRetryTimerEventSource()).thenReturn(retryTimerEventSourceMock);
+    defaultEventHandler.setControllerHandler(mockHandler);
+    defaultEventHandlerWithRetry.setControllerHandler(mockHandler);
 
     // todo: remove
-    when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResources(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
+    when(mockHandler.getCache()).thenReturn(customResourceCache);
+    doCallRealMethod().when(mockHandler).getLatestResource(any());
+    doCallRealMethod().when(mockHandler).getLatestResource(any());
+    doCallRealMethod().when(mockHandler).getLatestResources(any());
+    doCallRealMethod().when(mockHandler).getLatestResourceUids(any());
+    doCallRealMethod().when(mockHandler).cacheResource(any(), any());
     doAnswer(
             invocation -> {
               final var resourceId = (String) invocation.getArgument(0);
               customResourceCache.cleanup(resourceId);
               return null;
             })
-        .when(defaultEventSourceManagerMock)
+        .when(mockHandler)
         .cleanup(any());
   }
 
@@ -138,7 +136,7 @@ class DefaultEventHandlerTest {
 
     waitMinimalTime();
 
-    verify(defaultEventSourceManagerMock, times(1)).cleanup(uid);
+    verify(mockHandler, times(1)).cleanup(uid);
     assertThat(customResourceCache.getLatestResource(uid)).isNotPresent();
   }
 

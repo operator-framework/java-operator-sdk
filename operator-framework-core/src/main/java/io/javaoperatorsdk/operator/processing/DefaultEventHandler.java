@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.ControllerHandler;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -45,7 +45,7 @@ public class DefaultEventHandler implements EventHandler {
   private final String controllerName;
   private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
-  private DefaultEventSourceManager eventSourceManager;
+  private ControllerHandler controllerHandler;
 
   public DefaultEventHandler(
       ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
@@ -100,8 +100,8 @@ public class DefaultEventHandler implements EventHandler {
     }
   }
 
-  public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
-    this.eventSourceManager = eventSourceManager;
+  public void setControllerHandler(ControllerHandler controllerHandler) {
+    this.controllerHandler = controllerHandler;
   }
 
   @Override
@@ -124,7 +124,7 @@ public class DefaultEventHandler implements EventHandler {
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<CustomResource> latestCustomResource =
-        eventSourceManager.getLatestResource(customResourceUid);
+        controllerHandler.getLatestResource(customResourceUid);
 
     if (!controllerUnderExecution && newEventForResourceId && latestCustomResource.isPresent()) {
       setUnderExecutionProcessing(customResourceUid);
@@ -202,7 +202,7 @@ public class DefaultEventHandler implements EventHandler {
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
               executionScope.getCustomResourceUid());
-          eventSourceManager
+          controllerHandler
               .getRetryTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
         },
@@ -216,7 +216,7 @@ public class DefaultEventHandler implements EventHandler {
         "Marking successful execution for resource: {}",
         getName(executionScope.getCustomResource()));
     retryState.remove(executionScope.getCustomResourceUid());
-    eventSourceManager
+    controllerHandler
         .getRetryTimerEventSource()
         .cancelOnceSchedule(executionScope.getCustomResourceUid());
   }
@@ -257,7 +257,7 @@ public class DefaultEventHandler implements EventHandler {
           getName(originalCustomResource),
           getVersion(customResourceAfterExecution),
           getVersion(originalCustomResource));
-      eventSourceManager.cacheResource(
+      controllerHandler.cacheResource(
           customResourceAfterExecution,
           customResource ->
               getVersion(customResource).equals(originalResourceVersion)
@@ -266,7 +266,7 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   private void cleanupAfterDeletedEvent(String customResourceUid) {
-    eventSourceManager.cleanup(customResourceUid);
+    controllerHandler.cleanup(customResourceUid);
     eventBuffer.cleanup(customResourceUid);
   }
 

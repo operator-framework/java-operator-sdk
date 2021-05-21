@@ -7,7 +7,7 @@ import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.ControllerHandler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,10 +138,9 @@ public class Operator implements AutoCloseable {
       }
 
       final var client = k8sClient.customResources(resClass);
-      DefaultEventSourceManager eventSourceManager =
-          new DefaultEventSourceManager(controller, configuration, client);
-      controller.init(eventSourceManager);
-      closeables.add(eventSourceManager);
+      ControllerHandler handler = new ControllerHandler(controller, configuration, client);
+      controller.init(handler);
+      closeables.add(handler);
 
       if (failOnMissingCurrentNS(configuration)) {
         throw new OperatorException(
