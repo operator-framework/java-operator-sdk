@@ -52,8 +52,12 @@ public class DefaultEventHandler implements EventHandler {
         new EventDispatcher(controller, configuration, client),
         configuration.getName(),
         GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
-        configuration.getConfigurationService().concurrentReconciliationThreads(),
-        configuration.getConfigurationService().getTerminationTimeoutSeconds());
+        Optional.ofNullable(configuration.getConfigurationService())
+            .map(ConfigurationService::concurrentReconciliationThreads)
+            .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER),
+        Optional.ofNullable(configuration.getConfigurationService())
+            .map(ConfigurationService::getTerminationTimeoutSeconds)
+            .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS));
   }
 
   DefaultEventHandler(

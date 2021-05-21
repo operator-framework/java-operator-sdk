@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -48,7 +49,10 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
         configuration.isGenerationAware(),
         configuration.getFinalizer(),
         configuration.getCustomResourceClass(),
-        new CustomResourceCache(configuration.getConfigurationService().getObjectMapper()));
+        new CustomResourceCache(
+            Optional.ofNullable(configuration.getConfigurationService())
+                .map(ConfigurationService::getObjectMapper)
+                .orElse(ConfigurationService.OBJECT_MAPPER)));
   }
 
   CustomResourceEventSource(
