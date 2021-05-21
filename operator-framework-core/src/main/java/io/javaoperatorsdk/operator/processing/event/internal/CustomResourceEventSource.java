@@ -30,7 +30,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-  private final CustomResourceOperationsImpl<T, KubernetesResourceList<T>> client;
+  private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
   private final Set<String> targetNamespaces;
   private final boolean generationAware;
   private final String resourceFinalizer;
@@ -73,7 +73,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       String resourceFinalizer,
       Class<T> resClass,
       CustomResourceCache customResourceCache) {
-    this.client = (CustomResourceOperationsImpl<T, KubernetesResourceList<T>>) client;
+    this.client = client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
     this.resourceFinalizer = resourceFinalizer;
