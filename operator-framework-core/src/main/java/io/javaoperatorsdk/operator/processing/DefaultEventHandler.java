@@ -99,7 +99,7 @@ public class DefaultEventHandler implements EventHandler {
     }
   }
 
-  public void setControllerHandler(ControllerHandler controllerHandler) {
+  void setControllerHandler(ControllerHandler controllerHandler) {
     this.controllerHandler = controllerHandler;
   }
 

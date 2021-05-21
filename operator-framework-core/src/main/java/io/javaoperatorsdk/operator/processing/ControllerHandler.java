@@ -33,25 +33,19 @@ public class ControllerHandler implements EventSourceManager, EventHandler {
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
-  private final DefaultEventHandler defaultEventHandler;
-  private TimerEventSource retryTimerEventSource;
-
-  ControllerHandler(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
-    this.defaultEventHandler = defaultEventHandler;
-    defaultEventHandler.setControllerHandler(this);
-    if (supportRetry) {
-      this.retryTimerEventSource = new TimerEventSource();
-      registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
-    }
-  }
+  private final DefaultEventHandler eventHandler;
+  private final TimerEventSource retryTimerEventSource;
 
   public <R extends CustomResource<?, ?>> ControllerHandler(
       ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
-    this(new DefaultEventHandler(controller, configuration, client), true);
+    this.eventHandler = new DefaultEventHandler(controller, configuration, client);
+    eventHandler.setControllerHandler(this);
     registerEventSource(
         CUSTOM_RESOURCE_EVENT_SOURCE_NAME, new CustomResourceEventSource<>(client, configuration));
+    this.retryTimerEventSource = new TimerEventSource();
+    registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
     controller.init(this);
   }
 

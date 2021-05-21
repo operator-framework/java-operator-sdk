@@ -3,23 +3,51 @@ package io.javaoperatorsdk.operator.processing;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.RETURNS_DEFAULTS;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventSource;
+import java.util.Collections;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ControllerHandlerTest {
 
   public static final String CUSTOM_EVENT_SOURCE_NAME = "CustomEventSource";
+  private final ResourceController controller = mock(ResourceController.class);
+  private ControllerHandler handler;
 
-  private DefaultEventHandler mockEventHandler = mock(DefaultEventHandler.class);
-  private ControllerHandler handler = new ControllerHandler(mockEventHandler, false);
+  @BeforeEach
+  void setup() {
+    ControllerConfiguration config = mock(ControllerConfiguration.class);
+    MixedOperation client =
+        mock(MixedOperation.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
+
+    when(config.getCustomResourceClass()).thenReturn(CustomResource.class);
+    when(config.getRetryConfiguration())
+        .thenReturn(mock(RetryConfiguration.class, withSettings().defaultAnswer(RETURNS_DEFAULTS)));
+    when(config.getEffectiveNamespaces()).thenReturn(Collections.emptySet());
+
+    handler = new ControllerHandler(controller, config, client);
+  }
+
+  @Test
+  void creatingAControllerHandlerRegistersItWithTheController() {
+    verify(controller, times(1)).init(handler);
+  }
 
   @Test
   public void registersEventSource() {
@@ -28,9 +56,8 @@ class ControllerHandlerTest {
     handler.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
 
     Map<String, EventSource> registeredSources = handler.getRegisteredEventSources();
-    assertThat(registeredSources.entrySet()).hasSize(1);
     assertThat(registeredSources.get(CUSTOM_EVENT_SOURCE_NAME)).isEqualTo(eventSource);
-    verify(eventSource, times(1)).setEventHandler(eq(mockEventHandler));
+    verify(eventSource, times(1)).setEventHandler(eq(handler));
     verify(eventSource, times(1)).start();
   }
 
