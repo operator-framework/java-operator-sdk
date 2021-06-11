@@ -114,17 +114,22 @@ public class Operator implements AutoCloseable {
       final String controllerName = configuration.getName();
 
       // check that the custom resource is known by the cluster if configured that way
-      final CustomResourceDefinition crd;
+      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
       if (configurationService.checkCRDAndValidateLocalModel()) {
         final var crdName = configuration.getCRDName();
+        final var specVersion = "v1";
         crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
         if (crd == null) {
-          throw new OperatorException(
+          throw new MissingCRDException(
+              crdName,
+              specVersion,
               "'"
                   + crdName
-                  + "' CRD was not found on the cluster, controller "
+                  + "' "
+                  + specVersion
+                  + " CRD was not found on the cluster, controller '"
                   + controllerName
-                  + " cannot be registered");
+                  + "' cannot be registered");
         }
 
         // Apply validations that are not handled by fabric8
