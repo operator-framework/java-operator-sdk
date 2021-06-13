@@ -33,7 +33,10 @@ public class Operator implements AutoCloseable {
     this.lock = new Object();
     this.controllers = new ArrayList<>();
     this.started = false;
+  }
 
+  /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
+  public void installShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread(this::close));
   }
 
