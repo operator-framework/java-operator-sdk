@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Controller;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 public interface ControllerConfiguration<R extends CustomResource> {
@@ -41,6 +42,13 @@ public interface ControllerConfiguration<R extends CustomResource> {
         && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
   }
 
+  /**
+   * Computes the effective namespaces based on the set specified by the user, in particular
+   * retrieves the current namespace from the client when the user specified that they wanted to
+   * watch the current namespace only.
+   *
+   * @return a Set of namespace names the associated controller will watch
+   */
   default Set<String> getEffectiveNamespaces() {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
@@ -52,6 +60,12 @@ public interface ControllerConfiguration<R extends CustomResource> {
       targetNamespaces = Collections.singleton(parent.getClientConfiguration().getNamespace());
     }
     return targetNamespaces;
+  }
+
+  default boolean isCurrentNamespaceMissing() {
+    final var effectiveNamespaces = getEffectiveNamespaces();
+    return effectiveNamespaces.size() == 1
+        && effectiveNamespaces.stream().allMatch(Objects::isNull);
   }
 
   default RetryConfiguration getRetryConfiguration() {
