@@ -91,7 +91,9 @@ public class DefaultEventHandler implements EventHandler {
     try {
       log.debug("Closing handler for {}", controllerName);
       executor.shutdown();
-      executor.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
+      if (!executor.awaitTermination(terminationTimeout, TimeUnit.SECONDS)) {
+        executor.shutdownNow(); // if we timed out, waiting, cancel everything
+      }
     } catch (InterruptedException e) {
       log.debug("Exception closing handler for {}: {}", controllerName, e.getLocalizedMessage());
     }
