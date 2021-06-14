@@ -137,13 +137,21 @@ public class Operator implements AutoCloseable {
       controller.init(eventSourceManager);
       closeables.add(eventSourceManager);
 
+      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
+      if (configuration.isCurrentNamespaceMissing() && configuration.watchCurrentNamespace()) {
+        throw new OperatorException(
+            "Controller '"
+                + controllerName
+                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration. ");
+      }
+
+      final var watchedNS =
+          configuration.watchAllNamespaces() ? "[all namespaces]" : effectiveNamespaces;
       log.info(
           "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
           controllerName,
           resClass,
-          configuration.watchAllNamespaces()
-              ? "[all namespaces]"
-              : configuration.getEffectiveNamespaces());
+          watchedNS);
     }
   }
 }
