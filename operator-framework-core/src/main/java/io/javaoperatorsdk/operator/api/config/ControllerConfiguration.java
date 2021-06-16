@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.api.config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Controller;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Set;
 
 public interface ControllerConfiguration<R extends CustomResource> {
@@ -60,12 +59,6 @@ public interface ControllerConfiguration<R extends CustomResource> {
       targetNamespaces = Collections.singleton(parent.getClientConfiguration().getNamespace());
     }
     return targetNamespaces;
-  }
-
-  default boolean isCurrentNamespaceMissing() {
-    final var effectiveNamespaces = getEffectiveNamespaces();
-    return effectiveNamespaces.size() == 1
-        && effectiveNamespaces.stream().allMatch(Objects::isNull);
   }
 
   default RetryConfiguration getRetryConfiguration() {
