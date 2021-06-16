@@ -12,6 +12,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,21 +138,39 @@ public class Operator implements AutoCloseable {
       controller.init(eventSourceManager);
       closeables.add(eventSourceManager);
 
-      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
-      if (configuration.isCurrentNamespaceMissing() && configuration.watchCurrentNamespace()) {
+      if (failOnMissingCurrentNS(configuration)) {
         throw new OperatorException(
             "Controller '"
                 + controllerName
-                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration. ");
+                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
       }
 
       final var watchedNS =
-          configuration.watchAllNamespaces() ? "[all namespaces]" : effectiveNamespaces;
+          configuration.watchAllNamespaces()
+              ? "[all namespaces]"
+              : configuration.getEffectiveNamespaces();
       log.info(
           "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
           controllerName,
           resClass,
           watchedNS);
     }
+  }
+
+  /**
+   * Determines whether we should fail because the current namespace is request as target namespace
+   * but is missing
+   *
+   * @return {@code true} if the current namespace is requested but is missing, {@code false}
+   *     otherwise
+   */
+  private static <R extends CustomResource> boolean failOnMissingCurrentNS(
+      ControllerConfiguration<R> configuration) {
+    if (configuration.watchCurrentNamespace()) {
+      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
+      return effectiveNamespaces.size() == 1
+          && effectiveNamespaces.stream().allMatch(Objects::isNull);
+    }
+    return false;
   }
 }
