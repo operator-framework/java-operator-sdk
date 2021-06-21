@@ -144,7 +144,10 @@ public class DefaultEventSourceManager implements EventSourceManager {
         .keySet()
         .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
     eventSources.remove(customResourceUid);
-    getCache().cleanup(customResourceUid);
+    CustomResourceCache cache = getCache();
+    if (cache != null) {
+      cache.cleanup(customResourceUid);
+    }
   }
 
   // todo: remove
