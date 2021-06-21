@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import io.javaoperatorsdk.operator.OperatorException;
 import java.io.Closeable;
 import java.util.Map;
 import java.util.Optional;
@@ -13,8 +14,10 @@ public interface EventSourceManager extends Closeable {
    * @param eventSource the {@link EventSource} to register
    * @throws IllegalStateException if an {@link EventSource} with the same name is already
    *     registered.
+   * @throws OperatorException if an error occurred during the registration process
    */
-  void registerEventSource(String name, EventSource eventSource);
+  void registerEventSource(String name, EventSource eventSource)
+      throws IllegalStateException, OperatorException;
 
   /**
    * Remove the {@link EventSource} identified by the given <code>name</code> from the event

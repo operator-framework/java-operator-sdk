@@ -41,6 +41,13 @@ public interface ControllerConfiguration<R extends CustomResource> {
         && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
   }
 
+  /**
+   * Computes the effective namespaces based on the set specified by the user, in particular
+   * retrieves the current namespace from the client when the user specified that they wanted to
+   * watch the current namespace only.
+   *
+   * @return a Set of namespace names the associated controller will watch
+   */
   default Set<String> getEffectiveNamespaces() {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {

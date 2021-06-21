@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
@@ -69,7 +70,8 @@ public class DefaultEventSourceManager implements EventSourceManager {
   }
 
   @Override
-  public final void registerEventSource(String name, EventSource eventSource) {
+  public final void registerEventSource(String name, EventSource eventSource)
+      throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
 
     try {
@@ -81,6 +83,12 @@ public class DefaultEventSourceManager implements EventSourceManager {
       eventSources.put(name, eventSource);
       eventSource.setEventHandler(defaultEventHandler);
       eventSource.start();
+    } catch (Throwable e) {
+      if (e instanceof IllegalStateException) {
+        // leave untouched
+        throw e;
+      }
+      throw new OperatorException("Couldn't register event source named '" + name + "'", e);
     } finally {
       lock.unlock();
     }

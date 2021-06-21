@@ -43,9 +43,8 @@ public class DefaultEventHandler implements EventHandler {
   private final Map<String, RetryExecution> retryState = new HashMap<>();
   private final String controllerName;
   private final int terminationTimeout;
-  private DefaultEventSourceManager eventSourceManager;
-
   private final ReentrantLock lock = new ReentrantLock();
+  private DefaultEventSourceManager eventSourceManager;
 
   public DefaultEventHandler(
       ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
@@ -91,7 +90,10 @@ public class DefaultEventHandler implements EventHandler {
   public void close() {
     try {
       log.debug("Closing handler for {}", controllerName);
-      executor.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
+      executor.shutdown();
+      if (!executor.awaitTermination(terminationTimeout, TimeUnit.SECONDS)) {
+        executor.shutdownNow(); // if we timed out, waiting, cancel everything
+      }
     } catch (InterruptedException e) {
       log.debug("Exception closing handler for {}: {}", controllerName, e.getLocalizedMessage());
     }

@@ -12,6 +12,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,17 +131,22 @@ public class Operator implements AutoCloseable {
       final String controllerName = configuration.getName();
 
       // check that the custom resource is known by the cluster if configured that way
-      final CustomResourceDefinition crd;
+      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
       if (configurationService.checkCRDAndValidateLocalModel()) {
         final var crdName = configuration.getCRDName();
+        final var specVersion = "v1";
         crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
         if (crd == null) {
-          throw new OperatorException(
+          throw new MissingCRDException(
+              crdName,
+              specVersion,
               "'"
                   + crdName
-                  + "' CRD was not found on the cluster, controller "
+                  + "' "
+                  + specVersion
+                  + " CRD was not found on the cluster, controller '"
                   + controllerName
-                  + " cannot be registered");
+                  + "' cannot be registered");
         }
 
         // Apply validations that are not handled by fabric8
@@ -153,13 +159,39 @@ public class Operator implements AutoCloseable {
       controller.init(eventSourceManager);
       closeables.add(eventSourceManager);
 
+      if (failOnMissingCurrentNS(configuration)) {
+        throw new OperatorException(
+            "Controller '"
+                + controllerName
+                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
+      }
+
+      final var watchedNS =
+          configuration.watchAllNamespaces()
+              ? "[all namespaces]"
+              : configuration.getEffectiveNamespaces();
       log.info(
           "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
           controllerName,
           resClass,
-          configuration.watchAllNamespaces()
-              ? "[all namespaces]"
-              : configuration.getEffectiveNamespaces());
+          watchedNS);
     }
+  }
+
+  /**
+   * Determines whether we should fail because the current namespace is request as target namespace
+   * but is missing
+   *
+   * @return {@code true} if the current namespace is requested but is missing, {@code false}
+   *     otherwise
+   */
+  private static <R extends CustomResource> boolean failOnMissingCurrentNS(
+      ControllerConfiguration<R> configuration) {
+    if (configuration.watchCurrentNamespace()) {
+      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
+      return effectiveNamespaces.size() == 1
+          && effectiveNamespaces.stream().allMatch(Objects::isNull);
+    }
+    return false;
   }
 }
