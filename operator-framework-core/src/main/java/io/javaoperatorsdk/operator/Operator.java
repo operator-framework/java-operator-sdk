@@ -52,7 +52,7 @@ public class Operator implements AutoCloseable {
       }
     } catch (Exception e) {
       log.error("Error retrieving the server version. Exiting!", e);
-      System.exit(1);
+      throw new OperatorException("Error retrieving the server version");
     }
   }
 
