@@ -15,11 +15,7 @@ public abstract class CustomResourceUtils {
    * @throws OperatorException when the Custom Resource has validation error
    */
   public static void assertCustomResource(Class<?> resClass, CustomResourceDefinition crd) {
-    var namespaced =
-        Arrays.stream(resClass.getInterfaces())
-            .filter(classInterface -> classInterface.equals(Namespaced.class))
-            .findAny()
-            .isPresent();
+    var namespaced = Arrays.asList(resClass.getInterfaces()).contains(Namespaced.class);
 
     if (!namespaced && Namespaced.class.getSimpleName().equals(crd.getSpec().getScope())) {
       throw new OperatorException(
