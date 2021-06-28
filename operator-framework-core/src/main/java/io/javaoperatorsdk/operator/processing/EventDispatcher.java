@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
@@ -62,13 +63,12 @@ class EventDispatcher<R extends CustomResource> {
 
   private PostExecutionControl handleDispatch(ExecutionScope<R> executionScope) {
     R resource = executionScope.getCustomResource();
-    log.debug(
-        "Handling events: {} for resource {}", executionScope.getEvents(), resource.getMetadata());
+    log.debug("Handling events: {} for resource {}", executionScope.getEvents(), getName(resource));
 
     if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
       log.debug(
           "Skipping dispatch processing because of a Delete event: {} with version: {}",
-          getUID(resource),
+          getName(resource),
           getVersion(resource));
       return PostExecutionControl.defaultDispatch();
     }
@@ -77,7 +77,7 @@ class EventDispatcher<R extends CustomResource> {
     if (markedForDeletion && shouldNotDispatchToDelete(resource)) {
       log.debug(
           "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
-          resource.getMetadata().getName(),
+          getName(resource),
           resource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
@@ -119,7 +119,7 @@ class EventDispatcher<R extends CustomResource> {
     } else {
       log.debug(
           "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
-          getUID(resource),
+          getName(resource),
           getVersion(resource),
           executionScope);
       UpdateControl<R> updateControl = controller.createOrUpdateResource(resource, context);
@@ -150,7 +150,7 @@ class EventDispatcher<R extends CustomResource> {
   private PostExecutionControl handleDelete(R resource, Context<R> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
-        getUID(resource),
+        getName(resource),
         getVersion(resource));
     // todo: this is be executed in a try-catch statement, in case this fails
     DeleteControl deleteControl = controller.deleteResource(resource, context);
@@ -197,7 +197,7 @@ class EventDispatcher<R extends CustomResource> {
   private R replace(R resource) {
     log.debug(
         "Trying to replace resource {}, version: {}",
-        resource.getMetadata().getName(),
+        getName(resource),
         resource.getMetadata().getResourceVersion());
     return customResourceFacade.replaceWithLock(resource);
   }
@@ -216,14 +216,14 @@ class EventDispatcher<R extends CustomResource> {
       log.trace("Updating status for resource: {}", resource);
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(resource.getMetadata().getName())
+          .withName(getName(resource))
           .updateStatus(resource);
     }
 
     public R replaceWithLock(R resource) {
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(resource.getMetadata().getName())
+          .withName(getName(resource))
           .lockResourceVersion(resource.getMetadata().getResourceVersion())
           .replace(resource);
     }

@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -42,8 +45,8 @@ public class CustomResourceCache {
     try {
       lock.lock();
       if (predicate.test(resources.get(KubernetesResourceUtils.getUID(resource)))) {
-        log.trace("Update cache after condition is true: {}", resource);
-        resources.put(resource.getMetadata().getUid(), resource);
+        log.trace("Update cache after condition is true: {}", getName(resource));
+        resources.put(getUID(resource), resource);
       }
     } finally {
       lock.unlock();
