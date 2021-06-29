@@ -131,6 +131,14 @@
                     <configFile>${project.parent.basedir}/contributing/eclipse-formatter-config.xml</configFile>
                     <encoding>UTF-8</encoding>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                        <phase>compile</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
