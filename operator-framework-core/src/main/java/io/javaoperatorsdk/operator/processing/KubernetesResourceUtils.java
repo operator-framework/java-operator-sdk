@@ -4,6 +4,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class KubernetesResourceUtils {
 
+  public static String getName(HasMetadata customResource) {
+    return customResource.getMetadata().getName();
+  }
+
   public static String getUID(HasMetadata customResource) {
     return customResource.getMetadata().getUid();
   }

@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
@@ -33,7 +35,7 @@ public class CustomResourceEvent extends AbstractEvent {
         + "action="
         + action
         + ", resource=[ name="
-        + getCustomResource().getMetadata().getName()
+        + getName(getCustomResource())
         + ", kind="
         + getCustomResource().getKind()
         + ", apiVersion="

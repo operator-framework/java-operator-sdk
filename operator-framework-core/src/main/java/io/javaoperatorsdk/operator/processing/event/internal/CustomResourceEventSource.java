@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
@@ -113,9 +114,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   @Override
   public void eventReceived(Watcher.Action action, T customResource) {
     log.debug(
-        "Event received for action: {}, resource: {}",
-        action.name(),
-        customResource.getMetadata().getName());
+        "Event received for action: {}, resource: {}", action.name(), getName(customResource));
 
     // cache the latest version of the CR
     customResourceCache.cacheResource(customResource);

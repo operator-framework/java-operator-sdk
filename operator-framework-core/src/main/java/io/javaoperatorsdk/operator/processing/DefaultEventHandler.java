@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 import io.fabric8.kubernetes.client.CustomResource;
@@ -208,7 +208,8 @@ public class DefaultEventHandler implements EventHandler {
 
   private void markSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
     log.debug(
-        "Marking successful execution for resource: {}", executionScope.getCustomResourceUid());
+        "Marking successful execution for resource: {}",
+        getName(executionScope.getCustomResource()));
     retryState.remove(executionScope.getCustomResourceUid());
     eventSourceManager
         .getRetryTimerEventSource()
@@ -247,8 +248,8 @@ public class DefaultEventHandler implements EventHandler {
       String originalResourceVersion = getVersion(originalCustomResource);
 
       log.debug(
-          "Trying to update resource cache from update response for resource uid: {} new version: {} old version: {}",
-          getUID(originalCustomResource),
+          "Trying to update resource cache from update response for resource: {} new version: {} old version: {}",
+          getName(originalCustomResource),
           getVersion(customResourceAfterExecution),
           getVersion(originalCustomResource));
       eventSourceManager.cacheResource(
