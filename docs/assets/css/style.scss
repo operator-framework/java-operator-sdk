@@ -10,5 +10,6 @@ $baseurl: "{{ site.baseurl }}";
 @import 'components/header';
 @import 'components/logo';
 @import 'components/main-menu';
+@import 'components/navigation-bar';
 @import 'components/page';
 @import 'components/title';
