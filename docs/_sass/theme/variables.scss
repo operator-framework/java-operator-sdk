@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap');
+
+// Global variables
+$global-primary-background:                     #f89820;
+$global-secondary-background:                   #1f2c3d;
+$global-success-background:                     #32d296;
+$global-warning-background:                     #faa05a;
+$global-danger-background:                      #D95B72;
+$global-font-family:                            'Open sans', san-serif;
+$global-link-color:                             lighten($global-primary-background, 20%);
+$global-link-hover-color:                       lighten($global-primary-background, 20%);
+$global-small-font-size:                        0.875rem;
+$global-muted-color:                            #A9AAAB;
+$global-xxlarge-font-size:                      2.625rem;
+$global-xlarge-font-size:                       2rem;
+$global-large-font-size:                        1.5rem;
+$global-medium-font-size:                       1.25rem;
+$xsmall-font-size:                              0.875rem;
+
+// Base variables
+$base-heading-font-family:                      'Open sans', san-serif;
+$base-heading-font-weight:                      600;
+$base-heading-color:                            #1f2c3d;
+$base-h2-line-height:                           1.4;
+$base-link-hover-text-decoration:               none;
+$base-body-color:                               #5c5e65;
+$base-code-font-family:                         'Open sans', san-serif;
+$base-code-color:                               #6a6b71;
+$base-code-font-size:                           $xsmall-font-size;
+$base-pre-font-size:                            $xsmall-font-size;
+$base-pre-line-height:                          1.65;
+$base-pre-font-family:                          $base-code-font-family;
+$base-pre-color:                                $base-code-color;
+$border-light:                                  #f2f5f1;
+$border-rounded-border-radius:                  2px;
+$text-lead-font-size:                           1.125rem;
+$link-muted-hover-color:                        #222;
+$link-text-hover-color:                         #9e9aaa;
+$overlay-primary-background:                    rgba(34,34,34,0.8);
+
+// Accordion variables
+$accordion-item-margin-top:                     20px;
+$accordion-title-font-size:                     1.1875rem;
+$accordion-title-color:                         $global-link-color;
+$accordion-title-hover-color:                   $global-link-color;
+$accordion-content-margin-top:                  20px;
+$accordion-icon-color:                          $global-primary-background;
+$accordion-icon-background-color:               lighten( $global-primary-background, 57% );
+$internal-accordion-open-image:                 "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='#1f2c3d' stroke-width='1.03' points='4 13 10 7 16 13' /%3E%3C/svg%3E";
+$internal-accordion-close-image:                "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='#1f2c3d' stroke-width='1.03' points='16 7 10 13 4 7' /%3E%3C/svg%3E";
+
+// Article variables
+$article-title-font-size-m:                     2.625rem;
+$article-title-line-height:                     1.4;
+$article-meta-font-size: 	                    0.8125rem;
+$article-meta-line-height:                      1.6;
+
+// Button variables
+$button-font-weight:                            400;
+$button-default-color:                          #222;
+$button-default-hover-background:               $button-default-color;
+$button-default-hover-color:                    #f2f5f1;
+$button-default-active-background:              $button-default-color;
+$button-default-active-color:                   #f2f5f1;
+$button-default-border:                         $button-default-color;
+$button-default-hover-border:                   $button-default-color;
+$button-default-active-border:                  $button-default-color;
+$button-warning-background:                     $global-warning-background;
+$button-warning-hover-background:               darken($button-warning-background, 7%);
+$button-success-background:                     $global-success-background;
+$button-success-hover-background:               darken($button-success-background, 5%);
+$inverse-button-primary-color:                  #222;
+$inverse-button-primary-hover-color:            #1f2c3d;
+
+// Card variables
+$card-small-body-padding-horizontal:            25px;
+$card-small-body-padding-vertical:              25px;
+$card-title-font-size:                          1.25rem;
+$card-default-title-color:                      $base-heading-color;
+$card-default-color:                            $base-body-color;
+
+// Heading variables
+$heading-large-font-size-l:                     5rem;
+$heading-divider-border-width:                  1px;
+$heading-divider-border:                        #d0d5de;
+
+// Logo variables
+$logo-font-size:                                1.35rem;
+$logo-color:                                    #1f2c3d;
+$logo-hover-color:                              #1f2c3d;
+$inverse-logo-color:                            #f2f5f1;
+$inverse-logo-hover-color:                      #f2f5f1;
+
+// Navigation variables
+$nav-primary-item-font-size:                    $global-large-font-size;
+$navbar-background:                             #f2f5f1;
+$navbar-nav-item-color:                         #333;
+$navbar-nav-item-hover-color:                   #1f2c3d;
+$navbar-nav-item-active-color:                  #1f2c3d;
+$navbar-nav-item-font-size:                     13px;
+$navbar-nav-item-text-transform:                uppercase;
+$navbar-toggle-color:                           #333;
+$navbar-toggle-hover-color:                     #1f2c3d;
+$navbar-dropdown-nav-item-color:                $base-body-color;
+$offcanvas-bar-color-mode:                      dark;
+$offcanvas-bar-background:                      #f2f5f1;
+$subnav-item-font-size:                         $global-small-font-size;
+$subnav-item-text-transform:                    uppercase;
+
+// Search variables
+$search-default-background:                     #f2f5f1;
+$search-default-focus-background:               #f2f5f1;
+$inverse-search-default-background:             rgba(0, 0, 0, 0.3);
+$inverse-search-default-focus-background:       rgba(0, 0, 0, 0.5);
+
+// Section variables
+$section-success-background:                    $global-success-background;
+$section-success-color-mode:                    light;
+$section-danger-background:                     $global-danger-background;
+$section-danger-color-mode:                     light;
+$section-large-padding-vertical-m:              120px;

@@ -1,0 +1,33 @@
+.button {
+  background-color: #2841f9;
+  border: 0;
+  border-radius: 0;
+  display: inline-block;
+  height: 30px;
+  line-height: inherit;
+  margin-left: 5px;
+  margin-right: 15px;
+  padding: 0px;
+  white-space: nowrap;
+  width: 30px;
+}
+
+.button-text,
+input[type=submit] {
+  background-color: #000;
+  border: 0;
+  border-radius: 20px;
+  box-shadow: 0;
+  color: #fff !important;
+  display: inline-block;
+  font-size: 20px;
+  line-height: 30px;
+  margin: 10px 0px;
+  padding: 10px 30px;
+
+  &:hover {
+    color: #fff;
+    text-decoration: none;
+  }
+}
+
