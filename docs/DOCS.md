@@ -1,3 +1,9 @@
+---
+title: java-operator-sdk
+description: Build Kubernetes Operators in Java without hassle
+layout: homepage
+---
+
 # Java Operator SDK - Documentation
 
 ## Introduction & Resources on Operators

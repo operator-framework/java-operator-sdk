@@ -1,6 +1,16 @@
 ---
+
+# Site settings
 name: Java Operator SDK
-title: Java Operator SDK 
+title: Java Operator SDK
+description:            Build Kubernetes Operators in Java without hassle
+baseurl:                # Site subpath, e.g. /blog
+centerLogo:             false
+logo:                   logo.svg
+permalink:              /:title/ # Permalink URLs structure, for permalink style options see: https://jekyllrb.com/docs/permalinks/
+date_format:            "%b %-d, %Y" # refer to http://shopify.github.io/liquid/filters/date/ if you want to customize this
+images:                /assets/images/
+template:               base
 
 kramdown: 
   parse_block_html: true

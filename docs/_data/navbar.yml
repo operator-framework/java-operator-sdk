@@ -1,0 +1,18 @@
+# Navbar menu navigation links
+  - title: Home
+    url: /
+  - title: Docs
+    dropdown:
+      - title: Getting started
+        url: /docs/
+      - title: Examples
+        url: /examples/
+  - title: 404
+    url: /404/
+  - title: Join Discord
+    url: https://discord.gg/DacEhAy
+    button: default
+  - title: Contribute
+    url: https://github.com/java-operator-sdk/java-operator-sdk
+    button: default
+

@@ -1,0 +1,43 @@
+{% assign domain = '' | relative_url %}
+{% if link.url == page.url %}
+  {% assign current = ' class="uk-active"' %}
+{% else %}
+ {% assign current = ' class=""' %}
+{% endif %}
+{% if link.title %}
+  <li{{ current }}>
+  {% if link.url %}
+    {% if link.button %}
+       <div class="uk-navbar-item">
+           <a class="uk-button uk-button-small uk-button-{{ link.button | default: 'default' }}" href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
+           {{ link.title }}
+           </a>
+       </div>
+    {% else %}
+       <a href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>{{ link.title }}</a>
+  {% endif %}
+  {% else %}
+    <a href="#">{{ link.title }}</a>
+  {% endif %}
+  {% if link.dropdown != null %}
+    <div class="uk-navbar-dropdown">
+     <ul class="uk-nav uk-navbar-dropdown-nav">
+     {% for item in link.dropdown %}
+        {% if item.url != null %}
+          {% assign domain = '' | relative_url %}
+          {% if item.url == page.url %}
+            {% assign current = ' class="uk-active"' %}
+          {% else %}
+           {% assign current = ' class=""' %}
+          {% endif %}
+          <li{{ current }}><a href="{{ domain }}{{ item.url }}">{{ item.title }}</a></li>
+        {% else %}
+          <li class="uk-nav-header">{{ item.title }}</li>
+        {% endif %}
+     {% endfor %}
+     </ul>
+     </div>
+ {% endif %}
+ </li>
+{% endif %}
+
