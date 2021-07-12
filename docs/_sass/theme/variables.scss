@@ -3,15 +3,17 @@
 
 // Global variables
 $global-primary-background:                     #f89820;
-$global-secondary-background:                   #1f2c3d;
+$global-secondary-background:                   #433E3F;
 $global-success-background:                     #32d296;
+$global-muted-background:                       #FEF6EB;
 $global-warning-background:                     #faa05a;
 $global-danger-background:                      #D95B72;
 $global-font-family:                            'Open sans', san-serif;
 $global-link-color:                             lighten($global-primary-background, 20%);
 $global-link-hover-color:                       lighten($global-primary-background, 20%);
 $global-small-font-size:                        0.875rem;
-$global-muted-color:                            #f2f5f1;
+$global-muted-color:                             #ffffff;
+
 $global-xxlarge-font-size:                      2.625rem;
 $global-xlarge-font-size:                       2rem;
 $global-large-font-size:                        1.5rem;
@@ -21,21 +23,21 @@ $xsmall-font-size:                              0.875rem;
 // Base variables
 $base-heading-font-family:                      'Open sans', san-serif;
 $base-heading-font-weight:                      600;
-$base-heading-color:                            #1f2c3d;
+$base-heading-color:                            $global-secondary-background;
 $base-h2-line-height:                           1.4;
 $base-link-hover-text-decoration:               none;
-$base-body-color:                               #1f2c3d;
+$base-body-color:                               $global-secondary-background;
 $base-code-font-family:                         'Open sans', san-serif;
-$base-code-color:                               #1f2c3d;
+$base-code-color:                               $global-secondary-background;
 $base-code-font-size:                           $xsmall-font-size;
 $base-pre-font-size:                            $xsmall-font-size;
 $base-pre-line-height:                          1.65;
 $base-pre-font-family:                          $base-code-font-family;
 $base-pre-color:                                $base-code-color;
-$border-light:                                  #f2f5f1;
+$border-light:                                $global-muted-color;
 $border-rounded-border-radius:                  2px;
 $text-lead-font-size:                           1.125rem;
-$link-muted-hover-color:                        #222;
+$link-muted-hover-color:                        $global-secondary-background;
 $link-text-hover-color:                         #9e9aaa;
 $overlay-primary-background:                    rgba(34,34,34,0.8);
 $logo-font-family:                              'Asap', sans-serif;
@@ -48,8 +50,8 @@ $accordion-title-hover-color:                   $global-link-color;
 $accordion-content-margin-top:                  20px;
 $accordion-icon-color:                          $global-primary-background;
 $accordion-icon-background-color:               lighten( $global-primary-background, 57% );
-$internal-accordion-open-image:                 "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='#1f2c3d' stroke-width='1.03' points='4 13 10 7 16 13' /%3E%3C/svg%3E";
-$internal-accordion-close-image:                "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='#1f2c3d' stroke-width='1.03' points='16 7 10 13 4 7' /%3E%3C/svg%3E";
+$internal-accordion-open-image:                 "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='$global-secondary-background' stroke-width='1.03' points='4 13 10 7 16 13' /%3E%3C/svg%3E";
+$internal-accordion-close-image:                "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='$global-secondary-background' stroke-width='1.03' points='16 7 10 13 4 7' /%3E%3C/svg%3E";
 
 // Article variables
 $article-title-font-size-m:                     2.625rem;
@@ -59,11 +61,11 @@ $article-meta-line-height:                      1.6;
 
 // Button variables
 $button-font-weight:                            400;
-$button-default-color:                          #222;
+$button-default-color:                          $global-secondary-background;
 $button-default-hover-background:               $button-default-color;
-$button-default-hover-color:                    #f2f5f1;
+$button-default-hover-color:                   $global-muted-background;
 $button-default-active-background:              $button-default-color;
-$button-default-active-color:                   #f2f5f1;
+$button-default-active-color:                  $global-muted-background;
 $button-default-border:                         $button-default-color;
 $button-default-hover-border:                   $button-default-color;
 $button-default-active-border:                  $button-default-color;
@@ -71,8 +73,8 @@ $button-warning-background:                     $global-warning-background;
 $button-warning-hover-background:               darken($button-warning-background, 7%);
 $button-success-background:                     $global-success-background;
 $button-success-hover-background:               darken($button-success-background, 5%);
-$inverse-button-primary-color:                  #222;
-$inverse-button-primary-hover-color:            #1f2c3d;
+$inverse-button-primary-color:                  $global-secondary-background;
+$inverse-button-primary-hover-color:            $global-secondary-background;
 
 // Card variables
 $card-small-body-padding-horizontal:            25px;
@@ -88,30 +90,30 @@ $heading-divider-border:                        #d0d5de;
 
 // Logo variables
 $logo-font-size:                                1.35rem;
-$logo-color:                                    #1f2c3d;
-$logo-hover-color:                              #1f2c3d;
-$inverse-logo-color:                            #f2f5f1;
-$inverse-logo-hover-color:                      #f2f5f1;
+$logo-color:                                    $global-secondary-background;
+$logo-hover-color:                              $global-secondary-background;
+$inverse-logo-color:                           $global-muted-color;
+$inverse-logo-hover-color:                     $global-muted-color;
 
 // Navigation variables
 $nav-primary-item-font-size:                    $global-large-font-size;
 $navbar-background:                             #f89820;
-$navbar-nav-item-color:                         #f2f5f1;
+$navbar-nav-item-color:                        $global-muted-color;
 $navbar-nav-item-hover-color:                   #9e9aaa;
-$navbar-nav-item-active-color:                  #1f2c3d;
+$navbar-nav-item-active-color:                  $global-secondary-background;
 $navbar-nav-item-font-size:                     0.8rem;
 $navbar-nav-item-text-transform:                uppercase;
 $navbar-toggle-color:                           #333;
-$navbar-toggle-hover-color:                     #1f2c3d;
+$navbar-toggle-hover-color:                     $global-secondary-background;
 $navbar-dropdown-nav-item-color:                $base-body-color;
 $offcanvas-bar-color-mode:                      dark;
-$offcanvas-bar-background:                      #f2f5f1;
+$offcanvas-bar-background:                     $global-muted-color;
 $subnav-item-font-size:                         $global-small-font-size;
 $subnav-item-text-transform:                    uppercase;
 
 // Search variables
-$search-default-background:                     #f2f5f1;
-$search-default-focus-background:               #f2f5f1;
+$search-default-background:                    $global-muted-color;
+$search-default-focus-background:              $global-muted-color;
 $inverse-search-default-background:             rgba(0, 0, 0, 0.3);
 $inverse-search-default-focus-background:       rgba(0, 0, 0, 0.5);
 
