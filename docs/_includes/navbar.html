@@ -7,7 +7,7 @@
           <div class="uk-navbar-left">
             <a class="uk-navbar-item uk-logo" href="{{ "/" | relative_url }}">
             {% if site.logo %}
-            <img src="{{ site.images | absolute_url }}{{ site.logo }}" alt="{{ site.title }}" style="height: 2.5rem;">
+            <img  class="uk-logo uk-width-small" src="{{ site.images | absolute_url }}{{ site.logo }}" alt="{{ site.title }}">
             {% else %}
             {{ site.title }}
             {% endif %}
