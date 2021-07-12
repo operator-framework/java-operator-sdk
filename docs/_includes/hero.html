@@ -1,0 +1,20 @@
+<div class="uk-section uk-background-primary section-hero light repeat: true" style="">
+  <div class="uk-container uk-text-center ">
+      {% if site.logo %}
+      <img src="{{ site.images | absolute_url }}{{ site.logo-icon }}" alt="{{ site.title }}" class="uk-inline uk-logo uk-margin-medium-right@s" style="width: 5rem;">
+      {% endif %}
+    <h1 class="uk-heading-hero uk-text-bold uk-text-uppercase uk-text-muted uk-inline " style="font-family: 'Asap', sans-serif"> [ <small class="uk-margin-small-right uk-margin-small-left"> {{ site.title }} </small> ]</h1>
+    <div class="links uk-container uk-margin-medium-top">
+      <a class="uk-button uk-button-small uk-border-pill uk-button-secondary uk-margin-small-bottom" href="{{ domain }}{{ link.url }}">
+        Get Started
+      </a>
+      <a class="uk-button uk-button-small uk-border-pill uk-button-default uk-margin-small-bottom " href="{{ domain }}{{ link.url }}">
+        <span uk-icon="github"></span> Contribute
+      </a>
+      <a class="uk-button uk-button-small uk-border-pill uk-button-default uk-margin-small-bottom" href="{{ domain }}{{ link.url }}">
+        <span uk-icon="discord"></span> Discord Channel
+      </a>
+    </div>
+  </div>
+</div>
+
