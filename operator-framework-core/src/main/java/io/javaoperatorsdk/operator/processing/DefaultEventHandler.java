@@ -19,7 +19,6 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -111,14 +110,7 @@ public class DefaultEventHandler implements EventHandler {
       lock.lock();
       log.debug("Received event: {}", event);
 
-      Predicate<CustomResource> selector = event.getCustomResourcesSelector();
-      if (selector == null) {
-        final String uid =
-            Objects.requireNonNull(event.getRelatedCustomResourceUid(), "CustomResource UID");
-
-        selector = customResource -> Objects.equals(uid, customResource.getMetadata().getUid());
-      }
-
+      final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
       for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
         eventBuffer.addEvent(uid, event);
         executeBufferedEvents(uid);

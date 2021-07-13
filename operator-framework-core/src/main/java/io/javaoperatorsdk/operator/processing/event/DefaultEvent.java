@@ -1,30 +1,32 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 @SuppressWarnings("rawtypes")
 public class DefaultEvent implements Event {
-
-  private final String relatedCustomResourceUid;
   private final Predicate<CustomResource> customResourcesSelector;
   private final EventSource eventSource;
 
   public DefaultEvent(String relatedCustomResourceUid, EventSource eventSource) {
-    this.relatedCustomResourceUid = relatedCustomResourceUid;
-    this.customResourcesSelector = null;
+    this.customResourcesSelector = new UIDMatchingPredicate(relatedCustomResourceUid);
     this.eventSource = eventSource;
   }
 
   public DefaultEvent(Predicate<CustomResource> customResourcesSelector, EventSource eventSource) {
-    this.relatedCustomResourceUid = null;
     this.customResourcesSelector = customResourcesSelector;
     this.eventSource = eventSource;
   }
 
   @Override
   public String getRelatedCustomResourceUid() {
-    return relatedCustomResourceUid;
+    if (customResourcesSelector instanceof UIDMatchingPredicate) {
+      UIDMatchingPredicate resourcesSelector = (UIDMatchingPredicate) customResourcesSelector;
+      return resourcesSelector.uid;
+    } else {
+      return null;
+    }
   }
 
   public Predicate<CustomResource> getCustomResourcesSelector() {
@@ -40,12 +42,28 @@ public class DefaultEvent implements Event {
   public String toString() {
     return "{ class="
         + this.getClass().getName()
-        + ", relatedCustomResourceUid="
-        + relatedCustomResourceUid
         + ", customResourcesSelector="
         + customResourcesSelector
         + ", eventSource="
         + eventSource
         + " }";
+  }
+
+  private static class UIDMatchingPredicate implements Predicate<CustomResource> {
+    private final String uid;
+
+    public UIDMatchingPredicate(String uid) {
+      this.uid = uid;
+    }
+
+    @Override
+    public boolean test(CustomResource customResource) {
+      return Objects.equals(uid, customResource.getMetadata().getUid());
+    }
+
+    @Override
+    public String toString() {
+      return "UIDMatchingPredicate{uid='" + uid + "'}";
+    }
   }
 }
