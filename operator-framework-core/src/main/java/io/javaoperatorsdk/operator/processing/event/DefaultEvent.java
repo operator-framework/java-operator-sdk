@@ -4,19 +4,19 @@ import io.fabric8.kubernetes.client.CustomResource;
 import java.util.function.Predicate;
 
 @SuppressWarnings("rawtypes")
-public abstract class AbstractEvent implements Event {
+public class DefaultEvent implements Event {
 
   private final String relatedCustomResourceUid;
   private final Predicate<CustomResource> customResourcesSelector;
   private final EventSource eventSource;
 
-  public AbstractEvent(String relatedCustomResourceUid, EventSource eventSource) {
+  public DefaultEvent(String relatedCustomResourceUid, EventSource eventSource) {
     this.relatedCustomResourceUid = relatedCustomResourceUid;
     this.customResourcesSelector = null;
     this.eventSource = eventSource;
   }
 
-  public AbstractEvent(Predicate<CustomResource> customResourcesSelector, EventSource eventSource) {
+  public DefaultEvent(Predicate<CustomResource> customResourcesSelector, EventSource eventSource) {
     this.relatedCustomResourceUid = null;
     this.customResourcesSelector = customResourcesSelector;
     this.eventSource = eventSource;
