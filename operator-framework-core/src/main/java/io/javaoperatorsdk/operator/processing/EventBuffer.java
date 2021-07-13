@@ -1,12 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import io.javaoperatorsdk.operator.processing.event.Event;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 class EventBuffer {
 
@@ -22,7 +17,7 @@ class EventBuffer {
     Objects.requireNonNull(uid, "uid");
     Objects.requireNonNull(event, "event");
 
-    List<Event> crEvents = events.computeIfAbsent(uid, (id) -> new ArrayList<>(1));
+    List<Event> crEvents = events.computeIfAbsent(uid, (id) -> new LinkedList<>());
     crEvents.add(event);
   }
 
@@ -31,8 +26,7 @@ class EventBuffer {
   }
 
   public void putBackEvents(String resourceUid, List<Event> oldEvents) {
-    List<Event> crEvents =
-        events.computeIfAbsent(resourceUid, (id) -> new ArrayList<>(oldEvents.size()));
+    List<Event> crEvents = events.computeIfAbsent(resourceUid, (id) -> new LinkedList<>());
     crEvents.addAll(0, oldEvents);
   }
 
