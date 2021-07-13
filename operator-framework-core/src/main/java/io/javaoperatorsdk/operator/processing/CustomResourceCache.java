@@ -6,12 +6,15 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.CustomResource;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +65,30 @@ public class CustomResourceCache {
    */
   public Optional<CustomResource> getLatestResource(String uuid) {
     return Optional.ofNullable(resources.get(uuid)).map(this::clone);
+  }
+
+  public List<CustomResource> getLatestResources(Predicate<CustomResource> selector) {
+    try {
+      lock.lock();
+      return resources.values().stream()
+          .filter(selector)
+          .map(this::clone)
+          .collect(Collectors.toList());
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public Set<String> getLatestResourcesUids(Predicate<CustomResource> selector) {
+    try {
+      lock.lock();
+      return resources.values().stream()
+          .filter(selector)
+          .map(r -> r.getMetadata().getUid())
+          .collect(Collectors.toSet());
+    } finally {
+      lock.unlock();
+    }
   }
 
   private CustomResource clone(CustomResource customResource) {

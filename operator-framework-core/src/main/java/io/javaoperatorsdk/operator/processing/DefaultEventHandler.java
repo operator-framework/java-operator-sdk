@@ -19,11 +19,13 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,8 +110,19 @@ public class DefaultEventHandler implements EventHandler {
     try {
       lock.lock();
       log.debug("Received event: {}", event);
-      eventBuffer.addEvent(event);
-      executeBufferedEvents(event.getRelatedCustomResourceUid());
+
+      Predicate<CustomResource> selector = event.getCustomResourcesSelector();
+      if (selector == null) {
+        final String uid =
+            Objects.requireNonNull(event.getRelatedCustomResourceUid(), "CustomResource UID");
+
+        selector = customResource -> Objects.equals(uid, customResource.getMetadata().getUid());
+      }
+
+      for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
+        eventBuffer.addEvent(uid, event);
+        executeBufferedEvents(uid);
+      }
     } finally {
       lock.unlock();
     }

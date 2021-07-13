@@ -6,13 +6,22 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 class EventBuffer {
 
   private final Map<String, List<Event>> events = new HashMap<>();
 
+  /** @deprecated use {@link #addEvent(String, Event)} */
+  @Deprecated
   public void addEvent(Event event) {
-    String uid = event.getRelatedCustomResourceUid();
+    addEvent(event.getRelatedCustomResourceUid(), event);
+  }
+
+  public void addEvent(String uid, Event event) {
+    Objects.requireNonNull(uid, "uid");
+    Objects.requireNonNull(event, "event");
+
     List<Event> crEvents = events.computeIfAbsent(uid, (id) -> new ArrayList<>(1));
     crEvents.add(event);
   }
