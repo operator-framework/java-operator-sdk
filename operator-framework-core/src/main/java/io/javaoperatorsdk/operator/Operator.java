@@ -22,12 +22,12 @@ public class Operator implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private final List<Closeable> closeables;
+  private final List<ControllerHandler> handlers;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
-    this.closeables = new ArrayList<>();
+    this.handlers = new ArrayList<>();
 
     Runtime.getRuntime().addShutdownHook(new Thread(this::close));
   }
@@ -61,7 +61,7 @@ public class Operator implements AutoCloseable {
   public void close() {
     log.info("Operator {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-    for (Closeable closeable : this.closeables) {
+    for (Closeable closeable : this.handlers) {
       try {
         log.debug("closing {}", closeable);
         closeable.close();
@@ -139,7 +139,7 @@ public class Operator implements AutoCloseable {
 
       final var client = k8sClient.customResources(resClass);
       ControllerHandler handler = new ControllerHandler(controller, configuration, client);
-      closeables.add(handler);
+      handlers.add(handler);
 
       if (failOnMissingCurrentNS(configuration)) {
         throw new OperatorException(
