@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.processing.event.AbstractEvent;
+import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -74,13 +74,13 @@ class CustomResourceSelectorTest {
     customResourceCache.cacheResource(cr3);
 
     defaultEventHandler.handleEvent(
-        new AbstractEvent(
+        new DefaultEvent(
             c -> {
               var tcr = ((TestCustomResource) c);
               return Objects.equals("1", tcr.getSpec().getValue())
                   || Objects.equals("3", tcr.getSpec().getValue());
             },
-            null) {});
+            null));
 
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(any());
@@ -97,7 +97,7 @@ class CustomResourceSelectorTest {
         .hasSize(2)
         .allSatisfy(
             s -> {
-              assertThat(s.getEvents()).isNotEmpty().hasOnlyElementsOfType(AbstractEvent.class);
+              assertThat(s.getEvents()).isNotEmpty().hasOnlyElementsOfType(DefaultEvent.class);
               assertThat(s)
                   .satisfiesAnyOf(
                       e -> Objects.equals(cr1.getMetadata().getUid(), e.getCustomResourceUid()),
