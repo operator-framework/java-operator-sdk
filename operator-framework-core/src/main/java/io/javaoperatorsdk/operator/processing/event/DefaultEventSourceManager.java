@@ -12,9 +12,11 @@ import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
@@ -161,6 +163,16 @@ public class DefaultEventSourceManager implements EventSourceManager {
   // todo: remove
   public Optional<CustomResource> getLatestResource(String customResourceUid) {
     return getCache().getLatestResource(customResourceUid);
+  }
+
+  // todo: remove
+  public List<CustomResource> getLatestResources(Predicate<CustomResource> selector) {
+    return getCache().getLatestResources(selector);
+  }
+
+  // todo: remove
+  public Set<String> getLatestResourceUids(Predicate<CustomResource> selector) {
+    return getCache().getLatestResourcesUids(selector);
   }
 
   // todo: remove
