@@ -5,9 +5,9 @@
       <div class="uk-container">
         <div class="uk-navbar" uk-navbar>
           <div class="uk-navbar-left">
-            <a class="uk-navbar-item uk-logo" href="{{ "/" | relative_url }}">
+            <a class="uk-navbar-item uk-logo uk-flex uk-flex-center" href="{{ "/" | relative_url }}">
             {% if site.logo %}
-            <img  class="uk-logo uk-width-small" src="{{ site.images | absolute_url }}{{ site.logo }}" alt="{{ site.title }}">
+            <img  style="width: 14rem;" class="uk-logo" src="{{ site.images | absolute_url }}{{ site.logo }}" alt="{{ site.title }}">
             {% else %}
             {{ site.title }}
             {% endif %}

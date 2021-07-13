@@ -8,11 +8,17 @@
   <li{{ current }}>
   {% if link.url %}
     {% if link.button %}
-       <div class="uk-navbar-item">
-           <a class="uk-button uk-button-small uk-border-pill uk-button-{{ link.button | default: 'default' }}" href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
-           {{ link.title }}
-           </a>
-       </div>
+      <div class="uk-navbar-item" style='padding:0 5px;'>
+      {% if link.type %}
+          <a class="uk-text-muted" style='padding:0;' href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
+             <span uk-icon={{link.type}}></span>
+          </a>
+      {% else %}
+          <a class="uk-button uk-button-small uk-border-pill uk-button-{{ link.button | default: 'default' }}" href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
+             {{ link.title }}
+          </a>
+      {% endif %}
+          </div>
     {% else %}
        <a href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>{{ link.title }}</a>
   {% endif %}

@@ -12,7 +12,9 @@
   - title: Join Discord
     url: https://discord.gg/DacEhAy
     button: default
+    type: discord
   - title: Contribute
     url: https://github.com/java-operator-sdk/java-operator-sdk
     button: default
+    type: github
 

@@ -9,8 +9,8 @@ $global-muted-background:                       #FEF6EB;
 $global-warning-background:                     #faa05a;
 $global-danger-background:                      #D95B72;
 $global-font-family:                            'Open sans', san-serif;
-$global-link-color:                             lighten($global-primary-background, 20%);
-$global-link-hover-color:                       lighten($global-primary-background, 20%);
+$global-link-color:                             darken($global-primary-background, 10%);
+$global-link-hover-color:                       darken($global-primary-background, 20%);
 $global-small-font-size:                        0.875rem;
 $global-muted-color:                             #ffffff;
 
