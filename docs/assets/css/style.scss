@@ -7,10 +7,12 @@ $baseurl: "{{ site.baseurl }}";
 // 1. Custom variables and variable overwrites.
 @import "theme/variables";
 
+
 // 2. Import default variables and available mixins.
 @import "uikit/variables-theme";
 @import "uikit/mixins-theme";
 
 // 3. Import Custom theme for UIkit.
 @import "theme/uikit";
+@import "theme/mixins";
 

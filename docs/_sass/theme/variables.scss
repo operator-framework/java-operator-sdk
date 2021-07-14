@@ -98,6 +98,7 @@ $inverse-logo-hover-color:                     $global-muted-color;
 // Navigation variables
 $nav-primary-item-font-size:                    $global-large-font-size;
 $navbar-background:                             #f89820;
+$navbar-nav-item-height:                        60px;
 $navbar-nav-item-color:                        $global-muted-color;
 $navbar-nav-item-hover-color:                   #9e9aaa;
 $navbar-nav-item-active-color:                  $global-secondary-background;
@@ -123,3 +124,7 @@ $section-success-color-mode:                    light;
 $section-danger-background:                     $global-danger-background;
 $section-danger-color-mode:                     light;
 $section-large-padding-vertical-m:              120px;
+
+// Sidebar variables
+$sidebar-width:                             200px;
+$sidebar-width-l:                           300px;

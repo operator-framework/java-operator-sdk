@@ -1,0 +1,7 @@
+ # Navbar menu navigation links
+  - title: Getting Started
+    url: /docs/getting-started
+  - title: Contributing
+    url: /docs/contributing
+  - title: How to use Samples
+    url: /docs/using-samples

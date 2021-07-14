@@ -10,7 +10,7 @@
     {% if link.button %}
       <div class="uk-navbar-item" style='padding:0 5px;'>
       {% if link.type %}
-          <a class="uk-text-muted" style='padding:0;' href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
+          <a  style='padding:0;' href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
              <span uk-icon={{link.type}}></span>
           </a>
       {% else %}
