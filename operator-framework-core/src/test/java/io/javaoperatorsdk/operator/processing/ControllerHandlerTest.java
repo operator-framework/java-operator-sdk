@@ -58,6 +58,18 @@ class ControllerHandlerTest {
     Map<String, EventSource> registeredSources = handler.getRegisteredEventSources();
     assertThat(registeredSources.get(CUSTOM_EVENT_SOURCE_NAME)).isEqualTo(eventSource);
     verify(eventSource, times(1)).setEventHandler(eq(handler));
+  }
+
+  @Test
+  void startShouldCascadeToEventSource() {
+    EventSource eventSource = mock(EventSource.class);
+
+    // register event source
+    handler.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
+
+    // when handler start method is called, it should start all registered event sources
+    handler.start();
+
     verify(eventSource, times(1)).start();
   }
 

@@ -50,6 +50,11 @@ public class ControllerHandler implements EventSourceManager, EventHandler {
   }
 
   @Override
+  public void start() {
+    eventSources.values().forEach(EventSource::start);
+  }
+
+  @Override
   public void handleEvent(Event event) {
     this.eventHandler.handleEvent(event);
   }
@@ -87,7 +92,6 @@ public class ControllerHandler implements EventSourceManager, EventHandler {
       }
       eventSources.put(name, eventSource);
       eventSource.setEventHandler(this);
-      eventSource.start();
     } catch (Throwable e) {
       if (e instanceof IllegalStateException) {
         // leave untouched

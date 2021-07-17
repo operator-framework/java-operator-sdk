@@ -8,6 +8,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ControllerHandler;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,6 +55,9 @@ public class Operator implements AutoCloseable {
       log.error("Error retrieving the server version. Exiting!", e);
       throw new OperatorException("Error retrieving the server version", e);
     }
+
+    // start handlers
+    handlers.forEach(EventHandler::start);
   }
 
   /** Stop the operator. */
