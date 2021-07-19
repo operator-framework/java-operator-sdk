@@ -14,17 +14,22 @@ $global-link-hover-color:                       darken($global-primary-backgroun
 $global-small-font-size:                        0.875rem;
 $global-muted-color:                             #ffffff;
 
-$global-xxlarge-font-size:                      2.625rem;
+$global-xxlarge-font-size:                      2.75rem;
 $global-xlarge-font-size:                       2rem;
 $global-large-font-size:                        1.5rem;
 $global-medium-font-size:                       1.25rem;
 $xsmall-font-size:                              0.875rem;
 
 // Base variables
+$base-body-font-family:                         'Open sans', san-serif;
+$base-body-font-size:                           1rem;
+$base-body-font-weight:                         400;
+$base-body-line-height:                         1.7;
 $base-heading-font-family:                      'Open sans', san-serif;
 $base-heading-font-weight:                      600;
 $base-heading-color:                            $global-secondary-background;
-$base-h2-line-height:                           1.4;
+$base-h1-line-height:                           1.5;
+$base-h2-line-height:                           1.5;
 $base-link-hover-text-decoration:               none;
 $base-body-color:                               $global-secondary-background;
 $base-code-font-family:                         'Open sans', san-serif;
@@ -34,7 +39,7 @@ $base-pre-font-size:                            $xsmall-font-size;
 $base-pre-line-height:                          1.65;
 $base-pre-font-family:                          $base-code-font-family;
 $base-pre-color:                                $base-code-color;
-$border-light:                                $global-muted-color;
+$border-light:                                  $global-muted-color;
 $border-rounded-border-radius:                  2px;
 $text-lead-font-size:                           1.125rem;
 $link-muted-hover-color:                        $global-secondary-background;
@@ -92,14 +97,14 @@ $heading-divider-border:                        #d0d5de;
 $logo-font-size:                                1.35rem;
 $logo-color:                                    $global-secondary-background;
 $logo-hover-color:                              $global-secondary-background;
-$inverse-logo-color:                           $global-muted-color;
-$inverse-logo-hover-color:                     $global-muted-color;
+$inverse-logo-color:                            $global-muted-color;
+$inverse-logo-hover-color:                      $global-muted-color;
 
 // Navigation variables
 $nav-primary-item-font-size:                    $global-large-font-size;
 $navbar-background:                             #f89820;
 $navbar-nav-item-height:                        60px;
-$navbar-nav-item-color:                        $global-muted-color;
+$navbar-nav-item-color:                         $global-muted-color;
 $navbar-nav-item-hover-color:                   #9e9aaa;
 $navbar-nav-item-active-color:                  $global-secondary-background;
 $navbar-nav-item-font-size:                     0.8rem;
@@ -108,13 +113,13 @@ $navbar-toggle-color:                           #333;
 $navbar-toggle-hover-color:                     $global-secondary-background;
 $navbar-dropdown-nav-item-color:                $base-body-color;
 $offcanvas-bar-color-mode:                      dark;
-$offcanvas-bar-background:                     $global-muted-color;
+$offcanvas-bar-background:                      $global-muted-color;
 $subnav-item-font-size:                         $global-small-font-size;
 $subnav-item-text-transform:                    uppercase;
 
 // Search variables
-$search-default-background:                    $global-muted-color;
-$search-default-focus-background:              $global-muted-color;
+$search-default-background:                     $global-muted-color;
+$search-default-focus-background:               $global-muted-color;
 $inverse-search-default-background:             rgba(0, 0, 0, 0.3);
 $inverse-search-default-focus-background:       rgba(0, 0, 0, 0.5);
 
@@ -126,5 +131,5 @@ $section-danger-color-mode:                     light;
 $section-large-padding-vertical-m:              120px;
 
 // Sidebar variables
-$sidebar-width:                             200px;
-$sidebar-width-l:                           300px;
+$sidebar-width:                                 200px;
+$sidebar-width-l:                               300px;
