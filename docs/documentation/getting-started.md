@@ -42,20 +42,25 @@ the cluster's API server.
 Controllers are where you implement the business logic of the Operator. An Operator can host multiple Controllers, 
 each handling a different type of Custom Resource. In our samples each Operator has a single Controller. 
 
-## Automatic Retries
+[comment]: <> (## Automatic Retries)
 
-## Running The Operator
+[comment]: <> (## Running The Operator)
 
-## Development Tips & Tricks
+[comment]: <> (## Development Tips & Tricks)
 
-TODO: explain running operator locally against a cluster
+[comment]: <> (TODO: explain running operator locally against a cluster)
 
-## Event Processing Details
-### Handling Finalizers
-### Managing Consistency
-### Event Scheduling
-### Event Dispatching 
-### Generation Awareness
+[comment]: <> (## Event Processing Details)
+
+[comment]: <> (### Handling Finalizers)
+
+[comment]: <> (### Managing Consistency)
+
+[comment]: <> (### Event Scheduling)
+
+[comment]: <> (### Event Dispatching )
+
+[comment]: <> (### Generation Awareness)
 
 ## Dealing with Consistency 
 
@@ -87,6 +92,6 @@ So it could be a good case to just have a status field on the resource which is 
 ### Deleting a Resource
 
 During deletion process we use [Kubernetes finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers 
-"Kubernetes docs") finalizers. This is required, since it can happen that the operator is not running while the delete 
+"Kubernetes docs"). This is required, since it can happen that the operator is not running while the delete 
 of resource is executed (think `oc delete`). In this case we would not catch the delete event. So we automatically add a
 finalizer first time we update the resource if it's not there. 

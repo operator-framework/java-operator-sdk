@@ -15,7 +15,7 @@ We are serious about making this a welcoming, happy project. We will not tolerat
 aggressive or insulting behaviour.
 
 To this end, the project and everyone participating in it is bound by the [Code of
-Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report
+Conduct]({{baseurl}}/coc). By participating, you are expected to uphold this code. Please report
 unacceptable behaviour to any of the project admins or adam.sandor@container-solutions.com.
 
 ## Bugs

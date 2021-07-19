@@ -8,7 +8,7 @@ permalink: /docs/using-samples
 
 # How to use sample Operators
 
-We have several sample Operators under the [samples](samples) directory:
+We have several sample Operators under the [samples](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/samples) directory:
 
 * *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to
   stdout. Implemented with and without Spring Boot support. The two samples share the common module.
