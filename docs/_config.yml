@@ -8,12 +8,23 @@ baseurl:                # Site subpath, e.g. /blog
 centerLogo:             false
 logo:                   logo-white.svg
 logo-icon:                   logo-icon.svg
-permalink:              /:title/ # Permalink URLs structure, for permalink style options see: https://jekyllrb.com/docs/permalinks/
-date_format:            "%b %-d, %Y" # refer to http://shopify.github.io/liquid/filters/date/ if you want to customize this
+permalink:              /:title/
+date_format:            "%b %-d, %Y"
 images:                /assets/images/
 template:               base
 
+
+# Rouge highlighter
+markdown: kramdown
+highlighter: none
+
+
 kramdown: 
   parse_block_html: true
-permalink: /:title
+  permalink: /:title
+  syntax_highlighter_opts:
+     disable : true
+
+
+
 
