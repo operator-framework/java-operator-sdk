@@ -8,8 +8,8 @@
 #         url: /docs/docs
 #       - title: Examples
 #         url: /docs/examples/
-  - title: 404
-    url: /404/
+  - title: Code of Conduct
+    url: /coc
   - title: Join Discord
     url: https://discord.gg/DacEhAy
     button: default
