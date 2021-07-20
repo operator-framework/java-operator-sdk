@@ -27,4 +27,5 @@ kramdown:
 
 
 
-
+plugins:
+  - "jekyll-github-metadata"
