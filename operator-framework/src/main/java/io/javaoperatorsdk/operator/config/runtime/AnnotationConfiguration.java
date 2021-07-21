@@ -1,15 +1,16 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 public class AnnotationConfiguration<R extends CustomResource>
     implements ControllerConfiguration<R> {
@@ -69,6 +70,33 @@ public class AnnotationConfiguration<R extends CustomResource>
   @Override
   public String getAssociatedControllerClassName() {
     return controller.getClass().getCanonicalName();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public CustomResourceEventFilter<R> getEventFilter() {
+    CustomResourceEventFilter<R> answer = null;
+
+    var filterTypes = annotation.map(Controller::eventFilters);
+    if (filterTypes.isPresent()) {
+      for (var filterType : filterTypes.get()) {
+        try {
+          CustomResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
+
+          if (answer == null) {
+            answer = filter;
+          } else {
+            answer = filter.and(filter);
+          }
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
+    return answer != null
+        ? answer
+        : CustomResourceEventFilters.passthrough();
   }
 }
 

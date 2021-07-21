@@ -8,4 +8,14 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 public class TestCustomResource
     extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus> {
+
+  @Override
+  protected TestCustomResourceSpec initSpec() {
+    return new TestCustomResourceSpec();
+  }
+
+  @Override
+  protected TestCustomResourceStatus initStatus() {
+    return new TestCustomResourceStatus();
+  }
 }

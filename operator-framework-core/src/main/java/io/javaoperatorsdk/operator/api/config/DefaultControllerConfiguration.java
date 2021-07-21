@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import java.util.Collections;
 import java.util.Set;
-
-import io.fabric8.kubernetes.client.CustomResource;
 
 public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
     implements ControllerConfiguration<R> {
@@ -17,6 +17,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
+  private final CustomResourceEventFilter<R> customResourceEventFilter;
   private Class<R> customResourceClass;
   private ConfigurationService service;
 
@@ -29,6 +30,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
       Set<String> namespaces,
       RetryConfiguration retryConfiguration,
       String labelSelector,
+      CustomResourceEventFilter<R> customResourceEventFilter,
       Class<R> customResourceClass,
       ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
@@ -44,6 +46,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
     this.labelSelector = labelSelector;
+    this.customResourceEventFilter = customResourceEventFilter;
     this.customResourceClass =
         customResourceClass == null ? ControllerConfiguration.super.getCustomResourceClass()
             : customResourceClass;
@@ -52,7 +55,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
 
   /**
    * @deprecated use
-   *             {@link #DefaultControllerConfiguration(String, String, String, String, boolean, Set, RetryConfiguration, String, Class, ConfigurationService)}
+   *             {@link #DefaultControllerConfiguration(String, String, String, String, boolean, Set, RetryConfiguration)}
    *             instead
    */
   @Deprecated
@@ -64,8 +67,18 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
       boolean generationAware,
       Set<String> namespaces,
       RetryConfiguration retryConfiguration) {
-    this(associatedControllerClassName, name, crdName, finalizer, generationAware, namespaces,
-        retryConfiguration, null, null, null);
+    this(
+        associatedControllerClassName,
+        name,
+        crdName,
+        finalizer,
+        generationAware,
+        namespaces,
+        retryConfiguration,
+        null,
+        null,
+        null,
+        null);
   }
 
   @Override
@@ -130,5 +143,10 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   @Override
   public Class<R> getCustomResourceClass() {
     return customResourceClass;
+  }
+
+  @Override
+  public CustomResourceEventFilter<R> getEventFilter() {
+    return customResourceEventFilter;
   }
 }

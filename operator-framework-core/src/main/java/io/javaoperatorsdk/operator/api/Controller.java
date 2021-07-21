@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -46,7 +47,16 @@ public @interface Controller {
    * upon. The label selector can be made of multiple comma separated requirements that acts as a
    * logical AND operator.
    *
-   * @return the finalizer name
+   * @return the label selector
    */
   String labelSelector() default NULL;
+
+
+  /**
+   * Optional list of classes providing custom {@link CustomResourceEventFilter}.
+   *
+   * @return the list of event filters.
+   */
+  @SuppressWarnings("rawtypes")
+  Class<CustomResourceEventFilter>[] eventFilters() default {};
 }

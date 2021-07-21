@@ -146,7 +146,7 @@ public class CustomResourceSelectorTest {
 
     public MyConfiguration(ConfigurationService configurationService, String labelSelector) {
       this.labelSelector = labelSelector;
-      service = configurationService;
+      this.service = configurationService;
     }
 
     @Override
