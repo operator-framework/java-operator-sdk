@@ -1,3 +1,6 @@
+## Run website locally
+To run website locally run first `bundle install`and then `bundle exec jekyll serve`
+
 ## CSS library
 
 The website uses [UIkit](https://getuikit.com/) as the css library.

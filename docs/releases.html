@@ -9,7 +9,6 @@ permalink: /releases
 {%- assign releases = site.github.releases | slice: 1, 7 -%}
 
 <div class="article-content link-primary">
-  <div class="uk-margin-large-top">
     {%- for release in releases -%}
     <div class="entry uk-grid-divider uk-child-width-expand@s" uk-grid>
       <div class="time uk-width-1-6@s">
@@ -22,6 +21,5 @@ permalink: /releases
       </div>
     </div>
     {%- endfor -%}
-  </div>
   <h4>More details and older releases are available on <a href="https://github.com/java-operator-sdk/java-operator-sdk">GitHub</a> </h4>
 </div>

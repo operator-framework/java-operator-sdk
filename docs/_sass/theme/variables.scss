@@ -2,15 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Asap:wght@700&display=swap');
 
 // Global variables
-$global-primary-background:                     #f89820;
-$global-secondary-background:                   #433E3F;
+$global-primary-background:                     #fc9c62;
+//$global-secondary-background:                   #433E3F;
+$global-secondary-background:                    darken($global-primary-background, 60%);
 $global-success-background:                     #32d296;
 $global-muted-background:                       #FEF6EB;
 $global-warning-background:                     #faa05a;
-$global-danger-background:                      #D95B72;
+$global-danger-background:                      #cc2b48;
 $global-font-family:                            'Open sans', san-serif;
-$global-link-color:                             darken($global-primary-background, 10%);
-$global-link-hover-color:                       darken($global-primary-background, 20%);
+$global-link-color:                             darken($global-primary-background, 25%);
+$global-link-hover-color:                       darken($global-primary-background, 30%);
 $global-small-font-size:                        0.875rem;
 $global-muted-color:                             #ffffff;
 
@@ -102,20 +103,23 @@ $inverse-logo-hover-color:                      $global-muted-color;
 
 // Navigation variables
 $nav-primary-item-font-size:                    $global-large-font-size;
-$navbar-background:                             #f89820;
+$navbar-background:                             $global-primary-background;
 $navbar-nav-item-height:                        60px;
 $navbar-nav-item-color:                         $global-muted-color;
-$navbar-nav-item-hover-color:                   #9e9aaa;
 $navbar-nav-item-active-color:                  $global-secondary-background;
+$navbar-nav-item-hover-color:                   lighten($global-secondary-background, 20%);
 $navbar-nav-item-font-size:                     0.8rem;
 $navbar-nav-item-text-transform:                uppercase;
-$navbar-toggle-color:                           #333;
+$navbar-toggle-color:                           lighten($global-secondary-background, 30%);
 $navbar-toggle-hover-color:                     $global-secondary-background;
 $navbar-dropdown-nav-item-color:                $base-body-color;
 $offcanvas-bar-color-mode:                      dark;
 $offcanvas-bar-background:                      $global-muted-color;
 $subnav-item-font-size:                         $global-small-font-size;
 $subnav-item-text-transform:                    uppercase;
+$subnav-item-active-color:                       lighten($global-secondary-background, 30%);
+$subnav-item-hover-color:                        lighten($global-secondary-background, 20%);
+$link-muted-hover-color :                        lighten($global-secondary-background, 20%);
 
 // Search variables
 $search-default-background:                     $global-muted-color;

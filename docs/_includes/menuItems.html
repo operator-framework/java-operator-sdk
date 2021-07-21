@@ -8,13 +8,13 @@
   <li{{ current }}>
   {% if link.url %}
     {% if link.button %}
-      <div class="uk-navbar-item" style='padding:0 5px;'>
+      <div class="uk-navbar-item uk-link-muted" style='padding:0 5px;'>
       {% if link.type %}
           <a  style='padding:0;' href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
              <span uk-icon={{link.type}}></span>
           </a>
       {% else %}
-          <a class="uk-button uk-button-small uk-button-{{ link.button | default: 'default' }}" href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
+          <a class="uk-button uk-button-small uk-border-pill uk-button-{{ link.button | default: 'default' }}" href="{{ domain }}{{ link.url }}" {% if link.url contains 'http' %}target="_blank" rel="noopener" {% endif %}>
              {{ link.title }}
           </a>
       {% endif %}

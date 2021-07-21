@@ -7,11 +7,10 @@ description:            Build Kubernetes Operators in Java without hassle
 baseurl:                # Site subpath, e.g. /blog
 centerLogo:             false
 logo:                   logo-white.svg
-logo-icon:                   logo-icon.svg
+logo-icon:              logo-icon.svg
 permalink:              /:title/
 date_format:            "%b %-d, %Y"
 images:                /assets/images/
-template:               base
 
 
 # Rouge highlighter
