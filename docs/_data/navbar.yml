@@ -3,22 +3,11 @@
     url: /
   - title: Docs
     url: /docs/getting-started
-#     <-- example on how to create navigation dropdown -->
-#     dropdown:
-#       - title: Getting started
-#         url: /docs/docs
-#       - title: Examples
-#         url: /docs/examples/
   - title: Code of Conduct
     url: /coc
   - title: Releases
     url: /releases
-
-
-
-
-
-
+# Navbar buttons or social icons
   - title: Join Discord
     url: https://discord.gg/DacEhAy
     button: default

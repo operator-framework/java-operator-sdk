@@ -28,6 +28,16 @@ layout: docs
 permalink: /docs/getting-started
 ---
 ```
+
+In order to create a navigation dropdown follow the following example:
+```- title: Docs
+    url: /docs/getting-started
+    dropdown:
+     - title: Getting started
+         url: /docs/docs
+      - title: Examples
+         url: /docs/examples/
+```
 The sidebar for the docs pages makes use of `/_data/sidebar.yml` in the same manner as explained previously for the navigation bars.
 
 ## Page Layouts

@@ -4,8 +4,6 @@
 name: Java Operator SDK
 title: Java Operator SDK
 description:            Build Kubernetes Operators in Java without hassle
-baseurl:                # Site subpath, e.g. /blog
-centerLogo:             false
 logo:                   logo-white.svg
 logo-icon:              logo-icon.svg
 permalink:              /:title/
@@ -17,14 +15,11 @@ images:                /assets/images/
 markdown: kramdown
 highlighter: none
 
-
-kramdown: 
+kramdown:
   parse_block_html: true
   permalink: /:title
   syntax_highlighter_opts:
      disable : true
-
-
 
 plugins:
   - "jekyll-github-metadata"
