@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ControllerHandler;
-import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +56,13 @@ public class Operator implements AutoCloseable {
     }
 
     // start handlers
-    handlers.forEach(EventHandler::start);
+    handlers.forEach(this::start);
+  }
+
+  private void start(ControllerHandler handler) {
+    log.info("Starting handler for controller '{}'…", handler.getHandledController());
+    handler.start();
+    log.info("Handler for controller '{}' started!", handler.getHandledController());
   }
 
   /** Stop the operator. */
@@ -157,7 +162,7 @@ public class Operator implements AutoCloseable {
               ? "[all namespaces]"
               : configuration.getEffectiveNamespaces();
       log.info(
-          "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
+          "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}. Call 'start' to start processing events.",
           controllerName,
           resClass,
           watchedNS);

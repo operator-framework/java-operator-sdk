@@ -280,4 +280,8 @@ public class DefaultEventHandler implements EventHandler {
   private void unsetUnderExecution(String customResourceUid) {
     underProcessing.remove(customResourceUid);
   }
+
+  public ResourceController getAssociatedController() {
+    return eventDispatcher.getAssociatedController();
+  }
 }

@@ -54,6 +54,10 @@ public class ControllerHandler implements EventSourceManager, EventHandler {
     eventSources.values().forEach(EventSource::start);
   }
 
+  public ResourceController getHandledController() {
+    return eventHandler.getAssociatedController();
+  }
+
   @Override
   public void handleEvent(Event event) {
     this.eventHandler.handleEvent(event);

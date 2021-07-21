@@ -45,6 +45,10 @@ class EventDispatcher<R extends CustomResource> {
     this(controller, configuration, new CustomResourceFacade<>(client));
   }
 
+  ResourceController<R> getAssociatedController() {
+    return controller;
+  }
+
   public PostExecutionControl handleExecution(ExecutionScope<R> executionScope) {
     try {
       return handleDispatch(executionScope);
