@@ -1,0 +1,19 @@
+# Navbar menu navigation links
+  - title: Home
+    url: /
+  - title: Docs
+    url: /docs/getting-started
+  - title: Code of Conduct
+    url: /coc
+  - title: Releases
+    url: /releases
+# Navbar buttons or social icons
+  - title: Join Discord
+    url: https://discord.gg/DacEhAy
+    button: default
+    type: discord
+  - title: Contribute
+    url: https://github.com/java-operator-sdk/java-operator-sdk
+    button: default
+    type: github
+

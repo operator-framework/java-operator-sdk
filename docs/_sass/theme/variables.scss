@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Asap:wght@700&display=swap');
+
+// Global variables
+$global-primary-background:                     #fc9c62;
+$global-secondary-background:                    darken($global-primary-background, 60%);
+$global-success-background:                     #32d296;
+$global-muted-background:                       #FEF6EB;
+$global-warning-background:                     #faa05a;
+$global-danger-background:                      #cc2b48;
+$global-font-family:                            'Open sans', san-serif;
+$global-link-color:                             darken($global-primary-background, 25%);
+$global-link-hover-color:                       darken($global-primary-background, 30%);
+$global-small-font-size:                        0.875rem;
+$global-muted-color:                             #ffffff;
+
+$global-xxlarge-font-size:                      2.75rem;
+$global-xlarge-font-size:                       2rem;
+$global-large-font-size:                        1.5rem;
+$global-medium-font-size:                       1.25rem;
+$xsmall-font-size:                              0.875rem;
+
+// Base variables
+$base-body-font-family:                         'Open sans', san-serif;
+$base-body-font-size:                           1rem;
+$base-body-font-weight:                         400;
+$base-body-line-height:                         1.7;
+$base-heading-font-family:                      'Open sans', san-serif;
+$base-heading-font-weight:                      600;
+$base-heading-color:                            $global-secondary-background;
+$base-h1-line-height:                           1.5;
+$base-h2-line-height:                           1.5;
+$base-link-hover-text-decoration:               none;
+$base-body-color:                               $global-secondary-background;
+$base-code-font-family:                         'Open sans', san-serif;
+$base-code-color:                               $global-secondary-background;
+$base-code-font-size:                           $xsmall-font-size;
+$base-pre-font-size:                            $xsmall-font-size;
+$base-pre-line-height:                          1.65;
+$base-pre-font-family:                          $base-code-font-family;
+$base-pre-color:                                $base-code-color;
+$border-light:                                  $global-muted-color;
+$border-rounded-border-radius:                  2px;
+$text-lead-font-size:                           1.125rem;
+$link-muted-hover-color:                        $global-secondary-background;
+$link-text-hover-color:                         #9e9aaa;
+$overlay-primary-background:                    rgba(34,34,34,0.8);
+$logo-font-family:                              'Asap', sans-serif;
+
+// Accordion variables
+$accordion-item-margin-top:                     20px;
+$accordion-title-font-size:                     1.1875rem;
+$accordion-title-color:                         $global-link-color;
+$accordion-title-hover-color:                   $global-link-color;
+$accordion-content-margin-top:                  20px;
+$accordion-icon-color:                          $global-primary-background;
+$accordion-icon-background-color:               lighten( $global-primary-background, 57% );
+$internal-accordion-open-image:                 "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='$global-secondary-background' stroke-width='1.03' points='4 13 10 7 16 13' /%3E%3C/svg%3E";
+$internal-accordion-close-image:                "data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline fill='none' stroke='$global-secondary-background' stroke-width='1.03' points='16 7 10 13 4 7' /%3E%3C/svg%3E";
+
+// Article variables
+$article-title-font-size-m:                     2.625rem;
+$article-title-line-height:                     1.4;
+$article-meta-font-size: 	                    0.8125rem;
+$article-meta-line-height:                      1.6;
+
+// Button variables
+$button-font-weight:                            400;
+$button-default-color:                          $global-secondary-background;
+$button-default-hover-background:               $button-default-color;
+$button-default-hover-color:                   $global-muted-background;
+$button-default-active-background:              $button-default-color;
+$button-default-active-color:                  $global-muted-background;
+$button-default-border:                         $button-default-color;
+$button-default-hover-border:                   $button-default-color;
+$button-default-active-border:                  $button-default-color;
+$button-warning-background:                     $global-warning-background;
+$button-warning-hover-background:               darken($button-warning-background, 7%);
+$button-success-background:                     $global-success-background;
+$button-success-hover-background:               darken($button-success-background, 5%);
+$inverse-button-primary-color:                  $global-secondary-background;
+$inverse-button-primary-hover-color:            $global-secondary-background;
+
+// Card variables
+$card-small-body-padding-horizontal:            25px;
+$card-small-body-padding-vertical:              25px;
+$card-title-font-size:                          1.25rem;
+$card-default-title-color:                      $base-heading-color;
+$card-default-color:                            $base-body-color;
+
+// Heading variables
+$heading-large-font-size-l:                     5rem;
+$heading-divider-border-width:                  1px;
+$heading-divider-border:                        #d0d5de;
+
+// Logo variables
+$logo-font-size:                                1.35rem;
+$logo-color:                                    $global-secondary-background;
+$logo-hover-color:                              $global-secondary-background;
+$inverse-logo-color:                            $global-muted-color;
+$inverse-logo-hover-color:                      $global-muted-color;
+
+// Navigation variables
+$nav-primary-item-font-size:                    $global-large-font-size;
+$navbar-background:                             $global-primary-background;
+$navbar-nav-item-height:                        60px;
+$navbar-nav-item-color:                         $global-muted-color;
+$navbar-nav-item-active-color:                  $global-secondary-background;
+$navbar-nav-item-hover-color:                   lighten($global-secondary-background, 20%);
+$navbar-nav-item-font-size:                     0.8rem;
+$navbar-nav-item-text-transform:                uppercase;
+$navbar-toggle-color:                           lighten($global-secondary-background, 30%);
+$navbar-toggle-hover-color:                     $global-secondary-background;
+$navbar-dropdown-nav-item-color:                $base-body-color;
+$offcanvas-bar-color-mode:                      dark;
+$offcanvas-bar-background:                      $global-muted-color;
+$subnav-item-font-size:                         $global-small-font-size;
+$subnav-item-text-transform:                    uppercase;
+$subnav-item-active-color:                       lighten($global-secondary-background, 30%);
+$subnav-item-hover-color:                        lighten($global-secondary-background, 20%);
+$link-muted-hover-color :                        lighten($global-secondary-background, 20%);
+
+// Search variables
+$search-default-background:                     $global-muted-color;
+$search-default-focus-background:               $global-muted-color;
+$inverse-search-default-background:             rgba(0, 0, 0, 0.3);
+$inverse-search-default-focus-background:       rgba(0, 0, 0, 0.5);
+
+// Section variables
+$section-success-background:                    $global-success-background;
+$section-success-color-mode:                    light;
+$section-danger-background:                     $global-danger-background;
+$section-danger-color-mode:                     light;
+$section-large-padding-vertical-m:              120px;
+
+// Sidebar variables
+$sidebar-width:                                 200px;
+$sidebar-width-l:                               300px;

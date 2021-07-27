@@ -1,0 +1,25 @@
+---
+title: Latest releases
+description: Releases
+layout: default
+permalink: /releases
+---
+
+<!--Get last 5 releases-->
+{%- assign releases = site.github.releases | slice: 1, 7 -%}
+
+<div class="article-content link-primary">
+    {%- for release in releases -%}
+    <div class="entry uk-grid-divider uk-child-width-expand@s" uk-grid>
+      <div class="time uk-width-1-6@s">
+        <h5>{{release.published_at | date: "%b %d, %Y"}}</h5>
+      </div>
+      <div class="body uk-width-expand@s">
+        <h3 class="uk-flex uk-flex-middle "><a href="{{release.html_url}}">{{release.tag_name}}</a> <span class="uk-label uk-margin-small-left">{{release.label}}</span>
+        </h3>
+        <div>{{release.body | markdownify}}</div>
+      </div>
+    </div>
+    {%- endfor -%}
+  <h4>More details and older releases are available on <a href="https://github.com/java-operator-sdk/java-operator-sdk">GitHub</a> </h4>
+</div>

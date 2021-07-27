@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title | escape }}{% endif %}</title>
+  {% include links.html %}
+  {% include analytics.html %}
+</head>
+<body class="page">
+  {% include navbar.html %}
+
+  <div class="uk-section">
+    <div class="uk-container">
+      <div class="uk-grid-medium uk-grid-divider" uk-grid>
+        <div class="sidebar-wrapper uk-width-1-4@m uk-visible@m">
+        {% include sidebar.html %}
+        </div>
+        <div class="main-wrapper uk-width-1-1 uk-width-expand@m">
+          <article class="uk-article">
+            {{ content }}
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% include scripts.html %}
+</body>
+</html>

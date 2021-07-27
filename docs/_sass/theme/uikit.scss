@@ -1,0 +1,100 @@
+// Import UIkit components
+
+// The commented out imports are elements that can be used but they are not necessary at the moment
+// They are left in to make it easier to see what needs to be imported when creating new page elements
+// for example: you want to create a form so you uncomment @import "../uikit/components/form.scss" for the styles to apply;
+
+// Base
+@import "../uikit/components/variables.scss";
+@import "../uikit/components/mixin.scss";
+@import "../uikit/components/base.scss";
+
+// Elements
+@import "../uikit/components/link.scss";
+@import "../uikit/components/heading.scss";
+@import "../uikit/components/divider.scss";
+@import "../uikit/components/list.scss";
+@import "../uikit/components/description-list.scss";
+@import "../uikit/components/icon.scss";
+@import "../uikit/components/button.scss";
+//@import "../uikit/components/progress.scss";
+//@import "../uikit/components/table.scss";
+//@import "../uikit/components/form-range.scss";
+//@import "../uikit/components/form.scss";
+
+// Layout
+@import "../uikit/components/section.scss";
+@import "../uikit/components/container.scss";
+@import "../uikit/components/tile.scss";
+@import "../uikit/components/card.scss";
+
+// Common
+@import "../uikit/components/article.scss";
+//@import "../uikit/components/close.scss";
+//@import "../uikit/components/spinner.scss";
+//@import "../uikit/components/totop.scss";
+//@import "../uikit/components/marker.scss";
+//@import "../uikit/components/alert.scss";
+//@import "../uikit/components/placeholder.scss";
+//@import "../uikit/components/badge.scss";
+//@import "../uikit/components/label.scss";
+//@import "../uikit/components/overlay.scss";
+//@import "../uikit/components/comment.scss";
+//@import "../uikit/components/search.scss";
+
+// JavaScript
+@import "../uikit/components/modal.scss";
+@import "../uikit/components/sticky.scss";
+@import "../uikit/components/offcanvas.scss";
+@import "../uikit/components/leader.scss";
+//@import "../uikit/components/accordion.scss";
+//@import "../uikit/components/drop.scss";
+//@import "../uikit/components/dropdown.scss";
+//@import "../uikit/components/slideshow.scss";
+//@import "../uikit/components/slider.scss";
+//@import "../uikit/components/switcher.scss";
+//@import "../uikit/components/notification.scss";
+//@import "../uikit/components/tooltip.scss";
+//@import "../uikit/components/sortable.scss";
+//@import "../uikit/components/countdown.scss";
+// Scrollspy
+// Toggle
+// Scroll
+
+@import "../uikit/components/grid.scss";
+
+// Navs
+@import "../uikit/components/nav.scss";
+@import "../uikit/components/navbar.scss";
+@import "../uikit/components/subnav.scss";
+//@import "../uikit/components/breadcrumb.scss";
+//@import "../uikit/components/pagination.scss";
+//@import "../uikit/components/tab.scss";
+//@import "../uikit/components/slidenav.scss";
+//@import "../uikit/components/dotnav.scss";
+//@import "../uikit/components/thumbnav.scss";
+//@import "../uikit/components/iconnav.scss";
+
+//@import "../uikit/components/lightbox.scss";
+
+// Utilities
+
+@import "../uikit/components/width.scss";
+@import "../uikit/components/height.scss";
+@import "../uikit/components/text.scss";
+@import "../uikit/components/background.scss";
+@import "../uikit/components/align.scss";
+@import "../uikit/components/svg.scss";
+@import "../uikit/components/utility.scss";
+@import "../uikit/components/flex.scss";
+@import "../uikit/components/margin.scss";
+@import "../uikit/components/padding.scss";
+@import "../uikit/components/position.scss";
+@import "../uikit/components/visibility.scss";
+//@import "../uikit/components/transition.scss";
+//@import "../uikit/components/column.scss";
+//@import "../uikit/components/cover.scss";
+//@import "../uikit/components/animation.scss";
+//@import "../uikit/components/inverse.scss";
+
+//@import "../uikit/components/print.scss";

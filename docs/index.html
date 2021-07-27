@@ -1,0 +1,149 @@
+---
+title: java-operator-sdk
+description: Build Kubernetes Operators in Java without hassle
+layout: homepage
+---
+
+<div class="uk-section uk-background-muted section-hero light repeat: true" style="">
+  <div class="uk-container uk-text-center ">
+    <h2>Sponsored by:</h2>
+    <div class="uk-text-center">
+      <img class="uk-inline uk-padding-small" style="height: 4.5rem;" src="{{ site.images | absolute_url }}cs-logo.svg" alt="CS logo" uk-img>
+      <span class="uk-h3 uk-inline uk-padding-small"> & </span>
+      <img  class="uk-inline uk-padding-small" style="height: 4.5rem;" src="{{ site.images | absolute_url }}red-hat.webp" alt="CS logo" uk-img>
+    </div>
+  </div>
+</div>
+
+<div class="uk-container">
+  <div class="uk-section uk-text-center">
+    <h3 class="uk-text-secondary">
+      Whether you want to build applications that operate themselves or provision infrastructure from
+      Java code, Kubernetes Operators are the way to go. <strong class="uk-text-primary uk-text-uppercase">java-operator-sdk</strong> is
+      based on the <a href="https://github.com/fabric8io/kubernetes-client" alt="fabric8">fabric8</a> Kubernetes client and will make it
+      easy for Java developers to embrace this new way of automation.
+    </h3>
+  </div>
+  <div class="uk-section">
+    <h2 class="uk-text-center uk-margin-large-bottom"> Why build your own Operator?</h2>
+    <div class="uk-child-width-1-4@m uk-grid-small uk-grid-match" uk-grid>
+      <div>
+        <div class="uk-card uk-card-primary uk-card-body">
+          <h3 class="uk-card-title">Infrastructure automation using the power and flexibility of Java</h3>
+          <p>- see <a href="https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators">blog
+            post</a></p>
+        </div>
+      </div>
+      <div>
+        <div class="uk-card uk-card-primary uk-card-body">
+          <h3 class="uk-card-title">Provisioning of complex applications</h3>
+          <p>- avoid Helm chart hell</p>
+        </div>
+      </div>
+      <div>
+        <div class="uk-card uk-card-primary uk-card-body">
+          <h3 class="uk-card-title">Integration with Cloud services</h3>
+          <p>- e.g. Secret stores</p>
+        </div>
+      </div>
+      <div>
+        <div class="uk-card uk-card-primary uk-card-body">
+          <h3 class="uk-card-title">Safer deployment of applications</h3>
+          <p>- only expose cluster to users by Custom Resources</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--  FEATURES SECTION  -->
+  <div class="uk-section ">
+    <h2 class="uk-text-center uk-margin-large-bottom"> Features</h2>
+    <div style="line-height: 3rem;" class="uk-grid-divider uk-child-width-expand@s" uk-grid>
+      <div>
+        <ul class="uk-list uk-list-disc uk-list-primary">
+          <li>Framework for handling Kubernetes API events</li>
+          <li>Mapping Custom Resources to Java classes</li>
+          <li>Retry action on failure</li>
+          <li>Smart event scheduling <small>(only handle latest event for the same resource)</small></li>
+        </ul>
+      </div>
+      <div>
+        <ul class="uk-list uk-list-disc uk-list-primary">
+          <li> Avoid concurrency issues - related events are serialized, unrelated executed in parallel</li>
+          <li>Smooth integration with Quarkus and Spring Boot</li>
+          <li>Handling of events from non-Kubernetes resources</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!--  ROADMAP SECTION  -->
+  <div class="uk-section">
+    <h2 class="uk-text-center uk-margin-large-bottom"> Roadmap</h2>
+
+    <div class="uk-grid-collapse uk-child-width-1-4@s" uk-grid>
+      <ul class="uk-list">
+        <li class="uk-card uk-padding-small"><span class="uk-text-primary" uk-icon="icon: chevron-double-right"></span> Comprehensive
+          documentation
+        </li>
+      </ul>
+      <ul class="uk-list ">
+        <li class="uk-card  uk-padding-small"><span class="uk-text-primary" uk-icon="icon: chevron-double-right"></span> Integrate with
+          operator-sdk to generate project skeleton
+        </li>
+      </ul>
+      <ul class="uk-list ">
+        <li class="uk-card uk-padding-small"><span class="uk-text-primary" uk-icon="icon: chevron-double-right"></span> Testing of the
+          framework and all samples while running on a real cluster.
+        </li>
+      </ul>
+      <ul class="uk-list ">
+        <li class="uk-card   uk-padding-small"><span class="uk-text-primary" uk-icon="icon: chevron-double-right"></span> Generate Java
+          classes from CRD definion (and/or the other way around)
+        </li>
+      </ul>
+    </div>
+  </div>
+
+
+  <!--  CONTRIBUTING SECTION  -->
+  <div class="uk-section">
+    <h2 class="uk-text-center uk-margin-large-bottom"> Contributing</h2>
+    <div class="uk-card uk-card-default uk-width-1-1@m">
+      <div class="uk-card-header">
+        <div class="uk-grid-small uk-flex-middle" uk-grid>
+          <div class="uk-width-expand">
+            <h3 class="uk-card-title uk-margin-remove-bottom">We are a friendly team of Java and Kubernetes enthusiasts and welcome everyone
+              to contribute in any way to the framework!</h3>
+            <p class="uk-text-meta uk-margin-remove-top">
+              <time datetime="2016-04-01T19:00">April 01, 2016</time>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="uk-card-body">
+        <p>
+          Get in touch either on <a href="https://github.com/java-operator-sdk/java-operator-sdk">GitHub</a> or our <a href="https://discord.gg/DacEhAy" alt="discord server">Discord server</a>, we are always
+          happy to chat and help
+          you find the right issue to get started.</br>
+          Feel free to stop by for questions, comments or just saying <i>"Hi"</i>.
+        </p>
+        </p>
+        <p> We have a <a href="{{baseurl}}/coc">code of conduct</a>
+          which we strictly enforce, as well as <a
+              href="https://github.com/java-operator-sdk/java-operator-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22">issues
+            marked for new joiners</a>.
+        </p>
+        <p> We are also supporting <a href="https://hacktoberfest.digitalocean.com/">#HacktoberFest</a> and have several issues marked as <a
+            href="https://github.com/java-operator-sdk/java-operator-sdk/issues?q=is%3Aissue+is%3Aopen+label%3A%22hacktoberfest%22+"> good
+          candidates </a>to pick up during the event.
+      </div>
+      <div class="uk-card-footer uk-text-center uk-link-muted">
+        <button class="uk-button uk-button-primary uk-text-muted uk-button-medium "><a href="https://mvnrepository.com/artifact/io.javaoperatorsdk/java-operator-sdk"><span uk-icon="maven"></span> Maven</a></a></button>
+
+        <button class="uk-button uk-button-primary uk-text-muted uk-button-medium "><a href="https://github.com/java-operator-sdk/java-operator-sdk"><span uk-icon="github"></span> GitHub</a></button>
+
+        <button class="uk-button uk-button-primary uk-text-muted uk-button-medium"><a href="https://discord.gg/DacEhAy"><span uk-icon="discord"></span> Discord</a></button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<div class="header-strip {{ page.collection }} uk-background-primary ">
+  <div
+      uk-sticky="animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky;  top: 200">
+    <nav class="uk-navbar-container">
+      <div class="uk-container">
+        <div class="uk-navbar" uk-navbar>
+          <div class="uk-navbar-left">
+            <a class="uk-navbar-item uk-logo uk-flex uk-flex-center" href="{{ "/" | relative_url }}">
+            {% if site.logo %}
+            <img style="width: 14rem;" class="uk-logo" src="{{ site.images | absolute_url }}{{ site.logo }}" alt="{{ site.title }}">
+            {% else %}
+            {{ site.title }}
+            {% endif %}
+            </a>
+          </div>
+          <div class="uk-navbar-right">
+            <ul class="uk-navbar-nav uk-text-muted uk-visible@s">
+              {% for link in site.data.navbar%}
+              {% include menuItems.html %}
+              {% endfor %}
+            </ul>
+          </div>
+          <a href="#" class="uk-navbar-toggle uk-hidden@s" uk-navbar-toggle-icon uk-toggle="target: #sidenav"></a>
+        </div>
+      </div>
+    </nav>
+    <div id="sidenav" uk-offcanvas="flip: false" class="uk-offcanvas uk-hidden@s">
+      <div class="uk-offcanvas-bar">
+        <ul class="uk-nav uk-text-left">
+          {% for link in site.data.navbar %}
+          {% include menuItems.html %}
+          {% endfor %}
+          <hr class="uk-divider-icon">
+          {% for link in site.data.sidebar %}
+          {% include menuItems.html %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+

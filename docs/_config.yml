@@ -1,8 +1,25 @@
 ---
+
+# Site settings
 name: Java Operator SDK
-title: Java Operator SDK 
+title: Java Operator SDK
+description:            Build Kubernetes Operators in Java without hassle
+logo:                   logo-white.svg
+logo-icon:              logo-icon.svg
+permalink:              /:title/
+date_format:            "%b %-d, %Y"
+images:                /assets/images/
 
-kramdown: 
+
+# Rouge highlighter
+markdown: kramdown
+highlighter: none
+
+kramdown:
   parse_block_html: true
-permalink: /:title
+  permalink: /:title
+  syntax_highlighter_opts:
+     disable : true
 
+plugins:
+  - "jekyll-github-metadata"

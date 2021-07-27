@@ -8,12 +8,14 @@
   {% include analytics.html %}
 </head>
 <body class="page">
-  {% include header.html %}
-  {% include title.html %}
-  <div id="content" class="content">
-    {{ content }}
+{% include navbar.html %}
+{% include heroDefault.html %}
+<div id="content" class="content uk-container full-page">
+  <div class="uk-section">
+  {{ content }}
   </div>
-  {% include footer.html %}
-  {% include scripts.html %}
+</div>
+{% include footer.html %}
+{% include scripts.html %}
 </body>
 </html>
