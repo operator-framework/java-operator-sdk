@@ -7,7 +7,8 @@ import static org.mockito.Mockito.verify;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -19,8 +20,11 @@ import org.junit.jupiter.api.Test;
 class CustomResourceEventSourceTest {
 
   public static final String FINALIZER = "finalizer";
-  CustomResourceOperationsImpl<TestCustomResource, KubernetesResourceList<TestCustomResource>>
-      client = mock(CustomResourceOperationsImpl.class);
+  MixedOperation<
+          TestCustomResource,
+          KubernetesResourceList<TestCustomResource>,
+          Resource<TestCustomResource>>
+      client = mock(MixedOperation.class);
   EventHandler eventHandler = mock(EventHandler.class);
 
   private CustomResourceEventSource<TestCustomResource> customResourceEventSource =
