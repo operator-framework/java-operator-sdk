@@ -2,8 +2,10 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -89,6 +91,12 @@ public class DefaultEventSourceManager implements EventSourceManager {
       if (e instanceof IllegalStateException) {
         // leave untouched
         throw e;
+      }
+      if (e instanceof KubernetesClientException) {
+        KubernetesClientException ke = (KubernetesClientException) e;
+        if (404 == ke.getCode()) {
+          throw new MissingCRDException(null, null);
+        }
       }
       throw new OperatorException("Couldn't register event source named '" + name + "'", e);
     } finally {

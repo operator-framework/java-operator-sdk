@@ -122,24 +122,15 @@ public class Operator implements AutoCloseable {
 
       Class<R> resClass = configuration.getCustomResourceClass();
       final String controllerName = configuration.getName();
+      final var crdName = configuration.getCRDName();
+      final var specVersion = "v1";
 
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
       if (configurationService.checkCRDAndValidateLocalModel()) {
-        final var crdName = configuration.getCRDName();
-        final var specVersion = "v1";
         crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
         if (crd == null) {
-          throw new MissingCRDException(
-              crdName,
-              specVersion,
-              "'"
-                  + crdName
-                  + "' "
-                  + specVersion
-                  + " CRD was not found on the cluster, controller '"
-                  + controllerName
-                  + "' cannot be registered");
+          throwMissingCRDException(crdName, specVersion, controllerName);
         }
 
         // Apply validations that are not handled by fabric8
@@ -147,10 +138,14 @@ public class Operator implements AutoCloseable {
       }
 
       final var client = k8sClient.customResources(resClass);
-      DefaultEventSourceManager eventSourceManager =
-          new DefaultEventSourceManager(controller, configuration, client);
-      controller.init(eventSourceManager);
-      closeables.add(eventSourceManager);
+      try {
+        DefaultEventSourceManager eventSourceManager =
+            new DefaultEventSourceManager(controller, configuration, client);
+        controller.init(eventSourceManager);
+        closeables.add(eventSourceManager);
+      } catch (MissingCRDException e) {
+        throwMissingCRDException(crdName, specVersion, controllerName);
+      }
 
       if (failOnMissingCurrentNS(configuration)) {
         throw new OperatorException(
@@ -169,6 +164,19 @@ public class Operator implements AutoCloseable {
           resClass,
           watchedNS);
     }
+  }
+
+  private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
+    throw new MissingCRDException(
+        crdName,
+        specVersion,
+        "'"
+            + crdName
+            + "' "
+            + specVersion
+            + " CRD was not found on the cluster, controller '"
+            + controllerName
+            + "' cannot be registered");
   }
 
   /**
