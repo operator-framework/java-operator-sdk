@@ -40,7 +40,7 @@ public class Operator implements AutoCloseable {
   public void start() {
     final var version = configurationService.getVersion();
     log.info(
-        "Operator {} (commit: {}) built on {} starting...",
+        "Operator SDK {} (commit: {}) built on {} starting...",
         version.getSdkVersion(),
         version.getCommit(),
         version.getBuiltTime());
@@ -59,7 +59,8 @@ public class Operator implements AutoCloseable {
   /** Stop the operator. */
   @Override
   public void close() {
-    log.info("Operator {} is shutting down...", configurationService.getVersion().getSdkVersion());
+    log.info(
+        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
     for (Closeable closeable : this.closeables) {
       try {
