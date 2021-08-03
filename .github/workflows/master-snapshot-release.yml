@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         java: [11, 15]
-        distribution: [adopt, adopt-j9]
+        distribution: [adopt, adopt-openj9]
         kubernetes: ['v1.17.13','v1.18.12','v1.19.4']
     steps:
       - uses: actions/checkout@v2
