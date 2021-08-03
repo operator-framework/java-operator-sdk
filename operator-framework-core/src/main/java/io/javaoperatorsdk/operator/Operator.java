@@ -32,6 +32,14 @@ public class Operator implements AutoCloseable {
     Runtime.getRuntime().addShutdownHook(new Thread(this::close));
   }
 
+  public KubernetesClient getKubernetesClient() {
+    return k8sClient;
+  }
+
+  public ConfigurationService getConfigurationService() {
+    return configurationService;
+  }
+
   /**
    * Finishes the operator startup process. This is mostly used in injection-aware applications
    * where there is no obvious entrypoint to the application which can trigger the injection process
