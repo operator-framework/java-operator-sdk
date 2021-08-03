@@ -8,7 +8,4 @@ public abstract class AbstractEventSource implements EventSource {
   public void setEventHandler(EventHandler eventHandler) {
     this.eventHandler = eventHandler;
   }
-
-  @Override
-  public void eventSourceDeRegisteredForResource(String customResourceUid) {}
 }
