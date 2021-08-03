@@ -1,13 +1,14 @@
 name: Test & Release Snapshot to Maven Central
 on:
   push:
-    branchs: [ master ]
+    branches: [ master ]
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         java: [11, 15]
+        distribution: [adopt, adopt-j9]
         kubernetes: ['v1.17.13','v1.18.12','v1.19.4']
     steps:
       - uses: actions/checkout@v2
@@ -20,6 +21,7 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v2.1.0
         with:
+          distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
       - name: Run unit tests
         run: mvn -B test --file pom.xml
