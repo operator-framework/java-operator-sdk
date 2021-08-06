@@ -6,6 +6,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -16,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.micrometer.core.instrument.Clock;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,6 +48,7 @@ public class DefaultEventHandler implements EventHandler {
   private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
   private DefaultEventSourceManager eventSourceManager;
+  private final Metrics metrics = new Metrics(new Metrics.NoopMeterRegistry(Clock.SYSTEM));
 
   public DefaultEventHandler(
       ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
@@ -162,6 +165,7 @@ public class DefaultEventHandler implements EventHandler {
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
+        metrics.timeControllerRetry();
         return;
       }
 
