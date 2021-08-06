@@ -123,7 +123,12 @@ class EventDispatcher<R extends CustomResource> {
           getName(resource),
           getVersion(resource),
           executionScope);
-      UpdateControl<R> updateControl = controller.createOrUpdateResource(resource, context);
+
+      UpdateControl<R> updateControl =
+          configuration
+              .getConfigurationService()
+              .getMetrics()
+              .timeControllerCreateOrUpdate(controller, configuration, resource, context);
       R updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
@@ -153,8 +158,12 @@ class EventDispatcher<R extends CustomResource> {
         "Executing delete for resource: {} with version: {}",
         getName(resource),
         getVersion(resource));
-    // todo: this is be executed in a try-catch statement, in case this fails
-    DeleteControl deleteControl = controller.deleteResource(resource, context);
+
+    DeleteControl deleteControl =
+        configuration
+            .getConfigurationService()
+            .getMetrics()
+            .timeControllerDelete(controller, configuration, resource, context);
     final var useFinalizer = configuration.useFinalizer();
     if (useFinalizer) {
       if (deleteControl == DeleteControl.DEFAULT_DELETE

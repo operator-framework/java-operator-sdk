@@ -15,12 +15,14 @@ import static org.mockito.Mockito.when;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -40,6 +42,7 @@ class EventDispatcherTest {
   private final ResourceController<CustomResource> controller = mock(ResourceController.class);
   private ControllerConfiguration<CustomResource> configuration =
       mock(ControllerConfiguration.class);
+  private final ConfigurationService configService = mock(ConfigurationService.class);
   private final EventDispatcher.CustomResourceFacade customResourceFacade =
       mock(EventDispatcher.CustomResourceFacade.class);
 
@@ -51,6 +54,9 @@ class EventDispatcherTest {
 
     when(configuration.getFinalizer()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.useFinalizer()).thenCallRealMethod();
+    when(configuration.getName()).thenReturn("EventDispatcherTestController");
+    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
+    when(configuration.getConfigurationService()).thenReturn(configService);
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateCustomResource(testCustomResource));
     when(controller.deleteResource(eq(testCustomResource), any()))
@@ -135,7 +141,6 @@ class EventDispatcherTest {
   @Test
   void callDeleteOnControllerIfMarkedForDeletionWhenNoFinalizerIsConfigured() {
     configureToNotUseFinalizer();
-
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
@@ -156,6 +161,9 @@ class EventDispatcherTest {
 
   private void configureToNotUseFinalizer() {
     ControllerConfiguration<CustomResource> configuration = mock(ControllerConfiguration.class);
+    when(configuration.getName()).thenReturn("EventDispatcherTestController");
+    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
+    when(configuration.getConfigurationService()).thenReturn(configService);
     when(configuration.useFinalizer()).thenReturn(false);
     eventDispatcher = new EventDispatcher(controller, configuration, customResourceFacade);
   }

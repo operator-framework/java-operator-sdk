@@ -6,6 +6,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -16,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.micrometer.core.instrument.Clock;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,6 +48,7 @@ public class DefaultEventHandler implements EventHandler {
   private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
   private DefaultEventSourceManager eventSourceManager;
+  private ControllerConfiguration configuration;
 
   public DefaultEventHandler(
       ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
@@ -54,20 +57,20 @@ public class DefaultEventHandler implements EventHandler {
         configuration.getName(),
         GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
         configuration.getConfigurationService().concurrentReconciliationThreads(),
-        configuration.getConfigurationService().getTerminationTimeoutSeconds());
+        configuration.getConfigurationService().getTerminationTimeoutSeconds(), configuration);
   }
 
   DefaultEventHandler(
       EventDispatcher eventDispatcher,
       String relatedControllerName,
       Retry retry,
-      int concurrentReconciliationThreads) {
+      int concurrentReconciliationThreads, ControllerConfiguration configuration) {
     this(
         eventDispatcher,
         relatedControllerName,
         retry,
         concurrentReconciliationThreads,
-        ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
+        ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS, configuration);
   }
 
   private DefaultEventHandler(
@@ -75,7 +78,7 @@ public class DefaultEventHandler implements EventHandler {
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads,
-      int terminationTimeout) {
+      int terminationTimeout, ControllerConfiguration configuration) {
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.controllerName = relatedControllerName;
@@ -85,6 +88,7 @@ public class DefaultEventHandler implements EventHandler {
         new ScheduledThreadPoolExecutor(
             concurrentReconciliationThreads,
             runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
+    this.configuration = configuration;
   }
 
   @Override
@@ -113,6 +117,10 @@ public class DefaultEventHandler implements EventHandler {
       final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
       for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
         eventBuffer.addEvent(uid, event);
+        configuration
+            .getConfigurationService()
+            .getMetrics()
+            .timeControllerEvents();
         executeBufferedEvents(uid);
       }
     } finally {
@@ -162,6 +170,10 @@ public class DefaultEventHandler implements EventHandler {
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
+        configuration
+            .getConfigurationService()
+            .getMetrics()
+            .timeControllerRetry();
         return;
       }
 

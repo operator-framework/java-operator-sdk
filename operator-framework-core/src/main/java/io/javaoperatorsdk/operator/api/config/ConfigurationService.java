@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Set;
 
@@ -92,5 +93,9 @@ public interface ConfigurationService {
    */
   default int getTerminationTimeoutSeconds() {
     return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
+  }
+
+  default Metrics getMetrics() {
+    return Metrics.NOOP;
   }
 }

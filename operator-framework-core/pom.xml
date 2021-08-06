@@ -15,6 +15,13 @@
   <description>Core framework for implementing Kubernetes operators</description>
   <packaging>jar</packaging>
 
+  <properties>
+    <java.version>11</java.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <micrometer-core.version>1.7.3</micrometer-core.version>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -91,6 +98,11 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <version>${micrometer-core.version}</version>
     </dependency>
   </dependencies>
 </project>
