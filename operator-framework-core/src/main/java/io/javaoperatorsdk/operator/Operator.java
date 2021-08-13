@@ -18,16 +18,21 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable {
-
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
   private final List<Closeable> closeables;
+  private final Object lock;
+  private final List<ControllerRef> controllers;
+  private volatile boolean started;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
     this.closeables = new ArrayList<>();
+    this.lock = new Object();
+    this.controllers = new ArrayList<>();
+    this.started = false;
 
     Runtime.getRuntime().addShutdownHook(new Thread(this::close));
   }
@@ -45,43 +50,65 @@ public class Operator implements AutoCloseable {
    * where there is no obvious entrypoint to the application which can trigger the injection process
    * and start the cluster monitoring processes.
    */
+  @SuppressWarnings("unchecked")
   public void start() {
-    final var version = configurationService.getVersion();
-    log.info(
-        "Operator SDK {} (commit: {}) built on {} starting...",
-        version.getSdkVersion(),
-        version.getCommit(),
-        version.getBuiltTime());
-    log.info("Client version: {}", Version.clientVersion());
-    try {
-      final var k8sVersion = k8sClient.getVersion();
-      if (k8sVersion != null) {
-        log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+    synchronized (lock) {
+      if (started) {
+        return;
       }
-    } catch (Exception e) {
-      log.error("Error retrieving the server version. Exiting!", e);
-      throw new OperatorException("Error retrieving the server version", e);
+
+      final var version = configurationService.getVersion();
+      log.info(
+          "Operator SDK {} (commit: {}) built on {} starting...",
+          version.getSdkVersion(),
+          version.getCommit(),
+          version.getBuiltTime());
+      log.info("Client version: {}", Version.clientVersion());
+      try {
+        final var k8sVersion = k8sClient.getVersion();
+        if (k8sVersion != null) {
+          log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+        }
+      } catch (Exception e) {
+        log.error("Error retrieving the server version. Exiting!", e);
+        throw new OperatorException("Error retrieving the server version", e);
+      }
+
+      for (ControllerRef ref : controllers) {
+        startController(ref.controller, ref.configuration);
+      }
+
+      started = true;
     }
   }
 
   /** Stop the operator. */
   @Override
   public void close() {
-    log.info(
-        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
-
-    for (Closeable closeable : this.closeables) {
-      try {
-        log.debug("closing {}", closeable);
-        closeable.close();
-      } catch (IOException e) {
-        log.warn("Error closing {}", closeable, e);
+    synchronized (lock) {
+      if (!started) {
+        return;
       }
+
+      log.info(
+          "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+
+      for (Closeable closeable : this.closeables) {
+        try {
+          log.debug("closing {}", closeable);
+          closeable.close();
+        } catch (IOException e) {
+          log.warn("Error closing {}", closeable, e);
+        }
+      }
+
+      started = false;
     }
   }
 
   /**
-   * Registers the specified controller with this operator.
+   * Add a registration requests for the specified controller with this operator. The effective
+   * registration of the controller is delayed till the operator is started.
    *
    * @param controller the controller to register
    * @param <R> the {@code CustomResource} type associated with the controller
@@ -90,6 +117,32 @@ public class Operator implements AutoCloseable {
   public <R extends CustomResource> void register(ResourceController<R> controller)
       throws OperatorException {
     register(controller, null);
+  }
+
+  /**
+   * Add a registration requests for the specified controller with this operator, overriding its
+   * default configuration by the specified one (usually created via {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * passing it the controller's original configuration. The effective registration of the
+   * controller is delayed till the operator is started.
+   *
+   * @param controller the controller to register
+   * @param configuration the configuration with which we want to register the controller, if {@code
+   *     null}, the controller's original configuration is used
+   * @param <R> the {@code CustomResource} type associated with the controller
+   * @throws OperatorException if a problem occurred during the registration process
+   */
+  public <R extends CustomResource> void register(
+      ResourceController<R> controller, ControllerConfiguration<R> configuration)
+      throws OperatorException {
+    synchronized (lock) {
+      if (!started) {
+        this.controllers.add(new ControllerRef(controller, configuration));
+      } else {
+        this.controllers.add(new ControllerRef(controller, configuration));
+        startController(controller, configuration);
+      }
+    }
   }
 
   /**
@@ -104,9 +157,10 @@ public class Operator implements AutoCloseable {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource> void register(
+  private <R extends CustomResource> void startController(
       ResourceController<R> controller, ControllerConfiguration<R> configuration)
       throws OperatorException {
+
     final var existing = configurationService.getConfigurationFor(controller);
     if (existing == null) {
       log.warn(
@@ -120,7 +174,7 @@ public class Operator implements AutoCloseable {
         configuration = existing;
       }
 
-      Class<R> resClass = configuration.getCustomResourceClass();
+      final Class<R> resClass = configuration.getCustomResourceClass();
       final String controllerName = configuration.getName();
       final var crdName = configuration.getCRDName();
       final var specVersion = "v1";
@@ -137,10 +191,10 @@ public class Operator implements AutoCloseable {
         CustomResourceUtils.assertCustomResource(resClass, crd);
       }
 
-      final var client = k8sClient.customResources(resClass);
       try {
         DefaultEventSourceManager eventSourceManager =
-            new DefaultEventSourceManager(controller, configuration, client);
+            new DefaultEventSourceManager(
+                controller, configuration, k8sClient.customResources(resClass));
         controller.init(eventSourceManager);
         closeables.add(eventSourceManager);
       } catch (MissingCRDException e) {
@@ -194,5 +248,15 @@ public class Operator implements AutoCloseable {
           && effectiveNamespaces.stream().allMatch(Objects::isNull);
     }
     return false;
+  }
+
+  private static class ControllerRef {
+    public final ResourceController controller;
+    public final ControllerConfiguration configuration;
+
+    public ControllerRef(ResourceController controller, ControllerConfiguration configuration) {
+      this.controller = controller;
+      this.configuration = configuration;
+    }
   }
 }

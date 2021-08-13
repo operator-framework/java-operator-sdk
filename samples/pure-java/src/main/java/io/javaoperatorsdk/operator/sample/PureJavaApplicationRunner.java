@@ -11,5 +11,6 @@ public class PureJavaApplicationRunner {
     KubernetesClient client = new DefaultKubernetesClient();
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
     operator.register(new CustomServiceController(client));
+    operator.start();
   }
 }

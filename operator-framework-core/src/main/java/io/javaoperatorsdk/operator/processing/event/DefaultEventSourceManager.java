@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -45,10 +43,9 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public <R extends CustomResource<?, ?>> DefaultEventSourceManager(
-      ResourceController<R> controller,
-      ControllerConfiguration<R> configuration,
-      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
+      ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
     this(new DefaultEventHandler(controller, configuration, client), true);
     registerEventSource(
         CUSTOM_RESOURCE_EVENT_SOURCE_NAME, new CustomResourceEventSource<>(client, configuration));
