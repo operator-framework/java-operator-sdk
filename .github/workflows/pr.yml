@@ -1,4 +1,7 @@
 name: Verify Pull Request
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
 on:
   pull_request:
     branches: [ master ]

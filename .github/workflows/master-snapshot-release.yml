@@ -1,4 +1,7 @@
 name: Test & Release Snapshot to Maven Central
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
 on:
   push:
     branches: [ master ]
