@@ -9,7 +9,7 @@ jobs:
       matrix:
         java: [11, 15]
         distribution: [adopt, adopt-openj9]
-        kubernetes: ['v1.17.13','v1.18.12','v1.19.4']
+        kubernetes: ['v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.4']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -28,7 +28,7 @@ jobs:
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.4.2
         with:
-          minikube version: 'v1.15.1'
+          minikube version: 'v1.22.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
       - name: Run integration tests
