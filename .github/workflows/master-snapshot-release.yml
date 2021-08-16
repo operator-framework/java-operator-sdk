@@ -45,8 +45,8 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v2.2.0
         with:
-          distribution: ${{ matrix.distribution }}
-          java-version: ${{ matrix.java }}
+          distribution: adopt
+          java-version: 11
       - name: Release Maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
