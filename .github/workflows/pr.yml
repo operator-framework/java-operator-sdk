@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         java: [11, 15]
+        distribution: [ adopt, adopt-openj9 ]
         kubernetes: ['v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.4']
     steps:
       - uses: actions/checkout@v2
@@ -22,8 +23,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Set up Java and Maven
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2.2.0
         with:
+          distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
       - name: Check code format
         run: mvn fmt:check --file pom.xml
