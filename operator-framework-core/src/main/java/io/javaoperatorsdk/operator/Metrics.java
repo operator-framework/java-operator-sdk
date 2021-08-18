@@ -29,7 +29,8 @@ public class Metrics {
     //  todo: https://github.com/java-operator-sdk/java-operator-sdk/issues/496 would simplify
     // things
     final var name = configuration.getName();
-    final var timer = registry.timer("operator.sdk.controllers.execution.createOrUpdate", name);
+    final var timer =
+        registry.timer("operator.sdk.controllers.execution.createOrUpdate", "controller", name);
     try {
       final var result = timer.record(() -> controller.createOrUpdateResource(resource, context));
       String successType = "cr";
@@ -39,11 +40,16 @@ public class Metrics {
       if (result.isUpdateCustomResourceAndStatusSubResource()) {
         successType = "both";
       }
-      registry.counter("operator.sdk.controllers.execution.success", name, successType);
+      registry.counter(
+          "operator.sdk.controllers.execution.success", "controller", name, "type", successType);
       return result;
     } catch (Exception e) {
       registry.counter(
-          "operator.sdk.controllers.execution.failure", name, e.getClass().getSimpleName());
+          "operator.sdk.controllers.execution.failure",
+          "controller",
+          name,
+          "exception",
+          e.getClass().getSimpleName());
       throw e;
     }
   }
