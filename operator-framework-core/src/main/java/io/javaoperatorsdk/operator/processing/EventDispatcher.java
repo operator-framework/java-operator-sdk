@@ -122,7 +122,11 @@ class EventDispatcher<R extends CustomResource> {
           getName(resource),
           getVersion(resource),
           executionScope);
-      UpdateControl<R> updateControl = controller.createOrUpdateResource(resource, context);
+      UpdateControl<R> updateControl =
+          configuration
+              .getConfigurationService()
+              .getMetrics()
+              .timeControllerCreateOrUpdate(controller, configuration, resource, context);
       R updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());

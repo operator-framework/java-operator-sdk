@@ -25,16 +25,23 @@ public class Operator implements AutoCloseable {
   private final Object lock;
   private final List<ControllerRef> controllers;
   private volatile boolean started;
+  private final Metrics metrics;
 
-  public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
+  public Operator(
+      KubernetesClient k8sClient, ConfigurationService configurationService, Metrics metrics) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
     this.closeables = new ArrayList<>();
     this.lock = new Object();
     this.controllers = new ArrayList<>();
     this.started = false;
+    this.metrics = metrics;
 
     Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+  }
+
+  public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
+    this(k8sClient, configurationService, Metrics.NOOP);
   }
 
   public KubernetesClient getKubernetesClient() {

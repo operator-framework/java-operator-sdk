@@ -19,6 +19,7 @@
     <java.version>11</java.version>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+    <micrometer-core.version>1.7.3</micrometer-core.version>
   </properties>
 
   <build>
@@ -93,6 +94,11 @@
       <artifactId>assertj-core</artifactId>
       <version>3.20.2</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <version>${micrometer-core.version}</version>
     </dependency>
   </dependencies>
 </project>

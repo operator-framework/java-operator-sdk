@@ -22,6 +22,9 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +64,7 @@ public class IntegrationTestSupport {
       namespaces.create(
           new NamespaceBuilder().withNewMetadata().withName(TEST_NAMESPACE).endMetadata().build());
     }
-    operator = new Operator(k8sClient, configurationService);
+    operator = new Operator(k8sClient, configurationService, Metrics.NOOP);
     final var overriddenConfig =
         ControllerConfigurationOverrider.override(config).settingNamespace(TEST_NAMESPACE);
     if (retry != null) {
