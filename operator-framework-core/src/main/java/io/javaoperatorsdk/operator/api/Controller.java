@@ -40,4 +40,13 @@ public @interface Controller {
    * @return the list of namespaces this controller monitors
    */
   String[] namespaces() default {};
+
+  /**
+   * Optional label selector used to identify the set of custom resources the controller will acc
+   * upon. The label selector can be made of multiple comma separated requirements that acts as a
+   * logical AND operator.
+   *
+   * @return the finalizer name
+   */
+  String labelSelector() default NULL;
 }

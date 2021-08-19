@@ -5,12 +5,14 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ListOptions;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
@@ -33,6 +35,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final Set<String> targetNamespaces;
   private final boolean generationAware;
   private final String resourceFinalizer;
+  private final String labelSelector;
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
   private final List<Watch> watches;
   private final String resClass;
@@ -46,6 +49,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
         configuration.getEffectiveNamespaces(),
         configuration.isGenerationAware(),
         configuration.getFinalizer(),
+        configuration.getLabelSelector(),
         configuration.getCustomResourceClass(),
         new CustomResourceCache(configuration.getConfigurationService().getObjectMapper()));
   }
@@ -55,12 +59,14 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       Set<String> targetNamespaces,
       boolean generationAware,
       String resourceFinalizer,
+      String labelSelector,
       Class<T> resClass) {
     this(
         client,
         targetNamespaces,
         generationAware,
         resourceFinalizer,
+        labelSelector,
         resClass,
         new CustomResourceCache());
   }
@@ -70,12 +76,14 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       Set<String> targetNamespaces,
       boolean generationAware,
       String resourceFinalizer,
+      String labelSelector,
       Class<T> resClass,
       CustomResourceCache customResourceCache) {
     this.client = client;
     this.targetNamespaces = targetNamespaces;
     this.generationAware = generationAware;
     this.resourceFinalizer = resourceFinalizer;
+    this.labelSelector = labelSelector;
     this.watches = new ArrayList<>();
     this.resClass = resClass.getName();
     this.customResourceCache = customResourceCache;
@@ -83,14 +91,19 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public void start() {
+    var options = new ListOptions();
+    if (Utils.isNotNullOrEmpty(labelSelector)) {
+      options.setLabelSelector(labelSelector);
+    }
+
     if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-      var w = client.inAnyNamespace().watch(this);
+      var w = client.inAnyNamespace().watch(options, this);
       watches.add(w);
       log.debug("Registered controller {} -> {} for any namespace", resClass, w);
     } else {
       targetNamespaces.forEach(
           ns -> {
-            var w = client.inNamespace(ns).watch(this);
+            var w = client.inNamespace(ns).watch(options, this);
             watches.add(w);
             log.debug("Registered controller {} -> {} for namespace: {}", resClass, w, ns);
           });
