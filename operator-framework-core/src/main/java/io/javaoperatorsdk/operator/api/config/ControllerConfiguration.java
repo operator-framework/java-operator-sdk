@@ -13,6 +13,8 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   String getFinalizer();
 
+  String getLabelSelector();
+
   boolean isGenerationAware();
 
   Class<R> getCustomResourceClass();

@@ -15,6 +15,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
   private final Set<String> namespaces;
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
+  private final String labelSelector;
   private ConfigurationService service;
 
   public AbstractControllerConfiguration(
@@ -24,7 +25,8 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
       String finalizer,
       boolean generationAware,
       Set<String> namespaces,
-      RetryConfiguration retryConfiguration) {
+      RetryConfiguration retryConfiguration,
+      String labelSelector) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -37,6 +39,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
+    this.labelSelector = labelSelector;
   }
 
   @Override
@@ -87,5 +90,10 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
   @Override
   public void setConfigurationService(ConfigurationService service) {
     this.service = service;
+  }
+
+  @Override
+  public String getLabelSelector() {
+    return labelSelector;
   }
 }

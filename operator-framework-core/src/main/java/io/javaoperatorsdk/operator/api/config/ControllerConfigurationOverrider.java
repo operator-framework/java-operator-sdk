@@ -11,6 +11,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
   private boolean generationAware;
   private Set<String> namespaces;
   private RetryConfiguration retry;
+  private String labelSelector;
   private final ControllerConfiguration<R> original;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -18,6 +19,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
     generationAware = original.isGenerationAware();
     namespaces = new HashSet<>(original.getNamespaces());
     retry = original.getRetryConfiguration();
+    labelSelector = original.getLabelSelector();
     this.original = original;
   }
 
@@ -57,6 +59,11 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withLabelSelector(String labelSelector) {
+    this.labelSelector = labelSelector;
+    return this;
+  }
+
   public ControllerConfiguration<R> build() {
     return new AbstractControllerConfiguration<R>(
         original.getAssociatedControllerClassName(),
@@ -65,7 +72,8 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
         finalizer,
         generationAware,
         namespaces,
-        retry) {
+        retry,
+        labelSelector) {
       @Override
       public Class<R> getCustomResourceClass() {
         return original.getCustomResourceClass();

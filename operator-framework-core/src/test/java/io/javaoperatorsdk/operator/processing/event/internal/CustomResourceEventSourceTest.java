@@ -25,7 +25,8 @@ class CustomResourceEventSourceTest {
   EventHandler eventHandler = mock(EventHandler.class);
 
   private CustomResourceEventSource<TestCustomResource> customResourceEventSource =
-      new CustomResourceEventSource<>(client, null, true, FINALIZER, TestCustomResource.class);
+      new CustomResourceEventSource<>(
+          client, null, true, FINALIZER, null, TestCustomResource.class);
 
   @BeforeEach
   public void setup() {
@@ -72,7 +73,8 @@ class CustomResourceEventSourceTest {
   @Test
   public void handlesAllEventIfNotGenerationAware() {
     customResourceEventSource =
-        new CustomResourceEventSource<>(client, null, false, FINALIZER, TestCustomResource.class);
+        new CustomResourceEventSource<>(
+            client, null, false, FINALIZER, null, TestCustomResource.class);
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();

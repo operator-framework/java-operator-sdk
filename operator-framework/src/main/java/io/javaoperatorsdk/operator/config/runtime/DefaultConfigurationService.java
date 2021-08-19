@@ -29,8 +29,8 @@ public class DefaultConfigurationService extends AbstractConfigurationService {
     var config = super.getConfigurationFor(controller);
     if (config == null) {
       if (createIfNeeded) {
-        // create the the configuration on demand and register it
-        config = new AnnotationConfiguration(controller);
+        // create the configuration on demand and register it
+        config = new AnnotationConfiguration<>(controller);
         register(config);
         log.info(
             "Created configuration for controller {} with name {}",
