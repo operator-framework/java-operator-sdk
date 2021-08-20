@@ -80,11 +80,19 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.javaoperatorsdk</groupId>
+      <artifactId>operator-framework-junit-5</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!--
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
+    -->
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>crd-generator-apt</artifactId>

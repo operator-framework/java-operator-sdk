@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -46,6 +47,10 @@ public class Operator implements AutoCloseable {
 
   public ConfigurationService getConfigurationService() {
     return configurationService;
+  }
+
+  public List<ControllerRef> getControllers() {
+    return Collections.unmodifiableList(controllers);
   }
 
   /**
@@ -253,13 +258,21 @@ public class Operator implements AutoCloseable {
     return false;
   }
 
-  private static class ControllerRef {
+  public static class ControllerRef {
     public final ResourceController controller;
     public final ControllerConfiguration configuration;
 
     public ControllerRef(ResourceController controller, ControllerConfiguration configuration) {
       this.controller = controller;
       this.configuration = configuration;
+    }
+
+    public ResourceController getController() {
+      return controller;
+    }
+
+    public ControllerConfiguration getConfiguration() {
+      return configuration;
     }
   }
 }

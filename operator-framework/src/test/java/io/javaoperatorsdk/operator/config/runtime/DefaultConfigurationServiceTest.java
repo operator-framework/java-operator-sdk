@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
+import io.javaoperatorsdk.operator.api.config.DefaultConfigurationService;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +27,13 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   void attemptingToRetrieveAnUnknownControllerShouldLogWarning() {
-    final var logger = (Logger) LoggerFactory.getLogger(AbstractConfigurationService.LOGGER_NAME);
+    final var logger = (Logger) LoggerFactory.getLogger(DefaultConfigurationService.LOGGER_NAME);
     final var appender = new ListAppender<ILoggingEvent>();
     logger.addAppender(appender);
     appender.start();
     try {
       final var config =
-          DefaultConfigurationService.instance()
+          io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService.instance()
               .getConfigurationFor(new NotAutomaticallyCreated(), false);
       assertNull(config);
       assertEquals(1, appender.list.size());
@@ -54,7 +54,8 @@ public class DefaultConfigurationServiceTest {
   public void returnsValuesFromControllerAnnotationFinalizer() {
     final var controller = new TestCustomResourceController();
     final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(controller);
+        io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService.instance()
+            .getConfigurationFor(controller);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class), configuration.getCRDName());
     assertEquals(
         ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
@@ -67,7 +68,8 @@ public class DefaultConfigurationServiceTest {
   public void returnCustomerFinalizerNameIfSet() {
     final var controller = new TestCustomFinalizerController();
     final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(controller);
+        io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService.instance()
+            .getConfigurationFor(controller);
     assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizer());
   }
 
@@ -76,7 +78,7 @@ public class DefaultConfigurationServiceTest {
     final var controller = new TestCustomFinalizerController();
     assertDoesNotThrow(
         () -> {
-          DefaultConfigurationService.instance()
+          io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService.instance()
               .getConfigurationFor(controller)
               .getAssociatedControllerClassName();
         });

@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractConfigurationService implements ConfigurationService {
+public class DefaultConfigurationService implements ConfigurationService {
 
   public static final String LOGGER_NAME = "Default ConfigurationService implementation";
   protected static final Logger log = LoggerFactory.getLogger(LOGGER_NAME);
@@ -18,7 +18,7 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
 
-  public AbstractConfigurationService(Version version) {
+  public DefaultConfigurationService(Version version) {
     this.version = version;
   }
 
@@ -54,6 +54,7 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
             + newControllerClassName);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
