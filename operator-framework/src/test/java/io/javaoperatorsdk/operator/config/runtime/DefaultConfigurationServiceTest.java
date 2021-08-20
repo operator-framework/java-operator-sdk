@@ -1,14 +1,10 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
@@ -18,8 +14,13 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.test.appender.ListAppender;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 public class DefaultConfigurationServiceTest {
 
@@ -27,26 +28,44 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   void attemptingToRetrieveAnUnknownControllerShouldLogWarning() {
-    final var logger = (Logger) LoggerFactory.getLogger(AbstractConfigurationService.LOGGER_NAME);
-    final var appender = new ListAppender<ILoggingEvent>();
-    logger.addAppender(appender);
+    final LoggerContext context = LoggerContext.getContext(false);
+    final PatternLayout layout = PatternLayout.createDefaultLayout(context.getConfiguration());
+    final ListAppender appender = new ListAppender("list", null, layout, false, false);
+
     appender.start();
+
+    context.getConfiguration().addAppender(appender);
+
+    AppenderRef ref = AppenderRef.createAppenderRef("list", null, null);
+    LoggerConfig loggerConfig =
+        LoggerConfig.createLogger(
+            false,
+            Level.valueOf("info"),
+            AbstractConfigurationService.LOGGER_NAME,
+            "false",
+            new AppenderRef[] {ref},
+            null,
+            context.getConfiguration(),
+            null);
+    loggerConfig.addAppender(appender, null, null);
+
+    context.getConfiguration().addLogger(AbstractConfigurationService.LOGGER_NAME, loggerConfig);
+    context.updateLoggers();
+
     try {
       final var config =
           DefaultConfigurationService.instance()
               .getConfigurationFor(new NotAutomaticallyCreated(), false);
-      assertNull(config);
-      assertEquals(1, appender.list.size());
-      assertTrue(
-          appender.list.stream()
-              .allMatch(
-                  e -> {
-                    final var message = e.getFormattedMessage();
-                    return message.contains(NotAutomaticallyCreated.NAME)
-                        && message.contains("not found");
-                  }));
+
+      assertThat(config).isNull();
+      assertThat(appender.getMessages())
+          .hasSize(1)
+          .allMatch(m -> m.contains(NotAutomaticallyCreated.NAME) && m.contains("not found"));
     } finally {
-      logger.detachAndStopAllAppenders();
+      appender.stop();
+
+      context.getConfiguration().removeLogger(AbstractConfigurationService.LOGGER_NAME);
+      context.updateLoggers();
     }
   }
 
@@ -86,15 +105,15 @@ public class DefaultConfigurationServiceTest {
   static class TestCustomFinalizerController
       implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
 
-    @Group("test.crd")
-    @Version("v1")
-    public class InnerCustomResource extends CustomResource {}
-
     @Override
     public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
         InnerCustomResource resource, Context<InnerCustomResource> context) {
       return null;
     }
+
+    @Group("test.crd")
+    @Version("v1")
+    public class InnerCustomResource extends CustomResource {}
   }
 
   @Controller(name = NotAutomaticallyCreated.NAME)
