@@ -40,6 +40,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <fabric8-client.version>5.7.0</fabric8-client.version>
         <slf4j.version>1.7.32</slf4j.version>
+        <formatter-maven-plugin.version>2.16.0</formatter-maven-plugin.version>
+        <directory-maven-plugin.version>0.3.1</directory-maven-plugin.version>
     </properties>
 
     <modules>
@@ -111,6 +113,23 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.commonjava.maven.plugins</groupId>
+                <artifactId>directory-maven-plugin</artifactId>
+                <version>${directory-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>directories</id>
+                        <goals>
+                            <goal>highest-basedir</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <property>josdk.project.root</property>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
@@ -124,18 +143,17 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.coveo</groupId>
-                <artifactId>fmt-maven-plugin</artifactId>
-                <version>2.11</version>
-                <configuration>
-                    <style>google</style>
-                </configuration>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>${formatter-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
                             <goal>format</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <configuration>
+                            <configFile>${josdk.project.root}/contributing/eclipse-google-style.xml</configFile>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

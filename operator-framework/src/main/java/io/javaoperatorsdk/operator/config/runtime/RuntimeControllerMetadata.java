@@ -8,8 +8,7 @@ public class RuntimeControllerMetadata {
 
   public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
   public static final String DONEABLES_RESOURCE_PATH = "javaoperatorsdk/doneables";
-  private static final Map<Class<? extends ResourceController>, Class<? extends CustomResource>>
-      controllerToCustomResourceMappings;
+  private static final Map<Class<? extends ResourceController>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
 
   static {
     controllerToCustomResourceMappings =

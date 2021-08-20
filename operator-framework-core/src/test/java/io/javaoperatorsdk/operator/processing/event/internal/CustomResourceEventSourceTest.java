@@ -20,11 +20,8 @@ import org.junit.jupiter.api.Test;
 class CustomResourceEventSourceTest {
 
   public static final String FINALIZER = "finalizer";
-  MixedOperation<
-          TestCustomResource,
-          KubernetesResourceList<TestCustomResource>,
-          Resource<TestCustomResource>>
-      client = mock(MixedOperation.class);
+  MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> client =
+      mock(MixedOperation.class);
   EventHandler eventHandler = mock(EventHandler.class);
 
   private CustomResourceEventSource<TestCustomResource> customResourceEventSource =

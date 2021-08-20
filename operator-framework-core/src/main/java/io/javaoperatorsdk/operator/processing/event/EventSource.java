@@ -11,8 +11,8 @@ public interface EventSource extends Closeable {
   default void start() {}
 
   /**
-   * This method is invoked when this {@link EventSource} instance is de-registered from a {@link
-   * EventSourceManager}.
+   * This method is invoked when this {@link EventSource} instance is de-registered from a
+   * {@link EventSourceManager}.
    */
   @Override
   default void close() {}

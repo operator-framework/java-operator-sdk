@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [11, 15]
+        java: [11, 16]
         distribution: [ adopt, adopt-openj9 ]
         kubernetes: ['v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.4']
     steps:
@@ -32,7 +32,7 @@ jobs:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
       - name: Check code format
-        run: ./mvnw ${MAVEN_ARGS} fmt:check --file pom.xml
+        run: ./mvnw ${MAVEN_ARGS} formatter:validate -Dconfigfile=$PWD/contributing/eclipse-google-style.xml --file pom.xml
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
       - name: Set up Minikube

@@ -29,11 +29,11 @@ class TypeParameterResolver {
 
   /**
    * @param typeUtils Type utilities, During the annotation processing processingEnv.getTypeUtils()
-   *     can be passed.
+   *        can be passed.
    * @param declaredType Class or Interface which extends or implements the interestedClass, and the
-   *     interest is getting the actual declared type is used.
+   *        interest is getting the actual declared type is used.
    * @return the type of the parameter if it can be resolved from the the given declareType,
-   *     otherwise it returns null
+   *         otherwise it returns null
    */
   public TypeMirror resolve(Types typeUtils, DeclaredType declaredType) {
     final var chain = findChain(typeUtils, declaredType);
@@ -88,7 +88,7 @@ class TypeParameterResolver {
 
     final var matchingInterfaces = getMatchingInterfaces(typeUtils, superElement);
     // if chain of interfaces is not empty, there is no reason to continue the lookup
-    //  as interfaces do not extend the classes
+    // as interfaces do not extend the classes
     if (matchingInterfaces.size() > 0) {
       result.addAll(matchingInterfaces);
       return result;
@@ -137,18 +137,18 @@ class TypeParameterResolver {
     var matchingInterfaces =
         ((TypeElement) parentInterface.asElement())
             .getInterfaces().stream()
-                .filter(i -> typeUtils.isAssignable(i, interestedClass))
-                .map(i -> (DeclaredType) i)
-                .collect(Collectors.toList());
+            .filter(i -> typeUtils.isAssignable(i, interestedClass))
+            .map(i -> (DeclaredType) i)
+            .collect(Collectors.toList());
     while (matchingInterfaces.size() > 0) {
       result.addAll(matchingInterfaces);
       final var lastFoundInterface = matchingInterfaces.get(matchingInterfaces.size() - 1);
       matchingInterfaces =
           ((TypeElement) lastFoundInterface.asElement())
               .getInterfaces().stream()
-                  .filter(i -> typeUtils.isAssignable(i, interestedClass))
-                  .map(i -> (DeclaredType) i)
-                  .collect(Collectors.toList());
+              .filter(i -> typeUtils.isAssignable(i, interestedClass))
+              .map(i -> (DeclaredType) i)
+              .collect(Collectors.toList());
     }
     return result;
   }

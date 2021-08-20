@@ -93,8 +93,8 @@ class EventDispatcher<R extends CustomResource> {
   }
 
   /**
-   * Determines whether the given resource should be dispatched to the controller's {@link
-   * ResourceController#deleteResource(CustomResource, Context)} method
+   * Determines whether the given resource should be dispatched to the controller's
+   * {@link ResourceController#deleteResource(CustomResource, Context)} method
    *
    * @param resource the resource to be potentially deleted
    * @return {@code true} if the resource should be handed to the controller's {@code
@@ -109,11 +109,12 @@ class EventDispatcher<R extends CustomResource> {
   private PostExecutionControl handleCreateOrUpdate(
       ExecutionScope<R> executionScope, R resource, Context<R> context) {
     if (configuration.useFinalizer() && !resource.hasFinalizer(configuration.getFinalizer())) {
-      /*  We always add the finalizer if missing and the controller is configured to use a finalizer.
-         We execute the controller processing only for processing the event sent as a results
-         of the finalizer add. This will make sure that the resources are not created before
-         there is a finalizer.
-      */
+      /*
+       * We always add the finalizer if missing and the controller is configured to use a finalizer.
+       * We execute the controller processing only for processing the event sent as a results of the
+       * finalizer add. This will make sure that the resources are not created before there is a
+       * finalizer.
+       */
       updateCustomResourceWithFinalizer(resource);
       return PostExecutionControl.onlyFinalizerAdded();
     } else {

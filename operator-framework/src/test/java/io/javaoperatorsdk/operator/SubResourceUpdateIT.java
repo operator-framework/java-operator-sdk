@@ -112,12 +112,11 @@ public class SubResourceUpdateIT {
         .untilAsserted(
             () -> {
               SubResourceTestCustomResource cr =
-                  (SubResourceTestCustomResource)
-                      integrationTestSupport
-                          .getCrOperations()
-                          .inNamespace(TEST_NAMESPACE)
-                          .withName(name)
-                          .get();
+                  (SubResourceTestCustomResource) integrationTestSupport
+                      .getCrOperations()
+                      .inNamespace(TEST_NAMESPACE)
+                      .withName(name)
+                      .get();
               assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();

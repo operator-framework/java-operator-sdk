@@ -27,10 +27,9 @@ public class GenericRetryExecutionTest {
     res = retryExecution.nextDelay();
     assertThat(res.get())
         .isEqualTo(
-            (long)
-                (DEFAULT_INITIAL_INTERVAL
-                    * GenericRetry.DEFAULT_MULTIPLIER
-                    * GenericRetry.DEFAULT_MULTIPLIER));
+            (long) (DEFAULT_INITIAL_INTERVAL
+                * GenericRetry.DEFAULT_MULTIPLIER
+                * GenericRetry.DEFAULT_MULTIPLIER));
   }
 
   @Test

@@ -160,8 +160,8 @@ public class DefaultEventSourceManager implements EventSourceManager {
   // todo: remove
   public CustomResourceCache getCache() {
     final var source =
-        (CustomResourceEventSource)
-            getRegisteredEventSources().get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
+        (CustomResourceEventSource) getRegisteredEventSources()
+            .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
     return source.getCache();
   }
 

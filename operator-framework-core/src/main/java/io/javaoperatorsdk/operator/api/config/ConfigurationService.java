@@ -24,7 +24,7 @@ public interface ConfigurationService {
    * Retrieves the Kubernetes client configuration
    *
    * @return the configuration of the Kubernetes client, defaulting to the provided
-   *     auto-configuration
+   *         auto-configuration
    */
   default Config getClientConfiguration() {
     return Config.autoConfigure(null);
@@ -45,11 +45,13 @@ public interface ConfigurationService {
   Version getVersion();
 
   /**
-   * Whether the operator should query the CRD to make sure it's deployed and validate {@link
-   * CustomResource} implementations before attempting to register the associated controllers.
+   * Whether the operator should query the CRD to make sure it's deployed and validate
+   * {@link CustomResource} implementations before attempting to register the associated
+   * controllers.
    *
-   * <p>Note that this might require elevating the privileges associated with the operator to gain
-   * read access on the CRD resources.
+   * <p>
+   * Note that this might require elevating the privileges associated with the operator to gain read
+   * access on the CRD resources.
    *
    * @return {@code true} if CRDs should be checked (default), {@code false} otherwise
    */

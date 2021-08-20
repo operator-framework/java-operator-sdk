@@ -9,4 +9,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("cs")
-public class CustomService extends CustomResource<ServiceSpec, Void> implements Namespaced {}
+public class CustomService extends CustomResource<ServiceSpec, Void> implements Namespaced {
+}

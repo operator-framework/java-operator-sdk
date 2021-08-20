@@ -86,12 +86,11 @@ public class ControllerExecutionIT {
         .untilAsserted(
             () -> {
               TestCustomResource cr =
-                  (TestCustomResource)
-                      integrationTestSupport
-                          .getCrOperations()
-                          .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                          .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
-                          .get();
+                  (TestCustomResource) integrationTestSupport
+                      .getCrOperations()
+                      .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+                      .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
+                      .get();
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");

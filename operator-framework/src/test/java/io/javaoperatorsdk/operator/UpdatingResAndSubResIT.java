@@ -40,17 +40,17 @@ public class UpdatingResAndSubResIT {
           TestUtils.waitXms(300);
 
           DoubleUpdateTestCustomResource customResource =
-              (DoubleUpdateTestCustomResource)
-                  integrationTestSupport.getCustomResource(resource.getMetadata().getName());
+              (DoubleUpdateTestCustomResource) integrationTestSupport
+                  .getCustomResource(resource.getMetadata().getName());
           assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
           assertThat(customResource.getStatus().getState())
               .isEqualTo(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
           assertThat(
-                  customResource
-                      .getMetadata()
-                      .getAnnotations()
-                      .get(DoubleUpdateTestCustomResourceController.TEST_ANNOTATION))
-              .isNotNull();
+              customResource
+                  .getMetadata()
+                  .getAnnotations()
+                  .get(DoubleUpdateTestCustomResourceController.TEST_ANNOTATION))
+                      .isNotNull();
         });
   }
 
@@ -60,12 +60,11 @@ public class UpdatingResAndSubResIT {
         .untilAsserted(
             () -> {
               DoubleUpdateTestCustomResource cr =
-                  (DoubleUpdateTestCustomResource)
-                      integrationTestSupport
-                          .getCrOperations()
-                          .inNamespace(TEST_NAMESPACE)
-                          .withName(name)
-                          .get();
+                  (DoubleUpdateTestCustomResource) integrationTestSupport
+                      .getCrOperations()
+                      .inNamespace(TEST_NAMESPACE)
+                      .withName(name)
+                      .get();
               assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();

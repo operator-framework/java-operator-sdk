@@ -88,7 +88,8 @@ public class DefaultConfigurationServiceTest {
 
     @Group("test.crd")
     @Version("v1")
-    public class InnerCustomResource extends CustomResource {}
+    public class InnerCustomResource extends CustomResource {
+    }
 
     @Override
     public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(

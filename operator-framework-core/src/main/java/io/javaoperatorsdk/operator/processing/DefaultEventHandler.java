@@ -238,10 +238,12 @@ public class DefaultEventHandler implements EventHandler {
    * with a non up to date CR. Here we cache the latest CustomResource from the update execution so
    * we make sure its already used in the up-coming execution.
    *
-   * <p>Note that this is an improvement, not a bug fix. This situation can happen naturally, we
-   * just make the execution more efficient, and avoid questions about conflicts.
+   * <p>
+   * Note that this is an improvement, not a bug fix. This situation can happen naturally, we just
+   * make the execution more efficient, and avoid questions about conflicts.
    *
-   * <p>Note that without the conditional locking in the cache, there is a very minor chance that we
+   * <p>
+   * Note that without the conditional locking in the cache, there is a very minor chance that we
    * would override an additional change coming from a different client.
    */
   private void cacheUpdatedResourceIfChanged(
@@ -259,9 +261,8 @@ public class DefaultEventHandler implements EventHandler {
           getVersion(originalCustomResource));
       eventSourceManager.cacheResource(
           customResourceAfterExecution,
-          customResource ->
-              getVersion(customResource).equals(originalResourceVersion)
-                  && !originalResourceVersion.equals(getVersion(customResourceAfterExecution)));
+          customResource -> getVersion(customResource).equals(originalResourceVersion)
+              && !originalResourceVersion.equals(getVersion(customResourceAfterExecution)));
     }
   }
 

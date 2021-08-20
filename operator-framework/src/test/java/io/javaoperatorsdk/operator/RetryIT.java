@@ -44,12 +44,11 @@ public class RetryIT {
                   RetryTestCustomResourceController.NUMBER_FAILED_EXECUTIONS + 1);
 
           RetryTestCustomResource finalResource =
-              (RetryTestCustomResource)
-                  integrationTestSupport
-                      .getCrOperations()
-                      .inNamespace(TEST_NAMESPACE)
-                      .withName(resource.getMetadata().getName())
-                      .get();
+              (RetryTestCustomResource) integrationTestSupport
+                  .getCrOperations()
+                  .inNamespace(TEST_NAMESPACE)
+                  .withName(resource.getMetadata().getName())
+                  .get();
           assertThat(finalResource.getStatus().getState())
               .isEqualTo(RetryTestCustomResourceStatus.State.SUCCESS);
         });

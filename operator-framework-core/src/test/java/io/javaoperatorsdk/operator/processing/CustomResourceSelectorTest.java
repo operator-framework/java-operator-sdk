@@ -51,13 +51,13 @@ class CustomResourceSelectorTest {
     doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
     doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
     doAnswer(
-            invocation -> {
-              final var resourceId = (String) invocation.getArgument(0);
-              customResourceCache.cleanup(resourceId);
-              return null;
-            })
-        .when(defaultEventSourceManagerMock)
-        .cleanup(any());
+        invocation -> {
+          final var resourceId = (String) invocation.getArgument(0);
+          customResourceCache.cleanup(resourceId);
+          return null;
+        })
+            .when(defaultEventSourceManagerMock)
+            .cleanup(any());
   }
 
   @Test
