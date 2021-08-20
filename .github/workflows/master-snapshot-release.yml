@@ -1,4 +1,8 @@
 name: Test & Release Snapshot to Maven Central
+
+env:
+  MAVEN_ARGS: -V -ntp -e
+
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
@@ -28,7 +32,7 @@ jobs:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
       - name: Run unit tests
-        run: mvn -B test --file pom.xml
+        run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.4.2
         with:
@@ -36,7 +40,7 @@ jobs:
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
       - name: Run integration tests
-        run: mvn -B package -P no-unit-tests --file pom.xml
+        run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests --file pom.xml
   release-snapshot:
     runs-on: ubuntu-latest
     needs: test
