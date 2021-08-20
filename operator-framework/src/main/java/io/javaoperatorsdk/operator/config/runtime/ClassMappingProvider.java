@@ -23,7 +23,7 @@ class ClassMappingProvider {
     try {
       final var classLoader = Thread.currentThread().getContextClassLoader();
       final Enumeration<URL> customResourcesMetadataList = classLoader.getResources(resourcePath);
-      for (Iterator<URL> it = customResourcesMetadataList.asIterator(); it.hasNext(); ) {
+      for (Iterator<URL> it = customResourcesMetadataList.asIterator(); it.hasNext();) {
         URL url = it.next();
 
         List<String> classNamePairs = retrieveClassNamePairs(url);

@@ -74,13 +74,13 @@ class DefaultEventHandlerTest {
     doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
     doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
     doAnswer(
-            invocation -> {
-              final var resourceId = (String) invocation.getArgument(0);
-              customResourceCache.cleanup(resourceId);
-              return null;
-            })
-        .when(defaultEventSourceManagerMock)
-        .cleanup(any());
+        invocation -> {
+          final var resourceId = (String) invocation.getArgument(0);
+          customResourceCache.cleanup(resourceId);
+          return null;
+        })
+            .when(defaultEventSourceManagerMock)
+            .cleanup(any());
   }
 
   @Test
@@ -239,11 +239,10 @@ class DefaultEventHandlerTest {
   private String eventAlreadyUnderProcessing() {
     when(eventDispatcherMock.handleExecution(any()))
         .then(
-            (Answer<PostExecutionControl>)
-                invocationOnMock -> {
-                  Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION);
-                  return PostExecutionControl.defaultDispatch();
-                });
+            (Answer<PostExecutionControl>) invocationOnMock -> {
+              Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION);
+              return PostExecutionControl.defaultDispatch();
+            });
     Event event = prepareCREvent();
     defaultEventHandler.handleEvent(event);
     return event.getRelatedCustomResourceUid();

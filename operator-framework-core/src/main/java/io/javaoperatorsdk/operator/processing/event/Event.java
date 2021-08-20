@@ -7,7 +7,7 @@ public interface Event {
 
   /**
    * @return the UID of the the {@link CustomResource} for which a reconcile loop should be
-   *     triggered.
+   *         triggered.
    * @deprecated use {@link #getCustomResourcesSelector()}
    */
   @Deprecated

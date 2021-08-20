@@ -13,7 +13,7 @@ public interface EventSourceManager extends Closeable {
    * @param name the name of the {@link EventSource} to add
    * @param eventSource the {@link EventSource} to register
    * @throws IllegalStateException if an {@link EventSource} with the same name is already
-   *     registered.
+   *         registered.
    * @throws OperatorException if an error occurred during the registration process
    */
   void registerEventSource(String name, EventSource eventSource)
@@ -25,7 +25,7 @@ public interface EventSourceManager extends Closeable {
    *
    * @param name the name of the {@link EventSource} to remove
    * @return an optional {@link EventSource} which would be empty if no {@link EventSource} have
-   *     been registered with the given name.
+   *         been registered with the given name.
    */
   Optional<EventSource> deRegisterEventSource(String name);
 

@@ -31,9 +31,7 @@ public class IntegrationTestSupport {
   public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
   private static final Logger log = LoggerFactory.getLogger(IntegrationTestSupport.class);
   private KubernetesClient k8sClient;
-  private MixedOperation<
-          CustomResource, KubernetesResourceList<CustomResource>, Resource<CustomResource>>
-      crOperations;
+  private MixedOperation<CustomResource, KubernetesResourceList<CustomResource>, Resource<CustomResource>> crOperations;
   private Operator operator;
   private ResourceController controller;
 
@@ -179,9 +177,7 @@ public class IntegrationTestSupport {
     return k8sClient;
   }
 
-  public MixedOperation<
-          CustomResource, KubernetesResourceList<CustomResource>, Resource<CustomResource>>
-      getCrOperations() {
+  public MixedOperation<CustomResource, KubernetesResourceList<CustomResource>, Resource<CustomResource>> getCrOperations() {
     return crOperations;
   }
 

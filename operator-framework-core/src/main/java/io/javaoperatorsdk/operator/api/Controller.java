@@ -26,8 +26,8 @@ public @interface Controller {
 
   /**
    * If true, will dispatch new event to the controller if generation increased since the last
-   * processing, otherwise will process all events. See generation meta attribute <a
-   * href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource">here</a>
+   * processing, otherwise will process all events. See generation meta attribute <a href=
+   * "https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource">here</a>
    *
    * @return whether the controller takes generation into account to process events
    */

@@ -14,7 +14,6 @@ public class DoubleUpdateTestCustomResourceStatus {
   }
 
   public enum State {
-    SUCCESS,
-    ERROR
+    SUCCESS, ERROR
   }
 }

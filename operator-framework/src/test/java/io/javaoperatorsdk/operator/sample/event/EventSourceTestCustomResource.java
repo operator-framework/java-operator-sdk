@@ -13,4 +13,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("es")
 public class EventSourceTestCustomResource
     extends CustomResource<EventSourceTestCustomResourceSpec, EventSourceTestCustomResourceStatus>
-    implements Namespaced {}
+    implements Namespaced {
+}

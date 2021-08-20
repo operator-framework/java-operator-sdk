@@ -80,7 +80,7 @@ public class TestCustomResourceController
 
     if (existingConfigMap != null) {
       existingConfigMap.setData(configMapData(resource));
-      //            existingConfigMap.getMetadata().setResourceVersion(null);
+      // existingConfigMap.getMetadata().setResourceVersion(null);
       kubernetesClient
           .configMaps()
           .inNamespace(resource.getMetadata().getNamespace())

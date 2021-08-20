@@ -22,7 +22,7 @@ public class Config {
     return new CustomServiceController(client);
   }
 
-  //  Register all controller beans
+  // Register all controller beans
   @Bean(initMethod = "start", destroyMethod = "stop")
   public Operator operator(KubernetesClient client, List<ResourceController> controllers) {
     Operator operator = new Operator(client, DefaultConfigurationService.instance());

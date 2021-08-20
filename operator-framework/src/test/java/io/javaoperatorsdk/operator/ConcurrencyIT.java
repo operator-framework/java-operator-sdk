@@ -72,12 +72,11 @@ public class ConcurrencyIT {
           // update some resources
           for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
             TestCustomResource tcr =
-                (TestCustomResource)
-                    integrationTest
-                        .getCrOperations()
-                        .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                        .withName(IntegrationTestSupport.TEST_CUSTOM_RESOURCE_PREFIX + i)
-                        .get();
+                (TestCustomResource) integrationTest
+                    .getCrOperations()
+                    .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+                    .withName(IntegrationTestSupport.TEST_CUSTOM_RESOURCE_PREFIX + i)
+                    .get();
             tcr.getSpec().setValue(i + UPDATED_SUFFIX);
             integrationTest
                 .getCrOperations()

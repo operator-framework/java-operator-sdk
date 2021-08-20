@@ -124,8 +124,8 @@ public class Operator implements AutoCloseable {
 
   /**
    * Add a registration requests for the specified controller with this operator, overriding its
-   * default configuration by the specified one (usually created via {@link
-   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * default configuration by the specified one (usually created via
+   * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the controller's original configuration. The effective registration of the
    * controller is delayed till the operator is started.
    *
@@ -150,8 +150,8 @@ public class Operator implements AutoCloseable {
 
   /**
    * Registers the specified controller with this operator, overriding its default configuration by
-   * the specified one (usually created via {@link
-   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * the specified one (usually created via
+   * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the controller's original configuration.
    *
    * @param controller the controller to register
@@ -241,7 +241,7 @@ public class Operator implements AutoCloseable {
    * but is missing
    *
    * @return {@code true} if the current namespace is requested but is missing, {@code false}
-   *     otherwise
+   *         otherwise
    */
   private static <R extends CustomResource> boolean failOnMissingCurrentNS(
       ControllerConfiguration<R> configuration) {

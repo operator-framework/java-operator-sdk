@@ -13,4 +13,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("du")
 public class DoubleUpdateTestCustomResource
     extends CustomResource<DoubleUpdateTestCustomResourceSpec, DoubleUpdateTestCustomResourceStatus>
-    implements Namespaced {}
+    implements Namespaced {
+}
