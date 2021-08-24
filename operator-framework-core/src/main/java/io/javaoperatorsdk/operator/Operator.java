@@ -66,6 +66,11 @@ public class Operator implements AutoCloseable {
           version.getSdkVersion(),
           version.getCommit(),
           version.getBuiltTime());
+
+      if (controllers.isEmpty()) {
+        throw new OperatorException("No ResourceController exists. Exiting!");
+      }
+
       log.info("Client version: {}", Version.clientVersion());
       try {
         final var k8sVersion = k8sClient.getVersion();
