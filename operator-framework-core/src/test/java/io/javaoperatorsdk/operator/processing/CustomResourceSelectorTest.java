@@ -17,9 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -34,16 +32,12 @@ class CustomResourceSelectorTest {
   private final DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
 
-  private ControllerConfiguration configuration =
-      mock(ControllerConfiguration.class);
-  private final ConfigurationService configService = mock(ConfigurationService.class);
-
   private final DefaultEventHandler defaultEventHandler =
       new DefaultEventHandler(
           eventDispatcherMock,
           "Test",
           null,
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER, configuration);
+          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
 
   @BeforeEach
   public void setup() {
@@ -63,10 +57,6 @@ class CustomResourceSelectorTest {
         })
             .when(defaultEventSourceManagerMock)
             .cleanup(any());
-
-    when(configuration.getName()).thenReturn("DefaultEventHandlerTest");
-    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
-    when(configuration.getConfigurationService()).thenReturn(configService);
   }
 
   @Test

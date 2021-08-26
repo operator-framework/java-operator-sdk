@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.List;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import java.util.List;
 
-public class ExecutionScope<R extends CustomResource> {
+public class ExecutionScope<R extends CustomResource<?, ?>> {
 
   private final List<Event> events;
   // the latest custom resource from cache

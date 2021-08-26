@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -35,6 +34,13 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 public class DefaultEventHandler<R extends CustomResource<?, ?>> implements EventHandler {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
+  private static EventMonitor monitor = new EventMonitor() {
+    @Override
+    public void processedEvent(String uid, Event event) {}
+
+    @Override
+    public void failedEvent(String uid, Event event) {}
+  };
 
   private final EventBuffer eventBuffer;
   private final Set<String> underProcessing = new HashSet<>();
@@ -46,7 +52,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
   private DefaultEventSourceManager<R> eventSourceManager;
-  private final ControllerConfiguration<R> configuration;
 
   public DefaultEventHandler(ConfiguredController<R> controller) {
     this(
@@ -54,21 +59,20 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         controller.getConfiguration().getName(),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
         controller.getConfiguration().getConfigurationService().concurrentReconciliationThreads(),
-        controller.getConfiguration().getConfigurationService().getTerminationTimeoutSeconds(),
-        controller.getConfiguration());
+        controller.getConfiguration().getConfigurationService().getTerminationTimeoutSeconds());
   }
 
   DefaultEventHandler(
       EventDispatcher<R> eventDispatcher,
       String relatedControllerName,
       Retry retry,
-      int concurrentReconciliationThreads, ControllerConfiguration<R> configuration) {
+      int concurrentReconciliationThreads) {
     this(
         eventDispatcher,
         relatedControllerName,
         retry,
         concurrentReconciliationThreads,
-        ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS, configuration);
+        ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
   }
 
   private DefaultEventHandler(
@@ -76,7 +80,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads,
-      int terminationTimeout, ControllerConfiguration<R> configuration) {
+      int terminationTimeout) {
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.controllerName = relatedControllerName;
@@ -86,7 +90,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         new ScheduledThreadPoolExecutor(
             concurrentReconciliationThreads,
             runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
-    this.configuration = configuration;
   }
 
   @Override
@@ -106,6 +109,16 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.eventSourceManager = eventSourceManager;
   }
 
+  public static void setEventMonitor(EventMonitor monitor) {
+    DefaultEventHandler.monitor = monitor;
+  }
+
+  public interface EventMonitor {
+    void processedEvent(String uid, Event event);
+
+    void failedEvent(String uid, Event event);
+  }
+
   @Override
   public void handleEvent(Event event) {
     try {
@@ -115,10 +128,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
       for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
         eventBuffer.addEvent(uid, event);
-        configuration
-            .getConfigurationService()
-            .getMetrics()
-            .timeControllerEvents();
+        monitor.processedEvent(uid, event);
         executeBufferedEvents(uid);
       }
     } finally {
@@ -168,10 +178,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
-        configuration
-            .getConfigurationService()
-            .getMetrics()
-            .timeControllerRetry();
+        executionScope.getEvents()
+            .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceUid(), e));
         return;
       }
 

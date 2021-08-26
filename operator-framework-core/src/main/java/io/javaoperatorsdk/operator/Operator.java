@@ -15,6 +15,9 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
+import io.javaoperatorsdk.operator.processing.event.Event;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable {
@@ -24,25 +27,29 @@ public class Operator implements AutoCloseable {
   private final Object lock;
   private final List<ConfiguredController> controllers;
   private volatile boolean started;
-  private final Metrics metrics;
 
-  public Operator(
-      KubernetesClient k8sClient, ConfigurationService configurationService, Metrics metrics) {
+  public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
     this.lock = new Object();
     this.controllers = new ArrayList<>();
     this.started = false;
-    this.metrics = metrics;
+    DefaultEventHandler.setEventMonitor(new EventMonitor() {
+      @Override
+      public void processedEvent(String uid, Event event) {
+        configurationService.getMetrics().timeControllerEvents();
+      }
+
+      @Override
+      public void failedEvent(String uid, Event event) {
+        configurationService.getMetrics().timeControllerRetry();
+      }
+    });
   }
 
   /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
   public void installShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread(this::close));
-  }
-
-  public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
-    this(k8sClient, configurationService, Metrics.NOOP);
   }
 
   public KubernetesClient getKubernetesClient() {

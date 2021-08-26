@@ -13,11 +13,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.Watcher;
-import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -25,15 +33,6 @@ import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class DefaultEventHandlerTest {
 
@@ -47,25 +46,20 @@ class DefaultEventHandlerTest {
       mock(DefaultEventSourceManager.class);
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
-  private ControllerConfiguration configuration =
-      mock(ControllerConfiguration.class);
-  private final ConfigurationService configService = mock(ConfigurationService.class);
 
   private DefaultEventHandler defaultEventHandler =
       new DefaultEventHandler(
           eventDispatcherMock,
           "Test",
           null,
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
-          configuration);
+          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
       new DefaultEventHandler(
           eventDispatcherMock,
           "Test",
           GenericRetry.defaultLimitedExponentialRetry(),
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
-          configuration);
+          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
 
   @BeforeEach
   public void setup() {
@@ -73,10 +67,6 @@ class DefaultEventHandlerTest {
         .thenReturn(retryTimerEventSourceMock);
     defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
     defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
-
-    when(configuration.getName()).thenReturn("DefaultEventHandlerTest");
-    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
-    when(configuration.getConfigurationService()).thenReturn(configService);
 
     // todo: remove
     when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
