@@ -10,6 +10,8 @@ import java.util.Set;
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
 
+  ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   /**
    * Retrieves the configuration associated with the specified controller
    *
@@ -80,7 +82,7 @@ public interface ConfigurationService {
    * @return the ObjectMapper to use
    */
   default ObjectMapper getObjectMapper() {
-    return new ObjectMapper();
+    return OBJECT_MAPPER;
   }
 
   int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;
