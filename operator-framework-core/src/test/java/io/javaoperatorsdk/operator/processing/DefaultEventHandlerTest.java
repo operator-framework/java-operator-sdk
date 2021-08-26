@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.Watcher;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -48,18 +47,11 @@ class DefaultEventHandlerTest {
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private DefaultEventHandler defaultEventHandler =
-      new DefaultEventHandler(
-          eventDispatcherMock,
-          "Test",
-          null,
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+      new DefaultEventHandler(eventDispatcherMock, "Test", null);
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
-      new DefaultEventHandler(
-          eventDispatcherMock,
-          "Test",
-          GenericRetry.defaultLimitedExponentialRetry(),
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+      new DefaultEventHandler(eventDispatcherMock, "Test",
+          GenericRetry.defaultLimitedExponentialRetry());
 
   @BeforeEach
   public void setup() {
