@@ -37,12 +37,12 @@ public class Operator implements AutoCloseable {
     DefaultEventHandler.setEventMonitor(new EventMonitor() {
       @Override
       public void processedEvent(String uid, Event event) {
-        configurationService.getMetrics().timeControllerEvents();
+        configurationService.getMetrics().incrementProcessedEventsNumber();
       }
 
       @Override
       public void failedEvent(String uid, Event event) {
-        configurationService.getMetrics().timeControllerRetry();
+        configurationService.getMetrics().incrementControllerRetriesNumber();
       }
     });
   }
