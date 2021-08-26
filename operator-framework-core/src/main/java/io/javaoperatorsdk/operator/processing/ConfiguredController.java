@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Objects;
@@ -82,6 +85,10 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
   public KubernetesClient getClient() {
     return k8sClient;
+  }
+
+  public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
+    return k8sClient.resources(configuration.getCustomResourceClass());
   }
 
   /**
