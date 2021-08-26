@@ -8,12 +8,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
-import java.util.Map;
-import org.junit.jupiter.api.Test;
 
 class DefaultEventSourceManagerTest {
 
@@ -38,7 +41,7 @@ class DefaultEventSourceManagerTest {
   }
 
   @Test
-  public void closeShouldCascadeToEventSources() {
+  public void closeShouldCascadeToEventSources() throws IOException {
     EventSource eventSource = mock(EventSource.class);
     EventSource eventSource2 = mock(EventSource.class);
     defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);

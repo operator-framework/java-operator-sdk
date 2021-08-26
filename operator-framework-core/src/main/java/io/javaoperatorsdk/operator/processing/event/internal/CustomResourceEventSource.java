@@ -4,6 +4,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   @Override
-  public void close() {
+  public void close() throws IOException {
     eventHandler.close();
     for (Watch watch : this.watches) {
       try {

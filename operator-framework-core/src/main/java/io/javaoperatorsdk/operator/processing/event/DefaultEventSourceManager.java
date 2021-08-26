@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +111,11 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
       lock.lock();
       EventSource currentEventSource = eventSources.remove(name);
       if (currentEventSource != null) {
-        currentEventSource.close();
+        try {
+          currentEventSource.close();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
 
       return Optional.ofNullable(currentEventSource);

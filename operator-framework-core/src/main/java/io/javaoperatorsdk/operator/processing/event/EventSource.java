@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 public interface EventSource extends Closeable {
 
@@ -15,7 +16,7 @@ public interface EventSource extends Closeable {
    * {@link EventSourceManager}.
    */
   @Override
-  default void close() {}
+  default void close() throws IOException {}
 
   void setEventHandler(EventHandler eventHandler);
 
