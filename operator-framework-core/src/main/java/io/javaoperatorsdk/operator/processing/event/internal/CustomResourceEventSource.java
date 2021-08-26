@@ -4,26 +4,25 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ListOptions;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** This is a special case since is not bound to a single custom resource */
 public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource
@@ -31,66 +30,24 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-  private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
-  private final Set<String> targetNamespaces;
-  private final boolean generationAware;
-  private final String resourceFinalizer;
-  private final String labelSelector;
+  private final ConfiguredController<T> controller;
   private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
   private final List<Watch> watches;
-  private final String resClass;
   private final CustomResourceCache customResourceCache;
 
-  public CustomResourceEventSource(
-      MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      ControllerConfiguration<T> configuration) {
-    this(
-        client,
-        configuration.getEffectiveNamespaces(),
-        configuration.isGenerationAware(),
-        configuration.getFinalizer(),
-        configuration.getLabelSelector(),
-        configuration.getCustomResourceClass(),
-        new CustomResourceCache(configuration.getConfigurationService().getObjectMapper()));
-  }
-
-  CustomResourceEventSource(
-      MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      Set<String> targetNamespaces,
-      boolean generationAware,
-      String resourceFinalizer,
-      String labelSelector,
-      Class<T> resClass) {
-    this(
-        client,
-        targetNamespaces,
-        generationAware,
-        resourceFinalizer,
-        labelSelector,
-        resClass,
-        new CustomResourceCache());
-  }
-
-  CustomResourceEventSource(
-      MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      Set<String> targetNamespaces,
-      boolean generationAware,
-      String resourceFinalizer,
-      String labelSelector,
-      Class<T> resClass,
-      CustomResourceCache customResourceCache) {
-    this.client = client;
-    this.targetNamespaces = targetNamespaces;
-    this.generationAware = generationAware;
-    this.resourceFinalizer = resourceFinalizer;
-    this.labelSelector = labelSelector;
-    this.watches = new ArrayList<>();
-    this.resClass = resClass.getName();
-    this.customResourceCache = customResourceCache;
+  public CustomResourceEventSource(ConfiguredController<T> controller) {
+    this.controller = controller;
+    this.watches = new LinkedList<>();
+    this.customResourceCache = new CustomResourceCache(
+        controller.getConfiguration().getConfigurationService().getObjectMapper());
   }
 
   @Override
   public void start() {
+    final var configuration = controller.getConfiguration();
+    final var targetNamespaces = configuration.getEffectiveNamespaces();
+    final var client = controller.getCRClient();
+    final var labelSelector = configuration.getLabelSelector();
     var options = new ListOptions();
     if (Utils.isNotNullOrEmpty(labelSelector)) {
       options.setLabelSelector(labelSelector);
@@ -99,13 +56,13 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
       var w = client.inAnyNamespace().watch(options, this);
       watches.add(w);
-      log.debug("Registered controller {} -> {} for any namespace", resClass, w);
+      log.debug("Registered {} -> {} for any namespace", controller, w);
     } else {
       targetNamespaces.forEach(
           ns -> {
             var w = client.inNamespace(ns).watch(options, this);
             watches.add(w);
-            log.debug("Registered controller {} -> {} for namespace: {}", resClass, w, ns);
+            log.debug("Registered {} -> {} for namespace: {}", controller, w, ns);
           });
     }
   }
@@ -115,10 +72,10 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     eventHandler.close();
     for (Watch watch : this.watches) {
       try {
-        log.info("Closing watch {} -> {}", resClass, watch);
+        log.info("Closing watch {} -> {}", controller, watch);
         watch.close();
       } catch (Exception e) {
-        log.warn("Error closing watcher {} -> {}", resClass, watch, e);
+        log.warn("Error closing watcher {} -> {}", controller, watch, e);
       }
     }
   }
@@ -152,14 +109,15 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   private void markLastGenerationProcessed(T resource) {
-    if (generationAware && resource.hasFinalizer(resourceFinalizer)) {
+    if (controller.getConfiguration().isGenerationAware()
+        && resource.hasFinalizer(controller.getConfiguration().getFinalizer())) {
       lastGenerationProcessedSuccessfully.put(
           KubernetesResourceUtils.getUID(resource), resource.getMetadata().getGeneration());
     }
   }
 
   private boolean skipBecauseOfGeneration(T customResource) {
-    if (!generationAware) {
+    if (!controller.getConfiguration().isGenerationAware()) {
       return false;
     }
     // if CR being deleted generation is naturally not changing, so we process all the events
