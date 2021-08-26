@@ -113,7 +113,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     try {
       DefaultEventSourceManager eventSourceManager =
           new DefaultEventSourceManager(
-              controller, configuration, k8sClient.customResources(resClass));
+              controller, configuration, k8sClient.resources(resClass));
       controller.init(eventSourceManager);
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
