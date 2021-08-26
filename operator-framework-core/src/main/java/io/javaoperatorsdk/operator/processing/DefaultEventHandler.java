@@ -116,6 +116,7 @@ public class DefaultEventHandler implements EventHandler {
       final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
       for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
         eventBuffer.addEvent(uid, event);
+        metrics.timeControllerEvents();
         executeBufferedEvents(uid);
       }
     } finally {

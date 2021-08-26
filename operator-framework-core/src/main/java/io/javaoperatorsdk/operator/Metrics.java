@@ -36,6 +36,7 @@ public class Metrics {
             .register(registry);
     try {
       final var result = timer.record(() -> controller.createOrUpdateResource(resource, context));
+      System.out.println("I am here in create update");
       String successType = "cr";
       if (result.isUpdateStatusSubResource()) {
         successType = "status";
@@ -47,9 +48,6 @@ public class Metrics {
           .counter(
               "operator.sdk.controllers.execution.success", "controller", name, "type", successType)
           .increment();
-      registry
-          .counter("operator.sdk.events.received", "events", name, "type", "totalEvents")
-          .increment();
       return result;
     } catch (Exception e) {
       registry
@@ -59,9 +57,6 @@ public class Metrics {
               name,
               "exception",
               e.getClass().getSimpleName())
-          .increment();
-      registry
-          .counter("operator.sdk.events.received", "events", name, "exception", "totalEvents")
           .increment();
       throw e;
     }
@@ -81,6 +76,7 @@ public class Metrics {
             .register(registry);
     try {
       final var result = timer.record(() -> controller.deleteResource(resource, context));
+      System.out.println("I am here in delete");
       String successType = "notDelete";
       if (result == DeleteControl.DEFAULT_DELETE) {
         successType = "delete";
@@ -88,9 +84,6 @@ public class Metrics {
       registry
           .counter(
               "operator.sdk.controllers.execution.success", "controller", name, "type", successType)
-          .increment();
-      registry
-          .counter("operator.sdk.events.received", "events", name, "type", "totalEvents")
           .increment();
       return result;
     } catch (Exception e) {
@@ -102,9 +95,6 @@ public class Metrics {
               "exception",
               e.getClass().getSimpleName())
           .increment();
-      registry
-          .counter("operator.sdk.events.received", "events", name, "exception", "totalEvents")
-          .increment();
       throw e;
     }
   }
@@ -115,6 +105,16 @@ public class Metrics {
         .counter(
             "operator.sdk.retry.on.exception", "retry", "retryCounter", "type",
             "retryException")
+        .increment();
+
+  }
+
+  public void timeControllerEvents() {
+
+    registry
+        .counter(
+            "operator.sdk.total.events.received", "events", "totalEvents", "type",
+            "eventsReceived")
         .increment();
 
   }
