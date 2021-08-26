@@ -1,29 +1,28 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.javaoperatorsdk.operator.processing.ConfiguredController;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private final List<Closeable> closeables;
   private final Object lock;
-  private final List<ControllerRef> controllers;
+  private final List<ConfiguredController> controllers;
   private volatile boolean started;
   private final Metrics metrics;
 
@@ -31,7 +30,6 @@ public class Operator implements AutoCloseable {
       KubernetesClient k8sClient, ConfigurationService configurationService, Metrics metrics) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
-    this.closeables = new ArrayList<>();
     this.lock = new Object();
     this.controllers = new ArrayList<>();
     this.started = false;
@@ -89,9 +87,7 @@ public class Operator implements AutoCloseable {
         throw new OperatorException("Error retrieving the server version", e);
       }
 
-      for (ControllerRef ref : controllers) {
-        startController(ref.controller, ref.configuration);
-      }
+      controllers.forEach(ConfiguredController::start);
 
       started = true;
     }
@@ -108,7 +104,7 @@ public class Operator implements AutoCloseable {
       log.info(
           "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-      for (Closeable closeable : this.closeables) {
+      for (Closeable closeable : this.controllers) {
         try {
           log.debug("closing {}", closeable);
           closeable.close();
@@ -150,32 +146,6 @@ public class Operator implements AutoCloseable {
   public <R extends CustomResource> void register(
       ResourceController<R> controller, ControllerConfiguration<R> configuration)
       throws OperatorException {
-    synchronized (lock) {
-      if (!started) {
-        this.controllers.add(new ControllerRef(controller, configuration));
-      } else {
-        this.controllers.add(new ControllerRef(controller, configuration));
-        startController(controller, configuration);
-      }
-    }
-  }
-
-  /**
-   * Registers the specified controller with this operator, overriding its default configuration by
-   * the specified one (usually created via
-   * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
-   * passing it the controller's original configuration.
-   *
-   * @param controller the controller to register
-   * @param configuration the configuration with which we want to register the controller, if {@code
-   *     null}, the controller's original configuration is used
-   * @param <R> the {@code CustomResource} type associated with the controller
-   * @throws OperatorException if a problem occurred during the registration process
-   */
-  private <R extends CustomResource> void startController(
-      ResourceController<R> controller, ControllerConfiguration<R> configuration)
-      throws OperatorException {
-
     final var existing = configurationService.getConfigurationFor(controller);
     if (existing == null) {
       log.warn(
@@ -188,39 +158,13 @@ public class Operator implements AutoCloseable {
       if (configuration == null) {
         configuration = existing;
       }
-
-      final Class<R> resClass = configuration.getCustomResourceClass();
-      final String controllerName = configuration.getName();
-      final var crdName = configuration.getCRDName();
-      final var specVersion = "v1";
-
-      // check that the custom resource is known by the cluster if configured that way
-      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (configurationService.checkCRDAndValidateLocalModel()) {
-        crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
-        if (crd == null) {
-          throwMissingCRDException(crdName, specVersion, controllerName);
+      synchronized (lock) {
+        final var configuredController =
+            new ConfiguredController(controller, configuration, k8sClient);
+        this.controllers.add(configuredController);
+        if (started) {
+          configuredController.start();
         }
-
-        // Apply validations that are not handled by fabric8
-        CustomResourceUtils.assertCustomResource(resClass, crd);
-      }
-
-      try {
-        DefaultEventSourceManager eventSourceManager =
-            new DefaultEventSourceManager(
-                controller, configuration, k8sClient.customResources(resClass));
-        controller.init(eventSourceManager);
-        closeables.add(eventSourceManager);
-      } catch (MissingCRDException e) {
-        throwMissingCRDException(crdName, specVersion, controllerName);
-      }
-
-      if (failOnMissingCurrentNS(configuration)) {
-        throw new OperatorException(
-            "Controller '"
-                + controllerName
-                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
       }
 
       final var watchedNS =
@@ -229,49 +173,9 @@ public class Operator implements AutoCloseable {
               : configuration.getEffectiveNamespaces();
       log.info(
           "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
-          controllerName,
-          resClass,
+          configuration.getName(),
+          configuration.getCustomResourceClass(),
           watchedNS);
-    }
-  }
-
-  private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
-    throw new MissingCRDException(
-        crdName,
-        specVersion,
-        "'"
-            + crdName
-            + "' "
-            + specVersion
-            + " CRD was not found on the cluster, controller '"
-            + controllerName
-            + "' cannot be registered");
-  }
-
-  /**
-   * Determines whether we should fail because the current namespace is request as target namespace
-   * but is missing
-   *
-   * @return {@code true} if the current namespace is requested but is missing, {@code false}
-   *         otherwise
-   */
-  private static <R extends CustomResource> boolean failOnMissingCurrentNS(
-      ControllerConfiguration<R> configuration) {
-    if (configuration.watchCurrentNamespace()) {
-      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
-      return effectiveNamespaces.size() == 1
-          && effectiveNamespaces.stream().allMatch(Objects::isNull);
-    }
-    return false;
-  }
-
-  private static class ControllerRef {
-    public final ResourceController controller;
-    public final ControllerConfiguration configuration;
-
-    public ControllerRef(ResourceController controller, ControllerConfiguration configuration) {
-      this.controller = controller;
-      this.configuration = configuration;
     }
   }
 }
