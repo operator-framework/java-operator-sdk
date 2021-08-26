@@ -1,19 +1,20 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import java.util.Optional;
 
-public final class PostExecutionControl {
+import io.fabric8.kubernetes.client.CustomResource;
+
+public final class PostExecutionControl<R extends CustomResource<?, ?>> {
 
   private final boolean onlyFinalizerHandled;
 
-  private final CustomResource updatedCustomResource;
+  private final R updatedCustomResource;
 
   private final RuntimeException runtimeException;
 
   private PostExecutionControl(
       boolean onlyFinalizerHandled,
-      CustomResource updatedCustomResource,
+      R updatedCustomResource,
       RuntimeException runtimeException) {
     this.onlyFinalizerHandled = onlyFinalizerHandled;
     this.updatedCustomResource = updatedCustomResource;
@@ -28,8 +29,9 @@ public final class PostExecutionControl {
     return new PostExecutionControl(false, null, null);
   }
 
-  public static PostExecutionControl customResourceUpdated(CustomResource updatedCustomResource) {
-    return new PostExecutionControl(false, updatedCustomResource, null);
+  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> customResourceUpdated(
+      R updatedCustomResource) {
+    return new PostExecutionControl<>(false, updatedCustomResource, null);
   }
 
   public static PostExecutionControl exceptionDuringExecution(RuntimeException exception) {
@@ -40,7 +42,7 @@ public final class PostExecutionControl {
     return onlyFinalizerHandled;
   }
 
-  public Optional<CustomResource> getUpdatedCustomResource() {
+  public Optional<R> getUpdatedCustomResource() {
     return Optional.ofNullable(updatedCustomResource);
   }
 

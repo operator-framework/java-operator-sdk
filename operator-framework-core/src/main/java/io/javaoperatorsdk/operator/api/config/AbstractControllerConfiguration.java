@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import java.util.Collections;
 import java.util.Set;
 
-public abstract class AbstractControllerConfiguration<R extends CustomResource>
+import io.fabric8.kubernetes.client.CustomResource;
+
+public abstract class AbstractControllerConfiguration<R extends CustomResource<?, ?>>
     implements ControllerConfiguration<R> {
 
   private final String associatedControllerClassName;

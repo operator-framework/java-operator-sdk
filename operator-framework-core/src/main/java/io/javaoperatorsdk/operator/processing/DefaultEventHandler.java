@@ -4,7 +4,6 @@ import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceD
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -46,7 +46,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
   private DefaultEventSourceManager<R> eventSourceManager;
-  private final ControllerConfiguration configuration;
+  private final ControllerConfiguration<R> configuration;
 
   public DefaultEventHandler(ConfiguredController<R> controller) {
     this(
@@ -62,7 +62,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       EventDispatcher<R> eventDispatcher,
       String relatedControllerName,
       Retry retry,
-      int concurrentReconciliationThreads, ControllerConfiguration configuration) {
+      int concurrentReconciliationThreads, ControllerConfiguration<R> configuration) {
     this(
         eventDispatcher,
         relatedControllerName,
@@ -76,7 +76,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads,
-      int terminationTimeout, ControllerConfiguration configuration) {
+      int terminationTimeout, ControllerConfiguration<R> configuration) {
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.controllerName = relatedControllerName;
@@ -157,7 +157,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   }
 
   void eventProcessingFinished(
-      ExecutionScope<R> executionScope, PostExecutionControl postExecutionControl) {
+      ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
     try {
       lock.lock();
       log.debug(
@@ -194,7 +194,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(ExecutionScope executionScope) {
+  private void handleRetryOnException(ExecutionScope<R> executionScope) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
     boolean newEventsExists = eventBuffer.newEventsExists(executionScope.getCustomResourceUid());
     eventBuffer.putBackEvents(executionScope.getCustomResourceUid(), executionScope.getEvents());
@@ -216,9 +216,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               .getRetryTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
         },
-        () -> {
-          log.error("Exhausted retries for {}", executionScope);
-        });
+        () -> log.error("Exhausted retries for {}", executionScope));
   }
 
   private void markSuccessfulExecutionRegardingRetry(ExecutionScope<R> executionScope) {
@@ -257,11 +255,10 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    * would override an additional change coming from a different client.
    */
   private void cacheUpdatedResourceIfChanged(
-      ExecutionScope<R> executionScope, PostExecutionControl postExecutionControl) {
+      ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
     if (postExecutionControl.customResourceUpdatedDuringExecution()) {
       R originalCustomResource = executionScope.getCustomResource();
-      CustomResource customResourceAfterExecution =
-          postExecutionControl.getUpdatedCustomResource().get();
+      R customResourceAfterExecution = postExecutionControl.getUpdatedCustomResource().get();
       String originalResourceVersion = getVersion(originalCustomResource);
 
       log.debug(
