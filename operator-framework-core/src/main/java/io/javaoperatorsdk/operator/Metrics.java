@@ -36,7 +36,6 @@ public class Metrics {
             .register(registry);
     try {
       final var result = timer.record(() -> controller.createOrUpdateResource(resource, context));
-      System.out.println("I am here in create update");
       String successType = "cr";
       if (result.isUpdateStatusSubResource()) {
         successType = "status";
@@ -76,7 +75,6 @@ public class Metrics {
             .register(registry);
     try {
       final var result = timer.record(() -> controller.deleteResource(resource, context));
-      System.out.println("I am here in delete");
       String successType = "notDelete";
       if (result == DeleteControl.DEFAULT_DELETE) {
         successType = "delete";
