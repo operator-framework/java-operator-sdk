@@ -13,6 +13,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.Metrics;
@@ -26,13 +35,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 
 class EventDispatcherTest {
 
@@ -40,15 +42,17 @@ class EventDispatcherTest {
   private CustomResource testCustomResource;
   private EventDispatcher eventDispatcher;
   private final ResourceController<CustomResource> controller = mock(ResourceController.class);
-  private ControllerConfiguration<CustomResource> configuration =
+  private final ControllerConfiguration<CustomResource> configuration =
       mock(ControllerConfiguration.class);
   private final ConfigurationService configService = mock(ConfigurationService.class);
+  private final ConfiguredController<CustomResource<?, ?>> configuredController =
+      new ConfiguredController(controller, configuration, null);
   private final EventDispatcher.CustomResourceFacade customResourceFacade =
       mock(EventDispatcher.CustomResourceFacade.class);
 
   @BeforeEach
   void setup() {
-    eventDispatcher = new EventDispatcher(controller, configuration, customResourceFacade);
+    eventDispatcher = new EventDispatcher(configuredController, customResourceFacade);
 
     testCustomResource = TestUtils.testCustomResource();
 
@@ -165,7 +169,8 @@ class EventDispatcherTest {
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configuration.getConfigurationService()).thenReturn(configService);
     when(configuration.useFinalizer()).thenReturn(false);
-    eventDispatcher = new EventDispatcher(controller, configuration, customResourceFacade);
+    eventDispatcher = new EventDispatcher(new ConfiguredController(controller, configuration, null),
+        customResourceFacade);
   }
 
   @Test
