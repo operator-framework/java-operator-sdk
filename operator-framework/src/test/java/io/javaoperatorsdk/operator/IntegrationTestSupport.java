@@ -52,7 +52,7 @@ public class IntegrationTestSupport {
     loadCRDAndApplyToCluster(crdPath);
 
     final var customResourceClass = config.getCustomResourceClass();
-    this.crOperations = k8sClient.customResources(customResourceClass);
+    this.crOperations = k8sClient.resources(customResourceClass);
 
     final var namespaces = k8sClient.namespaces();
     if (namespaces.withName(TEST_NAMESPACE).get() == null) {
