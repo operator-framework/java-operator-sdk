@@ -10,24 +10,22 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.fabric8.kubernetes.client.Watcher;
+import java.util.Objects;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
 import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import java.util.Objects;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 class CustomResourceSelectorTest {
 
-  public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
 
   private final EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
@@ -36,7 +34,6 @@ class CustomResourceSelectorTest {
   private final DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
 
-  private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
   private ControllerConfiguration configuration =
       mock(ControllerConfiguration.class);
   private final ConfigurationService configService = mock(ConfigurationService.class);
@@ -125,13 +122,4 @@ class CustomResourceSelectorTest {
     }
   }
 
-  private CustomResourceEvent prepareCREvent() {
-    return prepareCREvent(UUID.randomUUID().toString());
-  }
-
-  private CustomResourceEvent prepareCREvent(String uid) {
-    TestCustomResource customResource = testCustomResource(uid);
-    customResourceCache.cacheResource(customResource);
-    return new CustomResourceEvent(Watcher.Action.MODIFIED, customResource, null);
-  }
 }
