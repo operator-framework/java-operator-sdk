@@ -13,8 +13,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -44,20 +47,25 @@ class DefaultEventHandlerTest {
       mock(DefaultEventSourceManager.class);
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
+  private ControllerConfiguration configuration =
+      mock(ControllerConfiguration.class);
+  private final ConfigurationService configService = mock(ConfigurationService.class);
 
   private DefaultEventHandler defaultEventHandler =
       new DefaultEventHandler(
           eventDispatcherMock,
           "Test",
           null,
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
+          configuration);
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
       new DefaultEventHandler(
           eventDispatcherMock,
           "Test",
           GenericRetry.defaultLimitedExponentialRetry(),
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
+          configuration);
 
   @BeforeEach
   public void setup() {
@@ -65,6 +73,10 @@ class DefaultEventHandlerTest {
         .thenReturn(retryTimerEventSourceMock);
     defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
     defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
+
+    when(configuration.getName()).thenReturn("DefaultEventHandlerTest");
+    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
+    when(configuration.getConfigurationService()).thenReturn(configService);
 
     // todo: remove
     when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);

@@ -11,10 +11,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.fabric8.kubernetes.client.Watcher;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,12 +36,17 @@ class CustomResourceSelectorTest {
   private final DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
 
+  private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
+  private ControllerConfiguration configuration =
+      mock(ControllerConfiguration.class);
+  private final ConfigurationService configService = mock(ConfigurationService.class);
+
   private final DefaultEventHandler defaultEventHandler =
       new DefaultEventHandler(
           eventDispatcherMock,
           "Test",
           null,
-          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+          ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER, configuration);
 
   @BeforeEach
   public void setup() {
@@ -58,6 +66,10 @@ class CustomResourceSelectorTest {
         })
             .when(defaultEventSourceManagerMock)
             .cleanup(any());
+
+    when(configuration.getName()).thenReturn("DefaultEventHandlerTest");
+    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
+    when(configuration.getConfigurationService()).thenReturn(configService);
   }
 
   @Test
