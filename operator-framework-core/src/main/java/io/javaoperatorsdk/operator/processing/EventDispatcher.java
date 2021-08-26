@@ -41,7 +41,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
     this(controller, new CustomResourceFacade<>(controller.getCRClient()));
   }
 
-  public PostExecutionControl handleExecution(ExecutionScope<R> executionScope) {
+  public PostExecutionControl<R> handleExecution(ExecutionScope<R> executionScope) {
     try {
       return handleDispatch(executionScope);
     } catch (KubernetesClientException e) {
@@ -57,7 +57,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
     }
   }
 
-  private PostExecutionControl handleDispatch(ExecutionScope<R> executionScope) {
+  private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope) {
     R resource = executionScope.getCustomResource();
     log.debug("Handling events: {} for resource {}", executionScope.getEvents(), getName(resource));
 
@@ -106,7 +106,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
     return configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer());
   }
 
-  private PostExecutionControl handleCreateOrUpdate(
+  private PostExecutionControl<R> handleCreateOrUpdate(
       ExecutionScope<R> executionScope, R resource, Context<R> context) {
     if (configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer())) {
       /*
@@ -153,7 +153,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
     }
   }
 
-  private PostExecutionControl handleDelete(R resource, Context<R> context) {
+  private PostExecutionControl<R> handleDelete(R resource, Context<R> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),
@@ -213,7 +213,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
   }
 
   // created to support unit testing
-  static class CustomResourceFacade<R extends CustomResource> {
+  static class CustomResourceFacade<R extends CustomResource<?, ?>> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 

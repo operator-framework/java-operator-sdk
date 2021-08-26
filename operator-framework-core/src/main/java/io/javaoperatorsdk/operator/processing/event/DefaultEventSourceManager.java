@@ -46,9 +46,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
     this(new DefaultEventHandler<>(controller), true);
-    registerEventSource(
-        CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
-        new CustomResourceEventSource<>(controller.getCRClient(), controller.getConfiguration()));
+    registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
+        new CustomResourceEventSource<>(controller));
   }
 
   @Override

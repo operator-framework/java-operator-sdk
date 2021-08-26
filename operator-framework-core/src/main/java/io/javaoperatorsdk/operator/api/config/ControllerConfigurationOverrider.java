@@ -1,15 +1,16 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ControllerConfigurationOverrider<R extends CustomResource> {
+import io.fabric8.kubernetes.client.CustomResource;
+
+public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
 
   private String finalizer;
   private boolean generationAware;
-  private Set<String> namespaces;
+  private final Set<String> namespaces;
   private RetryConfiguration retry;
   private String labelSelector;
   private final ControllerConfiguration<R> original;
@@ -65,7 +66,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
   }
 
   public ControllerConfiguration<R> build() {
-    return new AbstractControllerConfiguration<R>(
+    return new AbstractControllerConfiguration<>(
         original.getAssociatedControllerClassName(),
         original.getName(),
         original.getCRDName(),
@@ -86,7 +87,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource> {
     };
   }
 
-  public static <R extends CustomResource> ControllerConfigurationOverrider<R> override(
+  public static <R extends CustomResource<?, ?>> ControllerConfigurationOverrider<R> override(
       ControllerConfiguration<R> original) {
     return new ControllerConfigurationOverrider<>(original);
   }

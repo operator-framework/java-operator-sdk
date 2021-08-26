@@ -1,20 +1,17 @@
 package io.javaoperatorsdk.operator.processing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.fabric8.kubernetes.client.CustomResource;
 
-class ExecutionConsumer implements Runnable {
+class ExecutionConsumer<R extends CustomResource<?, ?>> implements Runnable {
 
-  private static final Logger log = LoggerFactory.getLogger(ExecutionConsumer.class);
-
-  private final ExecutionScope executionScope;
-  private final EventDispatcher eventDispatcher;
-  private final DefaultEventHandler defaultEventHandler;
+  private final ExecutionScope<R> executionScope;
+  private final EventDispatcher<R> eventDispatcher;
+  private final DefaultEventHandler<R> defaultEventHandler;
 
   ExecutionConsumer(
-      ExecutionScope executionScope,
-      EventDispatcher eventDispatcher,
-      DefaultEventHandler defaultEventHandler) {
+      ExecutionScope<R> executionScope,
+      EventDispatcher<R> eventDispatcher,
+      DefaultEventHandler<R> defaultEventHandler) {
     this.executionScope = executionScope;
     this.eventDispatcher = eventDispatcher;
     this.defaultEventHandler = defaultEventHandler;
@@ -22,7 +19,7 @@ class ExecutionConsumer implements Runnable {
 
   @Override
   public void run() {
-    PostExecutionControl postExecutionControl = eventDispatcher.handleExecution(executionScope);
+    PostExecutionControl<R> postExecutionControl = eventDispatcher.handleExecution(executionScope);
     defaultEventHandler.eventProcessingFinished(executionScope, postExecutionControl);
   }
 }
