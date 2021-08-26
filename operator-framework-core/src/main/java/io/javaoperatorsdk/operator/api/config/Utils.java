@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,8 @@ public class Utils {
           // RFC 822 date is the default format used by git-commit-id-plugin
           new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
               .parse(properties.getProperty("git.build.time"));
-    } catch (ParseException e) {
+    } catch (Exception e) {
+      log.debug("Couldn't parse git.build.time property", e);
       builtTime = Date.from(Instant.EPOCH);
     }
     return new Version(
