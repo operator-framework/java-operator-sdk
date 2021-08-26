@@ -5,6 +5,9 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -17,32 +20,25 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
  */
-class EventDispatcher<R extends CustomResource> {
+class EventDispatcher<R extends CustomResource<?, ?>> {
 
   private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-  private final ResourceController<R> controller;
-  private final ControllerConfiguration<R> configuration;
+  private final ConfiguredController<R> controller;
   private final CustomResourceFacade<R> customResourceFacade;
 
-  EventDispatcher(
-      ResourceController<R> controller,
-      ControllerConfiguration<R> configuration,
+  EventDispatcher(ConfiguredController<R> controller,
       CustomResourceFacade<R> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
-    this.configuration = configuration;
   }
 
-  public EventDispatcher(
-      ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
-    this(controller, configuration, new CustomResourceFacade<>(client));
+  public EventDispatcher(ConfiguredController<R> controller) {
+    this(controller, new CustomResourceFacade<>(controller.getCRClient()));
   }
 
   public PostExecutionControl handleExecution(ExecutionScope<R> executionScope) {
@@ -92,6 +88,10 @@ class EventDispatcher<R extends CustomResource> {
     }
   }
 
+  private ControllerConfiguration<R> configuration() {
+    return controller.getConfiguration();
+  }
+
   /**
    * Determines whether the given resource should be dispatched to the controller's
    * {@link ResourceController#deleteResource(CustomResource, Context)} method
@@ -103,12 +103,12 @@ class EventDispatcher<R extends CustomResource> {
   private boolean shouldNotDispatchToDelete(R resource) {
     // we don't dispatch to delete if the controller is configured to use a finalizer but that
     // finalizer is not present (which means it's already been removed)
-    return configuration.useFinalizer() && !resource.hasFinalizer(configuration.getFinalizer());
+    return configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer());
   }
 
   private PostExecutionControl handleCreateOrUpdate(
       ExecutionScope<R> executionScope, R resource, Context<R> context) {
-    if (configuration.useFinalizer() && !resource.hasFinalizer(configuration.getFinalizer())) {
+    if (configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
        * We execute the controller processing only for processing the event sent as a results of the
@@ -125,10 +125,10 @@ class EventDispatcher<R extends CustomResource> {
           executionScope);
 
       UpdateControl<R> updateControl =
-          configuration
+          configuration()
               .getConfigurationService()
               .getMetrics()
-              .timeControllerCreateOrUpdate(controller, configuration, resource, context);
+              .timeControllerCreateOrUpdate(controller, configuration(), resource, context);
       R updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
@@ -160,14 +160,14 @@ class EventDispatcher<R extends CustomResource> {
         getVersion(resource));
 
     DeleteControl deleteControl =
-        configuration
+        configuration()
             .getConfigurationService()
             .getMetrics()
-            .timeControllerDelete(controller, configuration, resource, context);
-    final var useFinalizer = configuration.useFinalizer();
+            .timeControllerDelete(controller, configuration(), resource, context);
+    final var useFinalizer = configuration().useFinalizer();
     if (useFinalizer) {
       if (deleteControl == DeleteControl.DEFAULT_DELETE
-          && resource.hasFinalizer(configuration.getFinalizer())) {
+          && resource.hasFinalizer(configuration().getFinalizer())) {
         R customResource = removeFinalizer(resource);
         // todo: should we patch the resource to remove the finalizer instead of updating it
         return PostExecutionControl.customResourceUpdated(customResource);
@@ -185,7 +185,7 @@ class EventDispatcher<R extends CustomResource> {
   private void updateCustomResourceWithFinalizer(R resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
-    resource.addFinalizer(configuration.getFinalizer());
+    resource.addFinalizer(configuration().getFinalizer());
     replace(resource);
   }
 
@@ -200,7 +200,7 @@ class EventDispatcher<R extends CustomResource> {
         "Removing finalizer on resource: {} with version: {}",
         getUID(resource),
         getVersion(resource));
-    resource.removeFinalizer(configuration.getFinalizer());
+    resource.removeFinalizer(configuration().getFinalizer());
     return customResourceFacade.replaceWithLock(resource);
   }
 

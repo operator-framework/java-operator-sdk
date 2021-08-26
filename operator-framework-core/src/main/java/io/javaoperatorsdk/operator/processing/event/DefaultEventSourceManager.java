@@ -1,16 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.javaoperatorsdk.operator.MissingCRDException;
-import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +9,22 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultEventSourceManager implements EventSourceManager {
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.javaoperatorsdk.operator.MissingCRDException;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
+
+public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
+    implements EventSourceManager {
 
   public static final String RETRY_TIMER_EVENT_SOURCE_NAME = "retry-timer-event-source";
   private static final String CUSTOM_RESOURCE_EVENT_SOURCE_NAME = "custom-resource-event-source";
@@ -31,10 +32,10 @@ public class DefaultEventSourceManager implements EventSourceManager {
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
-  private final DefaultEventHandler defaultEventHandler;
+  private final DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource retryTimerEventSource;
 
-  DefaultEventSourceManager(DefaultEventHandler defaultEventHandler, boolean supportRetry) {
+  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry) {
     this.defaultEventHandler = defaultEventHandler;
     defaultEventHandler.setEventSourceManager(this);
     if (supportRetry) {
@@ -43,12 +44,11 @@ public class DefaultEventSourceManager implements EventSourceManager {
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public <R extends CustomResource<?, ?>> DefaultEventSourceManager(
-      ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
-    this(new DefaultEventHandler(controller, configuration, client), true);
+  public DefaultEventSourceManager(ConfiguredController<R> controller) {
+    this(new DefaultEventHandler<>(controller), true);
     registerEventSource(
-        CUSTOM_RESOURCE_EVENT_SOURCE_NAME, new CustomResourceEventSource<>(client, configuration));
+        CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
+        new CustomResourceEventSource<>(controller.getCRClient(), controller.getConfiguration()));
   }
 
   @Override

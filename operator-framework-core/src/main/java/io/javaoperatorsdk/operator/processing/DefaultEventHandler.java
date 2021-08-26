@@ -4,20 +4,7 @@ import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceD
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.javaoperatorsdk.operator.Metrics;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.RetryInfo;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
-import io.micrometer.core.instrument.Clock;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,41 +14,52 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
  * UID, while buffering events which are received during an execution.
  */
-public class DefaultEventHandler implements EventHandler {
+public class DefaultEventHandler<R extends CustomResource<?, ?>> implements EventHandler {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
   private final EventBuffer eventBuffer;
   private final Set<String> underProcessing = new HashSet<>();
   private final ScheduledThreadPoolExecutor executor;
-  private final EventDispatcher eventDispatcher;
+  private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
   private final Map<String, RetryExecution> retryState = new HashMap<>();
   private final String controllerName;
   private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
-  private DefaultEventSourceManager eventSourceManager;
-  private ControllerConfiguration configuration;
+  private DefaultEventSourceManager<R> eventSourceManager;
+  private final ControllerConfiguration configuration;
 
-  public DefaultEventHandler(
-      ResourceController controller, ControllerConfiguration configuration, MixedOperation client) {
+  public DefaultEventHandler(ConfiguredController<R> controller) {
     this(
-        new EventDispatcher(controller, configuration, client),
-        configuration.getName(),
-        GenericRetry.fromConfiguration(configuration.getRetryConfiguration()),
-        configuration.getConfigurationService().concurrentReconciliationThreads(),
-        configuration.getConfigurationService().getTerminationTimeoutSeconds(), configuration);
+        new EventDispatcher<>(controller),
+        controller.getConfiguration().getName(),
+        GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
+        controller.getConfiguration().getConfigurationService().concurrentReconciliationThreads(),
+        controller.getConfiguration().getConfigurationService().getTerminationTimeoutSeconds(),
+        controller.getConfiguration());
   }
 
   DefaultEventHandler(
-      EventDispatcher eventDispatcher,
+      EventDispatcher<R> eventDispatcher,
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads, ControllerConfiguration configuration) {
@@ -74,7 +72,7 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   private DefaultEventHandler(
-      EventDispatcher eventDispatcher,
+      EventDispatcher<R> eventDispatcher,
       String relatedControllerName,
       Retry retry,
       int concurrentReconciliationThreads,
@@ -104,7 +102,7 @@ public class DefaultEventHandler implements EventHandler {
     }
   }
 
-  public void setEventSourceManager(DefaultEventSourceManager eventSourceManager) {
+  public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
   }
 
@@ -159,7 +157,7 @@ public class DefaultEventHandler implements EventHandler {
   }
 
   void eventProcessingFinished(
-      ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
+      ExecutionScope<R> executionScope, PostExecutionControl postExecutionControl) {
     try {
       lock.lock();
       log.debug(
@@ -223,7 +221,7 @@ public class DefaultEventHandler implements EventHandler {
         });
   }
 
-  private void markSuccessfulExecutionRegardingRetry(ExecutionScope executionScope) {
+  private void markSuccessfulExecutionRegardingRetry(ExecutionScope<R> executionScope) {
     log.debug(
         "Marking successful execution for resource: {}",
         getName(executionScope.getCustomResource()));
@@ -233,7 +231,7 @@ public class DefaultEventHandler implements EventHandler {
         .cancelOnceSchedule(executionScope.getCustomResourceUid());
   }
 
-  private RetryExecution getOrInitRetryExecution(ExecutionScope executionScope) {
+  private RetryExecution getOrInitRetryExecution(ExecutionScope<R> executionScope) {
     RetryExecution retryExecution = retryState.get(executionScope.getCustomResourceUid());
     if (retryExecution == null) {
       retryExecution = retry.initExecution();
@@ -259,9 +257,9 @@ public class DefaultEventHandler implements EventHandler {
    * would override an additional change coming from a different client.
    */
   private void cacheUpdatedResourceIfChanged(
-      ExecutionScope executionScope, PostExecutionControl postExecutionControl) {
+      ExecutionScope<R> executionScope, PostExecutionControl postExecutionControl) {
     if (postExecutionControl.customResourceUpdatedDuringExecution()) {
-      CustomResource originalCustomResource = executionScope.getCustomResource();
+      R originalCustomResource = executionScope.getCustomResource();
       CustomResource customResourceAfterExecution =
           postExecutionControl.getUpdatedCustomResource().get();
       String originalResourceVersion = getVersion(originalCustomResource);

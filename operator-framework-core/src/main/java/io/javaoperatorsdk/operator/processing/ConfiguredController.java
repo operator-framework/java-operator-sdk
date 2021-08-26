@@ -1,15 +1,15 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Objects;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -118,9 +118,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     }
 
     try {
-      DefaultEventSourceManager eventSourceManager =
-          new DefaultEventSourceManager(
-              controller, configuration, k8sClient.resources(resClass));
+      DefaultEventSourceManager<R> eventSourceManager = new DefaultEventSourceManager<>(this);
       controller.init(eventSourceManager);
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
