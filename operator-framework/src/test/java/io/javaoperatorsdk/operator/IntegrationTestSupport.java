@@ -3,6 +3,13 @@ package io.javaoperatorsdk.operator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -19,11 +26,6 @@ import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class IntegrationTestSupport {
 
@@ -59,7 +61,7 @@ public class IntegrationTestSupport {
       namespaces.create(
           new NamespaceBuilder().withNewMetadata().withName(TEST_NAMESPACE).endMetadata().build());
     }
-    operator = new Operator(k8sClient, configurationService, Metrics.NOOP);
+    operator = new Operator(k8sClient, configurationService);
     final var overriddenConfig =
         ControllerConfigurationOverrider.override(config).settingNamespace(TEST_NAMESPACE);
     if (retry != null) {
