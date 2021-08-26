@@ -62,16 +62,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         controller.getConfiguration().getConfigurationService().getTerminationTimeoutSeconds());
   }
 
-  DefaultEventHandler(
-      EventDispatcher<R> eventDispatcher,
-      String relatedControllerName,
-      Retry retry,
-      int concurrentReconciliationThreads) {
+  DefaultEventHandler(EventDispatcher<R> dispatcher, String relatedControllerName, Retry retry) {
     this(
-        eventDispatcher,
+        dispatcher,
         relatedControllerName,
         retry,
-        concurrentReconciliationThreads,
+        ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
         ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
   }
 
