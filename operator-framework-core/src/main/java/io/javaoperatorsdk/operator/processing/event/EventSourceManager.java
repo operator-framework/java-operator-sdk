@@ -1,9 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.javaoperatorsdk.operator.OperatorException;
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+
+import io.javaoperatorsdk.operator.OperatorException;
 
 public interface EventSourceManager extends Closeable {
 
@@ -35,5 +37,5 @@ public interface EventSourceManager extends Closeable {
   Map<String, EventSource> getRegisteredEventSources();
 
   @Override
-  default void close() {}
+  default void close() throws IOException {}
 }
