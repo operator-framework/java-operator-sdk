@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import java.io.IOException;
 import java.io.InputStream;
@@ -171,7 +171,7 @@ public class OperatorExtension
     private boolean preserveNamespaceOnError = false;
 
     protected Builder() {
-      this.configurationService = new DefaultConfigurationService(null);
+      this.configurationService = new BaseConfigurationService(null);
       this.controllers = new ArrayList<>();
     }
 

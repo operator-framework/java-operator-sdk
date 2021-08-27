@@ -2,11 +2,11 @@ package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 
-public class DefaultConfigurationService
-    extends io.javaoperatorsdk.operator.api.config.DefaultConfigurationService {
+public class DefaultConfigurationService extends BaseConfigurationService {
 
   private static final DefaultConfigurationService instance = new DefaultConfigurationService();
 

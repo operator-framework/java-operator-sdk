@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultConfigurationService implements ConfigurationService {
+public class BaseConfigurationService implements ConfigurationService {
 
   public static final String LOGGER_NAME = "Default ConfigurationService implementation";
   protected static final Logger log = LoggerFactory.getLogger(LOGGER_NAME);
@@ -18,7 +18,7 @@ public class DefaultConfigurationService implements ConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
 
-  public DefaultConfigurationService(Version version) {
+  public BaseConfigurationService(Version version) {
     this.version = version;
   }
 
