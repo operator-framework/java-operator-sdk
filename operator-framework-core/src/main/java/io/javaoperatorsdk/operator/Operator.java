@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,16 +24,13 @@ public class Operator implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private final Object lock;
-  private final List<ConfiguredController> controllers;
-  private volatile boolean started;
+  private final ReentrantLock lock = new ReentrantLock();
+  private final List<ConfiguredController> controllers = new LinkedList<>();
+  private volatile boolean started = false;
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
-    this.lock = new Object();
-    this.controllers = new ArrayList<>();
-    this.started = false;
     DefaultEventHandler.setEventMonitor(new EventMonitor() {
       @Override
       public void processedEvent(String uid, Event event) {
@@ -67,9 +64,13 @@ public class Operator implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   public void start() {
-    synchronized (lock) {
+    try {
+      lock.lock();
       if (started) {
         return;
+      }
+      if (controllers.isEmpty()) {
+        throw new OperatorException("No ResourceController exists. Exiting!");
       }
 
       final var version = configurationService.getVersion();
@@ -78,10 +79,6 @@ public class Operator implements AutoCloseable {
           version.getSdkVersion(),
           version.getCommit(),
           version.getBuiltTime());
-
-      if (controllers.isEmpty()) {
-        throw new OperatorException("No ResourceController exists. Exiting!");
-      }
 
       log.info("Client version: {}", Version.clientVersion());
       try {
@@ -94,33 +91,37 @@ public class Operator implements AutoCloseable {
         throw new OperatorException("Error retrieving the server version", e);
       }
 
-      controllers.forEach(ConfiguredController::start);
-
+      controllers.parallelStream().forEach(ConfiguredController::start);
       started = true;
+    } finally {
+      lock.unlock();
     }
   }
 
   /** Stop the operator. */
   @Override
   public void close() {
-    synchronized (lock) {
+    log.info(
+        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+
+    try {
+      lock.lock();
       if (!started) {
         return;
       }
 
-      log.info(
-          "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
-
-      for (Closeable closeable : this.controllers) {
+      this.controllers.parallelStream().forEach(closeable -> {
         try {
           log.debug("closing {}", closeable);
           closeable.close();
         } catch (IOException e) {
           log.warn("Error closing {}", closeable, e);
         }
-      }
+      });
 
       started = false;
+    } finally {
+      lock.unlock();
     }
   }
 
