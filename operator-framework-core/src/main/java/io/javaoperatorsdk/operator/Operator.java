@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -87,8 +88,14 @@ public class Operator implements AutoCloseable {
           log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
         }
       } catch (Exception e) {
-        log.error("Error retrieving the server version. Exiting!", e);
-        throw new OperatorException("Error retrieving the server version", e);
+        final String error;
+        if (e.getCause() instanceof ConnectException) {
+          error = "Cannot connect to cluster";
+        } else {
+          error = "Error retrieving the server version";
+        }
+        log.error(error, e);
+        throw new OperatorException(error, e);
       }
 
       controllers.parallelStream().forEach(ConfiguredController::start);
