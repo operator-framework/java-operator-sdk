@@ -4,12 +4,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -38,76 +32,36 @@ public class Metrics {
     this.registry = registry;
   }
 
-  public <R extends CustomResource> UpdateControl<R> timeControllerCreateOrUpdate(
-      ResourceController<R> controller,
-      ControllerConfiguration<R> configuration,
-      R resource,
-      Context<R> context) {
-    final var name = configuration.getName();
-    final var timer =
-        Timer.builder("operator.sdk.controllers.execution.createorupdate")
-            .tags("controller", name)
-            .publishPercentiles(0.3, 0.5, 0.95)
-            .publishPercentileHistogram()
-            .register(registry);
-    try {
-      final var result = timer.record(() -> controller.createOrUpdateResource(resource, context));
-      String successType = "cr";
-      if (result.isUpdateStatusSubResource()) {
-        successType = "status";
-      }
-      if (result.isUpdateCustomResourceAndStatusSubResource()) {
-        successType = "both";
-      }
-      registry
-          .counter(
-              "operator.sdk.controllers.execution.success", "controller", name, "type", successType)
-          .increment();
-      return result;
-    } catch (Exception e) {
-      registry
-          .counter(
-              "operator.sdk.controllers.execution.failure",
-              "controller",
-              name,
-              "exception",
-              e.getClass().getSimpleName())
-          .increment();
-      throw e;
-    }
+  public interface ControllerExecution<T> {
+    String name();
+
+    String controllerName();
+
+    String successTypeName(T result);
+
+    T execute();
   }
 
-  public DeleteControl timeControllerDelete(
-      ResourceController controller,
-      ControllerConfiguration configuration,
-      CustomResource resource,
-      Context context) {
-    final var name = configuration.getName();
+  public <T> T timeControllerExecution(ControllerExecution<T> execution) {
+    final var name = execution.controllerName();
+    final var execName = "operator.sdk.controllers.execution." + execution.name();
     final var timer =
-        Timer.builder("operator.sdk.controllers.execution.delete")
+        Timer.builder(execName)
             .tags("controller", name)
             .publishPercentiles(0.3, 0.5, 0.95)
             .publishPercentileHistogram()
             .register(registry);
     try {
-      final var result = timer.record(() -> controller.deleteResource(resource, context));
-      String successType = "notDelete";
-      if (result == DeleteControl.DEFAULT_DELETE) {
-        successType = "delete";
-      }
+      final var result = timer.record(execution::execute);
+      final var successType = execution.successTypeName(result);
       registry
-          .counter(
-              "operator.sdk.controllers.execution.success", "controller", name, "type", successType)
+          .counter(execName + ".success", "controller", name, "type", successType)
           .increment();
       return result;
     } catch (Exception e) {
+      final var exception = e.getClass().getSimpleName();
       registry
-          .counter(
-              "operator.sdk.controllers.execution.failure",
-              "controller",
-              name,
-              "exception",
-              e.getClass().getSimpleName())
+          .counter(execName + ".failure", "controller", name, "exception", exception)
           .increment();
       throw e;
     }

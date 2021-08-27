@@ -124,11 +124,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
           getVersion(resource),
           executionScope);
 
-      UpdateControl<R> updateControl =
-          configuration()
-              .getConfigurationService()
-              .getMetrics()
-              .timeControllerCreateOrUpdate(controller, configuration(), resource, context);
+      UpdateControl<R> updateControl = controller.createOrUpdateResource(resource, context);
       R updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
@@ -159,11 +155,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
         getName(resource),
         getVersion(resource));
 
-    DeleteControl deleteControl =
-        configuration()
-            .getConfigurationService()
-            .getMetrics()
-            .timeControllerDelete(controller, configuration(), resource, context);
+    DeleteControl deleteControl = controller.deleteResource(resource, context);
     final var useFinalizer = configuration().useFinalizer();
     if (useFinalizer) {
       if (deleteControl == DeleteControl.DEFAULT_DELETE
