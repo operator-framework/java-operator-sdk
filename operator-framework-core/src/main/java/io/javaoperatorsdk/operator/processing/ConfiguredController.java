@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
+import io.javaoperatorsdk.operator.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.Context;
@@ -38,12 +39,68 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
   @Override
   public DeleteControl deleteResource(R resource, Context<R> context) {
-    return controller.deleteResource(resource, context);
+    return configuration.getConfigurationService().getMetrics().timeControllerExecution(
+        new ControllerExecution<>() {
+          @Override
+          public String name() {
+            return "delete";
+          }
+
+          @Override
+          public String controllerName() {
+            return configuration.getName();
+          }
+
+          @Override
+          public String successTypeName(DeleteControl result) {
+            switch (result) {
+              case DEFAULT_DELETE:
+                return "delete";
+              case NO_FINALIZER_REMOVAL:
+                return "finalizerNotRemoved";
+              default:
+                return "unknown";
+            }
+          }
+
+          @Override
+          public DeleteControl execute() {
+            return controller.deleteResource(resource, context);
+          }
+        });
   }
 
   @Override
   public UpdateControl<R> createOrUpdateResource(R resource, Context<R> context) {
-    return controller.createOrUpdateResource(resource, context);
+    return configuration.getConfigurationService().getMetrics().timeControllerExecution(
+        new ControllerExecution<>() {
+          @Override
+          public String name() {
+            return "createOrUpdate";
+          }
+
+          @Override
+          public String controllerName() {
+            return configuration.getName();
+          }
+
+          @Override
+          public String successTypeName(UpdateControl<R> result) {
+            String successType = "cr";
+            if (result.isUpdateStatusSubResource()) {
+              successType = "status";
+            }
+            if (result.isUpdateCustomResourceAndStatusSubResource()) {
+              successType = "both";
+            }
+            return successType;
+          }
+
+          @Override
+          public UpdateControl<R> execute() {
+            return controller.createOrUpdateResource(resource, context);
+          }
+        });
   }
 
   @Override
