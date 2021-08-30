@@ -6,11 +6,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-
 import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +17,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.AbstractControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -113,30 +112,15 @@ class CustomResourceEventSourceTest {
       return client;
     }
   }
-  private static class TestConfiguration implements
-      ControllerConfiguration<TestCustomResource> {
+  private static class TestConfiguration extends
+      AbstractControllerConfiguration<TestCustomResource> {
 
     final ConfigurationService service = mock(ConfigurationService.class);
-    final boolean generationAware;
 
     public TestConfiguration(boolean generationAware) {
+      super(null, null, null, FINALIZER, generationAware, null, null, null);
       when(service.getObjectMapper()).thenReturn(ConfigurationService.OBJECT_MAPPER);
-      this.generationAware = generationAware;
-    }
-
-    @Override
-    public String getAssociatedControllerClassName() {
-      return null;
-    }
-
-    @Override
-    public ConfigurationService getConfigurationService() {
-      return service;
-    }
-
-    @Override
-    public boolean isGenerationAware() {
-      return generationAware;
+      setConfigurationService(service);
     }
   }
 }
