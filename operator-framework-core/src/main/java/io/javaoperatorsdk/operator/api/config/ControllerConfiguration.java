@@ -1,23 +1,38 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
+import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 import java.util.Set;
 
 public interface ControllerConfiguration<R extends CustomResource> {
 
-  String getName();
+  default String getName() {
+    return ControllerUtils.getDefaultResourceControllerName(getAssociatedControllerClassName());
+  }
 
-  String getCRDName();
+  default String getCRDName() {
+    return CustomResource.getCRDName(getCustomResourceClass());
+  }
 
-  String getFinalizer();
+  default String getFinalizer() {
+    return ControllerUtils.getDefaultFinalizerName(getCRDName());
+  }
 
-  String getLabelSelector();
+  default String getLabelSelector() {
+    return null;
+  }
 
-  boolean isGenerationAware();
+  default boolean isGenerationAware() {
+    return true;
+  }
 
-  Class<R> getCustomResourceClass();
+  default Class<R> getCustomResourceClass() {
+    ParameterizedType type = (ParameterizedType) getClass().getGenericInterfaces()[0];
+    return (Class<R>) type.getActualTypeArguments()[0];
+  }
 
   String getAssociatedControllerClassName();
 
@@ -69,7 +84,7 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   ConfigurationService getConfigurationService();
 
-  void setConfigurationService(ConfigurationService service);
+  default void setConfigurationService(ConfigurationService service) {}
 
   default boolean useFinalizer() {
     return !Controller.NO_FINALIZER.equals(getFinalizer());
