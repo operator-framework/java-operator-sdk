@@ -14,15 +14,13 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import io.javaoperatorsdk.operator.api.config.AbstractConfiguration;
-import io.javaoperatorsdk.operator.api.config.AnnotationConfiguration;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import java.text.ParseException;
@@ -70,14 +68,8 @@ public class CustomResourceSelectorTest {
     configurationService = spy(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
-    when(configurationService.getConfigurationFor(any(ResourceController.class)))
-        .thenAnswer(
-            invocation -> {
-              var answer =
-                  new AnnotationConfiguration<>(MyController.class, TestCustomResource.class);
-              answer.setConfigurationService(configurationService);
-              return answer;
-            });
+    when(configurationService.getConfigurationFor(any(MyController.class))).thenReturn(
+        new MyConfiguration(configurationService, null));
   }
 
   @Test
@@ -145,20 +137,14 @@ public class CustomResourceSelectorTest {
     return resource;
   }
 
-  public static class MyConfiguration extends AbstractConfiguration<TestCustomResource> {
+  public static class MyConfiguration implements ControllerConfiguration<TestCustomResource> {
 
     private final String labelSelector;
+    private final ConfigurationService service;
 
     public MyConfiguration(ConfigurationService configurationService, String labelSelector) {
-      super(MyController.class, TestCustomResource.class);
       this.labelSelector = labelSelector;
-
-      setConfigurationService(configurationService);
-    }
-
-    @Override
-    public String getFinalizer() {
-      return ControllerUtils.getDefaultFinalizerName(getCRDName());
+      service = configurationService;
     }
 
     @Override
@@ -167,8 +153,13 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
-    public boolean isGenerationAware() {
-      return true;
+    public String getAssociatedControllerClassName() {
+      return MyController.class.getCanonicalName();
+    }
+
+    @Override
+    public ConfigurationService getConfigurationService() {
+      return service;
     }
   }
 
