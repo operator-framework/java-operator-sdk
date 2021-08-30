@@ -118,6 +118,7 @@ class CustomResourceEventSourceTest {
 
     final ConfigurationService service = mock(ConfigurationService.class);
     final boolean generationAware;
+
     public TestConfiguration(boolean generationAware) {
       when(service.getObjectMapper()).thenReturn(ConfigurationService.OBJECT_MAPPER);
       this.generationAware = generationAware;

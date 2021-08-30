@@ -221,6 +221,8 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
   @Override
   public void close() throws IOException {
-    manager.close();
+    if (manager != null) {
+      manager.close();
+    }
   }
 }
