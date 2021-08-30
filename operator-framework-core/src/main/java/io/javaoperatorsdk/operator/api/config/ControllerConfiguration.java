@@ -21,6 +21,14 @@ public interface ControllerConfiguration<R extends CustomResource> {
     return ControllerUtils.getDefaultFinalizerName(getCRDName());
   }
 
+  /**
+   * Retrieves the label selector that is used to filter which custom resources are actually watched
+   * by the associated controller. See
+   * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more details on
+   * syntax.
+   *
+   * @return the label selector filtering watched custom resources
+   */
   default String getLabelSelector() {
     return null;
   }
