@@ -25,7 +25,6 @@ public class Operator implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private final ReentrantLock lock = new ReentrantLock();
   private final List<ConfiguredController> controllers = new LinkedList<>();
   private volatile boolean started = false;
 
@@ -65,44 +64,39 @@ public class Operator implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   public void start() {
-    try {
-      lock.lock();
-      if (started) {
-        return;
-      }
-      if (controllers.isEmpty()) {
-        throw new OperatorException("No ResourceController exists. Exiting!");
-      }
-
-      final var version = configurationService.getVersion();
-      log.info(
-          "Operator SDK {} (commit: {}) built on {} starting...",
-          version.getSdkVersion(),
-          version.getCommit(),
-          version.getBuiltTime());
-
-      log.info("Client version: {}", Version.clientVersion());
-      try {
-        final var k8sVersion = k8sClient.getVersion();
-        if (k8sVersion != null) {
-          log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
-        }
-      } catch (Exception e) {
-        final String error;
-        if (e.getCause() instanceof ConnectException) {
-          error = "Cannot connect to cluster";
-        } else {
-          error = "Error retrieving the server version";
-        }
-        log.error(error, e);
-        throw new OperatorException(error, e);
-      }
-
-      controllers.parallelStream().forEach(ConfiguredController::start);
-      started = true;
-    } finally {
-      lock.unlock();
+    if (started) {
+      return;
     }
+    if (controllers.isEmpty()) {
+      throw new OperatorException("No ResourceController exists. Exiting!");
+    }
+
+    final var version = configurationService.getVersion();
+    log.info(
+        "Operator SDK {} (commit: {}) built on {} starting...",
+        version.getSdkVersion(),
+        version.getCommit(),
+        version.getBuiltTime());
+
+    log.info("Client version: {}", Version.clientVersion());
+    try {
+      final var k8sVersion = k8sClient.getVersion();
+      if (k8sVersion != null) {
+        log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+      }
+    } catch (Exception e) {
+      final String error;
+      if (e.getCause() instanceof ConnectException) {
+        error = "Cannot connect to cluster";
+      } else {
+        error = "Error retrieving the server version";
+      }
+      log.error(error, e);
+      throw new OperatorException(error, e);
+    }
+
+    controllers.parallelStream().forEach(ConfiguredController::start);
+    started = true;
   }
 
   /** Stop the operator. */
@@ -111,25 +105,20 @@ public class Operator implements AutoCloseable {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-    try {
-      lock.lock();
-      if (!started) {
-        return;
-      }
-
-      this.controllers.parallelStream().forEach(closeable -> {
-        try {
-          log.debug("closing {}", closeable);
-          closeable.close();
-        } catch (IOException e) {
-          log.warn("Error closing {}", closeable, e);
-        }
-      });
-
-      started = false;
-    } finally {
-      lock.unlock();
+    if (!started) {
+      return;
     }
+
+    this.controllers.parallelStream().forEach(closeable -> {
+      try {
+        log.debug("closing {}", closeable);
+        closeable.close();
+      } catch (IOException e) {
+        log.warn("Error closing {}", closeable, e);
+      }
+    });
+
+    started = false;
   }
 
   /**
@@ -173,13 +162,11 @@ public class Operator implements AutoCloseable {
       if (configuration == null) {
         configuration = existing;
       }
-      synchronized (lock) {
-        final var configuredController =
-            new ConfiguredController(controller, configuration, k8sClient);
-        this.controllers.add(configuredController);
-        if (started) {
-          configuredController.start();
-        }
+      final var configuredController =
+          new ConfiguredController(controller, configuration, k8sClient);
+      this.controllers.add(configuredController);
+      if (started) {
+        configuredController.start();
       }
 
       final var watchedNS =
