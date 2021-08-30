@@ -51,7 +51,7 @@
   </build>
 
   <dependencies>
-    <!-- We use openshift client, because functionally it a superset of kubernetes client -->
+    <!-- We use the OpenShift client, because functionally it is a superset of the Kubernetes client -->
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>openshift-client</artifactId>
