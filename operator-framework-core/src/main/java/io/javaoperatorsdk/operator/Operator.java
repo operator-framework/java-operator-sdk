@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.LinkedList;
@@ -25,8 +26,7 @@ public class Operator implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient k8sClient;
   private final ConfigurationService configurationService;
-  private final List<ConfiguredController> controllers = new LinkedList<>();
-  private volatile boolean started = false;
+  private final ControllerManager controllers = new ControllerManager();
 
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
@@ -62,14 +62,8 @@ public class Operator implements AutoCloseable {
    * where there is no obvious entrypoint to the application which can trigger the injection process
    * and start the cluster monitoring processes.
    */
-  @SuppressWarnings("unchecked")
   public void start() {
-    if (started) {
-      return;
-    }
-    if (controllers.isEmpty()) {
-      throw new OperatorException("No ResourceController exists. Exiting!");
-    }
+    controllers.shouldStart();
 
     final var version = configurationService.getVersion();
     log.info(
@@ -95,8 +89,7 @@ public class Operator implements AutoCloseable {
       throw new OperatorException(error, e);
     }
 
-    controllers.parallelStream().forEach(ConfiguredController::start);
-    started = true;
+    controllers.start();
   }
 
   /** Stop the operator. */
@@ -105,20 +98,7 @@ public class Operator implements AutoCloseable {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-    if (!started) {
-      return;
-    }
-
-    this.controllers.parallelStream().forEach(closeable -> {
-      try {
-        log.debug("closing {}", closeable);
-        closeable.close();
-      } catch (IOException e) {
-        log.warn("Error closing {}", closeable, e);
-      }
-    });
-
-    started = false;
+    controllers.close();
   }
 
   /**
@@ -164,10 +144,7 @@ public class Operator implements AutoCloseable {
       }
       final var configuredController =
           new ConfiguredController(controller, configuration, k8sClient);
-      this.controllers.add(configuredController);
-      if (started) {
-        configuredController.start();
-      }
+      controllers.add(configuredController);
 
       final var watchedNS =
           configuration.watchAllNamespaces()
@@ -178,6 +155,51 @@ public class Operator implements AutoCloseable {
           configuration.getName(),
           configuration.getCustomResourceClass(),
           watchedNS);
+    }
+  }
+
+  private static class ControllerManager implements Closeable {
+    private final List<ConfiguredController> controllers = new LinkedList<>();
+    private boolean started = false;
+
+
+    public synchronized void shouldStart() {
+      if (started) {
+        return;
+      }
+      if (controllers.isEmpty()) {
+        throw new OperatorException("No ResourceController exists. Exiting!");
+      }
+    }
+
+    public synchronized void start() {
+      controllers.parallelStream().forEach(ConfiguredController::start);
+      started = true;
+    }
+
+    @Override
+    public synchronized void close() {
+      if (!started) {
+        return;
+      }
+
+      this.controllers.parallelStream().forEach(closeable -> {
+        try {
+          log.debug("closing {}", closeable);
+          closeable.close();
+        } catch (IOException e) {
+          log.warn("Error closing {}", closeable, e);
+        }
+      });
+
+      started = false;
+    }
+
+    public synchronized void add(ConfiguredController configuredController) {
+      this.controllers.add(configuredController);
+      if (started) {
+        configuredController.start();
+      }
     }
   }
 }
