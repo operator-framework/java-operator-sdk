@@ -5,7 +5,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
-public abstract class AbstractControllerConfiguration<R extends CustomResource<?, ?>>
+public class AbstractControllerConfiguration<R extends CustomResource<?, ?>>
     implements ControllerConfiguration<R> {
 
   private final String associatedControllerClassName;
@@ -17,6 +17,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource<?
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
+  private Class<R> customResourceClass;
   private ConfigurationService service;
 
   public AbstractControllerConfiguration(
@@ -27,7 +28,9 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource<?
       boolean generationAware,
       Set<String> namespaces,
       RetryConfiguration retryConfiguration,
-      String labelSelector) {
+      String labelSelector,
+      Class<R> customResourceClass,
+      ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -41,11 +44,15 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource<?
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
     this.labelSelector = labelSelector;
+    this.customResourceClass =
+        customResourceClass == null ? ControllerConfiguration.super.getCustomResourceClass()
+            : customResourceClass;
+    setConfigurationService(service);
   }
 
   /**
    * @deprecated use
-   *             {@link #AbstractControllerConfiguration(String, String, String, String, boolean, Set, RetryConfiguration, String)}
+   *             {@link #AbstractControllerConfiguration(String, String, String, String, boolean, Set, RetryConfiguration, String, Class, ConfigurationService)}
    *             instead
    */
   @Deprecated
@@ -58,7 +65,7 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource<?
       Set<String> namespaces,
       RetryConfiguration retryConfiguration) {
     this(associatedControllerClassName, name, crdName, finalizer, generationAware, namespaces,
-        retryConfiguration, null);
+        retryConfiguration, null, null, null);
   }
 
   @Override
@@ -108,11 +115,20 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource<?
 
   @Override
   public void setConfigurationService(ConfigurationService service) {
+    if (this.service != null) {
+      throw new RuntimeException("A ConfigurationService is already associated with '" + name
+          + "' ControllerConfiguration. Cannot change it once set!");
+    }
     this.service = service;
   }
 
   @Override
   public String getLabelSelector() {
     return labelSelector;
+  }
+
+  @Override
+  public Class<R> getCustomResourceClass() {
+    return customResourceClass;
   }
 }

@@ -115,12 +115,12 @@ class CustomResourceEventSourceTest {
   private static class TestConfiguration extends
       AbstractControllerConfiguration<TestCustomResource> {
 
-    final ConfigurationService service = mock(ConfigurationService.class);
-
     public TestConfiguration(boolean generationAware) {
-      super(null, null, null, FINALIZER, generationAware, null, null, null);
-      when(service.getObjectMapper()).thenReturn(ConfigurationService.OBJECT_MAPPER);
-      setConfigurationService(service);
+      super(null, null, null, FINALIZER, generationAware, null, null, null,
+          TestCustomResource.class,
+          mock(ConfigurationService.class));
+      when(getConfigurationService().getObjectMapper())
+          .thenReturn(ConfigurationService.OBJECT_MAPPER);
     }
   }
 }
