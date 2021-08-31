@@ -42,6 +42,24 @@ public abstract class AbstractControllerConfiguration<R extends CustomResource>
     this.labelSelector = labelSelector;
   }
 
+  /**
+   * @deprecated use
+   *             {@link #AbstractControllerConfiguration(String, String, String, String, boolean, Set, RetryConfiguration, String)}
+   *             instead
+   */
+  @Deprecated
+  public AbstractControllerConfiguration(
+      String associatedControllerClassName,
+      String name,
+      String crdName,
+      String finalizer,
+      boolean generationAware,
+      Set<String> namespaces,
+      RetryConfiguration retryConfiguration) {
+    this(associatedControllerClassName, name, crdName, finalizer, generationAware, namespaces,
+        retryConfiguration, null);
+  }
+
   @Override
   public String getName() {
     return name;
