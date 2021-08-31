@@ -10,10 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Java and Maven
-        uses: actions/setup-java@v2.3.0
+        uses: actions/setup-java@v2
         with:
           java-version: 11
           distribution: temurin
+          cache: 'maven'
       - name: change version to release version
         # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
         run: ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
@@ -34,10 +35,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Java and Maven
-        uses: actions/setup-java@v2.3.0
+        uses: actions/setup-java@v2
         with:
           java-version: 11
           distribution: temurin
+          cache: 'maven'
       - name: change version to release version
         run: |
           ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
