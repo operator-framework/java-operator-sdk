@@ -74,17 +74,9 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
         generationAware,
         namespaces,
         retry,
-        labelSelector) {
-      @Override
-      public Class<R> getCustomResourceClass() {
-        return original.getCustomResourceClass();
-      }
-
-      @Override
-      public ConfigurationService getConfigurationService() {
-        return original.getConfigurationService();
-      }
-    };
+        labelSelector,
+        original.getCustomResourceClass(),
+        original.getConfigurationService());
   }
 
   public static <R extends CustomResource<?, ?>> ControllerConfigurationOverrider<R> override(
