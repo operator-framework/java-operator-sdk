@@ -219,7 +219,7 @@ class EventDispatcher<R extends CustomResource<?, ?>> {
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(getName(resource))
-          .replaceStatus(resource);
+          .updateStatus(resource);
     }
 
     public R replaceWithLock(R resource) {
