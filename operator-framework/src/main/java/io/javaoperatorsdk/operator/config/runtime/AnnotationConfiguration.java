@@ -51,6 +51,11 @@ public class AnnotationConfiguration<R extends CustomResource>
   }
 
   @Override
+  public String getLabelSelector() {
+    return annotation.map(Controller::labelSelector).orElse("");
+  }
+
+  @Override
   public ConfigurationService getConfigurationService() {
     return service;
   }
