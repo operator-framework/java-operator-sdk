@@ -17,7 +17,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.AbstractControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -113,7 +113,7 @@ class CustomResourceEventSourceTest {
     }
   }
   private static class TestConfiguration extends
-      AbstractControllerConfiguration<TestCustomResource> {
+      DefaultControllerConfiguration<TestCustomResource> {
 
     public TestConfiguration(boolean generationAware) {
       super(null, null, null, FINALIZER, generationAware, null, null, null,
