@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -13,6 +14,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -33,6 +35,7 @@ class TimerEventSourceTest {
   public void setup() {
     timerEventSource = new TimerEventSource();
     timerEventSource.setEventHandler(eventHandlerMock);
+    timerEventSource.start();
   }
 
   @Test
@@ -102,6 +105,25 @@ class TimerEventSourceTest {
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
+    Thread.sleep(PERIOD + TESTING_TIME_SLACK);
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  public void eventNotRegisteredIfStopped() throws IOException {
+    CustomResource customResource = TestUtils.testCustomResource();
+
+    timerEventSource.close();
+    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
+        () -> timerEventSource.scheduleOnce(customResource, PERIOD));
+  }
+
+  @Test
+  public void eventNotFiredIfStopped() throws InterruptedException, IOException {
+    timerEventSource.scheduleOnce(TestUtils.testCustomResource(), PERIOD);
+    timerEventSource.close();
+
     Thread.sleep(PERIOD + TESTING_TIME_SLACK);
 
     verify(eventHandlerMock, never()).handleEvent(any());
