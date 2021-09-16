@@ -52,7 +52,7 @@
         <assertj.version>3.20.2</assertj.version>
         <awaitility.version>4.1.0</awaitility.version>
         <spring-boot.version>2.5.4</spring-boot.version>
-        <micrometer-core.version>1.7.3</micrometer-core.version>
+        <micrometer-core.version>1.7.4</micrometer-core.version>
 
         <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
