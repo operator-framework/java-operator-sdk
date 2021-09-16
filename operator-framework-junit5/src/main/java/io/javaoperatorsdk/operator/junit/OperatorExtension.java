@@ -57,25 +57,21 @@ public class OperatorExtension
 
   @Override
   public void beforeAll(ExtensionContext context) throws Exception {
-    LOGGER.info("beforeAll");
     before(context);
   }
 
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
-    LOGGER.info("beforeEach");
     before(context);
   }
 
   @Override
   public void afterAll(ExtensionContext context) throws Exception {
-    LOGGER.info("afterAll");
     after(context);
   }
 
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
-    LOGGER.info("afterEach");
     after(context);
   }
 
@@ -89,7 +85,7 @@ public class OperatorExtension
   }
 
   @SuppressWarnings({"rawtypes"})
-  public Iterable<ResourceController> controllers() {
+  public List<ResourceController> controllers() {
     return operator.getControllers().stream()
         .map(Operator.ControllerRef::getController)
         .collect(Collectors.toUnmodifiableList());
@@ -157,8 +153,16 @@ public class OperatorExtension
           .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
     }
 
-    this.operator.close();
-    this.kubernetesClient.close();
+    try {
+      this.operator.close();
+    } catch (Exception e) {
+      // ignored
+    }
+    try {
+      this.kubernetesClient.close();
+    } catch (Exception e) {
+      // ignored
+    }
   }
 
   public static Builder builder() {
