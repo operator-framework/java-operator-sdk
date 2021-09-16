@@ -120,10 +120,9 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       return;
     }
 
-    boolean fire = false;
-
+    boolean eventAccepted;
     if (oldResource == null || customResource.isMarkedForDeletion()) {
-      fire = true;
+      eventAccepted = true;
     } else {
       final var configuration = controller.getConfiguration();
 
@@ -132,18 +131,18 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       // events should not be filtered
       final CustomResourceEventFilter<T> finalizerPredicate =
           CustomResourceEventFilters.useFinalizer();
-      fire = finalizerPredicate.test(configuration, oldResource, customResource);
+      eventAccepted = finalizerPredicate.acceptChange(configuration, oldResource, customResource);
 
-      if (!fire) {
+      if (!eventAccepted) {
         CustomResourceEventFilter<T> filter = CustomResourceEventFilters.and(
             configuration.getEventFilter(),
             CustomResourceEventFilters.generationAware());
 
-        fire = filter.test(configuration, oldResource, customResource);
+        eventAccepted = filter.acceptChange(configuration, oldResource, customResource);
       }
     }
 
-    if (fire) {
+    if (eventAccepted) {
       eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
     } else {
       log.debug(
