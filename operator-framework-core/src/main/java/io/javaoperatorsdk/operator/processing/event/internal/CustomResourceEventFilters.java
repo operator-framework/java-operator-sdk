@@ -59,4 +59,14 @@ public final class CustomResourceEventFilters {
   public static <T extends CustomResource> CustomResourceEventFilter<T> useFinalizer() {
     return (CustomResourceEventFilter<T>) USE_FINALIZER;
   }
+
+  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> and(
+      CustomResourceEventFilter<T> first, CustomResourceEventFilter<T> second) {
+    return first == null ? (second == null ? passthrough() : second) : first.and(second);
+  }
+
+  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> or(
+      CustomResourceEventFilter<T> first, CustomResourceEventFilter<T> second) {
+    return first == null ? (second == null ? passthrough() : second) : first.or(second);
+  }
 }
