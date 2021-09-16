@@ -4,11 +4,11 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -25,21 +25,21 @@ class TimerEventSourceTest {
   public static final int PERIOD = 50;
   public static final int TESTING_TIME_SLACK = 40;
 
-  private TimerEventSource timerEventSource;
+  private TimerEventSource<TestCustomResource> timerEventSource;
   private CapturingEventHandler eventHandlerMock;
 
   @BeforeEach
   public void setup() {
     eventHandlerMock = new CapturingEventHandler();
 
-    timerEventSource = new TimerEventSource();
+    timerEventSource = new TimerEventSource<>();
     timerEventSource.setEventHandler(eventHandlerMock);
     timerEventSource.start();
   }
 
   @Test
   public void producesEventsPeriodically() {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
     timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
 
     untilAsserted(() -> {
@@ -54,7 +54,7 @@ class TimerEventSourceTest {
 
   @Test
   public void deRegistersPeriodicalEventSources() {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
     untilAsserted(() -> assertThat(eventHandlerMock.events).hasSizeGreaterThan(1));
@@ -67,7 +67,7 @@ class TimerEventSourceTest {
 
   @Test
   public void schedulesOnce() {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
 
@@ -77,7 +77,7 @@ class TimerEventSourceTest {
 
   @Test
   public void canCancelOnce() {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource.cancelOnceSchedule(KubernetesResourceUtils.getUID(customResource));
@@ -87,7 +87,7 @@ class TimerEventSourceTest {
 
   @Test
   public void canRescheduleOnceEvent() {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource.scheduleOnce(customResource, 2 * PERIOD);
@@ -97,7 +97,7 @@ class TimerEventSourceTest {
 
   @Test
   public void deRegistersOnceEventSources() {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
@@ -107,7 +107,7 @@ class TimerEventSourceTest {
 
   @Test
   public void eventNotRegisteredIfStopped() throws IOException {
-    CustomResource customResource = TestUtils.testCustomResource();
+    TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.close();
     assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
