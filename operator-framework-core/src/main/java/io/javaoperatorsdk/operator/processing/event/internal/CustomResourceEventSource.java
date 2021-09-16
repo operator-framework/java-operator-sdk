@@ -135,15 +135,11 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       fire = finalizerPredicate.test(configuration, oldResource, customResource);
 
       if (!fire) {
-        CustomResourceEventFilter<T> filter = controller.getConfiguration().getEventFilter();
+        CustomResourceEventFilter<T> filter = CustomResourceEventFilters.and(
+            configuration.getEventFilter(),
+            CustomResourceEventFilters.generationAware());
 
-        if (controller.getConfiguration().isGenerationAware()) {
-          filter = filter == null
-              ? CustomResourceEventFilters.generationAware()
-              : filter.and(CustomResourceEventFilters.generationAware());
-        }
-
-        fire = filter.test(controller.getConfiguration(), oldResource, customResource);
+        fire = filter.test(configuration, oldResource, customResource);
       }
     }
 

@@ -37,11 +37,9 @@ class CustomResourceEventFilterTest {
     var config = new TestControllerConfig(
         FINALIZER,
         false,
-        (configuration, oldResource, newResource) -> {
-          return !Objects.equals(
-              oldResource.getStatus().getConfigMapStatus(),
-              newResource.getStatus().getConfigMapStatus());
-        });
+        (configuration, oldResource, newResource) -> !Objects.equals(
+            oldResource.getStatus().getConfigMapStatus(),
+            newResource.getStatus().getConfigMapStatus()));
 
     var controller = new TestConfiguredController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
