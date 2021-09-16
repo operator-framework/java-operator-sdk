@@ -1,47 +1,28 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 public final class CustomResourceEventFilters {
 
   private static final CustomResourceEventFilter<CustomResource> USE_FINALIZER =
-      new CustomResourceEventFilter<>() {
-        @Override
-        public boolean test(
-            ControllerConfiguration configuration,
-            CustomResource oldResource,
-            CustomResource newResource) {
-
-          boolean oldFinalizer = oldResource.hasFinalizer(configuration.getFinalizer());
-          boolean newFinalizer = newResource.hasFinalizer(configuration.getFinalizer());
+      (configuration, oldResource, newResource) -> {
+        if (configuration.useFinalizer()) {
+          final var finalizer = configuration.getFinalizer();
+          boolean oldFinalizer = oldResource.hasFinalizer(finalizer);
+          boolean newFinalizer = newResource.hasFinalizer(finalizer);
 
           return !newFinalizer || !oldFinalizer;
+        } else {
+          return false;
         }
       };
 
   private static final CustomResourceEventFilter<CustomResource> GENERATION_AWARE =
-      new CustomResourceEventFilter<>() {
-        @Override
-        public boolean test(
-            ControllerConfiguration configuration,
-            CustomResource oldResource,
-            CustomResource newResource) {
-          return oldResource.getMetadata().getGeneration() < newResource.getMetadata()
-              .getGeneration();
-        }
-      };
+      (configuration, oldResource, newResource) -> !configuration.isGenerationAware()
+          || oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
 
   private static final CustomResourceEventFilter<CustomResource> PASSTHROUGH =
-      new CustomResourceEventFilter<>() {
-        @Override
-        public boolean test(
-            ControllerConfiguration configuration,
-            CustomResource oldResource,
-            CustomResource newResource) {
-          return true;
-        }
-      };
+      (configuration, oldResource, newResource) -> true;
 
   private CustomResourceEventFilters() {}
 
