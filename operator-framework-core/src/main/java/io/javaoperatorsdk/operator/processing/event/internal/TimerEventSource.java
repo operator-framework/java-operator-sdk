@@ -12,15 +12,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TimerEventSource extends AbstractEventSource {
+public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEventSource {
+  private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private final Timer timer = new Timer();
   private final AtomicBoolean running = new AtomicBoolean();
   private final Map<String, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
   private final Map<String, EventProducerTimeTask> timerTasks = new ConcurrentHashMap<>();
-  private Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
-  public void schedule(CustomResource customResource, long delay, long period) {
+  public void schedule(R customResource, long delay, long period) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
@@ -34,7 +34,7 @@ public class TimerEventSource extends AbstractEventSource {
     timer.schedule(task, delay, period);
   }
 
-  public void scheduleOnce(CustomResource customResource, long delay) {
+  public void scheduleOnce(R customResource, long delay) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }

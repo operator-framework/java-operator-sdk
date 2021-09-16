@@ -34,13 +34,13 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   private final ReentrantLock lock = new ReentrantLock();
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
   private final DefaultEventHandler<R> defaultEventHandler;
-  private TimerEventSource retryTimerEventSource;
+  private TimerEventSource<R> retryTimerEventSource;
 
   DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry) {
     this.defaultEventHandler = defaultEventHandler;
     defaultEventHandler.setEventSourceManager(this);
     if (supportRetry) {
-      this.retryTimerEventSource = new TimerEventSource();
+      this.retryTimerEventSource = new TimerEventSource<>();
       registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
     }
   }

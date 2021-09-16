@@ -25,7 +25,8 @@ public class EventSourceTestCustomResourceController
   public static final int TIMER_DELAY = 300;
   public static final int TIMER_PERIOD = 500;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private final TimerEventSource timerEventSource = new TimerEventSource();
+  private final TimerEventSource<EventSourceTestCustomResource> timerEventSource =
+      new TimerEventSource<>();
 
   @Override
   public void init(EventSourceManager eventSourceManager) {
