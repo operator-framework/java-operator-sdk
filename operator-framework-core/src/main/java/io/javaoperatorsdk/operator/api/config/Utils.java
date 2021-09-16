@@ -37,10 +37,14 @@ public class Utils {
 
     Date builtTime;
     try {
-      builtTime =
-          // RFC 822 date is the default format used by git-commit-id-plugin
-          new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-              .parse(properties.getProperty("git.build.time"));
+      String time = properties.getProperty("git.build.time");
+      if (time != null) {
+        builtTime =
+            // RFC 822 date is the default format used by git-commit-id-plugin
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(time);
+      } else {
+        builtTime = Date.from(Instant.EPOCH);
+      }
     } catch (Exception e) {
       log.debug("Couldn't parse git.build.time property", e);
       builtTime = Date.from(Instant.EPOCH);

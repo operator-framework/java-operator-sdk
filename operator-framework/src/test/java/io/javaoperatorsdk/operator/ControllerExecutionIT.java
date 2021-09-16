@@ -4,59 +4,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
+import io.javaoperatorsdk.operator.support.TestUtils;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class ControllerExecutionIT {
-
-  private IntegrationTestSupport integrationTestSupport = new IntegrationTestSupport();
-
-  public void initAndCleanup(boolean controllerStatusUpdate) {
-    KubernetesClient k8sClient = new DefaultKubernetesClient();
-    integrationTestSupport.initialize(
-        k8sClient, new TestCustomResourceController(k8sClient, controllerStatusUpdate));
-    integrationTestSupport.cleanup();
-  }
+  @RegisterExtension
+  OperatorExtension operator =
+      OperatorExtension.builder()
+          .withConfigurationService(DefaultConfigurationService.instance())
+          .withController(new TestCustomResourceController(true))
+          .build();
 
   @Test
   public void configMapGetsCreatedForTestCustomResource() {
-    initAndCleanup(true);
-    integrationTestSupport.teardownIfSuccess(
-        () -> {
-          TestCustomResource resource = TestUtils.testCustomResource();
+    operator.getControllerOfType(TestCustomResourceController.class).setUpdateStatus(true);
 
-          integrationTestSupport
-              .getCrOperations()
-              .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-              .create(resource);
+    TestCustomResource resource = TestUtils.testCustomResource();
+    operator.resources(TestCustomResource.class).create(resource);
 
-          awaitResourcesCreatedOrUpdated();
-          awaitStatusUpdated();
-          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(2);
-        });
+    awaitResourcesCreatedOrUpdated();
+    awaitStatusUpdated();
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   @Test
   public void eventIsSkippedChangedOnMetadataOnlyUpdate() {
-    initAndCleanup(false);
-    integrationTestSupport.teardownIfSuccess(
-        () -> {
-          TestCustomResource resource = TestUtils.testCustomResource();
+    operator.getControllerOfType(TestCustomResourceController.class).setUpdateStatus(false);
 
-          integrationTestSupport
-              .getCrOperations()
-              .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-              .create(resource);
+    TestCustomResource resource = TestUtils.testCustomResource();
+    operator.resources(TestCustomResource.class).create(resource);
 
-          awaitResourcesCreatedOrUpdated();
-          assertThat(integrationTestSupport.numberOfControllerExecutions()).isEqualTo(1);
-        });
+    awaitResourcesCreatedOrUpdated();
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
   }
 
   void awaitResourcesCreatedOrUpdated() {
@@ -65,10 +50,7 @@ public class ControllerExecutionIT {
         .untilAsserted(
             () -> {
               ConfigMap configMap =
-                  integrationTestSupport
-                      .getK8sClient()
-                      .configMaps()
-                      .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+                  operator.resources(ConfigMap.class)
                       .withName("test-config-map")
                       .get();
               assertThat(configMap).isNotNull();
@@ -86,9 +68,7 @@ public class ControllerExecutionIT {
         .untilAsserted(
             () -> {
               TestCustomResource cr =
-                  (TestCustomResource) integrationTestSupport
-                      .getCrOperations()
-                      .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
+                  operator.resources(TestCustomResource.class)
                       .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
                       .get();
               assertThat(cr).isNotNull();

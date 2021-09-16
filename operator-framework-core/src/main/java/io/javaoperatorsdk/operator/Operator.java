@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,6 +56,10 @@ public class Operator implements AutoCloseable {
 
   public ConfigurationService getConfigurationService() {
     return configurationService;
+  }
+
+  public List<ConfiguredController> getControllers() {
+    return Collections.unmodifiableList(controllers.controllers);
   }
 
   /**

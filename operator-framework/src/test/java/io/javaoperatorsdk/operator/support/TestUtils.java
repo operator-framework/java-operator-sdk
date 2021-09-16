@@ -1,6 +1,7 @@
-package io.javaoperatorsdk.operator;
+package io.javaoperatorsdk.operator.support;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.UUID;
 
 public class TestUtils {
 
+  public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
   public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
   public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
 
@@ -22,7 +24,6 @@ public class TestUtils {
             .withName(TEST_CUSTOM_RESOURCE_NAME)
             .withUid(uid)
             .withGeneration(1L)
-            .withNamespace(TEST_NAMESPACE)
             .build());
     resource.getMetadata().setAnnotations(new HashMap<>());
     resource.setKind("CustomService");
@@ -33,11 +34,29 @@ public class TestUtils {
     return resource;
   }
 
+  public static TestCustomResource testCustomResourceWithPrefix(String id) {
+    TestCustomResource resource = new TestCustomResource();
+    resource.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(TEST_CUSTOM_RESOURCE_PREFIX + id)
+            .build());
+    resource.setKind("CustomService");
+    resource.setSpec(new TestCustomResourceSpec());
+    resource.getSpec().setConfigMapName("test-config-map-" + id);
+    resource.getSpec().setKey("test-key");
+    resource.getSpec().setValue(id);
+    return resource;
+  }
+
   public static void waitXms(int x) {
     try {
       Thread.sleep(x);
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public static int getNumberOfExecutions(OperatorExtension extension) {
+    return ((TestExecutionInfoProvider) extension.getControllers().get(0)).getNumberOfExecutions();
   }
 }
