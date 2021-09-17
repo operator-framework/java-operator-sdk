@@ -61,7 +61,7 @@ public final class CustomResourceEventFilters {
    *         applied
    */
   @SuppressWarnings("unchecked")
-  public static <T extends CustomResource> CustomResourceEventFilter<T> useFinalizer() {
+  public static <T extends CustomResource> CustomResourceEventFilter<T> finalizerNeededAndApplied() {
     return (CustomResourceEventFilter<T>) USE_FINALIZER;
   }
 
