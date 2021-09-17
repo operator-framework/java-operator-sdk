@@ -6,6 +6,7 @@ import java.net.ConnectException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,6 +102,18 @@ public class Operator implements AutoCloseable {
   public void close() {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+
+    try {
+      log.debug("Closing executor");
+      final var executor = configurationService.getExecutorService();
+      executor.shutdown();
+      if (!executor.awaitTermination(configurationService.getTerminationTimeoutSeconds(),
+          TimeUnit.SECONDS)) {
+        executor.shutdownNow(); // if we timed out, waiting, cancel everything
+      }
+    } catch (InterruptedException e) {
+      log.debug("Exception closing executor: {}", e.getLocalizedMessage());
+    }
 
     controllers.close();
 

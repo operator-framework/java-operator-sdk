@@ -8,6 +8,7 @@ import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.concurrent.ExecutorService;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -101,5 +102,9 @@ public interface ConfigurationService {
 
   default Metrics getMetrics() {
     return Metrics.NOOP;
+  }
+
+  default ExecutorService getExecutorService() {
+    return ExecutorServiceProducer.getExecutor(concurrentReconciliationThreads());
   }
 }

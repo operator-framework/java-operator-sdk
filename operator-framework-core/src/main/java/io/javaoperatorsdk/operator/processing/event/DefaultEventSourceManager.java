@@ -51,10 +51,6 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
         new CustomResourceEventSource<>(controller));
   }
 
-  public DefaultEventHandler<R> getEventHandler() {
-    return defaultEventHandler;
-  }
-
   @Override
   public void close() {
     try {

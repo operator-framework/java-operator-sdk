@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -44,61 +45,37 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private final EventBuffer eventBuffer;
   private final Set<String> underProcessing = new HashSet<>();
-  private final ScheduledThreadPoolExecutor executor;
   private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
   private final Map<String, RetryExecution> retryState = new HashMap<>();
+  private final ExecutorService executor;
   private final String controllerName;
-  private final int terminationTimeout;
   private final ReentrantLock lock = new ReentrantLock();
   private DefaultEventSourceManager<R> eventSourceManager;
 
   public DefaultEventHandler(ConfiguredController<R> controller) {
-    this(
-        new EventDispatcher<>(controller),
+    this(controller.getConfiguration().getConfigurationService().getExecutorService(),
         controller.getConfiguration().getName(),
-        GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
-        controller.getConfiguration().getConfigurationService().concurrentReconciliationThreads(),
-        controller.getConfiguration().getConfigurationService().getTerminationTimeoutSeconds());
+        new EventDispatcher<>(controller),
+        GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()));
   }
 
-  DefaultEventHandler(EventDispatcher<R> dispatcher, String relatedControllerName, Retry retry) {
-    this(
-        dispatcher,
-        relatedControllerName,
-        retry,
-        ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER,
-        ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
+  DefaultEventHandler(EventDispatcher<R> eventDispatcher, String relatedControllerName,
+      Retry retry) {
+    this(null, relatedControllerName, eventDispatcher, retry);
   }
 
-  private DefaultEventHandler(
-      EventDispatcher<R> eventDispatcher,
-      String relatedControllerName,
-      Retry retry,
-      int concurrentReconciliationThreads,
-      int terminationTimeout) {
+  private DefaultEventHandler(ExecutorService executor, String relatedControllerName,
+      EventDispatcher<R> eventDispatcher, Retry retry) {
+    this.executor =
+        executor == null
+            ? new ScheduledThreadPoolExecutor(
+                ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER)
+            : executor;
+    this.controllerName = relatedControllerName;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
-    this.controllerName = relatedControllerName;
     eventBuffer = new EventBuffer();
-    this.terminationTimeout = terminationTimeout;
-    executor =
-        new ScheduledThreadPoolExecutor(
-            concurrentReconciliationThreads,
-            runnable -> new Thread(runnable, "EventHandler-" + relatedControllerName));
-  }
-
-  @Override
-  public void close() {
-    try {
-      log.debug("Closing handler for {}", controllerName);
-      executor.shutdown();
-      if (!executor.awaitTermination(terminationTimeout, TimeUnit.SECONDS)) {
-        executor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
-    } catch (InterruptedException e) {
-      log.debug("Exception closing handler for {}: {}", controllerName, e.getLocalizedMessage());
-    }
   }
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
@@ -146,7 +123,13 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               latestCustomResource.get(),
               retryInfo(customResourceUid));
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
-      executor.execute(new ExecutionConsumer(executionScope, eventDispatcher, this));
+      executor.execute(() -> {
+        // change thread name for easier debugging
+        Thread.currentThread().setName("EventHandler-" + controllerName);
+        PostExecutionControl<R> postExecutionControl =
+            eventDispatcher.handleExecution(executionScope);
+        eventProcessingFinished(executionScope, postExecutionControl);
+      });
     } else {
       log.debug(
           "Skipping executing controller for resource id: {}. Events in queue: {}."
