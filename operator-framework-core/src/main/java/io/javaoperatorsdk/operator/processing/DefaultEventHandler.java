@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
@@ -123,13 +122,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               latestCustomResource.get(),
               retryInfo(customResourceUid));
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
-      executor.execute(() -> {
-        // change thread name for easier debugging
-        Thread.currentThread().setName("EventHandler-" + controllerName);
-        PostExecutionControl<R> postExecutionControl =
-            eventDispatcher.handleExecution(executionScope);
-        eventProcessingFinished(executionScope, postExecutionControl);
-      });
+      executor.execute(new ControllerExecution(executionScope));
     } else {
       log.debug(
           "Skipping executing controller for resource id: {}. Events in queue: {}."
@@ -275,5 +268,27 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private void unsetUnderExecution(String customResourceUid) {
     underProcessing.remove(customResourceUid);
+  }
+
+  private class ControllerExecution implements Runnable {
+    private final ExecutionScope<R> executionScope;
+
+    private ControllerExecution(ExecutionScope<R> executionScope) {
+      this.executionScope = executionScope;
+    }
+
+    @Override
+    public void run() {
+      // change thread name for easier debugging
+      Thread.currentThread().setName("EventHandler-" + controllerName);
+      PostExecutionControl<R> postExecutionControl =
+          eventDispatcher.handleExecution(executionScope);
+      eventProcessingFinished(executionScope, postExecutionControl);
+    }
+
+    @Override
+    public String toString() {
+      return controllerName + " -> " + executionScope;
+    }
   }
 }
