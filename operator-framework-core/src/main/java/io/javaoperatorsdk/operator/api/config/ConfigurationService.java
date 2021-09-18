@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -8,7 +9,6 @@ import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.concurrent.ExecutorService;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
