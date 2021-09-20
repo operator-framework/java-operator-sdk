@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
 import static io.javaoperatorsdk.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
 import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Optional;
-import org.junit.jupiter.api.Test;
 
 public class GenericRetryExecutionTest {
 

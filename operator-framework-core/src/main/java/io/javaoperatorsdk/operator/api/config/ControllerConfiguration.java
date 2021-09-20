@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.Controller;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 import java.util.Set;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.api.Controller;
 
 public interface ControllerConfiguration<R extends CustomResource> {
 

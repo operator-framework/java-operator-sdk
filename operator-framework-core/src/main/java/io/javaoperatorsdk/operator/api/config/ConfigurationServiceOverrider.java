@@ -1,13 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Set;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Metrics;
+import io.javaoperatorsdk.operator.api.ResourceController;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;

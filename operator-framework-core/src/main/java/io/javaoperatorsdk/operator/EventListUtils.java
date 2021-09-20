@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.List;
+
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import java.util.List;
 
 public class EventListUtils {
 

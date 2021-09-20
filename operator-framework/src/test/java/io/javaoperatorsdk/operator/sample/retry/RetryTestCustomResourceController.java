@@ -1,15 +1,17 @@
 package io.javaoperatorsdk.operator.sample.retry;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller
 public class RetryTestCustomResourceController

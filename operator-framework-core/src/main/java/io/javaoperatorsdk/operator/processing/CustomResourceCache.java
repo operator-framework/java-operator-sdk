@@ -1,11 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.client.CustomResource;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -15,8 +9,17 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.fabric8.kubernetes.client.CustomResource;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 
 @SuppressWarnings("rawtypes")
 public class CustomResourceCache {

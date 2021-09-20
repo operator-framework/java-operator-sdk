@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
@@ -10,9 +12,9 @@ import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.support.TestUtils;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public class EventSourceIT {
   @RegisterExtension

@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
+import java.util.Arrays;
+
+import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
-import java.util.Arrays;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class EventListTest {
 

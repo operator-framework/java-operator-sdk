@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Arrays;
+
 import io.fabric8.kubernetes.api.model.Cluster;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import java.util.Arrays;
 
 public abstract class CustomResourceUtils {
 

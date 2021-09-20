@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +20,10 @@ import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /** This is a special case since is not bound to a single custom resource */
 public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource

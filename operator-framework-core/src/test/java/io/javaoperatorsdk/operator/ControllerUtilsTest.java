@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ControllerUtilsTest {
 

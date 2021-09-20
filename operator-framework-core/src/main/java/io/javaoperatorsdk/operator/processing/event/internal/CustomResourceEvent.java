@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 
 public class CustomResourceEvent extends DefaultEvent {
 

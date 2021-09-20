@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerConfigurationTest {
 

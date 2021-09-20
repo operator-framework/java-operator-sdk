@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.support;
 
+import java.util.HashMap;
+import java.util.UUID;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
-import java.util.HashMap;
-import java.util.UUID;
 
 public class TestUtils {
 

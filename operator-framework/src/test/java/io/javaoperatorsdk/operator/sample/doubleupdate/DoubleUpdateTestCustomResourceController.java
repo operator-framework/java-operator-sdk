@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.sample.doubleupdate;
 
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-import io.javaoperatorsdk.operator.api.*;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller
 public class DoubleUpdateTestCustomResourceController

@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import java.util.Map;
 
 public class RuntimeControllerMetadata {
 

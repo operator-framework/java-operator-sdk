@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.support.TestUtils;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +13,7 @@ import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResou
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
+import io.javaoperatorsdk.operator.support.TestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
