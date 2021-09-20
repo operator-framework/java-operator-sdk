@@ -140,8 +140,8 @@ public class OperatorExtension
 
     try (InputStream is = getClass().getResourceAsStream(path)) {
       kubernetesClient.load(is).createOrReplace();
-    } catch (IOException ex) {
-      throw new IllegalStateException("Cannot find yaml on classpath: " + path);
+    } catch (Exception ex) {
+      throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
     }
 
     if (controller instanceof KubernetesClientAware) {
