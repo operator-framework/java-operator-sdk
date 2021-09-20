@@ -1,10 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +15,11 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventList;
+
+import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.

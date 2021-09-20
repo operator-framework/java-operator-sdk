@@ -6,6 +6,7 @@ target/
 .settings/
 .classpath
 .project
+.cache/
 
 #  VSCode
 .factorypath

@@ -1,15 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.util.Objects;
 import java.util.UUID;
 
@@ -20,6 +10,16 @@ import org.mockito.ArgumentCaptor;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+
+import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class CustomResourceSelectorTest {
 

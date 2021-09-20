@@ -1,12 +1,7 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.CONTROLLERS_RESOURCE_PATH;
-
-import com.google.auto.service.AutoService;
-import com.squareup.javapoet.TypeName;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import java.util.Set;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -19,6 +14,14 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.ResourceController;
+
+import com.google.auto.service.AutoService;
+import com.squareup.javapoet.TypeName;
+
+import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.CONTROLLERS_RESOURCE_PATH;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)

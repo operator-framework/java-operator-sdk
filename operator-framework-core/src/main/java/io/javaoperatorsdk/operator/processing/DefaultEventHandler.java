@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,6 +22,10 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+
+import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource

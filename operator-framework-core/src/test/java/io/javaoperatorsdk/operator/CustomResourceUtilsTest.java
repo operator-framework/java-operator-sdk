@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.sample.simple.NamespacedTestCustomResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import io.javaoperatorsdk.operator.sample.simple.NamespacedTestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 public class CustomResourceUtilsTest {
   @Test

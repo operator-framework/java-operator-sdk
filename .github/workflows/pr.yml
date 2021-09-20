@@ -27,7 +27,9 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Check code format
-        run: ./mvnw ${MAVEN_ARGS} formatter:validate -Dconfigfile=$PWD/contributing/eclipse-google-style.xml --file pom.xml
+        run: |
+          ./mvnw ${MAVEN_ARGS} formatter:validate -Dconfigfile=$PWD/contributing/eclipse-google-style.xml --file pom.xml
+          ./mvnw ${MAVEN_ARGS} impsort:check --file pom.xml
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
       - name: Set up Minikube

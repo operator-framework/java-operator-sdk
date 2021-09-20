@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
@@ -12,9 +14,9 @@ import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceControlle
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceStatus;
 import io.javaoperatorsdk.operator.support.TestUtils;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public class RetryIT {
   public static final int RETRY_INTERVAL = 150;

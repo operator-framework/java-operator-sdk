@@ -1,16 +1,18 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
-import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
+import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 
 public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEventSource {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);

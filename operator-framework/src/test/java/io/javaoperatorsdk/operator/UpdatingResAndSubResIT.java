@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.support.TestUtils;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -13,6 +12,7 @@ import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomRes
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceStatus;
+import io.javaoperatorsdk.operator.support.TestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;

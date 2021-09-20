@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import java.util.Objects;
 import java.util.function.Predicate;
+
+import io.fabric8.kubernetes.client.CustomResource;
 
 @SuppressWarnings("rawtypes")
 public class DefaultEvent implements Event {

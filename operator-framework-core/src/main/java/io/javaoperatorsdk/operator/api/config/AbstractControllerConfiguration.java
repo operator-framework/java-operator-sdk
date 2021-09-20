@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import java.util.Set;
+
+import io.fabric8.kubernetes.client.CustomResource;
 
 /**
  * @deprecated use {@link DefaultControllerConfiguration} instead

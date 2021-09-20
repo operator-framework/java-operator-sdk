@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import org.junit.jupiter.api.Test;
+
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.CompilationSubject;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
-import org.junit.jupiter.api.Test;
 
 class ControllerAnnotationProcessorTest {
 

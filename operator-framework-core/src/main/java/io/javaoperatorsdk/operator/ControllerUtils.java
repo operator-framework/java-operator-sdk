@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Locale;
+
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import java.util.Locale;
 
 public class ControllerUtils {
 

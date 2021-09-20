@@ -1,12 +1,14 @@
 package io.javaoperatorsdk.operator.processing;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
-import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class EventBufferTest {
 

@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Set;
+
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import java.util.Set;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {

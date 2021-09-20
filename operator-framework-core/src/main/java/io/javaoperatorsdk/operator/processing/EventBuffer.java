@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.javaoperatorsdk.operator.processing.event.Event;
 import java.util.*;
+
+import io.javaoperatorsdk.operator.processing.event.Event;
 
 class EventBuffer {
 

@@ -1,13 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -17,6 +9,14 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class DefaultEventSourceManagerTest {
 
