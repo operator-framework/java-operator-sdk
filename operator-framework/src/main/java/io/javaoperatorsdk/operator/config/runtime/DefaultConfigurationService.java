@@ -32,7 +32,7 @@ public class DefaultConfigurationService extends BaseConfigurationService {
         // create the configuration on demand and register it
         config = new AnnotationConfiguration<>(controller);
         register(config);
-        log.info(
+        getLogger().info(
             "Created configuration for controller {} with name {}",
             controller.getClass().getName(),
             config.getName());
