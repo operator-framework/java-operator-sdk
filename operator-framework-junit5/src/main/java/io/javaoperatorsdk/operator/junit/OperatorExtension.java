@@ -119,8 +119,7 @@ public class OperatorExtension
     return kubernetesClient.resources(type).inNamespace(namespace);
   }
 
-  @SuppressWarnings({"rawtypes"})
-  public <T extends CustomResource> T getCustomResource(Class<T> type, String name) {
+  public <T extends HasMetadata> T getNamedResource(Class<T> type, String name) {
     return kubernetesClient.resources(type).inNamespace(namespace).withName(name).get();
   }
 

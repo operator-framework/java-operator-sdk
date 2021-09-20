@@ -50,9 +50,8 @@ public class RetryIT {
                   .isEqualTo(RetryTestCustomResourceController.NUMBER_FAILED_EXECUTIONS + 1);
 
           RetryTestCustomResource finalResource =
-              operator.resources(RetryTestCustomResource.class)
-                  .withName(resource.getMetadata().getName())
-                  .get();
+              operator.getNamedResource(RetryTestCustomResource.class,
+                  resource.getMetadata().getName());
           assertThat(finalResource.getStatus().getState())
               .isEqualTo(RetryTestCustomResourceStatus.State.SUCCESS);
         });

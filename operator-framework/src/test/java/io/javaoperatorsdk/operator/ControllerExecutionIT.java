@@ -50,9 +50,7 @@ public class ControllerExecutionIT {
         .untilAsserted(
             () -> {
               ConfigMap configMap =
-                  operator.resources(ConfigMap.class)
-                      .withName("test-config-map")
-                      .get();
+                  operator.getNamedResource(ConfigMap.class, "test-config-map");
               assertThat(configMap).isNotNull();
               assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
             });
@@ -68,9 +66,8 @@ public class ControllerExecutionIT {
         .untilAsserted(
             () -> {
               TestCustomResource cr =
-                  operator.resources(TestCustomResource.class)
-                      .withName(TestUtils.TEST_CUSTOM_RESOURCE_NAME)
-                      .get();
+                  operator.getNamedResource(TestCustomResource.class,
+                      TestUtils.TEST_CUSTOM_RESOURCE_NAME);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
