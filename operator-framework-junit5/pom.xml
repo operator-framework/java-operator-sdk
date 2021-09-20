@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>operator-framework-junit-5</artifactId>
-  <name>Operator SDK - Framework - Junit5</name>
+  <name>Operator SDK - Framework - JUnit 5 extension</name>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
