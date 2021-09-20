@@ -30,7 +30,7 @@ public class SubResourceUpdateIT {
   @Test
   public void updatesSubResourceStatus() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
-    operator.resources(SubResourceTestCustomResource.class).create(resource);
+    operator.create(SubResourceTestCustomResource.class, resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
@@ -45,7 +45,7 @@ public class SubResourceUpdateIT {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().setFinalizers(Collections.emptyList());
 
-    operator.resources(SubResourceTestCustomResource.class).create(resource);
+    operator.create(SubResourceTestCustomResource.class, resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
@@ -60,7 +60,7 @@ public class SubResourceUpdateIT {
   public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().getFinalizers().clear();
-    operator.resources(SubResourceTestCustomResource.class).create(resource);
+    operator.create(SubResourceTestCustomResource.class, resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
@@ -79,7 +79,7 @@ public class SubResourceUpdateIT {
   @Test
   public void updateCustomResourceAfterSubResourceChange() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
-    operator.resources(SubResourceTestCustomResource.class).create(resource);
+    operator.create(SubResourceTestCustomResource.class, resource);
 
     resource.getSpec().setValue("new value");
     operator.resources(SubResourceTestCustomResource.class).createOrReplace(resource);

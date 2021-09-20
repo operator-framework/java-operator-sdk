@@ -26,7 +26,7 @@ public class ControllerExecutionIT {
     operator.getControllerOfType(TestCustomResourceController.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    operator.resources(TestCustomResource.class).create(resource);
+    operator.create(TestCustomResource.class, resource);
 
     awaitResourcesCreatedOrUpdated();
     awaitStatusUpdated();
@@ -38,7 +38,7 @@ public class ControllerExecutionIT {
     operator.getControllerOfType(TestCustomResourceController.class).setUpdateStatus(false);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    operator.resources(TestCustomResource.class).create(resource);
+    operator.create(TestCustomResource.class, resource);
 
     awaitResourcesCreatedOrUpdated();
     assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);

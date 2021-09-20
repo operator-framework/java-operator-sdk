@@ -123,6 +123,10 @@ public class OperatorExtension
     return kubernetesClient.resources(type).inNamespace(namespace).withName(name).get();
   }
 
+  public <T extends HasMetadata> T create(Class<T> type, T resource) {
+    return kubernetesClient.resources(type).inNamespace(namespace).create(resource);
+  }
+
   public void register(ResourceController<? extends CustomResource<?, ?>> controller) {
     register(controller, null);
   }
