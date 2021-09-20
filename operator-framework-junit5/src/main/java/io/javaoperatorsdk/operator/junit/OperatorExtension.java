@@ -183,11 +183,6 @@ public class OperatorExtension
     } catch (Exception e) {
       // ignored
     }
-    try {
-      this.kubernetesClient.close();
-    } catch (Exception e) {
-      // ignored
-    }
   }
 
   @SuppressWarnings("rawtypes")

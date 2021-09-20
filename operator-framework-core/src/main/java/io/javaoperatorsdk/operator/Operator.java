@@ -104,6 +104,8 @@ public class Operator implements AutoCloseable {
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
     controllers.close();
+
+    k8sClient.close();
   }
 
   /**
