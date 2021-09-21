@@ -61,15 +61,10 @@ public class Utils {
   }
 
   public static boolean shouldCheckCRDAndValidateLocalModel() {
-    return getBooleanEnvProperty(CHECK_CRD_ENV_KEY);
-  }
-
-  private static boolean getBooleanEnvProperty(String envKey) {
-    final var value = System.getProperty(envKey);
-    return value == null || Boolean.getBoolean(value);
+    return Boolean.getBoolean(System.getProperty(CHECK_CRD_ENV_KEY, "true"));
   }
 
   public static boolean debugThreadPool() {
-    return getBooleanEnvProperty(DEBUG_THREAD_POOL_ENV_KEY);
+    return Boolean.getBoolean(System.getProperty(DEBUG_THREAD_POOL_ENV_KEY, "false"));
   }
 }
