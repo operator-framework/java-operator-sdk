@@ -4,129 +4,98 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
+import io.javaoperatorsdk.operator.support.TestUtils;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ConcurrencyIT {
-
   public static final int NUMBER_OF_RESOURCES_CREATED = 50;
   public static final int NUMBER_OF_RESOURCES_DELETED = 30;
   public static final int NUMBER_OF_RESOURCES_UPDATED = 20;
-  private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
   public static final String UPDATED_SUFFIX = "_updated";
-  private IntegrationTestSupport integrationTest = new IntegrationTestSupport();
+  private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
 
-  @BeforeAll
-  public void setup() {
-    KubernetesClient k8sClient = new DefaultKubernetesClient();
-    integrationTest.initialize(k8sClient, new TestCustomResourceController(k8sClient, true));
-  }
-
-  @BeforeEach
-  public void cleanup() {
-    integrationTest.cleanup();
-  }
+  @RegisterExtension
+  OperatorExtension operator =
+      OperatorExtension.builder()
+          .withConfigurationService(DefaultConfigurationService.instance())
+          .withController(new TestCustomResourceController(true))
+          .build();
 
   @Test
-  public void manyResourcesGetCreatedUpdatedAndDeleted() {
-    integrationTest.teardownIfSuccess(
-        () -> {
-          log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
-          for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
-            TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
-            integrationTest
-                .getCrOperations()
-                .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                .create(tcr);
-          }
+  public void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {
+    log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
+    for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
+      TestCustomResource tcr = TestUtils.testCustomResourceWithPrefix(String.valueOf(i));
+      operator.resources(TestCustomResource.class).create(tcr);
+    }
 
-          await()
-              .atMost(1, TimeUnit.MINUTES)
-              .untilAsserted(
-                  () -> {
-                    List<ConfigMap> items =
-                        integrationTest
-                            .getK8sClient()
-                            .configMaps()
-                            .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                            .withLabel(
-                                "managedBy", TestCustomResourceController.class.getSimpleName())
-                            .list()
-                            .getItems();
-                    assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
-                  });
+    await()
+        .atMost(1, TimeUnit.MINUTES)
+        .untilAsserted(
+            () -> {
+              List<ConfigMap> items =
+                  operator.resources(ConfigMap.class)
+                      .withLabel(
+                          "managedBy", TestCustomResourceController.class.getSimpleName())
+                      .list()
+                      .getItems();
+              assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
+            });
 
-          log.info("Updating {} resources", NUMBER_OF_RESOURCES_UPDATED);
-          // update some resources
-          for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
-            TestCustomResource tcr =
-                (TestCustomResource) integrationTest
-                    .getCrOperations()
-                    .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                    .withName(IntegrationTestSupport.TEST_CUSTOM_RESOURCE_PREFIX + i)
-                    .get();
-            tcr.getSpec().setValue(i + UPDATED_SUFFIX);
-            integrationTest
-                .getCrOperations()
-                .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                .createOrReplace(tcr);
-          }
-          // sleep for a short time to make variability to the test, so some updates are not
-          // executed before delete
-          Thread.sleep(300);
+    log.info("Updating {} resources", NUMBER_OF_RESOURCES_UPDATED);
+    // update some resources
+    for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
+      TestCustomResource tcr =
+          operator.getNamedResource(TestCustomResource.class,
+              TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
+      tcr.getSpec().setValue(i + UPDATED_SUFFIX);
+      operator.resources(TestCustomResource.class)
+          .createOrReplace(tcr);
+    }
+    // sleep for a short time to make variability to the test, so some updates are not
+    // executed before delete
+    Thread.sleep(300);
 
-          log.info("Deleting {} resources", NUMBER_OF_RESOURCES_DELETED);
-          for (int i = 0; i < NUMBER_OF_RESOURCES_DELETED; i++) {
-            TestCustomResource tcr = integrationTest.createTestCustomResource(String.valueOf(i));
-            integrationTest
-                .getCrOperations()
-                .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                .delete(tcr);
-          }
+    log.info("Deleting {} resources", NUMBER_OF_RESOURCES_DELETED);
+    for (int i = 0; i < NUMBER_OF_RESOURCES_DELETED; i++) {
+      TestCustomResource tcr = TestUtils.testCustomResourceWithPrefix(String.valueOf(i));
+      operator.resources(TestCustomResource.class).delete(tcr);
+    }
 
-          await()
-              .atMost(1, TimeUnit.MINUTES)
-              .untilAsserted(
-                  () -> {
-                    List<ConfigMap> items =
-                        integrationTest
-                            .getK8sClient()
-                            .configMaps()
-                            .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                            .withLabel(
-                                "managedBy", TestCustomResourceController.class.getSimpleName())
-                            .list()
-                            .getItems();
-                    // reducing configmaps to names only - better for debugging
-                    List<String> itemDescs =
-                        items.stream()
-                            .map(configMap -> configMap.getMetadata().getName())
-                            .collect(Collectors.toList());
-                    assertThat(itemDescs)
-                        .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
+    await()
+        .atMost(1, TimeUnit.MINUTES)
+        .untilAsserted(
+            () -> {
+              List<ConfigMap> items =
+                  operator.resources(ConfigMap.class)
+                      .withLabel(
+                          "managedBy", TestCustomResourceController.class.getSimpleName())
+                      .list()
+                      .getItems();
+              // reducing configmaps to names only - better for debugging
+              List<String> itemDescs =
+                  items.stream()
+                      .map(configMap -> configMap.getMetadata().getName())
+                      .collect(Collectors.toList());
+              assertThat(itemDescs)
+                  .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
-                    List<TestCustomResource> crs =
-                        integrationTest
-                            .getK8sClient()
-                            .customResources(TestCustomResource.class)
-                            .inNamespace(IntegrationTestSupport.TEST_NAMESPACE)
-                            .list()
-                            .getItems();
-                    assertThat(crs)
-                        .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
-                  });
-        });
+              List<TestCustomResource> crs =
+                  operator.resources(TestCustomResource.class)
+                      .list()
+                      .getItems();
+              assertThat(crs)
+                  .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
+            });
   }
 }

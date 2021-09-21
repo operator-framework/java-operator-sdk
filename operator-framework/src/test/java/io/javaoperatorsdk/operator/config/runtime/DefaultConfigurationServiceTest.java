@@ -28,6 +28,8 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   void attemptingToRetrieveAnUnknownControllerShouldLogWarning() {
+    final var configurationService = DefaultConfigurationService.instance();
+
     final LoggerContext context = LoggerContext.getContext(false);
     final PatternLayout layout = PatternLayout.createDefaultLayout(context.getConfiguration());
     final ListAppender appender = new ListAppender("list", null, layout, false, false);
@@ -37,11 +39,12 @@ public class DefaultConfigurationServiceTest {
     context.getConfiguration().addAppender(appender);
 
     AppenderRef ref = AppenderRef.createAppenderRef("list", null, null);
+    final var loggerName = configurationService.getLoggerName();
     LoggerConfig loggerConfig =
         LoggerConfig.createLogger(
             false,
             Level.valueOf("info"),
-            AbstractConfigurationService.LOGGER_NAME,
+            loggerName,
             "false",
             new AppenderRef[] {ref},
             null,
@@ -49,12 +52,12 @@ public class DefaultConfigurationServiceTest {
             null);
     loggerConfig.addAppender(appender, null, null);
 
-    context.getConfiguration().addLogger(AbstractConfigurationService.LOGGER_NAME, loggerConfig);
+    context.getConfiguration().addLogger(loggerName, loggerConfig);
     context.updateLoggers();
 
     try {
       final var config =
-          DefaultConfigurationService.instance()
+          configurationService
               .getConfigurationFor(new NotAutomaticallyCreated(), false);
 
       assertThat(config).isNull();
@@ -64,7 +67,7 @@ public class DefaultConfigurationServiceTest {
     } finally {
       appender.stop();
 
-      context.getConfiguration().removeLogger(AbstractConfigurationService.LOGGER_NAME);
+      context.getConfiguration().removeLogger(loggerName);
       context.updateLoggers();
     }
   }

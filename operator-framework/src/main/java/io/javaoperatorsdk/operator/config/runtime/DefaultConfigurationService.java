@@ -2,11 +2,11 @@ package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 
-public class DefaultConfigurationService extends AbstractConfigurationService {
+public class DefaultConfigurationService extends BaseConfigurationService {
 
   private static final DefaultConfigurationService instance = new DefaultConfigurationService();
 
@@ -32,7 +32,7 @@ public class DefaultConfigurationService extends AbstractConfigurationService {
         // create the configuration on demand and register it
         config = new AnnotationConfiguration<>(controller);
         register(config);
-        log.info(
+        getLogger().info(
             "Created configuration for controller {} with name {}",
             controller.getClass().getName(),
             config.getName());

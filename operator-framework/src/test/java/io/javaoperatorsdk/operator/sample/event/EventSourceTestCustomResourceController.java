@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.sample.event;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;

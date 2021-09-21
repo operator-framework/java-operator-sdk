@@ -6,12 +6,13 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,24 +21,42 @@ import org.slf4j.LoggerFactory;
 
 @Controller(generationAwareEventProcessing = false)
 public class TestCustomResourceController
-    implements ResourceController<TestCustomResource>, TestExecutionInfoProvider {
+    implements ResourceController<TestCustomResource>, TestExecutionInfoProvider,
+    KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
 
   public static final String FINALIZER_NAME =
       ControllerUtils.getDefaultFinalizerName(CustomResource.getCRDName(TestCustomResource.class));
 
-  private final KubernetesClient kubernetesClient;
-  private final boolean updateStatus;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+  private KubernetesClient kubernetesClient;
+  private boolean updateStatus;
 
-  public TestCustomResourceController(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, true);
+  public TestCustomResourceController() {
+    this(true);
   }
 
-  public TestCustomResourceController(KubernetesClient kubernetesClient, boolean updateStatus) {
-    this.kubernetesClient = kubernetesClient;
+  public TestCustomResourceController(boolean updateStatus) {
     this.updateStatus = updateStatus;
+  }
+
+  public boolean isUpdateStatus() {
+    return updateStatus;
+  }
+
+  public void setUpdateStatus(boolean updateStatus) {
+    this.updateStatus = updateStatus;
+  }
+
+  @Override
+  public KubernetesClient getKubernetesClient() {
+    return kubernetesClient;
+  }
+
+  @Override
+  public void setKubernetesClient(KubernetesClient kubernetesClient) {
+    this.kubernetesClient = kubernetesClient;
   }
 
   @Override

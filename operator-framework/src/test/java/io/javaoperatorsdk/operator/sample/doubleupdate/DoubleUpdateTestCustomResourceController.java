@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.doubleupdate;
 
-import io.javaoperatorsdk.operator.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import io.javaoperatorsdk.operator.api.*;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
