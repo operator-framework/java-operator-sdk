@@ -13,6 +13,7 @@ public class Utils {
 
   private static final Logger log = LoggerFactory.getLogger(Utils.class);
   public static final String CHECK_CRD_ENV_KEY = "JAVA_OPERATOR_SDK_CHECK_CRD";
+  public static final String DEBUG_THREAD_POOL_ENV_KEY = "JAVA_OPERATOR_SDK_DEBUG_THREAD_POOL";
 
   /**
    * Attempts to load version information from a properties file produced at build time, currently
@@ -60,7 +61,15 @@ public class Utils {
   }
 
   public static boolean shouldCheckCRDAndValidateLocalModel() {
-    final var value = System.getProperty(CHECK_CRD_ENV_KEY);
+    return getBooleanEnvProperty(CHECK_CRD_ENV_KEY);
+  }
+
+  private static boolean getBooleanEnvProperty(String envKey) {
+    final var value = System.getProperty(envKey);
     return value == null || Boolean.getBoolean(value);
+  }
+
+  public static boolean debugThreadPool() {
+    return getBooleanEnvProperty(DEBUG_THREAD_POOL_ENV_KEY);
   }
 }
