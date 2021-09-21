@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -13,7 +12,7 @@ import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExecutorServiceManager implements Closeable {
+public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
   private static ExecutorServiceManager instance;
 
@@ -25,7 +24,7 @@ public class ExecutorServiceManager implements Closeable {
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
 
-  public static void start(ConfigurationService configuration) {
+  public static void init(ConfigurationService configuration) {
     if (instance == null) {
       instance = new ExecutorServiceManager(
           new InstrumentedExecutorService(configuration.getExecutorService()),
@@ -33,6 +32,15 @@ public class ExecutorServiceManager implements Closeable {
     } else {
       log.debug("Already started, reusing already setup instance!");
     }
+  }
+
+  public static void close() {
+    if (instance != null) {
+      instance.stop();
+    }
+    // make sure that we remove the singleton so that the thread pool is re-created on next call to
+    // start
+    instance = null;
   }
 
   public static ExecutorServiceManager instance() {
@@ -47,8 +55,7 @@ public class ExecutorServiceManager implements Closeable {
     return executor;
   }
 
-  @Override
-  public void close() {
+  private void stop() {
     try {
       log.debug("Closing executor");
       executor.shutdown();

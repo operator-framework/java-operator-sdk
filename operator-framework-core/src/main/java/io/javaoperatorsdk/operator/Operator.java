@@ -94,7 +94,7 @@ public class Operator implements AutoCloseable {
       throw new OperatorException(error, e);
     }
 
-    ExecutorServiceManager.start(configurationService);
+    ExecutorServiceManager.init(configurationService);
     controllers.start();
   }
 
@@ -106,7 +106,7 @@ public class Operator implements AutoCloseable {
 
     controllers.close();
 
-    ExecutorServiceManager.instance().close();
+    ExecutorServiceManager.close();
     k8sClient.close();
   }
 
