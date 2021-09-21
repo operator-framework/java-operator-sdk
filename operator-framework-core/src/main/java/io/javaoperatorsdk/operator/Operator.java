@@ -6,7 +6,6 @@ import java.net.ConnectException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
@@ -94,6 +94,7 @@ public class Operator implements AutoCloseable {
       throw new OperatorException(error, e);
     }
 
+    ExecutorServiceManager.start(configurationService);
     controllers.start();
   }
 
@@ -103,20 +104,9 @@ public class Operator implements AutoCloseable {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-    try {
-      log.debug("Closing executor");
-      final var executor = configurationService.getExecutorService();
-      executor.shutdown();
-      if (!executor.awaitTermination(configurationService.getTerminationTimeoutSeconds(),
-          TimeUnit.SECONDS)) {
-        executor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
-    } catch (InterruptedException e) {
-      log.debug("Exception closing executor: {}", e.getLocalizedMessage());
-    }
-
     controllers.close();
 
+    ExecutorServiceManager.instance().close();
     k8sClient.close();
   }
 

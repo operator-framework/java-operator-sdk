@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -105,6 +106,6 @@ public interface ConfigurationService {
   }
 
   default ExecutorService getExecutorService() {
-    return ExecutorServiceProducer.getExecutor(concurrentReconciliationThreads());
+    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
   }
 }

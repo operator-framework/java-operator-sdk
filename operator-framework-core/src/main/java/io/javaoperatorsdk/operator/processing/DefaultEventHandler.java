@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -53,7 +54,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private DefaultEventSourceManager<R> eventSourceManager;
 
   public DefaultEventHandler(ConfiguredController<R> controller) {
-    this(controller.getConfiguration().getConfigurationService().getExecutorService(),
+    this(ExecutorServiceManager.instance().executorService(),
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()));
