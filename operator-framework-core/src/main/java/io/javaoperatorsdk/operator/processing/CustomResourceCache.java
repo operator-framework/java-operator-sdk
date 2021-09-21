@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.Metrics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,34 +26,34 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 public class CustomResourceCache {
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceCache.class);
+  private static final Predicate passthrough = o -> true;
 
   private final ObjectMapper objectMapper;
-  private final ConcurrentMap<String, CustomResource> resources = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, CustomResource> resources;
   private final Lock lock = new ReentrantLock();
 
   public CustomResourceCache() {
-    this(new ObjectMapper());
+    this(new ObjectMapper(), Metrics.NOOP);
   }
 
-  public CustomResourceCache(ObjectMapper objectMapper) {
+  public CustomResourceCache(ObjectMapper objectMapper, Metrics metrics) {
     this.objectMapper = objectMapper;
+    resources = metrics.monitorSizeOf(new ConcurrentHashMap<>(), "cache");
   }
 
   public void cacheResource(CustomResource resource) {
-    try {
-      lock.lock();
-      resources.put(KubernetesResourceUtils.getUID(resource), resource);
-    } finally {
-      lock.unlock();
-    }
+    cacheResource(resource, passthrough);
   }
 
   public void cacheResource(CustomResource resource, Predicate<CustomResource> predicate) {
     try {
       lock.lock();
-      if (predicate.test(resources.get(KubernetesResourceUtils.getUID(resource)))) {
-        log.trace("Update cache after condition is true: {}", getName(resource));
-        resources.put(getUID(resource), resource);
+      final var uid = getUID(resource);
+      if (predicate.test(resources.get(uid))) {
+        if (passthrough != predicate) {
+          log.trace("Update cache after condition is true: {}", getName(resource));
+        }
+        resources.put(uid, resource);
       }
     } finally {
       lock.unlock();
