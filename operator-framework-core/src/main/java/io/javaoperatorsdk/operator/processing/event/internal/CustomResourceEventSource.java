@@ -39,8 +39,9 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
     this.watches = new LinkedList<>();
-    this.customResourceCache = new CustomResourceCache(
-        controller.getConfiguration().getConfigurationService().getObjectMapper());
+    final var configurationService = controller.getConfiguration().getConfigurationService();
+    this.customResourceCache = new CustomResourceCache(configurationService.getObjectMapper(),
+        configurationService.getMetrics());
   }
 
   @Override

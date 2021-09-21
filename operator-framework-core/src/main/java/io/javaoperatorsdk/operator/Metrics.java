@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
@@ -26,6 +28,7 @@ import io.micrometer.core.instrument.noop.NoopTimer;
 
 public class Metrics {
   public static final Metrics NOOP = new Metrics(new NoopMeterRegistry(Clock.SYSTEM));
+  public static final String PREFIX = "operator.sdk.";
   private final MeterRegistry registry;
 
   public Metrics(MeterRegistry registry) {
@@ -44,7 +47,7 @@ public class Metrics {
 
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
-    final var execName = "operator.sdk.controllers.execution." + execution.name();
+    final var execName = PREFIX + "controllers.execution." + execution.name();
     final var timer =
         Timer.builder(execName)
             .tags("controller", name)
@@ -68,23 +71,25 @@ public class Metrics {
   }
 
   public void incrementControllerRetriesNumber() {
-
     registry
         .counter(
-            "operator.sdk.retry.on.exception", "retry", "retryCounter", "type",
+            PREFIX + "retry.on.exception", "retry", "retryCounter", "type",
             "retryException")
         .increment();
 
   }
 
   public void incrementProcessedEventsNumber() {
-
     registry
         .counter(
-            "operator.sdk.total.events.received", "events", "totalEvents", "type",
+            PREFIX + "total.events.received", "events", "totalEvents", "type",
             "eventsReceived")
         .increment();
 
+  }
+
+  public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
+    return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
 
   public static class NoopMeterRegistry extends MeterRegistry {
