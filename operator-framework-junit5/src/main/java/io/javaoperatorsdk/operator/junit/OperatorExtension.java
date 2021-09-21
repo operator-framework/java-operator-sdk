@@ -135,6 +135,7 @@ public class OperatorExtension
     namespace += "-";
     namespace += context.getRequiredTestMethod().getName();
     namespace = KubernetesResourceUtil.sanitizeName(namespace).toLowerCase(Locale.US);
+    namespace = namespace.substring(0, Math.min(namespace.length(), 63));
 
     LOGGER.info("Initializing integration test in namespace {}", namespace);
 
