@@ -38,6 +38,9 @@ public class CustomResourceCache {
 
   public CustomResourceCache(ObjectMapper objectMapper, Metrics metrics) {
     this.objectMapper = objectMapper;
+    if (metrics == null) {
+      metrics = Metrics.NOOP;
+    }
     resources = metrics.monitorSizeOf(new ConcurrentHashMap<>(), "cache");
   }
 
