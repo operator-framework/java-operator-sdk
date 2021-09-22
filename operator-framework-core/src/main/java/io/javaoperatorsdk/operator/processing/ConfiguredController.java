@@ -174,12 +174,8 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
       CustomResourceUtils.assertCustomResource(resClass, crd);
     }
 
-    try {
-      DefaultEventSourceManager<R> eventSourceManager = new DefaultEventSourceManager<>(this);
-      controller.init(eventSourceManager);
-    } catch (MissingCRDException e) {
-      throwMissingCRDException(crdName, specVersion, controllerName);
-    }
+    DefaultEventSourceManager<R> eventSourceManager = new DefaultEventSourceManager<>(this);
+    controller.init(eventSourceManager);
 
     if (failOnMissingCurrentNS()) {
       throw new OperatorException(

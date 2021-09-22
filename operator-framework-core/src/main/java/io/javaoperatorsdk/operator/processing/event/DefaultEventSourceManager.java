@@ -15,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
@@ -88,12 +86,6 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
       if (e instanceof IllegalStateException) {
         // leave untouched
         throw e;
-      }
-      if (e instanceof KubernetesClientException) {
-        KubernetesClientException ke = (KubernetesClientException) e;
-        if (404 == ke.getCode()) {
-          throw new MissingCRDException(null, null);
-        }
       }
       throw new OperatorException("Couldn't register event source named '" + name + "'", e);
     } finally {
