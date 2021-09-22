@@ -50,7 +50,7 @@ public class DefaultEvent implements Event {
         + " }";
   }
 
-  private static class UIDMatchingPredicate implements Predicate<CustomResource> {
+  public static class UIDMatchingPredicate implements Predicate<CustomResource> {
     private final String uid;
 
     public UIDMatchingPredicate(String uid) {

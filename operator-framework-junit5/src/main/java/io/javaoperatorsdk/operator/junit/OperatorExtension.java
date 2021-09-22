@@ -131,6 +131,10 @@ public class OperatorExtension
     return kubernetesClient.resources(type).inNamespace(namespace).create(resource);
   }
 
+  public <T extends HasMetadata> T replace(Class<T> type, T resource) {
+    return kubernetesClient.resources(type).inNamespace(namespace).replace(resource);
+  }
+
   @SuppressWarnings("unchecked")
   protected void before(ExtensionContext context) {
     namespace = context.getRequiredTestClass().getSimpleName();
