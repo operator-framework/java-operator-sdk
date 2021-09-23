@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 11 ]
+        java: [ 11, 17 ]
         distribution: [ temurin, adopt-openj9 ]
         kubernetes: [ 'v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.4', 'v1.22.1' ]
     steps:
