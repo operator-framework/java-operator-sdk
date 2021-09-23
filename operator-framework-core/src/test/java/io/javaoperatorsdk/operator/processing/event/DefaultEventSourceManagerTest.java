@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +25,8 @@ class DefaultEventSourceManagerTest {
 
   private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
   private DefaultEventSourceManager defaultEventSourceManager =
-      new DefaultEventSourceManager(defaultEventHandlerMock, false);
+      new DefaultEventSourceManager(defaultEventHandlerMock, false,
+          CustomResource.getCRDName(TestCustomResource.class));
 
   @Test
   public void registersEventSource() {

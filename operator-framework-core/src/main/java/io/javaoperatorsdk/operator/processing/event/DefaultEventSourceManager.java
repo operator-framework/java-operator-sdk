@@ -35,18 +35,21 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
   private final DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource<R> retryTimerEventSource;
+  private final String targetCRDName;
 
-  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry) {
+  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry,
+      String targetCRDName) {
     this.defaultEventHandler = defaultEventHandler;
     defaultEventHandler.setEventSourceManager(this);
     if (supportRetry) {
       this.retryTimerEventSource = new TimerEventSource<>();
       registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
     }
+    this.targetCRDName = targetCRDName;
   }
 
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
-    this(new DefaultEventHandler<>(controller), true);
+    this(new DefaultEventHandler<>(controller), true, controller.getConfiguration().getCRDName());
     registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
         new CustomResourceEventSource<>(controller));
   }
@@ -92,7 +95,10 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
       if (e instanceof KubernetesClientException) {
         KubernetesClientException ke = (KubernetesClientException) e;
         if (404 == ke.getCode()) {
-          throw new MissingCRDException(null, null);
+          // only throw MissingCRDException if the 404 error occurs on the target CRD
+          if (targetCRDName.equals(ke.getFullResourceName())) {
+            throw new MissingCRDException(targetCRDName, null);
+          }
         }
       }
       throw new OperatorException("Couldn't register event source named '" + name + "'", e);
