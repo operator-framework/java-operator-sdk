@@ -11,10 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ListOptions;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.utils.Utils;
+import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.CustomResourceCache;
@@ -55,17 +57,31 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       options.setLabelSelector(labelSelector);
     }
 
-    if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-      var w = client.inAnyNamespace().watch(options, this);
-      watches.add(w);
-      log.debug("Registered {} -> {} for any namespace", controller, w);
-    } else {
-      targetNamespaces.forEach(
-          ns -> {
-            var w = client.inNamespace(ns).watch(options, this);
-            watches.add(w);
-            log.debug("Registered {} -> {} for namespace: {}", controller, w, ns);
-          });
+    try {
+      if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
+        var w = client.inAnyNamespace().watch(options, this);
+        watches.add(w);
+        log.debug("Registered {} -> {} for any namespace", controller, w);
+      } else {
+        targetNamespaces.forEach(
+            ns -> {
+              var w = client.inNamespace(ns).watch(options, this);
+              watches.add(w);
+              log.debug("Registered {} -> {} for namespace: {}", controller, w, ns);
+            });
+      }
+    } catch (Exception e) {
+      if (e instanceof KubernetesClientException) {
+        KubernetesClientException ke = (KubernetesClientException) e;
+        if (404 == ke.getCode()) {
+          // only throw MissingCRDException if the 404 error occurs on the target CRD
+          final var targetCRDName = controller.getConfiguration().getCRDName();
+          if (targetCRDName.equals(ke.getFullResourceName())) {
+            throw new MissingCRDException(targetCRDName, null);
+          }
+        }
+      }
+      throw e;
     }
   }
 
