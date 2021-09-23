@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
@@ -35,21 +34,18 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
   private final DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource<R> retryTimerEventSource;
-  private final String targetCRDName;
 
-  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry,
-      String targetCRDName) {
+  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry) {
     this.defaultEventHandler = defaultEventHandler;
     defaultEventHandler.setEventSourceManager(this);
     if (supportRetry) {
       this.retryTimerEventSource = new TimerEventSource<>();
       registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
     }
-    this.targetCRDName = targetCRDName;
   }
 
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
-    this(new DefaultEventHandler<>(controller), true, controller.getConfiguration().getCRDName());
+    this(new DefaultEventHandler<>(controller), true);
     registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
         new CustomResourceEventSource<>(controller));
   }
@@ -88,18 +84,9 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
       eventSource.setEventHandler(defaultEventHandler);
       eventSource.start();
     } catch (Throwable e) {
-      if (e instanceof IllegalStateException) {
+      if (e instanceof IllegalStateException || e instanceof MissingCRDException) {
         // leave untouched
         throw e;
-      }
-      if (e instanceof KubernetesClientException) {
-        KubernetesClientException ke = (KubernetesClientException) e;
-        if (404 == ke.getCode()) {
-          // only throw MissingCRDException if the 404 error occurs on the target CRD
-          if (targetCRDName.equals(ke.getFullResourceName())) {
-            throw new MissingCRDException(targetCRDName, null);
-          }
-        }
       }
       throw new OperatorException("Couldn't register event source named '" + name + "'", e);
     } finally {
