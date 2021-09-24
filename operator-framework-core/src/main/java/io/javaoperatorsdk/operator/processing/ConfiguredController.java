@@ -105,8 +105,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
   @Override
   public void init(EventSourceManager eventSourceManager) {
-    this.manager = eventSourceManager;
-    controller.init(eventSourceManager);
+    throw new UnsupportedOperationException("This method should never be called directly");
   }
 
   @Override
