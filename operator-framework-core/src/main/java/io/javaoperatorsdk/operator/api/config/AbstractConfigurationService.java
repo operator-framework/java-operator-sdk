@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
-public abstract class AbstractConfigurationService implements ConfigurationService {
+public class AbstractConfigurationService implements ConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
 
@@ -60,8 +60,11 @@ public abstract class AbstractConfigurationService implements ConfigurationServi
     return configuration;
   }
 
-  protected abstract void logMissingControllerWarning(String controllerKey,
-      String controllersNameMessage);
+  protected void logMissingControllerWarning(String controllerKey,
+      String controllersNameMessage) {
+    System.out
+        .println("Cannot find controller named '" + controllerKey + "'. " + controllersNameMessage);
+  }
 
   private String getControllersNameMessage() {
     return "Known controllers: "
