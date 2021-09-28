@@ -163,11 +163,19 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
       } else {
         cacheUpdatedResourceIfChanged(executionScope, postExecutionControl);
+        reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
         executeBufferedEvents(executionScope.getCustomResourceUid());
       }
     } finally {
       lock.unlock();
     }
+  }
+
+  private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,
+      R customResource) {
+    postExecutionControl.getReScheduleDelay().ifPresent(delay -> eventSourceManager
+        .getRetryTimerEventSource()
+        .scheduleOnce(customResource, delay));
   }
 
   /**

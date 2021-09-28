@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.api;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import io.fabric8.kubernetes.client.CustomResource;
 
 public class UpdateControl<T extends CustomResource> {
@@ -7,6 +10,7 @@ public class UpdateControl<T extends CustomResource> {
   private final T customResource;
   private final boolean updateStatusSubResource;
   private final boolean updateCustomResource;
+  private Long reScheduleDelay = null;
 
   private UpdateControl(
       T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
@@ -38,6 +42,19 @@ public class UpdateControl<T extends CustomResource> {
 
   public static <T extends CustomResource> UpdateControl<T> noUpdate() {
     return new UpdateControl<>(null, false, false);
+  }
+
+  public UpdateControl withReSchedule(long delay, TimeUnit timeUnit) {
+    return withReSchedule(timeUnit.toMillis(delay));
+  }
+
+  public UpdateControl withReSchedule(long delay) {
+    this.reScheduleDelay = delay;
+    return this;
+  }
+
+  public Optional<Long> getReScheduleDelay() {
+    return Optional.ofNullable(reScheduleDelay);
   }
 
   public T getCustomResource() {

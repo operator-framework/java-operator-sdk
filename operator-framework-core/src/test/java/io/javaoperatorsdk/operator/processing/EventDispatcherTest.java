@@ -289,6 +289,20 @@ class EventDispatcherTest {
     assertThat(retryInfo.isLastAttempt()).isEqualTo(true);
   }
 
+  @Test
+  void setReScheduleToPostExecutionControlFromUpdateControl() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    when(controller.createOrUpdateResource(eq(testCustomResource), any()))
+        .thenReturn(
+            UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000l));
+
+    PostExecutionControl control = eventDispatcher.handleExecution(
+        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+
+    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000l);
+  }
+
   private void markForDeletion(CustomResource customResource) {
     customResource.getMetadata().setDeletionTimestamp("2019-8-10");
   }
