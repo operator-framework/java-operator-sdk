@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -21,7 +21,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     this(sharedInformer, mapper, true);
   }
 
-  InformerEventSource(KubernetesClient client, Class<T> type,
+  public InformerEventSource(KubernetesClient client, Class<T> type,
       ResourceToRelatedCustomResourceUIDMapper<T> mapper) {
     this(client, type, mapper, false);
   }
@@ -40,7 +40,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     this.mapper = mapper;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
 
-    sharedInformer.addEventHandler(new ResourceEventHandler<T>() {
+    sharedInformer.addEventHandler(new ResourceEventHandler<>() {
       @Override
       public void onAdd(T t) {
         propagateEvent(InformerEvent.Action.ADD, t, null);
@@ -92,8 +92,9 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     return sharedInformer;
   }
 
+  @FunctionalInterface
   public interface ResourceToRelatedCustomResourceUIDMapper<T> {
-    List<String> map(T resource);
+    Set<String> map(T resource);
   }
 
 }
