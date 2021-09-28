@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -15,36 +16,36 @@ import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
   private final SharedInformer<T> sharedInformer;
-  private final ResourceToRelatedCustomResourceUIDMapper<T> mapper;
-  private final CustomResourceToRelatedResourceMapper<T> reverseMapper;
+  private final Function<T, Set<String>> resourceToUIDs;
+  private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper) {
-    this(sharedInformer, mapper, null, true);
+      Function<T, Set<String>> resourceToUIDs) {
+    this(sharedInformer, resourceToUIDs, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper) {
-    this(client, type, mapper, false);
+      Function<T, Set<String>> resourceToUIDs) {
+    this(client, type, resourceToUIDs, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper,
+      Function<T, Set<String>> resourceToUIDs,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), mapper, null,
+    this(client.informers().sharedIndexInformerFor(type, 0), resourceToUIDs, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper,
-      CustomResourceToRelatedResourceMapper<T> reverseMapper,
+      Function<T, Set<String>> resourceToUIDs,
+      Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.mapper = mapper;
+    this.resourceToUIDs = resourceToUIDs;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
 
-    this.reverseMapper = Objects.requireNonNullElseGet(reverseMapper, () -> cr -> {
+    this.associatedWith = Objects.requireNonNullElseGet(associatedWith, () -> cr -> {
       final var metadata = cr.getMetadata();
       return getStore().getByKey(Cache.namespaceKeyFunc(metadata.getNamespace(),
           metadata.getName()));
@@ -74,7 +75,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(InformerEvent.Action action, T object, T oldObject) {
-    var uids = mapper.map(object);
+    var uids = resourceToUIDs.apply(object);
     if (uids.isEmpty()) {
       return;
     }
@@ -100,28 +101,17 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
 
   /**
    * Retrieves the informed resource associated with the specified primary resource as defined by
-   * the {@link CustomResourceToRelatedResourceMapper} provided when this InformerEventSource was
-   * created
+   * the function provided when this InformerEventSource was created
    * 
    * @param resource the primary resource we want to retrieve the associated resource for
    * @return the informed resource associated with the specified primary resource
    */
   public T getAssociated(HasMetadata resource) {
-    return reverseMapper.associatedWith(resource);
+    return associatedWith.apply(resource);
   }
 
 
   public SharedInformer<T> getSharedInformer() {
     return sharedInformer;
-  }
-
-  @FunctionalInterface
-  public interface ResourceToRelatedCustomResourceUIDMapper<T> {
-    Set<String> map(T resource);
-  }
-
-  @FunctionalInterface
-  public interface CustomResourceToRelatedResourceMapper<T> {
-    T associatedWith(HasMetadata cr);
   }
 }
