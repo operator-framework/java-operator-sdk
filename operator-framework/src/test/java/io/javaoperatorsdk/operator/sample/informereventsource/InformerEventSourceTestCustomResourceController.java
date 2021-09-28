@@ -1,8 +1,10 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -11,9 +13,6 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.Mappers;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.api.Controller.NO_FINALIZER;
 
@@ -48,9 +47,7 @@ public class InformerEventSourceTestCustomResourceController implements
 
     // Reading the config map from the informer not from the API
     // name of the config map same as custom resource for sake of simplicity
-    ConfigMap configMap = eventSource.getStore()
-        .getByKey(Cache.namespaceKeyFunc(resource.getMetadata().getNamespace(),
-            resource.getMetadata().getName()));
+    ConfigMap configMap = eventSource.getAssociated(resource);
 
     String targetStatus = configMap.getData().get(TARGET_CONFIG_MAP_KEY);
     LOGGER.debug("Setting target status for CR: {}", targetStatus);
