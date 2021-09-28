@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -64,12 +64,14 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(InformerEvent.Action action, T object, T oldObject) {
-    var uid = mapper.map(object);
-    if (uid.isEmpty()) {
+    var uids = mapper.map(object);
+    if (uids.isEmpty()) {
       return;
     }
-    InformerEvent event = new InformerEvent(uid.get(), this, action, object, oldObject);
-    this.eventHandler.handleEvent(event);
+    uids.forEach(uid -> {
+      InformerEvent event = new InformerEvent(uid, this, action, object, oldObject);
+      this.eventHandler.handleEvent(event);
+    });
   }
 
   @Override
@@ -91,8 +93,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   public interface ResourceToRelatedCustomResourceUIDMapper<T> {
-    // in case cannot map to the related CR uid, skip the event processing
-    Optional<String> map(T resource);
+    List<String> map(T resource);
   }
 
 }
