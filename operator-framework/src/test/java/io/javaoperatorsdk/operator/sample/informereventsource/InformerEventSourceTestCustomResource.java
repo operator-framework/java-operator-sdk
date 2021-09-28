@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("Informereventsourcesample")
 @ShortNames("ies")
 public class InformerEventSourceTestCustomResource extends
-    CustomResource<InformerEventSourceTestCustomResourceSpec, InformerEventSourceTestCustomResourceStatus>
+    CustomResource<Void, InformerEventSourceTestCustomResourceStatus>
     implements Namespaced {
 
 }
