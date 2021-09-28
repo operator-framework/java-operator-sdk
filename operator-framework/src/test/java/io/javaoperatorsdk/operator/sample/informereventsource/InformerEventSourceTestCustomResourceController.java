@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +45,9 @@ public class InformerEventSourceTestCustomResourceController implements
     eventSourceManager.registerEventSource("configmap", new InformerEventSource<>(informer,
         resource -> {
           if (resource.getMetadata() == null || resource.getMetadata().getAnnotations() == null) {
-            return Optional.empty();
+            return Collections.emptyList();
           }
-          return Optional
-              .ofNullable(resource.getMetadata().getAnnotations().get(RELATED_RESOURCE_UID));
+          return Arrays.asList(resource.getMetadata().getAnnotations().get(RELATED_RESOURCE_UID));
         }));
   }
 
