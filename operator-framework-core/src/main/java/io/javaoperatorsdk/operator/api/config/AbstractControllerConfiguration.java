@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Set;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
-import java.util.Set;
 
 /**
  * @deprecated use {@link DefaultControllerConfiguration} instead

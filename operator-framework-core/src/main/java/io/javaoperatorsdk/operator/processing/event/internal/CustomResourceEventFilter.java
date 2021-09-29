@@ -18,7 +18,7 @@ public interface CustomResourceEventFilter<T extends CustomResource> {
    * be propagated to the controller or not.
    *
    * @param configuration the target controller's configuration
-   * @param oldResource the old version of the resource
+   * @param oldResource the old version of the resource, null if no old resource available
    * @param newResource the new version of the resource
    * @return {@code true} if the change needs to be propagated to the controller, {@code false}
    *         otherwise
@@ -28,7 +28,7 @@ public interface CustomResourceEventFilter<T extends CustomResource> {
   /**
    * Combines this filter with the provided one with an AND logic, i.e. the resulting filter will
    * only accept the change if both this and the other filter accept it, reject it otherwise.
-   * 
+   *
    * @param other the possibly {@code null} other filter to combine this one with
    * @return a composite filter implementing the AND logic between this and the provided filter
    */

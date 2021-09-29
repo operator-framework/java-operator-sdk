@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import java.util.List;
+import java.util.Objects;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.Watcher;
@@ -17,10 +17,12 @@ import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import java.util.List;
-import java.util.Objects;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class CustomResourceEventFilterTest {
   public static final String FINALIZER = "finalizer";
@@ -37,7 +39,7 @@ class CustomResourceEventFilterTest {
     var config = new TestControllerConfig(
         FINALIZER,
         false,
-        (configuration, oldResource, newResource) -> !Objects.equals(
+        (configuration, oldResource, newResource) -> oldResource == null || !Objects.equals(
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
 
@@ -65,11 +67,9 @@ class CustomResourceEventFilterTest {
     var config = new TestControllerConfig(
         FINALIZER,
         true,
-        (configuration, oldResource, newResource) -> {
-          return !Objects.equals(
-              oldResource.getStatus().getConfigMapStatus(),
-              newResource.getStatus().getConfigMapStatus());
-        });
+        (configuration, oldResource, newResource) -> oldResource == null || !Objects.equals(
+            oldResource.getStatus().getConfigMapStatus(),
+            newResource.getStatus().getConfigMapStatus()));
 
     var controller = new TestConfiguredController(config);
     var eventSource = new CustomResourceEventSource<>(controller);

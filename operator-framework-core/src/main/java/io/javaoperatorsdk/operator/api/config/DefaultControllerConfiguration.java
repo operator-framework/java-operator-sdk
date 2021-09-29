@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import java.util.Collections;
 import java.util.Set;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 
 public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
     implements ControllerConfiguration<R> {

@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.api;
 
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
