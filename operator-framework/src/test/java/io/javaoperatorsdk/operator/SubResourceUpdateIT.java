@@ -12,9 +12,9 @@ import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
+import static io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus.State.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -87,7 +87,7 @@ public class SubResourceUpdateIT {
     awaitStatusUpdated(resource.getMetadata().getName());
 
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(500);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(3);
@@ -104,7 +104,7 @@ public class SubResourceUpdateIT {
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getState())
-                  .isEqualTo(SubResourceTestCustomResourceStatus.State.SUCCESS);
+                  .isEqualTo(SUCCESS);
             });
   }
 
