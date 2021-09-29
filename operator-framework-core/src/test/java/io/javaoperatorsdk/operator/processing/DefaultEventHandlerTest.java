@@ -152,14 +152,14 @@ class DefaultEventHandlerTest {
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
+    when(eventDispatcherMock.handleExecution(any()))
+        .thenReturn(postExecutionControl)
+        .thenReturn(PostExecutionControl.defaultDispatch());
+
     // start processing an event
     defaultEventHandlerWithRetry.handleEvent(event);
-    // buffer an another event
+    // buffer another event
     defaultEventHandlerWithRetry.handleEvent(event);
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
-        .handleExecution(any());
-
-    defaultEventHandlerWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionScope.class);
@@ -191,15 +191,14 @@ class DefaultEventHandlerTest {
         ArgumentCaptor.forClass(ExecutionScope.class);
 
     defaultEventHandlerWithRetry.handleEvent(event);
-
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
-    defaultEventHandlerWithRetry.handleEvent(event);
 
+    defaultEventHandlerWithRetry.handleEvent(event);
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(any());
-    defaultEventHandlerWithRetry.handleEvent(event);
 
+    defaultEventHandlerWithRetry.handleEvent(event);
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
         .handleExecution(executionScopeArgumentCaptor.capture());
     log.info("Finished successfulExecutionResetsTheRetry");

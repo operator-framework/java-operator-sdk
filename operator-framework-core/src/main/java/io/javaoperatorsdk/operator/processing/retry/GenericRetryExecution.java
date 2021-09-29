@@ -6,8 +6,8 @@ public class GenericRetryExecution implements RetryExecution {
 
   private final GenericRetry genericRetry;
 
-  private int lastAttemptIndex = 0;
-  private long currentInterval;
+  private volatile int lastAttemptIndex = 0;
+  private volatile long currentInterval;
 
   public GenericRetryExecution(GenericRetry genericRetry) {
     this.genericRetry = genericRetry;
