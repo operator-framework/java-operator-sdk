@@ -23,15 +23,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class DefaultEventHandlerTest {
 
@@ -187,7 +179,6 @@ class DefaultEventHandlerTest {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     customResource.getMetadata().setUid(event.getRelatedCustomResourceUid());
-    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
     PostExecutionControl postExecutionControlWithException =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
     PostExecutionControl defaultDispatchControl = PostExecutionControl.defaultDispatch();
@@ -220,6 +211,18 @@ class DefaultEventHandlerTest {
     assertThat(executionScopes.get(2).getRetryInfo()).isNull();
     assertThat(executionScopes.get(1).getRetryInfo().getAttemptCount()).isEqualTo(1);
     assertThat(executionScopes.get(1).getRetryInfo().isLastAttempt()).isEqualTo(false);
+  }
+
+  @Test
+  public void scheduleTimedEventIfInstructedByPostExecutionControl() {
+    var testDelay = 10000l;
+    when(eventDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
+
+    defaultEventHandler.handleEvent(prepareCREvent());
+
+    verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
+        .scheduleOnce(any(), eq(testDelay));
   }
 
   private void waitMinimalTime() {

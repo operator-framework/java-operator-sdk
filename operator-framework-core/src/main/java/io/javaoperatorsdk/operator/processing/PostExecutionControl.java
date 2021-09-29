@@ -7,10 +7,10 @@ import io.fabric8.kubernetes.client.CustomResource;
 public final class PostExecutionControl<R extends CustomResource<?, ?>> {
 
   private final boolean onlyFinalizerHandled;
-
   private final R updatedCustomResource;
-
   private final RuntimeException runtimeException;
+
+  private Long reScheduleDelay = null;
 
   private PostExecutionControl(
       boolean onlyFinalizerHandled,
@@ -54,8 +54,17 @@ public final class PostExecutionControl<R extends CustomResource<?, ?>> {
     return runtimeException != null;
   }
 
+  public PostExecutionControl withReSchedule(long delay) {
+    this.reScheduleDelay = delay;
+    return this;
+  }
+
   public Optional<RuntimeException> getRuntimeException() {
     return Optional.ofNullable(runtimeException);
+  }
+
+  public Optional<Long> getReScheduleDelay() {
+    return Optional.ofNullable(reScheduleDelay);
   }
 
   @Override

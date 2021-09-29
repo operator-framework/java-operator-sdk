@@ -140,13 +140,20 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
       } else if (updateControl.isUpdateCustomResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
       }
-
-      if (updatedCustomResource != null) {
-        return PostExecutionControl.customResourceUpdated(updatedCustomResource);
-      } else {
-        return PostExecutionControl.defaultDispatch();
-      }
+      return createPostExecutionControl(updatedCustomResource, updateControl);
     }
+  }
+
+  private PostExecutionControl<R> createPostExecutionControl(R updatedCustomResource,
+      UpdateControl<R> updateControl) {
+    PostExecutionControl<R> postExecutionControl;
+    if (updatedCustomResource != null) {
+      postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
+    } else {
+      postExecutionControl = PostExecutionControl.defaultDispatch();
+    }
+    updateControl.getReScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
+    return postExecutionControl;
   }
 
   private PostExecutionControl<R> handleDelete(R resource, Context<R> context) {
