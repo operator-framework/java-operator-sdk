@@ -1,46 +1,57 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedInformer;
+import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
   private final SharedInformer<T> sharedInformer;
-  private final ResourceToRelatedCustomResourceUIDMapper<T> mapper;
+  private final Function<T, Set<String>> resourceToUIDs;
+  private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper) {
-    this(sharedInformer, mapper, true);
+      Function<T, Set<String>> resourceToUIDs) {
+    this(sharedInformer, resourceToUIDs, null, true);
+  }
+
+  public InformerEventSource(KubernetesClient client, Class<T> type,
+      Function<T, Set<String>> resourceToUIDs) {
+    this(client, type, resourceToUIDs, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper) {
-    this(client, type, mapper, false);
-  }
-
-  InformerEventSource(KubernetesClient client, Class<T> type,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper,
+      Function<T, Set<String>> resourceToUIDs,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), mapper,
+    this(client.informers().sharedIndexInformerFor(type, 0), resourceToUIDs, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      ResourceToRelatedCustomResourceUIDMapper<T> mapper,
+      Function<T, Set<String>> resourceToUIDs,
+      Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.mapper = mapper;
+    this.resourceToUIDs = resourceToUIDs;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
 
-    sharedInformer.addEventHandler(new ResourceEventHandler<T>() {
+    this.associatedWith = Objects.requireNonNullElseGet(associatedWith, () -> cr -> {
+      final var metadata = cr.getMetadata();
+      return getStore().getByKey(Cache.namespaceKeyFunc(metadata.getNamespace(),
+          metadata.getName()));
+    });
+
+    sharedInformer.addEventHandler(new ResourceEventHandler<>() {
       @Override
       public void onAdd(T t) {
         propagateEvent(InformerEvent.Action.ADD, t, null);
@@ -64,7 +75,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(InformerEvent.Action action, T object, T oldObject) {
-    var uids = mapper.map(object);
+    var uids = resourceToUIDs.apply(object);
     if (uids.isEmpty()) {
       return;
     }
@@ -88,12 +99,19 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     return sharedInformer.getStore();
   }
 
+  /**
+   * Retrieves the informed resource associated with the specified primary resource as defined by
+   * the function provided when this InformerEventSource was created
+   * 
+   * @param resource the primary resource we want to retrieve the associated resource for
+   * @return the informed resource associated with the specified primary resource
+   */
+  public T getAssociated(HasMetadata resource) {
+    return associatedWith.apply(resource);
+  }
+
+
   public SharedInformer<T> getSharedInformer() {
     return sharedInformer;
   }
-
-  public interface ResourceToRelatedCustomResourceUIDMapper<T> {
-    List<String> map(T resource);
-  }
-
 }
