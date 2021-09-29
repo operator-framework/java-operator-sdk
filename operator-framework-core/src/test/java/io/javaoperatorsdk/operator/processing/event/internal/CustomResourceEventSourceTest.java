@@ -113,16 +113,27 @@ class CustomResourceEventSourceTest {
       return client;
     }
   }
+
   private static class TestConfiguration extends
       DefaultControllerConfiguration<TestCustomResource> {
 
     public TestConfiguration(boolean generationAware) {
-      super(null, null, null, FINALIZER, generationAware, null, null, null,
+      super(
+          null,
+          null,
+          null,
+          FINALIZER,
+          generationAware,
+          null,
+          null,
+          null,
+          null,
           TestCustomResource.class,
           mock(ConfigurationService.class));
       when(getConfigurationService().getObjectMapper())
           .thenReturn(ConfigurationService.OBJECT_MAPPER);
-      when(getConfigurationService().getMetrics()).thenReturn(Metrics.NOOP);
+      when(getConfigurationService().getMetrics())
+          .thenReturn(Metrics.NOOP);
     }
   }
 }

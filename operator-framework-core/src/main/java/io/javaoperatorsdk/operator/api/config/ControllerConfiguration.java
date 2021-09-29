@@ -7,6 +7,8 @@ import java.util.Set;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
 public interface ControllerConfiguration<R extends CustomResource> {
 
@@ -97,5 +99,18 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   default boolean useFinalizer() {
     return !Controller.NO_FINALIZER.equals(getFinalizer());
+  }
+
+  /**
+   * Allow controllers to filter events before they are provided to the
+   * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}.
+   * </p>
+   * Note that the provided filter is combined with {@link #isGenerationAware()} to compute the
+   * final set of fiolters that should be applied;
+   *
+   * @return
+   */
+  default CustomResourceEventFilter<R> getEventFilter() {
+    return CustomResourceEventFilters.passthrough();
   }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 
 public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
 
@@ -13,6 +14,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
   private final Set<String> namespaces;
   private RetryConfiguration retry;
   private String labelSelector;
+  private CustomResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -21,6 +23,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
     namespaces = new HashSet<>(original.getNamespaces());
     retry = original.getRetryConfiguration();
     labelSelector = original.getLabelSelector();
+    customResourcePredicate = original.getEventFilter();
     this.original = original;
   }
 
@@ -65,6 +68,12 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withCustomResourcePredicate(
+      CustomResourceEventFilter<R> customResourcePredicate) {
+    this.customResourcePredicate = customResourcePredicate;
+    return this;
+  }
+
   public ControllerConfiguration<R> build() {
     return new DefaultControllerConfiguration<>(
         original.getAssociatedControllerClassName(),
@@ -75,6 +84,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
         namespaces,
         retry,
         labelSelector,
+        customResourcePredicate,
         original.getCustomResourceClass(),
         original.getConfigurationService());
   }

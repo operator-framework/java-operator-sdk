@@ -3,8 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,23 +25,25 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-/** This is a special case since is not bound to a single custom resource */
+/**
+ * This is a special case since is not bound to a single custom resource
+ */
 public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource
     implements Watcher<T> {
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
   private final ConfiguredController<T> controller;
-  private final Map<String, Long> lastGenerationProcessedSuccessfully = new ConcurrentHashMap<>();
   private final List<Watch> watches;
-  private final CustomResourceCache customResourceCache;
+  private final CustomResourceCache<T> customResourceCache;
 
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
     this.watches = new LinkedList<>();
-    final var configurationService = controller.getConfiguration().getConfigurationService();
-    this.customResourceCache = new CustomResourceCache(configurationService.getObjectMapper(),
-        configurationService.getMetrics());
+
+    this.customResourceCache = new CustomResourceCache<>(
+        controller.getConfiguration().getConfigurationService().getObjectMapper(),
+        controller.getConfiguration().getConfigurationService().getMetrics());
   }
 
   @Override
@@ -103,6 +103,9 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     log.debug(
         "Event received for action: {}, resource: {}", action.name(), getName(customResource));
 
+    final String uuid = KubernetesResourceUtils.getUID(customResource);
+    final T oldResource = customResourceCache.getLatestResource(uuid).orElse(null);
+
     // cache the latest version of the CR
     customResourceCache.cacheResource(customResource);
 
@@ -115,47 +118,21 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       return;
     }
 
-    if (!skipBecauseOfGeneration(customResource)) {
+    final CustomResourceEventFilter<T> filter = CustomResourceEventFilters.or(
+        CustomResourceEventFilters.finalizerNeededAndApplied(),
+        CustomResourceEventFilters.markedForDeletion(),
+        CustomResourceEventFilters.and(
+            controller.getConfiguration().getEventFilter(),
+            CustomResourceEventFilters.generationAware()));
+
+    if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
       eventHandler.handleEvent(new CustomResourceEvent(action, customResource, this));
-      markLastGenerationProcessed(customResource);
     } else {
       log.debug(
           "Skipping event handling resource {} with version: {}",
           getUID(customResource),
           getVersion(customResource));
     }
-  }
-
-  private void markLastGenerationProcessed(T resource) {
-    if (controller.getConfiguration().isGenerationAware()
-        && resource.hasFinalizer(controller.getConfiguration().getFinalizer())) {
-      lastGenerationProcessedSuccessfully.put(
-          KubernetesResourceUtils.getUID(resource), resource.getMetadata().getGeneration());
-    }
-  }
-
-  private boolean skipBecauseOfGeneration(T customResource) {
-    if (!controller.getConfiguration().isGenerationAware()) {
-      return false;
-    }
-    // if CR being deleted generation is naturally not changing, so we process all the events
-    if (customResource.isMarkedForDeletion()) {
-      return false;
-    }
-
-    // only proceed if we haven't already seen this custom resource generation
-    Long lastGeneration =
-        lastGenerationProcessedSuccessfully.get(customResource.getMetadata().getUid());
-    if (lastGeneration == null) {
-      return false;
-    } else {
-      return customResource.getMetadata().getGeneration() <= lastGeneration;
-    }
-  }
-
-  @Override
-  public void eventSourceDeRegisteredForResource(String customResourceUid) {
-    lastGenerationProcessedSuccessfully.remove(customResourceUid);
   }
 
   @Override
@@ -181,7 +158,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   // todo: remove
-  public CustomResourceCache getCache() {
+  public CustomResourceCache<T> getCache() {
     return customResourceCache;
   }
 }
