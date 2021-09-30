@@ -17,6 +17,7 @@ public interface Event {
   /**
    * The selector used to determine the {@link CustomResource} for which a reconcile loop should be
    * triggered.
+   * 
    * @return predicate used to match the target CustomResource
    */
   Predicate<CustomResource> getCustomResourcesSelector();
