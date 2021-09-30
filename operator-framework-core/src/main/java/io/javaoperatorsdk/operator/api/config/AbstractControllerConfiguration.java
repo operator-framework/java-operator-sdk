@@ -19,7 +19,7 @@ public class AbstractControllerConfiguration<R extends CustomResource<?, ?>>
       Set<String> namespaces,
       RetryConfiguration retryConfiguration) {
     super(associatedControllerClassName, name, crdName, finalizer, generationAware, namespaces,
-        retryConfiguration);
+        retryConfiguration, null, null, null, null);
   }
 
   public AbstractControllerConfiguration(String associatedControllerClassName, String name,

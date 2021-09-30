@@ -69,8 +69,8 @@ public class CustomResourceCache<T extends CustomResource<?, ?>> {
    * We clone the object so the one in the cache is not changed by the controller or dispatcher.
    * Therefore the cached object always represents the object coming from the API server.
    *
-   * @param uuid
-   * @return
+   * @param uuid identifier of resource
+   * @return resource if found in cache
    */
   public Optional<T> getLatestResource(String uuid) {
     return Optional.ofNullable(resources.get(uuid)).map(this::clone);
