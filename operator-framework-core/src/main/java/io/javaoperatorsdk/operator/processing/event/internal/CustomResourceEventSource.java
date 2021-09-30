@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,16 +35,15 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
   private final ConfiguredController<T> controller;
-  private final List<Watch> watches;
-  private final CustomResourceCache<T> customResourceCache;
+//  private final List<Watch> watches;
+  private final SharedIndexInformer<T> sharedIndexInformer = null;
+//  private final CustomResourceCache<T> customResourceCache;
 
+  // todo metric for custom resource caches
+  // todo namespaces for informers
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
-    this.watches = new LinkedList<>();
 
-    this.customResourceCache = new CustomResourceCache<>(
-        controller.getConfiguration().getConfigurationService().getObjectMapper(),
-        controller.getConfiguration().getConfigurationService().getMetrics());
   }
 
   @Override
