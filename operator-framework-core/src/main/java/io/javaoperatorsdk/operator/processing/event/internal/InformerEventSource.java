@@ -54,7 +54,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     sharedInformer.addEventHandler(new ResourceEventHandler<>() {
       @Override
       public void onAdd(T t) {
-        propagateEvent(InformerEvent.Action.ADD, t, null);
+        propagateEvent(ResourceAction.ADDED, t, null);
       }
 
       @Override
@@ -64,23 +64,23 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
                 .equals(newObject.getMetadata().getResourceVersion())) {
           return;
         }
-        propagateEvent(InformerEvent.Action.UPDATE, newObject, oldObject);
+        propagateEvent(ResourceAction.UPDATED, newObject, oldObject);
       }
 
       @Override
       public void onDelete(T t, boolean b) {
-        propagateEvent(InformerEvent.Action.DELETE, t, null);
+        propagateEvent(ResourceAction.DELETED, t, null);
       }
     });
   }
 
-  private void propagateEvent(InformerEvent.Action action, T object, T oldObject) {
+  private void propagateEvent(ResourceAction action, T object, T oldObject) {
     var uids = resourceToUIDs.apply(object);
     if (uids.isEmpty()) {
       return;
     }
     uids.forEach(uid -> {
-      InformerEvent event = new InformerEvent(uid, this, action, object, oldObject);
+      InformerEvent event = new InformerEvent(action, object, oldObject);
       this.eventHandler.handleEvent(event);
     });
   }

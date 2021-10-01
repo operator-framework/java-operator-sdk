@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.Watcher;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -232,7 +233,7 @@ class DefaultEventHandlerTest {
     }
   }
 
-  private String eventAlreadyUnderProcessing() {
+  private CustomResourceID eventAlreadyUnderProcessing() {
     when(eventDispatcherMock.handleExecution(any()))
         .then(
             (Answer<PostExecutionControl>) invocationOnMock -> {
@@ -241,7 +242,7 @@ class DefaultEventHandlerTest {
             });
     Event event = prepareCREvent();
     defaultEventHandler.handleEvent(event);
-    return event.getRelatedCustomResourceUid();
+    return event.getRelatedCustomResourceID();
   }
 
   private CustomResourceEvent prepareCREvent() {
@@ -251,11 +252,11 @@ class DefaultEventHandlerTest {
   private CustomResourceEvent prepareCREvent(String uid) {
     TestCustomResource customResource = testCustomResource(uid);
     customResourceCache.cacheResource(customResource);
-    return new CustomResourceEvent(Watcher.Action.MODIFIED, customResource, null);
+    return new CustomResourceEvent(customResource);
   }
 
-  private Event nonCREvent(String relatedCustomResourceUid) {
-    TimerEvent timerEvent = new TimerEvent(relatedCustomResourceUid, null);
+  private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
+    TimerEvent timerEvent = new TimerEvent(relatedCustomResourceUid);
     return timerEvent;
   }
 }

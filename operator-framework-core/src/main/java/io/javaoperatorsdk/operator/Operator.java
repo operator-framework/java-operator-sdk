@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 @SuppressWarnings("rawtypes")
@@ -34,12 +35,12 @@ public class Operator implements AutoCloseable {
     this.configurationService = configurationService;
     DefaultEventHandler.setEventMonitor(new EventMonitor() {
       @Override
-      public void processedEvent(String uid, Event event) {
+      public void processedEvent(CustomResourceID uid, Event event) {
         configurationService.getMetrics().incrementProcessedEventsNumber();
       }
 
       @Override
-      public void failedEvent(String uid, Event event) {
+      public void failedEvent(CustomResourceID uid, Event event) {
         configurationService.getMetrics().incrementControllerRetriesNumber();
       }
     });

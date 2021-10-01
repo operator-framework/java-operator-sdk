@@ -1,54 +1,36 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
-
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 
 public class CustomResourceEvent extends DefaultEvent {
 
-  private final Watcher.Action action;
+  private final ResourceAction action;
   private final CustomResource customResource;
 
-  public CustomResourceEvent(
-      Watcher.Action action,
-      CustomResource resource,
-      CustomResourceEventSource customResourceEventSource) {
-    super(KubernetesResourceUtils.getUID(resource), customResourceEventSource);
-    this.action = action;
+
+  public CustomResourceEvent(ResourceAction action,
+      CustomResource resource) {
+    super(CustomResourceID.fromResource(resource));
     this.customResource = resource;
-  }
-
-  public Watcher.Action getAction() {
-    return action;
-  }
-
-  public String resourceUid() {
-    return getCustomResource().getMetadata().getUid();
+    this.action = action;
   }
 
   @Override
   public String toString() {
-    return "CustomResourceEvent{"
-        + "action="
-        + action
-        + ", resource=[ name="
-        + getName(getCustomResource())
-        + ", kind="
-        + getCustomResource().getKind()
-        + ", apiVersion="
-        + getCustomResource().getApiVersion()
-        + " ,resourceVersion="
-        + getCustomResource().getMetadata().getResourceVersion()
-        + ", markedForDeletion: "
-        + (getCustomResource().getMetadata().getDeletionTimestamp() != null
-            && !getCustomResource().getMetadata().getDeletionTimestamp().isEmpty())
-        + " ]}";
+    return "CustomResourceEvent{" +
+        "action=" + action +
+        ", customResource=" + customResource +
+        '}';
   }
 
   public CustomResource getCustomResource() {
     return customResource;
   }
+
+  public ResourceAction getAction() {
+    return action;
+  }
+
 }

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 
@@ -14,17 +15,18 @@ class EventBufferTest {
 
   private EventBuffer eventBuffer = new EventBuffer();
 
-  String uid = UUID.randomUUID().toString();
-  Event testEvent1 = new TimerEvent(uid, null);
-  Event testEvent2 = new TimerEvent(uid, null);
+  String name = UUID.randomUUID().toString();
+  CustomResourceID customResourceID = new CustomResourceID(name);
+  Event testEvent1 = new TimerEvent(customResourceID);
+  Event testEvent2 = new TimerEvent(customResourceID);
 
   @Test
   public void storesEvents() {
     eventBuffer.addEvent(testEvent1);
     eventBuffer.addEvent(testEvent2);
 
-    assertThat(eventBuffer.containsEvents(testEvent1.getRelatedCustomResourceUid())).isTrue();
-    List<Event> events = eventBuffer.getAndRemoveEventsForExecution(uid);
+    assertThat(eventBuffer.containsEvents(testEvent1.getRelatedCustomResourceID())).isTrue();
+    List<Event> events = eventBuffer.getAndRemoveEventsForExecution(customResourceID);
     assertThat(events).hasSize(2);
   }
 
@@ -33,7 +35,7 @@ class EventBufferTest {
     eventBuffer.addEvent(testEvent1);
     eventBuffer.addEvent(testEvent2);
 
-    List<Event> events = eventBuffer.getAndRemoveEventsForExecution(uid);
+    List<Event> events = eventBuffer.getAndRemoveEventsForExecution(new CustomResourceID(name));
     assertThat(events).hasSize(2);
     assertThat(events).contains(testEvent1, testEvent2);
   }
@@ -43,7 +45,7 @@ class EventBufferTest {
     eventBuffer.addEvent(testEvent1);
     eventBuffer.addEvent(testEvent2);
 
-    assertThat(eventBuffer.containsEvents(testEvent1.getRelatedCustomResourceUid())).isTrue();
+    assertThat(eventBuffer.containsEvents(testEvent1.getRelatedCustomResourceID())).isTrue();
   }
 
   @Test
@@ -51,8 +53,8 @@ class EventBufferTest {
     eventBuffer.addEvent(testEvent1);
     eventBuffer.addEvent(testEvent2);
 
-    eventBuffer.cleanup(uid);
+    eventBuffer.cleanup(customResourceID);
 
-    assertThat(eventBuffer.containsEvents(testEvent1.getRelatedCustomResourceUid())).isFalse();
+    assertThat(eventBuffer.containsEvents(testEvent1.getRelatedCustomResourceID())).isFalse();
   }
 }

@@ -2,14 +2,11 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +15,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import io.javaoperatorsdk.operator.processing.CustomResourceCache;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
@@ -115,7 +112,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   @Override
   public Optional<EventSource> deRegisterCustomResourceFromEventSource(
-      String eventSourceName, String customResourceUid) {
+      String eventSourceName, CustomResourceID customResourceUid) {
     try {
       lock.lock();
       EventSource eventSource = this.eventSources.get(eventSourceName);
@@ -143,42 +140,37 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     return Collections.unmodifiableMap(eventSources);
   }
 
-  public void cleanup(String customResourceUid) {
+  public void cleanup(CustomResourceID customResourceUid) {
     getRegisteredEventSources()
         .keySet()
         .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
-    eventSources.remove(customResourceUid);
-    CustomResourceCache cache = getCache();
-    if (cache != null) {
-      cache.cleanup(customResourceUid);
-    }
   }
 
   // todo: remove
-  public CustomResourceCache getCache() {
+  public ResourceCache getCache() {
     final var source =
         (CustomResourceEventSource) getRegisteredEventSources()
             .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
-    return source.getCache();
+    return source;
   }
 
-  // todo: remove
-  public Optional<CustomResource> getLatestResource(String customResourceUid) {
-    return getCache().getLatestResource(customResourceUid);
-  }
-
-  // todo: remove
-  public List<CustomResource> getLatestResources(Predicate<CustomResource> selector) {
-    return getCache().getLatestResources(selector);
-  }
-
-  // todo: remove
-  public Set<String> getLatestResourceUids(Predicate<CustomResource> selector) {
-    return getCache().getLatestResourcesUids(selector);
-  }
-
-  // todo: remove
-  public void cacheResource(CustomResource resource, Predicate<CustomResource> predicate) {
-    getCache().cacheResource(resource, predicate);
-  }
+  // // todo: remove
+  // public Optional<CustomResource> getLatestResource(String customResourceUid) {
+  // return getCache().getLatestResource(customResourceUid);
+  // }
+  //
+  // // todo: remove
+  // public List<CustomResource> getLatestResources(Predicate<CustomResource> selector) {
+  // return getCache().getLatestResources(selector);
+  // }
+  //
+  // // todo: remove
+  // public Set<String> getLatestResourceUids(Predicate<CustomResource> selector) {
+  // return getCache().getLatestResourcesUids(selector);
+  // }
+  //
+  // // todo: remove
+  // public void cacheResource(CustomResource resource, Predicate<CustomResource> predicate) {
+  // getCache().cacheResource(resource, predicate);
+  // }
 }

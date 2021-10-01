@@ -4,6 +4,7 @@ import java.util.List;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class ExecutionScope<R extends CustomResource<?, ?>> {
@@ -27,8 +28,8 @@ public class ExecutionScope<R extends CustomResource<?, ?>> {
     return customResource;
   }
 
-  public String getCustomResourceUid() {
-    return customResource.getMetadata().getUid();
+  public CustomResourceID getCustomResourceID() {
+    return CustomResourceID.fromResource(customResource);
   }
 
   @Override

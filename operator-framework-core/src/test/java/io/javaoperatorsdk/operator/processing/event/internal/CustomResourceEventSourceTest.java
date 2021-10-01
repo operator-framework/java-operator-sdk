@@ -44,7 +44,7 @@ class CustomResourceEventSourceTest {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
     customResource1.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(customResource1, customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);

@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -37,17 +37,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
   private static EventMonitor monitor = new EventMonitor() {
     @Override
-    public void processedEvent(String uid, Event event) {}
+    public void processedEvent(CustomResourceID uid, Event event) {}
 
     @Override
-    public void failedEvent(String uid, Event event) {}
+    public void failedEvent(CustomResourceID uid, Event event) {}
   };
 
   private final EventBuffer eventBuffer;
-  private final Set<String> underProcessing = new HashSet<>();
+  private final Set<CustomResourceID> underProcessing = new HashSet<>();
   private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
-  private final Map<String, RetryExecution> retryState = new HashMap<>();
+  private final Map<CustomResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
@@ -87,9 +87,9 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   }
 
   public interface EventMonitor {
-    void processedEvent(String uid, Event event);
+    void processedEvent(CustomResourceID uid, Event event);
 
-    void failedEvent(String uid, Event event);
+    void failedEvent(CustomResourceID uid, Event event);
   }
 
   @Override
@@ -97,23 +97,19 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     try {
       lock.lock();
       log.debug("Received event: {}", event);
-
-      final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
-      for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
-        eventBuffer.addEvent(uid, event);
-        monitor.processedEvent(uid, event);
-        executeBufferedEvents(uid);
-      }
+      eventBuffer.addEvent(event.getRelatedCustomResourceID(), event);
+      monitor.processedEvent(event.getRelatedCustomResourceID(), event);
+      executeBufferedEvents(event.getRelatedCustomResourceID());
     } finally {
       lock.unlock();
     }
   }
 
-  private void executeBufferedEvents(String customResourceUid) {
+  private void executeBufferedEvents(CustomResourceID customResourceUid) {
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<CustomResource> latestCustomResource =
-        eventSourceManager.getLatestResource(customResourceUid);
+        eventSourceManager.getCache().getCustomResource(customResourceUid);
 
     if (!controllerUnderExecution && newEventForResourceId && latestCustomResource.isPresent()) {
       setUnderExecutionProcessing(customResourceUid);
@@ -135,7 +131,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
   }
 
-  private RetryInfo retryInfo(String customResourceUid) {
+  private RetryInfo retryInfo(CustomResourceID customResourceUid) {
     return retryState.get(customResourceUid);
   }
 
@@ -147,12 +143,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
           "Event processing finished. Scope: {}, PostExecutionControl: {}",
           executionScope,
           postExecutionControl);
-      unsetUnderExecution(executionScope.getCustomResourceUid());
+      unsetUnderExecution(executionScope.getCustomResourceID());
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
         executionScope.getEvents()
-            .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceUid(), e));
+            .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceID(), e));
         return;
       }
 
@@ -160,11 +156,11 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         markSuccessfulExecutionRegardingRetry(executionScope);
       }
       if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
-        cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
+        cleanupAfterDeletedEvent(executionScope.getCustomResourceID());
       } else {
         cacheUpdatedResourceIfChanged(executionScope, postExecutionControl);
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
-        executeBufferedEvents(executionScope.getCustomResourceUid());
+        executeBufferedEvents(executionScope.getCustomResourceID());
       }
     } finally {
       lock.unlock();
@@ -185,12 +181,13 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    */
   private void handleRetryOnException(ExecutionScope<R> executionScope) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
-    boolean newEventsExists = eventBuffer.newEventsExists(executionScope.getCustomResourceUid());
-    eventBuffer.putBackEvents(executionScope.getCustomResourceUid(), executionScope.getEvents());
+    boolean newEventsExists = eventBuffer
+        .newEventsExists(CustomResourceID.fromResource(executionScope.getCustomResource()));
+    eventBuffer.putBackEvents(executionScope.getCustomResourceID(), executionScope.getEvents());
 
     if (newEventsExists) {
-      log.debug("New events exists for for resource id: {}", executionScope.getCustomResourceUid());
-      executeBufferedEvents(executionScope.getCustomResourceUid());
+      log.debug("New events exists for for resource id: {}", executionScope.getCustomResourceID());
+      executeBufferedEvents(executionScope.getCustomResourceID());
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
@@ -200,7 +197,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
           log.debug(
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
-              executionScope.getCustomResourceUid());
+              executionScope.getCustomResourceID());
           eventSourceManager
               .getRetryTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
@@ -212,17 +209,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     log.debug(
         "Marking successful execution for resource: {}",
         getName(executionScope.getCustomResource()));
-    retryState.remove(executionScope.getCustomResourceUid());
+    retryState.remove(executionScope.getCustomResourceID());
     eventSourceManager
         .getRetryTimerEventSource()
-        .cancelOnceSchedule(executionScope.getCustomResourceUid());
+        .cancelOnceSchedule(executionScope.getCustomResourceID());
   }
 
   private RetryExecution getOrInitRetryExecution(ExecutionScope<R> executionScope) {
-    RetryExecution retryExecution = retryState.get(executionScope.getCustomResourceUid());
+    RetryExecution retryExecution = retryState.get(executionScope.getCustomResourceID());
     if (retryExecution == null) {
       retryExecution = retry.initExecution();
-      retryState.put(executionScope.getCustomResourceUid(), retryExecution);
+      retryState.put(executionScope.getCustomResourceID(), retryExecution);
     }
     return retryExecution;
   }
@@ -255,27 +252,28 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
           getName(originalCustomResource),
           getVersion(customResourceAfterExecution),
           getVersion(originalCustomResource));
-      eventSourceManager.cacheResource(
-          customResourceAfterExecution,
-          customResource -> getVersion(customResource).equals(originalResourceVersion)
-              && !originalResourceVersion.equals(getVersion(customResourceAfterExecution)));
+      // todo how to handle this?
+      // eventSourceManager.cacheResource(
+      // customResourceAfterExecution,
+      // customResource -> getVersion(customResource).equals(originalResourceVersion)
+      // && !originalResourceVersion.equals(getVersion(customResourceAfterExecution)));
     }
   }
 
-  private void cleanupAfterDeletedEvent(String customResourceUid) {
+  private void cleanupAfterDeletedEvent(CustomResourceID customResourceUid) {
     eventSourceManager.cleanup(customResourceUid);
     eventBuffer.cleanup(customResourceUid);
   }
 
-  private boolean isControllerUnderExecution(String customResourceUid) {
+  private boolean isControllerUnderExecution(CustomResourceID customResourceUid) {
     return underProcessing.contains(customResourceUid);
   }
 
-  private void setUnderExecutionProcessing(String customResourceUid) {
+  private void setUnderExecutionProcessing(CustomResourceID customResourceUid) {
     underProcessing.add(customResourceUid);
   }
 
-  private void unsetUnderExecution(String customResourceUid) {
+  private void unsetUnderExecution(CustomResourceID customResourceUid) {
     underProcessing.remove(customResourceUid);
   }
 

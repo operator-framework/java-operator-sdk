@@ -23,6 +23,8 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 
 @SuppressWarnings("rawtypes")
+// todo remove
+@Deprecated
 public class CustomResourceCache<T extends CustomResource<?, ?>> {
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceCache.class);

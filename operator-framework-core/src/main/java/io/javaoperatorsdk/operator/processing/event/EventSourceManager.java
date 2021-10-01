@@ -32,7 +32,7 @@ public interface EventSourceManager extends Closeable {
   Optional<EventSource> deRegisterEventSource(String name);
 
   Optional<EventSource> deRegisterCustomResourceFromEventSource(
-      String name, String customResourceUid);
+      String name, CustomResourceID customResourceUid);
 
   Map<String, EventSource> getRegisteredEventSources();
 

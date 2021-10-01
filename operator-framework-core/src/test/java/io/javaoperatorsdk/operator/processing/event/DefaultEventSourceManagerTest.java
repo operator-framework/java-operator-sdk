@@ -8,9 +8,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.eq;
@@ -73,9 +71,9 @@ class DefaultEventSourceManagerTest {
     defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
 
     defaultEventSourceManager.deRegisterCustomResourceFromEventSource(
-        CUSTOM_EVENT_SOURCE_NAME, getUID(customResource));
+        CUSTOM_EVENT_SOURCE_NAME, CustomResourceID.fromResource(customResource));
 
     verify(eventSource, times(1))
-        .eventSourceDeRegisteredForResource(eq(KubernetesResourceUtils.getUID(customResource)));
+        .eventSourceDeRegisteredForResource(eq(CustomResourceID.fromResource(customResource)));
   }
 }
