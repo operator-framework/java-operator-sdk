@@ -54,6 +54,29 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
     setConfigurationService(service);
   }
 
+  @Deprecated
+  public DefaultControllerConfiguration(
+      String associatedControllerClassName,
+      String name,
+      String crdName,
+      String finalizer,
+      boolean generationAware,
+      Set<String> namespaces,
+      RetryConfiguration retryConfiguration) {
+    this(
+        associatedControllerClassName,
+        name,
+        crdName,
+        finalizer,
+        generationAware,
+        namespaces,
+        retryConfiguration,
+        null,
+        null,
+        null,
+        null);
+  }
+
   @Override
   public String getName() {
     return name;
