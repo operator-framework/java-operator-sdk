@@ -38,8 +38,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
     CustomResourceEventSource customResourceEventSource =
         new CustomResourceEventSource<>(controller);
-    registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME, customResourceEventSource);
     init(new DefaultEventHandler<>(controller, customResourceEventSource));
+    registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME, customResourceEventSource);
   }
 
   private void init(DefaultEventHandler<R> defaultEventHandler) {
@@ -48,7 +48,6 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
     this.retryTimerEventSource = new TimerEventSource<>();
     registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
-
   }
 
   @Override

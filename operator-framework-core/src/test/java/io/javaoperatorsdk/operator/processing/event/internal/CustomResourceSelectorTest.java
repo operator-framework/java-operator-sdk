@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
 public class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);
+  public static final String NAMESPACE = "test";
 
   KubernetesMockServer server;
   KubernetesClient client;
@@ -112,8 +113,9 @@ public class CustomResourceSelectorTest {
           new MyConfiguration(configurationService, "app=bar"));
       o2.start();
 
-      client.resources(TestCustomResource.class).inNamespace("test").create(newMyResource("foo"));
-      client.resources(TestCustomResource.class).inNamespace("test").create(newMyResource("bar"));
+      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("foo",
+          NAMESPACE));
+      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("bar",NAMESPACE));
 
       await()
           .atMost(5, TimeUnit.SECONDS)
@@ -133,9 +135,10 @@ public class CustomResourceSelectorTest {
     }
   }
 
-  public TestCustomResource newMyResource(String app) {
+  public TestCustomResource newMyResource(String app, String namespace) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(new ObjectMetaBuilder().withName(app).addToLabels("app", app).build());
+    resource.getMetadata().setNamespace(namespace);
     return resource;
   }
 
