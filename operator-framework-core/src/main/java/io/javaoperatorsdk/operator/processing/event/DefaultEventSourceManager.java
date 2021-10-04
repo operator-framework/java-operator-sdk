@@ -28,22 +28,27 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
-  private final DefaultEventHandler<R> defaultEventHandler;
+  private DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource<R> retryTimerEventSource;
 
-  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler, boolean supportRetry) {
-    this.defaultEventHandler = defaultEventHandler;
-    defaultEventHandler.setEventSourceManager(this);
-    if (supportRetry) {
-      this.retryTimerEventSource = new TimerEventSource<>();
-      registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
-    }
+  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler) {
+    init(defaultEventHandler);
   }
 
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
-    this(new DefaultEventHandler<>(controller), true);
-    registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME,
-        new CustomResourceEventSource<>(controller));
+    CustomResourceEventSource customResourceEventSource =
+        new CustomResourceEventSource<>(controller);
+    registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME, customResourceEventSource);
+    init(new DefaultEventHandler<>(controller, customResourceEventSource));
+  }
+
+  private void init(DefaultEventHandler<R> defaultEventHandler) {
+    this.defaultEventHandler = defaultEventHandler;
+    defaultEventHandler.setEventSourceManager(this);
+
+    this.retryTimerEventSource = new TimerEventSource<>();
+    registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
+
   }
 
   @Override

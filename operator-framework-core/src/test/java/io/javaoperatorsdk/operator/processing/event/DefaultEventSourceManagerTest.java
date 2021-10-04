@@ -22,7 +22,7 @@ class DefaultEventSourceManagerTest {
 
   private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
   private DefaultEventSourceManager defaultEventSourceManager =
-      new DefaultEventSourceManager(defaultEventHandlerMock, false);
+      new DefaultEventSourceManager(defaultEventHandlerMock);
 
   @Test
   public void registersEventSource() {
@@ -32,7 +32,7 @@ class DefaultEventSourceManagerTest {
 
     Map<String, EventSource> registeredSources =
         defaultEventSourceManager.getRegisteredEventSources();
-    assertThat(registeredSources.entrySet()).hasSize(1);
+    assertThat(registeredSources.entrySet()).hasSize(2);
     assertThat(registeredSources.get(CUSTOM_EVENT_SOURCE_NAME)).isEqualTo(eventSource);
     verify(eventSource, times(1)).setEventHandler(eq(defaultEventHandlerMock));
     verify(eventSource, times(1)).start();

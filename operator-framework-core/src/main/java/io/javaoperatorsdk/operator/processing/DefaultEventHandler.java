@@ -27,7 +27,6 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager.CUSTOM_RESOURCE_EVENT_SOURCE_NAME;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
@@ -55,10 +54,9 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final ResourceCache<R> resourceCache;
   private DefaultEventSourceManager<R> eventSourceManager;
 
-  public DefaultEventHandler(ConfiguredController<R> controller) {
+  public DefaultEventHandler(ConfiguredController<R> controller, ResourceCache<R> resourceCache) {
     this(
-        (ResourceCache<R>) controller.getEventSourceManager()
-            .getRegisteredEventSources().get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME),
+        resourceCache,
         ExecutorServiceManager.instance().executorService(),
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
