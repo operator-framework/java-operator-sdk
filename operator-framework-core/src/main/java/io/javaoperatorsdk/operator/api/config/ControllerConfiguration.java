@@ -103,12 +103,11 @@ public interface ControllerConfiguration<R extends CustomResource> {
 
   /**
    * Allow controllers to filter events before they are provided to the
-   * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}.
-   * </p>
-   * Note that the provided filter is combined with {@link #isGenerationAware()} to compute the
-   * final set of fiolters that should be applied;
+   * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}. Note that the provided
+   * filter is combined with {@link #isGenerationAware()} to compute the final set of fiolters that
+   * should be applied;
    *
-   * @return
+   * @return filter
    */
   default CustomResourceEventFilter<R> getEventFilter() {
     return CustomResourceEventFilters.passthrough();

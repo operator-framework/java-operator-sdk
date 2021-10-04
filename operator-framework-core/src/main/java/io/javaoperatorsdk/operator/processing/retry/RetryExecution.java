@@ -10,7 +10,7 @@ public interface RetryExecution extends RetryInfo {
    * Calculates the delay for the next execution. This method should return 0, when called first
    * time;
    *
-   * @return
+   * @return the time to wait until the next execution in millisecondsz
    */
   Optional<Long> nextDelay();
 }

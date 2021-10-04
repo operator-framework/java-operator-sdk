@@ -54,11 +54,6 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
     setConfigurationService(service);
   }
 
-  /**
-   * @deprecated use
-   *             {@link #DefaultControllerConfiguration(String, String, String, String, boolean, Set, RetryConfiguration)}
-   *             instead
-   */
   @Deprecated
   public DefaultControllerConfiguration(
       String associatedControllerClassName,
