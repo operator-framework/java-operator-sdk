@@ -12,7 +12,7 @@ public class DefaultEvent implements Event {
 
   @Override
   public CustomResourceID getRelatedCustomResourceID() {
-    return null;
+    return relatedCustomResource;
   }
 
   @Override

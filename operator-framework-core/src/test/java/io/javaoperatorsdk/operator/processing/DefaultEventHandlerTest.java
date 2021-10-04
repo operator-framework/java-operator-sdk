@@ -36,7 +36,6 @@ class DefaultEventHandlerTest {
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-  private CustomResourceCache customResourceCache = new CustomResourceCache();
   private DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
 
