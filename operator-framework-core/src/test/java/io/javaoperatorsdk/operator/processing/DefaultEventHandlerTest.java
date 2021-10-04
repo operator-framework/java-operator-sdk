@@ -23,7 +23,15 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class DefaultEventHandlerTest {
 
@@ -222,6 +230,14 @@ class DefaultEventHandlerTest {
 
     verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .scheduleOnce(any(), eq(testDelay));
+  }
+
+  @Test
+  public void doNotFireEventsIfClosing() {
+    defaultEventHandler.close();
+    defaultEventHandler.handleEvent(prepareCREvent());
+
+    verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
 
   private void waitMinimalTime() {
