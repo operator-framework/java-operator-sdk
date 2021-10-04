@@ -11,17 +11,19 @@ import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -32,6 +34,7 @@ class DefaultEventHandlerTest {
 
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
+  public static final String TEST_NAMESPACE = "default-event-handler-test";
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
   private CustomResourceCache customResourceCache = new CustomResourceCache();
   private DefaultEventSourceManager defaultEventSourceManagerMock =
@@ -53,21 +56,21 @@ class DefaultEventHandlerTest {
     defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
     defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
 
-    // todo: remove
-    when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResources(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
-    doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
-    doAnswer(
-        invocation -> {
-          final var resourceId = (String) invocation.getArgument(0);
-          customResourceCache.cleanup(resourceId);
-          return null;
-        })
-            .when(defaultEventSourceManagerMock)
-            .cleanup(any());
+    // // todo: remove
+    // when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
+    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
+    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
+    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResources(any());
+    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
+    // doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
+    // doAnswer(
+    // invocation -> {
+    // final var resourceId = (String) invocation.getArgument(0);
+    // customResourceCache.cleanup(resourceId);
+    // return null;
+    // })
+    // .when(defaultEventSourceManagerMock)
+    // .cleanup(any());
   }
 
   @Test
@@ -80,7 +83,7 @@ class DefaultEventHandlerTest {
   @Test
   public void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
-    customResourceCache.cleanup(event.getRelatedCustomResourceUid());
+    // customResourceCache.cleanup(event.getRelatedCustomResourceID()));
 
     defaultEventHandler.handleEvent(event);
 
@@ -89,7 +92,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
-    String resourceUid = eventAlreadyUnderProcessing();
+    CustomResourceID resourceUid = eventAlreadyUnderProcessing();
 
     defaultEventHandler.handleEvent(nonCREvent(resourceUid));
 
@@ -99,7 +102,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void buffersAllIncomingEventsWhileControllerInExecution() {
-    String resourceUid = eventAlreadyUnderProcessing();
+    CustomResourceID resourceUid = eventAlreadyUnderProcessing();
 
     defaultEventHandler.handleEvent(nonCREvent(resourceUid));
     defaultEventHandler.handleEvent(prepareCREvent(resourceUid));
@@ -118,15 +121,14 @@ class DefaultEventHandlerTest {
     TestCustomResource customResource = testCustomResource();
     customResourceCache.cacheResource(customResource);
     CustomResourceEvent event =
-        new CustomResourceEvent(Watcher.Action.DELETED, customResource, null);
-    String uid = customResource.getMetadata().getUid();
+        new CustomResourceEvent(DELETED, customResource);
 
     defaultEventHandler.handleEvent(event);
 
     waitMinimalTime();
 
-    verify(defaultEventSourceManagerMock, times(1)).cleanup(uid);
-    assertThat(customResourceCache.getLatestResource(uid)).isNotPresent();
+    verify(defaultEventSourceManagerMock, times(1))
+        .cleanup(CustomResourceID.fromResource(customResource));
   }
 
   @Test
@@ -148,7 +150,7 @@ class DefaultEventHandlerTest {
   public void executesTheControllerInstantlyAfterErrorIfEventsBuffered() {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
-    customResource.getMetadata().setUid(event.getRelatedCustomResourceUid());
+    overrideData(event.getRelatedCustomResourceID(), customResource);
     ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
@@ -179,7 +181,7 @@ class DefaultEventHandlerTest {
 
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
-    customResource.getMetadata().setUid(event.getRelatedCustomResourceUid());
+    overrideData(event.getRelatedCustomResourceID(), customResource);
     PostExecutionControl postExecutionControlWithException =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
     PostExecutionControl defaultDispatchControl = PostExecutionControl.defaultDispatch();
@@ -246,17 +248,23 @@ class DefaultEventHandlerTest {
   }
 
   private CustomResourceEvent prepareCREvent() {
-    return prepareCREvent(UUID.randomUUID().toString());
+    return prepareCREvent(new CustomResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private CustomResourceEvent prepareCREvent(String uid) {
+  private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
     customResourceCache.cacheResource(customResource);
-    return new CustomResourceEvent(customResource);
+    return new CustomResourceEvent(ResourceAction.UPDATED, customResource);
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
     TimerEvent timerEvent = new TimerEvent(relatedCustomResourceUid);
     return timerEvent;
   }
+
+  private void overrideData(CustomResourceID id, CustomResource<?, ?> applyTo) {
+    applyTo.getMetadata().setName(id.getName());
+    applyTo.getMetadata().setNamespace(id.getNamespace().orElse(null));
+  }
+
 }

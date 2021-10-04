@@ -10,7 +10,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.Context;
@@ -24,6 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.ADDED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -73,7 +73,7 @@ class EventDispatcherTest {
   void addFinalizerOnNewResource() {
     assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(ResourceAction.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
     verify(controller, never())
         .createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
@@ -86,7 +86,7 @@ class EventDispatcherTest {
   void callCreateOrUpdateOnNewResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(ResourceAction.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
     verify(controller, times(1))
         .createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
   }
@@ -99,7 +99,7 @@ class EventDispatcherTest {
         .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
 
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
     verify(customResourceFacade, never()).replaceWithLock(any());
@@ -299,7 +299,7 @@ class EventDispatcherTest {
             UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000l));
 
     PostExecutionControl control = eventDispatcher.handleExecution(
-        executionScopeWithCREvent(ResourceAction.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
 
     assertThat(control.getReScheduleDelay().get()).isEqualTo(1000l);
   }

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -52,13 +51,13 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -80,13 +79,13 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("2");
 
-    eventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -112,13 +111,13 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 

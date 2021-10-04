@@ -6,6 +6,7 @@ import java.util.UUID;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 
@@ -29,6 +30,7 @@ public class TestUtils {
         .build();
   }
 
+  // todo remove?
   public static TestCustomResource testCustomResource(String uid) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(
@@ -46,4 +48,23 @@ public class TestUtils {
     resource.getSpec().setValue("test-value");
     return resource;
   }
+
+  public static TestCustomResource testCustomResource(CustomResourceID id) {
+    TestCustomResource resource = new TestCustomResource();
+    resource.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(id.getName())
+            .withGeneration(1L)
+            .withNamespace(id.getNamespace().orElse(null))
+            .build());
+    resource.getMetadata().setAnnotations(new HashMap<>());
+    resource.setKind("CustomService");
+    resource.setSpec(new TestCustomResourceSpec());
+    resource.getSpec().setConfigMapName("test-config-map");
+    resource.getSpec().setKey("test-key");
+    resource.getSpec().setValue("test-value");
+    return resource;
+  }
+
+
 }
