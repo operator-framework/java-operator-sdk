@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
@@ -24,7 +23,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     implements EventSourceManager {
 
   public static final String RETRY_TIMER_EVENT_SOURCE_NAME = "retry-timer-event-source";
-  private static final String CUSTOM_RESOURCE_EVENT_SOURCE_NAME = "custom-resource-event-source";
+  public static final String CUSTOM_RESOURCE_EVENT_SOURCE_NAME = "custom-resource-event-source";
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
@@ -146,13 +145,13 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
         .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
   }
 
-  // todo: remove
-  public ResourceCache getCache() {
-    final var source =
-        (CustomResourceEventSource) getRegisteredEventSources()
-            .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
-    return source;
-  }
+  // // todo: remove
+  // public ResourceCache getCache() {
+  // final var source =
+  // (CustomResourceEventSource) getRegisteredEventSources()
+  // .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
+  // return source;
+  // }
 
   // // todo: remove
   // public Optional<CustomResource> getLatestResource(String customResourceUid) {

@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,14 +39,15 @@ class DefaultEventHandlerTest {
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
   private DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
+  private ResourceCache resourceCache = mock(ResourceCache.class);
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private DefaultEventHandler defaultEventHandler =
-      new DefaultEventHandler(eventDispatcherMock, "Test", null);
+      new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test", null);
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
-      new DefaultEventHandler(eventDispatcherMock, "Test",
+      new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test",
           GenericRetry.defaultLimitedExponentialRetry());
 
   @BeforeEach
@@ -82,7 +84,8 @@ class DefaultEventHandlerTest {
   @Test
   public void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
-    // customResourceCache.cleanup(event.getRelatedCustomResourceID()));
+    when(resourceCache.getCustomResource(event.getRelatedCustomResourceID()))
+        .thenReturn(Optional.empty());
 
     defaultEventHandler.handleEvent(event);
 
@@ -118,15 +121,14 @@ class DefaultEventHandlerTest {
   @Test
   public void cleanUpAfterDeleteEvent() {
     TestCustomResource customResource = testCustomResource();
-//    todo
-//    customResourceCache.cacheResource(customResource);
+    when(resourceCache.getCustomResource(CustomResourceID.fromResource(customResource)))
+        .thenReturn(Optional.of(customResource));
     CustomResourceEvent event =
         new CustomResourceEvent(DELETED, customResource);
 
     defaultEventHandler.handleEvent(event);
 
     waitMinimalTime();
-
     verify(defaultEventSourceManagerMock, times(1))
         .cleanup(CustomResourceID.fromResource(customResource));
   }
@@ -151,7 +153,6 @@ class DefaultEventHandlerTest {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     overrideData(event.getRelatedCustomResourceID(), customResource);
-    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -253,7 +254,7 @@ class DefaultEventHandlerTest {
 
   private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
-    customResourceCache.cacheResource(customResource);
+    when(resourceCache.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
     return new CustomResourceEvent(ResourceAction.UPDATED, customResource);
   }
 

@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import static io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager.CUSTOM_RESOURCE_EVENT_SOURCE_NAME;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
@@ -51,21 +52,27 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
+  private final ResourceCache<R> resourceCache;
   private DefaultEventSourceManager<R> eventSourceManager;
 
   public DefaultEventHandler(ConfiguredController<R> controller) {
-    this(ExecutorServiceManager.instance().executorService(),
+    this(
+        (ResourceCache<R>) controller.getEventSourceManager()
+            .getRegisteredEventSources().get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME),
+        ExecutorServiceManager.instance().executorService(),
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()));
   }
 
-  DefaultEventHandler(EventDispatcher<R> eventDispatcher, String relatedControllerName,
+  DefaultEventHandler(EventDispatcher<R> eventDispatcher, ResourceCache<R> resourceCache,
+      String relatedControllerName,
       Retry retry) {
-    this(null, relatedControllerName, eventDispatcher, retry);
+    this(resourceCache, null, relatedControllerName, eventDispatcher, retry);
   }
 
-  private DefaultEventHandler(ExecutorService executor, String relatedControllerName,
+  private DefaultEventHandler(ResourceCache<R> resourceCache, ExecutorService executor,
+      String relatedControllerName,
       EventDispatcher<R> eventDispatcher, Retry retry) {
     this.executor =
         executor == null
@@ -75,6 +82,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.controllerName = relatedControllerName;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
+    this.resourceCache = resourceCache;
     eventBuffer = new EventBuffer();
   }
 
@@ -108,8 +116,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private void executeBufferedEvents(CustomResourceID customResourceUid) {
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
-    Optional<CustomResource> latestCustomResource =
-        eventSourceManager.getCache().getCustomResource(customResourceUid);
+    Optional<R> latestCustomResource =
+        resourceCache.getCustomResource(customResourceUid);
 
     if (!controllerUnderExecution && newEventForResourceId && latestCustomResource.isPresent()) {
       setUnderExecutionProcessing(customResourceUid);
