@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
@@ -35,13 +36,9 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 public class DefaultEventHandler<R extends CustomResource<?, ?>> implements EventHandler {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
-  private static EventMonitor monitor = new EventMonitor() {
-    @Override
-    public void processedEvent(String uid, Event event) {}
 
-    @Override
-    public void failedEvent(String uid, Event event) {}
-  };
+  @Deprecated
+  private static EventMonitor monitor = EventMonitor.NOOP;
 
   private final EventBuffer eventBuffer;
   private final Set<String> underProcessing = new HashSet<>();
@@ -51,6 +48,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
+  private final EventMonitor eventMonitor;
   private volatile boolean running;
   private DefaultEventSourceManager<R> eventSourceManager;
 
@@ -58,16 +56,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this(ExecutorServiceManager.instance().executorService(),
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
-        GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()));
+        GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
+        controller.getConfiguration().getConfigurationService().getMetrics().getEventMonitor());
   }
 
   DefaultEventHandler(EventDispatcher<R> eventDispatcher, String relatedControllerName,
       Retry retry) {
-    this(null, relatedControllerName, eventDispatcher, retry);
+    this(null, relatedControllerName, eventDispatcher, retry, null);
   }
 
   private DefaultEventHandler(ExecutorService executor, String relatedControllerName,
-      EventDispatcher<R> eventDispatcher, Retry retry) {
+      EventDispatcher<R> eventDispatcher, Retry retry, EventMonitor monitor) {
     this.running = true;
     this.executor =
         executor == null
@@ -78,14 +77,44 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.eventBuffer = new EventBuffer();
-  }
-
-  public static void setEventMonitor(EventMonitor monitor) {
-    DefaultEventHandler.monitor = monitor;
+    this.eventMonitor = monitor != null ? monitor : EventMonitor.NOOP;
   }
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
+  }
+
+  /**
+   * @deprecated the EventMonitor to be used should now be retrieved from
+   *             {@link Metrics#getEventMonitor()}
+   * @param monitor
+   */
+  @Deprecated
+  public static void setEventMonitor(EventMonitor monitor) {
+    DefaultEventHandler.monitor = monitor;
+  }
+
+  /*
+   * TODO: promote this interface to top-level, probably create a `monitoring` package?
+   */
+  public interface EventMonitor {
+    EventMonitor NOOP = new EventMonitor() {
+      @Override
+      public void processedEvent(String uid, Event event) {}
+
+      @Override
+      public void failedEvent(String uid, Event event) {}
+    };
+
+    void processedEvent(String uid, Event event);
+
+    void failedEvent(String uid, Event event);
+  }
+
+  private EventMonitor monitor() {
+    // todo: remove us of static monitor, only here for backwards compatibility
+    return DefaultEventHandler.monitor != EventMonitor.NOOP ? DefaultEventHandler.monitor
+        : eventMonitor;
   }
 
   @Override
@@ -102,6 +131,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       log.debug("Received event: {}", event);
 
       final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
+      final var monitor = monitor();
       for (String uid : eventSourceManager.getLatestResourceUids(selector)) {
         eventBuffer.addEvent(uid, event);
         monitor.processedEvent(uid, event);
@@ -168,6 +198,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
+        final var monitor = monitor();
         executionScope.getEvents()
             .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceUid(), e));
         return;
@@ -296,11 +327,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     underProcessing.remove(customResourceUid);
   }
 
-  public interface EventMonitor {
-    void processedEvent(String uid, Event event);
-
-    void failedEvent(String uid, Event event);
-  }
 
   private class ControllerExecution implements Runnable {
     private final ExecutionScope<R> executionScope;
