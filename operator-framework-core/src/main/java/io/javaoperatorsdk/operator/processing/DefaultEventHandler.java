@@ -51,6 +51,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
+  private volatile boolean running;
   private DefaultEventSourceManager<R> eventSourceManager;
 
   public DefaultEventHandler(ConfiguredController<R> controller) {
@@ -67,6 +68,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private DefaultEventHandler(ExecutorService executor, String relatedControllerName,
       EventDispatcher<R> eventDispatcher, Retry retry) {
+    this.running = true;
     this.executor =
         executor == null
             ? new ScheduledThreadPoolExecutor(
@@ -75,27 +77,28 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.controllerName = relatedControllerName;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
-    eventBuffer = new EventBuffer();
-  }
-
-  public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
-    this.eventSourceManager = eventSourceManager;
+    this.eventBuffer = new EventBuffer();
   }
 
   public static void setEventMonitor(EventMonitor monitor) {
     DefaultEventHandler.monitor = monitor;
   }
 
-  public interface EventMonitor {
-    void processedEvent(String uid, Event event);
-
-    void failedEvent(String uid, Event event);
+  public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
+    this.eventSourceManager = eventSourceManager;
   }
 
   @Override
   public void handleEvent(Event event) {
+
     try {
       lock.lock();
+
+      if (!this.running) {
+        log.debug("Skipping event: {} because the event handler is shutting down", event);
+        return;
+      }
+
       log.debug("Received event: {}", event);
 
       final Predicate<CustomResource> selector = event.getCustomResourcesSelector();
@@ -104,6 +107,16 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         monitor.processedEvent(uid, event);
         executeBufferedEvents(uid);
       }
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public void close() {
+    try {
+      lock.lock();
+      this.running = false;
     } finally {
       lock.unlock();
     }
@@ -143,6 +156,10 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
     try {
       lock.lock();
+      if (!running) {
+        return;
+      }
+
       log.debug(
           "Event processing finished. Scope: {}, PostExecutionControl: {}",
           executionScope,
@@ -277,6 +294,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private void unsetUnderExecution(String customResourceUid) {
     underProcessing.remove(customResourceUid);
+  }
+
+  public interface EventMonitor {
+    void processedEvent(String uid, Event event);
+
+    void failedEvent(String uid, Event event);
   }
 
   private class ControllerExecution implements Runnable {
