@@ -4,7 +4,8 @@ import java.util.Collections;
 import java.util.Map;
 
 import io.javaoperatorsdk.operator.Metrics;
-import io.javaoperatorsdk.operator.Metrics.ControllerExecution;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
+import io.javaoperatorsdk.operator.processing.event.Event;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -12,6 +13,17 @@ public class MicrometerMetrics implements Metrics {
 
   public static final String PREFIX = "operator.sdk.";
   private final MeterRegistry registry;
+  private final EventMonitor monitor = new EventMonitor() {
+    @Override
+    public void processedEvent(String uid, Event event) {
+      incrementProcessedEventsNumber();
+    }
+
+    @Override
+    public void failedEvent(String uid, Event event) {
+      incrementControllerRetriesNumber();
+    }
+  };
 
   public MicrometerMetrics(MeterRegistry registry) {
     this.registry = registry;
@@ -62,5 +74,10 @@ public class MicrometerMetrics implements Metrics {
 
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
+  }
+
+  @Override
+  public EventMonitor getEventMonitor() {
+    return monitor;
   }
 }

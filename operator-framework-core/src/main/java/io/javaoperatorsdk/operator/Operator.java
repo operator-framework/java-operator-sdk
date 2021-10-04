@@ -18,9 +18,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
-import io.javaoperatorsdk.operator.processing.event.Event;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable {
@@ -32,17 +29,6 @@ public class Operator implements AutoCloseable {
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
-    DefaultEventHandler.setEventMonitor(new EventMonitor() {
-      @Override
-      public void processedEvent(String uid, Event event) {
-        configurationService.getMetrics().incrementProcessedEventsNumber();
-      }
-
-      @Override
-      public void failedEvent(String uid, Event event) {
-        configurationService.getMetrics().incrementControllerRetriesNumber();
-      }
-    });
   }
 
   /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
