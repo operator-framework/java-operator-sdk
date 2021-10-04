@@ -27,7 +27,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient k8sClient;
-  private EventSourceManager manager;
+  private EventSourceManager eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
@@ -174,7 +174,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     }
 
     try {
-      DefaultEventSourceManager<R> eventSourceManager = new DefaultEventSourceManager<>(this);
+      eventSourceManager = new DefaultEventSourceManager<>(this);
       controller.init(eventSourceManager);
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
@@ -217,11 +217,14 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     return false;
   }
 
+  public EventSourceManager getEventSourceManager() {
+    return eventSourceManager;
+  }
 
   @Override
   public void close() throws IOException {
-    if (manager != null) {
-      manager.close();
+    if (eventSourceManager != null) {
+      eventSourceManager.close();
     }
   }
 }
