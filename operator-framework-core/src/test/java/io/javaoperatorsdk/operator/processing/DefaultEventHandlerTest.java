@@ -118,7 +118,8 @@ class DefaultEventHandlerTest {
   @Test
   public void cleanUpAfterDeleteEvent() {
     TestCustomResource customResource = testCustomResource();
-    customResourceCache.cacheResource(customResource);
+//    todo
+//    customResourceCache.cacheResource(customResource);
     CustomResourceEvent event =
         new CustomResourceEvent(DELETED, customResource);
 
