@@ -102,38 +102,38 @@ public class CustomResourceSelectorTest {
               }),
           new MyConfiguration(configurationService, "app=foo"));
       o1.start();
-//      o2.register(
-//          new MyController(
-//              resource -> {
-//                if ("bar".equals(resource.getMetadata().getName())) {
-//                  c2.incrementAndGet();
-//                }
-//                if ("foo".equals(resource.getMetadata().getName())) {
-//                  c2err.incrementAndGet();
-//                }
-//              }),
-//          new MyConfiguration(configurationService, "app=bar"));
-//      o2.start();
+      o2.register(
+          new MyController(
+              resource -> {
+                if ("bar".equals(resource.getMetadata().getName())) {
+                  c2.incrementAndGet();
+                }
+                if ("foo".equals(resource.getMetadata().getName())) {
+                  c2err.incrementAndGet();
+                }
+              }),
+          new MyConfiguration(configurationService, "app=bar"));
+      o2.start();
 
       client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("foo",
           NAMESPACE));
-//      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("bar",NAMESPACE));
+      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("bar",NAMESPACE));
 
       await()
           .atMost(55, TimeUnit.SECONDS)
           .pollInterval(100, TimeUnit.MILLISECONDS)
           .until(() -> c1.get() > 0 );
-//      await()
-//          .atMost(5, TimeUnit.SECONDS)
-//          .pollInterval(100, TimeUnit.MILLISECONDS)
-//          .until(() -> c2.get() == 1 && c2err.get() == 0);
-//
-//      assertThrows(
-//          ConditionTimeoutException.class,
-//          () -> await().atMost(2, TimeUnit.SECONDS).untilAtomic(c1err, is(greaterThan(0))));
-//      assertThrows(
-//          ConditionTimeoutException.class,
-//          () -> await().atMost(2, TimeUnit.SECONDS).untilAtomic(c2err, is(greaterThan(0))));
+      await()
+          .atMost(5, TimeUnit.SECONDS)
+          .pollInterval(100, TimeUnit.MILLISECONDS)
+          .until(() -> c2.get() == 1 && c2err.get() == 0);
+
+      assertThrows(
+          ConditionTimeoutException.class,
+          () -> await().atMost(2, TimeUnit.SECONDS).untilAtomic(c1err, is(greaterThan(0))));
+      assertThrows(
+          ConditionTimeoutException.class,
+          () -> await().atMost(2, TimeUnit.SECONDS).untilAtomic(c2err, is(greaterThan(0))));
     }
   }
 
@@ -164,7 +164,8 @@ public class CustomResourceSelectorTest {
       return MyController.class.getCanonicalName();
     }
 
-    @Override public Set<String> getNamespaces() {
+    @Override
+    public Set<String> getNamespaces() {
       return Sets.newSet(NAMESPACE);
     }
 
