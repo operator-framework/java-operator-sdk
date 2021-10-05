@@ -54,6 +54,13 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   public void close() {
     try {
       lock.lock();
+
+      try {
+        defaultEventHandler.close();
+      } catch (Exception e) {
+        log.warn("Error closing event handler", e);
+      }
+
       for (var entry : eventSources.entrySet()) {
         try {
           log.debug("Closing {} -> {}", entry.getKey(), entry.getValue());

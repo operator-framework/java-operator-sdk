@@ -33,17 +33,6 @@ public class Operator implements AutoCloseable {
   public Operator(KubernetesClient k8sClient, ConfigurationService configurationService) {
     this.k8sClient = k8sClient;
     this.configurationService = configurationService;
-    DefaultEventHandler.setEventMonitor(new EventMonitor() {
-      @Override
-      public void processedEvent(CustomResourceID uid, Event event) {
-        configurationService.getMetrics().incrementProcessedEventsNumber();
-      }
-
-      @Override
-      public void failedEvent(CustomResourceID uid, Event event) {
-        configurationService.getMetrics().incrementControllerRetriesNumber();
-      }
-    });
   }
 
   /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */

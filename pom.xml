@@ -5,7 +5,7 @@
 
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>1.9.8-SNAPSHOT</version>
+    <version>1.9.9-SNAPSHOT</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
     <packaging>pom</packaging>
@@ -78,6 +78,7 @@
         <module>operator-framework-junit5</module>
         <module>operator-framework</module>
         <module>samples</module>
+      <module>micrometer-support</module>
     </modules>
 
 
