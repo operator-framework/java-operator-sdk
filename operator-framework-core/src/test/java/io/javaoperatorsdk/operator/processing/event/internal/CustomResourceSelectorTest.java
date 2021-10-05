@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
 import org.slf4j.Logger;
@@ -41,6 +42,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true, https = false)
+// todo
+@Disabled("Informers currently not support label selectors")
 public class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);
@@ -117,12 +120,13 @@ public class CustomResourceSelectorTest {
 
       client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("foo",
           NAMESPACE));
-      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("bar",NAMESPACE));
+      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("bar",
+          NAMESPACE));
 
       await()
-          .atMost(55, TimeUnit.SECONDS)
+          .atMost(325, TimeUnit.SECONDS)
           .pollInterval(100, TimeUnit.MILLISECONDS)
-          .until(() -> c1.get() > 0 );
+          .until(() -> c1.get() == 1 && c1err.get() == 0);
       await()
           .atMost(5, TimeUnit.SECONDS)
           .pollInterval(100, TimeUnit.MILLISECONDS)

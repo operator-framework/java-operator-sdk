@@ -21,6 +21,9 @@ import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
@@ -38,10 +41,13 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final ConfiguredController<T> controller;
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
+  private ObjectMapper cloningObjectMapper;
 
   // todo metric for custom resource caches
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
+    this.cloningObjectMapper =
+        controller.getConfiguration().getConfigurationService().getObjectMapper();
   }
 
   @Override
@@ -50,6 +56,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var client = controller.getCRClient();
     final var labelSelector = configuration.getLabelSelector();
+    // todo informers not support label selectors currently
     var options = new ListOptions();
     if (Utils.isNotNullOrEmpty(labelSelector)) {
       options.setLabelSelector(labelSelector);
@@ -111,7 +118,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
             CustomResourceEventFilters.generationAware()));
 
     if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
-      eventHandler.handleEvent(new CustomResourceEvent(action, customResource));
+      eventHandler.handleEvent(new CustomResourceEvent(action, clone(customResource)));
     } else {
       log.debug(
           "Skipping event handling resource {} with version: {}",
@@ -142,6 +149,19 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     var resource = sharedIndexInformer.getStore()
         .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
             resourceID.getName()));
-    return Optional.ofNullable(resource);
+    if (resource == null) {
+      return Optional.empty();
+    } else {
+      return Optional.of(clone(resource));
+    }
+  }
+
+  private T clone(T customResource) {
+    try {
+      return (T) cloningObjectMapper.readValue(
+          cloningObjectMapper.writeValueAsString(customResource), customResource.getClass());
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException(e);
+    }
   }
 }

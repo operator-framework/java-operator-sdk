@@ -56,22 +56,6 @@ class DefaultEventHandlerTest {
         .thenReturn(retryTimerEventSourceMock);
     defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
     defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
-
-    // // todo: remove
-    // when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
-    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
-    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
-    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResources(any());
-    // doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
-    // doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
-    // doAnswer(
-    // invocation -> {
-    // final var resourceId = (String) invocation.getArgument(0);
-    // customResourceCache.cleanup(resourceId);
-    // return null;
-    // })
-    // .when(defaultEventSourceManagerMock)
-    // .cleanup(any());
   }
 
   @Test
