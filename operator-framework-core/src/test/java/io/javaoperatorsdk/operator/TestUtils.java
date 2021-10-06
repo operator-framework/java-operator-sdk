@@ -12,11 +12,8 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 
 public class TestUtils {
 
-  public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
-  public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
-
   public static TestCustomResource testCustomResource() {
-    return testCustomResource(UUID.randomUUID().toString());
+    return testCustomResource(new CustomResourceID(UUID.randomUUID().toString(), "test"));
   }
 
   public static CustomResourceDefinition testCRD(String scope) {
@@ -28,25 +25,6 @@ public class TestUtils {
         .withName("test.operator.javaoperatorsdk.io")
         .and()
         .build();
-  }
-
-  // todo remove?
-  public static TestCustomResource testCustomResource(String uid) {
-    TestCustomResource resource = new TestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_CUSTOM_RESOURCE_NAME)
-            .withUid(uid)
-            .withGeneration(1L)
-            .withNamespace(TEST_NAMESPACE)
-            .build());
-    resource.getMetadata().setAnnotations(new HashMap<>());
-    resource.setKind("CustomService");
-    resource.setSpec(new TestCustomResourceSpec());
-    resource.getSpec().setConfigMapName("test-config-map");
-    resource.getSpec().setKey("test-key");
-    resource.getSpec().setValue("test-value");
-    return resource;
   }
 
   public static TestCustomResource testCustomResource(CustomResourceID id) {

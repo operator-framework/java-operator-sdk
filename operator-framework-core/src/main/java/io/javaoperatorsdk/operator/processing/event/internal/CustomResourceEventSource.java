@@ -43,7 +43,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       new ConcurrentHashMap<>();
   private ObjectMapper cloningObjectMapper;
 
-  // todo metric for custom resource caches
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
     this.cloningObjectMapper =
@@ -56,7 +55,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var client = controller.getCRClient();
     final var labelSelector = configuration.getLabelSelector();
-    // todo informers not support label selectors currently
+    // todo label selectors currently
     var options = new ListOptions();
     if (Utils.isNotNullOrEmpty(labelSelector)) {
       options.setLabelSelector(labelSelector);
@@ -106,7 +105,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     }
   }
 
-  // todo check if the resource version is the same?
   public void eventReceived(ResourceAction action, T customResource, T oldResource) {
     log.debug(
         "Event received for resource: {}", getName(customResource));

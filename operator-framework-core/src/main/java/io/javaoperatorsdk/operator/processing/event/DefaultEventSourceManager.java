@@ -160,32 +160,4 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
         .keySet()
         .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
   }
-
-  // // todo: remove
-  // public ResourceCache getCache() {
-  // final var source =
-  // (CustomResourceEventSource) getRegisteredEventSources()
-  // .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
-  // return source;
-  // }
-
-  // // todo: remove
-  // public Optional<CustomResource> getLatestResource(String customResourceUid) {
-  // return getCache().getLatestResource(customResourceUid);
-  // }
-  //
-  // // todo: remove
-  // public List<CustomResource> getLatestResources(Predicate<CustomResource> selector) {
-  // return getCache().getLatestResources(selector);
-  // }
-  //
-  // // todo: remove
-  // public Set<String> getLatestResourceUids(Predicate<CustomResource> selector) {
-  // return getCache().getLatestResourcesUids(selector);
-  // }
-  //
-  // // todo: remove
-  // public void cacheResource(CustomResource resource, Predicate<CustomResource> predicate) {
-  // getCache().cacheResource(resource, predicate);
-  // }
 }
