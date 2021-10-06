@@ -150,6 +150,11 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     return Collections.unmodifiableMap(eventSources);
   }
 
+  @Override
+  public CustomResourceEventSource getCustomResourceEventSource() {
+    return getCustomResourceEventSource();
+  }
+
   public void cleanup(CustomResourceID customResourceUid) {
     getRegisteredEventSources()
         .keySet()

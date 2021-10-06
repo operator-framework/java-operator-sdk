@@ -34,7 +34,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource
     implements ResourceEventHandler<T>, ResourceCache<T> {
 
-  private static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
+  public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
@@ -64,6 +64,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
+
         var informer = client.inAnyNamespace().inform(this);
         sharedIndexInformers.put(ANY_NAMESPACE_MAP_KEY, informer);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
@@ -154,6 +155,14 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     } else {
       return Optional.of(clone(resource));
     }
+  }
+
+  /**
+   * @return shared informers by namespace. If custom resource is not namespace scoped use
+   *         CustomResourceEventSource.ANY_NAMESPACE_MAP_KEY
+   */
+  public Map<String, SharedIndexInformer<T>> getInformers() {
+    return Collections.unmodifiableMap(sharedIndexInformers);
   }
 
   private T clone(T customResource) {
