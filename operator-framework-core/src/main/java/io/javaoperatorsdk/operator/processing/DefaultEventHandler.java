@@ -152,7 +152,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
   }
 
-  private void executeBufferedEvents(String customResourceUid) {
+  private boolean executeBufferedEvents(String customResourceUid) {
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<CustomResource> latestCustomResource =
@@ -167,6 +167,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               retryInfo(customResourceUid));
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
+      return true;
     } else {
       log.debug(
           "Skipping executing controller for resource id: {}. Events in queue: {}."
@@ -175,6 +176,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
           newEventForResourceId,
           controllerUnderExecution,
           latestCustomResource.isPresent());
+      return false;
     }
   }
 
@@ -211,8 +213,10 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         cleanupAfterDeletedEvent(executionScope.getCustomResourceUid());
       } else {
         cacheUpdatedResourceIfChanged(executionScope, postExecutionControl);
-        reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
-        executeBufferedEvents(executionScope.getCustomResourceUid());
+        var executed = executeBufferedEvents(executionScope.getCustomResourceUid());
+        if (!executed) {
+          reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
+        }
       }
     } finally {
       lock.unlock();
