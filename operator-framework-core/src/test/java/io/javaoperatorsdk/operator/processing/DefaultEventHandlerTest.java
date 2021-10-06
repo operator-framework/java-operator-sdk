@@ -233,6 +233,19 @@ class DefaultEventHandlerTest {
   }
 
   @Test
+  public void reScheduleOnlyIfNotExecutedBufferedEvents() {
+    var testDelay = 10000l;
+    when(eventDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
+
+    defaultEventHandler.handleEvent(prepareCREvent());
+    defaultEventHandler.handleEvent(prepareCREvent());
+
+    verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(0))
+        .scheduleOnce(any(), eq(testDelay));
+  }
+
+  @Test
   public void doNotFireEventsIfClosing() {
     defaultEventHandler.close();
     defaultEventHandler.handleEvent(prepareCREvent());
