@@ -55,7 +55,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var client = controller.getCRClient();
     final var labelSelector = configuration.getLabelSelector();
-    // todo label selectors currently
+    // todo label selectors
     var options = new ListOptions();
     if (Utils.isNotNullOrEmpty(labelSelector)) {
       options.setLabelSelector(labelSelector);
@@ -63,7 +63,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-
         var informer = client.inAnyNamespace().inform(this);
         sharedIndexInformers.put(ANY_NAMESPACE_MAP_KEY, informer);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
@@ -161,6 +160,14 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
    */
   public Map<String, SharedIndexInformer<T>> getInformers() {
     return Collections.unmodifiableMap(sharedIndexInformers);
+  }
+
+  public SharedIndexInformer<T> getInformer(String namespace) {
+    if (namespace == null) {
+      return getInformers().get(ANY_NAMESPACE_MAP_KEY);
+    } else {
+      return getInformers().get(namespace);
+    }
   }
 
   private T clone(T customResource) {
