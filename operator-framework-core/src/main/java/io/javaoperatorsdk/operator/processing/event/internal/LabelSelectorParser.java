@@ -12,10 +12,10 @@ public class LabelSelectorParser {
       return Collections.EMPTY_MAP;
     }
     String[] selectors = labelSelector.split(",");
-    Map<String,String> labels = new HashMap<>(selectors.length);
+    Map<String, String> labels = new HashMap<>(selectors.length);
     Arrays.stream(selectors).forEach(s -> {
       var kv = s.split("=");
-      labels.put(kv[0],kv[1]);
+      labels.put(kv[0], kv[1]);
     });
     return labels;
   }
