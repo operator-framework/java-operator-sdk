@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
