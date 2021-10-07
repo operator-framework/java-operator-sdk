@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
@@ -87,16 +86,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
-  }
-
-  /**
-   * @deprecated the EventMonitor to be used should now be retrieved from
-   *             {@link Metrics#getEventMonitor()}
-   * @param monitor to use
-   */
-  @Deprecated
-  public static void setEventMonitor(EventMonitor monitor) {
-    DefaultEventHandler.monitor = monitor;
   }
 
   /*

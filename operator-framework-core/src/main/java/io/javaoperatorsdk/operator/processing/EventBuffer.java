@@ -9,8 +9,6 @@ class EventBuffer {
 
   private final Map<CustomResourceID, List<Event>> events = new HashMap<>();
 
-  /** @deprecated use {@link #addEvent(CustomResourceID, Event)} */
-  @Deprecated
   public void addEvent(Event event) {
     addEvent(event.getRelatedCustomResourceID(), event);
   }
