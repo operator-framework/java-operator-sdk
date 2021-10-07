@@ -12,8 +12,8 @@ public class CustomResourceID {
         resource.getMetadata().getNamespace());
   }
 
-  private String name;
-  private String namespace;
+  private final String name;
+  private final String namespace;
 
   public CustomResourceID(String name, String namespace) {
     this.name = name;
@@ -21,7 +21,7 @@ public class CustomResourceID {
   }
 
   public CustomResourceID(String name) {
-    this.name = name;
+    this(name, null);
   }
 
   public String getName() {
