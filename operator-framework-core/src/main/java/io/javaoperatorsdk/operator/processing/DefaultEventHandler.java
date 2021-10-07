@@ -20,11 +20,12 @@ import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
-import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 
 /**
@@ -38,7 +39,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   @Deprecated
   private static EventMonitor monitor = EventMonitor.NOOP;
 
-  private final EventBuffer eventBuffer;
+  private final EventMarker eventMarker;
   private final Set<CustomResourceID> underProcessing = new HashSet<>();
   private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
@@ -79,9 +80,9 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.controllerName = relatedControllerName;
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
-    eventBuffer = new EventBuffer();
     this.resourceCache = resourceCache;
     this.eventMonitor = monitor != null ? monitor : EventMonitor.NOOP;
+    this.eventMarker = new EventMarker();
   }
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
@@ -113,34 +114,37 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   @Override
   public void handleEvent(Event event) {
+    lock.lock();
     try {
-      lock.lock();
       log.debug("Received event: {}", event);
       if (!this.running) {
         log.debug("Skipping event: {} because the event handler is shutting down", event);
         return;
       }
       final var monitor = monitor();
-      eventBuffer.addEvent(event.getRelatedCustomResourceID(), event);
       monitor.processedEvent(event.getRelatedCustomResourceID(), event);
-      executeBufferedEvents(event.getRelatedCustomResourceID());
+      markEvent(event);
+      if (eventMarker.isEventReceived(event.getRelatedCustomResourceID())) {
+        submitReconciliationExecution(event.getRelatedCustomResourceID());
+      } else {
+        cleanupForDeletedEvent(event.getRelatedCustomResourceID());
+      }
     } finally {
       lock.unlock();
     }
   }
 
-  @Override
-  public void close() {
-    try {
-      lock.lock();
-      this.running = false;
-    } finally {
-      lock.unlock();
+  private void markEvent(Event event) {
+    if (event instanceof CustomResourceEvent &&
+        ((CustomResourceEvent) event).getAction() == ResourceAction.DELETED) {
+      eventMarker.markDeleteEventReceived(event.getRelatedCustomResourceID());
+    } else if (!eventMarker.isDeleteEventReceived(event.getRelatedCustomResourceID())) {
+      eventMarker.markEventReceived(event.getRelatedCustomResourceID());
     }
   }
 
-  private boolean executeBufferedEvents(CustomResourceID customResourceUid) {
-    boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
+  private boolean submitReconciliationExecution(CustomResourceID customResourceUid) {
+    boolean newEventForResourceId = eventMarker.isEventReceived(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<R> latestCustomResource =
         resourceCache.getCustomResource(customResourceUid);
@@ -149,9 +153,9 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       setUnderExecutionProcessing(customResourceUid);
       ExecutionScope executionScope =
           new ExecutionScope(
-              eventBuffer.getAndRemoveEventsForExecution(customResourceUid),
               latestCustomResource.get(),
               retryInfo(customResourceUid));
+      eventMarker.unmarkEvent(customResourceUid);
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
       return true;
@@ -176,8 +180,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   void eventProcessingFinished(
       ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
+    lock.lock();
     try {
-      lock.lock();
       if (!running) {
         return;
       }
@@ -190,22 +194,23 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
-        final var monitor = monitor();
-        executionScope.getEvents()
-            .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceID(), e));
+        // todo
+        // final var monitor = monitor();
+        // executionScope.getEvents()
+        // .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceID(), e));
         return;
       }
 
       if (retry != null) {
         markSuccessfulExecutionRegardingRetry(executionScope);
       }
-      if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
-        cleanupAfterDeletedEvent(executionScope.getCustomResourceID());
-      } else {
-        var executed = executeBufferedEvents(executionScope.getCustomResourceID());
-        if (!executed) {
-          reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
-        }
+      // if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
+      // cleanupForDeletedEvent(executionScope.getCustomResourceID());
+      // } else {
+      var executed = submitReconciliationExecution(executionScope.getCustomResourceID());
+      if (!executed) {
+        reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
+        // }
       }
     } finally {
       lock.unlock();
@@ -226,17 +231,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    */
   private void handleRetryOnException(ExecutionScope<R> executionScope) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
-    boolean newEventsExists = eventBuffer
-        .newEventsExists(CustomResourceID.fromResource(executionScope.getCustomResource()));
-    eventBuffer.putBackEvents(executionScope.getCustomResourceID(), executionScope.getEvents());
+    boolean newEventsExists = eventMarker.isEventReceived(executionScope.getCustomResourceID());
+    eventMarker.markEventReceived(executionScope.getCustomResourceID());
 
     if (newEventsExists) {
       log.debug("New events exists for for resource id: {}", executionScope.getCustomResourceID());
-      executeBufferedEvents(executionScope.getCustomResourceID());
+      submitReconciliationExecution(executionScope.getCustomResourceID());
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
 
+    // todo cover situation when a new event is received but the
     nextDelay.ifPresentOrElse(
         delay -> {
           log.debug(
@@ -269,9 +274,10 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     return retryExecution;
   }
 
-  private void cleanupAfterDeletedEvent(CustomResourceID customResourceUid) {
+  // todo when to do cleanup, note retry might be relevant event if a delete event is received
+  private void cleanupForDeletedEvent(CustomResourceID customResourceUid) {
     eventSourceManager.cleanup(customResourceUid);
-    eventBuffer.cleanup(customResourceUid);
+    eventMarker.unmarkEvent(customResourceUid);
   }
 
   private boolean isControllerUnderExecution(CustomResourceID customResourceUid) {
@@ -286,6 +292,15 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     underProcessing.remove(customResourceUid);
   }
 
+  @Override
+  public void close() {
+    lock.lock();
+    try {
+      this.running = false;
+    } finally {
+      lock.unlock();
+    }
+  }
 
   private class ControllerExecution implements Runnable {
     private final ExecutionScope<R> executionScope;

@@ -52,9 +52,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   @Override
   public void close() {
+    lock.lock();
     try {
-      lock.lock();
-
       try {
         defaultEventHandler.close();
       } catch (Exception e) {
@@ -80,9 +79,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   public final void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
-
+    lock.lock();
     try {
-      lock.lock();
       if (eventSources.containsKey(name)) {
         throw new IllegalStateException(
             "Event source with name already registered. Event source name: " + name);
@@ -103,8 +101,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   @Override
   public Optional<EventSource> deRegisterEventSource(String name) {
+    lock.lock();
     try {
-      lock.lock();
       EventSource currentEventSource = eventSources.remove(name);
       if (currentEventSource != null) {
         try {
@@ -123,8 +121,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   @Override
   public Optional<EventSource> deRegisterCustomResourceFromEventSource(
       String eventSourceName, CustomResourceID customResourceUid) {
+    lock.lock();
     try {
-      lock.lock();
       EventSource eventSource = this.eventSources.get(eventSourceName);
       if (eventSource == null) {
         log.warn(

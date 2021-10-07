@@ -14,9 +14,7 @@ import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.EventList;
 
-import static io.javaoperatorsdk.operator.EventListUtils.containsCustomResourceDeletedEvent;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
@@ -59,15 +57,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
 
   private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope) {
     R resource = executionScope.getCustomResource();
-    log.debug("Handling events: {} for resource {}", executionScope.getEvents(), getName(resource));
-
-    if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
-      log.debug(
-          "Skipping dispatch processing because of a Delete event: {} with version: {}",
-          getName(resource),
-          getVersion(resource));
-      return PostExecutionControl.defaultDispatch();
-    }
+    log.debug("Handling dispatch for resource {}", getName(resource));
 
     final var markedForDeletion = resource.isMarkedForDeletion();
     if (markedForDeletion && shouldNotDispatchToDelete(resource)) {
@@ -79,8 +69,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
     }
 
     Context<R> context =
-        new DefaultContext<>(
-            new EventList(executionScope.getEvents()), executionScope.getRetryInfo());
+        new DefaultContext<>(executionScope.getRetryInfo());
     if (markedForDeletion) {
       return handleDelete(resource, context);
     } else {
