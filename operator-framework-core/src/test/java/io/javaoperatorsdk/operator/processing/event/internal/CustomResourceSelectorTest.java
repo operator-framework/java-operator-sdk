@@ -42,8 +42,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true, https = false)
-// todo
-@Disabled("Informers currently not support label selectors")
 public class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);

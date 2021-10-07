@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import static io.javaoperatorsdk.operator.processing.event.internal.LabelSelectorParser.parseSimpleLabelSelector;
 
 /**
  * This is a special case since is not bound to a single custom resource
@@ -55,21 +56,18 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var client = controller.getCRClient();
     final var labelSelector = configuration.getLabelSelector();
-    // todo label selectors
-    var options = new ListOptions();
-    if (Utils.isNotNullOrEmpty(labelSelector)) {
-      options.setLabelSelector(labelSelector);
-    }
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-        var informer = client.inAnyNamespace().inform(this);
+        var informer = client.inAnyNamespace()
+            .withLabels(parseSimpleLabelSelector(labelSelector)).inform(this);
         sharedIndexInformers.put(ANY_NAMESPACE_MAP_KEY, informer);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
       } else {
         targetNamespaces.forEach(
             ns -> {
-              var informer = client.inNamespace(ns).inform(this);
+              var informer = client.inNamespace(ns)
+                  .withLabels(parseSimpleLabelSelector(labelSelector)).inform(this);
               sharedIndexInformers.put(ns, informer);
               log.debug("Registered {} -> {} for namespace: {}", controller, informer,
                   ns);
