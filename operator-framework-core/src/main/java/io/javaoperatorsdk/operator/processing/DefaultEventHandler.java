@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,7 +151,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
   }
 
-  private void executeBufferedEvents(CustomResourceID customResourceUid) {
+  private boolean executeBufferedEvents(CustomResourceID customResourceUid) {
     boolean newEventForResourceId = eventBuffer.containsEvents(customResourceUid);
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<R> latestCustomResource =
@@ -165,6 +166,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               retryInfo(customResourceUid));
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
+      return true;
     } else {
       log.debug(
           "Skipping executing controller for resource id: {}. Events in queue: {}."
@@ -176,6 +178,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (latestCustomResource.isEmpty()) {
         log.warn("no custom resource found in cache for CustomResourceID: {}", customResourceUid);
       }
+      return false;
     }
   }
 
@@ -211,8 +214,10 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (containsCustomResourceDeletedEvent(executionScope.getEvents())) {
         cleanupAfterDeletedEvent(executionScope.getCustomResourceID());
       } else {
-        reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
-        executeBufferedEvents(executionScope.getCustomResourceID());
+        var executed = executeBufferedEvents(executionScope.getCustomResourceID());
+        if (!executed) {
+          reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getCustomResource());
+        }
       }
     } finally {
       lock.unlock();

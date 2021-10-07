@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -23,6 +24,10 @@ public class CustomServiceController implements ResourceController<CustomService
   private static final Logger log = LoggerFactory.getLogger(CustomServiceController.class);
 
   private final KubernetesClient kubernetesClient;
+
+  public CustomServiceController() {
+    this(new DefaultKubernetesClient());
+  }
 
   public CustomServiceController(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
