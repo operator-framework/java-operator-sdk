@@ -266,7 +266,7 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(
         new ExecutionScope(
-            Arrays.asList(),
+            List.of(),
             testCustomResource,
             new RetryInfo() {
               @Override
@@ -296,12 +296,12 @@ class EventDispatcherTest {
 
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(
-            UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000l));
+            UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000L));
 
     PostExecutionControl control = eventDispatcher.handleExecution(
         executionScopeWithCREvent(ADDED, testCustomResource));
 
-    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000l);
+    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
   }
 
   private void markForDeletion(CustomResource customResource) {

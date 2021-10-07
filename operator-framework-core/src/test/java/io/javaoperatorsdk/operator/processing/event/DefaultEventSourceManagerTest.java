@@ -59,9 +59,8 @@ class DefaultEventSourceManagerTest {
     defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(
-            () -> {
-              defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource2);
-            });
+            () -> defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME,
+                eventSource2));
   }
 
   @Test

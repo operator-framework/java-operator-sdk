@@ -40,7 +40,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final ConfiguredController<T> controller;
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
-  private ObjectMapper cloningObjectMapper;
+  private final ObjectMapper cloningObjectMapper;
 
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
@@ -159,11 +159,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   public SharedIndexInformer<T> getInformer(String namespace) {
-    if (namespace == null) {
-      return getInformers().get(ANY_NAMESPACE_MAP_KEY);
-    } else {
-      return getInformers().get(namespace);
-    }
+    return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
   }
 
   private T clone(T customResource) {

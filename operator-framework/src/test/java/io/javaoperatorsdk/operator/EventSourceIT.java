@@ -35,10 +35,8 @@ public class EventSourceIT {
         .pollInterval(
             EventSourceTestCustomResourceController.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
         .untilAsserted(
-            () -> {
-              assertThat(TestUtils.getNumberOfExecutions(operator))
-                  .isGreaterThanOrEqualTo(4);
-            });
+            () -> assertThat(TestUtils.getNumberOfExecutions(operator))
+                .isGreaterThanOrEqualTo(4));
   }
 
   public EventSourceTestCustomResource createTestCustomResource(String id) {

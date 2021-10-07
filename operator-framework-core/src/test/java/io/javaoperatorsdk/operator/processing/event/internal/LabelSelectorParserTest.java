@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class LabelSelectorParserTest {
 

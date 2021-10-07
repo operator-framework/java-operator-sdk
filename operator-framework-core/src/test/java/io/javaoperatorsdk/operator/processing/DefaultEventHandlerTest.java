@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -128,7 +127,7 @@ class DefaultEventHandlerTest {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(Arrays.asList(event), customResource, null);
+    ExecutionScope executionScope = new ExecutionScope(List.of(event), customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -208,7 +207,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void scheduleTimedEventIfInstructedByPostExecutionControl() {
-    var testDelay = 10000l;
+    var testDelay = 10000L;
     when(eventDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
 
@@ -257,8 +256,7 @@ class DefaultEventHandlerTest {
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
-    TimerEvent timerEvent = new TimerEvent(relatedCustomResourceUid);
-    return timerEvent;
+    return new TimerEvent(relatedCustomResourceUid);
   }
 
   private void overrideData(CustomResourceID id, CustomResource<?, ?> applyTo) {

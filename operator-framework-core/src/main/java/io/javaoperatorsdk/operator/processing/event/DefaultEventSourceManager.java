@@ -152,7 +152,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   @Override
   public CustomResourceEventSource getCustomResourceEventSource() {
-    return getCustomResourceEventSource();
+    return (CustomResourceEventSource) getRegisteredEventSources()
+        .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
   }
 
   public void cleanup(CustomResourceID customResourceUid) {

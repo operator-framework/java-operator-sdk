@@ -19,7 +19,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
   private final CustomResourceEventFilter<R> customResourceEventFilter;
-  private Class<R> customResourceClass;
+  private final Class<R> customResourceClass;
   private ConfigurationService service;
 
   public DefaultControllerConfiguration(

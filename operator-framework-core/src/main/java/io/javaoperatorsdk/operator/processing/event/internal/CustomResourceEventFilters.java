@@ -113,12 +113,12 @@ public final class CustomResourceEventFilters {
     }
 
     return (configuration, oldResource, newResource) -> {
-      for (int i = 0; i < items.length; i++) {
-        if (items[i] == null) {
+      for (CustomResourceEventFilter<T> item : items) {
+        if (item == null) {
           continue;
         }
 
-        if (!items[i].acceptChange(configuration, oldResource, newResource)) {
+        if (!item.acceptChange(configuration, oldResource, newResource)) {
           return false;
         }
       }
@@ -147,12 +147,12 @@ public final class CustomResourceEventFilters {
     }
 
     return (configuration, oldResource, newResource) -> {
-      for (int i = 0; i < items.length; i++) {
-        if (items[i] == null) {
+      for (CustomResourceEventFilter<T> item : items) {
+        if (item == null) {
           continue;
         }
 
-        if (items[i].acceptChange(configuration, oldResource, newResource)) {
+        if (item.acceptChange(configuration, oldResource, newResource)) {
           return true;
         }
       }

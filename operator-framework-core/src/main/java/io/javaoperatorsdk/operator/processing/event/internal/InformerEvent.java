@@ -8,9 +8,9 @@ import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 
 public class InformerEvent<T extends HasMetadata> extends DefaultEvent {
 
-  private ResourceAction action;
-  private T resource;
-  private T oldResource;
+  private final ResourceAction action;
+  private final T resource;
+  private final T oldResource;
 
   public InformerEvent(ResourceAction action,
       T resource, T oldResource) {

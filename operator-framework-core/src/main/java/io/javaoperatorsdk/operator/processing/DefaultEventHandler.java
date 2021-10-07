@@ -92,7 +92,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   /**
    * @deprecated the EventMonitor to be used should now be retrieved from
    *             {@link Metrics#getEventMonitor()}
-   * @param monitor
+   * @param monitor to use
    */
   @Deprecated
   public static void setEventMonitor(EventMonitor monitor) {
