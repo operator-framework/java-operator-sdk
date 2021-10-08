@@ -14,33 +14,34 @@ import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<String>> resourceToUIDs;
+  private final Function<T, Set<CustomResourceID>> resourceToUIDs;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<String>> resourceToUIDs) {
+      Function<T, Set<CustomResourceID>> resourceToUIDs) {
     this(sharedInformer, resourceToUIDs, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<String>> resourceToUIDs) {
+      Function<T, Set<CustomResourceID>> resourceToUIDs) {
     this(client, type, resourceToUIDs, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<String>> resourceToUIDs,
+      Function<T, Set<CustomResourceID>> resourceToUIDs,
       boolean skipUpdateEventPropagationIfNoChange) {
     this(client.informers().sharedIndexInformerFor(type, 0), resourceToUIDs, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<String>> resourceToUIDs,
+      Function<T, Set<CustomResourceID>> resourceToUIDs,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
