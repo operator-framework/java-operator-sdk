@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
