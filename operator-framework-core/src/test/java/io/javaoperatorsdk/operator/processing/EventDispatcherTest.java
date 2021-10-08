@@ -266,7 +266,6 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(
         new ExecutionScope(
-            List.of(),
             testCustomResource,
             new RetryInfo() {
               @Override
@@ -318,6 +317,6 @@ class EventDispatcherTest {
     List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
     eventList.add(event);
     eventList.addAll(Arrays.asList(otherEvents));
-    return new ExecutionScope(eventList, resource, null);
+    return new ExecutionScope(resource, null);
   }
 }

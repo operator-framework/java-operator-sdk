@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -26,14 +26,9 @@ import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+// todo review all the use cases
 class DefaultEventHandlerTest {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandlerTest.class);
@@ -92,22 +87,6 @@ class DefaultEventHandlerTest {
   }
 
   @Test
-  public void buffersAllIncomingEventsWhileControllerInExecution() {
-    CustomResourceID resourceUid = eventAlreadyUnderProcessing();
-
-    defaultEventHandler.handleEvent(nonCREvent(resourceUid));
-    defaultEventHandler.handleEvent(prepareCREvent(resourceUid));
-
-    ArgumentCaptor<ExecutionScope> captor = ArgumentCaptor.forClass(ExecutionScope.class);
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
-        .handleExecution(captor.capture());
-    List<Event> events = captor.getAllValues().get(1).getEvents();
-    assertThat(events).hasSize(2);
-    assertThat(events.get(0)).isInstanceOf(TimerEvent.class);
-    assertThat(events.get(1)).isInstanceOf(CustomResourceEvent.class);
-  }
-
-  @Test
   public void cleanUpAfterDeleteEvent() {
     TestCustomResource customResource = testCustomResource();
     when(resourceCache.getCustomResource(CustomResourceID.fromResource(customResource)))
@@ -127,7 +106,7 @@ class DefaultEventHandlerTest {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(List.of(event), customResource, null);
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -160,7 +139,6 @@ class DefaultEventHandlerTest {
         .handleExecution(executionScopeArgumentCaptor.capture());
     List<ExecutionScope> allValues = executionScopeArgumentCaptor.getAllValues();
     assertThat(allValues).hasSize(2);
-    assertThat(allValues.get(1).getEvents()).hasSize(2);
     verify(retryTimerEventSourceMock, never())
         .scheduleOnce(eq(customResource), eq(GenericRetry.DEFAULT_INITIAL_INTERVAL));
   }
@@ -217,6 +195,7 @@ class DefaultEventHandlerTest {
         .scheduleOnce(any(), eq(testDelay));
   }
 
+  // todo "flakes" from console
   @Test
   public void reScheduleOnlyIfNotExecutedBufferedEvents() {
     var testDelay = 10000l;
@@ -269,7 +248,7 @@ class DefaultEventHandlerTest {
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
-    return new TimerEvent(relatedCustomResourceUid);
+    return new DefaultEvent(relatedCustomResourceUid);
   }
 
   private void overrideData(CustomResourceID id, CustomResource<?, ?> applyTo) {

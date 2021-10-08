@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
@@ -54,7 +56,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     sharedInformer.addEventHandler(new ResourceEventHandler<>() {
       @Override
       public void onAdd(T t) {
-        propagateEvent(ResourceAction.ADDED, t, null);
+        propagateEvent(t);
       }
 
       @Override
@@ -64,23 +66,23 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
                 .equals(newObject.getMetadata().getResourceVersion())) {
           return;
         }
-        propagateEvent(ResourceAction.UPDATED, newObject, oldObject);
+        propagateEvent(newObject);
       }
 
       @Override
       public void onDelete(T t, boolean b) {
-        propagateEvent(ResourceAction.DELETED, t, null);
+        propagateEvent(t);
       }
     });
   }
 
-  private void propagateEvent(ResourceAction action, T object, T oldObject) {
+  private void propagateEvent(T object) {
     var uids = resourceToUIDs.apply(object);
     if (uids.isEmpty()) {
       return;
     }
     uids.forEach(uid -> {
-      InformerEvent event = new InformerEvent(action, object, oldObject);
+      DefaultEvent event = new DefaultEvent(CustomResourceID.fromResource(object));
       this.eventHandler.handleEvent(event);
     });
   }
