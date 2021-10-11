@@ -39,7 +39,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   @Deprecated
   private static EventMonitor monitor = EventMonitor.NOOP;
 
-  private final EventMarker eventMarker;
   private final Set<CustomResourceID> underProcessing = new HashSet<>();
   private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
@@ -51,6 +50,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private volatile boolean running;
   private final ResourceCache<R> resourceCache;
   private DefaultEventSourceManager<R> eventSourceManager;
+  private final EventMarker eventMarker;
 
   public DefaultEventHandler(ConfiguredController<R> controller, ResourceCache<R> resourceCache) {
     this(
@@ -59,18 +59,20 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
-        controller.getConfiguration().getConfigurationService().getMetrics().getEventMonitor());
+        controller.getConfiguration().getConfigurationService().getMetrics().getEventMonitor(),
+        new EventMarker());
   }
 
   DefaultEventHandler(EventDispatcher<R> eventDispatcher, ResourceCache<R> resourceCache,
       String relatedControllerName,
-      Retry retry) {
-    this(resourceCache, null, relatedControllerName, eventDispatcher, retry, null);
+      Retry retry, EventMarker eventMarker) {
+    this(resourceCache, null, relatedControllerName, eventDispatcher, retry, null, eventMarker);
   }
 
   private DefaultEventHandler(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
-      EventDispatcher<R> eventDispatcher, Retry retry, EventMonitor monitor) {
+      EventDispatcher<R> eventDispatcher, Retry retry, EventMonitor monitor,
+      EventMarker eventMarker) {
     this.running = true;
     this.executor =
         executor == null
@@ -82,7 +84,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.retry = retry;
     this.resourceCache = resourceCache;
     this.eventMonitor = monitor != null ? monitor : EventMonitor.NOOP;
-    this.eventMarker = new EventMarker();
+    this.eventMarker = eventMarker;
   }
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {

@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-// todo review all the use cases
 class DefaultEventHandlerTest {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandlerTest.class);
@@ -36,6 +35,7 @@ class DefaultEventHandlerTest {
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
+  private EventMarker eventMarker = new EventMarker();
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
   private DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
@@ -44,11 +44,11 @@ class DefaultEventHandlerTest {
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private DefaultEventHandler defaultEventHandler =
-      new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test", null);
+      new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test", null, eventMarker);
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
       new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test",
-          GenericRetry.defaultLimitedExponentialRetry());
+          GenericRetry.defaultLimitedExponentialRetry(), eventMarker);
 
   @BeforeEach
   public void setup() {
@@ -87,23 +87,7 @@ class DefaultEventHandlerTest {
   }
 
   @Test
-  public void cleanUpAfterDeleteEvent() {
-    TestCustomResource customResource = testCustomResource();
-    when(resourceCache.getCustomResource(CustomResourceID.fromResource(customResource)))
-        .thenReturn(Optional.of(customResource));
-    CustomResourceEvent event =
-        new CustomResourceEvent(DELETED, customResource);
-
-    defaultEventHandler.handleEvent(event);
-
-    waitMinimalTime();
-    verify(defaultEventSourceManagerMock, times(1))
-        .cleanup(CustomResourceID.fromResource(customResource));
-  }
-
-  @Test
   public void schedulesAnEventRetryOnException() {
-    Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
 
     ExecutionScope executionScope = new ExecutionScope(customResource, null);
@@ -195,7 +179,6 @@ class DefaultEventHandlerTest {
         .scheduleOnce(any(), eq(testDelay));
   }
 
-  // todo "flakes" from console
   @Test
   public void reScheduleOnlyIfNotExecutedBufferedEvents() {
     var testDelay = 10000l;
@@ -225,6 +208,31 @@ class DefaultEventHandlerTest {
     }
   }
 
+  @Test
+  public void cleansUpWhenDeleteEventReceivedAndNoEventPresent() {
+    Event deleteEvent =
+        new CustomResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
+
+    defaultEventHandler.handleEvent(deleteEvent);
+
+    verify(defaultEventSourceManagerMock, times(1))
+        .cleanup(eq(deleteEvent.getRelatedCustomResourceID()));
+  }
+
+  @Test
+  public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
+    var cr = testCustomResource(new CustomResourceID(UUID.randomUUID().toString()));
+    var crEvent = prepareCREvent(CustomResourceID.fromResource(cr));
+    eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
+    var executionScope = new ExecutionScope(cr, null);
+
+    defaultEventHandler.eventProcessingFinished(executionScope,
+        PostExecutionControl.defaultDispatch());
+
+    verify(defaultEventSourceManagerMock, times(1))
+        .cleanup(eq(crEvent.getRelatedCustomResourceID()));
+  }
+
   private CustomResourceID eventAlreadyUnderProcessing() {
     when(eventDispatcherMock.handleExecution(any()))
         .then(
@@ -244,7 +252,8 @@ class DefaultEventHandlerTest {
   private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
     when(resourceCache.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
-    return new CustomResourceEvent(ResourceAction.UPDATED, customResource);
+    return new CustomResourceEvent(ResourceAction.UPDATED,
+        CustomResourceID.fromResource(customResource));
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {

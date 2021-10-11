@@ -112,7 +112,8 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
             CustomResourceEventFilters.generationAware()));
 
     if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
-      eventHandler.handleEvent(new CustomResourceEvent(action, clone(customResource)));
+      eventHandler.handleEvent(
+          new CustomResourceEvent(action, CustomResourceID.fromResource(customResource)));
     } else {
       log.debug(
           "Skipping event handling resource {} with version: {}",
