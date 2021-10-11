@@ -70,7 +70,7 @@ public class InformerEventSourceIT {
   private void waitForCRStatusValue(String value) {
     await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
       var cr =
-          operator.getNamedResource(InformerEventSourceTestCustomResource.class, RESOURCE_NAME);
+          operator.get(InformerEventSourceTestCustomResource.class, RESOURCE_NAME);
       assertThat(cr.getStatus()).isNotNull();
       assertThat(cr.getStatus().getConfigMapValue()).isEqualTo(value);
     });

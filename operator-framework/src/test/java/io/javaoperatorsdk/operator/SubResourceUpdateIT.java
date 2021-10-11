@@ -99,7 +99,7 @@ public class SubResourceUpdateIT {
         .untilAsserted(
             () -> {
               SubResourceTestCustomResource cr =
-                  operator.getNamedResource(SubResourceTestCustomResource.class, name);
+                  operator.get(SubResourceTestCustomResource.class, name);
               assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
