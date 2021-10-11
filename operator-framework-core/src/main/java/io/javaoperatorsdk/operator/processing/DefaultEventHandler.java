@@ -270,7 +270,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   }
 
   private void cleanupAfterDeletedEvent(CustomResourceID customResourceUid) {
-    eventSourceManager.cleanup(customResourceUid);
+    eventSourceManager.deRegisterCustomResourceFromEventSources(customResourceUid);
     eventBuffer.cleanup(customResourceUid);
   }
 

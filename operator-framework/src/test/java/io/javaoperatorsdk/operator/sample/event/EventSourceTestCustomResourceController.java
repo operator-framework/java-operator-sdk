@@ -32,7 +32,7 @@ public class EventSourceTestCustomResourceController
 
   @Override
   public void init(EventSourceManager eventSourceManager) {
-    eventSourceManager.registerEventSource("Timer", timerEventSource);
+    eventSourceManager.registerEventSource(timerEventSource);
   }
 
   @Override

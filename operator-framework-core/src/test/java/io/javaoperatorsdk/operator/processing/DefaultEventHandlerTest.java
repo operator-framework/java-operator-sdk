@@ -119,7 +119,7 @@ class DefaultEventHandlerTest {
 
     waitMinimalTime();
     verify(defaultEventSourceManagerMock, times(1))
-        .cleanup(CustomResourceID.fromResource(customResource));
+        .deRegisterCustomResourceFromEventSources(CustomResourceID.fromResource(customResource));
   }
 
   @Test

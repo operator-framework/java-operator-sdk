@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,7 +21,7 @@ public interface EventSourceManager<T extends CustomResource<?, ?>> extends Clos
    *         registered.
    * @throws OperatorException if an error occurred during the registration process
    */
-  void registerEventSource(String name, EventSource eventSource)
+  void registerEventSource(EventSource eventSource)
       throws IllegalStateException, OperatorException;
 
   /**
@@ -31,12 +32,10 @@ public interface EventSourceManager<T extends CustomResource<?, ?>> extends Clos
    * @return an optional {@link EventSource} which would be empty if no {@link EventSource} have
    *         been registered with the given name.
    */
-  Optional<EventSource> deRegisterEventSource(String name);
 
-  Optional<EventSource> deRegisterCustomResourceFromEventSource(
-      String name, CustomResourceID customResourceUid);
+  void deRegisterCustomResourceFromEventSources(CustomResourceID customResourceUid);
 
-  Map<String, EventSource> getRegisteredEventSources();
+  List<EventSource> getRegisteredEventSources();
 
   CustomResourceEventSource<T> getCustomResourceEventSource();
 
