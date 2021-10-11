@@ -198,9 +198,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (retry != null && postExecutionControl.exceptionDuringExecution()) {
         handleRetryOnException(executionScope);
         // todo revisit monitoring since events are not present anymore
-        // final var monitor = monitor();
-        // executionScope.getEvents()
-        // .forEach(e -> monitor.failedEvent(executionScope.getCustomResourceID(), e));
+        // final var monitor = monitor(); executionScope.getEvents().forEach(e ->
+        // monitor.failedEvent(executionScope.getCustomResourceID(), e));
         return;
       }
 
