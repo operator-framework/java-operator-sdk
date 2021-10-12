@@ -18,7 +18,7 @@ import javax.tools.StandardLocation;
  */
 class AccumulativeMappingWriter {
 
-  private Map<String, String> mappings = new ConcurrentHashMap<>();
+  private final Map<String, String> mappings = new ConcurrentHashMap<>();
   private final String resourcePath;
   private final ProcessingEnvironment processingEnvironment;
 

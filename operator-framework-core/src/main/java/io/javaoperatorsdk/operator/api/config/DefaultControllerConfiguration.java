@@ -19,7 +19,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
   private final CustomResourceEventFilter<R> customResourceEventFilter;
-  private Class<R> customResourceClass;
+  private final Class<R> customResourceClass;
   private ConfigurationService service;
 
   public DefaultControllerConfiguration(
@@ -52,29 +52,6 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
         customResourceClass == null ? ControllerConfiguration.super.getCustomResourceClass()
             : customResourceClass;
     setConfigurationService(service);
-  }
-
-  @Deprecated
-  public DefaultControllerConfiguration(
-      String associatedControllerClassName,
-      String name,
-      String crdName,
-      String finalizer,
-      boolean generationAware,
-      Set<String> namespaces,
-      RetryConfiguration retryConfiguration) {
-    this(
-        associatedControllerClassName,
-        name,
-        crdName,
-        finalizer,
-        generationAware,
-        namespaces,
-        retryConfiguration,
-        null,
-        null,
-        null,
-        null);
   }
 
   @Override

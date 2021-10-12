@@ -12,12 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -48,9 +47,9 @@ class TimerEventSourceTest {
       assertThat(eventHandlerMock.events)
           .hasSizeGreaterThan(2);
       assertThat(eventHandlerMock.events)
-          .allMatch(e -> e.getRelatedCustomResourceUid().equals(getUID(customResource)));
-      assertThat(eventHandlerMock.events)
-          .allMatch(e -> e.getEventSource().equals(timerEventSource));
+          .allMatch(e -> e.getRelatedCustomResourceID()
+              .equals(CustomResourceID.fromResource(customResource)));
+
     });
   }
 
@@ -61,7 +60,8 @@ class TimerEventSourceTest {
     timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
     untilAsserted(() -> assertThat(eventHandlerMock.events).hasSizeGreaterThan(1));
 
-    timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
+    timerEventSource
+        .eventSourceDeRegisteredForResource(CustomResourceID.fromResource(customResource));
 
     int size = eventHandlerMock.events.size();
     untilAsserted(() -> assertThat(eventHandlerMock.events).hasSize(size));
@@ -82,7 +82,7 @@ class TimerEventSourceTest {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
-    timerEventSource.cancelOnceSchedule(KubernetesResourceUtils.getUID(customResource));
+    timerEventSource.cancelOnceSchedule(CustomResourceID.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }
@@ -102,7 +102,8 @@ class TimerEventSourceTest {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
-    timerEventSource.eventSourceDeRegisteredForResource(getUID(customResource));
+    timerEventSource
+        .eventSourceDeRegisteredForResource(CustomResourceID.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }

@@ -177,7 +177,6 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -363,6 +362,7 @@
             <id>release</id>
             <build>
                 <plugins>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
@@ -431,5 +431,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>

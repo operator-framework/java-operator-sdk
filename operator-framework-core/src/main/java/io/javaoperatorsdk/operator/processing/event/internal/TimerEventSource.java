@@ -11,23 +11,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
 public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEventSource {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private final Timer timer = new Timer();
   private final AtomicBoolean running = new AtomicBoolean();
-  private final Map<String, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
-  private final Map<String, EventProducerTimeTask> timerTasks = new ConcurrentHashMap<>();
+  private final Map<CustomResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
+  private final Map<CustomResourceID, EventProducerTimeTask> timerTasks = new ConcurrentHashMap<>();
 
   public void schedule(R customResource, long delay, long period) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
 
-    String resourceUid = KubernetesResourceUtils.getUID(customResource);
+    CustomResourceID resourceUid = CustomResourceID.fromResource(customResource);
     if (timerTasks.containsKey(resourceUid)) {
       return;
     }
@@ -40,8 +40,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
-
-    String resourceUid = KubernetesResourceUtils.getUID(customResource);
+    CustomResourceID resourceUid = CustomResourceID.fromResource(customResource);
     if (onceTasks.containsKey(resourceUid)) {
       cancelOnceSchedule(resourceUid);
     }
@@ -51,19 +50,19 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
   }
 
   @Override
-  public void eventSourceDeRegisteredForResource(String customResourceUid) {
+  public void eventSourceDeRegisteredForResource(CustomResourceID customResourceUid) {
     cancelSchedule(customResourceUid);
     cancelOnceSchedule(customResourceUid);
   }
 
-  public void cancelSchedule(String customResourceUid) {
-    TimerTask timerTask = timerTasks.remove(customResourceUid);
+  public void cancelSchedule(CustomResourceID customResourceID) {
+    TimerTask timerTask = timerTasks.remove(customResourceID);
     if (timerTask != null) {
       timerTask.cancel();
     }
   }
 
-  public void cancelOnceSchedule(String customResourceUid) {
+  public void cancelOnceSchedule(CustomResourceID customResourceUid) {
     TimerTask timerTask = onceTasks.remove(customResourceUid);
     if (timerTask != null) {
       timerTask.cancel();
@@ -85,9 +84,9 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
 
   public class EventProducerTimeTask extends TimerTask {
 
-    protected final String customResourceUid;
+    protected final CustomResourceID customResourceUid;
 
-    public EventProducerTimeTask(String customResourceUid) {
+    public EventProducerTimeTask(CustomResourceID customResourceUid) {
       this.customResourceUid = customResourceUid;
     }
 
@@ -95,7 +94,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
     public void run() {
       if (running.get()) {
         log.debug("Producing event for custom resource id: {}", customResourceUid);
-        eventHandler.handleEvent(new TimerEvent(customResourceUid, TimerEventSource.this));
+        eventHandler.handleEvent(new TimerEvent(customResourceUid));
       }
     }
   }

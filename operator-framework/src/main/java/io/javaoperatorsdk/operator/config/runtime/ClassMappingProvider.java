@@ -36,7 +36,7 @@ class ClassMappingProvider {
                   throw new IllegalStateException(
                       String.format(
                           "%s is not valid Mapping metadata, defined in %s",
-                          clazzPair, url.toString()));
+                          clazzPair, url));
                 }
 
                 result.put(

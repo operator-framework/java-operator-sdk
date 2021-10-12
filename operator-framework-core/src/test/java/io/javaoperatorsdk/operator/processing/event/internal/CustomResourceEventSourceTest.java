@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.Metrics;
@@ -41,13 +40,19 @@ class CustomResourceEventSourceTest {
 
   @Test
   public void skipsEventHandlingIfGenerationNotIncreased() {
-    TestCustomResource customResource1 = TestUtils.testCustomResource();
-    customResource1.getMetadata().setFinalizers(List.of(FINALIZER));
+    TestCustomResource customResource = TestUtils.testCustomResource();
+    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
+    customResource.getMetadata().setGeneration(2L);
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    TestCustomResource oldCustomResource = TestUtils.testCustomResource();
+    oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
+
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+        oldCustomResource);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+        customResource);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -55,12 +60,14 @@ class CustomResourceEventSourceTest {
   public void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
     // mark for deletion
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -68,11 +75,13 @@ class CustomResourceEventSourceTest {
   public void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setGeneration(2L);
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -84,10 +93,12 @@ class CustomResourceEventSourceTest {
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -95,10 +106,12 @@ class CustomResourceEventSourceTest {
   public void eventNotMarkedForLastGenerationIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 

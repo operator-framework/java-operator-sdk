@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -17,12 +16,12 @@ public class AnnotationConfiguration<R extends CustomResource>
     implements ControllerConfiguration<R> {
 
   private final ResourceController<R> controller;
-  private final Optional<Controller> annotation;
+  private final Controller annotation;
   private ConfigurationService service;
 
   public AnnotationConfiguration(ResourceController<R> controller) {
     this.controller = controller;
-    this.annotation = Optional.ofNullable(controller.getClass().getAnnotation(Controller.class));
+    this.annotation = controller.getClass().getAnnotation(Controller.class);
   }
 
   @Override
@@ -32,15 +31,16 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public String getFinalizer() {
-    return annotation
-        .map(Controller::finalizerName)
-        .filter(Predicate.not(String::isBlank))
-        .orElse(ControllerUtils.getDefaultFinalizerName(getCRDName()));
+    if (annotation == null || annotation.finalizerName().isBlank()) {
+      return ControllerUtils.getDefaultFinalizerName(getCRDName());
+    } else {
+      return annotation.finalizerName();
+    }
   }
 
   @Override
   public boolean isGenerationAware() {
-    return annotation.map(Controller::generationAwareEventProcessing).orElse(true);
+    return valueOrDefault(annotation, Controller::generationAwareEventProcessing, true);
   }
 
   @Override
@@ -50,12 +50,12 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public Set<String> getNamespaces() {
-    return Set.of(annotation.map(Controller::namespaces).orElse(new String[] {}));
+    return Set.of(valueOrDefault(annotation, Controller::namespaces, new String[] {}));
   }
 
   @Override
   public String getLabelSelector() {
-    return annotation.map(Controller::labelSelector).orElse("");
+    return valueOrDefault(annotation, Controller::labelSelector, "");
   }
 
   @Override
@@ -78,9 +78,11 @@ public class AnnotationConfiguration<R extends CustomResource>
   public CustomResourceEventFilter<R> getEventFilter() {
     CustomResourceEventFilter<R> answer = null;
 
-    var filterTypes = annotation.map(Controller::eventFilters);
-    if (filterTypes.isPresent()) {
-      for (var filterType : filterTypes.get()) {
+    Class<CustomResourceEventFilter<R>>[] filterTypes =
+        (Class<CustomResourceEventFilter<R>>[]) valueOrDefault(annotation, Controller::eventFilters,
+            new Object[] {});
+    if (filterTypes.length > 0) {
+      for (var filterType : filterTypes) {
         try {
           CustomResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
 
@@ -94,10 +96,18 @@ public class AnnotationConfiguration<R extends CustomResource>
         }
       }
     }
-
     return answer != null
         ? answer
         : CustomResourceEventFilters.passthrough();
+  }
+
+  public static <T> T valueOrDefault(Controller controller, Function<Controller, T> mapper,
+      T defaultValue) {
+    if (controller == null) {
+      return defaultValue;
+    } else {
+      return mapper.apply(controller);
+    }
   }
 }
 

@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 
-public interface EventSourceManager extends Closeable {
+public interface EventSourceManager<T extends CustomResource<?, ?>> extends Closeable {
 
   /**
    * Add the {@link EventSource} identified by the given <code>name</code> to the event manager.
@@ -32,9 +34,11 @@ public interface EventSourceManager extends Closeable {
   Optional<EventSource> deRegisterEventSource(String name);
 
   Optional<EventSource> deRegisterCustomResourceFromEventSource(
-      String name, String customResourceUid);
+      String name, CustomResourceID customResourceUid);
 
   Map<String, EventSource> getRegisteredEventSources();
+
+  CustomResourceEventSource<T> getCustomResourceEventSource();
 
   @Override
   default void close() throws IOException {}

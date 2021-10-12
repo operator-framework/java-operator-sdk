@@ -11,11 +11,11 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 @Target({ElementType.TYPE})
 public @interface Controller {
 
-  String NULL = "";
+  String EMPTY_STRING = "";
   String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";
   String NO_FINALIZER = "JOSDK_NO_FINALIZER";
 
-  String name() default NULL;
+  String name() default EMPTY_STRING;
 
   /**
    * Optional finalizer name, if it is not provided, one will be automatically generated. If the
@@ -24,7 +24,7 @@ public @interface Controller {
    *
    * @return the finalizer name
    */
-  String finalizerName() default NULL;
+  String finalizerName() default EMPTY_STRING;
 
   /**
    * If true, will dispatch new event to the controller if generation increased since the last
@@ -50,7 +50,7 @@ public @interface Controller {
    *
    * @return the label selector
    */
-  String labelSelector() default NULL;
+  String labelSelector() default EMPTY_STRING;
 
 
   /**

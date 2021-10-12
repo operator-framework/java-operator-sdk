@@ -20,5 +20,5 @@ public interface EventSource extends Closeable {
 
   void setEventHandler(EventHandler eventHandler);
 
-  default void eventSourceDeRegisteredForResource(String customResourceUid) {}
+  default void eventSourceDeRegisteredForResource(CustomResourceID customResourceUid) {}
 }

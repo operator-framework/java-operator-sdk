@@ -168,7 +168,6 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
       if (deleteControl == DeleteControl.DEFAULT_DELETE
           && resource.hasFinalizer(configuration().getFinalizer())) {
         R customResource = removeFinalizer(resource);
-        // todo: should we patch the resource to remove the finalizer instead of updating it
         return PostExecutionControl.customResourceUpdated(customResource);
       }
     }
