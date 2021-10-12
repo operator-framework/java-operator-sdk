@@ -26,15 +26,15 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     Closeable {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
-  private final KubernetesClient k8sClient;
+  private final KubernetesClient kubernetesClient;
   private EventSourceManager eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
-      KubernetesClient k8sClient) {
+      KubernetesClient kubernetesClient) {
     this.controller = controller;
     this.configuration = configuration;
-    this.k8sClient = k8sClient;
+    this.kubernetesClient = kubernetesClient;
   }
 
   @Override
@@ -140,11 +140,11 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   }
 
   public KubernetesClient getClient() {
-    return k8sClient;
+    return kubernetesClient;
   }
 
   public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
-    return k8sClient.resources(configuration.getCustomResourceClass());
+    return kubernetesClient.resources(configuration.getCustomResourceClass());
   }
 
   /**
@@ -164,7 +164,8 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     // check that the custom resource is known by the cluster if configured that way
     final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
     if (configuration.getConfigurationService().checkCRDAndValidateLocalModel()) {
-      crd = k8sClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
+      crd =
+          kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
       if (crd == null) {
         throwMissingCRDException(crdName, specVersion, controllerName);
       }

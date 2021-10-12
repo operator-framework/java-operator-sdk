@@ -241,17 +241,18 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    */
   private void handleRetryOnException(ExecutionScope<R> executionScope) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
+    var customResourceID = executionScope.getCustomResourceID();
     EventMarker.EventingState eventingState =
-        eventMarker.getEventingState(executionScope.getCustomResourceID());
+        eventMarker.getEventingState(customResourceID);
     boolean newEventsExists =
         eventingState == EventMarker.EventingState.EVENT_PRESENT ||
             eventingState == EventMarker.EventingState.DELETE_AND_NON_DELETE_EVENT_PRESENT;
-    eventMarker.markEventReceived(executionScope.getCustomResourceID());
+    eventMarker.markEventReceived(customResourceID);
 
     if (newEventsExists) {
       log.debug("New events exists for for resource id: {}",
-          executionScope.getCustomResourceID());
-      submitReconciliationExecution(executionScope.getCustomResourceID());
+          customResourceID);
+      submitReconciliationExecution(customResourceID);
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
@@ -261,7 +262,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
           log.debug(
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
-              executionScope.getCustomResourceID());
+              customResourceID);
           eventSourceManager
               .getRetryTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);

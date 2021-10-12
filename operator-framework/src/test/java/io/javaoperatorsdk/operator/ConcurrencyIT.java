@@ -58,7 +58,7 @@ public class ConcurrencyIT {
     // update some resources
     for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
       TestCustomResource tcr =
-          operator.getNamedResource(TestCustomResource.class,
+          operator.get(TestCustomResource.class,
               TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
       tcr.getSpec().setValue(i + UPDATED_SUFFIX);
       operator.resources(TestCustomResource.class)

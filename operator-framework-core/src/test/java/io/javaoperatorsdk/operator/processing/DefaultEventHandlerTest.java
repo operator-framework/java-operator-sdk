@@ -181,7 +181,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void reScheduleOnlyIfNotExecutedBufferedEvents() {
-    var testDelay = 10000l;
+    var testDelay = 10000L;
     when(eventDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
 

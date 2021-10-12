@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
 import java.util.Set;
+import java.util.function.Function;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -30,7 +31,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public String getFinalizer() {
-    if (annotation.finalizerName().isBlank()) {
+    if (annotation == null || annotation.finalizerName().isBlank()) {
       return ControllerUtils.getDefaultFinalizerName(getCRDName());
     } else {
       return annotation.finalizerName();
@@ -39,7 +40,7 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public boolean isGenerationAware() {
-    return annotation.generationAwareEventProcessing();
+    return valueOrDefault(annotation, Controller::generationAwareEventProcessing, true);
   }
 
   @Override
@@ -49,12 +50,12 @@ public class AnnotationConfiguration<R extends CustomResource>
 
   @Override
   public Set<String> getNamespaces() {
-    return Set.of(annotation.namespaces());
+    return Set.of(valueOrDefault(annotation, Controller::namespaces, new String[] {}));
   }
 
   @Override
   public String getLabelSelector() {
-    return annotation.labelSelector();
+    return valueOrDefault(annotation, Controller::labelSelector, "");
   }
 
   @Override
@@ -77,7 +78,9 @@ public class AnnotationConfiguration<R extends CustomResource>
   public CustomResourceEventFilter<R> getEventFilter() {
     CustomResourceEventFilter<R> answer = null;
 
-    var filterTypes = annotation.eventFilters();
+    Class<CustomResourceEventFilter<R>>[] filterTypes =
+        (Class<CustomResourceEventFilter<R>>[]) valueOrDefault(annotation, Controller::eventFilters,
+            new Object[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
         try {
@@ -93,10 +96,18 @@ public class AnnotationConfiguration<R extends CustomResource>
         }
       }
     }
-
     return answer != null
         ? answer
         : CustomResourceEventFilters.passthrough();
+  }
+
+  public static <T> T valueOrDefault(Controller controller, Function<Controller, T> mapper,
+      T defaultValue) {
+    if (controller == null) {
+      return defaultValue;
+    } else {
+      return mapper.apply(controller);
+    }
   }
 }
 
