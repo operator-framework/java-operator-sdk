@@ -36,7 +36,7 @@ public class UpdatingResAndSubResIT {
 
     DoubleUpdateTestCustomResource customResource =
         operator
-            .getNamedResource(DoubleUpdateTestCustomResource.class,
+            .get(DoubleUpdateTestCustomResource.class,
                 resource.getMetadata().getName());
 
     assertThat(TestUtils.getNumberOfExecutions(operator))
@@ -57,7 +57,7 @@ public class UpdatingResAndSubResIT {
         .untilAsserted(
             () -> {
               DoubleUpdateTestCustomResource cr =
-                  operator.getNamedResource(DoubleUpdateTestCustomResource.class, name);
+                  operator.get(DoubleUpdateTestCustomResource.class, name);
 
               assertThat(cr)
                   .isNotNull();

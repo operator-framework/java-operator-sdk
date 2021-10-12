@@ -67,6 +67,11 @@ public class OperatorExtension
     this.waitForNamespaceDeletion = waitForNamespaceDeletion;
   }
 
+  /**
+   * Creates a {@link Builder} to set up an {@link OperatorExtension} instance.
+   *
+   * @return the builder.
+   */
   public static Builder builder() {
     return new Builder();
   }
@@ -123,7 +128,7 @@ public class OperatorExtension
     return kubernetesClient.resources(type).inNamespace(namespace);
   }
 
-  public <T extends HasMetadata> T getNamedResource(Class<T> type, String name) {
+  public <T extends HasMetadata> T get(Class<T> type, String name) {
     return kubernetesClient.resources(type).inNamespace(namespace).withName(name).get();
   }
 
@@ -133,10 +138,6 @@ public class OperatorExtension
 
   public <T extends HasMetadata> T replace(Class<T> type, T resource) {
     return kubernetesClient.resources(type).inNamespace(namespace).replace(resource);
-  }
-
-  public <T extends HasMetadata> T get(Class<T> type, String name) {
-    return kubernetesClient.resources(type).inNamespace(namespace).withName(name).get();
   }
 
 
