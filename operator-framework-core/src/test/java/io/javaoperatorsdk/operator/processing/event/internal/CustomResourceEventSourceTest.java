@@ -40,14 +40,19 @@ class CustomResourceEventSourceTest {
 
   @Test
   public void skipsEventHandlingIfGenerationNotIncreased() {
-    TestCustomResource customResource1 = TestUtils.testCustomResource();
-    customResource1.getMetadata().setFinalizers(List.of(FINALIZER));
+    TestCustomResource customResource = TestUtils.testCustomResource();
+    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
+    customResource.getMetadata().setGeneration(2L);
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1, null);
+    TestCustomResource oldCustomResource = TestUtils.testCustomResource();
+    oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
+
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+        oldCustomResource);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
-        customResource1);
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+        customResource);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
