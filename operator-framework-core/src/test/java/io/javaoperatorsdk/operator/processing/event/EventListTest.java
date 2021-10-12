@@ -13,10 +13,11 @@ class EventListTest {
 
   @Test
   public void returnsLatestOfEventType() {
-    TimerEvent event2 = new TimerEvent("1", null);
+    TimerEvent event2 = new TimerEvent(new CustomResourceID("name1"));
     EventList eventList =
         new EventList(
-            Arrays.asList(mock(Event.class), new TimerEvent("2", null), event2, mock(Event.class)));
+            Arrays.asList(mock(Event.class), new TimerEvent(new CustomResourceID("name2")), event2,
+                mock(Event.class)));
 
     assertThat(eventList.getLatestOfType(TimerEvent.class).get()).isEqualTo(event2);
   }

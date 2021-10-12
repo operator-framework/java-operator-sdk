@@ -18,7 +18,7 @@ public class ControllerUtils {
     final var annotation = controllerClass.getAnnotation(Controller.class);
     if (annotation != null) {
       final var name = annotation.name();
-      if (!Controller.NULL.equals(name)) {
+      if (!Controller.EMPTY_STRING.equals(name)) {
         return name;
       }
     }

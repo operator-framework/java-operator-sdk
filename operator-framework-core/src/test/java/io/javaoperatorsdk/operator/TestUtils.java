@@ -6,16 +6,14 @@ import java.util.UUID;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 
 public class TestUtils {
 
-  public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
-  public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
-
   public static TestCustomResource testCustomResource() {
-    return testCustomResource(UUID.randomUUID().toString());
+    return testCustomResource(new CustomResourceID(UUID.randomUUID().toString(), "test"));
   }
 
   public static CustomResourceDefinition testCRD(String scope) {
@@ -29,14 +27,13 @@ public class TestUtils {
         .build();
   }
 
-  public static TestCustomResource testCustomResource(String uid) {
+  public static TestCustomResource testCustomResource(CustomResourceID id) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(
         new ObjectMetaBuilder()
-            .withName(TEST_CUSTOM_RESOURCE_NAME)
-            .withUid(uid)
+            .withName(id.getName())
             .withGeneration(1L)
-            .withNamespace(TEST_NAMESPACE)
+            .withNamespace(id.getNamespace().orElse(null))
             .build());
     resource.getMetadata().setAnnotations(new HashMap<>());
     resource.setKind("CustomService");
@@ -46,4 +43,6 @@ public class TestUtils {
     resource.getSpec().setValue("test-value");
     return resource;
   }
+
+
 }
