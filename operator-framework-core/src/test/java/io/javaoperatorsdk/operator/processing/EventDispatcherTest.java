@@ -268,7 +268,6 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(
         new ExecutionScope(
-            List.of(),
             testCustomResource,
             new RetryInfo() {
               @Override
