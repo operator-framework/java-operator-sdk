@@ -79,7 +79,12 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(ResourceAction.UPDATED, cr, null);
+    TestCustomResource cr2 = TestUtils.testCustomResource();
+    cr.getMetadata().setFinalizers(List.of(FINALIZER));
+    cr.getMetadata().setGeneration(2L);
+    cr.getStatus().setConfigMapStatus("1");
+
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr2);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
