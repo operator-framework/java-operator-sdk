@@ -8,9 +8,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.KubernetesResourceUtils;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.eq;
@@ -24,7 +22,7 @@ class DefaultEventSourceManagerTest {
 
   private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
   private DefaultEventSourceManager defaultEventSourceManager =
-      new DefaultEventSourceManager(defaultEventHandlerMock, false);
+      new DefaultEventSourceManager(defaultEventHandlerMock);
 
   @Test
   public void registersEventSource() {
@@ -34,7 +32,7 @@ class DefaultEventSourceManagerTest {
 
     Map<String, EventSource> registeredSources =
         defaultEventSourceManager.getRegisteredEventSources();
-    assertThat(registeredSources.entrySet()).hasSize(1);
+    assertThat(registeredSources.entrySet()).hasSize(2);
     assertThat(registeredSources.get(CUSTOM_EVENT_SOURCE_NAME)).isEqualTo(eventSource);
     verify(eventSource, times(1)).setEventHandler(eq(defaultEventHandlerMock));
     verify(eventSource, times(1)).start();
@@ -61,9 +59,8 @@ class DefaultEventSourceManagerTest {
     defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(
-            () -> {
-              defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource2);
-            });
+            () -> defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME,
+                eventSource2));
   }
 
   @Test
@@ -73,9 +70,9 @@ class DefaultEventSourceManagerTest {
     defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
 
     defaultEventSourceManager.deRegisterCustomResourceFromEventSource(
-        CUSTOM_EVENT_SOURCE_NAME, getUID(customResource));
+        CUSTOM_EVENT_SOURCE_NAME, CustomResourceID.fromResource(customResource));
 
     verify(eventSource, times(1))
-        .eventSourceDeRegisteredForResource(eq(KubernetesResourceUtils.getUID(customResource)));
+        .eventSourceDeRegisteredForResource(eq(CustomResourceID.fromResource(customResource)));
   }
 }

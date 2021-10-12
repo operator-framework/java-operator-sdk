@@ -1,30 +1,20 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import java.util.Optional;
-import java.util.function.Predicate;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
-import io.javaoperatorsdk.operator.processing.event.EventSource;
 
-public class InformerEvent<T> extends DefaultEvent {
+public class InformerEvent<T extends HasMetadata> extends DefaultEvent {
 
-  private Action action;
-  private T resource;
-  private T oldResource;
+  private final ResourceAction action;
+  private final T resource;
+  private final T oldResource;
 
-  public InformerEvent(String relatedCustomResourceUid, EventSource eventSource, Action action,
-      T resource,
-      T oldResource) {
-    this(new UIDMatchingPredicate(relatedCustomResourceUid), eventSource, action, resource,
-        oldResource);
-
-  }
-
-  public InformerEvent(Predicate<CustomResource> customResourcesSelector, EventSource eventSource,
-      Action action,
+  public InformerEvent(ResourceAction action,
       T resource, T oldResource) {
-    super(customResourcesSelector, eventSource);
+    super(CustomResourceID.fromResource(resource));
     this.action = action;
     this.resource = resource;
     this.oldResource = oldResource;
@@ -38,11 +28,8 @@ public class InformerEvent<T> extends DefaultEvent {
     return Optional.ofNullable(oldResource);
   }
 
-  public Action getAction() {
+  public ResourceAction getAction() {
     return action;
   }
 
-  public enum Action {
-    ADD, UPDATE, DELETE
-  }
 }

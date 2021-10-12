@@ -21,12 +21,12 @@ public final class PostExecutionControl<R extends CustomResource<?, ?>> {
     this.runtimeException = runtimeException;
   }
 
-  public static PostExecutionControl onlyFinalizerAdded() {
-    return new PostExecutionControl(true, null, null);
+  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> onlyFinalizerAdded() {
+    return new PostExecutionControl<>(true, null, null);
   }
 
-  public static PostExecutionControl defaultDispatch() {
-    return new PostExecutionControl(false, null, null);
+  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> defaultDispatch() {
+    return new PostExecutionControl<>(false, null, null);
   }
 
   public static <R extends CustomResource<?, ?>> PostExecutionControl<R> customResourceUpdated(
@@ -34,8 +34,9 @@ public final class PostExecutionControl<R extends CustomResource<?, ?>> {
     return new PostExecutionControl<>(false, updatedCustomResource, null);
   }
 
-  public static PostExecutionControl exceptionDuringExecution(RuntimeException exception) {
-    return new PostExecutionControl(false, null, exception);
+  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> exceptionDuringExecution(
+      RuntimeException exception) {
+    return new PostExecutionControl<>(false, null, exception);
   }
 
   public boolean isOnlyFinalizerHandled() {
@@ -54,7 +55,7 @@ public final class PostExecutionControl<R extends CustomResource<?, ?>> {
     return runtimeException != null;
   }
 
-  public PostExecutionControl withReSchedule(long delay) {
+  public PostExecutionControl<R> withReSchedule(long delay) {
     this.reScheduleDelay = delay;
     return this;
   }

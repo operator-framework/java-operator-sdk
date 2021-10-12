@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -11,6 +12,7 @@ import java.util.function.Consumer;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.util.collections.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +44,7 @@ import static org.mockito.Mockito.when;
 public class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);
+  public static final String NAMESPACE = "test";
 
   KubernetesMockServer server;
   KubernetesClient client;
@@ -112,11 +115,13 @@ public class CustomResourceSelectorTest {
           new MyConfiguration(configurationService, "app=bar"));
       o2.start();
 
-      client.resources(TestCustomResource.class).inNamespace("test").create(newMyResource("foo"));
-      client.resources(TestCustomResource.class).inNamespace("test").create(newMyResource("bar"));
+      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("foo",
+          NAMESPACE));
+      client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("bar",
+          NAMESPACE));
 
       await()
-          .atMost(5, TimeUnit.SECONDS)
+          .atMost(325, TimeUnit.SECONDS)
           .pollInterval(100, TimeUnit.MILLISECONDS)
           .until(() -> c1.get() == 1 && c1err.get() == 0);
       await()
@@ -133,9 +138,10 @@ public class CustomResourceSelectorTest {
     }
   }
 
-  public TestCustomResource newMyResource(String app) {
+  public TestCustomResource newMyResource(String app, String namespace) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(new ObjectMetaBuilder().withName(app).addToLabels("app", app).build());
+    resource.getMetadata().setNamespace(namespace);
     return resource;
   }
 
@@ -160,12 +166,17 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
+    public Set<String> getNamespaces() {
+      return Sets.newSet(NAMESPACE);
+    }
+
+    @Override
     public ConfigurationService getConfigurationService() {
       return service;
     }
   }
 
-  @Controller
+  @Controller(namespaces = NAMESPACE)
   public static class MyController implements ResourceController<TestCustomResource> {
 
     private final Consumer<TestCustomResource> consumer;

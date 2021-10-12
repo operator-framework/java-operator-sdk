@@ -12,33 +12,34 @@ import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<String>> resourceToUIDs;
+  private final Function<T, Set<CustomResourceID>> resourceToUIDs;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<String>> resourceToUIDs) {
+      Function<T, Set<CustomResourceID>> resourceToUIDs) {
     this(sharedInformer, resourceToUIDs, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<String>> resourceToUIDs) {
+      Function<T, Set<CustomResourceID>> resourceToUIDs) {
     this(client, type, resourceToUIDs, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<String>> resourceToUIDs,
+      Function<T, Set<CustomResourceID>> resourceToUIDs,
       boolean skipUpdateEventPropagationIfNoChange) {
     this(client.informers().sharedIndexInformerFor(type, 0), resourceToUIDs, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<String>> resourceToUIDs,
+      Function<T, Set<CustomResourceID>> resourceToUIDs,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
@@ -54,7 +55,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     sharedInformer.addEventHandler(new ResourceEventHandler<>() {
       @Override
       public void onAdd(T t) {
-        propagateEvent(InformerEvent.Action.ADD, t, null);
+        propagateEvent(ResourceAction.ADDED, t, null);
       }
 
       @Override
@@ -64,23 +65,23 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
                 .equals(newObject.getMetadata().getResourceVersion())) {
           return;
         }
-        propagateEvent(InformerEvent.Action.UPDATE, newObject, oldObject);
+        propagateEvent(ResourceAction.UPDATED, newObject, oldObject);
       }
 
       @Override
       public void onDelete(T t, boolean b) {
-        propagateEvent(InformerEvent.Action.DELETE, t, null);
+        propagateEvent(ResourceAction.DELETED, t, null);
       }
     });
   }
 
-  private void propagateEvent(InformerEvent.Action action, T object, T oldObject) {
+  private void propagateEvent(ResourceAction action, T object, T oldObject) {
     var uids = resourceToUIDs.apply(object);
     if (uids.isEmpty()) {
       return;
     }
     uids.forEach(uid -> {
-      InformerEvent event = new InformerEvent(uid, this, action, object, oldObject);
+      InformerEvent event = new InformerEvent(action, object, oldObject);
       this.eventHandler.handleEvent(event);
     });
   }

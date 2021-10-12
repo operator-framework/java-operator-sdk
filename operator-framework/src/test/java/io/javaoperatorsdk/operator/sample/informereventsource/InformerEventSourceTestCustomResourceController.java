@@ -27,7 +27,7 @@ public class InformerEventSourceTestCustomResourceController implements
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomResourceController.class);
 
-  public static final String RELATED_RESOURCE_UID = "relatedResourceUID";
+  public static final String RELATED_RESOURCE_UID = "relatedResourceName";
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
 
   private KubernetesClient kubernetesClient;

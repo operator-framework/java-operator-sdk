@@ -10,7 +10,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.Context;
@@ -22,7 +21,10 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.ADDED;
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.UPDATED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -72,7 +74,7 @@ class EventDispatcherTest {
   void addFinalizerOnNewResource() {
     assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
     verify(controller, never())
         .createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
@@ -85,7 +87,7 @@ class EventDispatcherTest {
   void callCreateOrUpdateOnNewResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
     verify(controller, times(1))
         .createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
   }
@@ -98,7 +100,7 @@ class EventDispatcherTest {
         .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
 
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
     verify(customResourceFacade, never()).replaceWithLock(any());
@@ -113,7 +115,7 @@ class EventDispatcherTest {
     when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     verify(customResourceFacade, times(1)).replaceWithLock(testCustomResource);
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
@@ -124,7 +126,7 @@ class EventDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
     verify(controller, times(1))
         .createOrUpdateResource(ArgumentMatchers.eq(testCustomResource), any());
   }
@@ -136,7 +138,7 @@ class EventDispatcherTest {
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     verify(controller, times(1)).deleteResource(eq(testCustomResource), any());
   }
@@ -148,7 +150,7 @@ class EventDispatcherTest {
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     verify(controller).deleteResource(eq(testCustomResource), any());
   }
@@ -158,7 +160,7 @@ class EventDispatcherTest {
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     verify(controller, never()).deleteResource(eq(testCustomResource), any());
   }
@@ -178,7 +180,7 @@ class EventDispatcherTest {
     configureToNotUseFinalizer();
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
   }
@@ -189,7 +191,7 @@ class EventDispatcherTest {
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
     verify(customResourceFacade, times(1)).replaceWithLock(any());
@@ -204,7 +206,7 @@ class EventDispatcherTest {
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
     verify(customResourceFacade, never()).replaceWithLock(any());
@@ -218,7 +220,7 @@ class EventDispatcherTest {
         .thenReturn(UpdateControl.noUpdate());
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
     verify(customResourceFacade, never()).replaceWithLock(any());
     verify(customResourceFacade, never()).updateStatus(testCustomResource);
   }
@@ -230,7 +232,7 @@ class EventDispatcherTest {
         .thenReturn(UpdateControl.noUpdate());
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
     verify(customResourceFacade, times(1)).replaceWithLock(any());
@@ -242,7 +244,7 @@ class EventDispatcherTest {
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     verify(customResourceFacade, never()).replaceWithLock(any());
     verify(controller, never()).deleteResource(eq(testCustomResource), any());
@@ -252,9 +254,9 @@ class EventDispatcherTest {
   void executeControllerRegardlessGenerationInNonGenerationAwareModeIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
     eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.MODIFIED, testCustomResource));
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     verify(controller, times(2)).createOrUpdateResource(eq(testCustomResource), any());
   }
@@ -265,7 +267,7 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(
         new ExecutionScope(
-            Arrays.asList(),
+            List.of(),
             testCustomResource,
             new RetryInfo() {
               @Override
@@ -295,12 +297,12 @@ class EventDispatcherTest {
 
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(
-            UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000l));
+            UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000L));
 
     PostExecutionControl control = eventDispatcher.handleExecution(
-        executionScopeWithCREvent(Watcher.Action.ADDED, testCustomResource));
+        executionScopeWithCREvent(ADDED, testCustomResource));
 
-    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000l);
+    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
   }
 
   private void markForDeletion(CustomResource customResource) {
@@ -312,8 +314,8 @@ class EventDispatcherTest {
   }
 
   public ExecutionScope executionScopeWithCREvent(
-      Watcher.Action action, CustomResource resource, Event... otherEvents) {
-    CustomResourceEvent event = new CustomResourceEvent(action, resource, null);
+      ResourceAction action, CustomResource resource, Event... otherEvents) {
+    CustomResourceEvent event = new CustomResourceEvent(action, resource);
     List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
     eventList.add(event);
     eventList.addAll(Arrays.asList(otherEvents));

@@ -2,9 +2,9 @@ package io.javaoperatorsdk.operator;
 
 import java.util.List;
 
-import io.fabric8.kubernetes.client.Watcher;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 
 public class EventListUtils {
 
@@ -13,7 +13,7 @@ public class EventListUtils {
         .anyMatch(
             e -> {
               if (e instanceof CustomResourceEvent) {
-                return ((CustomResourceEvent) e).getAction() == Watcher.Action.DELETED;
+                return ((CustomResourceEvent) e).getAction() == ResourceAction.DELETED;
               } else {
                 return false;
               }
