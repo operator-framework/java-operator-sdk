@@ -81,7 +81,7 @@ public class TestCustomResourceController
           resource.getSpec().getConfigMapName(),
           resource.getMetadata().getName());
     }
-    return DeleteControl.DEFAULT_DELETE;
+    return DeleteControl.defaultDelete();
   }
 
   @Override

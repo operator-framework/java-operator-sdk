@@ -66,7 +66,7 @@ class EventDispatcherTest {
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateCustomResource(testCustomResource));
     when(controller.deleteResource(eq(testCustomResource), any()))
-        .thenReturn(DeleteControl.DEFAULT_DELETE);
+        .thenReturn(DeleteControl.defaultDelete());
     when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
   }
 
@@ -202,7 +202,7 @@ class EventDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     when(controller.deleteResource(eq(testCustomResource), any()))
-        .thenReturn(DeleteControl.NO_FINALIZER_REMOVAL);
+        .thenReturn(DeleteControl.noFinalizerRemoval());
     markForDeletion(testCustomResource);
 
     eventDispatcher.handleExecution(
@@ -301,6 +301,21 @@ class EventDispatcherTest {
 
     PostExecutionControl control = eventDispatcher.handleExecution(
         executionScopeWithCREvent(ADDED, testCustomResource));
+
+    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
+  }
+
+  @Test
+  void reScheduleOnDeleteWithoutFinalizerRemoval() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+
+    when(controller.deleteResource(eq(testCustomResource), any()))
+        .thenReturn(
+            DeleteControl.noFinalizerRemoval().withReSchedule(1000L));
+
+    PostExecutionControl control = eventDispatcher.handleExecution(
+        executionScopeWithCREvent(UPDATED, testCustomResource));
 
     assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
   }

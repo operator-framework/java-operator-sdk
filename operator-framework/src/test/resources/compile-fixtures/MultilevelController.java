@@ -22,7 +22,7 @@ public class MultilevelController extends
 
   public DeleteControl deleteResource(MultilevelController.MyCustomResource customResource,
       Context<MultilevelController.MyCustomResource> context) {
-    return DeleteControl.DEFAULT_DELETE;
+    return DeleteControl.defaultDelete();
   }
 
 }
