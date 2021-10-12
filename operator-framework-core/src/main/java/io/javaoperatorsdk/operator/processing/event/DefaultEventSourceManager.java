@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -82,18 +80,18 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
         // leave untouched
         throw e;
       }
-      throw new OperatorException("Couldn't register event source: "+eventSource.getClass().getName(), e);
+      throw new OperatorException(
+          "Couldn't register event source: " + eventSource.getClass().getName(), e);
     } finally {
       lock.unlock();
     }
   }
 
-  @Override
-  public void deRegisterCustomResourceFromEventSources(CustomResourceID customResourceUid) {
+  public void cleanupForCustomResource(CustomResourceID customResourceUid) {
     lock.lock();
     try {
       for (EventSource eventSource : this.eventSources) {
-        eventSource.eventSourceDeRegisteredForResource(customResourceUid);
+        eventSource.cleanupForCustomResource(customResourceUid);
       }
     } finally {
       lock.unlock();
@@ -113,5 +111,5 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   public CustomResourceEventSource getCustomResourceEventSource() {
     return customResourceEventSource;
   }
-  
+
 }

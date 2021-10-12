@@ -37,7 +37,7 @@ public class InformerEventSourceTestCustomResourceController implements
   public void init(EventSourceManager eventSourceManager) {
     eventSource = new InformerEventSource<>(kubernetesClient, ConfigMap.class,
         Mappers.fromAnnotation(RELATED_RESOURCE_UID));
-    eventSourceManager.registerEventSource("configmap", eventSource);
+    eventSourceManager.registerEventSource(eventSource);
   }
 
   @Override
