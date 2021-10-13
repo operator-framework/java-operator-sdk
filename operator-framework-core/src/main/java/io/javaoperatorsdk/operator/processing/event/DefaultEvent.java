@@ -2,13 +2,12 @@ package io.javaoperatorsdk.operator.processing.event;
 
 @SuppressWarnings("rawtypes")
 public class DefaultEvent implements Event {
-  private final CustomResourceID relatedCustomResource;
 
+  private final CustomResourceID relatedCustomResource;
 
   public DefaultEvent(CustomResourceID targetCustomResource) {
     this.relatedCustomResource = targetCustomResource;
   }
-
 
   @Override
   public CustomResourceID getRelatedCustomResourceID() {

@@ -41,7 +41,6 @@ public class EventSourceTestCustomResourceController
 
     timerEventSource.schedule(resource, TIMER_DELAY, TIMER_PERIOD);
 
-    log.info("Events:: " + context.getEvents());
     numberOfExecutions.addAndGet(1);
     ensureStatusExists(resource);
     resource.getStatus().setState(EventSourceTestCustomResourceStatus.State.SUCCESS);

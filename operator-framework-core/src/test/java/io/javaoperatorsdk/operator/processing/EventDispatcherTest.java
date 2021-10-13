@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
@@ -267,7 +268,6 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(
         new ExecutionScope(
-            List.of(),
             testCustomResource,
             new RetryInfo() {
               @Override
@@ -330,10 +330,11 @@ class EventDispatcherTest {
 
   public ExecutionScope executionScopeWithCREvent(
       ResourceAction action, CustomResource resource, Event... otherEvents) {
-    CustomResourceEvent event = new CustomResourceEvent(action, resource);
+    CustomResourceEvent event =
+        new CustomResourceEvent(action, CustomResourceID.fromResource(resource));
     List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
     eventList.add(event);
     eventList.addAll(Arrays.asList(otherEvents));
-    return new ExecutionScope(eventList, resource, null);
+    return new ExecutionScope(resource, null);
   }
 }
