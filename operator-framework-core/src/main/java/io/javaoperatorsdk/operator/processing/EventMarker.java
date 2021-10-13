@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 
 /**
  * Manages the state of received events. Basically there can be only three distinct states relevant
- * for event processing. Either an even is received, so we eventually process or no event for
+ * for event processing. Either an event is received, so we eventually process or no event for
  * processing at the moment. The third case is if a DELETE event is received, this is a special case
  * meaning that the custom resource is deleted. We don't want to do any processing anymore is other
  * events are irrelevant for us from this point. Note that the dependant resources are either
