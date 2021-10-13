@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.processing.event.Event;
  * Manages the state of received events. Basically there can be only three distinct states relevant
  * for event processing. Either an event is received, so we eventually process or no event for
  * processing at the moment. The third case is if a DELETE event is received, this is a special case
- * meaning that the custom resource is deleted. We don't want to do any processing anymore is other
+ * meaning that the custom resource is deleted. We don't want to do any processing anymore so other
  * events are irrelevant for us from this point. Note that the dependant resources are either
  * cleaned up by K8S garbage collection or by the controller implementation for cleanup.
  */
