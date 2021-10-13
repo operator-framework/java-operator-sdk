@@ -6,12 +6,15 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 public interface ResourceController<R extends CustomResource> {
 
   /**
+   * Note that this method is used in combination of finalizers. If automatic finalizer handling is
+   * turned off for the controller, this method is not called.
+   *
    * The implementation should delete the associated component(s). Note that this is method is
    * called when an object is marked for deletion. After it's executed the custom resource finalizer
    * is automatically removed by the framework; unless the return value is
    * {@link DeleteControl#noFinalizerRemoval()}, which indicates that the controller has determined
-   * that the resource should not be deleted yet, in which case it is up to the controller to
-   * restore the resource's status so that it's not marked for deletion anymore.
+   * that the resource should not be deleted yet. This is usually a corner case, when a cleanup is
+   * tried again eventually.
    *
    * <p>
    * It's important that this method be idempotent, as it could be called several times, depending
