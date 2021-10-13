@@ -21,6 +21,6 @@ public class ControllerImplemented2Interfaces implements Serializable, ResourceC
 
     @Override
     public DeleteControl deleteResource(MyCustomResource customResource, Context<MyCustomResource> context) {
-        return DeleteControl.DEFAULT_DELETE;
+        return DeleteControl.defaultDelete();
     }
 }
