@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -21,7 +21,7 @@ public interface EventSourceManager<T extends CustomResource<?, ?>> extends Clos
   void registerEventSource(EventSource eventSource)
       throws IllegalStateException, OperatorException;
 
-  List<EventSource> getRegisteredEventSources();
+  Set<EventSource> getRegisteredEventSources();
 
   CustomResourceEventSource<T> getCustomResourceEventSource();
 

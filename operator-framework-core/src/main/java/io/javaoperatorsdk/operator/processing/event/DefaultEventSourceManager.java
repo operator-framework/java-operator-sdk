@@ -20,7 +20,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  private final List<EventSource> eventSources = Collections.synchronizedList(new ArrayList<>());
+  private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource<R> retryTimerEventSource;
   private CustomResourceEventSource customResourceEventSource;
@@ -103,8 +103,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public List<EventSource> getRegisteredEventSources() {
-    return Collections.unmodifiableList(eventSources);
+  public Set<EventSource> getRegisteredEventSources() {
+    return Collections.unmodifiableSet(eventSources);
   }
 
   @Override

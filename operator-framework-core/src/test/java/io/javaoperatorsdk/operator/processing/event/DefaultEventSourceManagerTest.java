@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ class DefaultEventSourceManagerTest {
 
     defaultEventSourceManager.registerEventSource(eventSource);
 
-    List<EventSource> registeredSources =
+    Set<EventSource> registeredSources =
         defaultEventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).hasSize(2);
 
