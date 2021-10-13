@@ -199,15 +199,7 @@ class DefaultEventHandlerTest {
 
     verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
-
-  private void waitMinimalTime() {
-    try {
-      Thread.sleep(50);
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
+  
   @Test
   public void cleansUpWhenDeleteEventReceivedAndNoEventPresent() {
     Event deleteEvent =
