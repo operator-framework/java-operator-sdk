@@ -216,7 +216,7 @@ class DefaultEventHandlerTest {
     defaultEventHandler.handleEvent(deleteEvent);
 
     verify(defaultEventSourceManagerMock, times(1))
-        .cleanup(eq(deleteEvent.getRelatedCustomResourceID()));
+        .cleanupForCustomResource(eq(deleteEvent.getRelatedCustomResourceID()));
   }
 
   @Test
@@ -230,7 +230,7 @@ class DefaultEventHandlerTest {
         PostExecutionControl.defaultDispatch());
 
     verify(defaultEventSourceManagerMock, times(1))
-        .cleanup(eq(crEvent.getRelatedCustomResourceID()));
+        .cleanupForCustomResource(eq(crEvent.getRelatedCustomResourceID()));
   }
 
   private CustomResourceID eventAlreadyUnderProcessing() {
