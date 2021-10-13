@@ -8,11 +8,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.DefaultContext;
-import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventList;
 
@@ -152,8 +148,14 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
     } else {
       postExecutionControl = PostExecutionControl.defaultDispatch();
     }
-    updateControl.getReScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
+    updatePostExecutionControlWithReschedule(postExecutionControl, updateControl);
     return postExecutionControl;
+  }
+
+  private void updatePostExecutionControlWithReschedule(
+      PostExecutionControl<R> postExecutionControl,
+      BaseControl<?> baseControl) {
+    baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
   private PostExecutionControl<R> handleDelete(R resource, Context<R> context) {
@@ -165,7 +167,9 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
     DeleteControl deleteControl = controller.deleteResource(resource, context);
     final var useFinalizer = configuration().useFinalizer();
     if (useFinalizer) {
-      if (deleteControl == DeleteControl.DEFAULT_DELETE
+      // note that we don't reschedule here even if instructed. Removing finalizer means that
+      // cleanup is finished, nothing left to done
+      if (deleteControl.isRemoveFinalizer()
           && resource.hasFinalizer(configuration().getFinalizer())) {
         R customResource = removeFinalizer(resource);
         return PostExecutionControl.customResourceUpdated(customResource);
@@ -177,7 +181,9 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
         getVersion(resource),
         deleteControl,
         useFinalizer);
-    return PostExecutionControl.defaultDispatch();
+    PostExecutionControl<R> postExecutionControl = PostExecutionControl.defaultDispatch();
+    updatePostExecutionControlWithReschedule(postExecutionControl, deleteControl);
+    return postExecutionControl;
   }
 
   private void updateCustomResourceWithFinalizer(R resource) {

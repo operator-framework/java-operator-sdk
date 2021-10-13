@@ -9,7 +9,7 @@ public interface ResourceController<R extends CustomResource> {
    * The implementation should delete the associated component(s). Note that this is method is
    * called when an object is marked for deletion. After it's executed the custom resource finalizer
    * is automatically removed by the framework; unless the return value is
-   * {@link DeleteControl#NO_FINALIZER_REMOVAL}, which indicates that the controller has determined
+   * {@link DeleteControl#noFinalizerRemoval()}, which indicates that the controller has determined
    * that the resource should not be deleted yet, in which case it is up to the controller to
    * restore the resource's status so that it's not marked for deletion anymore.
    *
@@ -21,13 +21,13 @@ public interface ResourceController<R extends CustomResource> {
    *
    * @param resource the resource that is marked for deletion
    * @param context the context with which the operation is executed
-   * @return {@link DeleteControl#DEFAULT_DELETE} - so the finalizer is automatically removed after
-   *         the call. {@link DeleteControl#NO_FINALIZER_REMOVAL} if you don't want to remove the
+   * @return {@link DeleteControl#defaultDelete()} - so the finalizer is automatically removed after
+   *         the call. {@link DeleteControl#noFinalizerRemoval()} if you don't want to remove the
    *         finalizer to indicate that the resource should not be deleted after all, in which case
    *         the controller should restore the resource's state appropriately.
    */
   default DeleteControl deleteResource(R resource, Context<R> context) {
-    return DeleteControl.DEFAULT_DELETE;
+    return DeleteControl.defaultDelete();
   }
 
   /**

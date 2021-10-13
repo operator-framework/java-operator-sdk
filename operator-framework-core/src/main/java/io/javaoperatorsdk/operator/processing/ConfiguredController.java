@@ -52,15 +52,8 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
           }
 
           @Override
-          public String successTypeName(DeleteControl result) {
-            switch (result) {
-              case DEFAULT_DELETE:
-                return "delete";
-              case NO_FINALIZER_REMOVAL:
-                return "finalizerNotRemoved";
-              default:
-                return "unknown";
-            }
+          public String successTypeName(DeleteControl deleteControl) {
+            return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
           }
 
           @Override
