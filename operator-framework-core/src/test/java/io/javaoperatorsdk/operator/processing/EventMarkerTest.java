@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.processing;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
-import static io.javaoperatorsdk.operator.processing.EventMarker.EventingState.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class EventMarkerTest {
 
@@ -15,46 +14,35 @@ class EventMarkerTest {
 
   @Test
   public void returnsNoEventPresentIfNotMarkedYet() {
-    assertThat(eventMarker.getEventingState(sampleCustomResourceID)).isEqualTo(NO_EVENT_PRESENT);
+    assertThat(eventMarker.noEventPresent(sampleCustomResourceID)).isTrue();
   }
 
   @Test
   public void marksEvent() {
     eventMarker.markEventReceived(sampleCustomResourceID);
 
-    assertThat(eventMarker.getEventingState(sampleCustomResourceID)).isEqualTo(EVENT_PRESENT);
-    assertThat(eventMarker.isEventPresent(sampleCustomResourceID)).isTrue();
-  }
-
-  @Test
-  public void markEventAwareOfDeleteEvent() {
-    eventMarker.markDeleteEventReceived(sampleCustomResourceID);
-
-    eventMarker.markEventReceived(sampleCustomResourceID);
-
-    assertThat(eventMarker.getEventingState(sampleCustomResourceID))
-        .isEqualTo(DELETE_AND_NON_DELETE_EVENT_PRESENT);
-    assertThat(eventMarker.isEventPresent(sampleCustomResourceID)).isTrue();
+    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isTrue();
+    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID)).isFalse();
   }
 
   @Test
   public void marksDeleteEvent() {
     eventMarker.markDeleteEventReceived(sampleCustomResourceID);
 
-    assertThat(eventMarker.getEventingState(sampleCustomResourceID))
-        .isEqualTo(ONLY_DELETE_EVENT_PRESENT);
-    assertThat(eventMarker.isDeleteEventPresent(sampleCustomResourceID)).isTrue();
+    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID))
+        .isTrue();
+    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isFalse();
   }
 
   @Test
-  public void markDeleteEventAwareOfEvent() {
+  public void afterDeleteEventMarkEventIsNotRelevant() {
     eventMarker.markEventReceived(sampleCustomResourceID);
 
     eventMarker.markDeleteEventReceived(sampleCustomResourceID);
 
-    assertThat(eventMarker.getEventingState(sampleCustomResourceID))
-        .isEqualTo(DELETE_AND_NON_DELETE_EVENT_PRESENT);
-    assertThat(eventMarker.isDeleteEventPresent(sampleCustomResourceID)).isTrue();
+    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID))
+        .isTrue();
+    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isFalse();
   }
 
   @Test
@@ -64,7 +52,16 @@ class EventMarkerTest {
 
     eventMarker.cleanup(sampleCustomResourceID);
 
-    assertThat(eventMarker.getEventingState(sampleCustomResourceID)).isEqualTo(NO_EVENT_PRESENT);
+    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isFalse();
+  }
+
+  @Test
+  public void cannotMarkEventAfterDeleteEventReceived() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+      eventMarker.markDeleteEventReceived(sampleCustomResourceID);
+      eventMarker.markEventReceived(sampleCustomResourceID);
+    });
   }
 
 }

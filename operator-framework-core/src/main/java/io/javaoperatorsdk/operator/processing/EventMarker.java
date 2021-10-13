@@ -5,20 +5,31 @@ import java.util.HashMap;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
+/**
+ * Manages the state of received events. Basically there can be only three distinct states relevant
+ * for event processing. Either an even is received, so we eventually process or no event for
+ * processing at the moment. The third case is if a DELETE event is received, this is a special case
+ * meaning that the custom resource is deleted. We don't want to do any processing anymore is other
+ * events are irrelevant for us from this point. Note that the dependant resources are either
+ * cleaned up by K8S garbage collection or by the controller implementation for cleanup.
+ */
 public class EventMarker {
 
   public enum EventingState {
-    EVENT_PRESENT, ONLY_DELETE_EVENT_PRESENT, DELETE_AND_NON_DELETE_EVENT_PRESENT, NO_EVENT_PRESENT
+    /** Event but NOT Delete event present */
+    EVENT_PRESENT, NO_EVENT_PRESENT,
+    /** Delete event present, from this point other events are not relevant */
+    DELETE_EVENT_PRESENT,
   }
 
   private final HashMap<CustomResourceID, EventingState> eventingState = new HashMap<>();
 
-  public EventingState getEventingState(CustomResourceID customResourceID) {
+  private EventingState getEventingState(CustomResourceID customResourceID) {
     EventingState actualState = eventingState.get(customResourceID);
     return actualState == null ? EventingState.NO_EVENT_PRESENT : actualState;
   }
 
-  public void setEventingState(CustomResourceID customResourceID, EventingState state) {
+  private void setEventingState(CustomResourceID customResourceID, EventingState state) {
     eventingState.put(customResourceID, state);
   }
 
@@ -27,16 +38,10 @@ public class EventMarker {
   }
 
   public void markEventReceived(CustomResourceID customResourceID) {
-    var actualState = getEventingState(customResourceID);
-    switch (actualState) {
-      case ONLY_DELETE_EVENT_PRESENT:
-        setEventingState(customResourceID,
-            EventingState.DELETE_AND_NON_DELETE_EVENT_PRESENT);
-        break;
-      case NO_EVENT_PRESENT:
-        setEventingState(customResourceID, EventingState.EVENT_PRESENT);
-        break;
+    if (deleteEventPresent(customResourceID)) {
+      throw new IllegalStateException("Cannot receive event after a delete event received");
     }
+    setEventingState(customResourceID, EventingState.EVENT_PRESENT);
   }
 
   public void unMarkEventReceived(CustomResourceID customResourceID) {
@@ -46,10 +51,8 @@ public class EventMarker {
         setEventingState(customResourceID,
             EventingState.NO_EVENT_PRESENT);
         break;
-      case DELETE_AND_NON_DELETE_EVENT_PRESENT:
-        setEventingState(customResourceID,
-            EventingState.ONLY_DELETE_EVENT_PRESENT);
-        break;
+      case DELETE_EVENT_PRESENT:
+        throw new IllegalStateException("Cannot unmark delete event.");
     }
   }
 
@@ -58,28 +61,21 @@ public class EventMarker {
   }
 
   public void markDeleteEventReceived(CustomResourceID customResourceID) {
-    var actualState = getEventingState(customResourceID);
-    switch (actualState) {
-      case NO_EVENT_PRESENT:
-        setEventingState(customResourceID, EventingState.ONLY_DELETE_EVENT_PRESENT);
-        break;
-      case EVENT_PRESENT:
-        setEventingState(customResourceID,
-            EventingState.DELETE_AND_NON_DELETE_EVENT_PRESENT);
-        break;
-    }
+    setEventingState(customResourceID, EventingState.DELETE_EVENT_PRESENT);
   }
 
-  public boolean isEventPresent(CustomResourceID customResourceID) {
-    var actualState = getEventingState(customResourceID);
-    return actualState == EventingState.EVENT_PRESENT ||
-        actualState == EventingState.DELETE_AND_NON_DELETE_EVENT_PRESENT;
+  public boolean deleteEventPresent(CustomResourceID customResourceID) {
+    return getEventingState(customResourceID) == EventingState.DELETE_EVENT_PRESENT;
   }
 
-  public boolean isDeleteEventPresent(CustomResourceID customResourceID) {
+  public boolean eventPresent(CustomResourceID customResourceID) {
     var actualState = getEventingState(customResourceID);
-    return actualState == EventingState.DELETE_AND_NON_DELETE_EVENT_PRESENT ||
-        actualState == EventingState.ONLY_DELETE_EVENT_PRESENT;
+    return actualState == EventingState.EVENT_PRESENT;
+  }
+
+  public boolean noEventPresent(CustomResourceID customResourceID) {
+    var actualState = getEventingState(customResourceID);
+    return actualState == EventingState.NO_EVENT_PRESENT;
   }
 
   public void cleanup(CustomResourceID customResourceID) {
