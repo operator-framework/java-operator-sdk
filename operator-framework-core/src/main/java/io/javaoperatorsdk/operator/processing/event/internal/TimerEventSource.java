@@ -51,7 +51,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
   }
 
   @Override
-  public void eventSourceDeRegisteredForResource(CustomResourceID customResourceUid) {
+  public void cleanupForCustomResource(CustomResourceID customResourceUid) {
     cancelSchedule(customResourceUid);
     cancelOnceSchedule(customResourceUid);
   }

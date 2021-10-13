@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,15 +10,12 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class DefaultEventSourceManagerTest {
-
-  public static final String CUSTOM_EVENT_SOURCE_NAME = "CustomEventSource";
 
   private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
   private DefaultEventSourceManager defaultEventSourceManager =
@@ -28,12 +25,12 @@ class DefaultEventSourceManagerTest {
   public void registersEventSource() {
     EventSource eventSource = mock(EventSource.class);
 
-    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
+    defaultEventSourceManager.registerEventSource(eventSource);
 
-    Map<String, EventSource> registeredSources =
+    Set<EventSource> registeredSources =
         defaultEventSourceManager.getRegisteredEventSources();
-    assertThat(registeredSources.entrySet()).hasSize(2);
-    assertThat(registeredSources.get(CUSTOM_EVENT_SOURCE_NAME)).isEqualTo(eventSource);
+    assertThat(registeredSources).hasSize(2);
+
     verify(eventSource, times(1)).setEventHandler(eq(defaultEventHandlerMock));
     verify(eventSource, times(1)).start();
   }
@@ -42,8 +39,8 @@ class DefaultEventSourceManagerTest {
   public void closeShouldCascadeToEventSources() throws IOException {
     EventSource eventSource = mock(EventSource.class);
     EventSource eventSource2 = mock(EventSource.class);
-    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
-    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME + "2", eventSource2);
+    defaultEventSourceManager.registerEventSource(eventSource);
+    defaultEventSourceManager.registerEventSource(eventSource2);
 
     defaultEventSourceManager.close();
 
@@ -52,27 +49,15 @@ class DefaultEventSourceManagerTest {
   }
 
   @Test
-  public void throwExceptionIfRegisteringEventSourceWithSameName() {
-    EventSource eventSource = mock(EventSource.class);
-    EventSource eventSource2 = mock(EventSource.class);
-
-    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
-    assertThatExceptionOfType(IllegalStateException.class)
-        .isThrownBy(
-            () -> defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME,
-                eventSource2));
-  }
-
-  @Test
   public void deRegistersEventSources() {
     CustomResource customResource = TestUtils.testCustomResource();
     EventSource eventSource = mock(EventSource.class);
-    defaultEventSourceManager.registerEventSource(CUSTOM_EVENT_SOURCE_NAME, eventSource);
+    defaultEventSourceManager.registerEventSource(eventSource);
 
-    defaultEventSourceManager.deRegisterCustomResourceFromEventSource(
-        CUSTOM_EVENT_SOURCE_NAME, CustomResourceID.fromResource(customResource));
+    defaultEventSourceManager
+        .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
 
     verify(eventSource, times(1))
-        .eventSourceDeRegisteredForResource(eq(CustomResourceID.fromResource(customResource)));
+        .cleanupForCustomResource(eq(CustomResourceID.fromResource(customResource)));
   }
 }

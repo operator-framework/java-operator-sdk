@@ -20,5 +20,10 @@ public interface EventSource extends Closeable {
 
   void setEventHandler(EventHandler eventHandler);
 
-  default void eventSourceDeRegisteredForResource(CustomResourceID customResourceUid) {}
+  /**
+   * Automatically called when a custom resource is deleted from the cluster.
+   *
+   * @param customResourceUid - id of custom resource
+   */
+  default void cleanupForCustomResource(CustomResourceID customResourceUid) {}
 }

@@ -18,6 +18,6 @@ public class ControllerImplementedIntermediateAbstractClass extends
 
   public DeleteControl deleteResource(AbstractController.MyCustomResource customResource,
       Context<AbstractController.MyCustomResource> context) {
-    return DeleteControl.DEFAULT_DELETE;
+    return DeleteControl.defaultDelete();
   }
 }

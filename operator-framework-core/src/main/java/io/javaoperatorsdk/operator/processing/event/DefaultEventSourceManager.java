@@ -1,11 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -22,24 +17,22 @@ import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     implements EventSourceManager {
 
-  public static final String RETRY_TIMER_EVENT_SOURCE_NAME = "retry-timer-event-source";
-  public static final String CUSTOM_RESOURCE_EVENT_SOURCE_NAME = "custom-resource-event-source";
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  private final Map<String, EventSource> eventSources = new ConcurrentHashMap<>();
+  private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource<R> retryTimerEventSource;
+  private CustomResourceEventSource customResourceEventSource;
 
   DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler) {
     init(defaultEventHandler);
   }
 
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
-    CustomResourceEventSource customResourceEventSource =
-        new CustomResourceEventSource<>(controller);
+    customResourceEventSource = new CustomResourceEventSource<>(controller);
     init(new DefaultEventHandler<>(controller, customResourceEventSource));
-    registerEventSource(CUSTOM_RESOURCE_EVENT_SOURCE_NAME, customResourceEventSource);
+    registerEventSource(customResourceEventSource);
   }
 
   private void init(DefaultEventHandler<R> defaultEventHandler) {
@@ -47,7 +40,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     defaultEventHandler.setEventSourceManager(this);
 
     this.retryTimerEventSource = new TimerEventSource<>();
-    registerEventSource(RETRY_TIMER_EVENT_SOURCE_NAME, retryTimerEventSource);
+    registerEventSource(retryTimerEventSource);
   }
 
   @Override
@@ -59,16 +52,14 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
       } catch (Exception e) {
         log.warn("Error closing event handler", e);
       }
-
-      for (var entry : eventSources.entrySet()) {
+      log.debug("Closing event sources.");
+      for (var eventSource : eventSources) {
         try {
-          log.debug("Closing {} -> {}", entry.getKey(), entry.getValue());
-          entry.getValue().close();
+          eventSource.close();
         } catch (Exception e) {
-          log.warn("Error closing {} -> {}", entry.getKey(), entry.getValue(), e);
+          log.warn("Error closing {} -> {}", eventSource);
         }
       }
-
       eventSources.clear();
     } finally {
       lock.unlock();
@@ -76,16 +67,12 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public final void registerEventSource(String name, EventSource eventSource)
+  public final void registerEventSource(EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     lock.lock();
     try {
-      if (eventSources.containsKey(name)) {
-        throw new IllegalStateException(
-            "Event source with name already registered. Event source name: " + name);
-      }
-      eventSources.put(name, eventSource);
+      eventSources.add(eventSource);
       eventSource.setEventHandler(defaultEventHandler);
       eventSource.start();
     } catch (Throwable e) {
@@ -93,46 +80,18 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
         // leave untouched
         throw e;
       }
-      throw new OperatorException("Couldn't register event source named '" + name + "'", e);
+      throw new OperatorException(
+          "Couldn't register event source: " + eventSource.getClass().getName(), e);
     } finally {
       lock.unlock();
     }
   }
 
-  @Override
-  public Optional<EventSource> deRegisterEventSource(String name) {
+  public void cleanupForCustomResource(CustomResourceID customResourceUid) {
     lock.lock();
     try {
-      EventSource currentEventSource = eventSources.remove(name);
-      if (currentEventSource != null) {
-        try {
-          currentEventSource.close();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      }
-
-      return Optional.ofNullable(currentEventSource);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
-  public Optional<EventSource> deRegisterCustomResourceFromEventSource(
-      String eventSourceName, CustomResourceID customResourceUid) {
-    lock.lock();
-    try {
-      EventSource eventSource = this.eventSources.get(eventSourceName);
-      if (eventSource == null) {
-        log.warn(
-            "Event producer: {} not found for custom resource: {}",
-            eventSourceName,
-            customResourceUid);
-        return Optional.empty();
-      } else {
-        eventSource.eventSourceDeRegisteredForResource(customResourceUid);
-        return Optional.of(eventSource);
+      for (EventSource eventSource : this.eventSources) {
+        eventSource.cleanupForCustomResource(customResourceUid);
       }
     } finally {
       lock.unlock();
@@ -144,19 +103,13 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public Map<String, EventSource> getRegisteredEventSources() {
-    return Collections.unmodifiableMap(eventSources);
+  public Set<EventSource> getRegisteredEventSources() {
+    return Collections.unmodifiableSet(eventSources);
   }
 
   @Override
   public CustomResourceEventSource getCustomResourceEventSource() {
-    return (CustomResourceEventSource) getRegisteredEventSources()
-        .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME);
+    return customResourceEventSource;
   }
 
-  public void cleanup(CustomResourceID customResourceUid) {
-    getRegisteredEventSources()
-        .keySet()
-        .forEach(k -> deRegisterCustomResourceFromEventSource(k, customResourceUid));
-  }
 }

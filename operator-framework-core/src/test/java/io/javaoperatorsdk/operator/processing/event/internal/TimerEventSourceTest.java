@@ -61,7 +61,7 @@ class TimerEventSourceTest {
     untilAsserted(() -> assertThat(eventHandlerMock.events).hasSizeGreaterThan(1));
 
     timerEventSource
-        .eventSourceDeRegisteredForResource(CustomResourceID.fromResource(customResource));
+        .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
 
     int size = eventHandlerMock.events.size();
     untilAsserted(() -> assertThat(eventHandlerMock.events).hasSize(size));
@@ -103,7 +103,7 @@ class TimerEventSourceTest {
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource
-        .eventSourceDeRegisteredForResource(CustomResourceID.fromResource(customResource));
+        .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }
