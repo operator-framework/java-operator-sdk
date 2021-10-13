@@ -126,7 +126,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       final var monitor = monitor();
       monitor.processedEvent(event.getRelatedCustomResourceID(), event);
 
-      markEvent(event);
+      handleEventMarking(event);
       if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
         submitReconciliationExecution(event.getRelatedCustomResourceID());
       } else {
@@ -168,7 +168,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
   }
 
-  private void markEvent(Event event) {
+  private void handleEventMarking(Event event) {
     if (event instanceof CustomResourceEvent &&
         ((CustomResourceEvent) event).getAction() == ResourceAction.DELETED) {
       eventMarker.markDeleteEventReceived(event);
