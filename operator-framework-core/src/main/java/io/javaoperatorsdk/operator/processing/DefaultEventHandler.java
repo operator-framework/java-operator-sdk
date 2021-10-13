@@ -195,9 +195,9 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
           postExecutionControl);
       unsetUnderExecution(executionScope.getCustomResourceID());
 
-      // If a delete event present it was received during reconciliation.
-      // So we either removed the finalizer during reconciliation or we don't use one
-      // for the cr. Neither way we want to retry.
+      // If a delete event present at this phase, it was received during reconciliation.
+      // So we either removed the finalizer during reconciliation or we don't use finalizers.
+      // Either way we don't want to retry.
       if (retry != null && postExecutionControl.exceptionDuringExecution() &&
           !eventMarker.deleteEventPresent(executionScope.getCustomResourceID())) {
         handleRetryOnException(executionScope);
