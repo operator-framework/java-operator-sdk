@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
-public class UpdateControl<T extends CustomResource> extends ControlBase<UpdateControl<T>> {
+public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateControl<T>> {
 
   private final T customResource;
   private final boolean updateStatusSubResource;

@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
-public class DeleteControl extends ControlBase<DeleteControl> {
+public class DeleteControl extends BaseControl<DeleteControl> {
 
   private final boolean removeFinalizer;
 
@@ -21,10 +21,10 @@ public class DeleteControl extends ControlBase<DeleteControl> {
   }
 
   @Override
-  public DeleteControl withReSchedule(long delay) {
+  public DeleteControl rescheduleAfter(long delay) {
     if (removeFinalizer == true) {
       throw new IllegalStateException("Cannot reschedule deleteResource if removing finalizer");
     }
-    return super.withReSchedule(delay);
+    return super.rescheduleAfter(delay);
   }
 }

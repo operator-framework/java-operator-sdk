@@ -297,7 +297,7 @@ class EventDispatcherTest {
 
     when(controller.createOrUpdateResource(eq(testCustomResource), any()))
         .thenReturn(
-            UpdateControl.updateStatusSubResource(testCustomResource).withReSchedule(1000L));
+            UpdateControl.updateStatusSubResource(testCustomResource).rescheduleAfter(1000L));
 
     PostExecutionControl control = eventDispatcher.handleExecution(
         executionScopeWithCREvent(ADDED, testCustomResource));
@@ -312,7 +312,7 @@ class EventDispatcherTest {
 
     when(controller.deleteResource(eq(testCustomResource), any()))
         .thenReturn(
-            DeleteControl.noFinalizerRemoval().withReSchedule(1000L));
+            DeleteControl.noFinalizerRemoval().rescheduleAfter(1000L));
 
     PostExecutionControl control = eventDispatcher.handleExecution(
         executionScopeWithCREvent(UPDATED, testCustomResource));

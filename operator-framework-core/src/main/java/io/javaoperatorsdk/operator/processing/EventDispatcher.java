@@ -154,8 +154,8 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
 
   private void updatePostExecutionControlWithReschedule(
       PostExecutionControl<R> postExecutionControl,
-      ControlBase<?> controlBase) {
-    controlBase.getReScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
+      BaseControl<?> baseControl) {
+    baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
   private PostExecutionControl<R> handleDelete(R resource, Context<R> context) {
