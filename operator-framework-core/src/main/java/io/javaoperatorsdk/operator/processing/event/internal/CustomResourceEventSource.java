@@ -43,7 +43,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       new ConcurrentHashMap<>();
   private final ObjectMapper cloningObjectMapper;
   private final CustomResourceEventFilter<T> filter;
-  private final CacheSyncNotificationEventFilter<T> cacheSyncNotificationEventFilter;
+  private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
 
 
   public CustomResourceEventSource(ConfiguredController<T> controller) {
@@ -60,10 +60,10 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
         .collect(Collectors.toList());
 
     if (controller.getConfiguration().isGenerationAware()) {
-      cacheSyncNotificationEventFilter = new CacheSyncNotificationEventFilter<>();
-      filters.add(cacheSyncNotificationEventFilter);
+      onceWhitelistEventFilterEventFilter = new OnceWhitelistEventFilterEventFilter<>();
+      filters.add(onceWhitelistEventFilterEventFilter);
     } else {
-      cacheSyncNotificationEventFilter = null;
+      onceWhitelistEventFilterEventFilter = null;
     }
     filter = CustomResourceEventFilters.or(filters.toArray(new CustomResourceEventFilter[0]));
   }
@@ -185,9 +185,15 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     }
   }
 
-  public void allowNextEvent(CustomResourceID customResourceID) {
-    if (cacheSyncNotificationEventFilter != null) {
-      cacheSyncNotificationEventFilter.allowNextEvent(customResourceID);
+  /**
+   * This will ensure that the next event received after this method is called will not be filtered
+   * out.
+   * 
+   * @param customResourceID - to which the event is related
+   */
+  public void whitelistNextEvent(CustomResourceID customResourceID) {
+    if (onceWhitelistEventFilterEventFilter != null) {
+      onceWhitelistEventFilterEventFilter.whitelistNextEvent(customResourceID);
     }
   }
 }

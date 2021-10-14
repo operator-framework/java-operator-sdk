@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
-public class CacheSyncNotificationEventFilter<T extends CustomResource>
+public class OnceWhitelistEventFilterEventFilter<T extends CustomResource>
     implements CustomResourceEventFilter<T> {
 
   private ReentrantLock lock = new ReentrantLock();
@@ -28,7 +28,7 @@ public class CacheSyncNotificationEventFilter<T extends CustomResource>
     }
   }
 
-  public void allowNextEvent(CustomResourceID customResourceID) {
+  public void whitelistNextEvent(CustomResourceID customResourceID) {
     lock.lock();
     try {
       whiteList.add(customResourceID);

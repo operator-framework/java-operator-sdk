@@ -231,7 +231,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   }
 
   private void postponeReconciliationAndHandleCacheSyncEvent(CustomResourceID customResourceID) {
-    eventSourceManager.getCustomResourceEventSource().allowNextEvent(customResourceID);
+    eventSourceManager.getCustomResourceEventSource().whitelistNextEvent(customResourceID);
   }
 
   private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,

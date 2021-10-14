@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -223,6 +224,11 @@ class DefaultEventHandlerTest {
 
     verify(defaultEventSourceManagerMock, times(1))
         .cleanupForCustomResource(eq(crEvent.getRelatedCustomResourceID()));
+  }
+
+  @Test
+  public void whitelistNextEventIfTheCacheIsNotPropagatedAfterAnUpdate() {
+    fail("todo");
   }
 
   private CustomResourceID eventAlreadyUnderProcessing() {
