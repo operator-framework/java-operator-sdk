@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +42,30 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
   private final ObjectMapper cloningObjectMapper;
+  private final CustomResourceEventFilter<T> filter;
+  private final CacheSyncNotificationEventFilter<T> cacheSyncNotificationEventFilter;
+
 
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
     this.cloningObjectMapper =
         controller.getConfiguration().getConfigurationService().getObjectMapper();
+
+    var filters = Arrays.stream(new CustomResourceEventFilter[] {
+        CustomResourceEventFilters.finalizerNeededAndApplied(),
+        CustomResourceEventFilters.markedForDeletion(),
+        CustomResourceEventFilters.and(
+            controller.getConfiguration().getEventFilter(),
+            CustomResourceEventFilters.generationAware())})
+        .collect(Collectors.toList());
+
+    if (controller.getConfiguration().isGenerationAware()) {
+      cacheSyncNotificationEventFilter = new CacheSyncNotificationEventFilter<>();
+      filters.add(cacheSyncNotificationEventFilter);
+    } else {
+      cacheSyncNotificationEventFilter = null;
+    }
+    filter = CustomResourceEventFilters.or(filters.toArray(new CustomResourceEventFilter[0]));
   }
 
   @Override
@@ -90,7 +110,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   @Override
   public void close() throws IOException {
     eventHandler.close();
-    for (SharedIndexInformer informer : sharedIndexInformers.values()) {
+    for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
       try {
         log.info("Closing informer {} -> {}", controller, informer);
         informer.close();
@@ -103,13 +123,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   public void eventReceived(ResourceAction action, T customResource, T oldResource) {
     log.debug(
         "Event received for resource: {}", getName(customResource));
-
-    final CustomResourceEventFilter<T> filter = CustomResourceEventFilters.or(
-        CustomResourceEventFilters.finalizerNeededAndApplied(),
-        CustomResourceEventFilters.markedForDeletion(),
-        CustomResourceEventFilters.and(
-            controller.getConfiguration().getEventFilter(),
-            CustomResourceEventFilters.generationAware()));
 
     if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
       eventHandler.handleEvent(
@@ -169,6 +182,12 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
           cloningObjectMapper.writeValueAsString(customResource), customResource.getClass());
     } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
+    }
+  }
+
+  public void allowNextEvent(CustomResourceID customResourceID) {
+    if (cacheSyncNotificationEventFilter != null) {
+      cacheSyncNotificationEventFilter.allowNextEvent(customResourceID);
     }
   }
 }

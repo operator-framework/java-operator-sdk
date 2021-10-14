@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
@@ -188,18 +189,18 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (!running) {
         return;
       }
-
+      CustomResourceID customResourceID = executionScope.getCustomResourceID();
       log.debug(
           "Event processing finished. Scope: {}, PostExecutionControl: {}",
           executionScope,
           postExecutionControl);
-      unsetUnderExecution(executionScope.getCustomResourceID());
+      unsetUnderExecution(customResourceID);
 
       // If a delete event present at this phase, it was received during reconciliation.
       // So we either removed the finalizer during reconciliation or we don't use finalizers.
       // Either way we don't want to retry.
       if (retry != null && postExecutionControl.exceptionDuringExecution() &&
-          !eventMarker.deleteEventPresent(executionScope.getCustomResourceID())) {
+          !eventMarker.deleteEventPresent(customResourceID)) {
         handleRetryOnException(executionScope);
         // todo revisit monitoring since events are not present anymore
         // final var monitor = monitor(); executionScope.getEvents().forEach(e ->
@@ -210,11 +211,15 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (retry != null) {
         handleSuccessfulExecutionRegardingRetry(executionScope);
       }
-      if (eventMarker.deleteEventPresent(executionScope.getCustomResourceID())) {
+      if (eventMarker.deleteEventPresent(customResourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
-        if (eventMarker.eventPresent(executionScope.getCustomResourceID())) {
-          submitReconciliationExecution(executionScope.getCustomResourceID());
+        if (eventMarker.eventPresent(customResourceID)) {
+          if (isCacheReadyForInstantReconciliation(executionScope, postExecutionControl)) {
+            submitReconciliationExecution(customResourceID);
+          } else {
+            postponeReconciliationAndHandleCacheSyncEvent(customResourceID);
+          }
         } else {
           reScheduleExecutionIfInstructed(postExecutionControl,
               executionScope.getCustomResource());
@@ -223,6 +228,34 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     } finally {
       lock.unlock();
     }
+  }
+
+  private void postponeReconciliationAndHandleCacheSyncEvent(CustomResourceID customResourceID) {
+    eventSourceManager.getCustomResourceEventSource().allowNextEvent(customResourceID);
+  }
+
+  private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,
+      PostExecutionControl<R> postExecutionControl) {
+    if (!postExecutionControl.customResourceUpdatedDuringExecution()) {
+      return true;
+    }
+    String originalResourceVersion = getVersion(executionScope.getCustomResource());
+    String customResourceVersionAfterExecution = getVersion(postExecutionControl
+        .getUpdatedCustomResource().get());
+    String cachedCustomResourceVersion = getVersion(resourceCache
+        .getCustomResource(executionScope.getCustomResourceID()).get());
+
+    if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
+      return true;
+    }
+    if (cachedCustomResourceVersion.equals(originalResourceVersion)) {
+      return false;
+    }
+    // If the cached resource version equals neither the version before of after execution
+    // probably an update happened on the custom resource independent of the framework during
+    // reconciliation. We cannot tell at this point if it happened before our update or before.
+    // (Well we could if we would parse resource version, but that should not be done by definition)
+    return true;
   }
 
   private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,

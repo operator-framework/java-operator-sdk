@@ -108,7 +108,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public CustomResourceEventSource getCustomResourceEventSource() {
+  public CustomResourceEventSource<R> getCustomResourceEventSource() {
     return customResourceEventSource;
   }
 
