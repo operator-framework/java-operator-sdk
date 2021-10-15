@@ -32,6 +32,7 @@ public class TestUtils {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName(id.getName())
+            .withResourceVersion("1")
             .withGeneration(1L)
             .withNamespace(id.getNamespace().orElse(null))
             .build());
