@@ -53,7 +53,7 @@ class DefaultEventHandlerTest {
 
   @BeforeEach
   public void setup() {
-    when(defaultEventSourceManagerMock.getRetryTimerEventSource())
+    when(defaultEventSourceManagerMock.getRetryAndRescheduleTimerEventSource())
         .thenReturn(retryTimerEventSourceMock);
     defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
     defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
@@ -278,6 +278,17 @@ class DefaultEventHandlerTest {
         PostExecutionControl.customResourceUpdated(cr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
+  }
+
+  @Test
+  public void cancelScheduleOnceEventsOnSuccessfulExecution() {
+    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var cr = testCustomResource(crID);
+
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+        PostExecutionControl.defaultDispatch());
+
+    verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
   }
 
   private CustomResourceID eventAlreadyUnderProcessing() {

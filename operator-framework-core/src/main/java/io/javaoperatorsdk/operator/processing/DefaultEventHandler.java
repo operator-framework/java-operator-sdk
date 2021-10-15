@@ -199,7 +199,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       // If a delete event present at this phase, it was received during reconciliation.
       // So we either removed the finalizer during reconciliation or we don't use finalizers.
       // Either way we don't want to retry.
-      if (retry != null && postExecutionControl.exceptionDuringExecution() &&
+      if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
           !eventMarker.deleteEventPresent(customResourceID)) {
         handleRetryOnException(executionScope);
         // todo revisit monitoring since events are not present anymore
@@ -207,10 +207,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         // monitor.failedEvent(executionScope.getCustomResourceID(), e));
         return;
       }
-
-      if (retry != null) {
-        handleSuccessfulExecutionRegardingRetry(executionScope);
-      }
+      cleanupOnSuccessfulExecution(executionScope);
       if (eventMarker.deleteEventPresent(customResourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
@@ -261,7 +258,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,
       R customResource) {
     postExecutionControl.getReScheduleDelay().ifPresent(delay -> eventSourceManager
-        .getRetryTimerEventSource()
+        .getRetryAndRescheduleTimerEventSource()
         .scheduleOnce(customResource, delay));
   }
 
@@ -291,19 +288,21 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               delay,
               customResourceID);
           eventSourceManager
-              .getRetryTimerEventSource()
+              .getRetryAndRescheduleTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
   }
 
-  private void handleSuccessfulExecutionRegardingRetry(ExecutionScope<R> executionScope) {
+  private void cleanupOnSuccessfulExecution(ExecutionScope<R> executionScope) {
     log.debug(
-        "Marking successful execution for resource: {}",
+        "Cleanup for successful execution for resource: {}",
         getName(executionScope.getCustomResource()));
-    retryState.remove(executionScope.getCustomResourceID());
+    if (isRetryConfigured()) {
+      retryState.remove(executionScope.getCustomResourceID());
+    }
     eventSourceManager
-        .getRetryTimerEventSource()
+        .getRetryAndRescheduleTimerEventSource()
         .cancelOnceSchedule(executionScope.getCustomResourceID());
   }
 
@@ -331,6 +330,10 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private void unsetUnderExecution(CustomResourceID customResourceUid) {
     underProcessing.remove(customResourceUid);
+  }
+
+  private boolean isRetryConfigured() {
+    return retry != null;
   }
 
   @Override
