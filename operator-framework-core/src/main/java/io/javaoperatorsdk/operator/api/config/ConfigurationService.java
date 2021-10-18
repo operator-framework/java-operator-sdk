@@ -9,12 +9,24 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
 
-  ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  Cloner DEFAULT_CLONER = new Cloner() {
+    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    @Override
+    public CustomResource<?, ?> clone(CustomResource<?, ?> object) {
+      try {
+        return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object), object.getClass());
+      } catch (JsonProcessingException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+  };
 
   /**
    * Retrieves the configuration associated with the specified controller
@@ -79,14 +91,12 @@ public interface ConfigurationService {
   }
 
   /**
-   * The {@link ObjectMapper} that the operator should use to de-/serialize resources. This is
-   * particularly useful when frameworks can configure a specific mapper that should also be used by
-   * the SDK.
-   *
+   * Used to clone custom resources.
+   * 
    * @return the ObjectMapper to use
    */
-  default ObjectMapper getObjectMapper() {
-    return OBJECT_MAPPER;
+  default Cloner getResourceCloner() {
+    return DEFAULT_CLONER;
   }
 
   int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;

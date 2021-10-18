@@ -164,8 +164,8 @@ class CustomResourceEventSourceTest {
           null,
           TestCustomResource.class,
           mock(ConfigurationService.class));
-      when(getConfigurationService().getObjectMapper())
-          .thenReturn(ConfigurationService.OBJECT_MAPPER);
+      when(getConfigurationService().getResourceCloner())
+          .thenReturn(ConfigurationService.DEFAULT_CLONER);
       when(getConfigurationService().getMetrics())
           .thenReturn(Metrics.NOOP);
     }

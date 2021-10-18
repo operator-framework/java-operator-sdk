@@ -14,14 +14,12 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.MissingCRDException;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -41,15 +39,14 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final ConfiguredController<T> controller;
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
-  private final ObjectMapper cloningObjectMapper;
+
   private final CustomResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
-
+  private final Cloner cloner;
 
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
-    this.cloningObjectMapper =
-        controller.getConfiguration().getConfigurationService().getObjectMapper();
+    this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
 
     var filters = Arrays.stream(new CustomResourceEventFilter[] {
         CustomResourceEventFilters.finalizerNeededAndApplied(),
@@ -160,7 +157,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     if (resource == null) {
       return Optional.empty();
     } else {
-      return Optional.of(clone(resource));
+      return Optional.of((T) (cloner.clone(resource)));
     }
   }
 
@@ -174,15 +171,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   public SharedIndexInformer<T> getInformer(String namespace) {
     return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
-  }
-
-  private T clone(T customResource) {
-    try {
-      return (T) cloningObjectMapper.readValue(
-          cloningObjectMapper.writeValueAsString(customResource), customResource.getClass());
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   /**

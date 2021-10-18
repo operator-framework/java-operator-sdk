@@ -7,15 +7,13 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
   private Metrics metrics;
   private Config clientConfig;
   private boolean checkCR;
   private int threadNumber;
-  private ObjectMapper mapper;
+  private Cloner cloner;
   private int timeoutSeconds;
 
   public ConfigurationServiceOverrider(
@@ -24,7 +22,7 @@ public class ConfigurationServiceOverrider {
     this.clientConfig = original.getClientConfiguration();
     this.checkCR = original.checkCRDAndValidateLocalModel();
     this.threadNumber = original.concurrentReconciliationThreads();
-    this.mapper = original.getObjectMapper();
+    this.cloner = original.getResourceCloner();
     this.timeoutSeconds = original.getTerminationTimeoutSeconds();
     this.metrics = original.getMetrics();
   }
@@ -45,8 +43,8 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withObjectMapper(ObjectMapper mapper) {
-    this.mapper = mapper;
+  public ConfigurationServiceOverrider getResourceCloner(Cloner cloner) {
+    this.cloner = cloner;
     return this;
   }
 
@@ -94,8 +92,8 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public ObjectMapper getObjectMapper() {
-        return mapper;
+      public Cloner getResourceCloner() {
+        return cloner;
       }
 
       @Override
