@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,21 +50,22 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     this.cloningObjectMapper =
         controller.getConfiguration().getConfigurationService().getObjectMapper();
 
-    var filters = Arrays.stream(new CustomResourceEventFilter[] {
+    var filters = new CustomResourceEventFilter[] {
         CustomResourceEventFilters.finalizerNeededAndApplied(),
         CustomResourceEventFilters.markedForDeletion(),
         CustomResourceEventFilters.and(
             controller.getConfiguration().getEventFilter(),
-            CustomResourceEventFilters.generationAware())})
-        .collect(Collectors.toList());
+            CustomResourceEventFilters.generationAware()),
+        null
+    };
 
     if (controller.getConfiguration().isGenerationAware()) {
       onceWhitelistEventFilterEventFilter = new OnceWhitelistEventFilterEventFilter<>();
-      filters.add(onceWhitelistEventFilterEventFilter);
+      filters[filters.length - 1] = onceWhitelistEventFilterEventFilter;
     } else {
       onceWhitelistEventFilterEventFilter = null;
     }
-    filter = CustomResourceEventFilters.or(filters.toArray(new CustomResourceEventFilter[0]));
+    filter = CustomResourceEventFilters.or(filters);
   }
 
   @Override
