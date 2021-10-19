@@ -251,7 +251,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (cachedCustomResourceVersion.equals(originalResourceVersion)) {
       return false;
     }
-    // If the cached resource version equals neither the version before of after execution
+    // If the cached resource version equals neither the version before or after execution
     // probably an update happened on the custom resource independent of the framework during
     // reconciliation. We cannot tell at this point if it happened before our update or before.
     // (Well we could if we would parse resource version, but that should not be done by definition)
