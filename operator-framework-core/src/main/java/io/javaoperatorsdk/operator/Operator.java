@@ -26,14 +26,21 @@ public class Operator implements AutoCloseable {
   private final KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
   private final ControllerManager controllers = new ControllerManager();
+  private final VersionLogger versionLogger;
 
   public Operator(ConfigurationService configurationService) {
     this(new DefaultKubernetesClient(), configurationService);
   }
 
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
+    this(kubernetesClient, configurationService, null);
+  }
+
+  public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService,
+      VersionLogger versionLogger) {
     this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
+    this.versionLogger = versionLogger;
   }
 
   /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
@@ -61,28 +68,32 @@ public class Operator implements AutoCloseable {
   public void start() {
     controllers.shouldStart();
 
-    final var version = configurationService.getVersion();
-    log.info(
-        "Operator SDK {} (commit: {}) built on {} starting...",
-        version.getSdkVersion(),
-        version.getCommit(),
-        version.getBuiltTime());
+    if (versionLogger != null) {
+      versionLogger.start();
+    } else {
+      final var version = configurationService.getVersion();
+      log.info(
+          "Operator SDK {} (commit: {}) built on {} starting...",
+          version.getSdkVersion(),
+          version.getCommit(),
+          version.getBuiltTime());
 
-    log.info("Client version: {}", Version.clientVersion());
-    try {
-      final var k8sVersion = kubernetesClient.getVersion();
-      if (k8sVersion != null) {
-        log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+      log.info("Client version: {}", Version.clientVersion());
+      try {
+        final var k8sVersion = kubernetesClient.getVersion();
+        if (k8sVersion != null) {
+          log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
+        }
+      } catch (Exception e) {
+        final String error;
+        if (e.getCause() instanceof ConnectException) {
+          error = "Cannot connect to cluster";
+        } else {
+          error = "Error retrieving the server version";
+        }
+        log.error(error, e);
+        throw new OperatorException(error, e);
       }
-    } catch (Exception e) {
-      final String error;
-      if (e.getCause() instanceof ConnectException) {
-        error = "Cannot connect to cluster";
-      } else {
-        error = "Error retrieving the server version";
-      }
-      log.error(error, e);
-      throw new OperatorException(error, e);
     }
 
     ExecutorServiceManager.init(configurationService);
@@ -92,8 +103,12 @@ public class Operator implements AutoCloseable {
   /** Stop the operator. */
   @Override
   public void close() {
-    log.info(
-        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+    if (versionLogger != null) {
+      versionLogger.close();
+    } else {
+      log.info(
+          "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+    }
 
     controllers.close();
 

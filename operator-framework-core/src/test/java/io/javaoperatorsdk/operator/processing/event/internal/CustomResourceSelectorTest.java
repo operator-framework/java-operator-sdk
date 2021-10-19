@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -16,17 +13,16 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.VersionLogger;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,26 +46,8 @@ public class CustomResourceSelectorTest {
   @SuppressWarnings("unchecked")
   @BeforeEach
   void setUpResources() throws ParseException {
-    String buildDate =
-        DateTimeFormatter.ofPattern(VersionInfo.VersionKeys.BUILD_DATE_FORMAT)
-            .format(LocalDateTime.now());
-
-    server
-        .expect()
-        .get()
-        .withPath("/version")
-        .andReturn(
-            200,
-            new VersionInfo.Builder()
-                .withBuildDate(buildDate)
-                .withMajor("1")
-                .withMinor("21")
-                .build())
-        .always();
-
     configurationService = spy(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
-    when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
     when(configurationService.getConfigurationFor(any(MyController.class))).thenReturn(
         new MyConfiguration(configurationService, null));
   }
@@ -79,8 +57,8 @@ public class CustomResourceSelectorTest {
     assertThat(server).isNotNull();
     assertThat(client).isNotNull();
 
-    try (Operator o1 = new Operator(client, configurationService);
-        Operator o2 = new Operator(client, configurationService)) {
+    try (Operator o1 = new Operator(client, configurationService, VersionLogger.NOOP);
+        Operator o2 = new Operator(client, configurationService, VersionLogger.NOOP)) {
 
       AtomicInteger c1 = new AtomicInteger();
       AtomicInteger c1err = new AtomicInteger();
