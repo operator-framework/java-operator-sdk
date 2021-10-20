@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -39,15 +40,15 @@ class DefaultEventHandlerTest {
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
   private DefaultEventSourceManager defaultEventSourceManagerMock =
       mock(DefaultEventSourceManager.class);
-  private ResourceCache resourceCache = mock(ResourceCache.class);
+  private ResourceCache resourceCacheMock = mock(ResourceCache.class);
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private DefaultEventHandler defaultEventHandler =
-      new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test", null, eventMarker);
+      new DefaultEventHandler(eventDispatcherMock, resourceCacheMock, "Test", null, eventMarker);
 
   private DefaultEventHandler defaultEventHandlerWithRetry =
-      new DefaultEventHandler(eventDispatcherMock, resourceCache, "Test",
+      new DefaultEventHandler(eventDispatcherMock, resourceCacheMock, "Test",
           GenericRetry.defaultLimitedExponentialRetry(), eventMarker);
 
   @BeforeEach
@@ -68,7 +69,7 @@ class DefaultEventHandlerTest {
   @Test
   public void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
-    when(resourceCache.getCustomResource(event.getRelatedCustomResourceID()))
+    when(resourceCacheMock.getCustomResource(event.getRelatedCustomResourceID()))
         .thenReturn(Optional.empty());
 
     defaultEventHandler.handleEvent(event);
@@ -213,7 +214,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
-    var cr = testCustomResource(new CustomResourceID(UUID.randomUUID().toString()));
+    var cr = testCustomResource();
     var crEvent = prepareCREvent(CustomResourceID.fromResource(cr));
     eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
     var executionScope = new ExecutionScope(cr, null);
@@ -223,6 +224,60 @@ class DefaultEventHandlerTest {
 
     verify(defaultEventSourceManagerMock, times(1))
         .cleanupForCustomResource(eq(crEvent.getRelatedCustomResourceID()));
+  }
+
+  @Test
+  public void whitelistNextEventIfTheCacheIsNotPropagatedAfterAnUpdate() {
+    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var cr = testCustomResource(crID);
+    var updatedCr = testCustomResource(crID);
+    updatedCr.getMetadata().setResourceVersion("2");
+    var mockCREventSource = mock(CustomResourceEventSource.class);
+    eventMarker.markEventReceived(crID);
+    when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
+    when(defaultEventSourceManagerMock.getCustomResourceEventSource())
+        .thenReturn(mockCREventSource);
+
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+        PostExecutionControl.customResourceUpdated(updatedCr));
+
+    verify(mockCREventSource, times(1)).whitelistNextEvent(eq(crID));
+  }
+
+  @Test
+  public void dontWhitelistsEventWhenOtherChangeDuringExecution() {
+    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var cr = testCustomResource(crID);
+    var updatedCr = testCustomResource(crID);
+    updatedCr.getMetadata().setResourceVersion("2");
+    var otherChangeCR = testCustomResource(crID);
+    otherChangeCR.getMetadata().setResourceVersion("3");
+    var mockCREventSource = mock(CustomResourceEventSource.class);
+    eventMarker.markEventReceived(crID);
+    when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
+    when(defaultEventSourceManagerMock.getCustomResourceEventSource())
+        .thenReturn(mockCREventSource);
+
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+        PostExecutionControl.customResourceUpdated(updatedCr));
+
+    verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
+  }
+
+  @Test
+  public void dontWhitelistsEventIfUpdatedEventInCache() {
+    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var cr = testCustomResource(crID);
+    var mockCREventSource = mock(CustomResourceEventSource.class);
+    eventMarker.markEventReceived(crID);
+    when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
+    when(defaultEventSourceManagerMock.getCustomResourceEventSource())
+        .thenReturn(mockCREventSource);
+
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+        PostExecutionControl.customResourceUpdated(cr));
+
+    verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
   }
 
   private CustomResourceID eventAlreadyUnderProcessing() {
@@ -243,7 +298,7 @@ class DefaultEventHandlerTest {
 
   private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
-    when(resourceCache.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
+    when(resourceCacheMock.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
     return new CustomResourceEvent(ResourceAction.UPDATED,
         CustomResourceID.fromResource(customResource));
   }

@@ -47,4 +47,12 @@ public class CustomResourceID {
   public int hashCode() {
     return Objects.hash(name, namespace);
   }
+
+  @Override
+  public String toString() {
+    return "CustomResourceID{" +
+        "name='" + name + '\'' +
+        ", namespace='" + namespace + '\'' +
+        '}';
+  }
 }
