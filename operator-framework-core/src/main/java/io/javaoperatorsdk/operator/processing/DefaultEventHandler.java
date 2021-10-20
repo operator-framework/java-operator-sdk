@@ -241,9 +241,11 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
     String originalResourceVersion = getVersion(executionScope.getCustomResource());
     String customResourceVersionAfterExecution = getVersion(postExecutionControl
-        .getUpdatedCustomResource().get());
+        .getUpdatedCustomResource()
+        .orElseThrow(() -> new IllegalStateException("Updated custom resource must be present at this point of time")));
     String cachedCustomResourceVersion = getVersion(resourceCache
-        .getCustomResource(executionScope.getCustomResourceID()).get());
+        .getCustomResource(executionScope.getCustomResourceID())
+        .orElseThrow(() -> new IllegalStateException("Cached custom resource must be present at this point")));
 
     if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
       return true;
@@ -251,7 +253,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (cachedCustomResourceVersion.equals(originalResourceVersion)) {
       return false;
     }
-    // If the cached resource version equals neither the version before or after execution
+    // If the cached resource version equals neither the version before nor after execution
     // probably an update happened on the custom resource independent of the framework during
     // reconciliation. We cannot tell at this point if it happened before our update or before.
     // (Well we could if we would parse resource version, but that should not be done by definition)
