@@ -103,8 +103,8 @@ class CustomResourceEventFilterTest {
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
 
-    when(config.getConfigurationService().getObjectMapper())
-        .thenReturn(ConfigurationService.OBJECT_MAPPER);
+    when(config.getConfigurationService().getResourceCloner())
+        .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var controller = new TestConfiguredController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
@@ -142,8 +142,8 @@ class CustomResourceEventFilterTest {
           TestCustomResource.class,
           mock(ConfigurationService.class));
 
-      when(getConfigurationService().getObjectMapper())
-          .thenReturn(ConfigurationService.OBJECT_MAPPER);
+      when(getConfigurationService().getResourceCloner())
+          .thenReturn(ConfigurationService.DEFAULT_CLONER);
     }
   }
 
