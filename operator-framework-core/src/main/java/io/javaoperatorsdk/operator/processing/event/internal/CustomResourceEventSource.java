@@ -41,11 +41,31 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
   private final ObjectMapper cloningObjectMapper;
+  private final CustomResourceEventFilter<T> filter;
+  private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
+
 
   public CustomResourceEventSource(ConfiguredController<T> controller) {
     this.controller = controller;
     this.cloningObjectMapper =
         controller.getConfiguration().getConfigurationService().getObjectMapper();
+
+    var filters = new CustomResourceEventFilter[] {
+        CustomResourceEventFilters.finalizerNeededAndApplied(),
+        CustomResourceEventFilters.markedForDeletion(),
+        CustomResourceEventFilters.and(
+            controller.getConfiguration().getEventFilter(),
+            CustomResourceEventFilters.generationAware()),
+        null
+    };
+
+    if (controller.getConfiguration().isGenerationAware()) {
+      onceWhitelistEventFilterEventFilter = new OnceWhitelistEventFilterEventFilter<>();
+      filters[filters.length - 1] = onceWhitelistEventFilterEventFilter;
+    } else {
+      onceWhitelistEventFilterEventFilter = null;
+    }
+    filter = CustomResourceEventFilters.or(filters);
   }
 
   @Override
@@ -90,7 +110,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   @Override
   public void close() throws IOException {
     eventHandler.close();
-    for (SharedIndexInformer informer : sharedIndexInformers.values()) {
+    for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
       try {
         log.info("Closing informer {} -> {}", controller, informer);
         informer.close();
@@ -103,13 +123,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   public void eventReceived(ResourceAction action, T customResource, T oldResource) {
     log.debug(
         "Event received for resource: {}", getName(customResource));
-
-    final CustomResourceEventFilter<T> filter = CustomResourceEventFilters.or(
-        CustomResourceEventFilters.finalizerNeededAndApplied(),
-        CustomResourceEventFilters.markedForDeletion(),
-        CustomResourceEventFilters.and(
-            controller.getConfiguration().getEventFilter(),
-            CustomResourceEventFilters.generationAware()));
 
     if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
       eventHandler.handleEvent(
@@ -169,6 +182,18 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
           cloningObjectMapper.writeValueAsString(customResource), customResource.getClass());
     } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * This will ensure that the next event received after this method is called will not be filtered
+   * out.
+   * 
+   * @param customResourceID - to which the event is related
+   */
+  public void whitelistNextEvent(CustomResourceID customResourceID) {
+    if (onceWhitelistEventFilterEventFilter != null) {
+      onceWhitelistEventFilterEventFilter.whitelistNextEvent(customResourceID);
     }
   }
 }

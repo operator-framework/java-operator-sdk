@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -103,16 +104,36 @@ class CustomResourceEventSourceTest {
   }
 
   @Test
-  public void eventNotMarkedForLastGenerationIfNoFinalizer() {
+  public void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
     customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
-    verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
-        customResource1);
-    verify(eventHandler, times(2)).handleEvent(any());
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  public void handlesNextEventIfWhitelisted() {
+    TestCustomResource customResource = TestUtils.testCustomResource();
+    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
+    customResourceEventSource.whitelistNextEvent(CustomResourceID.fromResource(customResource));
+
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+        customResource);
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  public void notHandlesNextEventIfNotWhitelisted() {
+    TestCustomResource customResource = TestUtils.testCustomResource();
+    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
+
+    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+        customResource);
+
+    verify(eventHandler, times(0)).handleEvent(any());
   }
 
   private static class TestConfiguredController extends ConfiguredController<TestCustomResource> {
