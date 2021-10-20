@@ -188,7 +188,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   /**
    * This will ensure that the next event received after this method is called will not be filtered
    * out.
-   * 
+   *
    * @param customResourceID - to which the event is related
    */
   public void whitelistNextEvent(CustomResourceID customResourceID) {
