@@ -51,21 +51,22 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     this.cloningObjectMapper =
         controller.getConfiguration().getConfigurationService().getObjectMapper();
 
-    var filters = Arrays.stream(new CustomResourceEventFilter[] {
+    var filters = new CustomResourceEventFilter[] {
         CustomResourceEventFilters.finalizerNeededAndApplied(),
         CustomResourceEventFilters.markedForDeletion(),
         CustomResourceEventFilters.and(
             controller.getConfiguration().getEventFilter(),
-            CustomResourceEventFilters.generationAware())})
-        .collect(Collectors.toList());
+            CustomResourceEventFilters.generationAware()),
+        null
+    };
 
     if (controller.getConfiguration().isGenerationAware()) {
       onceWhitelistEventFilterEventFilter = new OnceWhitelistEventFilterEventFilter<>();
-      filters.add(onceWhitelistEventFilterEventFilter);
+      filters[filters.length - 1] = onceWhitelistEventFilterEventFilter;
     } else {
       onceWhitelistEventFilterEventFilter = null;
     }
-    filter = CustomResourceEventFilters.or(filters.toArray(new CustomResourceEventFilter[0]));
+    filter = CustomResourceEventFilters.or(filters);
   }
 
   @Override
@@ -188,7 +189,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   /**
    * This will ensure that the next event received after this method is called will not be filtered
    * out.
-   * 
+   *
    * @param customResourceID - to which the event is related
    */
   public void whitelistNextEvent(CustomResourceID customResourceID) {
