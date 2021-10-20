@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public interface ConfigurationService {
 
   Cloner DEFAULT_CLONER = new Cloner() {
-    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public CustomResource<?, ?> clone(CustomResource<?, ?> object) {
