@@ -22,7 +22,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   private final ReentrantLock lock = new ReentrantLock();
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private DefaultEventHandler<R> defaultEventHandler;
-  private TimerEventSource<R> retryTimerEventSource;
+  private TimerEventSource<R> retryAndRescheduleTimerEventSource;
   private CustomResourceEventSource customResourceEventSource;
 
   DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler) {
@@ -39,8 +39,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     this.defaultEventHandler = defaultEventHandler;
     defaultEventHandler.setEventSourceManager(this);
 
-    this.retryTimerEventSource = new TimerEventSource<>();
-    registerEventSource(retryTimerEventSource);
+    this.retryAndRescheduleTimerEventSource = new TimerEventSource<>();
+    registerEventSource(retryAndRescheduleTimerEventSource);
   }
 
   @Override
@@ -98,8 +98,8 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     }
   }
 
-  public TimerEventSource getRetryTimerEventSource() {
-    return retryTimerEventSource;
+  public TimerEventSource getRetryAndRescheduleTimerEventSource() {
+    return retryAndRescheduleTimerEventSource;
   }
 
   @Override
