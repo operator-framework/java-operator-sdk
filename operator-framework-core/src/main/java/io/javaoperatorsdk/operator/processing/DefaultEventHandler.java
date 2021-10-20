@@ -242,10 +242,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     String originalResourceVersion = getVersion(executionScope.getCustomResource());
     String customResourceVersionAfterExecution = getVersion(postExecutionControl
         .getUpdatedCustomResource()
-        .orElseThrow(() -> new IllegalStateException("Updated custom resource must be present at this point of time")));
+        .orElseThrow(() -> new IllegalStateException(
+            "Updated custom resource must be present at this point of time")));
     String cachedCustomResourceVersion = getVersion(resourceCache
         .getCustomResource(executionScope.getCustomResourceID())
-        .orElseThrow(() -> new IllegalStateException("Cached custom resource must be present at this point")));
+        .orElseThrow(() -> new IllegalStateException(
+            "Cached custom resource must be present at this point")));
 
     if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
       return true;
