@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -186,15 +185,4 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     }
   }
 
-  /**
-   * This will ensure that the next event received after this method is called will not be filtered
-   * out.
-   *
-   * @param customResourceID - to which the event is related
-   */
-  public void whitelistNextEvent(CustomResourceID customResourceID) {
-    if (onceWhitelistEventFilterEventFilter != null) {
-      onceWhitelistEventFilterEventFilter.whitelistNextEvent(customResourceID);
-    }
-  }
 }
