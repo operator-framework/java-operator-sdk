@@ -47,11 +47,11 @@ public class UpdateControl<T extends CustomResource> {
     return new UpdateControl<>(null, false, false);
   }
 
-  public UpdateControl withReSchedule(long delay, TimeUnit timeUnit) {
+  public UpdateControl<T> withReSchedule(long delay, TimeUnit timeUnit) {
     return withReSchedule(timeUnit.toMillis(delay));
   }
 
-  public UpdateControl withReSchedule(long delay) {
+  public UpdateControl<T> withReSchedule(long delay) {
     this.reScheduleDelay = delay;
     return this;
   }
