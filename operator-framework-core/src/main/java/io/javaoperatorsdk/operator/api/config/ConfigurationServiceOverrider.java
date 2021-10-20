@@ -43,7 +43,7 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider getResourceCloner(Cloner cloner) {
+  public ConfigurationServiceOverrider withResourceCloner(Cloner cloner) {
     this.cloner = cloner;
     return this;
   }
