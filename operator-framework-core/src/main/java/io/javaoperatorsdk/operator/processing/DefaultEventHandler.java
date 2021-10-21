@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.monitoring.EventMonitor;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -92,23 +93,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.eventSourceManager = eventSourceManager;
   }
 
-  /*
-   * TODO: promote this interface to top-level, probably create a `monitoring` package?
-   */
-  public interface EventMonitor {
-    EventMonitor NOOP = new EventMonitor() {
-      @Override
-      public void processedEvent(CustomResourceID uid, Event event) {}
-
-      @Override
-      public void failedEvent(CustomResourceID uid, Event event) {}
-    };
-
-    void processedEvent(CustomResourceID uid, Event event);
-
-    void failedEvent(CustomResourceID uid, Event event);
-  }
-
   private EventMonitor monitor() {
     // todo: remove us of static monitor, only here for backwards compatibility
     return DefaultEventHandler.monitor != EventMonitor.NOOP ? DefaultEventHandler.monitor
@@ -125,13 +109,14 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         return;
       }
       final var monitor = monitor();
-      monitor.processedEvent(event.getRelatedCustomResourceID(), event);
+      final var resourceID = event.getRelatedCustomResourceID();
+      monitor.processedEvent(resourceID, event);
 
       handleEventMarking(event);
-      if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
-        submitReconciliationExecution(event.getRelatedCustomResourceID());
+      if (!eventMarker.deleteEventPresent(resourceID)) {
+        submitReconciliationExecution(resourceID);
       } else {
-        cleanupForDeletedEvent(event.getRelatedCustomResourceID());
+        cleanupForDeletedEvent(resourceID);
       }
     } finally {
       lock.unlock();

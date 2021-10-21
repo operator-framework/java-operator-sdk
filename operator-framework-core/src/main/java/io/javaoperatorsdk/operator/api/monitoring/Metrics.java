@@ -2,9 +2,6 @@ package io.javaoperatorsdk.operator.api.monitoring;
 
 import java.util.Map;
 
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
-
 public interface Metrics {
   Metrics NOOP = new Metrics() {};
 
@@ -31,7 +28,7 @@ public interface Metrics {
     return map;
   }
 
-  default DefaultEventHandler.EventMonitor getEventMonitor() {
+  default EventMonitor getEventMonitor() {
     return EventMonitor.NOOP;
   }
 }
