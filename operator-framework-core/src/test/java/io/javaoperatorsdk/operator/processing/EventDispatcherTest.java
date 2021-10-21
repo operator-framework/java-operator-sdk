@@ -20,12 +20,12 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.Event.Type;
 
-import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.ADDED;
-import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.UPDATED;
+import static io.javaoperatorsdk.operator.processing.event.Event.Type.ADDED;
+import static io.javaoperatorsdk.operator.processing.event.Event.Type.UPDATED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -329,9 +329,9 @@ class EventDispatcherTest {
   }
 
   public ExecutionScope executionScopeWithCREvent(
-      ResourceAction action, CustomResource resource, Event... otherEvents) {
-    CustomResourceEvent event =
-        new CustomResourceEvent(action, CustomResourceID.fromResource(resource));
+      Type type, CustomResource resource, Event... otherEvents) {
+    DefaultEvent event =
+        new DefaultEvent(CustomResourceID.fromResource(resource), type);
     List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
     eventList.add(event);
     eventList.addAll(Arrays.asList(otherEvents));

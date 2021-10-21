@@ -16,15 +16,14 @@ import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.Event.Type;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.DELETED;
+import static io.javaoperatorsdk.operator.processing.event.Event.Type.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -203,8 +202,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void cleansUpWhenDeleteEventReceivedAndNoEventPresent() {
-    Event deleteEvent =
-        new CustomResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
+    Event deleteEvent = new DefaultEvent(prepareCREvent().getRelatedCustomResourceID(), DELETED);
 
     defaultEventHandler.handleEvent(deleteEvent);
 
@@ -303,19 +301,18 @@ class DefaultEventHandlerTest {
     return event.getRelatedCustomResourceID();
   }
 
-  private CustomResourceEvent prepareCREvent() {
+  private DefaultEvent prepareCREvent() {
     return prepareCREvent(new CustomResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
+  private DefaultEvent prepareCREvent(CustomResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
     when(resourceCacheMock.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
-    return new CustomResourceEvent(ResourceAction.UPDATED,
-        CustomResourceID.fromResource(customResource));
+    return new DefaultEvent(CustomResourceID.fromResource(customResource), Type.UPDATED);
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
-    return new DefaultEvent(relatedCustomResourceUid);
+    return new DefaultEvent(relatedCustomResourceUid, Type.OTHER);
   }
 
   private void overrideData(CustomResourceID id, CustomResource<?, ?> applyTo) {
