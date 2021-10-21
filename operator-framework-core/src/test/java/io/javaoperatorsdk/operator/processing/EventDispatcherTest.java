@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,7 +17,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
-import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.Event.Type;
 
 import static io.javaoperatorsdk.operator.processing.event.Event.Type.ADDED;
@@ -279,7 +274,7 @@ class EventDispatcherTest {
               public boolean isLastAttempt() {
                 return true;
               }
-            }));
+            }, new DefaultEvent(CustomResourceID.fromResource(testCustomResource), UPDATED)));
 
     ArgumentCaptor<Context<CustomResource>> contextArgumentCaptor =
         ArgumentCaptor.forClass(Context.class);
@@ -328,13 +323,9 @@ class EventDispatcherTest {
     customResource.getMetadata().getFinalizers().clear();
   }
 
-  public ExecutionScope executionScopeWithCREvent(
-      Type type, CustomResource resource, Event... otherEvents) {
+  public ExecutionScope executionScopeWithCREvent(Type type, CustomResource resource) {
     DefaultEvent event =
         new DefaultEvent(CustomResourceID.fromResource(resource), type);
-    List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
-    eventList.add(event);
-    eventList.addAll(Arrays.asList(otherEvents));
-    return new ExecutionScope(resource, null);
+    return new ExecutionScope(resource, null, event);
   }
 }

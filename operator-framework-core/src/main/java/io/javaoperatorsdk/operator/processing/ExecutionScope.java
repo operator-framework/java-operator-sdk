@@ -3,16 +3,19 @@ package io.javaoperatorsdk.operator.processing;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class ExecutionScope<R extends CustomResource<?, ?>> {
 
   // the latest custom resource from cache
   private final R customResource;
   private final RetryInfo retryInfo;
+  private final Event triggeringEvent;
 
-  public ExecutionScope(R customResource, RetryInfo retryInfo) {
+  ExecutionScope(R customResource, RetryInfo retryInfo, Event triggeringEvent) {
     this.customResource = customResource;
     this.retryInfo = retryInfo;
+    this.triggeringEvent = triggeringEvent;
   }
 
   public R getCustomResource() {
@@ -21,6 +24,10 @@ public class ExecutionScope<R extends CustomResource<?, ?>> {
 
   public CustomResourceID getCustomResourceID() {
     return CustomResourceID.fromResource(customResource);
+  }
+
+  public Event getTriggeringEvent() {
+    return triggeringEvent;
   }
 
   @Override

@@ -24,6 +24,8 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static io.javaoperatorsdk.operator.processing.event.Event.Type.DELETED;
+import static io.javaoperatorsdk.operator.processing.event.Event.Type.OTHER;
+import static io.javaoperatorsdk.operator.processing.event.Event.Type.UPDATED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -90,7 +92,8 @@ class DefaultEventHandlerTest {
   public void schedulesAnEventRetryOnException() {
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    ExecutionScope executionScope = new ExecutionScope(customResource, null,
+        new DefaultEvent(CustomResourceID.fromResource(customResource), UPDATED));
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -213,9 +216,9 @@ class DefaultEventHandlerTest {
   @Test
   public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
     var cr = testCustomResource();
-    var crEvent = prepareCREvent(CustomResourceID.fromResource(cr));
+    var crEvent = new DefaultEvent(CustomResourceID.fromResource(cr), DELETED);
     eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
-    var executionScope = new ExecutionScope(cr, null);
+    var executionScope = new ExecutionScope(cr, null, crEvent);
 
     defaultEventHandler.eventProcessingFinished(executionScope,
         PostExecutionControl.defaultDispatch());
@@ -236,7 +239,8 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    defaultEventHandler.eventProcessingFinished(
+        new ExecutionScope(cr, null, new DefaultEvent(crID, UPDATED)),
         PostExecutionControl.customResourceUpdated(updatedCr));
 
     verify(mockCREventSource, times(1)).whitelistNextEvent(eq(crID));
@@ -251,12 +255,13 @@ class DefaultEventHandlerTest {
     var otherChangeCR = testCustomResource(crID);
     otherChangeCR.getMetadata().setResourceVersion("3");
     var mockCREventSource = mock(CustomResourceEventSource.class);
+    final var event = new DefaultEvent(crID, Type.UPDATED);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null, event),
         PostExecutionControl.customResourceUpdated(updatedCr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
@@ -272,7 +277,8 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    defaultEventHandler.eventProcessingFinished(
+        new ExecutionScope(cr, null, new DefaultEvent(crID, UPDATED)),
         PostExecutionControl.customResourceUpdated(cr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
@@ -283,7 +289,8 @@ class DefaultEventHandlerTest {
     var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    defaultEventHandler.eventProcessingFinished(
+        new ExecutionScope(cr, null, new DefaultEvent(crID, OTHER)),
         PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));

@@ -107,16 +107,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
       handleEventMarking(event);
       if (!eventMarker.deleteEventPresent(resourceID)) {
-        submitReconciliationExecution(resourceID);
+        submitReconciliationExecution(event);
       } else {
-        cleanupForDeletedEvent(resourceID);
+        cleanupForDeletedEvent(event);
       }
     } finally {
       lock.unlock();
     }
   }
 
-  private boolean submitReconciliationExecution(CustomResourceID customResourceUid) {
+  private boolean submitReconciliationExecution(Event event) {
+    final var customResourceUid = event.getRelatedCustomResourceID();
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<R> latestCustomResource =
         resourceCache.getCustomResource(customResourceUid);
@@ -127,7 +128,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       ExecutionScope<R> executionScope =
           new ExecutionScope<>(
               latestCustomResource.get(),
-              retryInfo(customResourceUid));
+              retryInfo(customResourceUid), event);
       eventMarker.unMarkEventReceived(customResourceUid);
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
@@ -179,18 +180,16 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
           !eventMarker.deleteEventPresent(customResourceID)) {
         handleRetryOnException(executionScope);
-        // todo revisit monitoring since events are not present anymore
-        // final var monitor = monitor(); executionScope.getEvents().forEach(e ->
-        // monitor.failedEvent(executionScope.getCustomResourceID(), e));
+        monitor().failedEvent(customResourceID, executionScope.getTriggeringEvent());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
       if (eventMarker.deleteEventPresent(customResourceID)) {
-        cleanupForDeletedEvent(executionScope.getCustomResourceID());
+        cleanupForDeletedEvent(executionScope.getTriggeringEvent());
       } else {
         if (eventMarker.eventPresent(customResourceID)) {
           if (isCacheReadyForInstantReconciliation(executionScope, postExecutionControl)) {
-            submitReconciliationExecution(customResourceID);
+            submitReconciliationExecution(executionScope.getTriggeringEvent());
           } else {
             postponeReconciliationAndHandleCacheSyncEvent(customResourceID);
           }
@@ -257,7 +256,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (eventPresent) {
       log.debug("New events exists for for resource id: {}",
           customResourceID);
-      submitReconciliationExecution(customResourceID);
+      submitReconciliationExecution(executionScope.getTriggeringEvent());
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
@@ -296,7 +295,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     return retryExecution;
   }
 
-  private void cleanupForDeletedEvent(CustomResourceID customResourceUid) {
+  private void cleanupForDeletedEvent(Event event) {
+    final var customResourceUid = event.getRelatedCustomResourceID();
     eventSourceManager.cleanupForCustomResource(customResourceUid);
     eventMarker.cleanup(customResourceUid);
   }
