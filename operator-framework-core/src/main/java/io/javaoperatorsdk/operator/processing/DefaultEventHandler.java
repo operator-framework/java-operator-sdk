@@ -38,9 +38,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
-  @Deprecated
-  private static EventMonitor monitor = EventMonitor.NOOP;
-
   private final Set<CustomResourceID> underProcessing = new HashSet<>();
   private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
@@ -94,9 +91,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   }
 
   private EventMonitor monitor() {
-    // todo: remove us of static monitor, only here for backwards compatibility
-    return DefaultEventHandler.monitor != EventMonitor.NOOP ? DefaultEventHandler.monitor
-        : eventMonitor;
+    return eventMonitor;
   }
 
   @Override
