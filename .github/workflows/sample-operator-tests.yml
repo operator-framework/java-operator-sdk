@@ -58,9 +58,9 @@ jobs:
         - name: create ns tomcatoperator-sample
           run: kubectl create ns tomcatoperator-sample
 
-        - name: Run unit tests
+        - name: Run tests
           working-directory: sample-operators/tomcat-operator
-          run: mvn -B test -q --file tomcat/pom.xml
+          run: mvn -B test -q --file pom.xml
 
         - name: Dump state
           if: ${{ failure() }}
