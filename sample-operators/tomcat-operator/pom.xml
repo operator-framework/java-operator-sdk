@@ -21,7 +21,7 @@
         <dependency>
             <groupId>io.javaoperatorsdk</groupId>
             <artifactId>operator-framework</artifactId>
-            <version>${project.version}</version>
+            <version>1.9.8</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
