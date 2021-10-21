@@ -5,7 +5,6 @@ import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.monitoring.EventMonitor;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -16,12 +15,12 @@ public class MicrometerMetrics implements Metrics {
   private final MeterRegistry registry;
   private final EventMonitor monitor = new EventMonitor() {
     @Override
-    public void processedEvent(CustomResourceID uid, Event event) {
+    public void processedEvent(Event event) {
       incrementProcessedEventsNumber();
     }
 
     @Override
-    public void failedEvent(CustomResourceID uid, Event event) {
+    public void failedEvent(Event event) {
       incrementControllerRetriesNumber();
     }
   };

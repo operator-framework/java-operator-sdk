@@ -103,7 +103,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       }
       final var monitor = monitor();
       final var resourceID = event.getRelatedCustomResourceID();
-      monitor.processedEvent(resourceID, event);
+      monitor.processedEvent(event);
 
       handleEventMarking(event);
       if (!eventMarker.deleteEventPresent(resourceID)) {
@@ -180,7 +180,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
           !eventMarker.deleteEventPresent(customResourceID)) {
         handleRetryOnException(executionScope);
-        monitor().failedEvent(customResourceID, executionScope.getTriggeringEvent());
+        monitor().failedEvent(executionScope.getTriggeringEvent());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
