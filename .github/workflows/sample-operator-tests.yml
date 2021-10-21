@@ -62,12 +62,14 @@ jobs:
         - name: Dump state
           if: ${{ failure() }}
           run: |
+            set +e
+            echo "All namespaces"
             kubectl get ns
-            echo "All objects in tomcat-test"
-            kubectl get all -n tomcat-test -o yaml
-            echo "Output of curl command"
-            kubectl logs curl -n tomcat-test
             echo "All objects in tomcat-operator"
             kubectl get all -n tomcat-operator -o yaml
             echo "Output of tomcat-operator pod"
             kubectl logs -l app=tomcat-operator
+            echo "All objects in tomcat-test"
+            kubectl get all -n tomcat-test -o yaml
+            echo "Output of curl command"
+            kubectl logs curl -n tomcat-test
