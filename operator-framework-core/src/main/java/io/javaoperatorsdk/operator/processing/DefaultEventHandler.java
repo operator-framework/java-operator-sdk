@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.api.monitoring.EventMonitor;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -43,7 +43,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
-  private final EventMonitor eventMonitor;
+  private final Metrics metrics;
   private volatile boolean running;
   private final ResourceCache<R> resourceCache;
   private DefaultEventSourceManager<R> eventSourceManager;
@@ -56,7 +56,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
-        controller.getConfiguration().getConfigurationService().getMetrics().getEventMonitor(),
+        controller.getConfiguration().getConfigurationService().getMetrics(),
         new EventMarker());
   }
 
@@ -68,7 +68,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private DefaultEventHandler(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
-      EventDispatcher<R> eventDispatcher, Retry retry, EventMonitor monitor,
+      EventDispatcher<R> eventDispatcher, Retry retry, Metrics metrics,
       EventMarker eventMarker) {
     this.running = true;
     this.executor =
@@ -80,16 +80,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.resourceCache = resourceCache;
-    this.eventMonitor = monitor != null ? monitor : EventMonitor.NOOP;
+    this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventMarker = eventMarker;
   }
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
-  }
-
-  private EventMonitor monitor() {
-    return eventMonitor;
   }
 
   @Override
@@ -101,9 +97,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         log.debug("Skipping event: {} because the event handler is shutting down", event);
         return;
       }
-      final var monitor = monitor();
       final var resourceID = event.getRelatedCustomResourceID();
-      monitor.processedEvent(event);
+      metrics.processingEvent(event);
 
       handleEventMarking(event);
       if (!eventMarker.deleteEventPresent(resourceID)) {
@@ -111,6 +106,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       } else {
         cleanupForDeletedEvent(event);
       }
+
+      metrics.processedEvent(event);
     } finally {
       lock.unlock();
     }
@@ -179,8 +176,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       // Either way we don't want to retry.
       if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
           !eventMarker.deleteEventPresent(customResourceID)) {
-        handleRetryOnException(executionScope);
-        monitor().failedEvent(executionScope.getTriggeringEvent());
+        handleRetryOnException(executionScope,
+            postExecutionControl.getRuntimeException().orElseThrow());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
@@ -247,7 +244,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(ExecutionScope<R> executionScope) {
+  private void handleRetryOnException(ExecutionScope<R> executionScope,
+      RuntimeException exception) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
     var customResourceID = executionScope.getCustomResourceID();
     boolean eventPresent = eventMarker.eventPresent(customResourceID);
@@ -267,6 +265,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
               customResourceID);
+          metrics.failedEvent(executionScope.getTriggeringEvent(), exception);
           eventSourceManager
               .getRetryAndRescheduleTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);

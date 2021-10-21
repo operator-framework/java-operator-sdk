@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
-import io.javaoperatorsdk.operator.api.monitoring.EventMonitor;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -13,17 +14,6 @@ public class MicrometerMetrics implements Metrics {
 
   public static final String PREFIX = "operator.sdk.";
   private final MeterRegistry registry;
-  private final EventMonitor monitor = new EventMonitor() {
-    @Override
-    public void processedEvent(Event event) {
-      incrementProcessedEventsNumber();
-    }
-
-    @Override
-    public void failedEvent(Event event) {
-      incrementControllerRetriesNumber();
-    }
-  };
 
   public MicrometerMetrics(MeterRegistry registry) {
     this.registry = registry;
@@ -63,21 +53,37 @@ public class MicrometerMetrics implements Metrics {
 
   }
 
-  public void incrementProcessedEventsNumber() {
-    registry
-        .counter(
-            PREFIX + "total.events.received", "events", "totalEvents", "type",
-            "eventsReceived")
-        .increment();
+  public void processingEvent(Event event) {
+    incrementCounter(event, "events.received");
+  }
 
+  public void processedEvent(Event event) {
+    incrementCounter(event, "events.processed");
+  }
+
+  public void failedEvent(Event event, RuntimeException exception) {
+    var cause = exception.getCause();
+    if (cause == null) {
+      cause = exception;
+    } else if (cause instanceof RuntimeException) {
+      cause = cause.getCause() != null ? cause.getCause() : cause;
+    }
+    incrementCounter(event, "events.failed", "exception", cause.getClass().getSimpleName());
   }
 
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
 
-  @Override
-  public EventMonitor getEventMonitor() {
-    return monitor;
+  private void incrementCounter(Event event, String counterName, String... additionalTags) {
+    final var id = event.getRelatedCustomResourceID();
+    var tags = List.of("namespace", id.getNamespace().orElse(""),
+        "scope", id.getNamespace().isPresent() ? "namespace" : "cluster",
+        "type", event.getType().name());
+    if (additionalTags != null && additionalTags.length > 0) {
+      tags = new LinkedList<>(tags);
+      tags.addAll(List.of(additionalTags));
+    }
+    registry.counter(PREFIX + counterName, tags.toArray(new String[0])).increment();
   }
 }

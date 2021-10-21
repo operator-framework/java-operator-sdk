@@ -2,8 +2,16 @@ package io.javaoperatorsdk.operator.api.monitoring;
 
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.processing.event.Event;
+
 public interface Metrics {
   Metrics NOOP = new Metrics() {};
+
+  default void processingEvent(Event event) {}
+
+  default void processedEvent(Event event) {}
+
+  default void failedEvent(Event event, RuntimeException exception) {}
 
 
   interface ControllerExecution<T> {
@@ -20,15 +28,7 @@ public interface Metrics {
     return execution.execute();
   }
 
-  default void incrementControllerRetriesNumber() {}
-
-  default void incrementProcessedEventsNumber() {}
-
   default <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return map;
-  }
-
-  default EventMonitor getEventMonitor() {
-    return EventMonitor.NOOP;
   }
 }
