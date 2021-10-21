@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -37,9 +38,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
-  @Deprecated
-  private static EventMonitor monitor = EventMonitor.NOOP;
-
   private final Set<CustomResourceID> underProcessing = new HashSet<>();
   private final EventDispatcher<R> eventDispatcher;
   private final Retry retry;
@@ -47,7 +45,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
-  private final EventMonitor eventMonitor;
+  private final Metrics metrics;
   private volatile boolean running;
   private final ResourceCache<R> resourceCache;
   private DefaultEventSourceManager<R> eventSourceManager;
@@ -60,7 +58,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         controller.getConfiguration().getName(),
         new EventDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
-        controller.getConfiguration().getConfigurationService().getMetrics().getEventMonitor(),
+        controller.getConfiguration().getConfigurationService().getMetrics(),
         new EventMarker());
   }
 
@@ -72,7 +70,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
 
   private DefaultEventHandler(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
-      EventDispatcher<R> eventDispatcher, Retry retry, EventMonitor monitor,
+      EventDispatcher<R> eventDispatcher, Retry retry, Metrics metrics,
       EventMarker eventMarker) {
     this.running = true;
     this.executor =
@@ -84,35 +82,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     this.eventDispatcher = eventDispatcher;
     this.retry = retry;
     this.resourceCache = resourceCache;
-    this.eventMonitor = monitor != null ? monitor : EventMonitor.NOOP;
+    this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventMarker = eventMarker;
   }
 
   public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
-  }
-
-  /*
-   * TODO: promote this interface to top-level, probably create a `monitoring` package?
-   */
-  public interface EventMonitor {
-    EventMonitor NOOP = new EventMonitor() {
-      @Override
-      public void processedEvent(CustomResourceID uid, Event event) {}
-
-      @Override
-      public void failedEvent(CustomResourceID uid, Event event) {}
-    };
-
-    void processedEvent(CustomResourceID uid, Event event);
-
-    void failedEvent(CustomResourceID uid, Event event);
-  }
-
-  private EventMonitor monitor() {
-    // todo: remove us of static monitor, only here for backwards compatibility
-    return DefaultEventHandler.monitor != EventMonitor.NOOP ? DefaultEventHandler.monitor
-        : eventMonitor;
   }
 
   @Override
@@ -124,21 +99,22 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         log.debug("Skipping event: {} because the event handler is shutting down", event);
         return;
       }
-      final var monitor = monitor();
-      monitor.processedEvent(event.getRelatedCustomResourceID(), event);
+      final var resourceID = event.getRelatedCustomResourceID();
+      metrics.receivedEvent(event);
 
       handleEventMarking(event);
-      if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
-        submitReconciliationExecution(event.getRelatedCustomResourceID());
+      if (!eventMarker.deleteEventPresent(resourceID)) {
+        submitReconciliationExecution(resourceID);
       } else {
-        cleanupForDeletedEvent(event.getRelatedCustomResourceID());
+        cleanupForDeletedEvent(resourceID);
       }
+
     } finally {
       lock.unlock();
     }
   }
 
-  private boolean submitReconciliationExecution(CustomResourceID customResourceUid) {
+  private void submitReconciliationExecution(CustomResourceID customResourceUid) {
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<R> latestCustomResource =
         resourceCache.getCustomResource(customResourceUid);
@@ -146,14 +122,15 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (!controllerUnderExecution
         && latestCustomResource.isPresent()) {
       setUnderExecutionProcessing(customResourceUid);
-      ExecutionScope executionScope =
-          new ExecutionScope(
+      final var retryInfo = retryInfo(customResourceUid);
+      ExecutionScope<R> executionScope =
+          new ExecutionScope<>(
               latestCustomResource.get(),
-              retryInfo(customResourceUid));
+              retryInfo);
       eventMarker.unMarkEventReceived(customResourceUid);
+      metrics.reconcileCustomResource(customResourceUid, retryInfo);
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
-      return true;
     } else {
       log.debug(
           "Skipping executing controller for resource id: {}."
@@ -165,7 +142,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         log.warn("no custom resource found in cache for CustomResourceID: {}",
             customResourceUid);
       }
-      return false;
     }
   }
 
@@ -201,13 +177,12 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       // Either way we don't want to retry.
       if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
           !eventMarker.deleteEventPresent(customResourceID)) {
-        handleRetryOnException(executionScope);
-        // todo revisit monitoring since events are not present anymore
-        // final var monitor = monitor(); executionScope.getEvents().forEach(e ->
-        // monitor.failedEvent(executionScope.getCustomResourceID(), e));
+        handleRetryOnException(executionScope,
+            postExecutionControl.getRuntimeException().orElseThrow());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
+      metrics.finishedReconciliation(customResourceID);
       if (eventMarker.deleteEventPresent(customResourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
@@ -249,14 +224,11 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
       return true;
     }
-    if (cachedCustomResourceVersion.equals(originalResourceVersion)) {
-      return false;
-    }
     // If the cached resource version equals neither the version before nor after execution
     // probably an update happened on the custom resource independent of the framework during
     // reconciliation. We cannot tell at this point if it happened before our update or before.
     // (Well we could if we would parse resource version, but that should not be done by definition)
-    return true;
+    return !cachedCustomResourceVersion.equals(originalResourceVersion);
   }
 
   private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,
@@ -271,7 +243,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(ExecutionScope<R> executionScope) {
+  private void handleRetryOnException(ExecutionScope<R> executionScope,
+      RuntimeException exception) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
     var customResourceID = executionScope.getCustomResourceID();
     boolean eventPresent = eventMarker.eventPresent(customResourceID);
@@ -291,6 +264,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
               customResourceID);
+          metrics.failedReconciliation(customResourceID, exception);
           eventSourceManager
               .getRetryAndRescheduleTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
@@ -322,6 +296,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   private void cleanupForDeletedEvent(CustomResourceID customResourceUid) {
     eventSourceManager.cleanupForCustomResource(customResourceUid);
     eventMarker.cleanup(customResourceUid);
+    metrics.cleanupDoneFor(customResourceUid);
   }
 
   private boolean isControllerUnderExecution(CustomResourceID customResourceUid) {
@@ -360,10 +335,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     @Override
     public void run() {
       // change thread name for easier debugging
-      Thread.currentThread().setName("EventHandler-" + controllerName);
-      PostExecutionControl<R> postExecutionControl =
-          eventDispatcher.handleExecution(executionScope);
-      eventProcessingFinished(executionScope, postExecutionControl);
+      final var thread = Thread.currentThread();
+      final var name = thread.getName();
+      try {
+        thread.setName("EventHandler-" + controllerName);
+        PostExecutionControl<R> postExecutionControl =
+            eventDispatcher.handleExecution(executionScope);
+        eventProcessingFinished(executionScope, postExecutionControl);
+      } finally {
+        // restore original name
+        thread.setName(name);
+      }
     }
 
     @Override
