@@ -55,9 +55,6 @@ jobs:
           run: |
             kubectl apply -f k8s/operator.yaml
 
-        - name: create ns tomcatoperator-sample
-          run: kubectl create ns tomcatoperator-sample
-
         - name: Run tests
           working-directory: sample-operators/tomcat-operator
           run: mvn -B test -q --file pom.xml
@@ -65,5 +62,6 @@ jobs:
         - name: Dump state
           if: ${{ failure() }}
           run: |
+            kubectl get ns
             kubectl get all -n tomcat-test -o yaml
             kubectl logs curl -n tomcat-test
