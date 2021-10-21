@@ -43,8 +43,8 @@ jobs:
           working-directory: sample-operators/tomcat-operator
           run: |
             mvn --version
-            mvn -B package jib:dockerBuild jib:buildTar -Djib-maven-image=tomcat-operator --file tomcat/pom.xml -DskipTests
-            kind load image-archive tomcat/target/jib-image.tar --name=${{ env.KIND_CL_NAME }}
+            mvn -B package jib:dockerBuild jib:buildTar -Djib-maven-image=tomcat-operator -DskipTests
+            kind load image-archive target/jib-image.tar --name=${{ env.KIND_CL_NAME }}
 
         - name: Apply CRDs
           working-directory: sample-operators/tomcat-operator
