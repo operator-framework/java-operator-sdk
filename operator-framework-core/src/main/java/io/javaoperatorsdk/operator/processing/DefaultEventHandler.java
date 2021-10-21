@@ -146,8 +146,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (!controllerUnderExecution
         && latestCustomResource.isPresent()) {
       setUnderExecutionProcessing(customResourceUid);
-      ExecutionScope executionScope =
-          new ExecutionScope(
+      ExecutionScope<R> executionScope =
+          new ExecutionScope<>(
               latestCustomResource.get(),
               retryInfo(customResourceUid));
       eventMarker.unMarkEventReceived(customResourceUid);
