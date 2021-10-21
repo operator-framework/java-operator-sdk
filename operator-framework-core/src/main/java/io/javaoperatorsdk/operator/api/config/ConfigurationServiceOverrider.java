@@ -4,8 +4,8 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;

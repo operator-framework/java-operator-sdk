@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -15,7 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
 public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
-    implements EventSourceManager {
+    implements EventSourceManager<R>, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
@@ -23,7 +24,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private DefaultEventHandler<R> defaultEventHandler;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
-  private CustomResourceEventSource customResourceEventSource;
+  private CustomResourceEventSource<R> customResourceEventSource;
 
   DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler) {
     init(defaultEventHandler);
@@ -57,7 +58,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
         try {
           eventSource.close();
         } catch (Exception e) {
-          log.warn("Error closing {} -> {}", eventSource);
+          log.warn("Error closing {} -> {}", eventSource, e);
         }
       }
       eventSources.clear();
@@ -98,7 +99,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     }
   }
 
-  public TimerEventSource getRetryAndRescheduleTimerEventSource() {
+  public TimerEventSource<R> getRetryAndRescheduleTimerEventSource() {
     return retryAndRescheduleTimerEventSource;
   }
 
