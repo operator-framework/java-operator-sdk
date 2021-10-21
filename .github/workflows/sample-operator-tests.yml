@@ -1,0 +1,84 @@
+# End to end integration test which deploys the Tomcat operator to a Kubernetes
+# (Kind) cluster and creates custom resources to verify the operator's functionality
+name: Tomcat integration test
+on:
+   push:
+      branches:
+      - "*"
+jobs: 
+    tomcat_integration_test:
+       runs-on: ubuntu-latest
+       env:
+        KIND_CL_NAME: tomcat-integration-test
+       steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+
+        - name: clean resident local docker
+          if: ${{ env.ACT }}
+          continue-on-error: true
+          run: |
+            for DIMG in "$KIND_CL_NAME-control-plane "; do
+              docker stop $DIMG ; docker rm $DIMG ;
+            done ;
+            sleep 1
+
+        - name: Create Kubernetes KinD Cluster
+          uses: container-tools/kind-action@v1.5.0
+          with:
+            cluster_name: tomcat-integration-test
+            registry: false
+  
+        - name: Apply CRDs
+          run: kubectl apply -f k8s/crd.yaml
+          working-directory: sample-operators/tomcat-operator
+
+        - name: Set up Java and Maven
+          uses: actions/setup-java@v2
+          with:
+            java-version: 15
+            distribution: adopt-hotspot
+
+        - name: cache
+          uses: actions/cache@v2
+          if: ${{ !env.ACT }}
+          with:
+            path: ~/.m2/repository
+            key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+            restore-keys: |
+              ${{ runner.os }}-maven-m2
+
+        - name: Set up Maven
+          uses: stCarolas/setup-maven@v4
+          if: ${{ env.ACT }}
+          with:
+            maven-version: 3.8.1
+
+        - name: build jib
+          working-directory: sample-operators/tomcat-operator
+          run: |
+            mvn --version
+            mvn -B package jib:dockerBuild jib:buildTar -Djib-maven-image=tomcat-operator --file tomcat/pom.xml -DskipTests
+            kind load image-archive tomcat/target/jib-image.tar --name=${{ env.KIND_CL_NAME }}
+
+        - name: Apply CRDs
+          working-directory: sample-operators/tomcat-operator
+          run: kubectl apply -f k8s/crd.yaml
+
+        - name: install tomcat operator
+          working-directory: sample-operators/tomcat-operator
+          run: |
+            kubectl apply -f k8s/operator.yaml
+
+        - name: create ns tomcatoperator-sample
+          run: kubectl create ns tomcatoperator-sample
+
+        - name: Run unit tests
+          working-directory: sample-operators/tomcat-operator
+          run: mvn -B test -q --file tomcat/pom.xml
+
+        - name: Dump state
+          if: ${{ failure() }}
+          run: |
+            kubectl get all -n tomcat-test -o yaml
+            kubectl logs curl -n tomcat-test
