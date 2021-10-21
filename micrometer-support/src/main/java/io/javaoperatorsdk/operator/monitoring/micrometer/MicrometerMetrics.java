@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.micrometer;
 import java.util.Collections;
 import java.util.Map;
 
-import io.javaoperatorsdk.operator.Metrics;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler.EventMonitor;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;

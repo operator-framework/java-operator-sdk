@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator;
+package io.javaoperatorsdk.operator.api.monitoring;
 
 import java.util.Map;
 
