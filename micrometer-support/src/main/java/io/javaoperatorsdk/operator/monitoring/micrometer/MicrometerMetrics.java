@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.micrometer;
+package io.javaoperatorsdk.operator.monitoring.micrometer;
 
 import java.util.Collections;
 import java.util.Map;
