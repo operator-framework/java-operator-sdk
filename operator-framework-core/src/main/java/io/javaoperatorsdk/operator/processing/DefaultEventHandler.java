@@ -113,7 +113,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
   }
 
-  private boolean submitReconciliationExecution(Event event) {
+  private void submitReconciliationExecution(Event event) {
     final var customResourceUid = event.getRelatedCustomResourceID();
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<R> latestCustomResource =
@@ -129,7 +129,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       eventMarker.unMarkEventReceived(customResourceUid);
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
-      return true;
     } else {
       log.debug(
           "Skipping executing controller for resource id: {}."
@@ -141,7 +140,6 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         log.warn("no custom resource found in cache for CustomResourceID: {}",
             customResourceUid);
       }
-      return false;
     }
   }
 
@@ -222,14 +220,11 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
       return true;
     }
-    if (cachedCustomResourceVersion.equals(originalResourceVersion)) {
-      return false;
-    }
     // If the cached resource version equals neither the version before nor after execution
     // probably an update happened on the custom resource independent of the framework during
     // reconciliation. We cannot tell at this point if it happened before our update or before.
     // (Well we could if we would parse resource version, but that should not be done by definition)
-    return true;
+    return !cachedCustomResourceVersion.equals(originalResourceVersion);
   }
 
   private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,
