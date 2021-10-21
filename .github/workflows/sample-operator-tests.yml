@@ -36,23 +36,8 @@ jobs:
         - name: Set up Java and Maven
           uses: actions/setup-java@v2
           with:
-            java-version: 15
+            java-version: 11
             distribution: adopt-hotspot
-
-        - name: cache
-          uses: actions/cache@v2
-          if: ${{ !env.ACT }}
-          with:
-            path: ~/.m2/repository
-            key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-            restore-keys: |
-              ${{ runner.os }}-maven-m2
-
-        - name: Set up Maven
-          uses: stCarolas/setup-maven@v4
-          if: ${{ env.ACT }}
-          with:
-            maven-version: 3.8.1
 
         - name: build jib
           working-directory: sample-operators/tomcat-operator
