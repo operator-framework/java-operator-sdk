@@ -360,10 +360,17 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     @Override
     public void run() {
       // change thread name for easier debugging
-      Thread.currentThread().setName("EventHandler-" + controllerName);
-      PostExecutionControl<R> postExecutionControl =
-          eventDispatcher.handleExecution(executionScope);
-      eventProcessingFinished(executionScope, postExecutionControl);
+      final var thread = Thread.currentThread();
+      final var name = thread.getName();
+      try {
+        thread.setName("EventHandler-" + controllerName);
+        PostExecutionControl<R> postExecutionControl =
+            eventDispatcher.handleExecution(executionScope);
+        eventProcessingFinished(executionScope, postExecutionControl);
+      } finally {
+        // restore original name
+        thread.setName(name);
+      }
     }
 
     @Override
