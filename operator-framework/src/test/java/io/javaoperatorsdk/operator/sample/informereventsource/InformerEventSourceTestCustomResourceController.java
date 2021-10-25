@@ -5,10 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
@@ -22,7 +19,8 @@ import static io.javaoperatorsdk.operator.api.Controller.NO_FINALIZER;
  */
 @Controller(finalizerName = NO_FINALIZER)
 public class InformerEventSourceTestCustomResourceController implements
-    ResourceController<InformerEventSourceTestCustomResource>, KubernetesClientAware {
+    ResourceController<InformerEventSourceTestCustomResource>, KubernetesClientAware,
+    EventSourceInitializer {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomResourceController.class);
