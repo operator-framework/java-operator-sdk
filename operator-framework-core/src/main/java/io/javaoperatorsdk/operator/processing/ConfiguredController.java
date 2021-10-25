@@ -27,7 +27,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
-  private EventSourceManager eventSourceManager;
+  private DefaultEventSourceManager eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
@@ -97,7 +97,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   }
 
   @Override
-  public void init(EventSourceManager eventSourceManager) {
+  public void prepareEventSources(EventSourceManager eventSourceManager) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -169,7 +169,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
     try {
       eventSourceManager = new DefaultEventSourceManager<>(this);
-      controller.init(eventSourceManager);
+      controller.prepareEventSources(eventSourceManager);
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
     }

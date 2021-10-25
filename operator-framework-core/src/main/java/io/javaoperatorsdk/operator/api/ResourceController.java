@@ -55,5 +55,5 @@ public interface ResourceController<R extends CustomResource> {
    * @param eventSourceManager the {@link EventSourceManager} which handles this controller and with
    *        which event sources can be registered
    */
-  default void init(EventSourceManager eventSourceManager) {}
+  default void prepareEventSources(EventSourceManager eventSourceManager) {}
 }
