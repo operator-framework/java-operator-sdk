@@ -3,9 +3,10 @@ package io.javaoperatorsdk.operator;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public class Operator implements AutoCloseable {
   }
 
   public List<ConfiguredController> getControllers() {
-    return Collections.unmodifiableList(controllers.controllers);
+    return new ArrayList<>(controllers.controllers.values());
   }
 
   /**
@@ -159,7 +160,7 @@ public class Operator implements AutoCloseable {
   }
 
   private static class ControllerManager implements Closeable {
-    private final List<ConfiguredController> controllers = new LinkedList<>();
+    private final Map<String, ConfiguredController> controllers = new HashMap<>();
     private boolean started = false;
 
 
@@ -173,7 +174,7 @@ public class Operator implements AutoCloseable {
     }
 
     public synchronized void start() {
-      controllers.parallelStream().forEach(ConfiguredController::start);
+      controllers.values().parallelStream().forEach(ConfiguredController::start);
       started = true;
     }
 
@@ -183,7 +184,7 @@ public class Operator implements AutoCloseable {
         return;
       }
 
-      this.controllers.parallelStream().forEach(closeable -> {
+      this.controllers.values().parallelStream().forEach(closeable -> {
         try {
           log.debug("closing {}", closeable);
           closeable.close();
@@ -196,7 +197,15 @@ public class Operator implements AutoCloseable {
     }
 
     public synchronized void add(ConfiguredController configuredController) {
-      this.controllers.add(configuredController);
+      final var configuration = configuredController.getConfiguration();
+      final var crdName = configuration.getCRDName();
+      final var existing = controllers.get(crdName);
+      if (existing != null) {
+        throw new OperatorException("Cannot register controller " + configuration.getName()
+            + ": another controller (" + existing.getConfiguration().getName()
+            + ") is already registered for CRD " + crdName);
+      }
+      this.controllers.put(crdName, configuredController);
       if (started) {
         configuredController.start();
       }
