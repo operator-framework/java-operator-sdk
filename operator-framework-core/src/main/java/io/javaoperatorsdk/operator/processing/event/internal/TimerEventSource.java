@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
+import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEventSource {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
@@ -95,7 +95,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
     public void run() {
       if (running.get()) {
         log.debug("Producing event for custom resource id: {}", customResourceUid);
-        eventHandler.handleEvent(new DefaultEvent(customResourceUid));
+        eventHandler.handleEvent(new Event(customResourceUid));
       }
     }
   }

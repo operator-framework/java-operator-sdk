@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -17,10 +18,7 @@ import io.javaoperatorsdk.operator.api.RetryInfo;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.*;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -34,7 +32,8 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
  * UID, while buffering events which are received during an execution.
  */
-public class DefaultEventHandler<R extends CustomResource<?, ?>> implements EventHandler {
+public class DefaultEventHandler<R extends CustomResource<?, ?>>
+    implements EventHandler, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 

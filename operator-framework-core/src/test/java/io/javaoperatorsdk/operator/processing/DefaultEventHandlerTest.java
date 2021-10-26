@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -315,7 +314,7 @@ class DefaultEventHandlerTest {
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
-    return new DefaultEvent(relatedCustomResourceUid);
+    return new Event(relatedCustomResourceUid);
   }
 
   private void overrideData(CustomResourceID id, CustomResource<?, ?> applyTo) {

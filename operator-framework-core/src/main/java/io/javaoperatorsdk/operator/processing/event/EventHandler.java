@@ -1,12 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.Closeable;
-import java.io.IOException;
-
-public interface EventHandler extends Closeable {
+public interface EventHandler {
 
   void handleEvent(Event event);
 
-  @Override
-  default void close() throws IOException {}
 }
