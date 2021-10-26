@@ -14,7 +14,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import io.javaoperatorsdk.operator.processing.event.Event.Type;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -52,13 +51,13 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Type.UPDATED, cr, null);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Type.UPDATED, cr, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -85,13 +84,13 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(2L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Type.UPDATED, cr, cr2);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr2);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("2");
 
-    eventSource.eventReceived(Type.UPDATED, cr, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -115,13 +114,13 @@ class CustomResourceEventFilterTest {
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Type.UPDATED, cr, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(1)).handleEvent(any());
 
     cr.getMetadata().setGeneration(1L);
     cr.getStatus().setConfigMapStatus("1");
 
-    eventSource.eventReceived(Type.UPDATED, cr, cr);
+    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 

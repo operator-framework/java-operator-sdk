@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -44,42 +45,45 @@ public class MicrometerMetrics implements Metrics {
     }
   }
 
-  public void incrementControllerRetriesNumber() {
-    registry
-        .counter(
-            PREFIX + "retry.on.exception", "retry", "retryCounter", "type",
-            "retryException")
-        .increment();
-
-  }
-
-  public void processingEvent(Event event) {
+  public void receivedEvent(Event event) {
     incrementCounter(event, "events.received");
   }
 
-  public void processedEvent(Event event) {
-    incrementCounter(event, "events.processed");
+  public void reconcileCustomResource(CustomResourceID customResourceID) {
+    incrementCounter(customResourceID, "reconciliation.times");
   }
 
-  public void failedEvent(Event event, RuntimeException exception) {
+  public void failedReconciliation(CustomResourceID customResourceID, RuntimeException exception) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;
     } else if (cause instanceof RuntimeException) {
       cause = cause.getCause() != null ? cause.getCause() : cause;
     }
-    incrementCounter(event, "events.failed", "exception", cause.getClass().getSimpleName());
+    incrementCounter(customResourceID, "reconciliation.failed", "exception",
+        cause.getClass().getSimpleName());
   }
 
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
 
+  private void incrementCounter(CustomResourceID id, String counterName, String... additionalTags) {
+    var tags = List.of("namespace", id.getNamespace().orElse(""),
+        "scope", id.getNamespace().isPresent() ? "namespace" : "cluster",
+        "type", "reconciliation");
+    if (additionalTags != null && additionalTags.length > 0) {
+      tags = new LinkedList<>(tags);
+      tags.addAll(List.of(additionalTags));
+    }
+    registry.counter(PREFIX + counterName, tags.toArray(new String[0])).increment();
+  }
+
   private void incrementCounter(Event event, String counterName, String... additionalTags) {
     final var id = event.getRelatedCustomResourceID();
     var tags = List.of("namespace", id.getNamespace().orElse(""),
         "scope", id.getNamespace().isPresent() ? "namespace" : "cluster",
-        "type", event.getType().name());
+        "type", event.getClass().getSimpleName());
     if (additionalTags != null && additionalTags.length > 0) {
       tags = new LinkedList<>(tags);
       tags.addAll(List.of(additionalTags));

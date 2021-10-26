@@ -2,16 +2,18 @@ package io.javaoperatorsdk.operator.api.monitoring;
 
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 public interface Metrics {
   Metrics NOOP = new Metrics() {};
 
-  default void processingEvent(Event event) {}
+  default void receivedEvent(Event event) {}
 
-  default void processedEvent(Event event) {}
+  default void reconcileCustomResource(CustomResourceID customResourceID) {}
 
-  default void failedEvent(Event event, RuntimeException exception) {}
+  default void failedReconciliation(CustomResourceID customResourceID,
+      RuntimeException exception) {}
 
 
   interface ControllerExecution<T> {

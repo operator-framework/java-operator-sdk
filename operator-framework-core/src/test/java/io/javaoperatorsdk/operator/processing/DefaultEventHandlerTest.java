@@ -16,16 +16,15 @@ import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.Event.Type;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static io.javaoperatorsdk.operator.processing.event.Event.Type.DELETED;
-import static io.javaoperatorsdk.operator.processing.event.Event.Type.OTHER;
-import static io.javaoperatorsdk.operator.processing.event.Event.Type.UPDATED;
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -92,8 +91,7 @@ class DefaultEventHandlerTest {
   public void schedulesAnEventRetryOnException() {
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(customResource, null,
-        new DefaultEvent(CustomResourceID.fromResource(customResource), UPDATED));
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
@@ -205,7 +203,8 @@ class DefaultEventHandlerTest {
 
   @Test
   public void cleansUpWhenDeleteEventReceivedAndNoEventPresent() {
-    Event deleteEvent = new DefaultEvent(prepareCREvent().getRelatedCustomResourceID(), DELETED);
+    Event deleteEvent =
+        new CustomResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
 
     defaultEventHandler.handleEvent(deleteEvent);
 
@@ -216,9 +215,9 @@ class DefaultEventHandlerTest {
   @Test
   public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
     var cr = testCustomResource();
-    var crEvent = new DefaultEvent(CustomResourceID.fromResource(cr), DELETED);
+    var crEvent = prepareCREvent(CustomResourceID.fromResource(cr));
     eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
-    var executionScope = new ExecutionScope(cr, null, crEvent);
+    var executionScope = new ExecutionScope(cr, null);
 
     defaultEventHandler.eventProcessingFinished(executionScope,
         PostExecutionControl.defaultDispatch());
@@ -239,8 +238,7 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(
-        new ExecutionScope(cr, null, new DefaultEvent(crID, UPDATED)),
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
 
     verify(mockCREventSource, times(1)).whitelistNextEvent(eq(crID));
@@ -255,13 +253,12 @@ class DefaultEventHandlerTest {
     var otherChangeCR = testCustomResource(crID);
     otherChangeCR.getMetadata().setResourceVersion("3");
     var mockCREventSource = mock(CustomResourceEventSource.class);
-    final var event = new DefaultEvent(crID, Type.UPDATED);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null, event),
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
@@ -277,8 +274,7 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(
-        new ExecutionScope(cr, null, new DefaultEvent(crID, UPDATED)),
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(cr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
@@ -289,8 +285,7 @@ class DefaultEventHandlerTest {
     var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
-    defaultEventHandler.eventProcessingFinished(
-        new ExecutionScope(cr, null, new DefaultEvent(crID, OTHER)),
+    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
@@ -308,18 +303,19 @@ class DefaultEventHandlerTest {
     return event.getRelatedCustomResourceID();
   }
 
-  private DefaultEvent prepareCREvent() {
+  private CustomResourceEvent prepareCREvent() {
     return prepareCREvent(new CustomResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private DefaultEvent prepareCREvent(CustomResourceID uid) {
+  private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
     when(resourceCacheMock.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
-    return new DefaultEvent(CustomResourceID.fromResource(customResource), Type.UPDATED);
+    return new CustomResourceEvent(ResourceAction.UPDATED,
+        CustomResourceID.fromResource(customResource));
   }
 
   private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
-    return new DefaultEvent(relatedCustomResourceUid, Type.OTHER);
+    return new DefaultEvent(relatedCustomResourceUid);
   }
 
   private void overrideData(CustomResourceID id, CustomResource<?, ?> applyTo) {

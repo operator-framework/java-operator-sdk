@@ -4,12 +4,9 @@ package io.javaoperatorsdk.operator.processing.event;
 public class DefaultEvent implements Event {
 
   private final CustomResourceID relatedCustomResource;
-  private final Type type;
 
-  public DefaultEvent(CustomResourceID targetCustomResource,
-      Type type) {
+  public DefaultEvent(CustomResourceID targetCustomResource) {
     this.relatedCustomResource = targetCustomResource;
-    this.type = type;
   }
 
   @Override
@@ -18,15 +15,9 @@ public class DefaultEvent implements Event {
   }
 
   @Override
-  public Type getType() {
-    return type;
-  }
-
-  @Override
   public String toString() {
     return "DefaultEvent{" +
         "relatedCustomResource=" + relatedCustomResource +
-        ", type=" + type +
         '}';
   }
 }

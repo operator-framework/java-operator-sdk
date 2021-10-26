@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,11 +20,12 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
-import io.javaoperatorsdk.operator.processing.event.Event.Type;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 
-import static io.javaoperatorsdk.operator.processing.event.Event.Type.ADDED;
-import static io.javaoperatorsdk.operator.processing.event.Event.Type.UPDATED;
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.ADDED;
+import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.UPDATED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -274,7 +279,7 @@ class EventDispatcherTest {
               public boolean isLastAttempt() {
                 return true;
               }
-            }, new DefaultEvent(CustomResourceID.fromResource(testCustomResource), UPDATED)));
+            }));
 
     ArgumentCaptor<Context<CustomResource>> contextArgumentCaptor =
         ArgumentCaptor.forClass(Context.class);
@@ -323,9 +328,13 @@ class EventDispatcherTest {
     customResource.getMetadata().getFinalizers().clear();
   }
 
-  public ExecutionScope executionScopeWithCREvent(Type type, CustomResource resource) {
-    DefaultEvent event =
-        new DefaultEvent(CustomResourceID.fromResource(resource), type);
-    return new ExecutionScope(resource, null, event);
+  public ExecutionScope executionScopeWithCREvent(
+      ResourceAction action, CustomResource resource, Event... otherEvents) {
+    CustomResourceEvent event =
+        new CustomResourceEvent(action, CustomResourceID.fromResource(resource));
+    List<Event> eventList = new ArrayList<>(1 + otherEvents.length);
+    eventList.add(event);
+    eventList.addAll(Arrays.asList(otherEvents));
+    return new ExecutionScope(resource, null);
   }
 }

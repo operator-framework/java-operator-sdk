@@ -21,6 +21,8 @@ import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -98,23 +100,21 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         return;
       }
       final var resourceID = event.getRelatedCustomResourceID();
-      metrics.processingEvent(event);
+      metrics.receivedEvent(event);
 
       handleEventMarking(event);
       if (!eventMarker.deleteEventPresent(resourceID)) {
-        submitReconciliationExecution(event);
+        submitReconciliationExecution(resourceID);
       } else {
-        cleanupForDeletedEvent(event);
+        cleanupForDeletedEvent(resourceID);
       }
 
-      metrics.processedEvent(event);
     } finally {
       lock.unlock();
     }
   }
 
-  private void submitReconciliationExecution(Event event) {
-    final var customResourceUid = event.getRelatedCustomResourceID();
+  private void submitReconciliationExecution(CustomResourceID customResourceUid) {
     boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
     Optional<R> latestCustomResource =
         resourceCache.getCustomResource(customResourceUid);
@@ -125,8 +125,9 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       ExecutionScope<R> executionScope =
           new ExecutionScope<>(
               latestCustomResource.get(),
-              retryInfo(customResourceUid), event);
+              retryInfo(customResourceUid));
       eventMarker.unMarkEventReceived(customResourceUid);
+      metrics.reconcileCustomResource(customResourceUid);
       log.debug("Executing events for custom resource. Scope: {}", executionScope);
       executor.execute(new ControllerExecution(executionScope));
     } else {
@@ -144,7 +145,8 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
   }
 
   private void handleEventMarking(Event event) {
-    if (event.isDeleteEvent()) {
+    if (event instanceof CustomResourceEvent &&
+        ((CustomResourceEvent) event).getAction() == ResourceAction.DELETED) {
       eventMarker.markDeleteEventReceived(event);
     } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
       eventMarker.markEventReceived(event);
@@ -180,11 +182,11 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
       }
       cleanupOnSuccessfulExecution(executionScope);
       if (eventMarker.deleteEventPresent(customResourceID)) {
-        cleanupForDeletedEvent(executionScope.getTriggeringEvent());
+        cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
         if (eventMarker.eventPresent(customResourceID)) {
           if (isCacheReadyForInstantReconciliation(executionScope, postExecutionControl)) {
-            submitReconciliationExecution(executionScope.getTriggeringEvent());
+            submitReconciliationExecution(customResourceID);
           } else {
             postponeReconciliationAndHandleCacheSyncEvent(customResourceID);
           }
@@ -249,7 +251,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     if (eventPresent) {
       log.debug("New events exists for for resource id: {}",
           customResourceID);
-      submitReconciliationExecution(executionScope.getTriggeringEvent());
+      submitReconciliationExecution(customResourceID);
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
@@ -260,7 +262,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
               customResourceID);
-          metrics.failedEvent(executionScope.getTriggeringEvent(), exception);
+          metrics.failedReconciliation(customResourceID, exception);
           eventSourceManager
               .getRetryAndRescheduleTimerEventSource()
               .scheduleOnce(executionScope.getCustomResource(), delay);
@@ -289,8 +291,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     return retryExecution;
   }
 
-  private void cleanupForDeletedEvent(Event event) {
-    final var customResourceUid = event.getRelatedCustomResourceID();
+  private void cleanupForDeletedEvent(CustomResourceID customResourceUid) {
     eventSourceManager.cleanupForCustomResource(customResourceUid);
     eventMarker.cleanup(customResourceUid);
   }

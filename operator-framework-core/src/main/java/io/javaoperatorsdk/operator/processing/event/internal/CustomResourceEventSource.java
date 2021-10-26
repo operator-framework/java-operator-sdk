@@ -19,8 +19,6 @@ import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
-import io.javaoperatorsdk.operator.processing.event.Event.Type;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -119,13 +117,13 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     }
   }
 
-  public void eventReceived(Type type, T customResource, T oldResource) {
+  public void eventReceived(ResourceAction action, T customResource, T oldResource) {
     log.debug(
         "Event received for resource: {}", getName(customResource));
 
     if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
-      eventHandler
-          .handleEvent(new DefaultEvent(CustomResourceID.fromResource(customResource), type));
+      eventHandler.handleEvent(
+          new CustomResourceEvent(action, CustomResourceID.fromResource(customResource)));
     } else {
       log.debug(
           "Skipping event handling resource {} with version: {}",
@@ -136,17 +134,17 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public void onAdd(T resource) {
-    eventReceived(Type.ADDED, resource, null);
+    eventReceived(ResourceAction.ADDED, resource, null);
   }
 
   @Override
   public void onUpdate(T oldCustomResource, T newCustomResource) {
-    eventReceived(Type.UPDATED, newCustomResource, oldCustomResource);
+    eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
   }
 
   @Override
   public void onDelete(T resource, boolean b) {
-    eventReceived(Type.DELETED, resource, null);
+    eventReceived(ResourceAction.DELETED, resource, null);
   }
 
   @Override
