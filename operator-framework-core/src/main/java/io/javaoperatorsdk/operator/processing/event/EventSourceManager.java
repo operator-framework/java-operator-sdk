@@ -1,14 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 
-public interface EventSourceManager<T extends CustomResource<?, ?>> extends Closeable {
+public interface EventSourceManager<T extends CustomResource<?, ?>> {
 
   /**
    * Add the {@link EventSource} identified by the given <code>name</code> to the event manager.
@@ -25,6 +23,4 @@ public interface EventSourceManager<T extends CustomResource<?, ?>> extends Clos
 
   CustomResourceEventSource<T> getCustomResourceEventSource();
 
-  @Override
-  default void close() throws IOException {}
 }
