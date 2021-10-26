@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -15,7 +16,8 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
 public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
-    implements EventSourceManager<R> {
+    implements EventSourceManager<R>, Closeable {
+
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 

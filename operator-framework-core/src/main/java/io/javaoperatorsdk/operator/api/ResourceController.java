@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public interface ResourceController<R extends CustomResource> {
 
@@ -49,11 +48,4 @@ public interface ResourceController<R extends CustomResource> {
    */
   UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
 
-  /**
-   * In init typically you might want to register event sources.
-   *
-   * @param eventSourceManager the {@link EventSourceManager} which handles this controller and with
-   *        which event sources can be registered
-   */
-  default void init(EventSourceManager eventSourceManager) {}
 }

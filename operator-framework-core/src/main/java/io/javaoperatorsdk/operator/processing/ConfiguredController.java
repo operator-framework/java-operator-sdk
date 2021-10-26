@@ -13,21 +13,18 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
-    Closeable {
+    Closeable, EventSourceInitializer {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
-  private EventSourceManager eventSourceManager;
+  private DefaultEventSourceManager eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
@@ -97,7 +94,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   }
 
   @Override
-  public void init(EventSourceManager eventSourceManager) {
+  public void prepareEventSources(EventSourceManager eventSourceManager) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -169,7 +166,9 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
     try {
       eventSourceManager = new DefaultEventSourceManager<>(this);
-      controller.init(eventSourceManager);
+      if (controller instanceof EventSourceInitializer) {
+        ((EventSourceInitializer) controller).prepareEventSources(eventSourceManager);
+      }
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
