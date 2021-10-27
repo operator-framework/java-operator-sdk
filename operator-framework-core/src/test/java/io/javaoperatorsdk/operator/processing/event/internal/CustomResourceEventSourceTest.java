@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,11 +16,19 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.CustomResourceCache;
+import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.EventDispatcher;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -100,6 +109,52 @@ class CustomResourceEventSourceTest {
 
     customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
+  }
+
+  @Test
+  public void restartingShouldResumeEventHandling() throws IOException {
+    final var cr = TestUtils.testCustomResource();
+
+    CustomResourceCache customResourceCache = new CustomResourceCache();
+    customResourceCache.cacheResource(cr);
+    DefaultEventSourceManager defaultEventSourceManagerMock =
+        mock(DefaultEventSourceManager.class);
+    EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+    DefaultEventHandler local = new DefaultEventHandler(eventDispatcherMock, "Test",
+        null);
+    local.setEventSourceManager(defaultEventSourceManagerMock);
+    when(defaultEventSourceManagerMock.getCache()).thenReturn(customResourceCache);
+    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResource(any());
+    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResources(any());
+    doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
+    doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
+
+    customResourceEventSource.setEventHandler(local);
+
+    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
+    waitMinimalTime();
+
+
+    customResourceEventSource.close();
+    assertFalse(local.isRunning());
+    waitMinimalTime();
+    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
+
+    customResourceEventSource.start();
+    assertTrue(local.isRunning());
+    waitMinimalTime();
+    customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
+  }
+
+  private void waitMinimalTime() {
+    try {
+      Thread.sleep(200);
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private static class TestConfiguredController extends ConfiguredController<TestCustomResource> {

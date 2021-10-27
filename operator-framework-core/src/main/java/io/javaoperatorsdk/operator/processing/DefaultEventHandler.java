@@ -60,9 +60,13 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
         controller.getConfiguration().getConfigurationService().getMetrics().getEventMonitor());
   }
 
-  DefaultEventHandler(EventDispatcher<R> eventDispatcher, String relatedControllerName,
+  public DefaultEventHandler(EventDispatcher<R> eventDispatcher, String relatedControllerName,
       Retry retry) {
     this(null, relatedControllerName, eventDispatcher, retry, null);
+  }
+
+  public boolean isRunning() {
+    return running;
   }
 
   private DefaultEventHandler(ExecutorService executor, String relatedControllerName,
