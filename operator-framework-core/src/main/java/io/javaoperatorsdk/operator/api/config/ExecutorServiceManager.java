@@ -46,7 +46,7 @@ public class ExecutorServiceManager {
   public static ExecutorServiceManager instance() {
     if (instance == null) {
       throw new IllegalStateException(
-          "ExecutorServiceManager hasn't been started. Call start method before using!");
+          "ExecutorServiceManager hasn't been started. Call init method before using!");
     }
     return instance;
   }
