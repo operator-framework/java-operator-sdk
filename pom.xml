@@ -301,6 +301,7 @@
                             <goal>format</goal>
                         </goals>
                         <configuration>
+                            <!--suppress UnresolvedMavenProperty -->
                             <configFile>${josdk.project.root}/contributing/eclipse-google-style.xml</configFile>
                         </configuration>
                     </execution>

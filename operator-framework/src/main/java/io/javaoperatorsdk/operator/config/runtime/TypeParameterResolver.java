@@ -1,10 +1,5 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
@@ -12,6 +7,10 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.type.TypeKind.TYPEVAR;
@@ -75,9 +74,9 @@ class TypeParameterResolver {
   private int getTypeIndexWithName(
       String typeName, List<? extends TypeParameterElement> typeParameters) {
     return IntStream.range(0, typeParameters.size())
-        .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(typeName))
-        .findFirst()
-        .getAsInt();
+            .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(typeName))
+            .findFirst()
+            .orElseThrow();
   }
 
   private List<DeclaredType> findChain(Types typeUtils, DeclaredType declaredType) {
