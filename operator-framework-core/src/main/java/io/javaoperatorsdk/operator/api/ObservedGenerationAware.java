@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.client.CustomResource;
 
 /**
- * If the custom resource's status object implements this interface the observed generation will be
+ * If the custom resource's status implements this interface, the observed generation will be
  * automatically handled. The last observed generation will be updated on status when the status is
  * instructed to be updated (see below). In addition to that, controller configuration will be
  * checked if is set to generation aware. If generation aware config is turned off, this interface
