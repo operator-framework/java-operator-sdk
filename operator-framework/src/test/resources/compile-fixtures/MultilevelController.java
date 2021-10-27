@@ -16,12 +16,12 @@ public class MultilevelController extends
 
   public UpdateControl<MultilevelController.MyCustomResource> createOrUpdateResource(
       MultilevelController.MyCustomResource customResource,
-      Context<MultilevelController.MyCustomResource> context) {
+      Context context) {
     return UpdateControl.updateCustomResource(null);
   }
 
   public DeleteControl deleteResource(MultilevelController.MyCustomResource customResource,
-      Context<MultilevelController.MyCustomResource> context) {
+      Context context) {
     return DeleteControl.defaultDelete();
   }
 

@@ -110,12 +110,12 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * registration of the controller is delayed till the operator is started.
    *
    * @param controller the controller to register
-   * @param <R> the {@code CustomResource} type associated with the controller
+   * @param <R>        the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource> void register(ResourceController<R> controller)
-      throws OperatorException {
-    register(controller, null);
+  public <R extends CustomResource<?, ?>> void register(ResourceController<R> controller)
+          throws OperatorException {
+      register(controller, null);
   }
 
   /**
@@ -131,23 +131,23 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource> void register(
-      ResourceController<R> controller, ControllerConfiguration<R> configuration)
-      throws OperatorException {
-    final var existing = configurationService.getConfigurationFor(controller);
-    if (existing == null) {
-      log.warn(
-          "Skipping registration of {} controller named {} because its configuration cannot be found.\n"
-              + "Known controllers are: {}",
-          controller.getClass().getCanonicalName(),
-          ControllerUtils.getNameFor(controller),
-          configurationService.getKnownControllerNames());
+  public <R extends CustomResource<?, ?>> void register(
+          ResourceController<R> controller, ControllerConfiguration<R> configuration)
+          throws OperatorException {
+      final var existing = configurationService.getConfigurationFor(controller);
+      if (existing == null) {
+          log.warn(
+                  "Skipping registration of {} controller named {} because its configuration cannot be found.\n"
+                          + "Known controllers are: {}",
+                  controller.getClass().getCanonicalName(),
+                  ControllerUtils.getNameFor(controller),
+                  configurationService.getKnownControllerNames());
     } else {
       if (configuration == null) {
         configuration = existing;
       }
-      final var configuredController =
-          new ConfiguredController(controller, configuration, kubernetesClient);
+          final var configuredController =
+                  new ConfiguredController<>(controller, configuration, kubernetesClient);
       controllers.add(configuredController);
 
       final var watchedNS =

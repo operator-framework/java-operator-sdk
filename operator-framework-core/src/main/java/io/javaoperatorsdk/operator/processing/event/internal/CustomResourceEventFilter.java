@@ -11,17 +11,17 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
  * @param <T> the type of custom resources handled by this filter
  */
 @FunctionalInterface
-public interface CustomResourceEventFilter<T extends CustomResource> {
+public interface CustomResourceEventFilter<T extends CustomResource<?, ?>> {
 
-  /**
-   * Determines whether the change between the old version of the resource and the new one needs to
-   * be propagated to the controller or not.
-   *
-   * @param configuration the target controller's configuration
-   * @param oldResource the old version of the resource, null if no old resource available
-   * @param newResource the new version of the resource
-   * @return {@code true} if the change needs to be propagated to the controller, {@code false}
-   *         otherwise
+    /**
+     * Determines whether the change between the old version of the resource and the new one needs to
+     * be propagated to the controller or not.
+     *
+     * @param configuration the target controller's configuration
+     * @param oldResource the old version of the resource, null if no old resource available
+     * @param newResource the new version of the resource
+     * @return {@code true} if the change needs to be propagated to the controller, {@code false}
+     *         otherwise
    */
   boolean acceptChange(ControllerConfiguration<T> configuration, T oldResource, T newResource);
 

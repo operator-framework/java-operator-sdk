@@ -1,14 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
-
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -25,13 +16,19 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.ADDED;
 import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.UPDATED;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
@@ -44,16 +41,16 @@ import static org.mockito.Mockito.when;
 class EventDispatcherTest {
 
   private static final String DEFAULT_FINALIZER = "javaoperatorsdk.io/finalizer";
-  private CustomResource testCustomResource;
+  private TestCustomResource testCustomResource;
   private EventDispatcher eventDispatcher;
-  private final ResourceController<CustomResource> controller = mock(ResourceController.class);
-  private final ControllerConfiguration<CustomResource> configuration =
-      mock(ControllerConfiguration.class);
+  private final ResourceController<TestCustomResource> controller = mock(ResourceController.class);
+  private final ControllerConfiguration<TestCustomResource> configuration =
+          mock(ControllerConfiguration.class);
   private final ConfigurationService configService = mock(ConfigurationService.class);
   private final ConfiguredController<CustomResource<?, ?>> configuredController =
-      new ConfiguredController(controller, configuration, null);
+          new ConfiguredController(controller, configuration, null);
   private final EventDispatcher.CustomResourceFacade customResourceFacade =
-      mock(EventDispatcher.CustomResourceFacade.class);
+          mock(EventDispatcher.CustomResourceFacade.class);
 
   @BeforeEach
   void setup() {
@@ -169,13 +166,14 @@ class EventDispatcherTest {
   }
 
   private void configureToNotUseFinalizer() {
-    ControllerConfiguration<CustomResource> configuration = mock(ControllerConfiguration.class);
+    ControllerConfiguration<CustomResource<?, ?>> configuration =
+            mock(ControllerConfiguration.class);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configuration.getConfigurationService()).thenReturn(configService);
     when(configuration.useFinalizer()).thenReturn(false);
     eventDispatcher = new EventDispatcher(new ConfiguredController(controller, configuration, null),
-        customResourceFacade);
+            customResourceFacade);
   }
 
   @Test
@@ -283,11 +281,11 @@ class EventDispatcherTest {
               }
             }));
 
-    ArgumentCaptor<Context<CustomResource>> contextArgumentCaptor =
-        ArgumentCaptor.forClass(Context.class);
+    ArgumentCaptor<Context> contextArgumentCaptor =
+            ArgumentCaptor.forClass(Context.class);
     verify(controller, times(1))
         .createOrUpdateResource(eq(testCustomResource), contextArgumentCaptor.capture());
-    Context<CustomResource> context = contextArgumentCaptor.getValue();
+    Context context = contextArgumentCaptor.getValue();
     final var retryInfo = context.getRetryInfo().get();
     assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
     assertThat(retryInfo.isLastAttempt()).isEqualTo(true);

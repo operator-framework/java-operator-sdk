@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import java.util.Set;
-import java.util.function.Function;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
@@ -12,8 +9,11 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
-public class AnnotationConfiguration<R extends CustomResource>
-    implements ControllerConfiguration<R> {
+import java.util.Set;
+import java.util.function.Function;
+
+public class AnnotationConfiguration<R extends CustomResource<?, ?>>
+        implements ControllerConfiguration<R> {
 
   private final ResourceController<R> controller;
   private final Controller annotation;

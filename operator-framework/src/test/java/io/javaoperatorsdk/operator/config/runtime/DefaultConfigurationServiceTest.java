@@ -1,13 +1,5 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.AppenderRef;
-import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.apache.logging.log4j.test.appender.ListAppender;
-import org.junit.jupiter.api.Test;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
@@ -16,6 +8,13 @@ import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.test.appender.ListAppender;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -110,13 +109,13 @@ public class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
-        InnerCustomResource resource, Context<InnerCustomResource> context) {
+            InnerCustomResource resource, Context context) {
       return null;
     }
 
     @Group("test.crd")
     @Version("v1")
-    public class InnerCustomResource extends CustomResource {
+    public static class InnerCustomResource extends CustomResource<Void, Void> {
     }
   }
 
@@ -127,7 +126,7 @@ public class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> createOrUpdateResource(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+            TestCustomResource resource, Context context) {
       return null;
     }
   }
@@ -137,7 +136,7 @@ public class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> createOrUpdateResource(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+            TestCustomResource resource, Context context) {
       return null;
     }
   }

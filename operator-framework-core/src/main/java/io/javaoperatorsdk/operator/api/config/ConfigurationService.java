@@ -1,16 +1,15 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -32,12 +31,12 @@ public interface ConfigurationService {
    * Retrieves the configuration associated with the specified controller
    *
    * @param controller the controller we want the configuration of
-   * @param <R> the {@code CustomResource} type associated with the specified controller
+   * @param <R>        the {@code CustomResource} type associated with the specified controller
    * @return the {@link ControllerConfiguration} associated with the specified controller or {@code
-   *     null} if no configuration exists for the controller
+   * null} if no configuration exists for the controller
    */
-  <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
-      ResourceController<R> controller);
+  <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+          ResourceController<R> controller);
 
   /**
    * Retrieves the Kubernetes client configuration

@@ -1,16 +1,16 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.Collections;
-import java.util.Set;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
-public interface ControllerConfiguration<R extends CustomResource> {
+import java.lang.reflect.ParameterizedType;
+import java.util.Collections;
+import java.util.Set;
+
+public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
 
   default String getName() {
     return ControllerUtils.getDefaultResourceControllerName(getAssociatedControllerClassName());

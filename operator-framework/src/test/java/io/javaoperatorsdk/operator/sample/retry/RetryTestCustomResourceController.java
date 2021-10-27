@@ -1,10 +1,5 @@
 package io.javaoperatorsdk.operator.sample.retry;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
@@ -12,6 +7,10 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller
 public class RetryTestCustomResourceController
@@ -28,7 +27,7 @@ public class RetryTestCustomResourceController
 
   @Override
   public UpdateControl<RetryTestCustomResource> createOrUpdateResource(
-      RetryTestCustomResource resource, Context<RetryTestCustomResource> context) {
+          RetryTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
