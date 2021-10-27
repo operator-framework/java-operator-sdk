@@ -194,7 +194,7 @@ class DefaultEventHandlerTest {
 
   @Test
   public void doNotFireEventsIfClosing() {
-    defaultEventHandler.close();
+    defaultEventHandler.stop();
     defaultEventHandler.handleEvent(prepareCREvent());
 
     verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());

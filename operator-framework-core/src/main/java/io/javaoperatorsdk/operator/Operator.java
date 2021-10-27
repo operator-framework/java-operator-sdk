@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,13 +14,14 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Stoppable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 
 @SuppressWarnings("rawtypes")
-public class Operator implements AutoCloseable {
+public class Operator implements AutoCloseable, Stoppable {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
@@ -90,16 +89,21 @@ public class Operator implements AutoCloseable {
     controllers.start();
   }
 
-  /** Stop the operator. */
   @Override
-  public void close() {
+  public void stop() throws OperatorException {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-    controllers.close();
+    controllers.stop();
 
-    ExecutorServiceManager.close();
+    ExecutorServiceManager.stop();
     kubernetesClient.close();
+  }
+
+  /** Stop the operator. */
+  @Override
+  public void close() {
+    stop();
   }
 
   /**
@@ -159,7 +163,7 @@ public class Operator implements AutoCloseable {
     }
   }
 
-  private static class ControllerManager implements Closeable {
+  private static class ControllerManager implements Stoppable {
     private final Map<String, ConfiguredController> controllers = new HashMap<>();
     private boolean started = false;
 
@@ -178,19 +182,14 @@ public class Operator implements AutoCloseable {
       started = true;
     }
 
-    @Override
-    public synchronized void close() {
+    public synchronized void stop() {
       if (!started) {
         return;
       }
 
       this.controllers.values().parallelStream().forEach(closeable -> {
-        try {
-          log.debug("closing {}", closeable);
-          closeable.close();
-        } catch (IOException e) {
-          log.warn("Error closing {}", closeable, e);
-        }
+        log.debug("closing {}", closeable);
+        closeable.stop();
       });
 
       started = false;

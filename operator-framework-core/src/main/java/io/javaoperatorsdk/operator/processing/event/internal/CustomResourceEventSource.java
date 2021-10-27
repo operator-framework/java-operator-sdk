@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -105,13 +104,13 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   @Override
-  public void close() throws IOException {
+  public void stop() {
     for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
       try {
-        log.info("Closing informer {} -> {}", controller, informer);
-        informer.close();
+        log.info("Stopping informer {} -> {}", controller, informer);
+        informer.stop();
       } catch (Exception e) {
-        log.warn("Error closing informer {} -> {}", controller, informer, e);
+        log.warn("Error stopping informer {} -> {}", controller, informer, e);
       }
     }
   }
