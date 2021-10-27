@@ -122,15 +122,9 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
         updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
       } else if (updateControl.isUpdateCustomResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
-      } else if (configuration().isGenerationAware() && isStatusObservedGenerationAware(resource)) {
-        updatedCustomResource = updateCustomResource(resource);
       }
       return createPostExecutionControl(updatedCustomResource, updateControl);
     }
-  }
-
-  private boolean isStatusObservedGenerationAware(R resource) {
-    return resource.getStatus() instanceof ObservedGenerationAware;
   }
 
   private R updateStatusGenerationAware(R customResource) {
