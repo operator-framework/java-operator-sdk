@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 
 /**
  * Convenience implementations of, and utility methods for, {@link CustomResourceEventFilter}.
@@ -21,9 +22,19 @@ public final class CustomResourceEventFilters {
       };
 
   private static final CustomResourceEventFilter<CustomResource> GENERATION_AWARE =
-      (configuration, oldResource, newResource) -> oldResource == null
-          || !configuration.isGenerationAware()
-          || oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
+      (configuration, oldResource, newResource) -> {
+        if (configuration.isGenerationAware() && newResource.getStatus() != null &&
+                newResource.getStatus() instanceof ObservedGenerationAware) {
+          var actualGeneration = newResource.getMetadata().getGeneration();
+          var observedGeneration = ((ObservedGenerationAware) newResource.getStatus())
+                  .getObservedGeneration();
+          return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
+        } else {
+          return oldResource == null
+                  || !configuration.isGenerationAware()
+                  || oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
+        }
+      };
 
   private static final CustomResourceEventFilter<CustomResource> PASSTHROUGH =
       (configuration, oldResource, newResource) -> true;
