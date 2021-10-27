@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
+import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
@@ -82,7 +82,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
       return;
     }
     uids.forEach(uid -> {
-      DefaultEvent event = new DefaultEvent(CustomResourceID.fromResource(object));
+      Event event = new Event(CustomResourceID.fromResource(object));
       this.eventHandler.handleEvent(event);
     });
   }

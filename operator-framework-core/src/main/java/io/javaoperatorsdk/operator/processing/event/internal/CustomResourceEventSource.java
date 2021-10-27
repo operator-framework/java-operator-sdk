@@ -106,7 +106,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public void close() throws IOException {
-    eventHandler.close();
     for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
       try {
         log.info("Closing informer {} -> {}", controller, informer);
