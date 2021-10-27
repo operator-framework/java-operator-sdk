@@ -48,6 +48,8 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public void start() {
+    eventHandler.start();
+
     final var configuration = controller.getConfiguration();
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var client = controller.getCRClient();

@@ -9,4 +9,6 @@ public interface EventHandler extends Closeable {
 
   @Override
   default void close() throws IOException {}
+
+  default void start() {}
 }

@@ -142,6 +142,15 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>> implements Even
     }
   }
 
+  public void start() {
+    try {
+      lock.lock();
+      this.running = true;
+    } finally {
+      lock.unlock();
+    }
+  }
+
   @Override
   public void close() {
     try {
