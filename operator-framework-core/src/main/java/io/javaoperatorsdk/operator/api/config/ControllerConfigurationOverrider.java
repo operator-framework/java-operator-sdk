@@ -48,7 +48,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
   }
 
   public ControllerConfigurationOverrider<R> removingNamespaces(String... namespaces) {
-    this.namespaces.removeAll(List.of(namespaces));
+    List.of(namespaces).forEach(this.namespaces::remove);
     return this;
   }
 
