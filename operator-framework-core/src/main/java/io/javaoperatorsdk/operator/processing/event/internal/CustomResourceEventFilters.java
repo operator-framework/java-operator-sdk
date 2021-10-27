@@ -23,18 +23,16 @@ public final class CustomResourceEventFilters {
 
   private static final CustomResourceEventFilter<CustomResource> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
-        if (configuration.isGenerationAware() && newResource.getStatus() != null &&
-            newResource.getStatus() instanceof ObservedGenerationAware) {
+        final var status = newResource.getStatus();
+        final var generationAware = configuration.isGenerationAware();
+        if (generationAware && status instanceof ObservedGenerationAware) {
           var actualGeneration = newResource.getMetadata().getGeneration();
-          var observedGeneration = ((ObservedGenerationAware) newResource.getStatus())
+          var observedGeneration = ((ObservedGenerationAware) status)
               .getObservedGeneration();
           return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
-        } else {
-          return oldResource == null
-              || !configuration.isGenerationAware()
-              || oldResource.getMetadata().getGeneration() < newResource.getMetadata()
-                  .getGeneration();
         }
+        return oldResource == null || !generationAware ||
+            oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };
 
   private static final CustomResourceEventFilter<CustomResource> PASSTHROUGH =
