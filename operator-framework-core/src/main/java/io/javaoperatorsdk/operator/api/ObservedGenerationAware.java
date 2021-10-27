@@ -6,9 +6,10 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 /**
  * If the custom resource's status object implements this interface the observed generation will be
- * automatically handled. The last observed generation will be set to status when the status is
- * updated or no update comes from controller. In addition to that will be checked if the controller
- * is generation aware.
+ * automatically handled. The last observed generation will be updated on status when the status is
+ * instructed to be updated (see below). In addition to that, controller configuration will be
+ * checked if is set to generation aware. If generation aware config is turned off, this interface
+ * is ignored.
  *
  * In order to work the status object returned by CustomResource.getStatus() should not be null. In
  * addition to that from the controller that the
@@ -16,6 +17,7 @@ import io.fabric8.kubernetes.client.CustomResource;
  * {@link UpdateControl#updateCustomResourceAndStatus(CustomResource)} should be returned. The
  * observed generation is not updated in other cases.
  *
+ * @see ObservedGenerationAwareStatus
  */
 public interface ObservedGenerationAware {
 
