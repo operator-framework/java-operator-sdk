@@ -15,7 +15,7 @@ public class ObservedGenSpec {
   @Override
   public String toString() {
     return "TestCustomResourceSpec{" +
-            "value='" + value + '\'' +
-            '}';
+        "value='" + value + '\'' +
+        '}';
   }
 }

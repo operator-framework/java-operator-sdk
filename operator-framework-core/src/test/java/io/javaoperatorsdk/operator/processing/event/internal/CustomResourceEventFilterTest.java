@@ -3,13 +3,12 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import java.util.List;
 import java.util.Objects;
 
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -18,6 +17,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.Mockito.any;
@@ -99,9 +99,9 @@ class CustomResourceEventFilterTest {
 
   @Test
   public void observedGenerationFiltering() {
-    var config = new ObservedGenControllerConfig(FINALIZER,true,null);
+    var config = new ObservedGenControllerConfig(FINALIZER, true, null);
     when(config.getConfigurationService().getResourceCloner())
-            .thenReturn(ConfigurationService.DEFAULT_CLONER);
+        .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var controller = new ObservedGenConfiguredController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
@@ -117,7 +117,7 @@ class CustomResourceEventFilterTest {
     verify(eventHandler, times(0)).handleEvent(any());
 
     cr.getMetadata().setGeneration(6L);
-    
+
     eventSource.eventReceived(ResourceAction.UPDATED, cr, null);
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -154,18 +154,19 @@ class CustomResourceEventFilterTest {
 
   private static class TestControllerConfig extends ControllerConfig<TestCustomResource> {
     public TestControllerConfig(String finalizer, boolean generationAware,
-                                CustomResourceEventFilter<TestCustomResource> eventFilter) {
+        CustomResourceEventFilter<TestCustomResource> eventFilter) {
       super(finalizer, generationAware, eventFilter, TestCustomResource.class);
     }
   }
-  private static class ObservedGenControllerConfig extends ControllerConfig<ObservedGenCustomResource> {
+  private static class ObservedGenControllerConfig
+      extends ControllerConfig<ObservedGenCustomResource> {
     public ObservedGenControllerConfig(String finalizer, boolean generationAware,
-                                       CustomResourceEventFilter<ObservedGenCustomResource> eventFilter) {
+        CustomResourceEventFilter<ObservedGenCustomResource> eventFilter) {
       super(finalizer, generationAware, eventFilter, ObservedGenCustomResource.class);
     }
   }
 
-  private static class ControllerConfig<T extends CustomResource<?,?>> extends
+  private static class ControllerConfig<T extends CustomResource<?, ?>> extends
       DefaultControllerConfiguration<T> {
 
     public ControllerConfig(String finalizer, boolean generationAware,
@@ -180,7 +181,7 @@ class CustomResourceEventFilterTest {
           null,
           null,
           eventFilter,
-              customResourceClass,
+          customResourceClass,
           mock(ConfigurationService.class));
 
       when(getConfigurationService().getResourceCloner())
@@ -200,15 +201,16 @@ class CustomResourceEventFilterTest {
     }
   }
 
-  private static class ObservedGenConfiguredController extends ConfiguredController<ObservedGenCustomResource> {
+  private static class ObservedGenConfiguredController
+      extends ConfiguredController<ObservedGenCustomResource> {
 
-    public ObservedGenConfiguredController(ControllerConfiguration<ObservedGenCustomResource> configuration) {
+    public ObservedGenConfiguredController(
+        ControllerConfiguration<ObservedGenCustomResource> configuration) {
       super(null, configuration, null);
     }
 
     @Override
-    public MixedOperation<ObservedGenCustomResource, KubernetesResourceList<ObservedGenCustomResource>,
-            Resource<ObservedGenCustomResource>> getCRClient() {
+    public MixedOperation<ObservedGenCustomResource, KubernetesResourceList<ObservedGenCustomResource>, Resource<ObservedGenCustomResource>> getCRClient() {
       return mock(MixedOperation.class);
     }
   }
