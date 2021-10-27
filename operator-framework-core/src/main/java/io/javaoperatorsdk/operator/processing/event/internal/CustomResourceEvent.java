@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEvent;
+import io.javaoperatorsdk.operator.processing.event.Event;
 
-public class CustomResourceEvent extends DefaultEvent {
+public class CustomResourceEvent extends Event {
 
   private final ResourceAction action;
 
