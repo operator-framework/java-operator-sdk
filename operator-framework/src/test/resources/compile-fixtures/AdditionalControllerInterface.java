@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import java.io.Serializable;
 
 
-public interface AdditionalControllerInterface<R, T extends CustomResource> extends
+public interface AdditionalControllerInterface<R, T extends CustomResource<?,?>> extends
     Serializable,
     ResourceController<T> {
 }

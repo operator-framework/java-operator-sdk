@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 public class MultilevelController extends
     MultilevelAbstractController<String, MultilevelController.MyCustomResource> {
 
-  public static class MyCustomResource extends CustomResource {
+  public static class MyCustomResource extends CustomResource<Void,Void> {
 
   }
 

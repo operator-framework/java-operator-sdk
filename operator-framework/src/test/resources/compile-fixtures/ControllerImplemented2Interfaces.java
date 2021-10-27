@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Controller
 public class ControllerImplemented2Interfaces implements Serializable, ResourceController<ControllerImplemented2Interfaces.MyCustomResource> {
 
-    public static class MyCustomResource extends CustomResource {
+    public static class MyCustomResource extends CustomResource<Void,Void> {
     }
 
     @Override

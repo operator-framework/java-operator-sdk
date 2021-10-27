@@ -5,10 +5,10 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import java.io.Serializable;
 
 
-public abstract class AbstractController<T extends CustomResource> implements Serializable,
+public abstract class AbstractController<T extends CustomResource<?,?>> implements Serializable,
     ResourceController<T> {
 
-  public static class MyCustomResource extends CustomResource {
+  public static class MyCustomResource extends CustomResource<Void,Void> {
 
   }
 }
