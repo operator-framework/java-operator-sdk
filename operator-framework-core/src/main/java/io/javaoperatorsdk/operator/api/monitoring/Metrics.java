@@ -17,9 +17,9 @@ public interface Metrics {
   default void failedReconciliation(CustomResourceID customResourceID,
       RuntimeException exception) {}
 
-  default void cleanupDoneFor(CustomResourceID customResourceUid) {};
+  default void cleanupDoneFor(CustomResourceID customResourceUid) {}
 
-  default void finishedReconciliation(CustomResourceID resourceID) {};
+  default void finishedReconciliation(CustomResourceID resourceID) {}
 
 
   interface ControllerExecution<T> {
