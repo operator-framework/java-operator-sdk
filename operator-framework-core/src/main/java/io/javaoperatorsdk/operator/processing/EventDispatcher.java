@@ -117,15 +117,35 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
             .getCustomResource()
             .getMetadata()
             .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
-        updatedCustomResource =
-            customResourceFacade.updateStatus(updateControl.getCustomResource());
+        updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
       } else if (updateControl.isUpdateStatusSubResource()) {
-        updatedCustomResource =
-            customResourceFacade.updateStatus(updateControl.getCustomResource());
+        updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
       } else if (updateControl.isUpdateCustomResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      } else if (configuration().isGenerationAware() && isStatusObservedGenerationAware(resource)) {
+        updatedCustomResource = updateCustomResource(resource);
       }
       return createPostExecutionControl(updatedCustomResource, updateControl);
+    }
+  }
+
+  private boolean isStatusObservedGenerationAware(R resource) {
+    return resource.getStatus() instanceof ObservedGenerationAware;
+  }
+
+  private R updateStatusGenerationAware(R customResource) {
+    updateStatusObservedGenerationIfRequired(customResource);
+    return customResourceFacade.updateStatus(customResource);
+  }
+
+  private void updateStatusObservedGenerationIfRequired(R customResource) {
+    if (controller.getConfiguration().isGenerationAware()) {
+      var status = customResource.getStatus();
+      // Note that if status is null we won't update the observed generation.
+      if (status instanceof ObservedGenerationAware) {
+        ((ObservedGenerationAware) status)
+            .setObservedGeneration(customResource.getMetadata().getGeneration());
+      }
     }
   }
 

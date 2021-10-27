@@ -24,15 +24,16 @@ public final class CustomResourceEventFilters {
   private static final CustomResourceEventFilter<CustomResource> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
         if (configuration.isGenerationAware() && newResource.getStatus() != null &&
-                newResource.getStatus() instanceof ObservedGenerationAware) {
+            newResource.getStatus() instanceof ObservedGenerationAware) {
           var actualGeneration = newResource.getMetadata().getGeneration();
           var observedGeneration = ((ObservedGenerationAware) newResource.getStatus())
-                  .getObservedGeneration();
+              .getObservedGeneration();
           return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
         } else {
           return oldResource == null
-                  || !configuration.isGenerationAware()
-                  || oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
+              || !configuration.isGenerationAware()
+              || oldResource.getMetadata().getGeneration() < newResource.getMetadata()
+                  .getGeneration();
         }
       };
 
