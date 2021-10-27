@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -76,7 +75,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
   }
 
   @Override
-  public void close() throws IOException {
+  public void stop() {
     running.set(false);
     onceTasks.keySet().forEach(this::cancelOnceSchedule);
     timerTasks.keySet().forEach(this::cancelSchedule);

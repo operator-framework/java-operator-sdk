@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -20,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
-    Closeable, EventSourceInitializer {
+    Stoppable, EventSourceInitializer {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
@@ -214,10 +212,9 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     return eventSourceManager;
   }
 
-  @Override
-  public void close() throws IOException {
+  public void stop() {
     if (eventSourceManager != null) {
-      eventSourceManager.close();
+      eventSourceManager.stop();
     }
   }
 }

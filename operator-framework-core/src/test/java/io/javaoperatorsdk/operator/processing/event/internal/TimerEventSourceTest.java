@@ -112,7 +112,7 @@ class TimerEventSourceTest {
   public void eventNotRegisteredIfStopped() throws IOException {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    timerEventSource.close();
+    timerEventSource.stop();
     assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
         () -> timerEventSource.scheduleOnce(customResource, PERIOD));
   }
@@ -120,7 +120,7 @@ class TimerEventSourceTest {
   @Test
   public void eventNotFiredIfStopped() throws IOException {
     timerEventSource.scheduleOnce(TestUtils.testCustomResource(), PERIOD);
-    timerEventSource.close();
+    timerEventSource.stop();
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }

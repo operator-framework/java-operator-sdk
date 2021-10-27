@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.io.Closeable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,11 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.api.Stoppable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.processing.event.*;
+import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -33,7 +37,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * UID, while buffering events which are received during an execution.
  */
 public class DefaultEventHandler<R extends CustomResource<?, ?>>
-    implements EventHandler, Closeable {
+    implements EventHandler, Stoppable {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 
@@ -315,10 +319,20 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public void close() {
+  public void stop() {
     lock.lock();
     try {
       this.running = false;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public void start() throws OperatorException {
+    lock.lock();
+    try {
+      this.running = true;
     } finally {
       lock.unlock();
     }
