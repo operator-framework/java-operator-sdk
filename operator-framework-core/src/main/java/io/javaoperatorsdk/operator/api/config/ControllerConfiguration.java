@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
-public interface ControllerConfiguration<R extends CustomResource> {
+public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
 
   default String getName() {
     return ControllerUtils.getDefaultResourceControllerName(getAssociatedControllerClassName());

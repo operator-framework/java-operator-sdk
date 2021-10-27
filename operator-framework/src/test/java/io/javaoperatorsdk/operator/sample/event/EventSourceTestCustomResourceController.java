@@ -35,7 +35,7 @@ public class EventSourceTestCustomResourceController
 
   @Override
   public UpdateControl<EventSourceTestCustomResource> createOrUpdateResource(
-      EventSourceTestCustomResource resource, Context<EventSourceTestCustomResource> context) {
+      EventSourceTestCustomResource resource, Context context) {
 
     timerEventSource.schedule(resource, TIMER_DELAY, TIMER_PERIOD);
 

@@ -5,6 +5,7 @@ import java.util.Locale;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 
+@SuppressWarnings("rawtypes")
 public class ControllerUtils {
 
   private static final String FINALIZER_NAME_SUFFIX = "/finalizer";

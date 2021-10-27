@@ -21,7 +21,7 @@ public class DoubleUpdateTestCustomResourceController
 
   @Override
   public UpdateControl<DoubleUpdateTestCustomResource> createOrUpdateResource(
-      DoubleUpdateTestCustomResource resource, Context<DoubleUpdateTestCustomResource> context) {
+      DoubleUpdateTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 
     log.info("Value: " + resource.getSpec().getValue());

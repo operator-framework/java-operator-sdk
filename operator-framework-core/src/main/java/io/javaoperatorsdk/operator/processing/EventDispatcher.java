@@ -64,8 +64,8 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
       return PostExecutionControl.defaultDispatch();
     }
 
-    Context<R> context =
-        new DefaultContext<>(executionScope.getRetryInfo());
+    Context context =
+        new DefaultContext(executionScope.getRetryInfo());
     if (markedForDeletion) {
       return handleDelete(resource, context);
     } else {
@@ -92,7 +92,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
   }
 
   private PostExecutionControl<R> handleCreateOrUpdate(
-      ExecutionScope<R> executionScope, R resource, Context<R> context) {
+      ExecutionScope<R> executionScope, R resource, Context context) {
     if (configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
@@ -147,7 +147,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
-  private PostExecutionControl<R> handleDelete(R resource, Context<R> context) {
+  private PostExecutionControl<R> handleDelete(R resource, Context context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),

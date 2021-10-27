@@ -18,11 +18,11 @@ import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
-    Stoppable, EventSourceInitializer {
+    Stoppable, EventSourceInitializer<R> {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
-  private DefaultEventSourceManager eventSourceManager;
+  private DefaultEventSourceManager<R> eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
       ControllerConfiguration<R> configuration,
@@ -33,7 +33,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   }
 
   @Override
-  public DeleteControl deleteResource(R resource, Context<R> context) {
+  public DeleteControl deleteResource(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -59,7 +59,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   }
 
   @Override
-  public UpdateControl<R> createOrUpdateResource(R resource, Context<R> context) {
+  public UpdateControl<R> createOrUpdateResource(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -92,7 +92,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   }
 
   @Override
-  public void prepareEventSources(EventSourceManager eventSourceManager) {
+  public void prepareEventSources(EventSourceManager<R> eventSourceManager) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -165,7 +165,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     try {
       eventSourceManager = new DefaultEventSourceManager<>(this);
       if (controller instanceof EventSourceInitializer) {
-        ((EventSourceInitializer) controller).prepareEventSources(eventSourceManager);
+        ((EventSourceInitializer<R>) controller).prepareEventSources(eventSourceManager);
       }
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
@@ -208,7 +208,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     return false;
   }
 
-  public EventSourceManager getEventSourceManager() {
+  public EventSourceManager<R> getEventSourceManager() {
     return eventSourceManager;
   }
 

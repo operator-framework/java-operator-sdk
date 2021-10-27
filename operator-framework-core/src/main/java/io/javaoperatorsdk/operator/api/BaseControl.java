@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.api;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-public abstract class BaseControl<T extends BaseControl> {
+public abstract class BaseControl<T extends BaseControl<T>> {
 
   private Long scheduleDelay = null;
 

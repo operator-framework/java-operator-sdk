@@ -187,7 +187,7 @@ public class CustomResourceSelectorTest {
 
     @Override
     public UpdateControl<TestCustomResource> createOrUpdateResource(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+        TestCustomResource resource, Context context) {
 
       LOGGER.info("Received event on: {}", resource);
 

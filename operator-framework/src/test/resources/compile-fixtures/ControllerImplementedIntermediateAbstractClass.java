@@ -12,12 +12,12 @@ public class ControllerImplementedIntermediateAbstractClass extends
 
   public UpdateControl<AbstractController.MyCustomResource> createOrUpdateResource(
       AbstractController.MyCustomResource customResource,
-      Context<AbstractController.MyCustomResource> context) {
+      Context context) {
     return UpdateControl.updateCustomResource(null);
   }
 
   public DeleteControl deleteResource(AbstractController.MyCustomResource customResource,
-      Context<AbstractController.MyCustomResource> context) {
+      Context context) {
     return DeleteControl.defaultDelete();
   }
 }

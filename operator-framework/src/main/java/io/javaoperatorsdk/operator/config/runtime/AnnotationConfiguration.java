@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
-public class AnnotationConfiguration<R extends CustomResource>
+public class AnnotationConfiguration<R extends CustomResource<?, ?>>
     implements ControllerConfiguration<R> {
 
   private final ResourceController<R> controller;

@@ -41,7 +41,7 @@ public class InformerEventSourceTestCustomResourceController implements
   @Override
   public UpdateControl<InformerEventSourceTestCustomResource> createOrUpdateResource(
       InformerEventSourceTestCustomResource resource,
-      Context<InformerEventSourceTestCustomResource> context) {
+      Context context) {
 
     // Reading the config map from the informer not from the API
     // name of the config map same as custom resource for sake of simplicity

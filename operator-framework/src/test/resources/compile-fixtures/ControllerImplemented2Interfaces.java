@@ -15,12 +15,12 @@ public class ControllerImplemented2Interfaces implements Serializable, ResourceC
     }
 
     @Override
-    public UpdateControl<MyCustomResource> createOrUpdateResource(MyCustomResource customResource, Context<MyCustomResource> context) {
+    public UpdateControl<MyCustomResource> createOrUpdateResource(MyCustomResource customResource, Context context) {
         return UpdateControl.updateCustomResource(null);
     }
 
     @Override
-    public DeleteControl deleteResource(MyCustomResource customResource, Context<MyCustomResource> context) {
+    public DeleteControl deleteResource(MyCustomResource customResource, Context context) {
         return DeleteControl.defaultDelete();
     }
 }

@@ -114,7 +114,7 @@ public class Operator implements AutoCloseable, Stoppable {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource> void register(ResourceController<R> controller)
+  public <R extends CustomResource<?, ?>> void register(ResourceController<R> controller)
       throws OperatorException {
     register(controller, null);
   }
@@ -132,7 +132,7 @@ public class Operator implements AutoCloseable, Stoppable {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource> void register(
+  public <R extends CustomResource<?, ?>> void register(
       ResourceController<R> controller, ControllerConfiguration<R> configuration)
       throws OperatorException {
     final var existing = configurationService.getConfigurationFor(controller);
@@ -148,7 +148,7 @@ public class Operator implements AutoCloseable, Stoppable {
         configuration = existing;
       }
       final var configuredController =
-          new ConfiguredController(controller, configuration, kubernetesClient);
+          new ConfiguredController<>(controller, configuration, kubernetesClient);
       controllers.add(configuredController);
 
       final var watchedNS =

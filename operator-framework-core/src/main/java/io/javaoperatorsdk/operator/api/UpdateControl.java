@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
+@SuppressWarnings("rawtypes")
 public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateControl<T>> {
 
   private final T customResource;
@@ -34,12 +35,12 @@ public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateC
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
    */
-  public static <T extends CustomResource> UpdateControl<T> updateCustomResourceAndStatus(
+  public static <T extends CustomResource<?, ?>> UpdateControl<T> updateCustomResourceAndStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }
 
-  public static <T extends CustomResource> UpdateControl<T> noUpdate() {
+  public static <T extends CustomResource<?, ?>> UpdateControl<T> noUpdate() {
     return new UpdateControl<>(null, false, false);
   }
 

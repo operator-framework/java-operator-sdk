@@ -19,12 +19,12 @@ public class DefaultConfigurationService extends BaseConfigurationService {
   }
 
   @Override
-  public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
+  public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller) {
     return getConfigurationFor(controller, true);
   }
 
-  <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
+  <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller, boolean createIfNeeded) {
     var config = super.getConfigurationFor(controller);
     if (config == null) {
