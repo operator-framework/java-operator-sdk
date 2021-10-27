@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-@SuppressWarnings("rawtypes")
 public class Event {
 
   private final CustomResourceID relatedCustomResource;
