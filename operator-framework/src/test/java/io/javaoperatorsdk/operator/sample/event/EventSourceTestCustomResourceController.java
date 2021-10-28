@@ -7,7 +7,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
@@ -35,7 +39,7 @@ public class EventSourceTestCustomResourceController
 
   @Override
   public UpdateControl<EventSourceTestCustomResource> createOrUpdateResource(
-      EventSourceTestCustomResource resource, Context<EventSourceTestCustomResource> context) {
+      EventSourceTestCustomResource resource, Context context) {
 
     timerEventSource.schedule(resource, TIMER_DELAY, TIMER_PERIOD);
 

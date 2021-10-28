@@ -10,18 +10,18 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 public class MultilevelController extends
     MultilevelAbstractController<String, MultilevelController.MyCustomResource> {
 
-  public static class MyCustomResource extends CustomResource {
+  public static class MyCustomResource extends CustomResource<Void,Void> {
 
   }
 
   public UpdateControl<MultilevelController.MyCustomResource> createOrUpdateResource(
       MultilevelController.MyCustomResource customResource,
-      Context<MultilevelController.MyCustomResource> context) {
+      Context context) {
     return UpdateControl.updateCustomResource(null);
   }
 
   public DeleteControl deleteResource(MultilevelController.MyCustomResource customResource,
-      Context<MultilevelController.MyCustomResource> context) {
+      Context context) {
     return DeleteControl.defaultDelete();
   }
 

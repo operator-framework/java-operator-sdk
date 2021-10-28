@@ -26,7 +26,7 @@ public class SubResourceTestCustomResourceController
 
   @Override
   public UpdateControl<SubResourceTestCustomResource> createOrUpdateResource(
-      SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
+      SubResourceTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");

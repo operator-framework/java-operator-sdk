@@ -19,8 +19,9 @@ class ClassMappingProvider {
 
   private static final Logger log = LoggerFactory.getLogger(ClassMappingProvider.class);
 
+  @SuppressWarnings("unchecked")
   static <T, V> Map<T, V> provide(final String resourcePath, T key, V value) {
-    Map<T, V> result = new HashMap();
+    Map<T, V> result = new HashMap<>();
     try {
       final var classLoader = Thread.currentThread().getContextClassLoader();
       final Enumeration<URL> customResourcesMetadataList = classLoader.getResources(resourcePath);

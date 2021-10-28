@@ -11,16 +11,16 @@ import java.io.Serializable;
 @Controller
 public class ControllerImplemented2Interfaces implements Serializable, ResourceController<ControllerImplemented2Interfaces.MyCustomResource> {
 
-    public static class MyCustomResource extends CustomResource {
+    public static class MyCustomResource extends CustomResource<Void,Void> {
     }
 
     @Override
-    public UpdateControl<MyCustomResource> createOrUpdateResource(MyCustomResource customResource, Context<MyCustomResource> context) {
+    public UpdateControl<MyCustomResource> createOrUpdateResource(MyCustomResource customResource, Context context) {
         return UpdateControl.updateCustomResource(null);
     }
 
     @Override
-    public DeleteControl deleteResource(MyCustomResource customResource, Context<MyCustomResource> context) {
+    public DeleteControl deleteResource(MyCustomResource customResource, Context context) {
         return DeleteControl.defaultDelete();
     }
 }

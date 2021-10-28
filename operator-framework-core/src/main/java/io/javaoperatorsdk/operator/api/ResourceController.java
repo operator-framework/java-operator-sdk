@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.client.CustomResource;
 
-public interface ResourceController<R extends CustomResource> {
+public interface ResourceController<R extends CustomResource<?, ?>> {
 
   /**
    * Note that this method is used in combination of finalizers. If automatic finalizer handling is
@@ -28,7 +28,7 @@ public interface ResourceController<R extends CustomResource> {
    *         finalizer to indicate that the resource should not be deleted after all, in which case
    *         the controller should restore the resource's state appropriately.
    */
-  default DeleteControl deleteResource(R resource, Context<R> context) {
+  default DeleteControl deleteResource(R resource, Context context) {
     return DeleteControl.defaultDelete();
   }
 
@@ -46,6 +46,6 @@ public interface ResourceController<R extends CustomResource> {
    *         be skipped. <b>However we will always call an update if there is no finalizer on object
    *         and it's not marked for deletion.</b>
    */
-  UpdateControl<R> createOrUpdateResource(R resource, Context<R> context);
+  UpdateControl<R> createOrUpdateResource(R resource, Context context);
 
 }

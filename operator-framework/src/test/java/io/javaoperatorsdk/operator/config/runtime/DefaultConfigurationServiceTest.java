@@ -110,13 +110,13 @@ public class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
-        InnerCustomResource resource, Context<InnerCustomResource> context) {
+        InnerCustomResource resource, Context context) {
       return null;
     }
 
     @Group("test.crd")
     @Version("v1")
-    public class InnerCustomResource extends CustomResource {
+    public static class InnerCustomResource extends CustomResource<Void, Void> {
     }
   }
 
@@ -127,7 +127,7 @@ public class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> createOrUpdateResource(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+        TestCustomResource resource, Context context) {
       return null;
     }
   }
@@ -137,7 +137,7 @@ public class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> createOrUpdateResource(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+        TestCustomResource resource, Context context) {
       return null;
     }
   }

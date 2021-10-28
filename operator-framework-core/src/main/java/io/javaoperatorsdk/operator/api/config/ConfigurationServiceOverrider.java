@@ -61,7 +61,7 @@ public class ConfigurationServiceOverrider {
   public ConfigurationService build() {
     return new ConfigurationService() {
       @Override
-      public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
+      public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
           ResourceController<R> controller) {
         return original.getConfigurationFor(controller);
       }

@@ -77,7 +77,7 @@ class TypeParameterResolver {
     return IntStream.range(0, typeParameters.size())
         .filter(i -> typeParameters.get(i).getSimpleName().toString().equals(typeName))
         .findFirst()
-        .getAsInt();
+        .orElseThrow();
   }
 
   private List<DeclaredType> findChain(Types typeUtils, DeclaredType declaredType) {

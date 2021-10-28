@@ -34,9 +34,9 @@ public interface ConfigurationService {
    * @param controller the controller we want the configuration of
    * @param <R> the {@code CustomResource} type associated with the specified controller
    * @return the {@link ControllerConfiguration} associated with the specified controller or {@code
-   *     null} if no configuration exists for the controller
+   * null} if no configuration exists for the controller
    */
-  <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
+  <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
       ResourceController<R> controller);
 
   /**

@@ -34,14 +34,14 @@ public class CustomServiceController implements ResourceController<CustomService
   }
 
   @Override
-  public DeleteControl deleteResource(CustomService resource, Context<CustomService> context) {
+  public DeleteControl deleteResource(CustomService resource, Context context) {
     log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
     return DeleteControl.defaultDelete();
   }
 
   @Override
   public UpdateControl<CustomService> createOrUpdateResource(
-      CustomService resource, Context<CustomService> context) {
+      CustomService resource, Context context) {
     log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
 
     ServicePort servicePort = new ServicePort();

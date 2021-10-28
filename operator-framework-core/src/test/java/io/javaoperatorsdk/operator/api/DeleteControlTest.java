@@ -7,9 +7,8 @@ class DeleteControlTest {
 
   @Test
   void cannotReScheduleForDefaultDelete() {
-    Assertions.assertThrows(IllegalStateException.class, () -> {
-      DeleteControl.defaultDelete().rescheduleAfter(1000L);
-    });
+    Assertions.assertThrows(IllegalStateException.class,
+        () -> DeleteControl.defaultDelete().rescheduleAfter(1000L));
   }
 
 }

@@ -28,7 +28,7 @@ public class RetryTestCustomResourceController
 
   @Override
   public UpdateControl<RetryTestCustomResource> createOrUpdateResource(
-      RetryTestCustomResource resource, Context<RetryTestCustomResource> context) {
+      RetryTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {

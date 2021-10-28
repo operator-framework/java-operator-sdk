@@ -6,7 +6,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller
@@ -21,7 +24,7 @@ public class DoubleUpdateTestCustomResourceController
 
   @Override
   public UpdateControl<DoubleUpdateTestCustomResource> createOrUpdateResource(
-      DoubleUpdateTestCustomResource resource, Context<DoubleUpdateTestCustomResource> context) {
+      DoubleUpdateTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 
     log.info("Value: " + resource.getSpec().getValue());

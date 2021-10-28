@@ -63,7 +63,7 @@ public class TestCustomResourceController
 
   @Override
   public DeleteControl deleteResource(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+      TestCustomResource resource, Context context) {
     Boolean delete =
         kubernetesClient
             .configMaps()
@@ -86,7 +86,7 @@ public class TestCustomResourceController
 
   @Override
   public UpdateControl<TestCustomResource> createOrUpdateResource(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+      TestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
