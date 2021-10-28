@@ -23,7 +23,7 @@ permalink: /docs/features
 
 ## Retry and Re-Scheduling Common Behavior
 
-## Event Sources
+## Handling Related Events with Event Sources
 
 ### Caching and Event Sources
 
