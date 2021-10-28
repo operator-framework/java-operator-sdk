@@ -63,7 +63,7 @@ public class TomcatOperatorE2E {
     Namespace testNs = new NamespaceBuilder().withMetadata(
         new ObjectMetaBuilder().withName(TEST_NS).build()).build();
 
-    if (testNs != null && client.namespaces().withName(TEST_NS).isReady()) {
+    if (testNs != null) {
       // We perform a pre-run cleanup instead of a post-run cleanup. This is to help with debugging
       // test results when running against a persistent cluster. The test namespace would stay
       // after the test run so we can check what's there, but it would be cleaned up during the next test run.
