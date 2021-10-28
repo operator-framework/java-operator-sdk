@@ -19,11 +19,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class TomcatOperatorEndToEnd {
+public class TomcatOperatorE2E {
 
   final static String TEST_NS = "tomcat-test";
 
-  final static Logger log = LoggerFactory.getLogger(TomcatOperatorEndToEnd.class);
+  final static Logger log = LoggerFactory.getLogger(TomcatOperatorE2E.class);
 
   @Test
   public void test() {
