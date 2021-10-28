@@ -1,5 +1,14 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -8,17 +17,9 @@ import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
-        implements EventSourceManager<R>, LifecycleAware {
+    implements EventSourceManager<R>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 

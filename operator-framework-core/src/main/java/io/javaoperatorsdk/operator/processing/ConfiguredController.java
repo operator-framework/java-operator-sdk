@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -20,18 +22,16 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
-import java.util.Objects;
-
 public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
-        LifecycleAware, EventSourceInitializer {
+    LifecycleAware, EventSourceInitializer {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
   private DefaultEventSourceManager eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
-                              ControllerConfiguration<R> configuration,
-                              KubernetesClient kubernetesClient) {
+      ControllerConfiguration<R> configuration,
+      KubernetesClient kubernetesClient) {
     this.controller = controller;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
