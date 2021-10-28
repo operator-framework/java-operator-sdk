@@ -163,10 +163,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
     }
   }
 
-  private static class ControllerManager implements LifecycleAware {
+  static class ControllerManager implements LifecycleAware {
     private final Map<String, ConfiguredController> controllers = new HashMap<>();
     private boolean started = false;
-
 
     public synchronized void shouldStart() {
       if (started) {
@@ -200,9 +199,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
       final var crdName = configuration.getCRDName();
       final var existing = controllers.get(crdName);
       if (existing != null) {
-        throw new OperatorException("Cannot register controller " + configuration.getName()
-            + ": another controller (" + existing.getConfiguration().getName()
-            + ") is already registered for CRD " + crdName);
+        throw new OperatorException("Cannot register controller '" + configuration.getName()
+            + "': another controller named '" + existing.getConfiguration().getName()
+            + "' is already registered for CRD '" + crdName + "'");
       }
       this.controllers.put(crdName, configuredController);
       if (started) {
