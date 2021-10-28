@@ -5,5 +5,3 @@ layout: docs
 permalink: /docs/faq
 ---
 
-
-TODO
