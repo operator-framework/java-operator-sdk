@@ -1,5 +1,13 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -11,17 +19,10 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
- * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also creates a
- * Service over which the Pods can be accessed.
+ * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
+ * creates a Service over which the Pods can be accessed.
  */
 @Controller
 public class TomcatController implements ResourceController<Tomcat> {
@@ -97,7 +98,8 @@ public class TomcatController implements ResourceController<Tomcat> {
       Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
       deployment.getMetadata().setName(tomcat.getMetadata().getName());
       deployment.getMetadata().setNamespace(ns);
-      deployment.getMetadata().getLabels().put("app.kubernetes.io/part-of", tomcat.getMetadata().getName());
+      deployment.getMetadata().getLabels().put("app.kubernetes.io/part-of",
+          tomcat.getMetadata().getName());
       deployment.getMetadata().getLabels().put("app.kubernetes.io/managed-by", "tomcat-operator");
       // set tomcat version
       deployment

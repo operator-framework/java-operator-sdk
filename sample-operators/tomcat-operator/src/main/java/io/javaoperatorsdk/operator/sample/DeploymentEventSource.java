@@ -1,19 +1,20 @@
 package io.javaoperatorsdk.operator.sample;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
- * Used by the TomcatController to watch changes on Deployment objects. As the Pods of the Deployment start up
- * the TomcatController updates the status.readyReplicas field.
+ * Used by the TomcatController to watch changes on Deployment objects. As the Pods of the
+ * Deployment start up the TomcatController updates the status.readyReplicas field.
  */
 public class DeploymentEventSource extends AbstractEventSource implements Watcher<Deployment> {
   private static final Logger log = LoggerFactory.getLogger(DeploymentEventSource.class);

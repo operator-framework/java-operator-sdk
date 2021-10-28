@@ -7,4 +7,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("tomcatoperator.io")
 @Version("v1")
-public class Tomcat extends CustomResource<TomcatSpec, TomcatStatus> implements Namespaced {}
+public class Tomcat extends CustomResource<TomcatSpec, TomcatStatus> implements Namespaced {
+}

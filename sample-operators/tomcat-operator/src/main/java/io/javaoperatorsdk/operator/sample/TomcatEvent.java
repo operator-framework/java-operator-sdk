@@ -9,7 +9,8 @@ public class TomcatEvent extends DefaultEvent {
   private final Tomcat tomcat;
 
   public TomcatEvent(
-      Watcher.Action action, Tomcat resource, TomcatEventSource tomcatEventSource, String webappUid) {
+      Watcher.Action action, Tomcat resource, TomcatEventSource tomcatEventSource,
+      String webappUid) {
     super(webappUid, tomcatEventSource);
     this.action = action;
     this.tomcat = resource;

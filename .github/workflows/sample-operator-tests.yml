@@ -57,7 +57,7 @@ jobs:
 
         - name: Run tests
           working-directory: sample-operators/tomcat-operator
-          run: mvn -B test -q --file pom.xml
+          run: mvn -B test -P end-to-end-tests
 
         - name: Dump state
           if: ${{ failure() }}
