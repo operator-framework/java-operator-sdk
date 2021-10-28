@@ -35,6 +35,7 @@ public class TomcatOperatorE2E {
       Operator operator = new Operator(client, DefaultConfigurationService.instance());
       operator.register(new TomcatController(client));
       operator.register(new WebappController(client));
+      operator.start();
     }
 
     Tomcat tomcat = new Tomcat();
