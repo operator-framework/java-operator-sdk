@@ -39,6 +39,9 @@ jobs:
             java-version: 11
             distribution: adopt-hotspot
 
+        - name: Build SDK
+          run: mvn install -DskipTests
+
         - name: build jib
           working-directory: sample-operators/tomcat-operator
           run: |
