@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.Context;
@@ -23,6 +24,7 @@ import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
+import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.ADDED;
 import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.UPDATED;
@@ -318,6 +320,33 @@ class EventDispatcherTest {
         executionScopeWithCREvent(UPDATED, testCustomResource));
 
     assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
+  }
+
+  @Test
+  void setObservedGenerationForStatusIfNeeded() {
+    var observedGenResource = createObservedGenCustomResource();
+
+    when(configuration.isGenerationAware()).thenReturn(true);
+    when(controller.createOrUpdateResource(eq(observedGenResource), any()))
+        .thenReturn(
+            UpdateControl.updateStatusSubResource(observedGenResource));
+
+    when(customResourceFacade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
+
+    PostExecutionControl<ObservedGenCustomResource> control = eventDispatcher.handleExecution(
+        executionScopeWithCREvent(ADDED, observedGenResource));
+    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration().get())
+        .isEqualTo(1L);
+  }
+
+  @Test
+  private ObservedGenCustomResource createObservedGenCustomResource() {
+    ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();
+    observedGenCustomResource.setMetadata(new ObjectMeta());
+    observedGenCustomResource.getMetadata().setGeneration(1L);
+    observedGenCustomResource.getMetadata().setFinalizers(new ArrayList<>());
+    observedGenCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
+    return observedGenCustomResource;
   }
 
   private void markForDeletion(CustomResource customResource) {
