@@ -140,7 +140,7 @@ class CustomResourceEventSourceTest {
     assertFalse(local.isRunning());
     waitMinimalTime();
     customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
-    verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
+    verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
 
     customResourceEventSource.start();
     assertTrue(local.isRunning());
