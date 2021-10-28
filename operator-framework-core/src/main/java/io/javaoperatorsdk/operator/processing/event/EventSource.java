@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.javaoperatorsdk.operator.api.Stoppable;
+import io.javaoperatorsdk.operator.api.LifecycleAware;
 
-public interface EventSource extends Stoppable {
+public interface EventSource extends LifecycleAware {
 
   void setEventHandler(EventHandler eventHandler);
 
@@ -11,5 +11,6 @@ public interface EventSource extends Stoppable {
    *
    * @param customResourceUid - id of custom resource
    */
-  default void cleanupForCustomResource(CustomResourceID customResourceUid) {}
+  default void cleanupForCustomResource(CustomResourceID customResourceUid) {
+  }
 }

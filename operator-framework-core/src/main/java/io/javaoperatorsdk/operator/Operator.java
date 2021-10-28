@@ -1,27 +1,26 @@
 package io.javaoperatorsdk.operator;
 
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Version;
+import io.javaoperatorsdk.operator.api.LifecycleAware;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.Stoppable;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
-
 @SuppressWarnings("rawtypes")
-public class Operator implements AutoCloseable, Stoppable {
+public class Operator implements AutoCloseable, LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
@@ -163,7 +162,7 @@ public class Operator implements AutoCloseable, Stoppable {
     }
   }
 
-  private static class ControllerManager implements Stoppable {
+  private static class ControllerManager implements LifecycleAware {
     private final Map<String, ConfiguredController> controllers = new HashMap<>();
     private boolean started = false;
 
