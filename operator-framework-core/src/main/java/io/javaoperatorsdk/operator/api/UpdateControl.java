@@ -10,7 +10,7 @@ public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateC
   private final boolean updateCustomResource;
 
   private UpdateControl(
-          T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
+      T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
     if ((updateCustomResource || updateStatusSubResource) && customResource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -24,7 +24,7 @@ public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateC
   }
 
   public static <T extends CustomResource> UpdateControl<T> updateStatusSubResource(
-          T customResource) {
+      T customResource) {
     return new UpdateControl<>(customResource, true, false);
   }
 
@@ -36,7 +36,7 @@ public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateC
    * @return UpdateControl instance
    */
   public static <T extends CustomResource<?, ?>> UpdateControl<T> updateCustomResourceAndStatus(
-          T customResource) {
+      T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }
 

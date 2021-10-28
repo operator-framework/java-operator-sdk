@@ -1,19 +1,21 @@
 package io.javaoperatorsdk.operator.processing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.BaseControl;
+import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.DefaultContext;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -62,14 +64,14 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
     final var markedForDeletion = resource.isMarkedForDeletion();
     if (markedForDeletion && shouldNotDispatchToDelete(resource)) {
       log.debug(
-              "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
-              getName(resource),
-              resource.getMetadata().getFinalizers());
+          "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
+          getName(resource),
+          resource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
 
     Context context =
-            new DefaultContext(executionScope.getRetryInfo());
+        new DefaultContext(executionScope.getRetryInfo());
     if (markedForDeletion) {
       return handleDelete(resource, context);
     } else {
@@ -96,7 +98,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
   }
 
   private PostExecutionControl<R> handleCreateOrUpdate(
-          ExecutionScope<R> executionScope, R resource, Context context) {
+      ExecutionScope<R> executionScope, R resource, Context context) {
     if (configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
@@ -167,9 +169,9 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
 
   private PostExecutionControl<R> handleDelete(R resource, Context context) {
     log.debug(
-            "Executing delete for resource: {} with version: {}",
-            getName(resource),
-            getVersion(resource));
+        "Executing delete for resource: {} with version: {}",
+        getName(resource),
+        getVersion(resource));
 
     DeleteControl deleteControl = controller.deleteResource(resource, context);
     final var useFinalizer = configuration().useFinalizer();

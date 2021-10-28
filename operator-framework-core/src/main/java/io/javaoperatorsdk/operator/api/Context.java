@@ -4,6 +4,6 @@ import java.util.Optional;
 
 public interface Context {
 
-    Optional<RetryInfo> getRetryInfo();
+  Optional<RetryInfo> getRetryInfo();
 
 }

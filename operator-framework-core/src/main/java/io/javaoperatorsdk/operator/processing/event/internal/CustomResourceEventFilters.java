@@ -9,40 +9,40 @@ import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 public final class CustomResourceEventFilters {
 
   private static final CustomResourceEventFilter<CustomResource<?, ?>> USE_FINALIZER =
-          (configuration, oldResource, newResource) -> {
-            if (configuration.useFinalizer()) {
-              final var finalizer = configuration.getFinalizer();
-              boolean oldFinalizer = oldResource == null || oldResource.hasFinalizer(finalizer);
-              boolean newFinalizer = newResource.hasFinalizer(finalizer);
+      (configuration, oldResource, newResource) -> {
+        if (configuration.useFinalizer()) {
+          final var finalizer = configuration.getFinalizer();
+          boolean oldFinalizer = oldResource == null || oldResource.hasFinalizer(finalizer);
+          boolean newFinalizer = newResource.hasFinalizer(finalizer);
 
-              return !newFinalizer || !oldFinalizer;
-            } else {
-              return false;
-            }
+          return !newFinalizer || !oldFinalizer;
+        } else {
+          return false;
+        }
       };
 
   private static final CustomResourceEventFilter<CustomResource<?, ?>> GENERATION_AWARE =
-          (configuration, oldResource, newResource) -> {
-            final var status = newResource.getStatus();
-            final var generationAware = configuration.isGenerationAware();
-            if (generationAware && status instanceof ObservedGenerationAware) {
-              var actualGeneration = newResource.getMetadata().getGeneration();
-              var observedGeneration = ((ObservedGenerationAware) status)
-                      .getObservedGeneration();
-              return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
-            }
-            return oldResource == null || !generationAware ||
+      (configuration, oldResource, newResource) -> {
+        final var status = newResource.getStatus();
+        final var generationAware = configuration.isGenerationAware();
+        if (generationAware && status instanceof ObservedGenerationAware) {
+          var actualGeneration = newResource.getMetadata().getGeneration();
+          var observedGeneration = ((ObservedGenerationAware) status)
+              .getObservedGeneration();
+          return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
+        }
+        return oldResource == null || !generationAware ||
             oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };
 
   private static final CustomResourceEventFilter<CustomResource<?, ?>> PASSTHROUGH =
-          (configuration, oldResource, newResource) -> true;
+      (configuration, oldResource, newResource) -> true;
 
   private static final CustomResourceEventFilter<CustomResource<?, ?>> NONE =
-          (configuration, oldResource, newResource) -> false;
+      (configuration, oldResource, newResource) -> false;
 
   private static final CustomResourceEventFilter<CustomResource<?, ?>> MARKED_FOR_DELETION =
-          (configuration, oldResource, newResource) -> newResource.isMarkedForDeletion();
+      (configuration, oldResource, newResource) -> newResource.isMarkedForDeletion();
 
   private CustomResourceEventFilters() {}
 
@@ -86,7 +86,7 @@ public final class CustomResourceEventFilters {
    *
    * @param <T> the type of custom resource the filter should handle
    * @return a filter accepting changes based on whether the finalizer is needed and has been
-   * applied
+   *         applied
    */
   @SuppressWarnings("unchecked")
   public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> finalizerNeededAndApplied() {

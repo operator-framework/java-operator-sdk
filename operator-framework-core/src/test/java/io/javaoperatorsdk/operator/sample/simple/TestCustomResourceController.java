@@ -1,5 +1,11 @@
 package io.javaoperatorsdk.operator.sample.simple;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -10,11 +16,6 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.UpdateControl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Controller(generationAwareEventProcessing = false)
 public class TestCustomResourceController implements ResourceController<TestCustomResource> {
@@ -38,17 +39,17 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
   @Override
   public DeleteControl deleteResource(
-          TestCustomResource resource, Context context) {
+      TestCustomResource resource, Context context) {
     Boolean delete =
-            kubernetesClient
-                    .configMaps()
-                    .inNamespace(resource.getMetadata().getNamespace())
-                    .withName(resource.getSpec().getConfigMapName())
-                    .delete();
+        kubernetesClient
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getSpec().getConfigMapName())
+            .delete();
     if (delete) {
       log.info(
-              "Deleted ConfigMap {} for resource: {}",
-              resource.getSpec().getConfigMapName(),
+          "Deleted ConfigMap {} for resource: {}",
+          resource.getSpec().getConfigMapName(),
           resource.getMetadata().getName());
     } else {
       log.error(
@@ -61,17 +62,17 @@ public class TestCustomResourceController implements ResourceController<TestCust
 
   @Override
   public UpdateControl<TestCustomResource> createOrUpdateResource(
-          TestCustomResource resource, Context context) {
+      TestCustomResource resource, Context context) {
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
     }
 
     ConfigMap existingConfigMap =
-            kubernetesClient
-                    .configMaps()
-                    .inNamespace(resource.getMetadata().getNamespace())
-                    .withName(resource.getSpec().getConfigMapName())
-                    .get();
+        kubernetesClient
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getSpec().getConfigMapName())
+            .get();
 
     if (existingConfigMap != null) {
       existingConfigMap.setData(configMapData(resource));

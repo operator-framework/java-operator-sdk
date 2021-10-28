@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
-
-import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class RuntimeControllerMetadata {
@@ -13,19 +13,19 @@ public class RuntimeControllerMetadata {
 
   static {
     controllerToCustomResourceMappings =
-            ClassMappingProvider.provide(
-                    CONTROLLERS_RESOURCE_PATH, ResourceController.class, CustomResource.class);
+        ClassMappingProvider.provide(
+            CONTROLLERS_RESOURCE_PATH, ResourceController.class, CustomResource.class);
   }
 
   static <R extends CustomResource<?, ?>> Class<R> getCustomResourceClass(
-          ResourceController<R> controller) {
+      ResourceController<R> controller) {
     final Class<? extends CustomResource> customResourceClass =
-            controllerToCustomResourceMappings.get(controller.getClass());
+        controllerToCustomResourceMappings.get(controller.getClass());
     if (customResourceClass == null) {
       throw new IllegalArgumentException(
-              String.format(
-                      "No custom resource has been found for controller %s",
-                      controller.getClass().getCanonicalName()));
+          String.format(
+              "No custom resource has been found for controller %s",
+              controller.getClass().getCanonicalName()));
     }
     return (Class<R>) customResourceClass;
   }

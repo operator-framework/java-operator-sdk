@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -20,18 +22,16 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
-import java.util.Objects;
-
 public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
-        LifecycleAware, EventSourceInitializer<R> {
+    LifecycleAware, EventSourceInitializer<R> {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
   private DefaultEventSourceManager<R> eventSourceManager;
 
   public ConfiguredController(ResourceController<R> controller,
-                              ControllerConfiguration<R> configuration,
-                              KubernetesClient kubernetesClient) {
+      ControllerConfiguration<R> configuration,
+      KubernetesClient kubernetesClient) {
     this.controller = controller;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
@@ -40,15 +40,15 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   @Override
   public DeleteControl deleteResource(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
-            new ControllerExecution<>() {
-              @Override
-              public String name() {
-                return "delete";
-              }
+        new ControllerExecution<>() {
+          @Override
+          public String name() {
+            return "delete";
+          }
 
-              @Override
-              public String controllerName() {
-                return configuration.getName();
+          @Override
+          public String controllerName() {
+            return configuration.getName();
           }
 
           @Override
@@ -66,15 +66,15 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
   @Override
   public UpdateControl<R> createOrUpdateResource(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
-            new ControllerExecution<>() {
-              @Override
-              public String name() {
-                return "createOrUpdate";
-              }
+        new ControllerExecution<>() {
+          @Override
+          public String name() {
+            return "createOrUpdate";
+          }
 
-              @Override
-              public String controllerName() {
-                return configuration.getName();
+          @Override
+          public String controllerName() {
+            return configuration.getName();
           }
 
           @Override

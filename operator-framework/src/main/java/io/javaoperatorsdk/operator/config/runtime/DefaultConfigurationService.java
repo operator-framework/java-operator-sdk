@@ -20,21 +20,21 @@ public class DefaultConfigurationService extends BaseConfigurationService {
 
   @Override
   public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-          ResourceController<R> controller) {
-      return getConfigurationFor(controller, true);
+      ResourceController<R> controller) {
+    return getConfigurationFor(controller, true);
   }
 
-    <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-            ResourceController<R> controller, boolean createIfNeeded) {
-        var config = super.getConfigurationFor(controller);
-        if (config == null) {
-            if (createIfNeeded) {
-                // create the configuration on demand and register it
-                config = new AnnotationConfiguration<>(controller);
-                register(config);
-                getLogger().info(
-                        "Created configuration for controller {} with name {}",
-                        controller.getClass().getName(),
+  <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+      ResourceController<R> controller, boolean createIfNeeded) {
+    var config = super.getConfigurationFor(controller);
+    if (config == null) {
+      if (createIfNeeded) {
+        // create the configuration on demand and register it
+        config = new AnnotationConfiguration<>(controller);
+        register(config);
+        getLogger().info(
+            "Created configuration for controller {} with name {}",
+            controller.getClass().getName(),
             config.getName());
       }
     } else {

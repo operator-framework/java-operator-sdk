@@ -1,13 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.ResourceController;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.api.ResourceController;
 
 @SuppressWarnings("rawtypes")
 public class AbstractConfigurationService implements ConfigurationService {
@@ -27,7 +27,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   private <R extends CustomResource<?, ?>> void put(
-          ControllerConfiguration<R> config, boolean failIfExisting) {
+      ControllerConfiguration<R> config, boolean failIfExisting) {
     final var name = config.getName();
     if (failIfExisting) {
       final var existing = configurations.get(name);
@@ -40,19 +40,19 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   protected <R extends CustomResource<?, ?>> void throwExceptionOnNameCollision(
-          String newControllerClassName, ControllerConfiguration<R> existing) {
+      String newControllerClassName, ControllerConfiguration<R> existing) {
     throw new IllegalArgumentException(
-            "Controller name '"
-                    + existing.getName()
-                    + "' is used by both "
-                    + existing.getAssociatedControllerClassName()
-                    + " and "
-                    + newControllerClassName);
+        "Controller name '"
+            + existing.getName()
+            + "' is used by both "
+            + existing.getAssociatedControllerClassName()
+            + " and "
+            + newControllerClassName);
   }
 
   @Override
   public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-          ResourceController<R> controller) {
+      ResourceController<R> controller) {
     final var key = keyFor(controller);
     final var configuration = configurations.get(key);
     if (configuration == null) {

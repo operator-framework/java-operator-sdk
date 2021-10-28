@@ -1,5 +1,14 @@
 package io.javaoperatorsdk.operator;
 
+import java.net.ConnectException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -10,14 +19,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.ConnectException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable, LifecycleAware {
@@ -110,12 +111,12 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * registration of the controller is delayed till the operator is started.
    *
    * @param controller the controller to register
-   * @param <R>        the {@code CustomResource} type associated with the controller
+   * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource<?, ?>> void register(ResourceController<R> controller)
-          throws OperatorException {
-      register(controller, null);
+      throws OperatorException {
+    register(controller, null);
   }
 
   /**
@@ -132,22 +133,22 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource<?, ?>> void register(
-          ResourceController<R> controller, ControllerConfiguration<R> configuration)
-          throws OperatorException {
-      final var existing = configurationService.getConfigurationFor(controller);
-      if (existing == null) {
-          log.warn(
-                  "Skipping registration of {} controller named {} because its configuration cannot be found.\n"
-                          + "Known controllers are: {}",
-                  controller.getClass().getCanonicalName(),
-                  ControllerUtils.getNameFor(controller),
-                  configurationService.getKnownControllerNames());
+      ResourceController<R> controller, ControllerConfiguration<R> configuration)
+      throws OperatorException {
+    final var existing = configurationService.getConfigurationFor(controller);
+    if (existing == null) {
+      log.warn(
+          "Skipping registration of {} controller named {} because its configuration cannot be found.\n"
+              + "Known controllers are: {}",
+          controller.getClass().getCanonicalName(),
+          ControllerUtils.getNameFor(controller),
+          configurationService.getKnownControllerNames());
     } else {
       if (configuration == null) {
         configuration = existing;
       }
-          final var configuredController =
-                  new ConfiguredController<>(controller, configuration, kubernetesClient);
+      final var configuredController =
+          new ConfiguredController<>(controller, configuration, kubernetesClient);
       controllers.add(configuredController);
 
       final var watchedNS =
