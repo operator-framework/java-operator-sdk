@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -13,14 +11,19 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.*;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.DeleteControl;
+import io.javaoperatorsdk.operator.api.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.LifecycleAware;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
-    Closeable, EventSourceInitializer {
+    LifecycleAware, EventSourceInitializer {
   private final ResourceController<R> controller;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
@@ -214,10 +217,9 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     return eventSourceManager;
   }
 
-  @Override
-  public void close() throws IOException {
+  public void stop() {
     if (eventSourceManager != null) {
-      eventSourceManager.close();
+      eventSourceManager.stop();
     }
   }
 }

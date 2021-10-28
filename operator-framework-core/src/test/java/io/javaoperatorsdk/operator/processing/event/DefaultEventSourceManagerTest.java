@@ -42,10 +42,10 @@ class DefaultEventSourceManagerTest {
     defaultEventSourceManager.registerEventSource(eventSource);
     defaultEventSourceManager.registerEventSource(eventSource2);
 
-    defaultEventSourceManager.close();
+    defaultEventSourceManager.stop();
 
-    verify(eventSource, times(1)).close();
-    verify(eventSource2, times(1)).close();
+    verify(eventSource, times(1)).stop();
+    verify(eventSource2, times(1)).stop();
   }
 
   @Test

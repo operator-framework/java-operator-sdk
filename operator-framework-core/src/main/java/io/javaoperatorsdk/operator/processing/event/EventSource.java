@@ -1,22 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.Closeable;
-import java.io.IOException;
+import io.javaoperatorsdk.operator.api.LifecycleAware;
 
-public interface EventSource extends Closeable {
-
-  /**
-   * This method is invoked when this {@link EventSource} instance is properly registered to a
-   * {@link EventSourceManager}.
-   */
-  default void start() {}
-
-  /**
-   * This method is invoked when this {@link EventSource} instance is de-registered from a
-   * {@link EventSourceManager}.
-   */
-  @Override
-  default void close() throws IOException {}
+public interface EventSource extends LifecycleAware {
 
   void setEventHandler(EventHandler eventHandler);
 

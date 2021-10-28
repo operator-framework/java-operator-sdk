@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.Closeable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -10,13 +12,14 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
 public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
-    implements EventSourceManager<R>, Closeable {
+    implements EventSourceManager<R>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
@@ -45,18 +48,23 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public void close() {
+  public void start() throws OperatorException {
+    defaultEventHandler.start();
+  }
+
+  @Override
+  public void stop() {
     lock.lock();
     try {
       try {
-        defaultEventHandler.close();
+        defaultEventHandler.stop();
       } catch (Exception e) {
         log.warn("Error closing event handler", e);
       }
       log.debug("Closing event sources.");
       for (var eventSource : eventSources) {
         try {
-          eventSource.close();
+          eventSource.stop();
         } catch (Exception e) {
           log.warn("Error closing {} -> {}", eventSource, e);
         }

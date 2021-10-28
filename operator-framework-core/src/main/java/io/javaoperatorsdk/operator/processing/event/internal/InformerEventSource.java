@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -93,7 +92,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   @Override
-  public void close() throws IOException {
+  public void stop() {
     sharedInformer.close();
   }
 

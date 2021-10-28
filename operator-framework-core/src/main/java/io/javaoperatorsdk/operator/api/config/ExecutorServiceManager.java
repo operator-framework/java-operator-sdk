@@ -34,9 +34,9 @@ public class ExecutorServiceManager {
     }
   }
 
-  public static void close() {
+  public static void stop() {
     if (instance != null) {
-      instance.stop();
+      instance.doStop();
     }
     // make sure that we remove the singleton so that the thread pool is re-created on next call to
     // start
@@ -55,7 +55,7 @@ public class ExecutorServiceManager {
     return executor;
   }
 
-  private void stop() {
+  private void doStop() {
     try {
       log.debug("Closing executor");
       executor.shutdown();
