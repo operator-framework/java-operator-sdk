@@ -25,11 +25,9 @@ public class TomcatOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
-
-    TomcatController tomcatController = new TomcatController(client);
-    operator.register(tomcatController);
-
+    operator.register(new TomcatController(client));
     operator.register(new WebappController(client));
+    operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);
   }
