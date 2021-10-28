@@ -8,7 +8,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ListOptions;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.Metrics;
@@ -129,32 +132,26 @@ class CustomResourceEventSourceTest {
     doCallRealMethod().when(defaultEventSourceManagerMock).getLatestResourceUids(any());
     doCallRealMethod().when(defaultEventSourceManagerMock).cacheResource(any(), any());
 
+    final var mock = mock(FilterWatchListMultiDeletable.class);
+    when(mock.watch((ListOptions) any(), any())).thenReturn(mock(Watch.class));
+    when(client.inAnyNamespace()).thenReturn(mock);
+
     customResourceEventSource.setEventHandler(local);
 
     customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
     verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
-    waitMinimalTime();
-
 
     customResourceEventSource.close();
     assertFalse(local.isRunning());
-    waitMinimalTime();
     customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
+    // mockito times method is not reset and keeps increasing so here we stay at 1 call
     verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
 
     customResourceEventSource.start();
     assertTrue(local.isRunning());
-    waitMinimalTime();
     customResourceEventSource.eventReceived(Watcher.Action.MODIFIED, cr);
-    verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
-  }
-
-  private void waitMinimalTime() {
-    try {
-      Thread.sleep(200);
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(e);
-    }
+    // we're expecting another call to the dispatcher, so total number of calls should now be 2
+    verify(eventDispatcherMock, timeout(50).times(2)).handleExecution(any());
   }
 
   private static class TestConfiguredController extends ConfiguredController<TestCustomResource> {

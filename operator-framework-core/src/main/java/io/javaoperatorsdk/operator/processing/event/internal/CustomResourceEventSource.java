@@ -48,8 +48,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public void start() {
-    // todo: this will be enabled once the tests are sorted out
-    // eventHandler.start();
+    eventHandler.start();
 
     final var configuration = controller.getConfiguration();
     final var targetNamespaces = configuration.getEffectiveNamespaces();
