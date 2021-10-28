@@ -1,17 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
@@ -28,6 +16,17 @@ import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
@@ -37,7 +36,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * UID, while buffering events which are received during an execution.
  */
 public class DefaultEventHandler<R extends CustomResource<?, ?>>
-    implements EventHandler, LifecycleAware {
+        implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
 

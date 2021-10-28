@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
 public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
-    implements EventSourceManager<R>, LifecycleAware {
+        implements EventSourceManager<R>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(DefaultEventSourceManager.class);
 
