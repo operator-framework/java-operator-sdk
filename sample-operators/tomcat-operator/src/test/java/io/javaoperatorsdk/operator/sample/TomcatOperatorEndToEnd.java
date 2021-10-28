@@ -19,17 +19,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class TomcatOperatorEndToEndTest {
+public class TomcatOperatorEndToEnd {
 
   final static String TEST_NS = "tomcat-test";
 
-  final static Logger log = LoggerFactory.getLogger(TomcatOperatorEndToEndTest.class);
+  final static Logger log = LoggerFactory.getLogger(TomcatOperatorEndToEnd.class);
 
   @Test
   public void test() {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
 
+    // Use this if you want to run the test without deploying the Operator to Kubernetes
     if ("true".equals(System.getenv("RUN_OPERATOR_IN_TEST"))) {
       Operator operator = new Operator(client, DefaultConfigurationService.instance());
       operator.register(new TomcatController(client));
