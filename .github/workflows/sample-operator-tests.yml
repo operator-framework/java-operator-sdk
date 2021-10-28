@@ -53,12 +53,12 @@ jobs:
           working-directory: sample-operators/tomcat-operator
           run: kubectl apply -f k8s/crd.yaml
 
-        - name: install tomcat operator
+        - name: Deploy Tomcat Operator
           working-directory: sample-operators/tomcat-operator
           run: |
             kubectl apply -f k8s/operator.yaml
 
-        - name: Run tests
+        - name: Run E2E Tests
           working-directory: sample-operators/tomcat-operator
           run: mvn -B test -P end-to-end-tests
 
