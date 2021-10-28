@@ -73,6 +73,6 @@ jobs:
             echo "Output of tomcat-operator pod"
             kubectl logs -l app=tomcat-operator -n tomcat-operator
             echo "All objects in tomcat-test"
-            kubectl get all -n tomcat-test -o yaml
+            kubectl get deployment,pod,tomcat,webapp -n tomcat-test -o yaml
             echo "Output of curl command"
             kubectl logs curl -n tomcat-test
