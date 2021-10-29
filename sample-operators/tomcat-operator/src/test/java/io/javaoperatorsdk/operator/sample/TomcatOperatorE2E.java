@@ -76,8 +76,9 @@ public class TomcatOperatorE2E {
     log.info("Creating test namespace {}", TEST_NS);
     client.namespaces().create(testNs);
 
-    log.info("Creating test resources");
+    log.info("Creating test Tomcat object: {}", tomcat);
     tomcatClient.inNamespace(TEST_NS).create(tomcat);
+    log.info("Creating test Webapp object: {}", webapp1);
     webappClient.inNamespace(TEST_NS).create(webapp1);
 
     log.info("Waiting 5 minutes for Tomcat and Webapp CR statuses to be updated");
