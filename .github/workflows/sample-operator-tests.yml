@@ -38,6 +38,7 @@ jobs:
           with:
             java-version: 11
             distribution: adopt-hotspot
+            cache: 'maven'
 
         - name: Build SDK
           run: mvn install -DskipTests
