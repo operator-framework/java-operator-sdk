@@ -6,6 +6,7 @@
 Build Kubernetes Operators in Java without hassle. Inspired
 by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 
+Our webpage with documentation is getting better every day: https://javaoperatorsdk.io/ 
 
 Table of Contents
 ==========
