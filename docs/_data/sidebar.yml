@@ -1,7 +1,14 @@
  # Navbar menu navigation links
+  - title: Intro to Operators
+    url: /docs/intro-operators
   - title: Getting Started
     url: /docs/getting-started
-  - title: Contributing
-    url: /docs/contributing
   - title: How to use Samples
     url: /docs/using-samples
+  - title: Features
+    url: /docs/features
+  - title: FAQ
+    url: /docs/faq
+  - title: Contributing
+    url: /docs/contributing
+
