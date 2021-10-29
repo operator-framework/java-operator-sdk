@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
@@ -116,17 +117,21 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   public void eventReceived(ResourceAction action, T customResource, T oldResource) {
-    log.debug(
-        "Event received for resource: {}", getName(customResource));
-
-    if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
-      eventHandler.handleEvent(
-          new CustomResourceEvent(action, CustomResourceID.fromResource(customResource)));
-    } else {
+    try {
       log.debug(
-          "Skipping event handling resource {} with version: {}",
-          getUID(customResource),
-          getVersion(customResource));
+          "Event received for resource: {}", getName(customResource));
+      MDCUtils.addCustomResourceInfo(customResource);
+      if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
+        eventHandler.handleEvent(
+            new CustomResourceEvent(action, CustomResourceID.fromResource(customResource)));
+      } else {
+        log.debug(
+            "Skipping event handling resource {} with version: {}",
+            getUID(customResource),
+            getVersion(customResource));
+      }
+    } finally {
+      MDCUtils.removeCustomResourceInfo();
     }
   }
 
