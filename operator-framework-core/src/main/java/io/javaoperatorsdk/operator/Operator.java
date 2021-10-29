@@ -137,7 +137,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
       throws OperatorException {
     final var existing = configurationService.getConfigurationFor(controller);
     if (existing == null) {
-      throw new IllegalStateException(
+      throw new OperatorException(
           "Cannot register controller with name " + controller.getClass().getCanonicalName() +
               " controller named " + ControllerUtils.getNameFor(controller)
               + " because its configuration cannot be found.\n" +
