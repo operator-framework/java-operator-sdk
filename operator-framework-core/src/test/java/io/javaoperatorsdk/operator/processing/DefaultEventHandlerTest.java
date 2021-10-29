@@ -101,7 +101,7 @@ class DefaultEventHandlerTest {
   }
 
   @Test
-  public void executesTheControllerInstantlyAfterErrorIfEventsBuffered() {
+  public void executesTheControllerInstantlyAfterErrorIfNewEventsReceived() {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     overrideData(event.getRelatedCustomResourceID(), customResource);
@@ -114,7 +114,7 @@ class DefaultEventHandlerTest {
 
     // start processing an event
     defaultEventHandlerWithRetry.handleEvent(event);
-    // buffer another event
+    // handle another event
     defaultEventHandlerWithRetry.handleEvent(event);
 
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
@@ -180,7 +180,7 @@ class DefaultEventHandlerTest {
   }
 
   @Test
-  public void reScheduleOnlyIfNotExecutedBufferedEvents() {
+  public void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() {
     var testDelay = 10000L;
     when(eventDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
