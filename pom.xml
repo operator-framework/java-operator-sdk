@@ -67,7 +67,7 @@
         <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
         <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
         <git-commit-id-maven-plugin.version>5.0.0</git-commit-id-maven-plugin.version>
-        <formatter-maven-plugin.version>2.16.0</formatter-maven-plugin.version>
+        <formatter-maven-plugin.version>2.17.0</formatter-maven-plugin.version>
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.6.2</impsort-maven-plugin.version>
     </properties>
