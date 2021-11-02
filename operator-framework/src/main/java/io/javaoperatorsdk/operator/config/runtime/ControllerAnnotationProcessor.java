@@ -21,9 +21,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeName;
 
-import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.CONTROLLERS_RESOURCE_PATH;
+import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
-@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.controller.Controller")
+@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {
@@ -35,7 +35,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
     controllersResourceWriter =
-        new AccumulativeMappingWriter(CONTROLLERS_RESOURCE_PATH, processingEnv)
+        new AccumulativeMappingWriter(RECONCILERS_RESOURCE_PATH, processingEnv)
             .loadExistingMappings();
 
     typeParameterResolver = initializeResolver(processingEnv);

@@ -74,9 +74,9 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   public void returnsValuesFromControllerAnnotationFinalizer() {
-    final var controller = new TestCustomReconciler();
+    final var reconciler = new TestCustomReconciler();
     final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(controller);
+        DefaultConfigurationService.instance().getConfigurationFor(reconciler);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class), configuration.getCRDName());
     assertEquals(
         ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
@@ -87,15 +87,15 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   public void returnCustomerFinalizerNameIfSet() {
-    final var controller = new TestCustomFinalizerController();
+    final var reconciler = new TestCustomFinalizerReconciler();
     final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(controller);
+        DefaultConfigurationService.instance().getConfigurationFor(reconciler);
     assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizer());
   }
 
   @Test
   public void supportsInnerClassCustomResources() {
-    final var controller = new TestCustomFinalizerController();
+    final var controller = new TestCustomFinalizerReconciler();
     assertDoesNotThrow(
         () -> {
           DefaultConfigurationService.instance()
@@ -105,11 +105,11 @@ public class DefaultConfigurationServiceTest {
   }
 
   @Controller(finalizerName = CUSTOM_FINALIZER_NAME)
-  static class TestCustomFinalizerController
-      implements Reconciler<TestCustomFinalizerController.InnerCustomResource> {
+  static class TestCustomFinalizerReconciler
+      implements Reconciler<TestCustomFinalizerReconciler.InnerCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResources(
+    public UpdateControl<TestCustomFinalizerReconciler.InnerCustomResource> createOrUpdateResources(
         InnerCustomResource resource, Context context) {
       return null;
     }

@@ -4,8 +4,8 @@ import org.junit.Test;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator.ControllerManager;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.javaoperatorsdk.operator.sample.simple.DuplicateCRController;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;

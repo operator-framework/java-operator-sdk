@@ -8,24 +8,24 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 @SuppressWarnings("rawtypes")
 public class RuntimeControllerMetadata {
 
-  public static final String CONTROLLERS_RESOURCE_PATH = "javaoperatorsdk/controllers";
+  public static final String RECONCILERS_RESOURCE_PATH = "javaoperatorsdk/reconcilers";
   private static final Map<Class<? extends Reconciler>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
 
   static {
     controllerToCustomResourceMappings =
         ClassMappingProvider.provide(
-            CONTROLLERS_RESOURCE_PATH, Reconciler.class, CustomResource.class);
+            RECONCILERS_RESOURCE_PATH, Reconciler.class, CustomResource.class);
   }
 
   static <R extends CustomResource<?, ?>> Class<R> getCustomResourceClass(
-      Reconciler<R> controller) {
+      Reconciler<R> reconciler) {
     final Class<? extends CustomResource> customResourceClass =
-        controllerToCustomResourceMappings.get(controller.getClass());
+        controllerToCustomResourceMappings.get(reconciler.getClass());
     if (customResourceClass == null) {
       throw new IllegalArgumentException(
           String.format(
               "No custom resource has been found for controller %s",
-              controller.getClass().getCanonicalName()));
+              reconciler.getClass().getCanonicalName()));
     }
     return (Class<R>) customResourceClass;
   }
