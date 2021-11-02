@@ -37,7 +37,6 @@ public class TestUtils {
             .withNamespace(id.getNamespace().orElse(null))
             .build());
     resource.getMetadata().setAnnotations(new HashMap<>());
-    resource.setKind("CustomService");
     resource.setSpec(new TestCustomResourceSpec());
     resource.getSpec().setConfigMapName("test-config-map");
     resource.getSpec().setKey("test-key");
