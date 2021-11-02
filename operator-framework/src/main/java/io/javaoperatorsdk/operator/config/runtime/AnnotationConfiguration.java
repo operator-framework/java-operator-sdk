@@ -6,7 +6,7 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
@@ -15,11 +15,11 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 public class AnnotationConfiguration<R extends CustomResource<?, ?>>
     implements ControllerConfiguration<R> {
 
-  private final ResourceController<R> controller;
+  private final Reconciler<R> controller;
   private final Controller annotation;
   private ConfigurationService service;
 
-  public AnnotationConfiguration(ResourceController<R> controller) {
+  public AnnotationConfiguration(Reconciler<R> controller) {
     this.controller = controller;
     this.annotation = controller.getClass().getAnnotation(Controller.class);
   }

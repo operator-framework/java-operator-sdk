@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
@@ -25,23 +25,23 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
-  private DefaultEventHandler<R> defaultEventHandler;
+  private EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
   private CustomResourceEventSource<R> customResourceEventSource;
 
-  DefaultEventSourceManager(DefaultEventHandler<R> defaultEventHandler) {
-    init(defaultEventHandler);
+  DefaultEventSourceManager(EventProcessor<R> eventProcessor) {
+    init(eventProcessor);
   }
 
   public DefaultEventSourceManager(ConfiguredController<R> controller) {
     customResourceEventSource = new CustomResourceEventSource<>(controller);
-    init(new DefaultEventHandler<>(controller, customResourceEventSource));
+    init(new EventProcessor<>(controller, customResourceEventSource));
     registerEventSource(customResourceEventSource);
   }
 
-  private void init(DefaultEventHandler<R> defaultEventHandler) {
-    this.defaultEventHandler = defaultEventHandler;
-    defaultEventHandler.setEventSourceManager(this);
+  private void init(EventProcessor<R> eventProcessor) {
+    this.eventProcessor = eventProcessor;
+    eventProcessor.setEventSourceManager(this);
 
     this.retryAndRescheduleTimerEventSource = new TimerEventSource<>();
     registerEventSource(retryAndRescheduleTimerEventSource);
@@ -49,7 +49,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
 
   @Override
   public void start() throws OperatorException {
-    defaultEventHandler.start();
+    eventProcessor.start();
   }
 
   @Override
@@ -57,7 +57,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     lock.lock();
     try {
       try {
-        defaultEventHandler.stop();
+        eventProcessor.stop();
       } catch (Exception e) {
         log.warn("Error closing event handler", e);
       }
@@ -82,7 +82,7 @@ public class DefaultEventSourceManager<R extends CustomResource<?, ?>>
     lock.lock();
     try {
       eventSources.add(eventSource);
-      eventSource.setEventHandler(defaultEventHandler);
+      eventSource.setEventHandler(eventProcessor);
       eventSource.start();
     } catch (Throwable e) {
       if (e instanceof IllegalStateException || e instanceof MissingCRDException) {

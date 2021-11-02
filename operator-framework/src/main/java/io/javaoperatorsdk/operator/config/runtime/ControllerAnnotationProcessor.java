@@ -16,7 +16,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeName;
@@ -66,7 +66,7 @@ public class ControllerAnnotationProcessor extends AbstractProcessor {
             .getDeclaredType(
                 processingEnv
                     .getElementUtils()
-                    .getTypeElement(ResourceController.class.getCanonicalName()),
+                    .getTypeElement(Reconciler.class.getCanonicalName()),
                 processingEnv.getTypeUtils().getWildcardType(null, null));
     return new TypeParameterResolver(resourceControllerType, 0);
   }

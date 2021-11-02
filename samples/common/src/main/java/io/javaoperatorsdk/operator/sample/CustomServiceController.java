@@ -13,12 +13,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 
 /** A very simple sample controller that creates a service with a label. */
 @Controller
-public class CustomServiceController implements ResourceController<CustomService> {
+public class CustomServiceController implements Reconciler<CustomService> {
 
   public static final String KIND = "CustomService";
   private static final Logger log = LoggerFactory.getLogger(CustomServiceController.class);
@@ -34,13 +34,13 @@ public class CustomServiceController implements ResourceController<CustomService
   }
 
   @Override
-  public DeleteControl deleteResource(CustomService resource, Context context) {
+  public DeleteControl deleteResources(CustomService resource, Context context) {
     log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
     return DeleteControl.defaultDelete();
   }
 
   @Override
-  public UpdateControl<CustomService> createOrUpdateResource(
+  public UpdateControl<CustomService> createOrUpdateResources(
       CustomService resource, Context context) {
     log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
 

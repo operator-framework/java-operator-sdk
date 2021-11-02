@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.DefaultEventHandler;
+import io.javaoperatorsdk.operator.processing.EventProcessor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.eq;
@@ -17,9 +17,9 @@ import static org.mockito.Mockito.verify;
 
 class DefaultEventSourceManagerTest {
 
-  private DefaultEventHandler defaultEventHandlerMock = mock(DefaultEventHandler.class);
+  private EventProcessor eventProcessorMock = mock(EventProcessor.class);
   private DefaultEventSourceManager defaultEventSourceManager =
-      new DefaultEventSourceManager(defaultEventHandlerMock);
+      new DefaultEventSourceManager(eventProcessorMock);
 
   @Test
   public void registersEventSource() {
@@ -31,7 +31,7 @@ class DefaultEventSourceManagerTest {
         defaultEventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).hasSize(2);
 
-    verify(eventSource, times(1)).setEventHandler(eq(defaultEventHandlerMock));
+    verify(eventSource, times(1)).setEventHandler(eq(eventProcessorMock));
     verify(eventSource, times(1)).start();
   }
 

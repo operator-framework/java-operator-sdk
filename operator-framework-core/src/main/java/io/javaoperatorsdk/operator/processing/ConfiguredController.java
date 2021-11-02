@@ -15,30 +15,30 @@ import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.DeleteControl;
 import io.javaoperatorsdk.operator.api.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
-public class ConfiguredController<R extends CustomResource<?, ?>> implements ResourceController<R>,
+public class ConfiguredController<R extends CustomResource<?, ?>> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
-  private final ResourceController<R> controller;
+  private final Reconciler<R> reconciler;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
   private DefaultEventSourceManager<R> eventSourceManager;
 
-  public ConfiguredController(ResourceController<R> controller,
+  public ConfiguredController(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration,
       KubernetesClient kubernetesClient) {
-    this.controller = controller;
+    this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
   }
 
   @Override
-  public DeleteControl deleteResource(R resource, Context context) {
+  public DeleteControl deleteResources(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -58,13 +58,13 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
           @Override
           public DeleteControl execute() {
-            return controller.deleteResource(resource, context);
+            return reconciler.deleteResources(resource, context);
           }
         });
   }
 
   @Override
-  public UpdateControl<R> createOrUpdateResource(R resource, Context context) {
+  public UpdateControl<R> createOrUpdateResources(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -91,7 +91,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
           @Override
           public UpdateControl<R> execute() {
-            return controller.createOrUpdateResource(resource, context);
+            return reconciler.createOrUpdateResources(resource, context);
           }
         });
   }
@@ -124,8 +124,8 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
     return "'" + configuration.getName() + "' Controller";
   }
 
-  public ResourceController<R> getController() {
-    return controller;
+  public Reconciler<R> getReconciler() {
+    return reconciler;
   }
 
   public ControllerConfiguration<R> getConfiguration() {
@@ -169,8 +169,8 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Res
 
     try {
       eventSourceManager = new DefaultEventSourceManager<>(this);
-      if (controller instanceof EventSourceInitializer) {
-        ((EventSourceInitializer<R>) controller).prepareEventSources(eventSourceManager);
+      if (reconciler instanceof EventSourceInitializer) {
+        ((EventSourceInitializer<R>) reconciler).prepareEventSources(eventSourceManager);
       }
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);

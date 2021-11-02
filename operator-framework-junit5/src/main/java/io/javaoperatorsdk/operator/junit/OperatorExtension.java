@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Version;
@@ -106,16 +106,16 @@ public class OperatorExtension
   }
 
   @SuppressWarnings({"rawtypes"})
-  public List<ResourceController> getControllers() {
+  public List<Reconciler> getControllers() {
     return operator.getControllers().stream()
-        .map(ConfiguredController::getController)
+        .map(ConfiguredController::getReconciler)
         .collect(Collectors.toUnmodifiableList());
   }
 
   @SuppressWarnings({"rawtypes"})
-  public <T extends ResourceController> T getControllerOfType(Class<T> type) {
+  public <T extends Reconciler> T getControllerOfType(Class<T> type) {
     return operator.getControllers().stream()
-        .map(ConfiguredController::getController)
+        .map(ConfiguredController::getReconciler)
         .filter(type::isInstance)
         .map(type::cast)
         .findFirst()
@@ -176,7 +176,7 @@ public class OperatorExtension
       }
 
 
-      this.operator.register(ref.controller, oconfig.build());
+      this.operator.registerController(ref.controller, oconfig.build());
     }
 
     this.operator.start();
@@ -242,19 +242,19 @@ public class OperatorExtension
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(ResourceController value) {
+    public Builder withController(Reconciler value) {
       controllers.add(new ControllerSpec(value, null));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(ResourceController value, Retry retry) {
+    public Builder withController(Reconciler value, Retry retry) {
       controllers.add(new ControllerSpec(value, retry));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(Class<? extends ResourceController> value) {
+    public Builder withController(Class<? extends Reconciler> value) {
       try {
         controllers.add(new ControllerSpec(value.getConstructor().newInstance(), null));
       } catch (Exception e) {
@@ -274,11 +274,11 @@ public class OperatorExtension
 
   @SuppressWarnings("rawtypes")
   private static class ControllerSpec {
-    final ResourceController controller;
+    final Reconciler controller;
     final Retry retry;
 
     public ControllerSpec(
-        ResourceController controller,
+        Reconciler controller,
         Retry retry) {
       this.controller = controller;
       this.retry = retry;

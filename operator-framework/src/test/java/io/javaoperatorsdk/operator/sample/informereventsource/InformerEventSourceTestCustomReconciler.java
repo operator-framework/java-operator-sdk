@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -22,12 +22,12 @@ import static io.javaoperatorsdk.operator.api.Controller.NO_FINALIZER;
  * sample usage of InformerEventSource
  */
 @Controller(finalizerName = NO_FINALIZER)
-public class InformerEventSourceTestCustomResourceController implements
-    ResourceController<InformerEventSourceTestCustomResource>, KubernetesClientAware,
+public class InformerEventSourceTestCustomReconciler implements
+    Reconciler<InformerEventSourceTestCustomResource>, KubernetesClientAware,
     EventSourceInitializer {
 
   private static final Logger LOGGER =
-      LoggerFactory.getLogger(InformerEventSourceTestCustomResourceController.class);
+      LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
 
   public static final String RELATED_RESOURCE_UID = "relatedResourceName";
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
@@ -43,7 +43,7 @@ public class InformerEventSourceTestCustomResourceController implements
   }
 
   @Override
-  public UpdateControl<InformerEventSourceTestCustomResource> createOrUpdateResource(
+  public UpdateControl<InformerEventSourceTestCustomResource> createOrUpdateResources(
       InformerEventSourceTestCustomResource resource,
       Context context) {
 

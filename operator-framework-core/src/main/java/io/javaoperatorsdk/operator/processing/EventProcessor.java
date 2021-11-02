@@ -36,10 +36,10 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
  * UID, while buffering events which are received during an execution.
  */
-public class DefaultEventHandler<R extends CustomResource<?, ?>>
+public class EventProcessor<R extends CustomResource<?, ?>>
     implements EventHandler, LifecycleAware {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultEventHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
 
   private final Set<CustomResourceID> underProcessing = new HashSet<>();
   private final EventDispatcher<R> eventDispatcher;
@@ -54,7 +54,7 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>>
   private DefaultEventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker;
 
-  public DefaultEventHandler(ConfiguredController<R> controller, ResourceCache<R> resourceCache) {
+  public EventProcessor(ConfiguredController<R> controller, ResourceCache<R> resourceCache) {
     this(
         resourceCache,
         ExecutorServiceManager.instance().executorService(),
@@ -65,13 +65,13 @@ public class DefaultEventHandler<R extends CustomResource<?, ?>>
         new EventMarker());
   }
 
-  DefaultEventHandler(EventDispatcher<R> eventDispatcher, ResourceCache<R> resourceCache,
+  EventProcessor(EventDispatcher<R> eventDispatcher, ResourceCache<R> resourceCache,
       String relatedControllerName,
       Retry retry, EventMarker eventMarker) {
     this(resourceCache, null, relatedControllerName, eventDispatcher, retry, null, eventMarker);
   }
 
-  private DefaultEventHandler(ResourceCache<R> resourceCache, ExecutorService executor,
+  private EventProcessor(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
       EventDispatcher<R> eventDispatcher, Retry retry, Metrics metrics,
       EventMarker eventMarker) {

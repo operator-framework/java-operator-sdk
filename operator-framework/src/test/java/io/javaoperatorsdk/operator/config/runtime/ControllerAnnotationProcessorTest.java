@@ -16,7 +16,7 @@ class ControllerAnnotationProcessorTest {
             .withProcessors(new ControllerAnnotationProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "compile-fixtures/ControllerImplemented2Interfaces.java"));
+                    "compile-fixtures/ReconcilerImplemented2Interfaces.java"));
     CompilationSubject.assertThat(compilation).succeeded();
   }
 
@@ -26,9 +26,9 @@ class ControllerAnnotationProcessorTest {
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
             .compile(
-                JavaFileObjects.forResource("compile-fixtures/AbstractController.java"),
+                JavaFileObjects.forResource("compile-fixtures/AbstractReconciler.java"),
                 JavaFileObjects.forResource(
-                    "compile-fixtures/ControllerImplementedIntermediateAbstractClass.java"));
+                    "compile-fixtures/ReconcilerImplementedIntermediateAbstractClass.java"));
     CompilationSubject.assertThat(compilation).succeeded();
   }
 
@@ -38,9 +38,9 @@ class ControllerAnnotationProcessorTest {
         Compiler.javac()
             .withProcessors(new ControllerAnnotationProcessor())
             .compile(
-                JavaFileObjects.forResource("compile-fixtures/AdditionalControllerInterface.java"),
-                JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractController.java"),
-                JavaFileObjects.forResource("compile-fixtures/MultilevelController.java"));
+                JavaFileObjects.forResource("compile-fixtures/AdditionalReconcilerInterface.java"),
+                JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractReconciler.java"),
+                JavaFileObjects.forResource("compile-fixtures/MultilevelReconciler.java"));
     CompilationSubject.assertThat(compilation).succeeded();
   }
 }

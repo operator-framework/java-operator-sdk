@@ -28,9 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class DefaultEventHandlerTest {
+class EventProcessorTest {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultEventHandlerTest.class);
+  private static final Logger log = LoggerFactory.getLogger(EventProcessorTest.class);
 
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
@@ -43,24 +43,24 @@ class DefaultEventHandlerTest {
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
-  private DefaultEventHandler defaultEventHandler =
-      new DefaultEventHandler(eventDispatcherMock, resourceCacheMock, "Test", null, eventMarker);
+  private EventProcessor eventProcessor =
+      new EventProcessor(eventDispatcherMock, resourceCacheMock, "Test", null, eventMarker);
 
-  private DefaultEventHandler defaultEventHandlerWithRetry =
-      new DefaultEventHandler(eventDispatcherMock, resourceCacheMock, "Test",
+  private EventProcessor eventProcessorWithRetry =
+      new EventProcessor(eventDispatcherMock, resourceCacheMock, "Test",
           GenericRetry.defaultLimitedExponentialRetry(), eventMarker);
 
   @BeforeEach
   public void setup() {
     when(defaultEventSourceManagerMock.getRetryAndRescheduleTimerEventSource())
         .thenReturn(retryTimerEventSourceMock);
-    defaultEventHandler.setEventSourceManager(defaultEventSourceManagerMock);
-    defaultEventHandlerWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
+    eventProcessor.setEventSourceManager(defaultEventSourceManagerMock);
+    eventProcessorWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
   }
 
   @Test
   public void dispatchesEventsIfNoExecutionInProgress() {
-    defaultEventHandler.handleEvent(prepareCREvent());
+    eventProcessor.handleEvent(prepareCREvent());
 
     verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
   }
@@ -71,7 +71,7 @@ class DefaultEventHandlerTest {
     when(resourceCacheMock.getCustomResource(event.getRelatedCustomResourceID()))
         .thenReturn(Optional.empty());
 
-    defaultEventHandler.handleEvent(event);
+    eventProcessor.handleEvent(event);
 
     verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
@@ -80,7 +80,7 @@ class DefaultEventHandlerTest {
   public void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
     CustomResourceID resourceUid = eventAlreadyUnderProcessing();
 
-    defaultEventHandler.handleEvent(nonCREvent(resourceUid));
+    eventProcessor.handleEvent(nonCREvent(resourceUid));
 
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
@@ -94,7 +94,7 @@ class DefaultEventHandlerTest {
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
-    defaultEventHandlerWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
     verify(retryTimerEventSourceMock, times(1))
         .scheduleOnce(eq(customResource), eq(GenericRetry.DEFAULT_INITIAL_INTERVAL));
@@ -113,9 +113,9 @@ class DefaultEventHandlerTest {
         .thenReturn(PostExecutionControl.defaultDispatch());
 
     // start processing an event
-    defaultEventHandlerWithRetry.handleEvent(event);
+    eventProcessorWithRetry.handleEvent(event);
     // handle another event
-    defaultEventHandlerWithRetry.handleEvent(event);
+    eventProcessorWithRetry.handleEvent(event);
 
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionScope.class);
@@ -145,15 +145,15 @@ class DefaultEventHandlerTest {
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionScope.class);
 
-    defaultEventHandlerWithRetry.handleEvent(event);
+    eventProcessorWithRetry.handleEvent(event);
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
 
-    defaultEventHandlerWithRetry.handleEvent(event);
+    eventProcessorWithRetry.handleEvent(event);
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(any());
 
-    defaultEventHandlerWithRetry.handleEvent(event);
+    eventProcessorWithRetry.handleEvent(event);
     verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
         .handleExecution(executionScopeArgumentCaptor.capture());
     log.info("Finished successfulExecutionResetsTheRetry");
@@ -173,7 +173,7 @@ class DefaultEventHandlerTest {
     when(eventDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
 
-    defaultEventHandler.handleEvent(prepareCREvent());
+    eventProcessor.handleEvent(prepareCREvent());
 
     verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .scheduleOnce(any(), eq(testDelay));
@@ -185,8 +185,8 @@ class DefaultEventHandlerTest {
     when(eventDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
 
-    defaultEventHandler.handleEvent(prepareCREvent());
-    defaultEventHandler.handleEvent(prepareCREvent());
+    eventProcessor.handleEvent(prepareCREvent());
+    eventProcessor.handleEvent(prepareCREvent());
 
     verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(0))
         .scheduleOnce(any(), eq(testDelay));
@@ -194,8 +194,8 @@ class DefaultEventHandlerTest {
 
   @Test
   public void doNotFireEventsIfClosing() {
-    defaultEventHandler.stop();
-    defaultEventHandler.handleEvent(prepareCREvent());
+    eventProcessor.stop();
+    eventProcessor.handleEvent(prepareCREvent());
 
     verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
@@ -205,7 +205,7 @@ class DefaultEventHandlerTest {
     Event deleteEvent =
         new CustomResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
 
-    defaultEventHandler.handleEvent(deleteEvent);
+    eventProcessor.handleEvent(deleteEvent);
 
     verify(defaultEventSourceManagerMock, times(1))
         .cleanupForCustomResource(eq(deleteEvent.getRelatedCustomResourceID()));
@@ -218,7 +218,7 @@ class DefaultEventHandlerTest {
     eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
     var executionScope = new ExecutionScope(cr, null);
 
-    defaultEventHandler.eventProcessingFinished(executionScope,
+    eventProcessor.eventProcessingFinished(executionScope,
         PostExecutionControl.defaultDispatch());
 
     verify(defaultEventSourceManagerMock, times(1))
@@ -237,7 +237,7 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
 
     verify(mockCREventSource, times(1)).whitelistNextEvent(eq(crID));
@@ -257,7 +257,7 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
@@ -273,7 +273,7 @@ class DefaultEventHandlerTest {
     when(defaultEventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(cr));
 
     verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
@@ -284,7 +284,7 @@ class DefaultEventHandlerTest {
     var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
-    defaultEventHandler.eventProcessingFinished(new ExecutionScope(cr, null),
+    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
@@ -298,7 +298,7 @@ class DefaultEventHandlerTest {
               return PostExecutionControl.defaultDispatch();
             });
     Event event = prepareCREvent();
-    defaultEventHandler.handleEvent(event);
+    eventProcessor.handleEvent(event);
     return event.getRelatedCustomResourceID();
   }
 

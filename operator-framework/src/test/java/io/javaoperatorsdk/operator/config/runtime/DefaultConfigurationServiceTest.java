@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,7 +74,7 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   public void returnsValuesFromControllerAnnotationFinalizer() {
-    final var controller = new TestCustomResourceController();
+    final var controller = new TestCustomReconciler();
     final var configuration =
         DefaultConfigurationService.instance().getConfigurationFor(controller);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class), configuration.getCRDName());
@@ -106,10 +106,10 @@ public class DefaultConfigurationServiceTest {
 
   @Controller(finalizerName = CUSTOM_FINALIZER_NAME)
   static class TestCustomFinalizerController
-      implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
+      implements Reconciler<TestCustomFinalizerController.InnerCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResources(
         InnerCustomResource resource, Context context) {
       return null;
     }
@@ -121,22 +121,22 @@ public class DefaultConfigurationServiceTest {
   }
 
   @Controller(name = NotAutomaticallyCreated.NAME)
-  static class NotAutomaticallyCreated implements ResourceController<TestCustomResource> {
+  static class NotAutomaticallyCreated implements Reconciler<TestCustomResource> {
 
     public static final String NAME = "should-be-logged";
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomResource> createOrUpdateResources(
         TestCustomResource resource, Context context) {
       return null;
     }
   }
 
   @Controller(generationAwareEventProcessing = false, name = "test")
-  static class TestCustomResourceController implements ResourceController<TestCustomResource> {
+  static class TestCustomReconciler implements Reconciler<TestCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomResource> createOrUpdateResources(
         TestCustomResource resource, Context context) {
       return null;
     }

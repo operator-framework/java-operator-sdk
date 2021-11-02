@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample.simple;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,34 +12,57 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller(generationAwareEventProcessing = false)
-public class TestCustomResourceController implements ResourceController<TestCustomResource> {
+public class TestReconciler
+    implements Reconciler<TestCustomResource>, TestExecutionInfoProvider,
+    KubernetesClientAware {
 
-  private static final Logger log = LoggerFactory.getLogger(TestCustomResourceController.class);
+  private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
-  public static final String CRD_NAME = CustomResource.getCRDName(TestCustomResource.class);
-  public static final String FINALIZER_NAME = CRD_NAME + "/finalizer";
+  public static final String FINALIZER_NAME =
+      ControllerUtils.getDefaultFinalizerName(CustomResource.getCRDName(TestCustomResource.class));
 
-  private final KubernetesClient kubernetesClient;
-  private final boolean updateStatus;
+  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+  private KubernetesClient kubernetesClient;
+  private boolean updateStatus;
 
-  public TestCustomResourceController(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, true);
+  public TestReconciler() {
+    this(true);
   }
 
-  public TestCustomResourceController(KubernetesClient kubernetesClient, boolean updateStatus) {
-    this.kubernetesClient = kubernetesClient;
+  public TestReconciler(boolean updateStatus) {
+    this.updateStatus = updateStatus;
+  }
+
+  public boolean isUpdateStatus() {
+    return updateStatus;
+  }
+
+  public void setUpdateStatus(boolean updateStatus) {
     this.updateStatus = updateStatus;
   }
 
   @Override
-  public DeleteControl deleteResource(
+  public KubernetesClient getKubernetesClient() {
+    return kubernetesClient;
+  }
+
+  @Override
+  public void setKubernetesClient(KubernetesClient kubernetesClient) {
+    this.kubernetesClient = kubernetesClient;
+  }
+
+  @Override
+  public DeleteControl deleteResources(
       TestCustomResource resource, Context context) {
     Boolean delete =
         kubernetesClient
@@ -61,8 +85,9 @@ public class TestCustomResourceController implements ResourceController<TestCust
   }
 
   @Override
-  public UpdateControl<TestCustomResource> createOrUpdateResource(
+  public UpdateControl<TestCustomResource> createOrUpdateResources(
       TestCustomResource resource, Context context) {
+    numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
     }
@@ -84,7 +109,7 @@ public class TestCustomResourceController implements ResourceController<TestCust
           .createOrReplace(existingConfigMap);
     } else {
       Map<String, String> labels = new HashMap<>();
-      labels.put("managedBy", TestCustomResourceController.class.getSimpleName());
+      labels.put("managedBy", TestReconciler.class.getSimpleName());
       ConfigMap newConfigMap =
           new ConfigMapBuilder()
               .withMetadata(
@@ -106,12 +131,16 @@ public class TestCustomResourceController implements ResourceController<TestCust
       }
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
     }
-    return UpdateControl.updateCustomResource(resource);
+    return UpdateControl.updateStatusSubResource(resource);
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {
     Map<String, String> data = new HashMap<>();
     data.put(resource.getSpec().getKey(), resource.getSpec().getValue());
     return data;
+  }
+
+  public int getNumberOfExecutions() {
+    return numberOfExecutions.get();
   }
 }

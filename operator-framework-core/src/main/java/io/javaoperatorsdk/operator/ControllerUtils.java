@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator;
 import java.util.Locale;
 
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 
 @SuppressWarnings("rawtypes")
 public class ControllerUtils {
@@ -14,7 +14,7 @@ public class ControllerUtils {
     return crdName + FINALIZER_NAME_SUFFIX;
   }
 
-  public static String getNameFor(Class<? extends ResourceController> controllerClass) {
+  public static String getNameFor(Class<? extends Reconciler> controllerClass) {
     // if the controller annotation has a name attribute, use it
     final var annotation = controllerClass.getAnnotation(Controller.class);
     if (annotation != null) {
@@ -28,19 +28,19 @@ public class ControllerUtils {
     return getDefaultNameFor(controllerClass);
   }
 
-  public static String getNameFor(ResourceController controller) {
+  public static String getNameFor(Reconciler controller) {
     return getNameFor(controller.getClass());
   }
 
-  public static String getDefaultNameFor(ResourceController controller) {
+  public static String getDefaultNameFor(Reconciler controller) {
     return getDefaultNameFor(controller.getClass());
   }
 
-  public static String getDefaultNameFor(Class<? extends ResourceController> controllerClass) {
-    return getDefaultResourceControllerName(controllerClass.getSimpleName());
+  public static String getDefaultNameFor(Class<? extends Reconciler> reconcilerClass) {
+    return getDefaultResourceReconcilerName(reconcilerClass.getSimpleName());
   }
 
-  public static String getDefaultResourceControllerName(String rcControllerClassName) {
+  public static String getDefaultResourceReconcilerName(String rcControllerClassName) {
     // if the name is fully qualified, extract the simple class name
     final var lastDot = rcControllerClassName.lastIndexOf('.');
     if (lastDot > 0) {

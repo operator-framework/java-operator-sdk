@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 
 @SuppressWarnings("rawtypes")
 public class AbstractConfigurationService implements ConfigurationService {
@@ -52,7 +52,7 @@ public class AbstractConfigurationService implements ConfigurationService {
 
   @Override
   public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-      ResourceController<R> controller) {
+      Reconciler<R> controller) {
     final var key = keyFor(controller);
     final var configuration = configurations.get(key);
     if (configuration == null) {
@@ -73,7 +73,7 @@ public class AbstractConfigurationService implements ConfigurationService {
         + ".";
   }
 
-  protected <R extends CustomResource<?, ?>> String keyFor(ResourceController<R> controller) {
+  protected <R extends CustomResource<?, ?>> String keyFor(Reconciler<R> controller) {
     return ControllerUtils.getNameFor(controller);
   }
 

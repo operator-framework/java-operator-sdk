@@ -7,16 +7,16 @@ import io.javaoperatorsdk.operator.api.UpdateControl;
 import java.io.Serializable;
 
 @Controller
-public class ControllerImplementedIntermediateAbstractClass extends
-    AbstractController<AbstractController.MyCustomResource> implements Serializable {
+public class ReconcilerImplementedIntermediateAbstractClass extends
+    AbstractReconciler<AbstractReconciler.MyCustomResource> implements Serializable {
 
-  public UpdateControl<AbstractController.MyCustomResource> createOrUpdateResource(
-      AbstractController.MyCustomResource customResource,
+  public UpdateControl<AbstractReconciler.MyCustomResource> createOrUpdateResources(
+      AbstractReconciler.MyCustomResource customResource,
       Context context) {
     return UpdateControl.updateCustomResource(null);
   }
 
-  public DeleteControl deleteResource(AbstractController.MyCustomResource customResource,
+  public DeleteControl deleteResources(AbstractReconciler.MyCustomResource customResource,
       Context context) {
     return DeleteControl.defaultDelete();
   }

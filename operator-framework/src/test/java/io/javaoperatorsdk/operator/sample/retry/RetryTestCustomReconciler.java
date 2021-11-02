@@ -9,13 +9,13 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller
-public class RetryTestCustomResourceController
-    implements ResourceController<RetryTestCustomResource>, TestExecutionInfoProvider {
+public class RetryTestCustomReconciler
+    implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
 
   public static final int NUMBER_FAILED_EXECUTIONS = 2;
 
@@ -23,11 +23,11 @@ public class RetryTestCustomResourceController
       ControllerUtils.getDefaultFinalizerName(
           CustomResource.getCRDName(RetryTestCustomResource.class));
   private static final Logger log =
-      LoggerFactory.getLogger(RetryTestCustomResourceController.class);
+      LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<RetryTestCustomResource> createOrUpdateResource(
+  public UpdateControl<RetryTestCustomResource> createOrUpdateResources(
       RetryTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 

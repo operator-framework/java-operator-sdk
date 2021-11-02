@@ -9,23 +9,23 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller(generationAwareEventProcessing = false)
-public class SubResourceTestCustomResourceController
-    implements ResourceController<SubResourceTestCustomResource>, TestExecutionInfoProvider {
+public class SubResourceTestCustomReconciler
+    implements Reconciler<SubResourceTestCustomResource>, TestExecutionInfoProvider {
 
   public static final String FINALIZER_NAME =
       ControllerUtils.getDefaultFinalizerName(
           CustomResource.getCRDName(SubResourceTestCustomResource.class));
   private static final Logger log =
-      LoggerFactory.getLogger(SubResourceTestCustomResourceController.class);
+      LoggerFactory.getLogger(SubResourceTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<SubResourceTestCustomResource> createOrUpdateResource(
+  public UpdateControl<SubResourceTestCustomResource> createOrUpdateResources(
       SubResourceTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {

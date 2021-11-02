@@ -10,11 +10,11 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResource;
-import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResourceController;
 
-import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResourceController.RELATED_RESOURCE_UID;
-import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResourceController.TARGET_CONFIG_MAP_KEY;
+import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.RELATED_RESOURCE_UID;
+import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.TARGET_CONFIG_MAP_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -28,7 +28,7 @@ public class InformerEventSourceIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(new InformerEventSourceTestCustomResourceController())
+          .withController(new InformerEventSourceTestCustomReconciler())
           .build();
 
   @Test

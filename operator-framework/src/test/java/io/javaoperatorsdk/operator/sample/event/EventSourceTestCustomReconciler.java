@@ -10,22 +10,22 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.Context;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.Reconciler;
 import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Controller
-public class EventSourceTestCustomResourceController
-    implements ResourceController<EventSourceTestCustomResource>, EventSourceInitializer,
+public class EventSourceTestCustomReconciler
+    implements Reconciler<EventSourceTestCustomResource>, EventSourceInitializer,
     TestExecutionInfoProvider {
 
   public static final String FINALIZER_NAME =
       ControllerUtils.getDefaultFinalizerName(
           CustomResource.getCRDName(EventSourceTestCustomResource.class));
   private static final Logger log =
-      LoggerFactory.getLogger(EventSourceTestCustomResourceController.class);
+      LoggerFactory.getLogger(EventSourceTestCustomReconciler.class);
   public static final int TIMER_DELAY = 300;
   public static final int TIMER_PERIOD = 500;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -38,7 +38,7 @@ public class EventSourceTestCustomResourceController
   }
 
   @Override
-  public UpdateControl<EventSourceTestCustomResource> createOrUpdateResource(
+  public UpdateControl<EventSourceTestCustomResource> createOrUpdateResources(
       EventSourceTestCustomResource resource, Context context) {
 
     timerEventSource.schedule(resource, TIMER_DELAY, TIMER_PERIOD);

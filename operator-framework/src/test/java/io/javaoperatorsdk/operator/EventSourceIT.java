@@ -8,8 +8,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
-import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
@@ -21,7 +21,7 @@ public class EventSourceIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(EventSourceTestCustomResourceController.class)
+          .withController(EventSourceTestCustomReconciler.class)
           .build();
 
   @Test
@@ -33,7 +33,7 @@ public class EventSourceIT {
     await()
         .atMost(5, TimeUnit.SECONDS)
         .pollInterval(
-            EventSourceTestCustomResourceController.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
+            EventSourceTestCustomReconciler.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
         .untilAsserted(
             () -> assertThat(TestUtils.getNumberOfExecutions(operator))
                 .isGreaterThanOrEqualTo(4));
@@ -45,7 +45,7 @@ public class EventSourceIT {
         new ObjectMetaBuilder()
             .withName("eventsource-" + id)
             .withNamespace(operator.getNamespace())
-            .withFinalizers(EventSourceTestCustomResourceController.FINALIZER_NAME)
+            .withFinalizers(EventSourceTestCustomReconciler.FINALIZER_NAME)
             .build());
     resource.setKind("Eventsourcesample");
     resource.setSpec(new EventSourceTestCustomResourceSpec());
