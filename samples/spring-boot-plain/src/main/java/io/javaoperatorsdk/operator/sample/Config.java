@@ -18,7 +18,7 @@ public class Config {
   }
 
   // Register all controller beans
-  @Bean(initMethod = "start", destroyMethod = "stop")
+  @Bean(initMethod = "start", destroyMethod = "close")
   public Operator operator(List<ResourceController> controllers) {
     Operator operator = new Operator(DefaultConfigurationService.instance());
     controllers.forEach(operator::register);
