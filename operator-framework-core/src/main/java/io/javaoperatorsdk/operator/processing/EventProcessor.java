@@ -103,6 +103,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
         return;
       }
       final var resourceID = event.getRelatedCustomResourceID();
+      MDCUtils.addCustomResourceIDInfo(resourceID);
       metrics.receivedEvent(event);
 
       handleEventMarking(event);
@@ -111,40 +112,44 @@ public class EventProcessor<R extends CustomResource<?, ?>>
       } else {
         cleanupForDeletedEvent(resourceID);
       }
-
     } finally {
       lock.unlock();
+      MDCUtils.removeCustomResourceIDInfo();
     }
   }
 
   private void submitReconciliationExecution(CustomResourceID customResourceUid) {
-    boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
-    Optional<R> latestCustomResource =
-        resourceCache.getCustomResource(customResourceUid);
-
-    if (!controllerUnderExecution
-        && latestCustomResource.isPresent()) {
-      setUnderExecutionProcessing(customResourceUid);
-      final var retryInfo = retryInfo(customResourceUid);
-      ExecutionScope<R> executionScope =
-          new ExecutionScope<>(
-              latestCustomResource.get(),
-              retryInfo);
-      eventMarker.unMarkEventReceived(customResourceUid);
-      metrics.reconcileCustomResource(customResourceUid, retryInfo);
-      log.debug("Executing events for custom resource. Scope: {}", executionScope);
-      executor.execute(new ControllerExecution(executionScope));
-    } else {
-      log.debug(
-          "Skipping executing controller for resource id: {}."
-              + " Controller in execution: {}. Latest CustomResource present: {}",
-          customResourceUid,
-          controllerUnderExecution,
-          latestCustomResource.isPresent());
-      if (latestCustomResource.isEmpty()) {
-        log.warn("no custom resource found in cache for CustomResourceID: {}",
-            customResourceUid);
+    try {
+      boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
+      Optional<R> latestCustomResource =
+          resourceCache.getCustomResource(customResourceUid);
+      latestCustomResource.ifPresent(MDCUtils::addCustomResourceInfo);
+      if (!controllerUnderExecution
+          && latestCustomResource.isPresent()) {
+        setUnderExecutionProcessing(customResourceUid);
+        final var retryInfo = retryInfo(customResourceUid);
+        ExecutionScope<R> executionScope =
+            new ExecutionScope<>(
+                latestCustomResource.get(),
+                retryInfo);
+        eventMarker.unMarkEventReceived(customResourceUid);
+        metrics.reconcileCustomResource(customResourceUid, retryInfo);
+        log.debug("Executing events for custom resource. Scope: {}", executionScope);
+        executor.execute(new ControllerExecution(executionScope));
+      } else {
+        log.debug(
+            "Skipping executing controller for resource id: {}."
+                + " Controller in execution: {}. Latest CustomResource present: {}",
+            customResourceUid,
+            controllerUnderExecution,
+            latestCustomResource.isPresent());
+        if (latestCustomResource.isEmpty()) {
+          log.warn("no custom resource found in cache for CustomResourceID: {}",
+              customResourceUid);
+        }
       }
+    } finally {
+      MDCUtils.removeCustomResourceInfo();
     }
   }
 
@@ -351,6 +356,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
       final var thread = Thread.currentThread();
       final var name = thread.getName();
       try {
+        MDCUtils.addCustomResourceInfo(executionScope.getCustomResource());
         thread.setName("EventHandler-" + controllerName);
         PostExecutionControl<R> postExecutionControl =
             eventDispatcher.handleExecution(executionScope);
@@ -358,6 +364,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
       } finally {
         // restore original name
         thread.setName(name);
+        MDCUtils.removeCustomResourceInfo();
       }
     }
 
