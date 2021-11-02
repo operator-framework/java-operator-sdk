@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.config.runtime;
 import java.util.Map;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
 public class RuntimeControllerMetadata {

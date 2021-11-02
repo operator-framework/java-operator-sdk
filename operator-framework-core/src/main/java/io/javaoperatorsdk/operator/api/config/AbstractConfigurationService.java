@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
 public class AbstractConfigurationService implements ConfigurationService {

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api;
+package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;

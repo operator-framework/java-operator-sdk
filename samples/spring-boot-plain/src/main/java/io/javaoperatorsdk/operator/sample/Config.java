@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 
 @Configuration

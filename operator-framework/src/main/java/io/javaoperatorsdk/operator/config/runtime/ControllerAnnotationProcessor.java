@@ -16,14 +16,14 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeName;
 
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.CONTROLLERS_RESOURCE_PATH;
 
-@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.Controller")
+@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.controller.Controller")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {

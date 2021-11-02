@@ -2,8 +2,8 @@ package io.javaoperatorsdk.operator;
 
 import java.util.Locale;
 
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
 public class ControllerUtils {

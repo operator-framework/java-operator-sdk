@@ -5,17 +5,17 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.Reconciler;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.Mappers;
 
-import static io.javaoperatorsdk.operator.api.Controller.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.Controller.NO_FINALIZER;
 
 /**
  * Copies the config map value from spec into status. The main purpose is to test and demonstrate

@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.retry;
 
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 
 public interface RetryExecution extends RetryInfo {
 
