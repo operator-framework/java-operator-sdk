@@ -13,7 +13,7 @@ images:                /assets/images/
 
 # Rouge highlighter
 markdown: kramdown
-highlighter: none
+highlighter: rouge
 
 kramdown:
   parse_block_html: true
