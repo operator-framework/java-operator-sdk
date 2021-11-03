@@ -21,7 +21,7 @@ reconciliation happens for a custom resource.
 
 After a reconciliation (
 i.e. [ResourceController](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ResourceController.java)
-called), a post-processing phase follows, where typically framework checks if:
+called, a post-processing phase follows, where typically framework checks if:
 
 - an exception was thrown during execution, if yes schedules a retry.
 - there are new events received during the controller execution, if yes schedule the execution again.
