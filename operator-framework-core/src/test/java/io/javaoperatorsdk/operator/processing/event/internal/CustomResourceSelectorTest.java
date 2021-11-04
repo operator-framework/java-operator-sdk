@@ -121,7 +121,7 @@ public class CustomResourceSelectorTest {
           NAMESPACE));
 
       await()
-          .atMost(325, TimeUnit.SECONDS)
+          .atMost(5, TimeUnit.SECONDS)
           .pollInterval(100, TimeUnit.MILLISECONDS)
           .until(() -> c1.get() == 1 && c1err.get() == 0);
       await()

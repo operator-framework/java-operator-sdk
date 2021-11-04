@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.Mappers;
 
@@ -36,10 +36,10 @@ public class InformerEventSourceTestCustomReconciler implements
   private InformerEventSource<ConfigMap> eventSource;
 
   @Override
-  public void prepareEventSources(EventSourceManager eventSourceManager) {
+  public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {
     eventSource = new InformerEventSource<>(kubernetesClient, ConfigMap.class,
         Mappers.fromAnnotation(RELATED_RESOURCE_UID));
-    eventSourceManager.registerEventSource(eventSource);
+    eventSourceRegistry.registerEventSource(eventSource);
   }
 
   @Override

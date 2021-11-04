@@ -12,7 +12,7 @@ class ControllerUtilsTest {
   void getDefaultResourceControllerName() {
     assertEquals(
         "testcustomreconciler",
-        ControllerUtils.getDefaultResourceReconcilerName(
+        ControllerUtils.getDefaultReconcilerName(
             TestCustomReconciler.class.getCanonicalName()));
   }
 }

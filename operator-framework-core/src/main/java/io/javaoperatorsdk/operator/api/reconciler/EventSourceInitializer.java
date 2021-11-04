@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 
 public interface EventSourceInitializer<T extends CustomResource<?, ?>> {
 
@@ -9,8 +9,9 @@ public interface EventSourceInitializer<T extends CustomResource<?, ?>> {
    * In this typically you might want to register event sources. But can access
    * CustomResourceEventSource, what might be handy for some edge cases.
    * 
-   * @param eventSourceManager the {@link EventSourceManager} where event sources can be registered.
+   * @param eventSourceRegistry the {@link EventSourceRegistry} where event sources can be
+   *        registered.
    */
-  void prepareEventSources(EventSourceManager<T> eventSourceManager);
+  void prepareEventSources(EventSourceRegistry<T> eventSourceRegistry);
 
 }

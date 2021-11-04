@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Controller;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
@@ -33,8 +33,8 @@ public class EventSourceTestCustomReconciler
       new TimerEventSource<>();
 
   @Override
-  public void prepareEventSources(EventSourceManager eventSourceManager) {
-    eventSourceManager.registerEventSource(timerEventSource);
+  public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {
+    eventSourceRegistry.registerEventSource(timerEventSource);
   }
 
   @Override

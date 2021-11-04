@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
@@ -37,8 +37,8 @@ class EventProcessorTest {
   public static final String TEST_NAMESPACE = "default-event-handler-test";
   private EventMarker eventMarker = new EventMarker();
   private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-  private DefaultEventSourceManager defaultEventSourceManagerMock =
-      mock(DefaultEventSourceManager.class);
+  private EventSourceManager eventSourceManagerMock =
+      mock(EventSourceManager.class);
   private ResourceCache resourceCacheMock = mock(ResourceCache.class);
 
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
@@ -52,10 +52,10 @@ class EventProcessorTest {
 
   @BeforeEach
   public void setup() {
-    when(defaultEventSourceManagerMock.getRetryAndRescheduleTimerEventSource())
+    when(eventSourceManagerMock.getRetryAndRescheduleTimerEventSource())
         .thenReturn(retryTimerEventSourceMock);
-    eventProcessor.setEventSourceManager(defaultEventSourceManagerMock);
-    eventProcessorWithRetry.setEventSourceManager(defaultEventSourceManagerMock);
+    eventProcessor.setEventSourceManager(eventSourceManagerMock);
+    eventProcessorWithRetry.setEventSourceManager(eventSourceManagerMock);
   }
 
   @Test
@@ -207,7 +207,7 @@ class EventProcessorTest {
 
     eventProcessor.handleEvent(deleteEvent);
 
-    verify(defaultEventSourceManagerMock, times(1))
+    verify(eventSourceManagerMock, times(1))
         .cleanupForCustomResource(eq(deleteEvent.getRelatedCustomResourceID()));
   }
 
@@ -221,7 +221,7 @@ class EventProcessorTest {
     eventProcessor.eventProcessingFinished(executionScope,
         PostExecutionControl.defaultDispatch());
 
-    verify(defaultEventSourceManagerMock, times(1))
+    verify(eventSourceManagerMock, times(1))
         .cleanupForCustomResource(eq(crEvent.getRelatedCustomResourceID()));
   }
 
@@ -234,7 +234,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(CustomResourceEventSource.class);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
-    when(defaultEventSourceManagerMock.getCustomResourceEventSource())
+    when(eventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -254,7 +254,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(CustomResourceEventSource.class);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
-    when(defaultEventSourceManagerMock.getCustomResourceEventSource())
+    when(eventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -270,7 +270,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(CustomResourceEventSource.class);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
-    when(defaultEventSourceManagerMock.getCustomResourceEventSource())
+    when(eventSourceManagerMock.getCustomResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),

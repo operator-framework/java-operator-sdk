@@ -19,15 +19,16 @@ import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 
 public class ConfiguredController<R extends CustomResource<?, ?>> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
-  private DefaultEventSourceManager<R> eventSourceManager;
+  private EventSourceManager<R> eventSourceManager;
+  private EventProcessor<R> eventProcessor;
 
   public ConfiguredController(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration,
@@ -97,7 +98,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Rec
   }
 
   @Override
-  public void prepareEventSources(EventSourceManager<R> eventSourceManager) {
+  public void prepareEventSources(EventSourceRegistry<R> eventSourceRegistry) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -153,34 +154,39 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Rec
     final String controllerName = configuration.getName();
     final var crdName = configuration.getCRDName();
     final var specVersion = "v1";
+    try {
+      // check that the custom resource is known by the cluster if configured that way
+      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
+      if (configuration.getConfigurationService().checkCRDAndValidateLocalModel()) {
+        crd =
+            kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
+                .get();
+        if (crd == null) {
+          throwMissingCRDException(crdName, specVersion, controllerName);
+        }
 
-    // check that the custom resource is known by the cluster if configured that way
-    final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-    if (configuration.getConfigurationService().checkCRDAndValidateLocalModel()) {
-      crd =
-          kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
-      if (crd == null) {
-        throwMissingCRDException(crdName, specVersion, controllerName);
+        // Apply validations that are not handled by fabric8
+        CustomResourceUtils.assertCustomResource(resClass, crd);
       }
 
-      // Apply validations that are not handled by fabric8
-      CustomResourceUtils.assertCustomResource(resClass, crd);
-    }
-
-    try {
-      eventSourceManager = new DefaultEventSourceManager<>(this);
+      eventSourceManager = new EventSourceManager<>(this);
+      eventProcessor =
+          new EventProcessor<>(this, eventSourceManager.getCustomResourceEventSource());
+      eventProcessor.setEventSourceManager(eventSourceManager);
+      eventSourceManager.setEventProcessor(eventProcessor);
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler).prepareEventSources(eventSourceManager);
       }
+      if (failOnMissingCurrentNS()) {
+        throw new OperatorException(
+            "Controller '"
+                + controllerName
+                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
+      }
+      eventProcessor.start();
+      eventSourceManager.start();
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
-    }
-
-    if (failOnMissingCurrentNS()) {
-      throw new OperatorException(
-          "Controller '"
-              + controllerName
-              + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
     }
   }
 
@@ -213,13 +219,16 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Rec
     return false;
   }
 
-  public EventSourceManager<R> getEventSourceManager() {
+  public EventSourceRegistry<R> getEventSourceManager() {
     return eventSourceManager;
   }
 
   public void stop() {
     if (eventSourceManager != null) {
       eventSourceManager.stop();
+    }
+    if (eventProcessor != null) {
+      eventProcessor.stop();
     }
   }
 }

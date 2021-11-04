@@ -20,9 +20,9 @@ import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
-import io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -51,7 +51,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
   private final Metrics metrics;
   private volatile boolean running;
   private final ResourceCache<R> resourceCache;
-  private DefaultEventSourceManager<R> eventSourceManager;
+  private EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker;
 
   public EventProcessor(ConfiguredController<R> controller, ResourceCache<R> resourceCache) {
@@ -89,7 +89,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
     this.eventMarker = eventMarker;
   }
 
-  public void setEventSourceManager(DefaultEventSourceManager<R> eventSourceManager) {
+  public void setEventSourceManager(EventSourceManager<R> eventSourceManager) {
     this.eventSourceManager = eventSourceManager;
   }
 

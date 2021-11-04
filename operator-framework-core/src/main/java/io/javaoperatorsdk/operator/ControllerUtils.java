@@ -23,7 +23,6 @@ public class ControllerUtils {
         return name;
       }
     }
-
     // otherwise, use the lower-cased full class name
     return getDefaultNameFor(controllerClass);
   }
@@ -37,10 +36,10 @@ public class ControllerUtils {
   }
 
   public static String getDefaultNameFor(Class<? extends Reconciler> reconcilerClass) {
-    return getDefaultResourceReconcilerName(reconcilerClass.getSimpleName());
+    return getDefaultReconcilerName(reconcilerClass.getSimpleName());
   }
 
-  public static String getDefaultResourceReconcilerName(String rcControllerClassName) {
+  public static String getDefaultReconcilerName(String rcControllerClassName) {
     // if the name is fully qualified, extract the simple class name
     final var lastDot = rcControllerClassName.lastIndexOf('.');
     if (lastDot > 0) {
