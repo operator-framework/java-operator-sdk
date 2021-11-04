@@ -9,7 +9,7 @@ jobs:
     tomcat_integration_test:
        runs-on: ubuntu-latest
        env:
-        KIND_CL_NAME: tomcat-integration-test
+        KIND_CL_NAME: e2e-test
        steps:
         - name: Checkout
           uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
         - name: Create Kubernetes KinD Cluster
           uses: container-tools/kind-action@v1.5.0
           with:
-            cluster_name: tomcat-integration-test
+            cluster_name: e2e-test
             registry: false
   
         - name: Apply CRDs
