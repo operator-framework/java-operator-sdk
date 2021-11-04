@@ -219,10 +219,6 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
     return false;
   }
 
-  public EventSourceRegistry<R> getEventSourceManager() {
-    return eventSourceManager;
-  }
-
   public void stop() {
     if (eventSourceManager != null) {
       eventSourceManager.stop();
