@@ -39,35 +39,6 @@ class TimerEventSourceTest {
   }
 
   @Test
-  public void producesEventsPeriodically() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
-    timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
-
-    untilAsserted(() -> {
-      assertThat(eventHandlerMock.events)
-          .hasSizeGreaterThan(2);
-      assertThat(eventHandlerMock.events)
-          .allMatch(e -> e.getRelatedCustomResourceID()
-              .equals(CustomResourceID.fromResource(customResource)));
-
-    });
-  }
-
-  @Test
-  public void deRegistersPeriodicalEventSources() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
-
-    timerEventSource.schedule(customResource, INITIAL_DELAY, PERIOD);
-    untilAsserted(() -> assertThat(eventHandlerMock.events).hasSizeGreaterThan(1));
-
-    timerEventSource
-        .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
-
-    int size = eventHandlerMock.events.size();
-    untilAsserted(() -> assertThat(eventHandlerMock.events).hasSize(size));
-  }
-
-  @Test
   public void schedulesOnce() {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
