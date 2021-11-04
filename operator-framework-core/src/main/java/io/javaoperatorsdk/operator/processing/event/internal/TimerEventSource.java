@@ -20,21 +20,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
   private final Timer timer = new Timer();
   private final AtomicBoolean running = new AtomicBoolean();
   private final Map<CustomResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
-  private final Map<CustomResourceID, EventProducerTimeTask> timerTasks = new ConcurrentHashMap<>();
 
-  public void schedule(R customResource, long delay, long period) {
-    if (!running.get()) {
-      throw new IllegalStateException("The TimerEventSource is not running");
-    }
-
-    CustomResourceID resourceUid = CustomResourceID.fromResource(customResource);
-    if (timerTasks.containsKey(resourceUid)) {
-      return;
-    }
-    EventProducerTimeTask task = new EventProducerTimeTask(resourceUid);
-    timerTasks.put(resourceUid, task);
-    timer.schedule(task, delay, period);
-  }
 
   public void scheduleOnce(R customResource, long delay) {
     if (!running.get()) {
@@ -51,15 +37,7 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
 
   @Override
   public void cleanupForCustomResource(CustomResourceID customResourceUid) {
-    cancelSchedule(customResourceUid);
     cancelOnceSchedule(customResourceUid);
-  }
-
-  public void cancelSchedule(CustomResourceID customResourceID) {
-    TimerTask timerTask = timerTasks.remove(customResourceID);
-    if (timerTask != null) {
-      timerTask.cancel();
-    }
   }
 
   public void cancelOnceSchedule(CustomResourceID customResourceUid) {
@@ -78,7 +56,6 @@ public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEv
   public void stop() {
     running.set(false);
     onceTasks.keySet().forEach(this::cancelOnceSchedule);
-    timerTasks.keySet().forEach(this::cancelSchedule);
     timer.cancel();
   }
 
