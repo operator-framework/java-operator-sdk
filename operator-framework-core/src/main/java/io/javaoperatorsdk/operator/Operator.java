@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable, LifecycleAware {
@@ -49,7 +49,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
     return configurationService;
   }
 
-  public List<ConfiguredController> getControllers() {
+  public List<Controller> getControllers() {
     return new ArrayList<>(controllers.controllers.values());
   }
 
@@ -146,9 +146,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
       if (configuration == null) {
         configuration = existing;
       }
-      final var configuredController =
-          new ConfiguredController<>(reconciler, configuration, kubernetesClient);
-      controllers.add(configuredController);
+      final var controller =
+          new Controller<>(reconciler, configuration, kubernetesClient);
+      controllers.add(controller);
 
       final var watchedNS =
           configuration.watchAllNamespaces()
@@ -163,7 +163,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
   }
 
   static class ControllerManager implements LifecycleAware {
-    private final Map<String, ConfiguredController> controllers = new HashMap<>();
+    private final Map<String, Controller> controllers = new HashMap<>();
     private boolean started = false;
 
     public synchronized void shouldStart() {
@@ -176,7 +176,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
     }
 
     public synchronized void start() {
-      controllers.values().parallelStream().forEach(ConfiguredController::start);
+      controllers.values().parallelStream().forEach(Controller::start);
       started = true;
     }
 
@@ -193,8 +193,8 @@ public class Operator implements AutoCloseable, LifecycleAware {
       started = false;
     }
 
-    public synchronized void add(ConfiguredController configuredController) {
-      final var configuration = configuredController.getConfiguration();
+    public synchronized void add(Controller controller) {
+      final var configuration = controller.getConfiguration();
       final var crdName = configuration.getCRDName();
       final var existing = controllers.get(crdName);
       if (existing != null) {
@@ -202,9 +202,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
             + "': another controller named '" + existing.getConfiguration().getName()
             + "' is already registered for CRD '" + crdName + "'");
       }
-      this.controllers.put(crdName, configuredController);
+      this.controllers.put(crdName, controller);
       if (started) {
-        configuredController.start();
+        controller.start();
       }
     }
   }

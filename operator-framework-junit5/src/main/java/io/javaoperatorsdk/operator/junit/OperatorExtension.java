@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override;
@@ -108,14 +108,14 @@ public class OperatorExtension
   @SuppressWarnings({"rawtypes"})
   public List<Reconciler> getControllers() {
     return operator.getControllers().stream()
-        .map(ConfiguredController::getReconciler)
+        .map(Controller::getReconciler)
         .collect(Collectors.toUnmodifiableList());
   }
 
   @SuppressWarnings({"rawtypes"})
   public <T extends Reconciler> T getControllerOfType(Class<T> type) {
     return operator.getControllers().stream()
-        .map(ConfiguredController::getReconciler)
+        .map(Controller::getReconciler)
         .filter(type::isInstance)
         .map(type::cast)
         .findFirst()

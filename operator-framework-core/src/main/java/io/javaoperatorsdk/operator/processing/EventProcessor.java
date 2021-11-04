@@ -54,7 +54,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
   private EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker;
 
-  public EventProcessor(ConfiguredController<R> controller, ResourceCache<R> resourceCache) {
+  public EventProcessor(Controller<R> controller, ResourceCache<R> resourceCache) {
     this(
         resourceCache,
         ExecutorServiceManager.instance().executorService(),

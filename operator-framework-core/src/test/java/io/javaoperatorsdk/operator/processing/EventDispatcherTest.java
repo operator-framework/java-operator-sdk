@@ -54,22 +54,22 @@ class EventDispatcherTest {
   }
 
   private <R extends CustomResource<?, ?>> EventDispatcher<R> init(R customResource,
-      Reconciler<R> controller, ControllerConfiguration<R> configuration,
+      Reconciler<R> reconciler, ControllerConfiguration<R> configuration,
       CustomResourceFacade<R> customResourceFacade) {
     when(configuration.getFinalizer()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.useFinalizer()).thenCallRealMethod();
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configuration.getConfigurationService()).thenReturn(configService);
-    when(controller.createOrUpdateResources(eq(customResource), any()))
+    when(reconciler.createOrUpdateResources(eq(customResource), any()))
         .thenReturn(UpdateControl.updateCustomResource(customResource));
-    when(controller.deleteResources(eq(customResource), any()))
+    when(reconciler.deleteResources(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
     when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
-    ConfiguredController<R> configuredController =
-        new ConfiguredController<>(controller, configuration, null);
+    Controller<R> controller =
+        new Controller<>(reconciler, configuration, null);
 
-    return new EventDispatcher<>(configuredController, customResourceFacade);
+    return new EventDispatcher<>(controller, customResourceFacade);
   }
 
   @Test
@@ -168,7 +168,7 @@ class EventDispatcherTest {
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configuration.getConfigurationService()).thenReturn(configService);
     when(configuration.useFinalizer()).thenReturn(false);
-    eventDispatcher = new EventDispatcher(new ConfiguredController(controller, configuration, null),
+    eventDispatcher = new EventDispatcher(new Controller(controller, configuration, null),
         customResourceFacade);
   }
 

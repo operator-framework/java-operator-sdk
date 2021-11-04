@@ -22,7 +22,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 
-public class ConfiguredController<R extends CustomResource<?, ?>> implements Reconciler<R>,
+public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration<R> configuration;
@@ -30,7 +30,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Rec
   private EventSourceManager<R> eventSourceManager;
   private EventProcessor<R> eventProcessor;
 
-  public ConfiguredController(Reconciler<R> reconciler,
+  public Controller(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration,
       KubernetesClient kubernetesClient) {
     this.reconciler = reconciler;
@@ -111,7 +111,7 @@ public class ConfiguredController<R extends CustomResource<?, ?>> implements Rec
       return false;
     }
 
-    ConfiguredController<?> that = (ConfiguredController<?>) o;
+    Controller<?> that = (Controller<?>) o;
     return configuration.getName().equals(that.configuration.getName());
   }
 

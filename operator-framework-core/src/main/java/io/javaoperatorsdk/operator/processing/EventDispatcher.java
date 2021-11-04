@@ -28,16 +28,16 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
 
   private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
-  private final ConfiguredController<R> controller;
+  private final Controller<R> controller;
   private final CustomResourceFacade<R> customResourceFacade;
 
-  EventDispatcher(ConfiguredController<R> controller,
+  EventDispatcher(Controller<R> controller,
       CustomResourceFacade<R> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
   }
 
-  public EventDispatcher(ConfiguredController<R> controller) {
+  public EventDispatcher(Controller<R> controller) {
     this(controller, new CustomResourceFacade<>(controller.getCRClient()));
   }
 

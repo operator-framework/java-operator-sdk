@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
@@ -33,7 +33,7 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
     init();
   }
 
-  public EventSourceManager(ConfiguredController<R> controller) {
+  public EventSourceManager(Controller<R> controller) {
     init();
     customResourceEventSource = new CustomResourceEventSource<>(controller);
     registerEventSource(customResourceEventSource);

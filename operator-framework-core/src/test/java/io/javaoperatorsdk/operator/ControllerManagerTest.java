@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator.ControllerManager;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.sample.simple.DuplicateCRController;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconcilerV2;
@@ -44,8 +44,8 @@ public class ControllerManagerTest {
       TestControllerConfiguration<U> duplicated) {
     final var exception = assertThrows(OperatorException.class, () -> {
       final var controllerManager = new ControllerManager();
-      controllerManager.add(new ConfiguredController<>(registered.controller, registered, null));
-      controllerManager.add(new ConfiguredController<>(duplicated.controller, duplicated, null));
+      controllerManager.add(new Controller<>(registered.controller, registered, null));
+      controllerManager.add(new Controller<>(duplicated.controller, duplicated, null));
     });
     final var msg = exception.getMessage();
     assertTrue(
