@@ -97,8 +97,7 @@ public class TomcatOperatorE2E {
         "http://" + tomcat.getMetadata().getName() + "/" + webapp1.getSpec().getContextPath() + "/";
     log.info("Starting curl Pod and waiting 5 minutes for GET of {} to return 200", url);
 
-    int timeoutMinutes = 5;
-    await("wait-for-webapp").atMost(timeoutMinutes, MINUTES).untilAsserted(() -> {
+    await("wait-for-webapp").atMost(6, MINUTES).untilAsserted(() -> {
       try {
 
         log.info("Starting curl Pod to test if webapp was deployed correctly");
@@ -111,9 +110,11 @@ public class TomcatOperatorE2E {
                 .build())
             .done();
         log.info("Waiting for curl Pod to finish running");
-        await("wait-for-curl-pod-run").atMost(timeoutMinutes, MINUTES)
-            .until(() -> client.pods().inNamespace(TEST_NS).withName("curl").get().getStatus()
-                .getPhase().equals("Succeeded"));
+        await("wait-for-curl-pod-run").atMost(2, MINUTES)
+            .until(() -> {
+              String phase = client.pods().inNamespace(TEST_NS).withName("curl").get().getStatus().getPhase();
+              return phase.equals("Succeeded") || phase.equals("Failed");
+            });
 
         String curlOutput =
             client.pods().inNamespace(TEST_NS).withName(curlPod.getMetadata().getName()).getLog();
@@ -122,9 +123,9 @@ public class TomcatOperatorE2E {
       } catch (KubernetesClientException ex) {
         throw new AssertionError(ex);
       } finally {
+        log.info("Deleting curl Pod");
         client.pods().inNamespace(TEST_NS).withName("curl").delete();
-        log.info("Waiting for curl Pod to be deleted");
-        await("wait-for-curl-pod-stop").atMost(timeoutMinutes, MINUTES)
+        await("wait-for-curl-pod-stop").atMost(1, MINUTES)
             .until(() -> client.pods().inNamespace(TEST_NS).withName("curl").get() == null);
       }
     });
