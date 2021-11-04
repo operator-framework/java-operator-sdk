@@ -291,6 +291,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/*IT.java</exclude>
+                        <exclude>**/*E2E.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -392,6 +393,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/*IT.java</exclude>
+                                <exclude>**/*E2E.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
