@@ -6,7 +6,7 @@ on:
       branches:
       - "*"
 jobs: 
-    tomcat_integration_test:
+    tomcat_e2e_test:
        runs-on: ubuntu-latest
        env:
         KIND_CL_NAME: e2e-test
