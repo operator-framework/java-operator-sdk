@@ -36,7 +36,8 @@ class EventProcessorTest {
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
   private EventMarker eventMarker = new EventMarker();
-  private EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+  private ReconciliationDispatcher reconciliationDispatcherMock =
+      mock(ReconciliationDispatcher.class);
   private EventSourceManager eventSourceManagerMock =
       mock(EventSourceManager.class);
   private ResourceCache resourceCacheMock = mock(ResourceCache.class);
@@ -44,10 +45,11 @@ class EventProcessorTest {
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private EventProcessor eventProcessor =
-      new EventProcessor(eventDispatcherMock, resourceCacheMock, "Test", null, eventMarker);
+      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test", null,
+          eventMarker);
 
   private EventProcessor eventProcessorWithRetry =
-      new EventProcessor(eventDispatcherMock, resourceCacheMock, "Test",
+      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test",
           GenericRetry.defaultLimitedExponentialRetry(), eventMarker);
 
   @BeforeEach
@@ -62,7 +64,7 @@ class EventProcessorTest {
   public void dispatchesEventsIfNoExecutionInProgress() {
     eventProcessor.handleEvent(prepareCREvent());
 
-    verify(eventDispatcherMock, timeout(50).times(1)).handleExecution(any());
+    verify(reconciliationDispatcherMock, timeout(50).times(1)).handleExecution(any());
   }
 
   @Test
@@ -73,7 +75,7 @@ class EventProcessorTest {
 
     eventProcessor.handleEvent(event);
 
-    verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
+    verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
 
   @Test
@@ -82,7 +84,7 @@ class EventProcessorTest {
 
     eventProcessor.handleEvent(nonCREvent(resourceUid));
 
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
   }
 
@@ -108,7 +110,7 @@ class EventProcessorTest {
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
-    when(eventDispatcherMock.handleExecution(any()))
+    when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(postExecutionControl)
         .thenReturn(PostExecutionControl.defaultDispatch());
 
@@ -119,7 +121,7 @@ class EventProcessorTest {
 
     ArgumentCaptor<ExecutionScope> executionScopeArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionScope.class);
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(executionScopeArgumentCaptor.capture());
     List<ExecutionScope> allValues = executionScopeArgumentCaptor.getAllValues();
     assertThat(allValues).hasSize(2);
@@ -138,7 +140,7 @@ class EventProcessorTest {
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
     PostExecutionControl defaultDispatchControl = PostExecutionControl.defaultDispatch();
 
-    when(eventDispatcherMock.handleExecution(any()))
+    when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(postExecutionControlWithException)
         .thenReturn(defaultDispatchControl);
 
@@ -146,15 +148,15 @@ class EventProcessorTest {
         ArgumentCaptor.forClass(ExecutionScope.class);
 
     eventProcessorWithRetry.handleEvent(event);
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
 
     eventProcessorWithRetry.handleEvent(event);
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(any());
 
     eventProcessorWithRetry.handleEvent(event);
-    verify(eventDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
         .handleExecution(executionScopeArgumentCaptor.capture());
     log.info("Finished successfulExecutionResetsTheRetry");
 
@@ -170,7 +172,7 @@ class EventProcessorTest {
   @Test
   public void scheduleTimedEventIfInstructedByPostExecutionControl() {
     var testDelay = 10000L;
-    when(eventDispatcherMock.handleExecution(any()))
+    when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
 
     eventProcessor.handleEvent(prepareCREvent());
@@ -182,7 +184,7 @@ class EventProcessorTest {
   @Test
   public void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() {
     var testDelay = 10000L;
-    when(eventDispatcherMock.handleExecution(any()))
+    when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
 
     eventProcessor.handleEvent(prepareCREvent());
@@ -197,7 +199,7 @@ class EventProcessorTest {
     eventProcessor.stop();
     eventProcessor.handleEvent(prepareCREvent());
 
-    verify(eventDispatcherMock, timeout(50).times(0)).handleExecution(any());
+    verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
 
   @Test
@@ -291,7 +293,7 @@ class EventProcessorTest {
   }
 
   private CustomResourceID eventAlreadyUnderProcessing() {
-    when(eventDispatcherMock.handleExecution(any()))
+    when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
             (Answer<PostExecutionControl>) invocationOnMock -> {
               Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION);

@@ -22,22 +22,22 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
- * Dispatches events to the Controller and handles Finalizers for a single type of Custom Resource.
+ * Handles calls and results of a Reconciler and finalizer related logic
  */
-public class EventDispatcher<R extends CustomResource<?, ?>> {
+public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
 
-  private static final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
+  private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
   private final Controller<R> controller;
   private final CustomResourceFacade<R> customResourceFacade;
 
-  EventDispatcher(Controller<R> controller,
+  ReconciliationDispatcher(Controller<R> controller,
       CustomResourceFacade<R> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
   }
 
-  public EventDispatcher(Controller<R> controller) {
+  public ReconciliationDispatcher(Controller<R> controller) {
     this(controller, new CustomResourceFacade<>(controller.getCRClient()));
   }
 

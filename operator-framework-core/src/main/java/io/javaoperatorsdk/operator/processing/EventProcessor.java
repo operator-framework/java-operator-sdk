@@ -42,7 +42,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
 
   private final Set<CustomResourceID> underProcessing = new HashSet<>();
-  private final EventDispatcher<R> eventDispatcher;
+  private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
   private final Map<CustomResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
@@ -59,21 +59,23 @@ public class EventProcessor<R extends CustomResource<?, ?>>
         resourceCache,
         ExecutorServiceManager.instance().executorService(),
         controller.getConfiguration().getName(),
-        new EventDispatcher<>(controller),
+        new ReconciliationDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
         controller.getConfiguration().getConfigurationService().getMetrics(),
         new EventMarker());
   }
 
-  EventProcessor(EventDispatcher<R> eventDispatcher, ResourceCache<R> resourceCache,
+  EventProcessor(ReconciliationDispatcher<R> reconciliationDispatcher,
+      ResourceCache<R> resourceCache,
       String relatedControllerName,
       Retry retry, EventMarker eventMarker) {
-    this(resourceCache, null, relatedControllerName, eventDispatcher, retry, null, eventMarker);
+    this(resourceCache, null, relatedControllerName, reconciliationDispatcher, retry, null,
+        eventMarker);
   }
 
   private EventProcessor(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
-      EventDispatcher<R> eventDispatcher, Retry retry, Metrics metrics,
+      ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics,
       EventMarker eventMarker) {
     this.running = true;
     this.executor =
@@ -82,7 +84,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
                 ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER)
             : executor;
     this.controllerName = relatedControllerName;
-    this.eventDispatcher = eventDispatcher;
+    this.reconciliationDispatcher = reconciliationDispatcher;
     this.retry = retry;
     this.resourceCache = resourceCache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
@@ -359,7 +361,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
         MDCUtils.addCustomResourceInfo(executionScope.getCustomResource());
         thread.setName("EventHandler-" + controllerName);
         PostExecutionControl<R> postExecutionControl =
-            eventDispatcher.handleExecution(executionScope);
+            reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
         // restore original name
