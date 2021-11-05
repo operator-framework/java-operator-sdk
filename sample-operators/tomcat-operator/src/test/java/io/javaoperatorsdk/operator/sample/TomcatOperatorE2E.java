@@ -66,7 +66,8 @@ public class TomcatOperatorE2E {
     if (testNs != null) {
       // We perform a pre-run cleanup instead of a post-run cleanup. This is to help with debugging
       // test results when running against a persistent cluster. The test namespace would stay
-      // after the test run so we can check what's there, but it would be cleaned up during the next test run.
+      // after the test run so we can check what's there, but it would be cleaned up during the next
+      // test run.
       log.info("Cleanup: deleting test namespace {}", TEST_NS);
       client.namespaces().delete(testNs);
       await().atMost(5, MINUTES)
@@ -112,7 +113,8 @@ public class TomcatOperatorE2E {
         log.info("Waiting for curl Pod to finish running");
         await("wait-for-curl-pod-run").atMost(2, MINUTES)
             .until(() -> {
-              String phase = client.pods().inNamespace(TEST_NS).withName("curl").get().getStatus().getPhase();
+              String phase =
+                  client.pods().inNamespace(TEST_NS).withName("curl").get().getStatus().getPhase();
               return phase.equals("Succeeded") || phase.equals("Failed");
             });
 
