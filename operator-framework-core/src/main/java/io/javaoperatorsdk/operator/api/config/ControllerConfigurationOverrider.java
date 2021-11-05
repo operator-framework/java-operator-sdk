@@ -76,7 +76,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
 
   public ControllerConfiguration<R> build() {
     return new DefaultControllerConfiguration<>(
-        original.getAssociatedControllerClassName(),
+        original.getAssociatedReconcilerClassName(),
         original.getName(),
         original.getCRDName(),
         finalizer,

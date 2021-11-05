@@ -100,7 +100,7 @@ public class DefaultConfigurationServiceTest {
         () -> {
           DefaultConfigurationService.instance()
               .getConfigurationFor(controller)
-              .getAssociatedControllerClassName();
+              .getAssociatedReconcilerClassName();
         });
   }
 

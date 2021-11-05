@@ -69,7 +69,7 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public String getAssociatedControllerClassName() {
+  public String getAssociatedReconcilerClassName() {
     return controller.getClass().getCanonicalName();
   }
 

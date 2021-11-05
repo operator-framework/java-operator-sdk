@@ -12,7 +12,7 @@ class ControllerConfigurationTest {
   void getCustomResourceClass() {
     final ControllerConfiguration<TestCustomResource> conf = new ControllerConfiguration<>() {
       @Override
-      public String getAssociatedControllerClassName() {
+      public String getAssociatedReconcilerClassName() {
         return null;
       }
 

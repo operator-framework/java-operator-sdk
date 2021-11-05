@@ -40,7 +40,7 @@ public class DefaultConfigurationService extends BaseConfigurationService {
     } else {
       // check that we don't have a controller name collision
       final var newControllerClassName = reconciler.getClass().getCanonicalName();
-      if (!config.getAssociatedControllerClassName().equals(newControllerClassName)) {
+      if (!config.getAssociatedReconcilerClassName().equals(newControllerClassName)) {
         throwExceptionOnNameCollision(newControllerClassName, config);
       }
     }

@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
 
   default String getName() {
-    return ControllerUtils.getDefaultReconcilerName(getAssociatedControllerClassName());
+    return ControllerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
 
   default String getCRDName() {
@@ -45,7 +45,7 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
     return (Class<R>) type.getActualTypeArguments()[0];
   }
 
-  String getAssociatedControllerClassName();
+  String getAssociatedReconcilerClassName();
 
   default Set<String> getNamespaces() {
     return Collections.emptySet();

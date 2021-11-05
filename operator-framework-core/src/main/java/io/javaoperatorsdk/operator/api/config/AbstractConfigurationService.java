@@ -32,7 +32,7 @@ public class AbstractConfigurationService implements ConfigurationService {
     if (failIfExisting) {
       final var existing = configurations.get(name);
       if (existing != null) {
-        throwExceptionOnNameCollision(config.getAssociatedControllerClassName(), existing);
+        throwExceptionOnNameCollision(config.getAssociatedReconcilerClassName(), existing);
       }
     }
     configurations.put(name, config);
@@ -45,7 +45,7 @@ public class AbstractConfigurationService implements ConfigurationService {
         "Controller name '"
             + existing.getName()
             + "' is used by both "
-            + existing.getAssociatedControllerClassName()
+            + existing.getAssociatedReconcilerClassName()
             + " and "
             + newControllerClassName);
   }

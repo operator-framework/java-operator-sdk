@@ -161,7 +161,7 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
-    public String getAssociatedControllerClassName() {
+    public String getAssociatedReconcilerClassName() {
       return MyController.class.getCanonicalName();
     }
 
