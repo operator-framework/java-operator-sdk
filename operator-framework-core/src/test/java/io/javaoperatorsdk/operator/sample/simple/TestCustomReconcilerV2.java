@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 public class TestCustomReconcilerV2 implements Reconciler<TestCustomResourceV2> {
 
   @Override
-  public UpdateControl<TestCustomResourceV2> createOrUpdateResources(TestCustomResourceV2 resource,
+  public UpdateControl<TestCustomResourceV2> reconcile(TestCustomResourceV2 resource,
       Context context) {
     return UpdateControl.noUpdate();
   }

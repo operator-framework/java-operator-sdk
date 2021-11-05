@@ -39,7 +39,7 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
   }
 
   @Override
-  public DeleteControl deleteResources(R resource, Context context) {
+  public DeleteControl cleanup(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -59,13 +59,13 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
 
           @Override
           public DeleteControl execute() {
-            return reconciler.deleteResources(resource, context);
+            return reconciler.cleanup(resource, context);
           }
         });
   }
 
   @Override
-  public UpdateControl<R> createOrUpdateResources(R resource, Context context) {
+  public UpdateControl<R> reconcile(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -92,7 +92,7 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
 
           @Override
           public UpdateControl<R> execute() {
-            return reconciler.createOrUpdateResources(resource, context);
+            return reconciler.reconcile(resource, context);
           }
         });
   }

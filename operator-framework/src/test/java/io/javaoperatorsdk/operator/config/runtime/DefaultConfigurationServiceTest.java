@@ -109,7 +109,7 @@ public class DefaultConfigurationServiceTest {
       implements Reconciler<TestCustomFinalizerReconciler.InnerCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomFinalizerReconciler.InnerCustomResource> createOrUpdateResources(
+    public UpdateControl<TestCustomFinalizerReconciler.InnerCustomResource> reconcile(
         InnerCustomResource resource, Context context) {
       return null;
     }
@@ -126,7 +126,7 @@ public class DefaultConfigurationServiceTest {
     public static final String NAME = "should-be-logged";
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResources(
+    public UpdateControl<TestCustomResource> reconcile(
         TestCustomResource resource, Context context) {
       return null;
     }
@@ -136,7 +136,7 @@ public class DefaultConfigurationServiceTest {
   static class TestCustomReconciler implements Reconciler<TestCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResources(
+    public UpdateControl<TestCustomResource> reconcile(
         TestCustomResource resource, Context context) {
       return null;
     }

@@ -176,7 +176,7 @@ public class OperatorExtension
       }
 
 
-      this.operator.registerController(ref.controller, oconfig.build());
+      this.operator.register(ref.controller, oconfig.build());
     }
 
     this.operator.start();

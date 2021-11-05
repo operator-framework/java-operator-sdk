@@ -18,29 +18,29 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 /** A very simple sample controller that creates a service with a label. */
 @Controller
-public class CustomServiceController implements Reconciler<CustomService> {
+public class CustomServiceReconciler implements Reconciler<CustomService> {
 
   public static final String KIND = "CustomService";
-  private static final Logger log = LoggerFactory.getLogger(CustomServiceController.class);
+  private static final Logger log = LoggerFactory.getLogger(CustomServiceReconciler.class);
 
   private final KubernetesClient kubernetesClient;
 
-  public CustomServiceController() {
+  public CustomServiceReconciler() {
     this(new DefaultKubernetesClient());
   }
 
-  public CustomServiceController(KubernetesClient kubernetesClient) {
+  public CustomServiceReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
   }
 
   @Override
-  public DeleteControl deleteResources(CustomService resource, Context context) {
+  public DeleteControl cleanup(CustomService resource, Context context) {
     log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
     return DeleteControl.defaultDelete();
   }
 
   @Override
-  public UpdateControl<CustomService> createOrUpdateResources(
+  public UpdateControl<CustomService> reconcile(
       CustomService resource, Context context) {
     log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
 

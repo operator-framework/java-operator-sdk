@@ -85,7 +85,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
 
   /**
    * Determines whether the given resource should be dispatched to the controller's
-   * {@link Reconciler#deleteResources(CustomResource, Context)} method
+   * {@link Reconciler#cleanup(CustomResource, Context)} method
    *
    * @param resource the resource to be potentially deleted
    * @return {@code true} if the resource should be handed to the controller's {@code
@@ -115,7 +115,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
           getVersion(resource),
           executionScope);
 
-      UpdateControl<R> updateControl = controller.createOrUpdateResources(resource, context);
+      UpdateControl<R> updateControl = controller.reconcile(resource, context);
       R updatedCustomResource = null;
       if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
         updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
@@ -173,7 +173,7 @@ public class EventDispatcher<R extends CustomResource<?, ?>> {
         getName(resource),
         getVersion(resource));
 
-    DeleteControl deleteControl = controller.deleteResources(resource, context);
+    DeleteControl deleteControl = controller.cleanup(resource, context);
     final var useFinalizer = configuration().useFinalizer();
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that

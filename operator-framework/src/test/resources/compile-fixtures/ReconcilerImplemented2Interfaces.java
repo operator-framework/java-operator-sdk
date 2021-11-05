@@ -15,12 +15,12 @@ public class ReconcilerImplemented2Interfaces implements Serializable, Reconcile
     }
 
     @Override
-    public UpdateControl<MyCustomResource> createOrUpdateResources(MyCustomResource customResource, Context context) {
+    public UpdateControl<MyCustomResource> reconcile(MyCustomResource customResource, Context context) {
         return UpdateControl.updateCustomResource(null);
     }
 
     @Override
-    public DeleteControl deleteResources(MyCustomResource customResource, Context context) {
+    public DeleteControl cleanup(MyCustomResource customResource, Context context) {
         return DeleteControl.defaultDelete();
     }
 }

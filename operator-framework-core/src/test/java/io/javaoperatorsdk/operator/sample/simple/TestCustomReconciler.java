@@ -38,7 +38,7 @@ public class TestCustomReconciler implements Reconciler<TestCustomResource> {
   }
 
   @Override
-  public DeleteControl deleteResources(
+  public DeleteControl cleanup(
       TestCustomResource resource, Context context) {
     Boolean delete =
         kubernetesClient
@@ -61,7 +61,7 @@ public class TestCustomReconciler implements Reconciler<TestCustomResource> {
   }
 
   @Override
-  public UpdateControl<TestCustomResource> createOrUpdateResources(
+  public UpdateControl<TestCustomResource> reconcile(
       TestCustomResource resource, Context context) {
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");

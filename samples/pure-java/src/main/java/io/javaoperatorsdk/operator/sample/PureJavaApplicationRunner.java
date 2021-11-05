@@ -11,7 +11,7 @@ public class PureJavaApplicationRunner {
         new Operator(ConfigurationServiceOverrider.override(DefaultConfigurationService.instance())
             .withConcurrentReconciliationThreads(2)
             .build());
-    operator.registerController(new CustomServiceController());
+    operator.register(new CustomServiceReconciler());
     operator.start();
   }
 }

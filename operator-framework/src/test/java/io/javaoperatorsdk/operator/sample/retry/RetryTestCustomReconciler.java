@@ -27,7 +27,7 @@ public class RetryTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<RetryTestCustomResource> createOrUpdateResources(
+  public UpdateControl<RetryTestCustomResource> reconcile(
       RetryTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 

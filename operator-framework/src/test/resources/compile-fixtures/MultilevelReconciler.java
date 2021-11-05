@@ -14,13 +14,13 @@ public class MultilevelReconciler extends
 
   }
 
-  public UpdateControl<MultilevelReconciler.MyCustomResource> createOrUpdateResources(
+  public UpdateControl<MultilevelReconciler.MyCustomResource> reconcile(
           MultilevelReconciler.MyCustomResource customResource,
       Context context) {
     return UpdateControl.updateCustomResource(null);
   }
 
-  public DeleteControl deleteResources(MultilevelReconciler.MyCustomResource customResource,
+  public DeleteControl cleanup(MultilevelReconciler.MyCustomResource customResource,
       Context context) {
     return DeleteControl.defaultDelete();
   }

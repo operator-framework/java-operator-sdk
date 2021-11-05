@@ -61,9 +61,9 @@ class EventDispatcherTest {
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configuration.getConfigurationService()).thenReturn(configService);
-    when(reconciler.createOrUpdateResources(eq(customResource), any()))
+    when(reconciler.reconcile(eq(customResource), any()))
         .thenReturn(UpdateControl.updateCustomResource(customResource));
-    when(reconciler.deleteResources(eq(customResource), any()))
+    when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
     when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
     Controller<R> controller =
@@ -77,7 +77,7 @@ class EventDispatcherTest {
     assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(controller, never())
-        .createOrUpdateResources(ArgumentMatchers.eq(testCustomResource), any());
+        .reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
         .replaceWithLock(
             argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
@@ -89,14 +89,14 @@ class EventDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(controller, times(1))
-        .createOrUpdateResources(ArgumentMatchers.eq(testCustomResource), any());
+        .reconcile(ArgumentMatchers.eq(testCustomResource), any());
   }
 
   @Test
   void updatesOnlyStatusSubResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(controller.createOrUpdateResources(eq(testCustomResource), any()))
+    when(controller.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -109,7 +109,7 @@ class EventDispatcherTest {
   void updatesBothResourceAndStatusIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(controller.createOrUpdateResources(eq(testCustomResource), any()))
+    when(controller.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.updateCustomResourceAndStatus(testCustomResource));
     when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
 
@@ -125,7 +125,7 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(controller, times(1))
-        .createOrUpdateResources(ArgumentMatchers.eq(testCustomResource), any());
+        .reconcile(ArgumentMatchers.eq(testCustomResource), any());
   }
 
   @Test
@@ -136,7 +136,7 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(controller, times(1)).deleteResources(eq(testCustomResource), any());
+    verify(controller, times(1)).cleanup(eq(testCustomResource), any());
   }
 
   /**
@@ -149,7 +149,7 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(controller).deleteResources(eq(testCustomResource), any());
+    verify(controller).cleanup(eq(testCustomResource), any());
   }
 
   @Test
@@ -158,7 +158,7 @@ class EventDispatcherTest {
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(controller, never()).deleteResources(eq(testCustomResource), any());
+    verify(controller, never()).cleanup(eq(testCustomResource), any());
   }
 
   private void configureToNotUseFinalizer() {
@@ -196,7 +196,7 @@ class EventDispatcherTest {
   void doesNotRemovesTheSetFinalizerIfTheDeleteNotMethodInstructsIt() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(controller.deleteResources(eq(testCustomResource), any()))
+    when(controller.cleanup(eq(testCustomResource), any()))
         .thenReturn(DeleteControl.noFinalizerRemoval());
     markForDeletion(testCustomResource);
 
@@ -210,7 +210,7 @@ class EventDispatcherTest {
   void doesNotUpdateTheResourceIfNoUpdateUpdateControlIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(controller.createOrUpdateResources(eq(testCustomResource), any()))
+    when(controller.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.noUpdate());
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -221,7 +221,7 @@ class EventDispatcherTest {
   @Test
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
-    when(controller.createOrUpdateResources(eq(testCustomResource), any()))
+    when(controller.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.noUpdate());
 
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -238,7 +238,7 @@ class EventDispatcherTest {
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     verify(customResourceFacade, never()).replaceWithLock(any());
-    verify(controller, never()).deleteResources(eq(testCustomResource), any());
+    verify(controller, never()).cleanup(eq(testCustomResource), any());
   }
 
   @Test
@@ -247,7 +247,7 @@ class EventDispatcherTest {
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     eventDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(controller, times(2)).createOrUpdateResources(eq(testCustomResource), any());
+    verify(controller, times(2)).reconcile(eq(testCustomResource), any());
   }
 
   @Test
@@ -272,7 +272,7 @@ class EventDispatcherTest {
     ArgumentCaptor<Context> contextArgumentCaptor =
         ArgumentCaptor.forClass(Context.class);
     verify(controller, times(1))
-        .createOrUpdateResources(eq(testCustomResource), contextArgumentCaptor.capture());
+        .reconcile(eq(testCustomResource), contextArgumentCaptor.capture());
     Context context = contextArgumentCaptor.getValue();
     final var retryInfo = context.getRetryInfo().get();
     assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
@@ -283,7 +283,7 @@ class EventDispatcherTest {
   void setReScheduleToPostExecutionControlFromUpdateControl() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(controller.createOrUpdateResources(eq(testCustomResource), any()))
+    when(controller.reconcile(eq(testCustomResource), any()))
         .thenReturn(
             UpdateControl.updateStatusSubResource(testCustomResource).rescheduleAfter(1000L));
 
@@ -298,7 +298,7 @@ class EventDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
 
-    when(controller.deleteResources(eq(testCustomResource), any()))
+    when(controller.cleanup(eq(testCustomResource), any()))
         .thenReturn(DeleteControl.noFinalizerRemoval().rescheduleAfter(1000L));
 
     PostExecutionControl control =
@@ -318,7 +318,7 @@ class EventDispatcherTest {
     var lDispatcher = init(observedGenResource, lController, lConfiguration, lFacade);
 
     when(lConfiguration.isGenerationAware()).thenReturn(true);
-    when(lController.createOrUpdateResources(eq(observedGenResource), any()))
+    when(lController.reconcile(eq(observedGenResource), any()))
         .thenReturn(UpdateControl.updateStatusSubResource(observedGenResource));
     when(lFacade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
 

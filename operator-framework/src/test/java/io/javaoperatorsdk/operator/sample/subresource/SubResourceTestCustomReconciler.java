@@ -25,7 +25,7 @@ public class SubResourceTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<SubResourceTestCustomResource> createOrUpdateResources(
+  public UpdateControl<SubResourceTestCustomResource> reconcile(
       SubResourceTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {

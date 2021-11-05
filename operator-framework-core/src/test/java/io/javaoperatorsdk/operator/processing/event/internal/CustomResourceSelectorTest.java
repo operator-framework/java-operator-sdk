@@ -90,7 +90,7 @@ public class CustomResourceSelectorTest {
       AtomicInteger c2 = new AtomicInteger();
       AtomicInteger c2err = new AtomicInteger();
 
-      o1.registerController(
+      o1.register(
           new MyController(
               resource -> {
                 if ("foo".equals(resource.getMetadata().getName())) {
@@ -102,7 +102,7 @@ public class CustomResourceSelectorTest {
               }),
           new MyConfiguration(configurationService, "app=foo"));
       o1.start();
-      o2.registerController(
+      o2.register(
           new MyController(
               resource -> {
                 if ("bar".equals(resource.getMetadata().getName())) {
@@ -186,7 +186,7 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResources(
+    public UpdateControl<TestCustomResource> reconcile(
         TestCustomResource resource, Context context) {
 
       LOGGER.info("Received event on: {}", resource);

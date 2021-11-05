@@ -43,7 +43,7 @@ public class InformerEventSourceTestCustomReconciler implements
   }
 
   @Override
-  public UpdateControl<InformerEventSourceTestCustomResource> createOrUpdateResources(
+  public UpdateControl<InformerEventSourceTestCustomResource> reconcile(
       InformerEventSourceTestCustomResource resource,
       Context context) {
 

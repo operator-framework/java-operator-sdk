@@ -13,15 +13,15 @@ import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 public class Config {
 
   @Bean
-  public CustomServiceController customServiceController() {
-    return new CustomServiceController();
+  public CustomServiceReconciler customServiceController() {
+    return new CustomServiceReconciler();
   }
 
   // Register all controller beans
   @Bean(initMethod = "start", destroyMethod = "stop")
   public Operator operator(List<Reconciler> controllers) {
     Operator operator = new Operator(DefaultConfigurationService.instance());
-    controllers.forEach(operator::registerController);
+    controllers.forEach(operator::register);
     return operator;
   }
 }

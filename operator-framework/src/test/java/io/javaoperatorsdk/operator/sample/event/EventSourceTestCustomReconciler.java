@@ -32,7 +32,7 @@ public class EventSourceTestCustomReconciler
   }
 
   @Override
-  public UpdateControl<EventSourceTestCustomResource> createOrUpdateResources(
+  public UpdateControl<EventSourceTestCustomResource> reconcile(
       EventSourceTestCustomResource resource, Context context) {
 
     numberOfExecutions.addAndGet(1);

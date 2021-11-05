@@ -28,7 +28,7 @@ public interface Reconciler<R extends CustomResource<?, ?>> {
    *         finalizer to indicate that the resource should not be deleted after all, in which case
    *         the controller should restore the resource's state appropriately.
    */
-  default DeleteControl deleteResources(R resource, Context context) {
+  default DeleteControl cleanup(R resource, Context context) {
     return DeleteControl.defaultDelete();
   }
 
@@ -46,6 +46,6 @@ public interface Reconciler<R extends CustomResource<?, ?>> {
    *         be skipped. <b>However we will always call an update if there is no finalizer on object
    *         and it's not marked for deletion.</b>
    */
-  UpdateControl<R> createOrUpdateResources(R resource, Context context);
+  UpdateControl<R> reconcile(R resource, Context context);
 
 }

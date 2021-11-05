@@ -62,7 +62,7 @@ public class TestReconciler
   }
 
   @Override
-  public DeleteControl deleteResources(
+  public DeleteControl cleanup(
       TestCustomResource resource, Context context) {
     Boolean delete =
         kubernetesClient
@@ -85,7 +85,7 @@ public class TestReconciler
   }
 
   @Override
-  public UpdateControl<TestCustomResource> createOrUpdateResources(
+  public UpdateControl<TestCustomResource> reconcile(
       TestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {

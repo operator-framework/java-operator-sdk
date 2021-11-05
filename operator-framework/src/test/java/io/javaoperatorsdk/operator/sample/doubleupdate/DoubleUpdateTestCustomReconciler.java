@@ -23,7 +23,7 @@ public class DoubleUpdateTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<DoubleUpdateTestCustomResource> createOrUpdateResources(
+  public UpdateControl<DoubleUpdateTestCustomResource> reconcile(
       DoubleUpdateTestCustomResource resource, Context context) {
     numberOfExecutions.addAndGet(1);
 

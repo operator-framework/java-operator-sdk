@@ -10,13 +10,13 @@ import java.io.Serializable;
 public class ReconcilerImplementedIntermediateAbstractClass extends
     AbstractReconciler<AbstractReconciler.MyCustomResource> implements Serializable {
 
-  public UpdateControl<AbstractReconciler.MyCustomResource> createOrUpdateResources(
+  public UpdateControl<AbstractReconciler.MyCustomResource> reconcile(
       AbstractReconciler.MyCustomResource customResource,
       Context context) {
     return UpdateControl.updateCustomResource(null);
   }
 
-  public DeleteControl deleteResources(AbstractReconciler.MyCustomResource customResource,
+  public DeleteControl cleanup(AbstractReconciler.MyCustomResource customResource,
       Context context) {
     return DeleteControl.defaultDelete();
   }
