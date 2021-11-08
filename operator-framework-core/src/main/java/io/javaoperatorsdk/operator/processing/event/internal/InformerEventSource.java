@@ -17,33 +17,33 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<CustomResourceID>> resourceToUIDs;
+  private final Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToUIDs) {
-    this(sharedInformer, resourceToUIDs, null, true);
+      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet) {
+    this(sharedInformer, resourceToCustomResourceIDSet, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToUIDs) {
-    this(client, type, resourceToUIDs, false);
+      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet) {
+    this(client, type, resourceToCustomResourceIDSet, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToUIDs,
+      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), resourceToUIDs, null,
+    this(client.informers().sharedIndexInformerFor(type, 0), resourceToCustomResourceIDSet, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToUIDs,
+      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.resourceToUIDs = resourceToUIDs;
+    this.resourceToCustomResourceIDSet = resourceToCustomResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
 
     this.associatedWith = Objects.requireNonNullElseGet(associatedWith, () -> cr -> {
@@ -76,7 +76,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(T object) {
-    var uids = resourceToUIDs.apply(object);
+    var uids = resourceToCustomResourceIDSet.apply(object);
     if (uids.isEmpty()) {
       return;
     }
