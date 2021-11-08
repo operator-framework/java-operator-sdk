@@ -4,6 +4,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
@@ -13,8 +16,6 @@ import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
@@ -51,8 +52,8 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
       log.warn(
-              "Informer is already running on event source creation, this is not desirable and may " +
-                      "lead to non deterministic behavior.");
+          "Informer is already running on event source creation, this is not desirable and may " +
+              "lead to non deterministic behavior.");
     }
 
     this.associatedWith = Objects.requireNonNullElseGet(associatedWith, () -> cr -> {
