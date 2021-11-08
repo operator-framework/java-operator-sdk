@@ -4,16 +4,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@Controller
+@ControllerConfiguration
 public class EventSourceTestCustomReconciler
     implements Reconciler<EventSourceTestCustomResource>, EventSourceInitializer,
     TestExecutionInfoProvider {

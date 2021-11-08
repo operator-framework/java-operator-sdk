@@ -14,7 +14,7 @@ other configuration options are provided to fine tune or turn off these features
 ## Controller Execution in a Nutshell
 
 Controller execution is always triggered by an event. Events typically come from the custom resource
-(i.e. custom resource is created, updated or deleted) that the controller is watching, but also from different sources
+(i.e. custom resource is created, updated or deleted) that the controllerConfiguration is watching, but also from different sources
 (see event sources). When an event is received reconciliation is executed, unless there is already a reconciliation
 happening for a particular custom resource. In other words it is guaranteed by the framework that no concurrent
 reconciliation happens for a custom resource.
@@ -24,7 +24,7 @@ i.e. [ResourceController](https://github.com/java-operator-sdk/java-operator-sdk
 called, a post-processing phase follows, where typically framework checks if:
 
 - an exception was thrown during execution, if yes schedules a retry.
-- there are new events received during the controller execution, if yes schedule the execution again.
+- there are new events received during the controllerConfiguration execution, if yes schedule the execution again.
 - there is an instruction to re-schedule the execution for the future, if yes schedule a timer event with the specified
   delay.
 - if none above, the reconciliation is finished.
@@ -45,14 +45,14 @@ Finalizers are automatically added by the framework as the first step, thus when
 before the first reconciliation, the custom resource is updated via a Kubernetes API call. As a result of this update, the
 finalizer will be present. The subsequent event will be received, which will trigger the first reconciliation.
 
-The finalizer that is automatically added will be also removed after the `deleteResource` is executed on the controller.
+The finalizer that is automatically added will be also removed after the `deleteResource` is executed on the controllerConfiguration.
 However, the removal behavior can be further customized, and can be instructed to "not remove yet" - this is useful just
 in some specific corner cases, when there would be a long waiting period for some dependent resource cleanup.
 
 The name of the finalizers can be specified, in case it is not, a name will be generated.
 
 This behavior can be turned off, so when configured no finalizer will be added or removed.  
-See [`@Controller`](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Controller.java)
+See [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ControllerConfiguration.java)
 annotation for more details.
 
 ### When not to Use Finalizers?
@@ -90,7 +90,7 @@ time.
 ## Contextual Info for Logging with MDC
 
 Logging is enhanced with additional contextual information using [MDC](http://www.slf4j.org/manual.html#mdc). 
-This following attributes are available in most parts of reconciliation logic and during the execution of the controller:
+This following attributes are available in most parts of reconciliation logic and during the execution of the controllerConfiguration:
 
 | MDC Key      | Value added from Custom Resource |
 | :---        |    :---   | 

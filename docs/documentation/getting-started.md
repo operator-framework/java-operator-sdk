@@ -73,7 +73,7 @@ if the operator just gets restarted after it went down.
 
 ### At Least Once
 
-To implement controller logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
+To implement controllerConfiguration logic, we have to override two methods: `createOrUpdateResource` and `deleteResource`. 
 These methods are called if a resource is created/changed or marked for deletion. In most cases these methods will be
 called just once, but in some rare cases, it can happen that they are called more then once. In practice this means that the 
 implementation needs to be **idempotent**.    

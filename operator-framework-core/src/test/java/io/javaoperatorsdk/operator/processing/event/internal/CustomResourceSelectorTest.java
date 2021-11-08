@@ -23,10 +23,9 @@ import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -145,7 +144,9 @@ public class CustomResourceSelectorTest {
     return resource;
   }
 
-  public static class MyConfiguration implements ControllerConfiguration<TestCustomResource> {
+  public static class MyConfiguration
+      implements
+      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<TestCustomResource> {
 
     private final String labelSelector;
     private final ConfigurationService service;
@@ -176,7 +177,7 @@ public class CustomResourceSelectorTest {
     }
   }
 
-  @Controller(namespaces = NAMESPACE)
+  @ControllerConfiguration(namespaces = NAMESPACE)
   public static class MyController implements Reconciler<TestCustomResource> {
 
     private final Consumer<TestCustomResource> consumer;

@@ -23,7 +23,7 @@ import com.squareup.javapoet.TypeName;
 
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
-@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.Controller")
+@SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class ControllerAnnotationProcessor extends AbstractProcessor {

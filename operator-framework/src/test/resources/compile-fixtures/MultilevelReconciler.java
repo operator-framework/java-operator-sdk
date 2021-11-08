@@ -2,11 +2,11 @@ package io;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@Controller
+@ControllerConfiguration
 public class MultilevelReconciler extends
     MultilevelAbstractReconciler<String, MultilevelReconciler.MyCustomResource> {
 

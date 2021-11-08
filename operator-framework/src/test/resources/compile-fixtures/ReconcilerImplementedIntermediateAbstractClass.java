@@ -1,12 +1,12 @@
 package io;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import java.io.Serializable;
 
-@Controller
+@ControllerConfiguration
 public class ReconcilerImplementedIntermediateAbstractClass extends
     AbstractReconciler<AbstractReconciler.MyCustomResource> implements Serializable {
 

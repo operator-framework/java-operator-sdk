@@ -6,7 +6,6 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
@@ -66,7 +65,8 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     return namespaces != null
         && namespaces.size() == 1
-        && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
+        && namespaces.contains(
+            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.WATCH_CURRENT_NAMESPACE);
   }
 
   /**
@@ -98,7 +98,8 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
   default void setConfigurationService(ConfigurationService service) {}
 
   default boolean useFinalizer() {
-    return !Controller.NO_FINALIZER.equals(getFinalizer());
+    return !io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER
+        .equals(getFinalizer());
   }
 
   /**

@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.sample.simple;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@Controller
+@ControllerConfiguration
 public class DuplicateCRController implements Reconciler<TestCustomResource> {
 
   @Override

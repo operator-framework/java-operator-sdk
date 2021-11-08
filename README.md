@@ -130,7 +130,7 @@ dependencies {
 ```
 
 Once you've added the dependency, define a main method initializing the Operator and registering a
-controller.
+controllerConfiguration.
 
 ```java
 public class Runner {
@@ -146,7 +146,7 @@ The Controller implements the business logic and describes all the classes neede
 
 ```java
 
-@Controller
+@ControllerConfiguration
 public class WebServerController implements ResourceController<WebServer> {
 
   // Return the changed resource, so it gets updated. See javadoc for details.

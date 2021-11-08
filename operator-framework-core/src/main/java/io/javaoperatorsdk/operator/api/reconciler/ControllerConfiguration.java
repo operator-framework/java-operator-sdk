@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface Controller {
+public @interface ControllerConfiguration {
 
   String EMPTY_STRING = "";
   String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";

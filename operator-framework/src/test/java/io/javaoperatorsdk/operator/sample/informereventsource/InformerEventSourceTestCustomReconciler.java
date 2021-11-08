@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -15,13 +15,13 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Controller.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 
 /**
  * Copies the config map value from spec into status. The main purpose is to test and demonstrate
  * sample usage of InformerEventSource
  */
-@Controller(finalizerName = NO_FINALIZER)
+@ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class InformerEventSourceTestCustomReconciler implements
     Reconciler<InformerEventSourceTestCustomResource>, KubernetesClientAware,
     EventSourceInitializer {

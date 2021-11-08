@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import java.util.Locale;
 
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
@@ -16,10 +16,10 @@ public class ControllerUtils {
 
   public static String getNameFor(Class<? extends Reconciler> controllerClass) {
     // if the controller annotation has a name attribute, use it
-    final var annotation = controllerClass.getAnnotation(Controller.class);
+    final var annotation = controllerClass.getAnnotation(ControllerConfiguration.class);
     if (annotation != null) {
       final var name = annotation.name();
-      if (!Controller.EMPTY_STRING.equals(name)) {
+      if (!ControllerConfiguration.EMPTY_STRING.equals(name)) {
         return name;
       }
     }

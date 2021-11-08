@@ -44,7 +44,7 @@ dependencies {
 ```
 
 Once you've added the dependency, define a main method initializing the Operator and registering a
-controller.
+controllerConfiguration.
 
 ```java
 public class Runner {

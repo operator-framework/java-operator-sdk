@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Controller;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -77,7 +77,8 @@ public class DefaultConfigurationServiceTest {
     final var reconciler = new TestCustomReconciler();
     final var configuration =
         DefaultConfigurationService.instance().getConfigurationFor(reconciler);
-    assertEquals(CustomResource.getCRDName(TestCustomResource.class), configuration.getCRDName());
+    assertEquals(CustomResource.getCRDName(TestCustomResource.class),
+        configuration.getCRDName());
     assertEquals(
         ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
         configuration.getFinalizer());
@@ -104,7 +105,7 @@ public class DefaultConfigurationServiceTest {
         });
   }
 
-  @Controller(finalizerName = CUSTOM_FINALIZER_NAME)
+  @ControllerConfiguration(finalizerName = CUSTOM_FINALIZER_NAME)
   static class TestCustomFinalizerReconciler
       implements Reconciler<TestCustomFinalizerReconciler.InnerCustomResource> {
 
@@ -120,7 +121,7 @@ public class DefaultConfigurationServiceTest {
     }
   }
 
-  @Controller(name = NotAutomaticallyCreated.NAME)
+  @ControllerConfiguration(name = NotAutomaticallyCreated.NAME)
   static class NotAutomaticallyCreated implements Reconciler<TestCustomResource> {
 
     public static final String NAME = "should-be-logged";
@@ -132,7 +133,7 @@ public class DefaultConfigurationServiceTest {
     }
   }
 
-  @Controller(generationAwareEventProcessing = false, name = "test")
+  @ControllerConfiguration(generationAwareEventProcessing = false, name = "test")
   static class TestCustomReconciler implements Reconciler<TestCustomResource> {
 
     @Override
