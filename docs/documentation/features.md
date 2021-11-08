@@ -14,7 +14,7 @@ other configuration options are provided to fine tune or turn off these features
 ## Controller Execution in a Nutshell
 
 Controller execution is always triggered by an event. Events typically come from the custom resource
-(i.e. custom resource is created, updated or deleted) that the controllerConfiguration is watching, but also from different sources
+(i.e. custom resource is created, updated or deleted) that the controller is watching, but also from different sources
 (see event sources). When an event is received reconciliation is executed, unless there is already a reconciliation
 happening for a particular custom resource. In other words it is guaranteed by the framework that no concurrent
 reconciliation happens for a custom resource.
@@ -24,7 +24,7 @@ i.e. [ResourceController](https://github.com/java-operator-sdk/java-operator-sdk
 called, a post-processing phase follows, where typically framework checks if:
 
 - an exception was thrown during execution, if yes schedules a retry.
-- there are new events received during the controllerConfiguration execution, if yes schedule the execution again.
+- there are new events received during the controller execution, if yes schedule the execution again.
 - there is an instruction to re-schedule the execution for the future, if yes schedule a timer event with the specified
   delay.
 - if none above, the reconciliation is finished.
@@ -90,7 +90,7 @@ time.
 ## Contextual Info for Logging with MDC
 
 Logging is enhanced with additional contextual information using [MDC](http://www.slf4j.org/manual.html#mdc). 
-This following attributes are available in most parts of reconciliation logic and during the execution of the controllerConfiguration:
+This following attributes are available in most parts of reconciliation logic and during the execution of the controller:
 
 | MDC Key      | Value added from Custom Resource |
 | :---        |    :---   | 
