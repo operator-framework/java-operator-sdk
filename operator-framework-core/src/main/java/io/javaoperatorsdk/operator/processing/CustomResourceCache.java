@@ -76,7 +76,7 @@ public class CustomResourceCache<T extends CustomResource<?, ?>> {
     return Optional.ofNullable(resources.get(uuid)).map(this::clone);
   }
 
-  public List<T> getLatestResources(Predicate<CustomResource> selector) {
+  public List<T> getLatestResources(Predicate<T> selector) {
     try {
       lock.lock();
       return resources.values().stream()
@@ -88,7 +88,7 @@ public class CustomResourceCache<T extends CustomResource<?, ?>> {
     }
   }
 
-  public Set<String> getLatestResourcesUids(Predicate<CustomResource> selector) {
+  public Set<String> getLatestResourcesUids(Predicate<T> selector) {
     try {
       lock.lock();
       return resources.values().stream()
@@ -113,4 +113,5 @@ public class CustomResourceCache<T extends CustomResource<?, ?>> {
   public T cleanup(String customResourceUid) {
     return resources.remove(customResourceUid);
   }
+
 }

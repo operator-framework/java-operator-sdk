@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +15,13 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
+
+import static java.util.Collections.EMPTY_SET;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
@@ -31,7 +34,7 @@ public class TomcatController implements ResourceController<Tomcat> {
 
   private final KubernetesClient kubernetesClient;
 
-  private DeploymentEventSource deploymentEventSource;
+  private volatile InformerEventSource<Deployment> informerEventSource;
 
   public TomcatController(KubernetesClient client) {
     this.kubernetesClient = client;
@@ -39,24 +42,32 @@ public class TomcatController implements ResourceController<Tomcat> {
 
   @Override
   public void init(EventSourceManager eventSourceManager) {
-    this.deploymentEventSource = DeploymentEventSource.createAndRegisterWatch(kubernetesClient);
-    eventSourceManager.registerEventSource("deployment-event-source", this.deploymentEventSource);
+    SharedIndexInformer<Deployment> deploymentInformer =
+        kubernetesClient.apps().deployments().inAnyNamespace()
+            .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
+            .inform();
+
+    this.informerEventSource = new InformerEventSource<>(deploymentInformer, d -> {
+      var ownerReferences = d.getMetadata().getOwnerReferences();
+      if (!ownerReferences.isEmpty()) {
+        return Set.of(ownerReferences.get(0).getUid());
+      } else {
+        return EMPTY_SET;
+      }
+    });
+    eventSourceManager.registerEventSource("deployment-event-source", this.informerEventSource);
   }
 
   @Override
   public UpdateControl<Tomcat> createOrUpdateResource(Tomcat tomcat, Context<Tomcat> context) {
-    Optional<CustomResourceEvent> latestCREvent =
-        context.getEvents().getLatestOfType(CustomResourceEvent.class);
-    if (latestCREvent.isPresent()) {
-      createOrUpdateDeployment(tomcat);
-      createOrUpdateService(tomcat);
-    }
+    createOrUpdateDeployment(tomcat);
+    createOrUpdateService(tomcat);
 
-    Optional<DeploymentEvent> latestDeploymentEvent =
-        context.getEvents().getLatestOfType(DeploymentEvent.class);
-    if (latestDeploymentEvent.isPresent()) {
+    Deployment deployment = informerEventSource.getAssociated(tomcat);
+
+    if (deployment != null) {
       Tomcat updatedTomcat =
-          updateTomcatStatus(tomcat, latestDeploymentEvent.get().getDeployment());
+          updateTomcatStatus(tomcat, deployment);
       log.info(
           "Updating status of Tomcat {} in namespace {} to {} ready replicas",
           tomcat.getMetadata().getName(),
@@ -64,7 +75,6 @@ public class TomcatController implements ResourceController<Tomcat> {
           tomcat.getStatus().getReadyReplicas());
       return UpdateControl.updateStatusSubResource(updatedTomcat);
     }
-
     return UpdateControl.noUpdate();
   }
 

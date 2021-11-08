@@ -159,7 +159,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     }
   }
 
-  // todo: remove
   public CustomResourceCache<T> getCache() {
     return customResourceCache;
   }

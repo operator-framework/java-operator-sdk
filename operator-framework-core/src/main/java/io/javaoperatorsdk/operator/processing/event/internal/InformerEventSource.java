@@ -81,7 +81,9 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     }
     uids.forEach(uid -> {
       InformerEvent event = new InformerEvent(uid, this, action, object, oldObject);
-      this.eventHandler.handleEvent(event);
+      if (this.eventHandler != null) {
+        this.eventHandler.handleEvent(event);
+      }
     });
   }
 

@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,12 @@ import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
 
 import okhttp3.Response;
+
+import static io.javaoperatorsdk.operator.processing.event.DefaultEventSourceManager.CUSTOM_RESOURCE_EVENT_SOURCE_NAME;
 
 @Controller
 public class WebappController implements ResourceController<Webapp> {
@@ -34,8 +39,19 @@ public class WebappController implements ResourceController<Webapp> {
 
   @Override
   public void init(EventSourceManager eventSourceManager) {
-    TomcatEventSource tomcatEventSource =
-        TomcatEventSource.createAndRegisterWatch(kubernetesClient);
+    InformerEventSource<Tomcat> tomcatEventSource =
+        new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
+          var cache =
+              ((CustomResourceEventSource<Webapp>) eventSourceManager
+                  .getRegisteredEventSources()
+                  .get(CUSTOM_RESOURCE_EVENT_SOURCE_NAME)).getCache();
+
+          var latestResourceIds = cache.getLatestResources(
+              (Webapp webApp) -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()));
+          return latestResourceIds.stream().map(webApp -> webApp.getMetadata().getUid())
+              .collect(Collectors.toSet());
+        });
+
     eventSourceManager.registerEventSource("tomcat-event-source", tomcatEventSource);
   }
 
