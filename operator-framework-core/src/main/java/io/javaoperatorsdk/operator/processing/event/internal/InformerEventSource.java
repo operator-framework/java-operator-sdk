@@ -5,6 +5,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
@@ -14,6 +17,8 @@ import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
+
+  private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final SharedInformer<T> sharedInformer;
   private final Function<T, Set<String>> resourceToUIDs;
@@ -41,6 +46,11 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
       Function<T, Set<String>> resourceToUIDs,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
+    if (sharedInformer.isRunning()) {
+      log.warn(
+          "Informer is already running on event source creation, this is not desirable and may " +
+              "lead to non deterministic behavior.");
+    }
     this.sharedInformer = sharedInformer;
     this.resourceToUIDs = resourceToUIDs;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
@@ -81,6 +91,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     }
     uids.forEach(uid -> {
       InformerEvent event = new InformerEvent(uid, this, action, object, oldObject);
+      // In case user passes an already running informer this would fail.
       if (this.eventHandler != null) {
         this.eventHandler.handleEvent(event);
       }

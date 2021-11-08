@@ -45,7 +45,7 @@ public class TomcatController implements ResourceController<Tomcat> {
     SharedIndexInformer<Deployment> deploymentInformer =
         kubernetesClient.apps().deployments().inAnyNamespace()
             .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
-            .inform();
+            .runnableInformer(0);
 
     this.informerEventSource = new InformerEventSource<>(deploymentInformer, d -> {
       var ownerReferences = d.getMetadata().getOwnerReferences();
