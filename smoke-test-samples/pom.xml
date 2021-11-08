@@ -9,9 +9,9 @@
         <version>1.9.12-SNAPSHOT</version>
     </parent>
 
-    <artifactId>java-operator-sdk-samples</artifactId>
-    <name>Operator SDK - Samples</name>
-    <description>Sample usage of the operator sdk</description>
+    <artifactId>java-operator-sdk-smoke-test-samples</artifactId>
+    <name>Operator SDK - Smoke Test Samples</name>
+    <description>Samples to manually smoke the sdk</description>
     <packaging>pom</packaging>
 
     <modules>
