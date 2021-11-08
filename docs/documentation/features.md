@@ -57,7 +57,7 @@ annotation for more details.
 
 ### When not to Use Finalizers?
 
-Typically, automated finalizer handling should be turned off, when **all** the cleanup of the dependent resources is
+Typically, automated finalizer handling should be turned off, in case **all** the cleanup of the dependent resources is
 handled by Kubernetes itself. This is handled by
 Kubernetes [garbage collection](https://kubernetes.io/docs/concepts/architecture/garbage-collection/#owners-dependents).
 Setting the owner reference and related fields are not in the scope of the SDK for now, it's up to the user to have them
@@ -67,7 +67,43 @@ When automatic finalizer handling is turned off, the `ResourceController.deleteR
 case of a delete event received. So it does not make sense to implement this method and turn off finalizer at the same
 time.
 
-## Separating `createOrUpdate` from `delete`
+## The `createOrUpdateResource` and `deleteResource` Methods of `ResourceController`
+
+The lifecycle of a custom resource can be clearly separated to two phases from a perspective of an operator. 
+When a custom resource is created or update, or on the other hand when the custom resource is deleted - or rater 
+marked for deletion in case a finalizer is used. 
+
+There is no point to make a distinction between create and update, since the reconciliation 
+logic typically would be very similar or identical in most of the cases. 
+
+This separation related logic is automatically handled by framework. The framework will always call `createOrUpdateResource`
+function, unless the custom resource is 
+[marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work). 
+From the point when the custom resource is marked from deletion, only the `deleteResource` method is called. 
+
+If there is **no finalizer** in place (see Finalizer Support section), the `deleteResource` method is **not called**.
+
+### Using `UpdateControl` and `DeleteControl`
+
+These two methods are used to control the outcome or the desired behavior after the reconciliation. 
+
+The `UpdateControl` can instruct the framework to update the custom resource status sub-resource and/or re-schedule 
+a reconciliation with a desired time delay. Those are the typical use cases, however in some cases there it can happen
+that the controller wants to update the custom resource itself (like adding annotations) or not to do any updates, 
+which are also supported.
+
+It is also possible to update both the status and the custom resource with `updateCustomResourceAndStatus` method. 
+In this case first the custom resource is updated then the status in two separate requests to K8S API.
+
+Always update the custom resource with `UpdateControl`, not with the actual kubernetes client if possible.
+
+The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent resource are 
+cleaned up in `deleteResource` implementation. 
+
+However, there is a possibility to not remove the finalizer, this 
+allows to clean up the resources in a more async way, mostly for the cases when there is a long waiting period after a delete 
+operation is initiated. Note that in this case you might want to either schedule a timed event to make sure the 
+`deleteResource` is executed again or use event sources get notified about the state changes of a deleted resource. 
 
 ## Automatic Retries on Error
 
