@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class EventSourceTestCustomReconciler
-    implements Reconciler<EventSourceTestCustomResource>, EventSourceInitializer,
+    implements Reconciler<EventSourceTestCustomResource>,
     TestExecutionInfoProvider {
 
   public static final String FINALIZER_NAME =
@@ -20,13 +20,6 @@ public class EventSourceTestCustomReconciler
           CustomResource.getCRDName(EventSourceTestCustomResource.class));
   public static final int TIMER_PERIOD = 500;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private final TimerEventSource<EventSourceTestCustomResource> timerEventSource =
-      new TimerEventSource<>();
-
-  @Override
-  public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {
-    eventSourceRegistry.registerEventSource(timerEventSource);
-  }
 
   @Override
   public UpdateControl<EventSourceTestCustomResource> reconcile(
