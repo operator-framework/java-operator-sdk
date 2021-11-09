@@ -89,7 +89,6 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
             });
       }
     } catch (Exception e) {
-      // todo double check this if still applies for informers
       if (e instanceof KubernetesClientException) {
         KubernetesClientException ke = (KubernetesClientException) e;
         if (404 == ke.getCode()) {
