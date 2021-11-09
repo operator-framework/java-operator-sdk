@@ -21,7 +21,7 @@ public class EventSourceIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(EventSourceTestCustomReconciler.class)
+          .withReconciler(EventSourceTestCustomReconciler.class)
           .build();
 
   @Test

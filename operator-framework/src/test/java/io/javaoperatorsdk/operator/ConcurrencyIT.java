@@ -30,7 +30,7 @@ public class ConcurrencyIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(new TestReconciler(true))
+          .withReconciler(new TestReconciler(true))
           .build();
 
   @Test

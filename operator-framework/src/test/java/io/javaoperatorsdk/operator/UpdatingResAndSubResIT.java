@@ -22,7 +22,7 @@ public class UpdatingResAndSubResIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(DoubleUpdateTestCustomReconciler.class)
+          .withReconciler(DoubleUpdateTestCustomReconciler.class)
           .build();
 
   @Test

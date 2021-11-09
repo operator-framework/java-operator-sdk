@@ -24,7 +24,7 @@ public class SubResourceUpdateIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(SubResourceTestCustomReconciler.class)
+          .withReconciler(SubResourceTestCustomReconciler.class)
           .build();
 
   @Test

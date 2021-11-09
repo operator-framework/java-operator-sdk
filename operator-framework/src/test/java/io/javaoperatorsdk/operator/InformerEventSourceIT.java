@@ -28,7 +28,7 @@ public class InformerEventSourceIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(new InformerEventSourceTestCustomReconciler())
+          .withReconciler(new InformerEventSourceTestCustomReconciler())
           .build();
 
   @Test

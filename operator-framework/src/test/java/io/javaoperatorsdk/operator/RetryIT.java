@@ -25,7 +25,7 @@ public class RetryIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(
+          .withReconciler(
               new RetryTestCustomReconciler(),
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
                   .setMaxAttempts(5))

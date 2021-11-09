@@ -243,19 +243,19 @@ public class OperatorExtension
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(Reconciler value) {
+    public Builder withReconciler(Reconciler value) {
       controllers.add(new ControllerSpec(value, null));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(Reconciler value, Retry retry) {
+    public Builder withReconciler(Reconciler value, Retry retry) {
       controllers.add(new ControllerSpec(value, retry));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(Class<? extends Reconciler> value) {
+    public Builder withReconciler(Class<? extends Reconciler> value) {
       try {
         controllers.add(new ControllerSpec(value.getConstructor().newInstance(), null));
       } catch (Exception e) {
