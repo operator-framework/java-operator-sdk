@@ -6,8 +6,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
