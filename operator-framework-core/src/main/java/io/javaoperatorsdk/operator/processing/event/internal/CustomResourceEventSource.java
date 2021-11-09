@@ -95,7 +95,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
           // only throw MissingCRDException if the 404 error occurs on the target CRD
           final var targetCRDName = controller.getConfiguration().getCRDName();
           if (targetCRDName.equals(ke.getFullResourceName())) {
-            throw new MissingCRDException(targetCRDName, null);
+            throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
           }
         }
       }
