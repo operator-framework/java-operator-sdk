@@ -59,7 +59,7 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
   public void start() throws OperatorException {
     lock.lock();
     try {
-      log.debug("Closing event sources.");
+      log.debug("Starting event sources.");
       for (var eventSource : eventSources) {
         try {
           eventSource.start();

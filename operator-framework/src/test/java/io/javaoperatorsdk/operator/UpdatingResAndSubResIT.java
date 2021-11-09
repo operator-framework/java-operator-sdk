@@ -73,7 +73,6 @@ public class UpdatingResAndSubResIT {
   public DoubleUpdateTestCustomResource createTestCustomResource(String id) {
     DoubleUpdateTestCustomResource resource = new DoubleUpdateTestCustomResource();
     resource.setMetadata(new ObjectMetaBuilder().withName("doubleupdateresource-" + id).build());
-    resource.setKind("DoubleUpdateSample");
     resource.setSpec(new DoubleUpdateTestCustomResourceSpec());
     resource.getSpec().setValue(id);
     return resource;
