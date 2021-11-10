@@ -167,8 +167,10 @@ public class OperatorExtension
 
       try (InputStream is = getClass().getResourceAsStream(path)) {
         kubernetesClient.load(is).createOrReplace();
-        // this fixes an issue with CRD registration, integration tests were failing, since the CRD was not found yet
-        // when the operator started. This seems to be fixing this issue (maybe a problem with minikube?)
+        // this fixes an issue with CRD registration, integration tests were failing, since the CRD
+        // was not found yet
+        // when the operator started. This seems to be fixing this issue (maybe a problem with
+        // minikube?)
         Thread.sleep(2000);
         LOGGER.debug("Applied CRD with name: {}", config.getCRDName());
       } catch (Exception ex) {
