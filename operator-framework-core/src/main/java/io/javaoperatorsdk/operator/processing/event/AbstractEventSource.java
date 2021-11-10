@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 public abstract class AbstractEventSource implements EventSource {
 
-  protected EventHandler eventHandler;
+  protected volatile EventHandler eventHandler;
 
   @Override
   public void setEventHandler(EventHandler eventHandler) {
