@@ -97,6 +97,9 @@ In this case first the custom resource is updated then the status in two separat
 
 Always update the custom resource with `UpdateControl`, not with the actual kubernetes client if possible.
 
+On custom resource updates there is always an optimistic version control in place, to make sure that another update is
+not overwritten (by setting `resourceVersion` ) . 
+
 The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent resource are 
 cleaned up in `deleteResource` implementation. 
 
@@ -138,7 +141,6 @@ In simple operators one way to implement an operator is to periodically reconcil
 This would schedule a reconciliation to the future.
 
 ## Retry and Re-Scheduling Common Behavior
-
 
 
 ## Handling Related Events with Event Sources
