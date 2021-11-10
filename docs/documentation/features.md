@@ -110,27 +110,27 @@ operation is initiated. Note that in this case you might want to either schedule
 
 ## Automatic Retries on Error
 
-When an exception is thrown from the controller, the framework will do an automatic retry of the reconciliation.
+When an exception is thrown from a controller, the framework will schedule an automatic retry of the reconciliation.
 The retry is behavior is configurable, an implementation is provided that should cover most of the use-cases, see 
 [GenericRetry](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/retry/GenericRetry.java)
 But it is possible to provide a custom implementation.
 
 It is possible to set a limit on the number of retries. In the [Context](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Context.java)
 object information is provided about the retry, particularly interesting is the `isLastAttempt`, since a behavior
-could be implemented in case this is the last attempt, like setting an error message into status of the resource. 
+could be implemented bases on this flag. Like setting an error message in the status in case of a last attempt; 
 
 Event if the retry reached a limit, in case of a new event is received the reconciliation would happen again, it's 
 just won't be a result of a retry, but the new event. 
 
 A successful execution resets the retry.
 
-### Correctness and automatic retry
+### Correctness and Automatic Retries
 
-There is a possibility to turn of the automatic retries. This is not desirable, unless there some very specific
-reason. Errors naturally happen, typically network errors can cause some temporal issues, but 
-another case is when a custom resource is updated during the reconciliation (using `kubectl` for example), in this case
+There is a possibility to turn of the automatic retries. This is not desirable, unless there is a very specific
+reason. Errors naturally happen, typically network errors can cause some temporal issues, another case is when a 
+custom resource is updated during the reconciliation (using `kubectl` for example), in this case
 if an update of the custom resource from the controller (using `UpdateControl`) would fail on a conflict. The automatic
-retries covers these cases and will result in a reconciliation. Even if normally an event would not be processed 
+retries covers these cases and will result in a reconciliation, even if normally an event would not be processed 
 as a result of a custom resource update from previous example (like if there is no generation update as a result of the 
 change and generation filtering is turned on) 
 
@@ -141,7 +141,6 @@ In simple operators one way to implement an operator is to periodically reconcil
 This would schedule a reconciliation to the future.
 
 ## Retry and Re-Scheduling Common Behavior
-
 
 ## Handling Related Events with Event Sources
 
