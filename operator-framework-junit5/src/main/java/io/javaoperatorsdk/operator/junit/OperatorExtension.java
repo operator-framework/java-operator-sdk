@@ -167,6 +167,7 @@ public class OperatorExtension
 
       try (InputStream is = getClass().getResourceAsStream(path)) {
         kubernetesClient.load(is).createOrReplace();
+        Thread.sleep(2000);
         LOGGER.debug("Applied CRD with name: {}", config.getCRDName());
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
