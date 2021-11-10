@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -32,7 +32,7 @@ class CustomResourceEventSourceTest {
   EventHandler eventHandler = mock(EventHandler.class);
 
   private CustomResourceEventSource<TestCustomResource> customResourceEventSource =
-      new CustomResourceEventSource<>(new TestConfiguredController(true));
+      new CustomResourceEventSource<>(new TestController(true));
 
   @BeforeEach
   public void setup() {
@@ -89,7 +89,7 @@ class CustomResourceEventSourceTest {
   @Test
   public void handlesAllEventIfNotGenerationAware() {
     customResourceEventSource =
-        new CustomResourceEventSource<>(new TestConfiguredController(false));
+        new CustomResourceEventSource<>(new TestController(false));
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
@@ -136,9 +136,9 @@ class CustomResourceEventSourceTest {
     verify(eventHandler, times(0)).handleEvent(any());
   }
 
-  private static class TestConfiguredController extends ConfiguredController<TestCustomResource> {
+  private static class TestController extends Controller<TestCustomResource> {
 
-    public TestConfiguredController(boolean generationAware) {
+    public TestController(boolean generationAware) {
       super(null, new TestConfiguration(generationAware), null);
     }
 

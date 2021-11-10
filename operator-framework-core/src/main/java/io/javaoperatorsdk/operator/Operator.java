@@ -14,11 +14,11 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.processing.Controller;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable, LifecycleAware {
@@ -49,7 +49,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
     return configurationService;
   }
 
-  public List<ConfiguredController> getControllers() {
+  public List<Controller> getControllers() {
     return new ArrayList<>(controllers.controllers.values());
   }
 
@@ -114,7 +114,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource<?, ?>> void register(ResourceController<R> controller)
+  public <R extends CustomResource<?, ?>> void register(Reconciler<R> controller)
       throws OperatorException {
     register(controller, null);
   }
@@ -126,29 +126,29 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * passing it the controller's original configuration. The effective registration of the
    * controller is delayed till the operator is started.
    *
-   * @param controller the controller to register
+   * @param reconciler part of the controller to register
    * @param configuration the configuration with which we want to register the controller, if {@code
    *     null}, the controller's original configuration is used
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends CustomResource<?, ?>> void register(
-      ResourceController<R> controller, ControllerConfiguration<R> configuration)
+      Reconciler<R> reconciler, ControllerConfiguration<R> configuration)
       throws OperatorException {
-    final var existing = configurationService.getConfigurationFor(controller);
+    final var existing = configurationService.getConfigurationFor(reconciler);
     if (existing == null) {
       throw new OperatorException(
-          "Cannot register controller with name " + controller.getClass().getCanonicalName() +
-              " controller named " + ControllerUtils.getNameFor(controller)
+          "Cannot register controller with name " + reconciler.getClass().getCanonicalName() +
+              " controller named " + ControllerUtils.getNameFor(reconciler)
               + " because its configuration cannot be found.\n" +
               " Known controllers are: " + configurationService.getKnownControllerNames());
     } else {
       if (configuration == null) {
         configuration = existing;
       }
-      final var configuredController =
-          new ConfiguredController<>(controller, configuration, kubernetesClient);
-      controllers.add(configuredController);
+      final var controller =
+          new Controller<>(reconciler, configuration, kubernetesClient);
+      controllers.add(controller);
 
       final var watchedNS =
           configuration.watchAllNamespaces()
@@ -163,7 +163,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
   }
 
   static class ControllerManager implements LifecycleAware {
-    private final Map<String, ConfiguredController> controllers = new HashMap<>();
+    private final Map<String, Controller> controllers = new HashMap<>();
     private boolean started = false;
 
     public synchronized void shouldStart() {
@@ -176,7 +176,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
     }
 
     public synchronized void start() {
-      controllers.values().parallelStream().forEach(ConfiguredController::start);
+      controllers.values().parallelStream().forEach(Controller::start);
       started = true;
     }
 
@@ -193,8 +193,8 @@ public class Operator implements AutoCloseable, LifecycleAware {
       started = false;
     }
 
-    public synchronized void add(ConfiguredController configuredController) {
-      final var configuration = configuredController.getConfiguration();
+    public synchronized void add(Controller controller) {
+      final var configuration = controller.getConfiguration();
       final var crdName = configuration.getCRDName();
       final var existing = controllers.get(crdName);
       if (existing != null) {
@@ -202,9 +202,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
             + "': another controller named '" + existing.getConfiguration().getName()
             + "' is already registered for CRD '" + crdName + "'");
       }
-      this.controllers.put(crdName, configuredController);
+      this.controllers.put(crdName, controller);
       if (started) {
-        configuredController.start();
+        controller.start();
       }
     }
   }

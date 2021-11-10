@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
 public class ExecutionScope<R extends CustomResource<?, ?>> {

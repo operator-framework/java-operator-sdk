@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
-import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResourceStatus;
 import io.javaoperatorsdk.operator.support.TestUtils;
@@ -25,8 +25,8 @@ public class RetryIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(
-              new RetryTestCustomResourceController(),
+          .withReconciler(
+              new RetryTestCustomReconciler(),
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
                   .setMaxAttempts(5))
           .build();
@@ -40,7 +40,7 @@ public class RetryIT {
 
     await("cr status updated")
         .pollDelay(
-            RETRY_INTERVAL * (RetryTestCustomResourceController.NUMBER_FAILED_EXECUTIONS + 2),
+            RETRY_INTERVAL * (RetryTestCustomReconciler.NUMBER_FAILED_EXECUTIONS + 2),
             TimeUnit.MILLISECONDS)
         .pollInterval(
             RETRY_INTERVAL,
@@ -49,7 +49,7 @@ public class RetryIT {
         .untilAsserted(() -> {
           assertThat(
               TestUtils.getNumberOfExecutions(operator))
-                  .isEqualTo(RetryTestCustomResourceController.NUMBER_FAILED_EXECUTIONS + 1);
+                  .isEqualTo(RetryTestCustomReconciler.NUMBER_FAILED_EXECUTIONS + 1);
 
           RetryTestCustomResource finalResource =
               operator.get(RetryTestCustomResource.class,
@@ -64,7 +64,7 @@ public class RetryIT {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("retrysource-" + id)
-            .withFinalizers(RetryTestCustomResourceController.FINALIZER_NAME)
+            .withFinalizers(RetryTestCustomReconciler.FINALIZER_NAME)
             .build());
     resource.setKind("retrysample");
     resource.setSpec(new RetryTestCustomResourceSpec());

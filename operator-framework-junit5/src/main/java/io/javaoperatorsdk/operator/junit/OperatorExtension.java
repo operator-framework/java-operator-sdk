@@ -26,11 +26,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override;
@@ -106,16 +106,16 @@ public class OperatorExtension
   }
 
   @SuppressWarnings({"rawtypes"})
-  public List<ResourceController> getControllers() {
+  public List<Reconciler> getControllers() {
     return operator.getControllers().stream()
-        .map(ConfiguredController::getController)
+        .map(Controller::getReconciler)
         .collect(Collectors.toUnmodifiableList());
   }
 
   @SuppressWarnings({"rawtypes"})
-  public <T extends ResourceController> T getControllerOfType(Class<T> type) {
+  public <T extends Reconciler> T getControllerOfType(Class<T> type) {
     return operator.getControllers().stream()
-        .map(ConfiguredController::getController)
+        .map(Controller::getReconciler)
         .filter(type::isInstance)
         .map(type::cast)
         .findFirst()
@@ -167,6 +167,12 @@ public class OperatorExtension
 
       try (InputStream is = getClass().getResourceAsStream(path)) {
         kubernetesClient.load(is).createOrReplace();
+        // this fixes an issue with CRD registration, integration tests were failing, since the CRD
+        // was not found yet
+        // when the operator started. This seems to be fixing this issue (maybe a problem with
+        // minikube?)
+        Thread.sleep(2000);
+        LOGGER.debug("Applied CRD with name: {}", config.getCRDName());
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
       }
@@ -242,19 +248,19 @@ public class OperatorExtension
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(ResourceController value) {
+    public Builder withReconciler(Reconciler value) {
       controllers.add(new ControllerSpec(value, null));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(ResourceController value, Retry retry) {
+    public Builder withReconciler(Reconciler value, Retry retry) {
       controllers.add(new ControllerSpec(value, retry));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
-    public Builder withController(Class<? extends ResourceController> value) {
+    public Builder withReconciler(Class<? extends Reconciler> value) {
       try {
         controllers.add(new ControllerSpec(value.getConstructor().newInstance(), null));
       } catch (Exception e) {
@@ -274,11 +280,11 @@ public class OperatorExtension
 
   @SuppressWarnings("rawtypes")
   private static class ControllerSpec {
-    final ResourceController controller;
+    final Reconciler controller;
     final Retry retry;
 
     public ControllerSpec(
-        ResourceController controller,
+        Reconciler controller,
         Retry retry) {
       this.controller = controller;
       this.retry = retry;

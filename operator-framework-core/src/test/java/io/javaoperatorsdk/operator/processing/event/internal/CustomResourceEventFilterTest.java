@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -45,7 +45,7 @@ class CustomResourceEventFilterTest {
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
 
-    var controller = new TestConfiguredController(config);
+    var controller = new TestController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
@@ -73,7 +73,7 @@ class CustomResourceEventFilterTest {
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
 
-    var controller = new TestConfiguredController(config);
+    var controller = new TestController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
@@ -103,7 +103,7 @@ class CustomResourceEventFilterTest {
     when(config.getConfigurationService().getResourceCloner())
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
-    var controller = new ObservedGenConfiguredController(config);
+    var controller = new ObservedGenController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
@@ -134,7 +134,7 @@ class CustomResourceEventFilterTest {
     when(config.getConfigurationService().getResourceCloner())
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
-    var controller = new TestConfiguredController(config);
+    var controller = new TestController(config);
     var eventSource = new CustomResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
@@ -189,9 +189,9 @@ class CustomResourceEventFilterTest {
     }
   }
 
-  private static class TestConfiguredController extends ConfiguredController<TestCustomResource> {
+  private static class TestController extends Controller<TestCustomResource> {
 
-    public TestConfiguredController(ControllerConfiguration<TestCustomResource> configuration) {
+    public TestController(ControllerConfiguration<TestCustomResource> configuration) {
       super(null, configuration, null);
     }
 
@@ -201,10 +201,10 @@ class CustomResourceEventFilterTest {
     }
   }
 
-  private static class ObservedGenConfiguredController
-      extends ConfiguredController<ObservedGenCustomResource> {
+  private static class ObservedGenController
+      extends Controller<ObservedGenCustomResource> {
 
-    public ObservedGenConfiguredController(
+    public ObservedGenController(
         ControllerConfiguration<ObservedGenCustomResource> configuration) {
       super(null, configuration, null);
     }

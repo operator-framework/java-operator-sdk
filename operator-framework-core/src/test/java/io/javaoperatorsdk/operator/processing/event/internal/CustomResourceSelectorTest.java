@@ -22,13 +22,12 @@ import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,7 +120,7 @@ public class CustomResourceSelectorTest {
           NAMESPACE));
 
       await()
-          .atMost(325, TimeUnit.SECONDS)
+          .atMost(5, TimeUnit.SECONDS)
           .pollInterval(100, TimeUnit.MILLISECONDS)
           .until(() -> c1.get() == 1 && c1err.get() == 0);
       await()
@@ -145,7 +144,9 @@ public class CustomResourceSelectorTest {
     return resource;
   }
 
-  public static class MyConfiguration implements ControllerConfiguration<TestCustomResource> {
+  public static class MyConfiguration
+      implements
+      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<TestCustomResource> {
 
     private final String labelSelector;
     private final ConfigurationService service;
@@ -161,7 +162,7 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
-    public String getAssociatedControllerClassName() {
+    public String getAssociatedReconcilerClassName() {
       return MyController.class.getCanonicalName();
     }
 
@@ -176,8 +177,8 @@ public class CustomResourceSelectorTest {
     }
   }
 
-  @Controller(namespaces = NAMESPACE)
-  public static class MyController implements ResourceController<TestCustomResource> {
+  @ControllerConfiguration(namespaces = NAMESPACE)
+  public static class MyController implements Reconciler<TestCustomResource> {
 
     private final Consumer<TestCustomResource> consumer;
 
@@ -186,7 +187,7 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomResource> reconcile(
         TestCustomResource resource, Context context) {
 
       LOGGER.info("Received event on: {}", resource);

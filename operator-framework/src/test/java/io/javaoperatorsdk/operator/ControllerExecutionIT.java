@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceController;
+import io.javaoperatorsdk.operator.sample.simple.TestReconciler;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,12 +20,12 @@ public class ControllerExecutionIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(new TestCustomResourceController(true))
+          .withReconciler(new TestReconciler(true))
           .build();
 
   @Test
   public void configMapGetsCreatedForTestCustomResource() {
-    operator.getControllerOfType(TestCustomResourceController.class).setUpdateStatus(true);
+    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
     operator.create(TestCustomResource.class, resource);
@@ -37,7 +37,7 @@ public class ControllerExecutionIT {
 
   @Test
   public void eventIsSkippedChangedOnMetadataOnlyUpdate() {
-    operator.getControllerOfType(TestCustomResourceController.class).setUpdateStatus(false);
+    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(false);
 
     TestCustomResource resource = TestUtils.testCustomResource();
     operator.create(TestCustomResource.class, resource);

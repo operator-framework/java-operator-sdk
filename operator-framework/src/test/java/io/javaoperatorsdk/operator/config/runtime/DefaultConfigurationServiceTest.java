@@ -12,10 +12,10 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -74,10 +74,11 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   public void returnsValuesFromControllerAnnotationFinalizer() {
-    final var controller = new TestCustomResourceController();
+    final var reconciler = new TestCustomReconciler();
     final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(controller);
-    assertEquals(CustomResource.getCRDName(TestCustomResource.class), configuration.getCRDName());
+        DefaultConfigurationService.instance().getConfigurationFor(reconciler);
+    assertEquals(CustomResource.getCRDName(TestCustomResource.class),
+        configuration.getCRDName());
     assertEquals(
         ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
         configuration.getFinalizer());
@@ -87,29 +88,29 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   public void returnCustomerFinalizerNameIfSet() {
-    final var controller = new TestCustomFinalizerController();
+    final var reconciler = new TestCustomFinalizerReconciler();
     final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(controller);
+        DefaultConfigurationService.instance().getConfigurationFor(reconciler);
     assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizer());
   }
 
   @Test
   public void supportsInnerClassCustomResources() {
-    final var controller = new TestCustomFinalizerController();
+    final var controller = new TestCustomFinalizerReconciler();
     assertDoesNotThrow(
         () -> {
           DefaultConfigurationService.instance()
               .getConfigurationFor(controller)
-              .getAssociatedControllerClassName();
+              .getAssociatedReconcilerClassName();
         });
   }
 
-  @Controller(finalizerName = CUSTOM_FINALIZER_NAME)
-  static class TestCustomFinalizerController
-      implements ResourceController<TestCustomFinalizerController.InnerCustomResource> {
+  @ControllerConfiguration(finalizerName = CUSTOM_FINALIZER_NAME)
+  static class TestCustomFinalizerReconciler
+      implements Reconciler<TestCustomFinalizerReconciler.InnerCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomFinalizerController.InnerCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomFinalizerReconciler.InnerCustomResource> reconcile(
         InnerCustomResource resource, Context context) {
       return null;
     }
@@ -120,23 +121,23 @@ public class DefaultConfigurationServiceTest {
     }
   }
 
-  @Controller(name = NotAutomaticallyCreated.NAME)
-  static class NotAutomaticallyCreated implements ResourceController<TestCustomResource> {
+  @ControllerConfiguration(name = NotAutomaticallyCreated.NAME)
+  static class NotAutomaticallyCreated implements Reconciler<TestCustomResource> {
 
     public static final String NAME = "should-be-logged";
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomResource> reconcile(
         TestCustomResource resource, Context context) {
       return null;
     }
   }
 
-  @Controller(generationAwareEventProcessing = false, name = "test")
-  static class TestCustomResourceController implements ResourceController<TestCustomResource> {
+  @ControllerConfiguration(generationAwareEventProcessing = false, name = "test")
+  static class TestCustomReconciler implements Reconciler<TestCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomResource> createOrUpdateResource(
+    public UpdateControl<TestCustomResource> reconcile(
         TestCustomResource resource, Context context) {
       return null;
     }

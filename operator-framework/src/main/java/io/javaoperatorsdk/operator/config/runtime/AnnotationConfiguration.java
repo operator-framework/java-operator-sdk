@@ -5,28 +5,27 @@ import java.util.function.Function;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
 public class AnnotationConfiguration<R extends CustomResource<?, ?>>
-    implements ControllerConfiguration<R> {
+    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
-  private final ResourceController<R> controller;
-  private final Controller annotation;
+  private final Reconciler<R> reconciler;
+  private final ControllerConfiguration annotation;
   private ConfigurationService service;
 
-  public AnnotationConfiguration(ResourceController<R> controller) {
-    this.controller = controller;
-    this.annotation = controller.getClass().getAnnotation(Controller.class);
+  public AnnotationConfiguration(Reconciler<R> reconciler) {
+    this.reconciler = reconciler;
+    this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
   }
 
   @Override
   public String getName() {
-    return ControllerUtils.getNameFor(controller);
+    return ControllerUtils.getNameFor(reconciler);
   }
 
   @Override
@@ -40,22 +39,23 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
 
   @Override
   public boolean isGenerationAware() {
-    return valueOrDefault(annotation, Controller::generationAwareEventProcessing, true);
+    return valueOrDefault(annotation, ControllerConfiguration::generationAwareEventProcessing,
+        true);
   }
 
   @Override
   public Class<R> getCustomResourceClass() {
-    return RuntimeControllerMetadata.getCustomResourceClass(controller);
+    return RuntimeControllerMetadata.getCustomResourceClass(reconciler);
   }
 
   @Override
   public Set<String> getNamespaces() {
-    return Set.of(valueOrDefault(annotation, Controller::namespaces, new String[] {}));
+    return Set.of(valueOrDefault(annotation, ControllerConfiguration::namespaces, new String[] {}));
   }
 
   @Override
   public String getLabelSelector() {
-    return valueOrDefault(annotation, Controller::labelSelector, "");
+    return valueOrDefault(annotation, ControllerConfiguration::labelSelector, "");
   }
 
   @Override
@@ -69,8 +69,8 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public String getAssociatedControllerClassName() {
-    return controller.getClass().getCanonicalName();
+  public String getAssociatedReconcilerClassName() {
+    return reconciler.getClass().getCanonicalName();
   }
 
   @SuppressWarnings("unchecked")
@@ -79,7 +79,8 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
     CustomResourceEventFilter<R> answer = null;
 
     Class<CustomResourceEventFilter<R>>[] filterTypes =
-        (Class<CustomResourceEventFilter<R>>[]) valueOrDefault(annotation, Controller::eventFilters,
+        (Class<CustomResourceEventFilter<R>>[]) valueOrDefault(annotation,
+            ControllerConfiguration::eventFilters,
             new Object[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
@@ -101,12 +102,13 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
         : CustomResourceEventFilters.passthrough();
   }
 
-  public static <T> T valueOrDefault(Controller controller, Function<Controller, T> mapper,
+  public static <T> T valueOrDefault(ControllerConfiguration controllerConfiguration,
+      Function<ControllerConfiguration, T> mapper,
       T defaultValue) {
-    if (controller == null) {
+    if (controllerConfiguration == null) {
       return defaultValue;
     } else {
-      return mapper.apply(controller);
+      return mapper.apply(controllerConfiguration);
     }
   }
 }

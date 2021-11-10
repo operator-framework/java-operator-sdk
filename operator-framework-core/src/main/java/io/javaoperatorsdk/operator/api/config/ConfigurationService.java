@@ -6,8 +6,8 @@ import java.util.concurrent.Executors;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,7 +37,7 @@ public interface ConfigurationService {
    * null} if no configuration exists for the controller
    */
   <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-      ResourceController<R> controller);
+      Reconciler<R> controller);
 
   /**
    * Retrieves the Kubernetes client configuration

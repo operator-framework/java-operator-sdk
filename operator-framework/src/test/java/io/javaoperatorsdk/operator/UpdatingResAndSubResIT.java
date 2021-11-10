@@ -8,8 +8,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResource;
-import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceStatus;
 import io.javaoperatorsdk.operator.support.TestUtils;
@@ -22,7 +22,7 @@ public class UpdatingResAndSubResIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(DoubleUpdateTestCustomResourceController.class)
+          .withReconciler(DoubleUpdateTestCustomReconciler.class)
           .build();
 
   @Test
@@ -47,7 +47,7 @@ public class UpdatingResAndSubResIT {
         customResource
             .getMetadata()
             .getAnnotations()
-            .get(DoubleUpdateTestCustomResourceController.TEST_ANNOTATION))
+            .get(DoubleUpdateTestCustomReconciler.TEST_ANNOTATION))
                 .isNotNull();
   }
 
@@ -73,7 +73,6 @@ public class UpdatingResAndSubResIT {
   public DoubleUpdateTestCustomResource createTestCustomResource(String id) {
     DoubleUpdateTestCustomResource resource = new DoubleUpdateTestCustomResource();
     resource.setMetadata(new ObjectMetaBuilder().withName("doubleupdateresource-" + id).build());
-    resource.setKind("DoubleUpdateSample");
     resource.setSpec(new DoubleUpdateTestCustomResourceSpec());
     resource.getSpec().setValue(id);
     return resource;

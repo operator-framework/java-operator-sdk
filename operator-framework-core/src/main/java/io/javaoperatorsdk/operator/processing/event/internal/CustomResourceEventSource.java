@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
@@ -35,7 +35,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
 
-  private final ConfiguredController<T> controller;
+  private final Controller<T> controller;
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
 
@@ -43,7 +43,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final Cloner cloner;
 
-  public CustomResourceEventSource(ConfiguredController<T> controller) {
+  public CustomResourceEventSource(Controller<T> controller) {
     this.controller = controller;
     this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
 
@@ -89,14 +89,13 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
             });
       }
     } catch (Exception e) {
-      // todo double check this if still applies for informers
       if (e instanceof KubernetesClientException) {
         KubernetesClientException ke = (KubernetesClientException) e;
         if (404 == ke.getCode()) {
           // only throw MissingCRDException if the 404 error occurs on the target CRD
           final var targetCRDName = controller.getConfiguration().getCRDName();
           if (targetCRDName.equals(ke.getFullResourceName())) {
-            throw new MissingCRDException(targetCRDName, null);
+            throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
           }
         }
       }

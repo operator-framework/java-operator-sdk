@@ -45,14 +45,14 @@ Finalizers are automatically added by the framework as the first step, thus when
 before the first reconciliation, the custom resource is updated via a Kubernetes API call. As a result of this update, the
 finalizer will be present. The subsequent event will be received, which will trigger the first reconciliation.
 
-The finalizer that is automatically added will be also removed after the `deleteResource` is executed on the controller.
+The finalizer that is automatically added will be also removed after the `deleteResource` is executed on the controllerConfiguration.
 However, the removal behavior can be further customized, and can be instructed to "not remove yet" - this is useful just
 in some specific corner cases, when there would be a long waiting period for some dependent resource cleanup.
 
 The name of the finalizers can be specified, in case it is not, a name will be generated.
 
 This behavior can be turned off, so when configured no finalizer will be added or removed.  
-See [`@Controller`](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Controller.java)
+See [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ControllerConfiguration.java)
 annotation for more details.
 
 ### When not to Use Finalizers?

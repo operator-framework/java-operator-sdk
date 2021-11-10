@@ -6,14 +6,13 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
 public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
 
   default String getName() {
-    return ControllerUtils.getDefaultResourceControllerName(getAssociatedControllerClassName());
+    return ControllerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
 
   default String getCRDName() {
@@ -45,7 +44,7 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
     return (Class<R>) type.getActualTypeArguments()[0];
   }
 
-  String getAssociatedControllerClassName();
+  String getAssociatedReconcilerClassName();
 
   default Set<String> getNamespaces() {
     return Collections.emptySet();
@@ -66,7 +65,8 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     return namespaces != null
         && namespaces.size() == 1
-        && namespaces.contains(Controller.WATCH_CURRENT_NAMESPACE);
+        && namespaces.contains(
+            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.WATCH_CURRENT_NAMESPACE);
   }
 
   /**
@@ -98,7 +98,8 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
   default void setConfigurationService(ConfigurationService service) {}
 
   default boolean useFinalizer() {
-    return !Controller.NO_FINALIZER.equals(getFinalizer());
+    return !io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER
+        .equals(getFinalizer());
   }
 
   /**

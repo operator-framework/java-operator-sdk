@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 /**
  * If the custom resource's status implements this interface, the observed generation will be

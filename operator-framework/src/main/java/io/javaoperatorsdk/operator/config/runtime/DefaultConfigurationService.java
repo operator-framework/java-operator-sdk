@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 public class DefaultConfigurationService extends BaseConfigurationService {
 
@@ -20,27 +20,27 @@ public class DefaultConfigurationService extends BaseConfigurationService {
 
   @Override
   public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-      ResourceController<R> controller) {
-    return getConfigurationFor(controller, true);
+      Reconciler<R> reconciler) {
+    return getConfigurationFor(reconciler, true);
   }
 
   <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-      ResourceController<R> controller, boolean createIfNeeded) {
-    var config = super.getConfigurationFor(controller);
+      Reconciler<R> reconciler, boolean createIfNeeded) {
+    var config = super.getConfigurationFor(reconciler);
     if (config == null) {
       if (createIfNeeded) {
         // create the configuration on demand and register it
-        config = new AnnotationConfiguration<>(controller);
+        config = new AnnotationConfiguration<>(reconciler);
         register(config);
         getLogger().info(
             "Created configuration for controller {} with name {}",
-            controller.getClass().getName(),
+            reconciler.getClass().getName(),
             config.getName());
       }
     } else {
       // check that we don't have a controller name collision
-      final var newControllerClassName = controller.getClass().getCanonicalName();
-      if (!config.getAssociatedControllerClassName().equals(newControllerClassName)) {
+      final var newControllerClassName = reconciler.getClass().getCanonicalName();
+      if (!config.getAssociatedReconcilerClassName().equals(newControllerClassName)) {
         throwExceptionOnNameCollision(newControllerClassName, config);
       }
     }

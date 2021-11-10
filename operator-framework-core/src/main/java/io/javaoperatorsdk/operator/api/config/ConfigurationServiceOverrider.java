@@ -4,8 +4,8 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
@@ -62,7 +62,7 @@ public class ConfigurationServiceOverrider {
     return new ConfigurationService() {
       @Override
       public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
-          ResourceController<R> controller) {
+          Reconciler<R> controller) {
         return original.getConfigurationFor(controller);
       }
 

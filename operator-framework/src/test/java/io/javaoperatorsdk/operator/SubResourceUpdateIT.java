@@ -9,8 +9,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
-import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceController;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
@@ -24,7 +24,7 @@ public class SubResourceUpdateIT {
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withController(SubResourceTestCustomResourceController.class)
+          .withReconciler(SubResourceTestCustomReconciler.class)
           .build();
 
   @Test
@@ -113,7 +113,7 @@ public class SubResourceUpdateIT {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("subresource-" + id)
-            .withFinalizers(SubResourceTestCustomResourceController.FINALIZER_NAME)
+            .withFinalizers(SubResourceTestCustomReconciler.FINALIZER_NAME)
             .build());
     resource.setKind("SubresourceSample");
     resource.setSpec(new SubResourceTestCustomResourceSpec());
