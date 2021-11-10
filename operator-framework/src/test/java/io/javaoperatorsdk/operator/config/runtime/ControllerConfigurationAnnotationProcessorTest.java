@@ -7,13 +7,13 @@ import com.google.testing.compile.CompilationSubject;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 
-class ControllerAnnotationProcessorTest {
+class ControllerConfigurationAnnotationProcessorTest {
 
   @Test
   public void generateCorrectDoneableClassIfInterfaceIsSecond() {
     Compilation compilation =
         Compiler.javac()
-            .withProcessors(new ControllerAnnotationProcessor())
+            .withProcessors(new ControllerConfigurationAnnotationProcessor())
             .compile(
                 JavaFileObjects.forResource(
                     "compile-fixtures/ReconcilerImplemented2Interfaces.java"));
@@ -24,7 +24,7 @@ class ControllerAnnotationProcessorTest {
   public void generateCorrectDoneableClassIfThereIsAbstractBaseController() {
     Compilation compilation =
         Compiler.javac()
-            .withProcessors(new ControllerAnnotationProcessor())
+            .withProcessors(new ControllerConfigurationAnnotationProcessor())
             .compile(
                 JavaFileObjects.forResource("compile-fixtures/AbstractReconciler.java"),
                 JavaFileObjects.forResource(
@@ -36,7 +36,7 @@ class ControllerAnnotationProcessorTest {
   public void generateDoneableClasswithMultilevelHierarchy() {
     Compilation compilation =
         Compiler.javac()
-            .withProcessors(new ControllerAnnotationProcessor())
+            .withProcessors(new ControllerConfigurationAnnotationProcessor())
             .compile(
                 JavaFileObjects.forResource("compile-fixtures/AdditionalReconcilerInterface.java"),
                 JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractReconciler.java"),

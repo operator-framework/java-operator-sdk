@@ -26,7 +26,7 @@ import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetada
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
-public class ControllerAnnotationProcessor extends AbstractProcessor {
+public class ControllerConfigurationAnnotationProcessor extends AbstractProcessor {
 
   private AccumulativeMappingWriter controllersResourceWriter;
   private TypeParameterResolver typeParameterResolver;
