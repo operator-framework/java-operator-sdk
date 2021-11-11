@@ -54,14 +54,14 @@ Now you can create Tomcat instances with CRs (see examples above).
 
 ## EventSources
 The TomcatController is listening to events about Deployments created by the TomcatOperator by registering a
-DeploymentEventSource with the EventSourceManager. The DeploymentEventSource will in turn register a watch on
+InformerEventSource with the EventSourceManager. The InformerEventSource will in turn register a watch on
 all Deployments managed by the Controller (identified by the `app.kubernetes.io/managed-by` label). 
 When an event from a Deployment is received we have to identify which Tomcat object does the Deployment
-belong to. This is done when the DeploymentEventSource creates the DeploymentEvent.
+belong to. This is done when the InformerEventSource creates the event.
 
-The TomcatController has to take care of setting the `app.kubernetes.io/managed-by` label on the Deployment so the 
-DeploymentEventSource can watch the right Deployments.
-The TomcatController also has to set `ownerReference` on the Deployment so later the DeploymentEventSource can 
+The TomcatController has to take care of setting the `app.kubernetes.io/managed-by` label on the Deployment so the
+InformerEventSource can watch the right Deployments.
+The TomcatController also has to set `ownerReference` on the Deployment so later the InformerEventSource can 
 identify which Tomcat does the Deployment belong to. This is necessary so the frameowork can call the Controller
 `createOrUpdate` method correctly.
 
