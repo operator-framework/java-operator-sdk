@@ -41,6 +41,10 @@ public class WebappController implements ResourceController<Webapp> {
   public void init(EventSourceManager eventSourceManager) {
     InformerEventSource<Tomcat> tomcatEventSource =
         new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
+          // To create an event to a related WebApp resource and trigger the reconciliation
+          // we need to find which WebApp this Tomcat custom resource is related to.
+          // To find the related UID of the WebApp resource we traverse the cache to
+          // and identify it based on naming convention.
           var cache =
               ((CustomResourceEventSource<Webapp>) eventSourceManager
                   .getRegisteredEventSources()
