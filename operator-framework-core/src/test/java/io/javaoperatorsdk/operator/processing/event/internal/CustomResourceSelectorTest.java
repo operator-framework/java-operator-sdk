@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.javaoperatorsdk.operator.Operator;
@@ -49,24 +45,7 @@ public class CustomResourceSelectorTest {
 
   @SuppressWarnings("unchecked")
   @BeforeEach
-  void setUpResources() throws ParseException {
-    String buildDate =
-        DateTimeFormatter.ofPattern(VersionInfo.VersionKeys.BUILD_DATE_FORMAT)
-            .format(LocalDateTime.now());
-
-    server
-        .expect()
-        .get()
-        .withPath("/version")
-        .andReturn(
-            200,
-            new VersionInfo.Builder()
-                .withBuildDate(buildDate)
-                .withMajor("1")
-                .withMinor("21")
-                .build())
-        .always();
-
+  void setUpResources() {
     configurationService = spy(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
