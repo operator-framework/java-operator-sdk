@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 
 @SuppressWarnings("rawtypes")
-public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateControl<T>> {
+public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
   private final T customResource;
   private final boolean updateStatusSubResource;
@@ -19,7 +20,7 @@ public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateC
     this.updateCustomResource = updateCustomResource;
   }
 
-  public static <T extends CustomResource> UpdateControl<T> updateCustomResource(T customResource) {
+  public static <T extends HasMetadata> UpdateControl<T> updateCustomResource(T customResource) {
     return new UpdateControl<>(customResource, false, true);
   }
 
@@ -35,12 +36,12 @@ public class UpdateControl<T extends CustomResource> extends BaseControl<UpdateC
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
    */
-  public static <T extends CustomResource<?, ?>> UpdateControl<T> updateCustomResourceAndStatus(
+  public static <T extends HasMetadata> UpdateControl<T> updateCustomResourceAndStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }
 
-  public static <T extends CustomResource<?, ?>> UpdateControl<T> noUpdate() {
+  public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
     return new UpdateControl<>(null, false, false);
   }
 

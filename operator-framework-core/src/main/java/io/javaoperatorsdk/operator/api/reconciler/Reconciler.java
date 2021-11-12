@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public interface Reconciler<R extends CustomResource<?, ?>> {
+public interface Reconciler<R extends HasMetadata> {
 
   /**
    * Note that this method is used in combination of finalizers. If automatic finalizer handling is

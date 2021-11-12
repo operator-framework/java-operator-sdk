@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
-public class EventSourceManager<R extends CustomResource<?, ?>>
+public class EventSourceManager<R extends HasMetadata>
     implements EventSourceRegistry<R>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);

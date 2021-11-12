@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.config.runtime;
 
 import java.util.Map;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -17,9 +18,9 @@ public class RuntimeControllerMetadata {
             RECONCILERS_RESOURCE_PATH, Reconciler.class, CustomResource.class);
   }
 
-  static <R extends CustomResource<?, ?>> Class<R> getCustomResourceClass(
+  static <R extends HasMetadata> Class<R> getCustomResourceClass(
       Reconciler<R> reconciler) {
-    final Class<? extends CustomResource> customResourceClass =
+    final Class<? extends HasMetadata> customResourceClass =
         controllerToCustomResourceMappings.get(reconciler.getClass());
     if (customResourceClass == null) {
       throw new IllegalArgumentException(

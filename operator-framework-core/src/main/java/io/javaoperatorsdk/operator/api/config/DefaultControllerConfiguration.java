@@ -3,10 +3,10 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Collections;
 import java.util.Set;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 
-public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
+public class DefaultControllerConfiguration<R extends HasMetadata>
     implements ControllerConfiguration<R> {
 
   private final String associatedControllerClassName;

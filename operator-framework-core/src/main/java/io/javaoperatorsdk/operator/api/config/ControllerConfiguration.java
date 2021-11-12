@@ -4,12 +4,13 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 import java.util.Set;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 
-public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
+public interface ControllerConfiguration<R extends HasMetadata> {
 
   default String getName() {
     return ControllerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());

@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -29,7 +30,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * This is a special case since is not bound to a single custom resource
  */
-public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource
+public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEventSource
     implements ResourceEventHandler<T>, ResourceCache<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";

@@ -9,6 +9,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -114,7 +115,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource<?, ?>> void register(Reconciler<R> controller)
+  public <R extends HasMetadata> void register(Reconciler<R> controller)
       throws OperatorException {
     register(controller, null);
   }
@@ -132,7 +133,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends CustomResource<?, ?>> void register(
+  public <R extends HasMetadata> void register(
       Reconciler<R> reconciler, ControllerConfiguration<R> configuration)
       throws OperatorException {
     final var existing = configurationService.getConfigurationFor(reconciler);

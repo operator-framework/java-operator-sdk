@@ -4,10 +4,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 
-public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
+public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
   private boolean generationAware;
@@ -89,7 +89,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
         original.getConfigurationService());
   }
 
-  public static <R extends CustomResource<?, ?>> ControllerConfigurationOverrider<R> override(
+  public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
       ControllerConfiguration<R> original) {
     return new ControllerConfigurationOverrider<>(original);
   }

@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
  * Convenience implementations of, and utility methods for, {@link CustomResourceEventFilter}.
  */
 public final class CustomResourceEventFilters {
 
-  private static final CustomResourceEventFilter<CustomResource<?, ?>> USE_FINALIZER =
+  private static final CustomResourceEventFilter<HasMetadata> USE_FINALIZER =
       (configuration, oldResource, newResource) -> {
         if (configuration.useFinalizer()) {
           final var finalizer = configuration.getFinalizer();
@@ -21,27 +20,28 @@ public final class CustomResourceEventFilters {
         }
       };
 
-  private static final CustomResourceEventFilter<CustomResource<?, ?>> GENERATION_AWARE =
+  private static final CustomResourceEventFilter<HasMetadata> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
-        final var status = newResource.getStatus();
+    // todo status
+        // final var status = newResource.getStatus();
         final var generationAware = configuration.isGenerationAware();
-        if (generationAware && status instanceof ObservedGenerationAware) {
-          var actualGeneration = newResource.getMetadata().getGeneration();
-          var observedGeneration = ((ObservedGenerationAware) status)
-              .getObservedGeneration();
-          return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
-        }
+        // if (generationAware && status instanceof ObservedGenerationAware) {
+        // var actualGeneration = newResource.getMetadata().getGeneration();
+        // var observedGeneration = ((ObservedGenerationAware) status)
+        // .getObservedGeneration();
+        // return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
+        // }
         return oldResource == null || !generationAware ||
             oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };
 
-  private static final CustomResourceEventFilter<CustomResource<?, ?>> PASSTHROUGH =
+  private static final CustomResourceEventFilter<HasMetadata> PASSTHROUGH =
       (configuration, oldResource, newResource) -> true;
 
-  private static final CustomResourceEventFilter<CustomResource<?, ?>> NONE =
+  private static final CustomResourceEventFilter<HasMetadata> NONE =
       (configuration, oldResource, newResource) -> false;
 
-  private static final CustomResourceEventFilter<CustomResource<?, ?>> MARKED_FOR_DELETION =
+  private static final CustomResourceEventFilter<HasMetadata> MARKED_FOR_DELETION =
       (configuration, oldResource, newResource) -> newResource.isMarkedForDeletion();
 
   private CustomResourceEventFilters() {}
@@ -53,7 +53,7 @@ public final class CustomResourceEventFilters {
    * @return a filter that accepts all events
    */
   @SuppressWarnings("unchecked")
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> passthrough() {
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> passthrough() {
     return (CustomResourceEventFilter<T>) PASSTHROUGH;
   }
 
@@ -64,7 +64,7 @@ public final class CustomResourceEventFilters {
    * @return a filter that reject all events
    */
   @SuppressWarnings("unchecked")
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> none() {
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> none() {
     return (CustomResourceEventFilter<T>) NONE;
   }
 
@@ -76,7 +76,7 @@ public final class CustomResourceEventFilters {
    * @return a filter accepting changes based on generation information
    */
   @SuppressWarnings("unchecked")
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> generationAware() {
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> generationAware() {
     return (CustomResourceEventFilter<T>) GENERATION_AWARE;
   }
 
@@ -89,7 +89,7 @@ public final class CustomResourceEventFilters {
    *         applied
    */
   @SuppressWarnings("unchecked")
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> finalizerNeededAndApplied() {
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> finalizerNeededAndApplied() {
     return (CustomResourceEventFilter<T>) USE_FINALIZER;
   }
 
@@ -100,7 +100,7 @@ public final class CustomResourceEventFilters {
    * @return a filter accepting changes based on whether the Custom Resource is marked for deletion.
    */
   @SuppressWarnings("unchecked")
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> markedForDeletion() {
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> markedForDeletion() {
     return (CustomResourceEventFilter<T>) MARKED_FOR_DELETION;
   }
 
@@ -116,7 +116,7 @@ public final class CustomResourceEventFilters {
    * @return a combined filter implementing the AND logic combination of the provided filters
    */
   @SafeVarargs
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> and(
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> and(
       CustomResourceEventFilter<T>... items) {
     if (items == null) {
       return none();
@@ -150,7 +150,7 @@ public final class CustomResourceEventFilters {
    * @return a combined filter implementing the OR logic combination of both provided filters
    */
   @SafeVarargs
-  public static <T extends CustomResource<?, ?>> CustomResourceEventFilter<T> or(
+  public static <T extends HasMetadata> CustomResourceEventFilter<T> or(
       CustomResourceEventFilter<T>... items) {
     if (items == null) {
       return none();

@@ -6,9 +6,9 @@ import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -166,7 +166,7 @@ class CustomResourceEventFilterTest {
     }
   }
 
-  private static class ControllerConfig<T extends CustomResource<?, ?>> extends
+  private static class ControllerConfig<T extends HasMetadata> extends
       DefaultControllerConfiguration<T> {
 
     public ControllerConfig(String finalizer, boolean generationAware,

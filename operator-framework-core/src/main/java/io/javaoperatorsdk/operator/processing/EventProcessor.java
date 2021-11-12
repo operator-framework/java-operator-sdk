@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -36,7 +36,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
  * UID, while buffering events which are received during an execution.
  */
-public class EventProcessor<R extends CustomResource<?, ?>>
+public class EventProcessor<R extends HasMetadata>
     implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
