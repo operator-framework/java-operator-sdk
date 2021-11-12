@@ -29,7 +29,7 @@ public class InformerEventSourceTestCustomReconciler implements
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
 
-  public static final String RELATED_RESOURCE_UID = "relatedResourceName";
+  public static final String RELATED_RESOURCE_NAME = "relatedResourceName";
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
 
   private KubernetesClient kubernetesClient;
@@ -38,7 +38,7 @@ public class InformerEventSourceTestCustomReconciler implements
   @Override
   public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {
     eventSource = new InformerEventSource<>(kubernetesClient, ConfigMap.class,
-        Mappers.fromAnnotation(RELATED_RESOURCE_UID));
+        Mappers.fromAnnotation(RELATED_RESOURCE_NAME));
     eventSourceRegistry.registerEventSource(eventSource);
   }
 

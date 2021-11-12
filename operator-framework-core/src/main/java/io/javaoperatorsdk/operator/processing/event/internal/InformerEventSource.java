@@ -86,12 +86,12 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(T object) {
-    var uids = resourceToCustomResourceIDSet.apply(object);
-    if (uids.isEmpty()) {
+    var customResourceIDSet = resourceToCustomResourceIDSet.apply(object);
+    if (customResourceIDSet.isEmpty()) {
       return;
     }
-    uids.forEach(uid -> {
-      Event event = new Event(CustomResourceID.fromResource(object));
+    customResourceIDSet.forEach(customResourceId -> {
+      Event event = new Event(customResourceId);
       /*
        * In fabric8 client for certain cases informers can be created on in a way that they are
        * automatically started, what would cause a NullPointerException here, since an event might
