@@ -6,8 +6,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
@@ -23,7 +25,6 @@ import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static io.javaoperatorsdk.operator.processing.event.internal.LabelSelectorParser.parseSimpleLabelSelector;
 
 /**
  * This is a special case since is not bound to a single custom resource
@@ -74,20 +75,16 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-        var informer = client.inAnyNamespace()
-            .withLabels(parseSimpleLabelSelector(labelSelector)).runnableInformer(0);
-        informer.addEventHandler(this);
-        sharedIndexInformers.put(ANY_NAMESPACE_MAP_KEY, informer);
+        final var filteredBySelectorClient = client.inAnyNamespace()
+            .withLabelSelector(labelSelector);
+        final var informer =
+            createAndRunInformerFor(filteredBySelectorClient, ANY_NAMESPACE_MAP_KEY);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
-        informer.run();
       } else {
         targetNamespaces.forEach(
             ns -> {
-              var informer = client.inNamespace(ns)
-                  .withLabels(parseSimpleLabelSelector(labelSelector)).runnableInformer(0);
-              informer.addEventHandler(this);
-              sharedIndexInformers.put(ns, informer);
-              informer.run();
+              final var informer = createAndRunInformerFor(
+                  client.inNamespace(ns).withLabelSelector(labelSelector), ns);
               log.debug("Registered {} -> {} for namespace: {}", controller, informer,
                   ns);
             });
@@ -105,6 +102,15 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       }
       throw e;
     }
+  }
+
+  private SharedIndexInformer<T> createAndRunInformerFor(
+      FilterWatchListDeletable<T, KubernetesResourceList<T>> filteredBySelectorClient, String key) {
+    var informer = filteredBySelectorClient.runnableInformer(0);
+    informer.addEventHandler(this);
+    sharedIndexInformers.put(key, informer);
+    informer.run();
+    return informer;
   }
 
   @Override
