@@ -58,6 +58,6 @@ public class TestUtils {
   }
 
   public static int getNumberOfExecutions(OperatorExtension extension) {
-    return ((TestExecutionInfoProvider) extension.getControllers().get(0)).getNumberOfExecutions();
+    return ((TestExecutionInfoProvider) extension.getReconcilers().get(0)).getNumberOfExecutions();
   }
 }
