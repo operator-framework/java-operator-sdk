@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -97,6 +98,8 @@ class CustomResourceEventFilterTest {
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
+  // todo
+  @Disabled
   @Test
   public void observedGenerationFiltering() {
     var config = new ObservedGenControllerConfig(FINALIZER, true, null);

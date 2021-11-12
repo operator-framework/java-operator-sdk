@@ -81,6 +81,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
         final var informer =
             createAndRunInformerFor(filteredBySelectorClient, ANY_NAMESPACE_MAP_KEY);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
+        informer.run();
       } else {
         targetNamespaces.forEach(
             ns -> {
