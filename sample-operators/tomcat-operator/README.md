@@ -33,24 +33,33 @@ spec:
 
 ## Getting started / Testing
 
-The quickest way to try the operator is to run it on your local machine, while it connects to a local or remote 
-Kubernetes cluster. When you start it, it will use the current kubectl context on your machine to connect to the cluster.
+The quickest way to try the operator is to run it on your local machine, while it connects to a
+local or remote Kubernetes cluster. When you start it, it will use the current kubectl context on
+your machine to connect to the cluster.
 
-Before you run it you have to install the CRD on your cluster by running `kubectl apply -f k8s/crd.yaml`.
+Before you run it you have to install the CRDs on your cluster by running:
+- `kubectl apply -f target/classes/META-INF/fabric8/tomcats.tomcatoperator.io-v1.yml`
+- `kubectl apply -f target/classes/META-INF/fabric8/webapps.tomcatoperator.io-v1.yml`
 
-When the Operator is running you can create some Tomcat Custom Resources. You can find a sample custom resources 
-in the k8s folder.
+The CRDs are generated automatically from your code by simply adding the `crd-generator-apt`
+dependency to your `pom.xml` file.
+
+When the Operator is running you can create some Tomcat Custom Resources. You can find a sample
+custom resources in the k8s folder.
 
 If you want the Operator to be running as a deployment in your cluster, follow the below steps.
 
 ## Build
-You can build the sample using `mvn install jib:dockerBuild` this will produce a Docker image you can push to the 
-registry of your choice. The JAR file is built using your local Maven and JDK and then copied into the Docker image.
+
+You can build the sample using `mvn install jib:dockerBuild` this will produce a Docker image you
+can push to the registry of your choice. The JAR file is built using your local Maven and JDK and
+then copied into the Docker image.
 
 ## Install Operator into cluster
 
-Run `kubectl apply -f k8s/crd.yaml` if you haven't already, then run `kubectl apply -f k8s/operator.yaml`. 
-Now you can create Tomcat instances with CRs (see examples above).
+Install the CRDs as shown above if you haven't already, then
+run `kubectl apply -f k8s/operator.yaml`. Now you can create Tomcat instances with CRs (see examples
+above).
 
 ## EventSources
 The TomcatController is listening to events about Deployments created by the TomcatOperator by registering a

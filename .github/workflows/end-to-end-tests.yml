@@ -29,10 +29,6 @@ jobs:
             cluster_name: e2e-test
             registry: false
   
-        - name: Apply CRDs
-          run: kubectl apply -f k8s/crd.yaml
-          working-directory: sample-operators/tomcat-operator
-
         - name: Set up Java and Maven
           uses: actions/setup-java@v2
           with:
@@ -52,7 +48,9 @@ jobs:
 
         - name: Apply CRDs
           working-directory: sample-operators/tomcat-operator
-          run: kubectl apply -f k8s/crd.yaml
+          run: |
+            kubectl apply -f target/classes/META-INF/fabric8/tomcats.tomcatoperator.io-v1.yml
+            kubectl apply -f target/classes/META-INF/fabric8/webapps.tomcatoperator.io-v1.yml
 
         - name: Deploy Tomcat Operator
           working-directory: sample-operators/tomcat-operator
