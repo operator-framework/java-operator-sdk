@@ -22,7 +22,7 @@ public final class CustomResourceEventFilters {
 
   private static final CustomResourceEventFilter<HasMetadata> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
-    // todo status
+        // todo status
         // final var status = newResource.getStatus();
         final var generationAware = configuration.isGenerationAware();
         // if (generationAware && status instanceof ObservedGenerationAware) {

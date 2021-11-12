@@ -75,15 +75,19 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
         var informer = client.inAnyNamespace()
-            .withLabels(parseSimpleLabelSelector(labelSelector)).inform(this);
+            .withLabels(parseSimpleLabelSelector(labelSelector)).runnableInformer(0);
+        informer.addEventHandler(this);
         sharedIndexInformers.put(ANY_NAMESPACE_MAP_KEY, informer);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
+        informer.run();
       } else {
         targetNamespaces.forEach(
             ns -> {
               var informer = client.inNamespace(ns)
-                  .withLabels(parseSimpleLabelSelector(labelSelector)).inform(this);
+                  .withLabels(parseSimpleLabelSelector(labelSelector)).runnableInformer(0);
+              informer.addEventHandler(this);
               sharedIndexInformers.put(ns, informer);
+              informer.run();
               log.debug("Registered {} -> {} for namespace: {}", controller, informer,
                   ns);
             });

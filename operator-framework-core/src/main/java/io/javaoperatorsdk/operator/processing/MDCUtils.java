@@ -25,14 +25,16 @@ public class MDCUtils {
     MDC.remove(NAMESPACE);
   }
 
-  public static void addCustomResourceInfo(HasMetadata customResource) {
-    MDC.put(API_VERSION, customResource.getApiVersion());
-    MDC.put(KIND, customResource.getKind());
-    MDC.put(NAME, customResource.getMetadata().getName());
-    MDC.put(NAMESPACE, customResource.getMetadata().getNamespace());
-    MDC.put(RESOURCE_VERSION, customResource.getMetadata().getResourceVersion());
-    MDC.put(GENERATION, customResource.getMetadata().getGeneration().toString());
-    MDC.put(UID, customResource.getMetadata().getUid());
+  public static void addCustomResourceInfo(HasMetadata resource) {
+    MDC.put(API_VERSION, resource.getApiVersion());
+    MDC.put(KIND, resource.getKind());
+    MDC.put(NAME, resource.getMetadata().getName());
+    MDC.put(NAMESPACE, resource.getMetadata().getNamespace());
+    MDC.put(RESOURCE_VERSION, resource.getMetadata().getResourceVersion());
+    if (resource.getMetadata().getGeneration() != null) {
+      MDC.put(GENERATION, resource.getMetadata().getGeneration().toString());
+    }
+    MDC.put(UID, resource.getMetadata().getUid());
   }
 
   public static void removeCustomResourceInfo() {
