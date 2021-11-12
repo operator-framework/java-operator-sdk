@@ -106,7 +106,7 @@ public class OperatorExtension
   }
 
   @SuppressWarnings({"rawtypes"})
-  public List<Reconciler> getControllers() {
+  public List<Reconciler> getReconcilers() {
     return operator.getControllers().stream()
         .map(Controller::getReconciler)
         .collect(Collectors.toUnmodifiableList());
