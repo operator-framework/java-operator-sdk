@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -20,6 +20,9 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -174,8 +177,6 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
       return Optional.of(cloner.clone(resource));
     }
   }
-
-
 
   /**
    * @return shared informers by namespace. If custom resource is not namespace scoped use
