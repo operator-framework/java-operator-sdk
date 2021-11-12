@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import org.slf4j.MDC;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
 public class MDCUtils {
@@ -25,7 +25,7 @@ public class MDCUtils {
     MDC.remove(NAMESPACE);
   }
 
-  public static void addCustomResourceInfo(CustomResource<?, ?> customResource) {
+  public static void addCustomResourceInfo(HasMetadata customResource) {
     MDC.put(API_VERSION, customResource.getApiVersion());
     MDC.put(KIND, customResource.getKind());
     MDC.put(NAME, customResource.getMetadata().getName());

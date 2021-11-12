@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 /**
@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
  * @param <T> the type of custom resources handled by this filter
  */
 @FunctionalInterface
-public interface CustomResourceEventFilter<T extends CustomResource<?, ?>> {
+public interface CustomResourceEventFilter<T extends HasMetadata> {
 
   /**
    * Determines whether the change between the old version of the resource and the new one needs to

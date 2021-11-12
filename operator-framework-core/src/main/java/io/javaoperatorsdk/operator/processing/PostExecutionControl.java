@@ -2,9 +2,9 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.Optional;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public final class PostExecutionControl<R extends CustomResource<?, ?>> {
+public final class PostExecutionControl<R extends HasMetadata> {
 
   private final boolean onlyFinalizerHandled;
   private final R updatedCustomResource;
@@ -21,20 +21,20 @@ public final class PostExecutionControl<R extends CustomResource<?, ?>> {
     this.runtimeException = runtimeException;
   }
 
-  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> onlyFinalizerAdded() {
+  public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded() {
     return new PostExecutionControl<>(true, null, null);
   }
 
-  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> defaultDispatch() {
+  public static <R extends HasMetadata> PostExecutionControl<R> defaultDispatch() {
     return new PostExecutionControl<>(false, null, null);
   }
 
-  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> customResourceUpdated(
+  public static <R extends HasMetadata> PostExecutionControl<R> customResourceUpdated(
       R updatedCustomResource) {
     return new PostExecutionControl<>(false, updatedCustomResource, null);
   }
 
-  public static <R extends CustomResource<?, ?>> PostExecutionControl<R> exceptionDuringExecution(
+  public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
       RuntimeException exception) {
     return new PostExecutionControl<>(false, null, exception);
   }

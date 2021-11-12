@@ -9,12 +9,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
-public class TimerEventSource<R extends CustomResource<?, ?>> extends AbstractEventSource {
+public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private final Timer timer = new Timer();

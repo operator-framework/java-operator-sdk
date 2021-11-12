@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import org.junit.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator.ControllerManager;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
@@ -39,7 +40,7 @@ public class ControllerManagerTest {
 
   }
 
-  private <T extends CustomResource<?, ?>, U extends CustomResource<?, ?>> void checkException(
+  private <T extends HasMetadata, U extends HasMetadata> void checkException(
       TestControllerConfiguration<T> registered,
       TestControllerConfiguration<U> duplicated) {
     final var exception = assertThrows(OperatorException.class, () -> {
@@ -54,7 +55,7 @@ public class ControllerManagerTest {
             && msg.contains(registered.getCRDName()));
   }
 
-  private static class TestControllerConfiguration<R extends CustomResource<?, ?>>
+  private static class TestControllerConfiguration<R extends HasMetadata>
       extends DefaultControllerConfiguration<R> {
     private final Reconciler<R> controller;
 
@@ -64,7 +65,7 @@ public class ControllerManagerTest {
       this.controller = controller;
     }
 
-    static <R extends CustomResource<?, ?>> String getControllerName(
+    static <R extends HasMetadata> String getControllerName(
         Reconciler<R> controller) {
       return controller.getClass().getSimpleName() + "Controller";
     }

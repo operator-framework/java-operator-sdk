@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -54,7 +55,7 @@ class ReconciliationDispatcherTest {
         init(testCustomResource, controller, configuration, customResourceFacade);
   }
 
-  private <R extends CustomResource<?, ?>> ReconciliationDispatcher<R> init(R customResource,
+  private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
       Reconciler<R> reconciler, ControllerConfiguration<R> configuration,
       CustomResourceFacade<R> customResourceFacade) {
     when(configuration.getFinalizer()).thenReturn(DEFAULT_FINALIZER);
@@ -163,7 +164,7 @@ class ReconciliationDispatcherTest {
   }
 
   private void configureToNotUseFinalizer() {
-    ControllerConfiguration<CustomResource<?, ?>> configuration =
+    ControllerConfiguration<HasMetadata> configuration =
         mock(ControllerConfiguration.class);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
@@ -348,7 +349,7 @@ class ReconciliationDispatcherTest {
     customResource.getMetadata().getFinalizers().clear();
   }
 
-  public <T extends CustomResource<?, ?>> ExecutionScope<T> executionScopeWithCREvent(T resource) {
+  public <T extends HasMetadata> ExecutionScope<T> executionScopeWithCREvent(T resource) {
     return new ExecutionScope<>(resource, null);
   }
 }

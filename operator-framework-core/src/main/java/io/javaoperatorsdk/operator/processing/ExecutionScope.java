@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 
-public class ExecutionScope<R extends CustomResource<?, ?>> {
+public class ExecutionScope<R extends HasMetadata> {
 
   // the latest custom resource from cache
   private final R customResource;

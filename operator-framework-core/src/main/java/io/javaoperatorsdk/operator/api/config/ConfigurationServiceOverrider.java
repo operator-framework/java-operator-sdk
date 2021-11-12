@@ -2,8 +2,8 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -61,7 +61,7 @@ public class ConfigurationServiceOverrider {
   public ConfigurationService build() {
     return new ConfigurationService() {
       @Override
-      public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+      public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
           Reconciler<R> controller) {
         return original.getConfigurationFor(controller);
       }

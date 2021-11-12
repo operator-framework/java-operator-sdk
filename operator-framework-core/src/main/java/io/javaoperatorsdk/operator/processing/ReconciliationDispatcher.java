@@ -3,12 +3,11 @@ package io.javaoperatorsdk.operator.processing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -24,7 +23,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * Handles calls and results of a Reconciler and finalizer related logic
  */
-public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
+public class ReconciliationDispatcher<R extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
@@ -85,7 +84,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
 
   /**
    * Determines whether the given resource should be dispatched to the controller's
-   * {@link Reconciler#cleanup(CustomResource, Context)} method
+   * {@link Reconciler#cleanup(HasMetadata, Context)} method
    *
    * @param resource the resource to be potentially deleted
    * @return {@code true} if the resource should be handed to the controller's {@code
@@ -140,12 +139,13 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
 
   private void updateStatusObservedGenerationIfRequired(R customResource) {
     if (controller.getConfiguration().isGenerationAware()) {
-      var status = customResource.getStatus();
-      // Note that if status is null we won't update the observed generation.
-      if (status instanceof ObservedGenerationAware) {
-        ((ObservedGenerationAware) status)
-            .setObservedGeneration(customResource.getMetadata().getGeneration());
-      }
+      // TODO
+      // var status = customResource.getStatus();
+      // // Note that if status is null we won't update the observed generation.
+      // if (status instanceof ObservedGenerationAware) {
+      // ((ObservedGenerationAware) status)
+      // .setObservedGeneration(customResource.getMetadata().getGeneration());
+      // }
     }
   }
 
@@ -226,7 +226,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
   }
 
   // created to support unit testing
-  static class CustomResourceFacade<R extends CustomResource<?, ?>> {
+  static class CustomResourceFacade<R extends HasMetadata> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 
