@@ -170,7 +170,7 @@ handle webhooks or websockets or to react to any event coming from a service we 
 create a dependent resource we also register an Event Source that will propagate events regarding the changes of that
 resource. This way we avoid the need of polling, and can implement controllers very efficiently.
 
-TODO add image
+![Alt text for broken image link](../assets/images/event-sources.png)
 
 There are few interesting points here:
 The CustomResourceEvenSource event source is a special one, which sends events regarding changes of our custom resource,
@@ -191,9 +191,10 @@ objects (in the Event Source) and read it from there if needed.
 
 ### Built-in Event Sources
 
-1. InformerEventSource
-2. TimerEventSource
-3. CustomResourceEventSource
+1. InformerEventSource - used to get event about other K8S resources, also provides a local cache for them.
+2. TimerEventSource - used to create timed events, mainly intended for internal usage.
+3. CustomResourceEventSource - an event source that is automatically registered to listen to the changes of the main
+   resource the operation manages, it also maintains a cache of those objects that can be accessed from the Reconciler.
 
 ## Monitoring with Micrometer
 
