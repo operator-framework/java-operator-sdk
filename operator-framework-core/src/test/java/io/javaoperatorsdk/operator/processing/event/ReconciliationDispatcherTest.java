@@ -11,10 +11,13 @@ import org.mockito.ArgumentMatchers;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -37,37 +40,43 @@ class ReconciliationDispatcherTest {
   private ReconciliationDispatcher<TestCustomResource> reconciliationDispatcher;
   private final Reconciler<TestCustomResource> reconciler = mock(Reconciler.class,
       withSettings().extraInterfaces(ErrorStatusHandler.class));
-  private final ControllerConfiguration<TestCustomResource> configuration =
-      mock(ControllerConfiguration.class);
   private final ConfigurationService configService = mock(ConfigurationService.class);
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
 
   @BeforeEach
   void setup() {
+    ExecutorServiceManager.useTestInstance();
     testCustomResource = TestUtils.testCustomResource();
     reconciliationDispatcher =
-        init(testCustomResource, reconciler, configuration, customResourceFacade);
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
       Reconciler<R> reconciler, ControllerConfiguration<R> configuration,
-      CustomResourceFacade<R> customResourceFacade) {
-    when(configuration.getFinalizer()).thenReturn(DEFAULT_FINALIZER);
+      CustomResourceFacade<R> customResourceFacade, boolean useFinalizer) {
+    configuration = configuration == null ? mock(ControllerConfiguration.class) : configuration;
+    final var finalizer = useFinalizer ? DEFAULT_FINALIZER : Constants.NO_FINALIZER;
+    when(configuration.getFinalizer()).thenReturn(finalizer);
     when(configuration.useFinalizer()).thenCallRealMethod();
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
-    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
+    when(configuration.getResourceClass()).thenReturn((Class<R>) customResource.getClass());
+    when(configuration.getRetryConfiguration()).thenReturn(RetryConfiguration.DEFAULT);
     when(configuration.getConfigurationService()).thenReturn(configService);
+
+    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configService.getResourceCloner()).thenReturn(new Cloner() {
       @Override
+
       public <R extends HasMetadata> R clone(R object) {
         return object;
       }
     });
     when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
-    Controller<R> controller =
-        new Controller<>(reconciler, configuration, null);
+    Controller<R> controller = new Controller<>(reconciler, configuration,
+        MockKubernetesClient.client(customResource.getClass()));
+    controller.start();
 
     return new ReconciliationDispatcher<>(controller, customResourceFacade);
   }
@@ -144,10 +153,12 @@ class ReconciliationDispatcherTest {
    */
   @Test
   void callDeleteOnControllerIfMarkedForDeletionWhenNoFinalizerIsConfigured() {
-    configureToNotUseFinalizer();
+    final ReconciliationDispatcher<TestCustomResource> dispatcher =
+        init(testCustomResource, reconciler,
+            null, customResourceFacade, false);
     markForDeletion(testCustomResource);
 
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     verify(reconciler).cleanup(eq(testCustomResource), any());
   }
@@ -161,23 +172,13 @@ class ReconciliationDispatcherTest {
     verify(reconciler, never()).cleanup(eq(testCustomResource), any());
   }
 
-  private void configureToNotUseFinalizer() {
-    ControllerConfiguration<HasMetadata> configuration =
-        mock(ControllerConfiguration.class);
-    when(configuration.getName()).thenReturn("EventDispatcherTestController");
-    when(configService.getMetrics()).thenReturn(Metrics.NOOP);
-    when(configuration.getConfigurationService()).thenReturn(configService);
-    when(configuration.useFinalizer()).thenReturn(false);
-    reconciliationDispatcher =
-        new ReconciliationDispatcher(new Controller(reconciler, configuration, null),
-            customResourceFacade);
-  }
-
   @Test
   void doesNotAddFinalizerIfConfiguredNotTo() {
-    configureToNotUseFinalizer();
+    final ReconciliationDispatcher<TestCustomResource> dispatcher =
+        init(testCustomResource, reconciler,
+            null, customResourceFacade, false);
 
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
   }
@@ -274,7 +275,7 @@ class ReconciliationDispatcherTest {
         ArgumentCaptor.forClass(Context.class);
     verify(reconciler, times(1))
         .reconcile(any(), contextArgumentCaptor.capture());
-    Context context = contextArgumentCaptor.getValue();
+    Context<?> context = contextArgumentCaptor.getValue();
     final var retryInfo = context.getRetryInfo().get();
     assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
     assertThat(retryInfo.isLastAttempt()).isEqualTo(true);
@@ -316,7 +317,7 @@ class ReconciliationDispatcherTest {
     ControllerConfiguration<ObservedGenCustomResource> config =
         mock(ControllerConfiguration.class);
     CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
-    var dispatcher = init(observedGenResource, reconciler, config, facade);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     when(config.isGenerationAware()).thenReturn(true);
     when(reconciler.reconcile(any(), any()))
@@ -341,7 +342,7 @@ class ReconciliationDispatcherTest {
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.noUpdate());
     when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
-    var dispatcher = init(observedGenResource, reconciler, config, facade);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
@@ -362,7 +363,7 @@ class ReconciliationDispatcherTest {
         .thenReturn(UpdateControl.updateResource(observedGenResource));
     when(facade.replaceWithLock(any())).thenReturn(observedGenResource);
     when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
-    var dispatcher = init(observedGenResource, reconciler, config, facade);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));

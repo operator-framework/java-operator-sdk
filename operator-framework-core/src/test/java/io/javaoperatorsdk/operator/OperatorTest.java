@@ -8,20 +8,25 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class OperatorTest {
 
-  private final KubernetesClient kubernetesClient = mock(KubernetesClient.class);
+  private final KubernetesClient kubernetesClient =
+      MockKubernetesClient.client(FooCustomResource.class);
   private final ConfigurationService configurationService = mock(ConfigurationService.class);
   private final ControllerConfiguration configuration = mock(ControllerConfiguration.class);
+  static {
+    ExecutorServiceManager.useTestInstance();
+  }
 
   private final Operator operator = new Operator(kubernetesClient, configurationService);
   private final FooReconciler fooReconciler = FooReconciler.create();
@@ -33,16 +38,14 @@ class OperatorTest {
     when(configurationService.getConfigurationFor(fooReconciler)).thenReturn(configuration);
     when(configuration.watchAllNamespaces()).thenReturn(true);
     when(configuration.getName()).thenReturn("FOO");
-    when(configuration.getResourceClass()).thenReturn(FooReconciler.class);
+    when(configuration.getResourceClass()).thenReturn(FooCustomResource.class);
+    when(configuration.getRetryConfiguration()).thenReturn(RetryConfiguration.DEFAULT);
+    when(configuration.getConfigurationService()).thenReturn(configurationService);
 
     // when
     operator.register(fooReconciler);
 
     // then
-    verify(configuration).watchAllNamespaces();
-    verify(configuration).getName();
-    verify(configuration).getResourceClass();
-
     assertThat(operator.getControllers().size()).isEqualTo(1);
     assertThat(operator.getControllers().get(0).getReconciler()).isEqualTo(fooReconciler);
   }

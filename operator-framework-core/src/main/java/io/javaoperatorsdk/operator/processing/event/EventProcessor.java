@@ -45,18 +45,17 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final Map<ResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
   private final String controllerName;
+  private final String resourceType;
   private final ReentrantLock lock = new ReentrantLock();
   private final Metrics metrics;
   private volatile boolean running;
-  private final ResourceCache<R> resourceCache;
   private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker = new EventMarker();
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
-    this(
-        eventSourceManager.getControllerResourceEventSource().getResourceCache(),
-        ExecutorServiceManager.instance().executorService(),
+    this(ExecutorServiceManager.instance().executorService(),
         eventSourceManager.getController().getConfiguration().getName(),
+        eventSourceManager.getController().getConfiguration().getResourceTypeName(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
         GenericRetry.fromConfiguration(
             eventSourceManager.getController().getConfiguration().getRetryConfiguration()),
@@ -66,19 +65,14 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   EventProcessor(ReconciliationDispatcher<R> reconciliationDispatcher,
-      EventSourceManager<R> eventSourceManager,
-      String relatedControllerName,
-      Retry retry) {
-    this(eventSourceManager.getControllerResourceEventSource().getResourceCache(), null,
-        relatedControllerName,
-        reconciliationDispatcher, retry, null, eventSourceManager);
+      EventSourceManager<R> eventSourceManager, Retry retry) {
+    this(null, "Test", "Test", reconciliationDispatcher, retry, null, eventSourceManager);
   }
 
-  private EventProcessor(ResourceCache<R> resourceCache, ExecutorService executor,
-      String relatedControllerName,
+  private EventProcessor(ExecutorService executor,
+      String relatedControllerName, String resourceTypeName,
       ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics,
       EventSourceManager<R> eventSourceManager) {
-    this.running = true;
     this.executor =
         executor == null
             ? new ScheduledThreadPoolExecutor(
@@ -87,9 +81,9 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.controllerName = relatedControllerName;
     this.reconciliationDispatcher = reconciliationDispatcher;
     this.retry = retry;
-    this.resourceCache = resourceCache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
+    this.resourceType = resourceTypeName;
   }
 
   EventMarker getEventMarker() {
@@ -102,7 +96,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     try {
       log.debug("Received event: {}", event);
       if (!this.running) {
-        log.debug("Skipping event: {} because the event handler is not started", event);
+        log.debug("Skipping event: {} because the event processor is not started", event);
         return;
       }
       final var resourceID = event.getRelatedCustomResourceID();
@@ -121,10 +115,14 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     }
   }
 
+  ResourceCache<R> resourceCache() {
+    return eventSourceManager.getControllerResourceEventSource().getResourceCache();
+  }
+
   private void submitReconciliationExecution(ResourceID resourceID) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(resourceID);
-      Optional<R> latest = resourceCache.get(resourceID);
+      Optional<R> latest = resourceCache().get(resourceID);
       latest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && latest.isPresent()) {
         setUnderExecutionProcessing(resourceID);
@@ -141,7 +139,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
             controllerUnderExecution,
             latest.isPresent());
         if (latest.isEmpty()) {
-          log.warn("no custom resource found in cache for ResourceID: {}", resourceID);
+          log.warn("No {} resource found in cache for ResourceID: {}", resourceType, resourceID);
         }
       }
     } finally {
@@ -220,7 +218,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         .getUpdatedCustomResource()
         .orElseThrow(() -> new IllegalStateException(
             "Updated custom resource must be present at this point of time")));
-    String cachedCustomResourceVersion = getVersion(resourceCache
+    String cachedCustomResourceVersion = getVersion(resourceCache()
         .get(executionScope.getCustomResourceID())
         .orElseThrow(() -> new IllegalStateException(
             "Cached custom resource must be present at this point")));

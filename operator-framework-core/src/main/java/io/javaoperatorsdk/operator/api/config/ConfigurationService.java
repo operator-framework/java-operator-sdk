@@ -21,6 +21,9 @@ public interface ConfigurationService {
 
     @Override
     public HasMetadata clone(HasMetadata object) {
+      if (object == null) {
+        return null;
+      }
       try {
         return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object), object.getClass());
       } catch (JsonProcessingException e) {

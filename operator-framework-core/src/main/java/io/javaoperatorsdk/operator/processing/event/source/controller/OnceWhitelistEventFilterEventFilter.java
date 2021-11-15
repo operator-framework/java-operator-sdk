@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class OnceWhitelistEventFilterEventFilter<T extends HasMetadata>
-    implements ResourceEventFilter<T> {
+    implements ResourceEventFilter<T, ControllerConfiguration<T>> {
 
   private static final Logger log =
       LoggerFactory.getLogger(OnceWhitelistEventFilterEventFilter.class);

@@ -34,6 +34,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
     this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
+    ExecutorServiceManager.init(configurationService);
   }
 
   /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
@@ -85,7 +86,6 @@ public class Operator implements AutoCloseable, LifecycleAware {
       throw new OperatorException(error, e);
     }
 
-    ExecutorServiceManager.init(configurationService);
     controllers.start();
   }
 

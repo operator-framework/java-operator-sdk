@@ -23,6 +23,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   private final AtomicBoolean running = new AtomicBoolean();
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
+  public TimerEventSource() {
+    // we need to return the source class so that it can be used to register the event source
+    super(TimerEventSource.class);
+  }
+
 
   public void scheduleOnce(R resource, long delay) {
     if (!running.get()) {
@@ -73,7 +78,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     public void run() {
       if (running.get()) {
         log.debug("Producing event for custom resource id: {}", customResourceUid);
-        eventHandler.handleEvent(new Event(customResourceUid));
+        getEventHandler().handleEvent(new Event(customResourceUid));
       }
     }
   }

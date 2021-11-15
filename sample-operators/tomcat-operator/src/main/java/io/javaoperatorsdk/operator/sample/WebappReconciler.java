@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -17,21 +18,27 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.sample.WebappReconciler.TomcatIdentifier;
+import io.javaoperatorsdk.operator.sample.WebappReconciler.WebappRetriever;
 
 import okhttp3.Response;
 
-@ControllerConfiguration
-public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
+@ControllerConfiguration(
+    dependents = @DependentResourceConfiguration(
+        creatable = false, resourceType = Tomcat.class,
+        associatedPrimariesRetriever = WebappRetriever.class,
+        associatedSecondaryIdentifier = TomcatIdentifier.class))
+public class WebappReconciler implements Reconciler<Webapp> {
 
   private KubernetesClient kubernetesClient;
 
@@ -41,22 +48,26 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     this.kubernetesClient = kubernetesClient;
   }
 
-  private InformerEventSource<Tomcat> tomcatEventSource;
+  public static class WebappRetriever implements PrimaryResourcesRetriever<Tomcat, Webapp> {
+    @Override
+    public Set<ResourceID> associatedPrimaryResources(Tomcat t,
+        EventSourceRegistry<Webapp> registry) {
+      // To create an event to a related WebApp resource and trigger the reconciliation
+      // we need to find which WebApp this Tomcat custom resource is related to.
+      // To find the related customResourceId of the WebApp resource we traverse the cache to
+      // and identify it based on naming convention.
+      return registry.getControllerResourceEventSource().getResourceCache()
+          .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
+          .map(ResourceID::fromResource)
+          .collect(Collectors.toSet());
+    }
+  }
 
-  @Override
-  public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    tomcatEventSource =
-        new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
-          // To create an event to a related WebApp resource and trigger the reconciliation
-          // we need to find which WebApp this Tomcat custom resource is related to.
-          // To find the related customResourceId of the WebApp resource we traverse the cache to
-          // and identify it based on naming convention.
-          return eventSourceRegistry.getControllerResourceEventSource().getResourceCache()
-              .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-              .map(ResourceID::fromResource)
-              .collect(Collectors.toSet());
-        });
-    eventSourceRegistry.registerEventSource(tomcatEventSource);
+  public static class TomcatIdentifier implements AssociatedSecondaryIdentifier<Webapp> {
+    @Override
+    public ResourceID associatedSecondaryID(Webapp primary, EventSourceRegistry<Webapp> registry) {
+      return new ResourceID(primary.getSpec().getTomcat(), primary.getMetadata().getNamespace());
+    }
   }
 
   /**
@@ -64,15 +75,13 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
    * change.
    */
   @Override
-  public UpdateControl<Webapp> reconcile(Webapp webapp, Context context) {
+  public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();
     }
 
-    Tomcat tomcat = tomcatEventSource.getStore()
-        .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),
-            webapp.getSpec().getTomcat()));
+    Tomcat tomcat = context.getSecondaryResource(Tomcat.class);
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
@@ -108,7 +117,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   }
 
   @Override
-  public DeleteControl cleanup(Webapp webapp, Context context) {
+  public DeleteControl cleanup(Webapp webapp, Context<Webapp> context) {
 
     String[] command = new String[] {"rm", "/data/" + webapp.getSpec().getContextPath() + ".war"};
     String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);

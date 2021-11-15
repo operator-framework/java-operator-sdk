@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 
 public interface EventSourceInitializer<T extends HasMetadata> {
@@ -12,6 +13,6 @@ public interface EventSourceInitializer<T extends HasMetadata> {
    * @param eventSourceRegistry the {@link EventSourceRegistry} where event sources can be
    *        registered.
    */
-  void prepareEventSources(EventSourceRegistry<T> eventSourceRegistry);
+  void prepareEventSources(EventSourceRegistry<T> eventSourceRegistry, Cloner cloner);
 
 }

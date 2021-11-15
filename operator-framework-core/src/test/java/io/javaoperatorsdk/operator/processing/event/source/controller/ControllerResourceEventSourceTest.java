@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
@@ -30,16 +31,18 @@ class ControllerResourceEventSourceTest {
 
   public static final String FINALIZER = "finalizer";
   private static final MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> client =
-      mock(MixedOperation.class);
+      MockKubernetesClient.client(TestCustomResource.class).resources(TestCustomResource.class);
   EventHandler eventHandler = mock(EventHandler.class);
+  EventSourceRegistry registry = mock(EventSourceRegistry.class);
 
-  private TestController testController = new TestController(true);
+  private final TestController testController = new TestController(true);
   private ControllerResourceEventSource<TestCustomResource> controllerResourceEventSource =
-      new ControllerResourceEventSource<>(testController);
+      new ControllerResourceEventSource<>(testController, registry);
 
   @BeforeEach
   public void setup() {
-    controllerResourceEventSource.setEventHandler(eventHandler);
+    when(registry.getEventHandler()).thenReturn(eventHandler);
+    controllerResourceEventSource.setEventRegistry(registry);
   }
 
   @Test
@@ -92,7 +95,7 @@ class ControllerResourceEventSourceTest {
   @Test
   public void handlesAllEventIfNotGenerationAware() {
     controllerResourceEventSource =
-        new ControllerResourceEventSource<>(new TestController(false));
+        new ControllerResourceEventSource<>(new TestController(false), registry);
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();

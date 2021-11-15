@@ -19,6 +19,8 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class TimerEventSourceTest {
 
@@ -26,14 +28,17 @@ class TimerEventSourceTest {
   public static final int PERIOD = 50;
 
   private TimerEventSource<TestCustomResource> timerEventSource;
-  private CapturingEventHandler eventHandlerMock;
+  private CapturingEventHandler eventHandler;
 
   @BeforeEach
   public void setup() {
-    eventHandlerMock = new CapturingEventHandler();
+    eventHandler = new CapturingEventHandler();
 
     timerEventSource = new TimerEventSource<>();
-    timerEventSource.setEventHandler(eventHandlerMock);
+    EventSourceRegistry registryMock = mock(EventSourceRegistry.class);
+    when(registryMock.getEventHandler()).thenReturn(eventHandler);
+
+    timerEventSource.setEventRegistry(registryMock);
     timerEventSource.start();
   }
 
@@ -43,8 +48,8 @@ class TimerEventSourceTest {
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).hasSize(1));
-    untilAsserted(PERIOD * 2, 0, () -> assertThat(eventHandlerMock.events).hasSize(1));
+    untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
+    untilAsserted(PERIOD * 2, 0, () -> assertThat(eventHandler.events).hasSize(1));
   }
 
   @Test
@@ -54,7 +59,7 @@ class TimerEventSourceTest {
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource.cancelOnceSchedule(ResourceID.fromResource(customResource));
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
+    untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   @Test
@@ -64,7 +69,7 @@ class TimerEventSourceTest {
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource.scheduleOnce(customResource, 2 * PERIOD);
 
-    untilAsserted(PERIOD * 2, PERIOD, () -> assertThat(eventHandlerMock.events).hasSize(1));
+    untilAsserted(PERIOD * 2, PERIOD, () -> assertThat(eventHandler.events).hasSize(1));
   }
 
   @Test
@@ -75,7 +80,7 @@ class TimerEventSourceTest {
     timerEventSource
         .onResourceDeleted(customResource);
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
+    untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   @Test
@@ -92,7 +97,7 @@ class TimerEventSourceTest {
     timerEventSource.scheduleOnce(TestUtils.testCustomResource(), PERIOD);
     timerEventSource.stop();
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
+    untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   private void untilAsserted(ThrowingRunnable assertion) {

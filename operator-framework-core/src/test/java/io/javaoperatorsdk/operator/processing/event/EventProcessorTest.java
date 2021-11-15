@@ -42,8 +42,7 @@ class EventProcessorTest {
   private ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
   private EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
-  private ControllerResourceCache resourceCacheMock =
-      mock(ControllerResourceCache.class);
+  private AggregateResourceCache resourceCacheMock = mock(AggregateResourceCache.class);
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
   private ControllerResourceEventSource controllerResourceEventSourceMock =
       mock(ControllerResourceEventSource.class);
@@ -58,13 +57,17 @@ class EventProcessorTest {
     when(controllerResourceEventSourceMock.getResourceCache()).thenReturn(resourceCacheMock);
 
     eventProcessor =
-        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, null));
     eventProcessorWithRetry =
-        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock,
             GenericRetry.defaultLimitedExponentialRetry()));
 
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+
+    // start processors
+    eventProcessor.start();
+    eventProcessorWithRetry.start();
   }
 
   @Test
@@ -218,6 +221,7 @@ class EventProcessorTest {
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
+    when(mockCREventSource.getResourceCache()).thenReturn(resourceCacheMock);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
@@ -237,6 +241,7 @@ class EventProcessorTest {
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(otherChangeCR));
     when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
+    when(mockCREventSource.getResourceCache()).thenReturn(resourceCacheMock);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
@@ -252,6 +257,7 @@ class EventProcessorTest {
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
+    when(mockCREventSource.getResourceCache()).thenReturn(resourceCacheMock);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(cr));

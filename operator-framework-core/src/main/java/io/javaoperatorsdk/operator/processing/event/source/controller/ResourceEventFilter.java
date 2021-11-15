@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 
 /**
  * A functional interface to determine whether resource events should be processed by the SDK. This
@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
  * @param <T> the type of custom resources handled by this filter
  */
 @FunctionalInterface
-public interface ResourceEventFilter<T extends HasMetadata> {
+public interface ResourceEventFilter<T extends HasMetadata, U extends ResourceConfiguration<T, U>> {
 
   /**
    * Determines whether the change between the old version of the resource and the new one needs to
@@ -23,7 +23,7 @@ public interface ResourceEventFilter<T extends HasMetadata> {
    * @return {@code true} if the change needs to be propagated to the controller, {@code false}
    *         otherwise
    */
-  boolean acceptChange(ControllerConfiguration<T> configuration, T oldResource, T newResource);
+  boolean acceptChange(U configuration, T oldResource, T newResource);
 
   /**
    * Combines this filter with the provided one with an AND logic, i.e. the resulting filter will
@@ -32,12 +32,11 @@ public interface ResourceEventFilter<T extends HasMetadata> {
    * @param other the possibly {@code null} other filter to combine this one with
    * @return a composite filter implementing the AND logic between this and the provided filter
    */
-  default ResourceEventFilter<T> and(ResourceEventFilter<T> other) {
-    return other == null ? this
-        : (ControllerConfiguration<T> configuration, T oldResource, T newResource) -> {
-          boolean result = acceptChange(configuration, oldResource, newResource);
-          return result && other.acceptChange(configuration, oldResource, newResource);
-        };
+  default ResourceEventFilter<T, U> and(ResourceEventFilter<T, U> other) {
+    return other == null ? this : (U configuration, T oldResource, T newResource) -> {
+      boolean result = acceptChange(configuration, oldResource, newResource);
+      return result && other.acceptChange(configuration, oldResource, newResource);
+    };
   }
 
   /**
@@ -48,11 +47,10 @@ public interface ResourceEventFilter<T extends HasMetadata> {
    * @param other the possibly {@code null} other filter to combine this one with
    * @return a composite filter implementing the OR logic between this and the provided filter
    */
-  default ResourceEventFilter<T> or(ResourceEventFilter<T> other) {
-    return other == null ? this
-        : (ControllerConfiguration<T> configuration, T oldResource, T newResource) -> {
-          boolean result = acceptChange(configuration, oldResource, newResource);
-          return result || other.acceptChange(configuration, oldResource, newResource);
-        };
+  default ResourceEventFilter<T, U> or(ResourceEventFilter<T, U> other) {
+    return other == null ? this : (U configuration, T oldResource, T newResource) -> {
+      boolean result = acceptChange(configuration, oldResource, newResource);
+      return result || other.acceptChange(configuration, oldResource, newResource);
+    };
   }
 }

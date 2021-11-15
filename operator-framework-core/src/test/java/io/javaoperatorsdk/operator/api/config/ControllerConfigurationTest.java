@@ -20,6 +20,9 @@ class ControllerConfigurationTest {
       public ConfigurationService getConfigurationService() {
         return null;
       }
+
+      @Override
+      public void setConfigurationService(ConfigurationService service) {}
     };
     assertEquals(TestCustomResource.class, conf.getResourceClass());
   }

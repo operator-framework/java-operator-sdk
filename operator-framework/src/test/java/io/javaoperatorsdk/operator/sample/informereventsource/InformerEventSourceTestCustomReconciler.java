@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
@@ -15,7 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 /**
  * Copies the config map value from spec into status. The main purpose is to test and demonstrate
@@ -33,12 +34,12 @@ public class InformerEventSourceTestCustomReconciler implements
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
 
   private KubernetesClient kubernetesClient;
-  private InformerEventSource<ConfigMap> eventSource;
+  private InformerEventSource<ConfigMap, InformerEventSourceTestCustomResource> eventSource;
 
   @Override
-  public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {
+  public void prepareEventSources(EventSourceRegistry eventSourceRegistry, Cloner cloner) {
     eventSource = new InformerEventSource<>(kubernetesClient, ConfigMap.class,
-        Mappers.fromAnnotation(RELATED_RESOURCE_NAME));
+        Mappers.fromAnnotation(RELATED_RESOURCE_NAME), cloner);
     eventSourceRegistry.registerEventSource(eventSource);
   }
 

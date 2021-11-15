@@ -14,7 +14,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final Set<String> namespaces;
   private RetryConfiguration retry;
   private String labelSelector;
-  private ResourceEventFilter<R> customResourcePredicate;
+  private ResourceEventFilter<R, ControllerConfiguration<R>> customResourcePredicate;
   private final ControllerConfiguration<R> original;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -69,7 +69,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> withCustomResourcePredicate(
-      ResourceEventFilter<R> customResourcePredicate) {
+      ResourceEventFilter<R, ControllerConfiguration<R>> customResourcePredicate) {
     this.customResourcePredicate = customResourcePredicate;
     return this;
   }

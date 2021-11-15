@@ -3,13 +3,15 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 
 /**
  * Convenience implementations of, and utility methods for, {@link ResourceEventFilter}.
  */
 public final class ResourceEventFilters {
 
-  private static final ResourceEventFilter<HasMetadata> USE_FINALIZER =
+  private static final ResourceEventFilter<HasMetadata, ControllerConfiguration<HasMetadata>> USE_FINALIZER =
       (configuration, oldResource, newResource) -> {
         if (configuration.useFinalizer()) {
           final var finalizer = configuration.getFinalizer();
@@ -22,7 +24,7 @@ public final class ResourceEventFilters {
         }
       };
 
-  private static final ResourceEventFilter<HasMetadata> GENERATION_AWARE =
+  private static final ResourceEventFilter<HasMetadata, ControllerConfiguration<HasMetadata>> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
         final var generationAware = configuration.isGenerationAware();
         // todo: change this to check for HasStatus (or similar) when
@@ -41,13 +43,13 @@ public final class ResourceEventFilters {
             oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };
 
-  private static final ResourceEventFilter<HasMetadata> PASSTHROUGH =
+  private static final ResourceEventFilter PASSTHROUGH =
       (configuration, oldResource, newResource) -> true;
 
-  private static final ResourceEventFilter<HasMetadata> NONE =
+  private static final ResourceEventFilter NONE =
       (configuration, oldResource, newResource) -> false;
 
-  private static final ResourceEventFilter<HasMetadata> MARKED_FOR_DELETION =
+  private static final ResourceEventFilter MARKED_FOR_DELETION =
       (configuration, oldResource, newResource) -> newResource.isMarkedForDeletion();
 
   private ResourceEventFilters() {}
@@ -59,8 +61,8 @@ public final class ResourceEventFilters {
    * @return a filter that accepts all events
    */
   @SuppressWarnings("unchecked")
-  public static <T extends HasMetadata> ResourceEventFilter<T> passthrough() {
-    return (ResourceEventFilter<T>) PASSTHROUGH;
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> passthrough() {
+    return (ResourceEventFilter<T, U>) PASSTHROUGH;
   }
 
   /**
@@ -70,8 +72,8 @@ public final class ResourceEventFilters {
    * @return a filter that reject all events
    */
   @SuppressWarnings("unchecked")
-  public static <T extends HasMetadata> ResourceEventFilter<T> none() {
-    return (ResourceEventFilter<T>) NONE;
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> none() {
+    return (ResourceEventFilter<T, U>) NONE;
   }
 
   /**
@@ -82,8 +84,8 @@ public final class ResourceEventFilters {
    * @return a filter accepting changes based on generation information
    */
   @SuppressWarnings("unchecked")
-  public static <T extends HasMetadata> ResourceEventFilter<T> generationAware() {
-    return (ResourceEventFilter<T>) GENERATION_AWARE;
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> generationAware() {
+    return (ResourceEventFilter<T, U>) GENERATION_AWARE;
   }
 
   /**
@@ -95,8 +97,8 @@ public final class ResourceEventFilters {
    *         applied
    */
   @SuppressWarnings("unchecked")
-  public static <T extends HasMetadata> ResourceEventFilter<T> finalizerNeededAndApplied() {
-    return (ResourceEventFilter<T>) USE_FINALIZER;
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> finalizerNeededAndApplied() {
+    return (ResourceEventFilter<T, U>) USE_FINALIZER;
   }
 
   /**
@@ -106,8 +108,8 @@ public final class ResourceEventFilters {
    * @return a filter accepting changes based on whether the Custom Resource is marked for deletion.
    */
   @SuppressWarnings("unchecked")
-  public static <T extends HasMetadata> ResourceEventFilter<T> markedForDeletion() {
-    return (ResourceEventFilter<T>) MARKED_FOR_DELETION;
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> markedForDeletion() {
+    return (ResourceEventFilter<T, U>) MARKED_FOR_DELETION;
   }
 
   /**
@@ -122,14 +124,14 @@ public final class ResourceEventFilters {
    * @return a combined filter implementing the AND logic combination of the provided filters
    */
   @SafeVarargs
-  public static <T extends HasMetadata> ResourceEventFilter<T> and(
-      ResourceEventFilter<T>... items) {
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> and(
+      ResourceEventFilter<T, U>... items) {
     if (items == null) {
       return none();
     }
 
     return (configuration, oldResource, newResource) -> {
-      for (ResourceEventFilter<T> item : items) {
+      for (ResourceEventFilter<T, U> item : items) {
         if (item == null) {
           continue;
         }
@@ -156,14 +158,14 @@ public final class ResourceEventFilters {
    * @return a combined filter implementing the OR logic combination of both provided filters
    */
   @SafeVarargs
-  public static <T extends HasMetadata> ResourceEventFilter<T> or(
-      ResourceEventFilter<T>... items) {
+  public static <T extends HasMetadata, U extends ResourceConfiguration<T, U>> ResourceEventFilter<T, U> or(
+      ResourceEventFilter<T, U>... items) {
     if (items == null) {
       return none();
     }
 
     return (configuration, oldResource, newResource) -> {
-      for (ResourceEventFilter<T> item : items) {
+      for (ResourceEventFilter<T, U> item : items) {
         if (item == null) {
           continue;
         }

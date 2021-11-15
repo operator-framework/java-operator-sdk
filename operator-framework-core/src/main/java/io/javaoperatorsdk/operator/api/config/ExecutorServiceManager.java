@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -19,7 +20,8 @@ public class ExecutorServiceManager {
   private final ExecutorService executor;
   private final int terminationTimeoutSeconds;
 
-  private ExecutorServiceManager(ExecutorService executor, int terminationTimeoutSeconds) {
+  private ExecutorServiceManager(InstrumentedExecutorService executor,
+      int terminationTimeoutSeconds) {
     this.executor = executor;
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
@@ -28,6 +30,9 @@ public class ExecutorServiceManager {
     if (instance == null) {
       instance = new ExecutorServiceManager(
           new InstrumentedExecutorService(configuration.getExecutorService()),
+          configuration.getTerminationTimeoutSeconds());
+      log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
+          configuration.getExecutorService().getClass(),
           configuration.getTerminationTimeoutSeconds());
     } else {
       log.debug("Already started, reusing already setup instance!");
@@ -43,10 +48,18 @@ public class ExecutorServiceManager {
     instance = null;
   }
 
+  public static void useTestInstance() {
+    if (instance == null) {
+      log.debug("Using test instance");
+      instance = new ExecutorServiceManager(
+          new InstrumentedExecutorService(Executors.newFixedThreadPool(5)), 1);
+    }
+  }
+
   public static ExecutorServiceManager instance() {
     if (instance == null) {
       throw new IllegalStateException(
-          "ExecutorServiceManager hasn't been started. Call start method before using!");
+          "ExecutorServiceManager hasn't been started. Call init method before using!");
     }
     return instance;
   }
@@ -72,6 +85,9 @@ public class ExecutorServiceManager {
     private final ExecutorService executor;
 
     private InstrumentedExecutorService(ExecutorService executor) {
+      if (executor == null) {
+        throw new NullPointerException();
+      }
       this.executor = executor;
       debug = Utils.debugThreadPool();
     }

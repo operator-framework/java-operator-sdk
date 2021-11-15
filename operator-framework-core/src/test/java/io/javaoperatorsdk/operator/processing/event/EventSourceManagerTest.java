@@ -12,6 +12,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EventSourceManagerTest {
 
@@ -21,19 +22,22 @@ class EventSourceManagerTest {
   @Test
   public void registersEventSource() {
     EventSource eventSource = mock(EventSource.class);
+    when(eventSource.getResourceClass()).thenReturn(String.class);
 
     eventSourceManager.registerEventSource(eventSource);
 
     Set<EventSource> registeredSources = eventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).contains(eventSource);
 
-    verify(eventSource, times(1)).setEventHandler(eq(eventProcessorMock));
+    verify(eventSource, times(1)).setEventRegistry(eq(eventSourceManager));
   }
 
   @Test
   public void closeShouldCascadeToEventSources() throws IOException {
     EventSource eventSource = mock(EventSource.class);
+    when(eventSource.getResourceClass()).thenReturn(String.class);
     EventSource eventSource2 = mock(EventSource.class);
+    when(eventSource2.getResourceClass()).thenReturn(Object.class);
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 
@@ -46,7 +50,9 @@ class EventSourceManagerTest {
   @Test
   public void startCascadesToEventSources() {
     EventSource eventSource = mock(EventSource.class);
+    when(eventSource.getResourceClass()).thenReturn(String.class);
     EventSource eventSource2 = mock(EventSource.class);
+    when(eventSource2.getResourceClass()).thenReturn(Object.class);
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 

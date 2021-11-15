@@ -7,17 +7,14 @@ public class ResourceEvent extends Event {
 
   private final ResourceAction action;
 
-  public ResourceEvent(ResourceAction action,
-      ResourceID resourceID) {
+  public ResourceEvent(ResourceAction action, ResourceID resourceID) {
     super(resourceID);
     this.action = action;
   }
 
   @Override
   public String toString() {
-    return "CustomResourceEvent{" +
-        "action=" + action +
-        '}';
+    return "ResourceEvent{action=" + action + '}';
   }
 
   public ResourceAction getAction() {

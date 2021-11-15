@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class ErrorStatusHandlerTestReconciler
@@ -22,7 +22,8 @@ public class ErrorStatusHandlerTestReconciler
 
   @Override
   public UpdateControl<ErrorStatusHandlerTestCustomResource> reconcile(
-      ErrorStatusHandlerTestCustomResource resource, Context context) {
+      ErrorStatusHandlerTestCustomResource resource,
+      Context<ErrorStatusHandlerTestCustomResource> context) {
     var number = numberOfExecutions.addAndGet(1);
     var retryAttempt = -1;
     if (context.getRetryInfo().isPresent()) {
