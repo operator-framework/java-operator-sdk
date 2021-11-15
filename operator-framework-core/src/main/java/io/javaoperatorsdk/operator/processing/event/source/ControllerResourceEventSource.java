@@ -1,10 +1,15 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -176,6 +181,20 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     } else {
       return Optional.of(cloner.clone(resource));
     }
+  }
+
+  public Stream<T> getCachedCustomResources() {
+    return getCachedCustomResources(a -> true);
+  }
+
+  public Stream<T> getCachedCustomResources(Predicate<T> predicate) {
+    var streams = sharedIndexInformers.values().stream()
+        .map(i -> i.getStore().list().stream().filter(predicate));
+    var lists = streams.map(s -> s.collect(Collectors.toList())).collect(Collectors.toList());
+    var size = lists.stream().mapToInt(List::size).sum();
+    List<T> list = new ArrayList<>(size);
+    lists.forEach(list::addAll);
+    return list.stream();
   }
 
   /**
