@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,7 +179,19 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     }
   }
 
+  public Stream<T> getCachedCustomResources() {
+    return getCachedCustomResources(a -> true);
+  }
 
+  public Stream<T> getCachedCustomResources(Predicate<T> predicate) {
+    var streams = sharedIndexInformers.values().stream()
+        .map(i -> i.getStore().list().stream().filter(predicate));
+    var lists = streams.map(s -> s.collect(Collectors.toList())).collect(Collectors.toList());
+    var size = lists.stream().mapToInt(List::size).sum();
+    List<T> list = new ArrayList<>(size);
+    lists.forEach(list::addAll);
+    return list.stream();
+  }
 
 
 

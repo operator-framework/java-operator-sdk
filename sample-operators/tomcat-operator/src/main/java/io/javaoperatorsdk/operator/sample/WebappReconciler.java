@@ -44,17 +44,11 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
           // we need to find which WebApp this Tomcat custom resource is related to.
           // To find the related customResourceId of the WebApp resource we traverse the cache to
           // and identify it based on naming convention.
-          var webAppInformer =
-              eventSourceRegistry.getControllerResourceEventSource()
-                  .getInformer(ControllerResourceEventSource.ANY_NAMESPACE_MAP_KEY);
-
-          var ids = webAppInformer.getStore().list().stream()
-              .filter(
-                  (Webapp webApp) -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-              .map(webapp -> new ResourceID(webapp.getMetadata().getName(),
-                  webapp.getMetadata().getNamespace()))
-              .collect(Collectors.toSet());
-          return ids;
+          return eventSourceRegistry.getControllerResourceEventSource()
+              .getCachedCustomResources(
+                  (Webapp webApp) -> webApp.getSpec().getTomcat()
+                      .equals(t.getMetadata().getName()))
+              .map(ResourceID::fromResource).collect(Collectors.toSet());
         });
     eventSourceRegistry.registerEventSource(tomcatEventSource);
   }
