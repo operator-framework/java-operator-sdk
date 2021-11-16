@@ -32,7 +32,7 @@ public class ErrorStatusHandlerIT {
         operator.create(ErrorStatusHandlerTestCustomResource.class, createCustomResource());
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
+        .atMost(15, TimeUnit.SECONDS)
         .pollInterval(1L, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {

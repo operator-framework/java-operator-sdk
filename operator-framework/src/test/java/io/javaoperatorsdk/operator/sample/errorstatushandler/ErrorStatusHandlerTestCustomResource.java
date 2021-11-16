@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("DoubleUpdateSample")
-@ShortNames("du")
+@Kind("ErrorStatusHandlerTestCustomResource")
+@ShortNames("esh")
 public class ErrorStatusHandlerTestCustomResource
     extends CustomResource<Void, ErrorStatusHandlerTestCustomResourceStatus>
     implements Namespaced {
