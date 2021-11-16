@@ -161,8 +161,11 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
 
   @Override
   public Optional<T> getCustomResource(CustomResourceID resourceID) {
-    var sharedIndexInformer =
-        sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
+    var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
+    if (sharedIndexInformer == null) {
+      sharedIndexInformer =
+          sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
+    }
     var resource = sharedIndexInformer.getStore()
         .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
             resourceID.getName()));
@@ -172,6 +175,8 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       return Optional.of((T) (cloner.clone(resource)));
     }
   }
+
+
 
   /**
    * @return shared informers by namespace. If custom resource is not namespace scoped use
