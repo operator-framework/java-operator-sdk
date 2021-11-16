@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResource;
 
-import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.RELATED_RESOURCE_UID;
+import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.RELATED_RESOURCE_NAME;
 import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.TARGET_CONFIG_MAP_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -36,11 +36,11 @@ public class InformerEventSourceIT {
     var customResource = initialCustomResource();
     customResource = operator.create(InformerEventSourceTestCustomResource.class, customResource);
     ConfigMap configMap =
-        operator.create(ConfigMap.class, relatedConfigMap(customResource.getMetadata().getUid()));
+        operator.create(ConfigMap.class, relatedConfigMap(customResource.getMetadata().getName()));
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
     configMap.getData().put(TARGET_CONFIG_MAP_KEY, UPDATE_STATUS_MESSAGE);
-    operator.replace(ConfigMap.class, configMap);
+    configMap = operator.replace(ConfigMap.class, configMap);
 
     waitForCRStatusValue(UPDATE_STATUS_MESSAGE);
   }
@@ -51,7 +51,7 @@ public class InformerEventSourceIT {
     ObjectMeta objectMeta = new ObjectMeta();
     objectMeta.setName(RESOURCE_NAME);
     objectMeta.setAnnotations(new HashMap<>());
-    objectMeta.getAnnotations().put(RELATED_RESOURCE_UID, relatedResourceAnnotation);
+    objectMeta.getAnnotations().put(RELATED_RESOURCE_NAME, relatedResourceAnnotation);
     configMap.setMetadata(objectMeta);
 
     configMap.setData(new HashMap<>());

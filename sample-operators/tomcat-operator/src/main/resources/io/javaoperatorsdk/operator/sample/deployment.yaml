@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ""
+  labels:
+    app.kubernetes.io/part-of: ""
+    app.kubernetes.io/managed-by: "" # used for filtering of Deployments created by the controller
+  ownerReferences: # used for finding which Tomcat does this Deployment belong to
+    - apiVersion: apps/v1
+      kind: Tomcat
+      name: ""
+      uid: ""
+spec:
+  selector:
+    matchLabels:
+      app: ""
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ""
+    spec:
+      containers:
+        - name: tomcat
+          image: tomcat:8.0
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /usr/local/tomcat/webapps
+              name: webapps-volume
+        - name: war-downloader
+          image: busybox:1.28
+          command: ['tail', '-f', '/dev/null']
+          volumeMounts:
+            - name: webapps-volume
+              mountPath: /data
+      volumes:
+        - name: webapps-volume
+          emptydir: {}
