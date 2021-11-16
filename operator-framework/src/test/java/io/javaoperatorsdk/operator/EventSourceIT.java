@@ -47,7 +47,6 @@ public class EventSourceIT {
             .withNamespace(operator.getNamespace())
             .withFinalizers(EventSourceTestCustomReconciler.FINALIZER_NAME)
             .build());
-    resource.setKind("Eventsourcesample");
     resource.setSpec(new EventSourceTestCustomResourceSpec());
     resource.getSpec().setValue(id);
     return resource;

@@ -127,6 +127,30 @@ won't be a result of a retry, but the new event.
 
 A successful execution resets the retry.
 
+### Setting Error Status After Last Retry Attempt
+
+In order to facilitate error reporting in case a last retry attempt fails, Reconciler can implement the following
+interface:
+
+```java
+public interface ErrorStatusHandler<T extends CustomResource<?, ?>> {
+
+    T updateErrorStatus(T resource, RuntimeException e);
+
+}
+```
+
+The `updateErrorStatus` resource is called when it's the last retry attempt according the retry configuration and the
+reconciler execution still resulted in a runtime exception.
+
+The result of the method call is used to make a status sub-resource update on the custom resource. This is always a
+sub-resource update request, so no update on custom resource itself (like spec of metadata) happens. Note that this
+update request will also produce an event, and will result in a reconciliation if the controller is not generation
+aware.
+
+Note that the scope of this feature is only the `reconcile` method of the reconciler, since there should not be updates
+on custom resource after it is marked for deletion.
+
 ### Correctness and Automatic Retries
 
 There is a possibility to turn of the automatic retries. This is not desirable, unless there is a very specific reason.
