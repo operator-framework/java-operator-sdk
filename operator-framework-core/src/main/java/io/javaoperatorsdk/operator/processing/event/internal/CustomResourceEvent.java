@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class CustomResourceEvent extends Event {
 

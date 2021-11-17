@@ -14,8 +14,8 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.Mockito.any;

@@ -7,8 +7,8 @@ import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -58,7 +58,7 @@ public class MicrometerMetrics implements Metrics {
   }
 
   public void reconcileCustomResource(ResourceID resourceID,
-                                      RetryInfo retryInfo) {
+      RetryInfo retryInfo) {
     incrementCounter(resourceID, RECONCILIATIONS + "started",
         RECONCILIATIONS + "retries.number", "" + retryInfo.getAttemptCount(),
         RECONCILIATIONS + "retries.last", "" + retryInfo.isLastAttempt());

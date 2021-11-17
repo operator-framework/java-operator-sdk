@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.api.monitoring;
 import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface Metrics {
   Metrics NOOP = new Metrics() {};
@@ -12,10 +12,10 @@ public interface Metrics {
   default void receivedEvent(Event event) {}
 
   default void reconcileCustomResource(ResourceID resourceID,
-                                       RetryInfo retryInfo) {}
+      RetryInfo retryInfo) {}
 
   default void failedReconciliation(ResourceID resourceID,
-                                    RuntimeException exception) {}
+      RuntimeException exception) {}
 
   default void cleanupDoneFor(ResourceID customResourceUid) {}
 

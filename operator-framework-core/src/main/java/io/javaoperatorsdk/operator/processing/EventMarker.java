@@ -2,8 +2,8 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.HashMap;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
  * Manages the state of received events. Basically there can be only three distinct states relevant

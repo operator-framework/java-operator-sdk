@@ -12,9 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;

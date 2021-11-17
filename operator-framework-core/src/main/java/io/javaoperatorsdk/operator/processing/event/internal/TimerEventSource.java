@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
