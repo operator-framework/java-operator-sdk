@@ -70,7 +70,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
 
     log.info("Client version: {}", Version.clientVersion());
     try {
-      final var k8sVersion = kubernetesClient.getVersion();
+      final var k8sVersion = kubernetesClient.getKubernetesVersion();
       if (k8sVersion != null) {
         log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
       }
