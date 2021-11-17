@@ -138,7 +138,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
-    return kubernetesClient.resources(configuration.getCustomResourceClass());
+    return kubernetesClient.resources(configuration.getResourceClass());
   }
 
   /**
@@ -150,7 +150,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
    * @throws OperatorException if a problem occurred during the registration process
    */
   public void start() throws OperatorException {
-    final Class<R> resClass = configuration.getCustomResourceClass();
+    final Class<R> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
     final var crdName = configuration.getCRDName();
     final var specVersion = "v1";

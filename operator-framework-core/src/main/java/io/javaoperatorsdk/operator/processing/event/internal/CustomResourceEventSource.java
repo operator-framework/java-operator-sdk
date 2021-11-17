@@ -40,7 +40,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
 
-  private final CustomResourceEventFilter<T> filter;
+  private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final Cloner cloner;
 
@@ -48,7 +48,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
     this.controller = controller;
     this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
 
-    var filters = new CustomResourceEventFilter[] {
+    var filters = new ResourceEventFilter[] {
         CustomResourceEventFilters.finalizerNeededAndApplied(),
         CustomResourceEventFilters.markedForDeletion(),
         CustomResourceEventFilters.and(

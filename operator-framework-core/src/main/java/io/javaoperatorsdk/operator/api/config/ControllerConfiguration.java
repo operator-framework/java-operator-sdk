@@ -7,8 +7,8 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
 
 public interface ControllerConfiguration<R extends HasMetadata> {
 
@@ -17,7 +17,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   }
 
   default String getCRDName() {
-    return CustomResource.getCRDName(getCustomResourceClass());
+    return CustomResource.getCRDName(getResourceClass());
   }
 
   default String getFinalizer() {
@@ -40,7 +40,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
     return true;
   }
 
-  default Class<R> getCustomResourceClass() {
+  default Class<R> getResourceClass() {
     ParameterizedType type = (ParameterizedType) getClass().getGenericInterfaces()[0];
     return (Class<R>) type.getActualTypeArguments()[0];
   }
@@ -111,7 +111,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
    *
    * @return filter
    */
-  default CustomResourceEventFilter<R> getEventFilter() {
+  default ResourceEventFilter<R> getEventFilter() {
     return CustomResourceEventFilters.passthrough();
   }
 }

@@ -114,7 +114,7 @@ public class EventSourceManager<R extends HasMetadata>
     lock.lock();
     try {
       for (EventSource eventSource : this.eventSources) {
-        eventSource.cleanupForCustomResource(customResourceUid);
+        eventSource.cleanupForResource(customResourceUid);
       }
     } finally {
       lock.unlock();

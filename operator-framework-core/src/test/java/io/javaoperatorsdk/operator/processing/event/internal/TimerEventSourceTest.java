@@ -73,7 +73,7 @@ class TimerEventSourceTest {
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource
-        .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
+        .cleanupForResource(CustomResourceID.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }

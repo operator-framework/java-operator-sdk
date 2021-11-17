@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
  * @param <T> the type of custom resources handled by this filter
  */
 @FunctionalInterface
-public interface CustomResourceEventFilter<T extends HasMetadata> {
+public interface ResourceEventFilter<T extends HasMetadata> {
 
   /**
    * Determines whether the change between the old version of the resource and the new one needs to
@@ -32,7 +32,7 @@ public interface CustomResourceEventFilter<T extends HasMetadata> {
    * @param other the possibly {@code null} other filter to combine this one with
    * @return a composite filter implementing the AND logic between this and the provided filter
    */
-  default CustomResourceEventFilter<T> and(CustomResourceEventFilter<T> other) {
+  default ResourceEventFilter<T> and(ResourceEventFilter<T> other) {
     return other == null ? this
         : (ControllerConfiguration<T> configuration, T oldResource, T newResource) -> {
           boolean result = acceptChange(configuration, oldResource, newResource);
@@ -48,7 +48,7 @@ public interface CustomResourceEventFilter<T extends HasMetadata> {
    * @param other the possibly {@code null} other filter to combine this one with
    * @return a composite filter implementing the OR logic between this and the provided filter
    */
-  default CustomResourceEventFilter<T> or(CustomResourceEventFilter<T> other) {
+  default ResourceEventFilter<T> or(ResourceEventFilter<T> other) {
     return other == null ? this
         : (ControllerConfiguration<T> configuration, T oldResource, T newResource) -> {
           boolean result = acceptChange(configuration, oldResource, newResource);

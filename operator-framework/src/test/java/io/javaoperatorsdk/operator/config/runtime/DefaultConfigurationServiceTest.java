@@ -82,7 +82,7 @@ public class DefaultConfigurationServiceTest {
     assertEquals(
         ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
         configuration.getFinalizer());
-    assertEquals(TestCustomResource.class, configuration.getCustomResourceClass());
+    assertEquals(TestCustomResource.class, configuration.getResourceClass());
     assertFalse(configuration.isGenerationAware());
   }
 

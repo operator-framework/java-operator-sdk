@@ -22,11 +22,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   private final Map<CustomResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
 
-  public void scheduleOnce(R customResource, long delay) {
+  public void scheduleOnce(R resource, long delay) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
-    CustomResourceID resourceUid = CustomResourceID.fromResource(customResource);
+    CustomResourceID resourceUid = CustomResourceID.fromResource(resource);
     if (onceTasks.containsKey(resourceUid)) {
       cancelOnceSchedule(resourceUid);
     }
@@ -36,8 +36,8 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   @Override
-  public void cleanupForCustomResource(CustomResourceID customResourceUid) {
-    cancelOnceSchedule(customResourceUid);
+  public void cleanupForResource(CustomResourceID resourceUid) {
+    cancelOnceSchedule(resourceUid);
   }
 
   public void cancelOnceSchedule(CustomResourceID customResourceUid) {

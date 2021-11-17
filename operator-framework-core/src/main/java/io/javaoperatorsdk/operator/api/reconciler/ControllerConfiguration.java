@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -54,10 +54,10 @@ public @interface ControllerConfiguration {
 
 
   /**
-   * Optional list of classes providing custom {@link CustomResourceEventFilter}.
+   * Optional list of classes providing custom {@link ResourceEventFilter}.
    *
    * @return the list of event filters.
    */
   @SuppressWarnings("rawtypes")
-  Class<CustomResourceEventFilter>[] eventFilters() default {};
+  Class<ResourceEventFilter>[] eventFilters() default {};
 }

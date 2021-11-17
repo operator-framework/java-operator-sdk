@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
 
 public class AnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
@@ -44,7 +44,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Class<R> getCustomResourceClass() {
+  public Class<R> getResourceClass() {
     return RuntimeControllerMetadata.getCustomResourceClass(reconciler);
   }
 
@@ -75,17 +75,17 @@ public class AnnotationConfiguration<R extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   @Override
-  public CustomResourceEventFilter<R> getEventFilter() {
-    CustomResourceEventFilter<R> answer = null;
+  public ResourceEventFilter<R> getEventFilter() {
+    ResourceEventFilter<R> answer = null;
 
-    Class<CustomResourceEventFilter<R>>[] filterTypes =
-        (Class<CustomResourceEventFilter<R>>[]) valueOrDefault(annotation,
+    Class<ResourceEventFilter<R>>[] filterTypes =
+        (Class<ResourceEventFilter<R>>[]) valueOrDefault(annotation,
             ControllerConfiguration::eventFilters,
             new Object[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
         try {
-          CustomResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
+          ResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
 
           if (answer == null) {
             answer = filter;

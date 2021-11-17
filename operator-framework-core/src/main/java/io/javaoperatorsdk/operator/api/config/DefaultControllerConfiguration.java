@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
 
 public class DefaultControllerConfiguration<R extends HasMetadata>
     implements ControllerConfiguration<R> {
@@ -18,7 +18,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
-  private final CustomResourceEventFilter<R> customResourceEventFilter;
+  private final ResourceEventFilter<R> resourceEventFilter;
   private final Class<R> customResourceClass;
   private ConfigurationService service;
 
@@ -31,7 +31,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       Set<String> namespaces,
       RetryConfiguration retryConfiguration,
       String labelSelector,
-      CustomResourceEventFilter<R> customResourceEventFilter,
+      ResourceEventFilter<R> resourceEventFilter,
       Class<R> customResourceClass,
       ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
@@ -47,9 +47,9 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
     this.labelSelector = labelSelector;
-    this.customResourceEventFilter = customResourceEventFilter;
+    this.resourceEventFilter = resourceEventFilter;
     this.customResourceClass =
-        customResourceClass == null ? ControllerConfiguration.super.getCustomResourceClass()
+        customResourceClass == null ? ControllerConfiguration.super.getResourceClass()
             : customResourceClass;
     setConfigurationService(service);
   }
@@ -114,12 +114,12 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Class<R> getCustomResourceClass() {
+  public Class<R> getResourceClass() {
     return customResourceClass;
   }
 
   @Override
-  public CustomResourceEventFilter<R> getEventFilter() {
-    return customResourceEventFilter;
+  public ResourceEventFilter<R> getEventFilter() {
+    return resourceEventFilter;
   }
 }

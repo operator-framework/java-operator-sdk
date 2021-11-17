@@ -21,6 +21,6 @@ class ControllerConfigurationTest {
         return null;
       }
     };
-    assertEquals(TestCustomResource.class, conf.getCustomResourceClass());
+    assertEquals(TestCustomResource.class, conf.getResourceClass());
   }
 }

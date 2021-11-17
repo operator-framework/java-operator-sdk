@@ -76,6 +76,6 @@ class EventSourceManagerTest {
         .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
 
     verify(eventSource, times(1))
-        .cleanupForCustomResource(eq(CustomResourceID.fromResource(customResource)));
+        .cleanupForResource(eq(CustomResourceID.fromResource(customResource)));
   }
 }

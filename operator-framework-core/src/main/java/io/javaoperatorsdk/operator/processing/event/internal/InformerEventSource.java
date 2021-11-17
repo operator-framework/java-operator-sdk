@@ -27,28 +27,28 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet) {
-    this(sharedInformer, resourceToCustomResourceIDSet, null, true);
+      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet) {
+    this(sharedInformer, resourceToTargetResourceIDSet, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet) {
-    this(client, type, resourceToCustomResourceIDSet, false);
+      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet) {
+    this(client, type, resourceToTargetResourceIDSet, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet,
+      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), resourceToCustomResourceIDSet, null,
+    this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet,
+      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.resourceToCustomResourceIDSet = resourceToCustomResourceIDSet;
+    this.resourceToCustomResourceIDSet = resourceToTargetResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
       log.warn(
@@ -90,8 +90,8 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     if (customResourceIDSet.isEmpty()) {
       return;
     }
-    customResourceIDSet.forEach(customResourceId -> {
-      Event event = new Event(customResourceId);
+    customResourceIDSet.forEach(resourceId -> {
+      Event event = new Event(resourceId);
       /*
        * In fabric8 client for certain cases informers can be created on in a way that they are
        * automatically started, what would cause a NullPointerException here, since an event might

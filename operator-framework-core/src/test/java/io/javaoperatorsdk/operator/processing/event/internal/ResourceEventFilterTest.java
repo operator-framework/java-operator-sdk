@@ -26,7 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class CustomResourceEventFilterTest {
+class ResourceEventFilterTest {
   public static final String FINALIZER = "finalizer";
 
   private EventHandler eventHandler;
@@ -154,14 +154,14 @@ class CustomResourceEventFilterTest {
 
   private static class TestControllerConfig extends ControllerConfig<TestCustomResource> {
     public TestControllerConfig(String finalizer, boolean generationAware,
-        CustomResourceEventFilter<TestCustomResource> eventFilter) {
+        ResourceEventFilter<TestCustomResource> eventFilter) {
       super(finalizer, generationAware, eventFilter, TestCustomResource.class);
     }
   }
   private static class ObservedGenControllerConfig
       extends ControllerConfig<ObservedGenCustomResource> {
     public ObservedGenControllerConfig(String finalizer, boolean generationAware,
-        CustomResourceEventFilter<ObservedGenCustomResource> eventFilter) {
+        ResourceEventFilter<ObservedGenCustomResource> eventFilter) {
       super(finalizer, generationAware, eventFilter, ObservedGenCustomResource.class);
     }
   }
@@ -170,7 +170,7 @@ class CustomResourceEventFilterTest {
       DefaultControllerConfiguration<T> {
 
     public ControllerConfig(String finalizer, boolean generationAware,
-        CustomResourceEventFilter<T> eventFilter, Class<T> customResourceClass) {
+        ResourceEventFilter<T> eventFilter, Class<T> customResourceClass) {
       super(
           null,
           null,
