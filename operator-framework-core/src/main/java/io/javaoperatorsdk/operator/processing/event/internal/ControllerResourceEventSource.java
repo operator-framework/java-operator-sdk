@@ -184,13 +184,16 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   }
 
   public Stream<T> getCachedCustomResources(Predicate<T> predicate) {
-    var streams = sharedIndexInformers.values().stream()
-        .map(i -> i.getStore().list().stream().filter(predicate));
-    var lists = streams.map(s -> s.collect(Collectors.toList())).collect(Collectors.toList());
-    var size = lists.stream().mapToInt(List::size).sum();
-    List<T> list = new ArrayList<>(size);
-    lists.forEach(list::addAll);
-    return list.stream();
+    var streamList = sharedIndexInformers.values().stream()
+        .map(i -> i.getStore().list().stream().filter(predicate)).collect(Collectors.toList());
+    if (streamList.size() == 1) {
+      return streamList.get(0);
+    }
+    var resStream = streamList.get(0);
+    for (int i = 1; i < streamList.size(); i++) {
+      resStream = Stream.concat(resStream, streamList.get(i));
+    }
+    return resStream;
   }
 
 
