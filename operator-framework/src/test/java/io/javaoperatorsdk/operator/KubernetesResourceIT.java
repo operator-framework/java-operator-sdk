@@ -32,7 +32,7 @@ public class KubernetesResourceIT {
     await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
       // there is an additional default config map in the namespace
       assertThat(
-          ((TestExecutionInfoProvider) operator.getControllers().get(0)).getNumberOfExecutions())
+          ((TestExecutionInfoProvider) operator.getReconcilers().get(0)).getNumberOfExecutions())
               .isEqualTo(2);
     });
   }
