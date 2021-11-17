@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
@@ -81,7 +82,6 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
         final var informer =
             createAndRunInformerFor(filteredBySelectorClient, ANY_NAMESPACE_MAP_KEY);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
-        informer.run();
       } else {
         targetNamespaces.forEach(
             ns -> {
