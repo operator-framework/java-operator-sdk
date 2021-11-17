@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +22,7 @@ class OnceWhitelistEventFilterEventFilterTest {
   public void allowCustomResourceWhitelisted() {
     var cr = TestUtils.testCustomResource();
 
-    filter.whitelistNextEvent(CustomResourceID.fromResource(cr));
+    filter.whitelistNextEvent(ResourceID.fromResource(cr));
 
     assertThat(filter.acceptChange(null,
         cr, cr)).isTrue();
@@ -32,7 +32,7 @@ class OnceWhitelistEventFilterEventFilterTest {
   public void allowCustomResourceWhitelistedOnlyOnce() {
     var cr = TestUtils.testCustomResource();
 
-    filter.whitelistNextEvent(CustomResourceID.fromResource(cr));
+    filter.whitelistNextEvent(ResourceID.fromResource(cr));
 
     assertThat(filter.acceptChange(null,
         cr, cr)).isTrue();

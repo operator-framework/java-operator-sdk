@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -117,7 +117,7 @@ class CustomResourceEventSourceTest {
   public void handlesNextEventIfWhitelisted() {
     TestCustomResource customResource = TestUtils.testCustomResource();
     customResource.getMetadata().setFinalizers(List.of(FINALIZER));
-    customResourceEventSource.whitelistNextEvent(CustomResourceID.fromResource(customResource));
+    customResourceEventSource.whitelistNextEvent(ResourceID.fromResource(customResource));
 
     customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
         customResource);

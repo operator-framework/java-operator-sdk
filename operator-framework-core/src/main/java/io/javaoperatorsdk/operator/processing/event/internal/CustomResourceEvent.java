@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class CustomResourceEvent extends Event {
@@ -8,8 +8,8 @@ public class CustomResourceEvent extends Event {
   private final ResourceAction action;
 
   public CustomResourceEvent(ResourceAction action,
-      CustomResourceID customResourceID) {
-    super(customResourceID);
+      ResourceID resourceID) {
+    super(resourceID);
     this.action = action;
   }
 

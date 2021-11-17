@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.processing;
 import org.slf4j.MDC;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class MDCUtils {
 
@@ -15,9 +15,9 @@ public class MDCUtils {
   private static final String GENERATION = "resource.generation";
   private static final String UID = "resource.uid";
 
-  public static void addCustomResourceIDInfo(CustomResourceID customResourceID) {
-    MDC.put(NAME, customResourceID.getName());
-    MDC.put(NAMESPACE, customResourceID.getNamespace().orElse("no namespace"));
+  public static void addCustomResourceIDInfo(ResourceID resourceID) {
+    MDC.put(NAME, resourceID.getName());
+    MDC.put(NAMESPACE, resourceID.getNamespace().orElse("no namespace"));
   }
 
   public static void removeCustomResourceIDInfo() {

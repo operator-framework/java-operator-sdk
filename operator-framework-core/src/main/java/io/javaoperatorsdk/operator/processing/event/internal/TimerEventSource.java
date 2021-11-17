@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource {
@@ -19,14 +19,14 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   private final Timer timer = new Timer();
   private final AtomicBoolean running = new AtomicBoolean();
-  private final Map<CustomResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
+  private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
 
   public void scheduleOnce(R resource, long delay) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
-    CustomResourceID resourceUid = CustomResourceID.fromResource(resource);
+    ResourceID resourceUid = ResourceID.fromResource(resource);
     if (onceTasks.containsKey(resourceUid)) {
       cancelOnceSchedule(resourceUid);
     }
@@ -36,11 +36,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   @Override
-  public void cleanupForResource(CustomResourceID resourceUid) {
+  public void cleanupForResource(ResourceID resourceUid) {
     cancelOnceSchedule(resourceUid);
   }
 
-  public void cancelOnceSchedule(CustomResourceID customResourceUid) {
+  public void cancelOnceSchedule(ResourceID customResourceUid) {
     TimerTask timerTask = onceTasks.remove(customResourceUid);
     if (timerTask != null) {
       timerTask.cancel();
@@ -61,9 +61,9 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   public class EventProducerTimeTask extends TimerTask {
 
-    protected final CustomResourceID customResourceUid;
+    protected final ResourceID customResourceUid;
 
-    public EventProducerTimeTask(CustomResourceID customResourceUid) {
+    public EventProducerTimeTask(ResourceID customResourceUid) {
       this.customResourceUid = customResourceUid;
     }
 

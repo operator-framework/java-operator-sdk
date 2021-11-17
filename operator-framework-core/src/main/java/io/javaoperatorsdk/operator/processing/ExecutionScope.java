@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class ExecutionScope<R extends HasMetadata> {
 
@@ -19,8 +19,8 @@ public class ExecutionScope<R extends HasMetadata> {
     return customResource;
   }
 
-  public CustomResourceID getCustomResourceID() {
-    return CustomResourceID.fromResource(customResource);
+  public ResourceID getCustomResourceID() {
+    return ResourceID.fromResource(customResource);
   }
 
   @Override

@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -132,7 +132,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
       MDCUtils.addCustomResourceInfo(customResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
         eventHandler.handleEvent(
-            new CustomResourceEvent(action, CustomResourceID.fromResource(customResource)));
+            new CustomResourceEvent(action, ResourceID.fromResource(customResource)));
       } else {
         log.debug(
             "Skipping event handling resource {} with version: {}",
@@ -160,7 +160,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
   }
 
   @Override
-  public Optional<T> getCustomResource(CustomResourceID resourceID) {
+  public Optional<T> getCustomResource(ResourceID resourceID) {
     var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
     if (sharedIndexInformer == null) {
       sharedIndexInformer =
@@ -194,11 +194,11 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
    * This will ensure that the next event received after this method is called will not be filtered
    * out.
    *
-   * @param customResourceID - to which the event is related
+   * @param resourceID - to which the event is related
    */
-  public void whitelistNextEvent(CustomResourceID customResourceID) {
+  public void whitelistNextEvent(ResourceID resourceID) {
     if (onceWhitelistEventFilterEventFilter != null) {
-      onceWhitelistEventFilterEventFilter.whitelistNextEvent(customResourceID);
+      onceWhitelistEventFilterEventFilter.whitelistNextEvent(resourceID);
     }
   }
 

@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.api.monitoring;
 import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 public interface Metrics {
@@ -11,15 +11,15 @@ public interface Metrics {
 
   default void receivedEvent(Event event) {}
 
-  default void reconcileCustomResource(CustomResourceID customResourceID,
-      RetryInfo retryInfo) {}
+  default void reconcileCustomResource(ResourceID resourceID,
+                                       RetryInfo retryInfo) {}
 
-  default void failedReconciliation(CustomResourceID customResourceID,
-      RuntimeException exception) {}
+  default void failedReconciliation(ResourceID resourceID,
+                                    RuntimeException exception) {}
 
-  default void cleanupDoneFor(CustomResourceID customResourceUid) {}
+  default void cleanupDoneFor(ResourceID customResourceUid) {}
 
-  default void finishedReconciliation(CustomResourceID resourceID) {}
+  default void finishedReconciliation(ResourceID resourceID) {}
 
 
   interface ControllerExecution<T> {

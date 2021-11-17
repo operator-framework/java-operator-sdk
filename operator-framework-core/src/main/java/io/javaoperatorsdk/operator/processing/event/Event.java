@@ -2,13 +2,13 @@ package io.javaoperatorsdk.operator.processing.event;
 
 public class Event {
 
-  private final CustomResourceID relatedCustomResource;
+  private final ResourceID relatedCustomResource;
 
-  public Event(CustomResourceID targetCustomResource) {
+  public Event(ResourceID targetCustomResource) {
     this.relatedCustomResource = targetCustomResource;
   }
 
-  public CustomResourceID getRelatedCustomResourceID() {
+  public ResourceID getRelatedCustomResourceID() {
     return relatedCustomResource;
   }
 

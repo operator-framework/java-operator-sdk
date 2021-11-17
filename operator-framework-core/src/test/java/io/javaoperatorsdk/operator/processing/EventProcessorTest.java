@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
@@ -80,7 +80,7 @@ class EventProcessorTest {
 
   @Test
   public void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
-    CustomResourceID resourceUid = eventAlreadyUnderProcessing();
+    ResourceID resourceUid = eventAlreadyUnderProcessing();
 
     eventProcessor.handleEvent(nonCREvent(resourceUid));
 
@@ -216,7 +216,7 @@ class EventProcessorTest {
   @Test
   public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
     var cr = testCustomResource();
-    var crEvent = prepareCREvent(CustomResourceID.fromResource(cr));
+    var crEvent = prepareCREvent(ResourceID.fromResource(cr));
     eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
     var executionScope = new ExecutionScope(cr, null);
 
@@ -229,7 +229,7 @@ class EventProcessorTest {
 
   @Test
   public void whitelistNextEventIfTheCacheIsNotPropagatedAfterAnUpdate() {
-    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
     var updatedCr = testCustomResource(crID);
     updatedCr.getMetadata().setResourceVersion("2");
@@ -247,7 +247,7 @@ class EventProcessorTest {
 
   @Test
   public void dontWhitelistsEventWhenOtherChangeDuringExecution() {
-    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
     var updatedCr = testCustomResource(crID);
     updatedCr.getMetadata().setResourceVersion("2");
@@ -267,7 +267,7 @@ class EventProcessorTest {
 
   @Test
   public void dontWhitelistsEventIfUpdatedEventInCache() {
-    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
     var mockCREventSource = mock(CustomResourceEventSource.class);
     eventMarker.markEventReceived(crID);
@@ -283,7 +283,7 @@ class EventProcessorTest {
 
   @Test
   public void cancelScheduleOnceEventsOnSuccessfulExecution() {
-    var crID = new CustomResourceID("test-cr", TEST_NAMESPACE);
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -292,7 +292,7 @@ class EventProcessorTest {
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
   }
 
-  private CustomResourceID eventAlreadyUnderProcessing() {
+  private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
             (Answer<PostExecutionControl>) invocationOnMock -> {
@@ -305,21 +305,21 @@ class EventProcessorTest {
   }
 
   private CustomResourceEvent prepareCREvent() {
-    return prepareCREvent(new CustomResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
+    return prepareCREvent(new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private CustomResourceEvent prepareCREvent(CustomResourceID uid) {
+  private CustomResourceEvent prepareCREvent(ResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
     when(resourceCacheMock.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
     return new CustomResourceEvent(ResourceAction.UPDATED,
-        CustomResourceID.fromResource(customResource));
+        ResourceID.fromResource(customResource));
   }
 
-  private Event nonCREvent(CustomResourceID relatedCustomResourceUid) {
+  private Event nonCREvent(ResourceID relatedCustomResourceUid) {
     return new Event(relatedCustomResourceUid);
   }
 
-  private void overrideData(CustomResourceID id, HasMetadata applyTo) {
+  private void overrideData(ResourceID id, HasMetadata applyTo) {
     applyTo.getMetadata().setName(id.getName());
     applyTo.getMetadata().setNamespace(id.getNamespace().orElse(null));
   }

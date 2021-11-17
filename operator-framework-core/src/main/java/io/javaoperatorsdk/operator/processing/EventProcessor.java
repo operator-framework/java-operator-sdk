@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -41,10 +41,10 @@ public class EventProcessor<R extends HasMetadata>
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
 
-  private final Set<CustomResourceID> underProcessing = new HashSet<>();
+  private final Set<ResourceID> underProcessing = new HashSet<>();
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
-  private final Map<CustomResourceID, RetryExecution> retryState = new HashMap<>();
+  private final Map<ResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
@@ -120,7 +120,7 @@ public class EventProcessor<R extends HasMetadata>
     }
   }
 
-  private void submitReconciliationExecution(CustomResourceID customResourceUid) {
+  private void submitReconciliationExecution(ResourceID customResourceUid) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
       Optional<R> latestCustomResource =
@@ -164,7 +164,7 @@ public class EventProcessor<R extends HasMetadata>
     }
   }
 
-  private RetryInfo retryInfo(CustomResourceID customResourceUid) {
+  private RetryInfo retryInfo(ResourceID customResourceUid) {
     return retryState.get(customResourceUid);
   }
 
@@ -175,32 +175,32 @@ public class EventProcessor<R extends HasMetadata>
       if (!running) {
         return;
       }
-      CustomResourceID customResourceID = executionScope.getCustomResourceID();
+      ResourceID resourceID = executionScope.getCustomResourceID();
       log.debug(
           "Event processing finished. Scope: {}, PostExecutionControl: {}",
           executionScope,
           postExecutionControl);
-      unsetUnderExecution(customResourceID);
+      unsetUnderExecution(resourceID);
 
       // If a delete event present at this phase, it was received during reconciliation.
       // So we either removed the finalizer during reconciliation or we don't use finalizers.
       // Either way we don't want to retry.
       if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
-          !eventMarker.deleteEventPresent(customResourceID)) {
+          !eventMarker.deleteEventPresent(resourceID)) {
         handleRetryOnException(executionScope,
             postExecutionControl.getRuntimeException().orElseThrow());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
-      metrics.finishedReconciliation(customResourceID);
-      if (eventMarker.deleteEventPresent(customResourceID)) {
+      metrics.finishedReconciliation(resourceID);
+      if (eventMarker.deleteEventPresent(resourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
-        if (eventMarker.eventPresent(customResourceID)) {
+        if (eventMarker.eventPresent(resourceID)) {
           if (isCacheReadyForInstantReconciliation(executionScope, postExecutionControl)) {
-            submitReconciliationExecution(customResourceID);
+            submitReconciliationExecution(resourceID);
           } else {
-            postponeReconciliationAndHandleCacheSyncEvent(customResourceID);
+            postponeReconciliationAndHandleCacheSyncEvent(resourceID);
           }
         } else {
           reScheduleExecutionIfInstructed(postExecutionControl,
@@ -212,8 +212,8 @@ public class EventProcessor<R extends HasMetadata>
     }
   }
 
-  private void postponeReconciliationAndHandleCacheSyncEvent(CustomResourceID customResourceID) {
-    eventSourceManager.getCustomResourceEventSource().whitelistNextEvent(customResourceID);
+  private void postponeReconciliationAndHandleCacheSyncEvent(ResourceID resourceID) {
+    eventSourceManager.getCustomResourceEventSource().whitelistNextEvent(resourceID);
   }
 
   private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,
@@ -303,21 +303,21 @@ public class EventProcessor<R extends HasMetadata>
     return retryExecution;
   }
 
-  private void cleanupForDeletedEvent(CustomResourceID customResourceUid) {
+  private void cleanupForDeletedEvent(ResourceID customResourceUid) {
     eventSourceManager.cleanupForCustomResource(customResourceUid);
     eventMarker.cleanup(customResourceUid);
     metrics.cleanupDoneFor(customResourceUid);
   }
 
-  private boolean isControllerUnderExecution(CustomResourceID customResourceUid) {
+  private boolean isControllerUnderExecution(ResourceID customResourceUid) {
     return underProcessing.contains(customResourceUid);
   }
 
-  private void setUnderExecutionProcessing(CustomResourceID customResourceUid) {
+  private void setUnderExecutionProcessing(ResourceID customResourceUid) {
     underProcessing.add(customResourceUid);
   }
 
-  private void unsetUnderExecution(CustomResourceID customResourceUid) {
+  private void unsetUnderExecution(ResourceID customResourceUid) {
     underProcessing.remove(customResourceUid);
   }
 

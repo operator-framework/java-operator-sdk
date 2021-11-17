@@ -17,9 +17,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
@@ -52,7 +51,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
           var ids = webAppInformer.getStore().list().stream()
               .filter(
                   (Webapp webApp) -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-              .map(webapp -> new CustomResourceID(webapp.getMetadata().getName(),
+              .map(webapp -> new ResourceID(webapp.getMetadata().getName(),
                   webapp.getMetadata().getNamespace()))
               .collect(Collectors.toSet());
           return ids;

@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.HashMap;
 
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 /**
@@ -22,33 +22,33 @@ public class EventMarker {
     DELETE_EVENT_PRESENT,
   }
 
-  private final HashMap<CustomResourceID, EventingState> eventingState = new HashMap<>();
+  private final HashMap<ResourceID, EventingState> eventingState = new HashMap<>();
 
-  private EventingState getEventingState(CustomResourceID customResourceID) {
-    EventingState actualState = eventingState.get(customResourceID);
+  private EventingState getEventingState(ResourceID resourceID) {
+    EventingState actualState = eventingState.get(resourceID);
     return actualState == null ? EventingState.NO_EVENT_PRESENT : actualState;
   }
 
-  private void setEventingState(CustomResourceID customResourceID, EventingState state) {
-    eventingState.put(customResourceID, state);
+  private void setEventingState(ResourceID resourceID, EventingState state) {
+    eventingState.put(resourceID, state);
   }
 
   public void markEventReceived(Event event) {
     markEventReceived(event.getRelatedCustomResourceID());
   }
 
-  public void markEventReceived(CustomResourceID customResourceID) {
-    if (deleteEventPresent(customResourceID)) {
+  public void markEventReceived(ResourceID resourceID) {
+    if (deleteEventPresent(resourceID)) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
-    setEventingState(customResourceID, EventingState.EVENT_PRESENT);
+    setEventingState(resourceID, EventingState.EVENT_PRESENT);
   }
 
-  public void unMarkEventReceived(CustomResourceID customResourceID) {
-    var actualState = getEventingState(customResourceID);
+  public void unMarkEventReceived(ResourceID resourceID) {
+    var actualState = getEventingState(resourceID);
     switch (actualState) {
       case EVENT_PRESENT:
-        setEventingState(customResourceID,
+        setEventingState(resourceID,
             EventingState.NO_EVENT_PRESENT);
         break;
       case DELETE_EVENT_PRESENT:
@@ -60,25 +60,25 @@ public class EventMarker {
     markDeleteEventReceived(event.getRelatedCustomResourceID());
   }
 
-  public void markDeleteEventReceived(CustomResourceID customResourceID) {
-    setEventingState(customResourceID, EventingState.DELETE_EVENT_PRESENT);
+  public void markDeleteEventReceived(ResourceID resourceID) {
+    setEventingState(resourceID, EventingState.DELETE_EVENT_PRESENT);
   }
 
-  public boolean deleteEventPresent(CustomResourceID customResourceID) {
-    return getEventingState(customResourceID) == EventingState.DELETE_EVENT_PRESENT;
+  public boolean deleteEventPresent(ResourceID resourceID) {
+    return getEventingState(resourceID) == EventingState.DELETE_EVENT_PRESENT;
   }
 
-  public boolean eventPresent(CustomResourceID customResourceID) {
-    var actualState = getEventingState(customResourceID);
+  public boolean eventPresent(ResourceID resourceID) {
+    var actualState = getEventingState(resourceID);
     return actualState == EventingState.EVENT_PRESENT;
   }
 
-  public boolean noEventPresent(CustomResourceID customResourceID) {
-    var actualState = getEventingState(customResourceID);
+  public boolean noEventPresent(ResourceID resourceID) {
+    var actualState = getEventingState(resourceID);
     return actualState == EventingState.NO_EVENT_PRESENT;
   }
 
-  public void cleanup(CustomResourceID customResourceID) {
-    eventingState.remove(customResourceID);
+  public void cleanup(ResourceID resourceID) {
+    eventingState.remove(resourceID);
   }
 }

@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
@@ -22,29 +22,29 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet;
+  private final Function<T, Set<ResourceID>> resourceToCustomResourceIDSet;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet) {
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
     this(sharedInformer, resourceToTargetResourceIDSet, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet) {
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
     this(client, type, resourceToTargetResourceIDSet, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet,
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
     this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToTargetResourceIDSet,
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;

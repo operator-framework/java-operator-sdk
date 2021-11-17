@@ -11,5 +11,5 @@ public interface EventSource extends LifecycleAware {
    *
    * @param customResourceUid - id of custom resource
    */
-  default void cleanupForResource(CustomResourceID customResourceUid) {}
+  default void cleanupForResource(ResourceID customResourceUid) {}
 }
