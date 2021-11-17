@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.internal;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 
 /**
  * Convenience implementations of, and utility methods for, {@link CustomResourceEventFilter}.
@@ -22,15 +24,17 @@ public final class CustomResourceEventFilters {
 
   private static final CustomResourceEventFilter<HasMetadata> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
-        // todo status
-        // final var status = newResource.getStatus();
         final var generationAware = configuration.isGenerationAware();
-        // if (generationAware && status instanceof ObservedGenerationAware) {
-        // var actualGeneration = newResource.getMetadata().getGeneration();
-        // var observedGeneration = ((ObservedGenerationAware) status)
-        // .getObservedGeneration();
-        // return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
-        // }
+        if (newResource instanceof CustomResource<?, ?>) {
+          var newCustomResource = (CustomResource<?, ?>) newResource;
+          final var status = newCustomResource.getStatus();
+          if (generationAware && status instanceof ObservedGenerationAware) {
+            var actualGeneration = newResource.getMetadata().getGeneration();
+            var observedGeneration = ((ObservedGenerationAware) status)
+                .getObservedGeneration();
+            return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
+          }
+        }
         return oldResource == null || !generationAware ||
             oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };
@@ -107,7 +111,7 @@ public final class CustomResourceEventFilters {
   /**
    * Combines the provided, potentially {@code null} filters with an AND logic, i.e. the resulting
    * filter will only accept the change if all filters accept it, reject it otherwise.
-   *
+   * <p>
    * Note that the evaluation of filters is lazy: the result is returned as soon as possible without
    * evaluating all filters if possible.
    *

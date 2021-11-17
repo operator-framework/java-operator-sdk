@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -137,15 +139,16 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     return customResourceFacade.updateStatus(customResource);
   }
 
-  private void updateStatusObservedGenerationIfRequired(R customResource) {
-    if (controller.getConfiguration().isGenerationAware()) {
-      // TODO
-      // var status = customResource.getStatus();
-      // // Note that if status is null we won't update the observed generation.
-      // if (status instanceof ObservedGenerationAware) {
-      // ((ObservedGenerationAware) status)
-      // .setObservedGeneration(customResource.getMetadata().getGeneration());
-      // }
+  private void updateStatusObservedGenerationIfRequired(R resource) {
+    if (controller.getConfiguration().isGenerationAware()
+        && resource instanceof CustomResource<?, ?>) {
+      var customResource = (CustomResource) resource;
+      var status = customResource.getStatus();
+      // Note that if status is null we won't update the observed generation.
+      if (status instanceof ObservedGenerationAware) {
+        ((ObservedGenerationAware) status)
+            .setObservedGeneration(resource.getMetadata().getGeneration());
+      }
     }
   }
 
