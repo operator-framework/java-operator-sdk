@@ -133,7 +133,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler,
-                                                        ControllerConfiguration<R> configuration)
+      ControllerConfiguration<R> configuration)
       throws OperatorException {
 
     if (configuration == null) {
@@ -148,8 +148,8 @@ public class Operator implements AutoCloseable, LifecycleAware {
 
     controllers.add(controller);
 
-    final var watchedNS =
-        configuration.watchAllNamespaces() ? "[all namespaces]" : configuration.getEffectiveNamespaces();
+    final var watchedNS = configuration.watchAllNamespaces() ? "[all namespaces]"
+        : configuration.getEffectiveNamespaces();
 
     log.info(
         "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
