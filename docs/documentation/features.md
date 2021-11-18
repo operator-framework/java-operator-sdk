@@ -110,6 +110,13 @@ mostly for the cases when there is a long waiting period after a delete operatio
 you might want to either schedule a timed event to make sure the
 `deleteResource` is executed again or use event sources get notified about the state changes of a deleted resource.
 
+## Automatic Observed Generation Handling
+
+## Support for Well Known (non-custom) Kubernetes Resources
+
+A Controller can be registered for a non-custom resource, so well known Kubernetes resources like (
+Ingress,Deployment,...). Note that automatic observed generation handling is not supported for these resources.
+
 ## Automatic Retries on Error
 
 When an exception is thrown from a controller, the framework will schedule an automatic retry of the reconciliation. The

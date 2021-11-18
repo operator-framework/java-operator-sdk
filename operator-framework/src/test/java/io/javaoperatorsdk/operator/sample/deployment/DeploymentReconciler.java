@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 
-@ControllerConfiguration(finalizerName = NO_FINALIZER, generationAwareEventProcessing = false)
+@ControllerConfiguration
 public class DeploymentReconciler
     implements Reconciler<Deployment>, TestExecutionInfoProvider {
 
