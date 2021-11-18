@@ -15,8 +15,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
-
 @ControllerConfiguration
 public class DeploymentReconciler
     implements Reconciler<Deployment>, TestExecutionInfoProvider {
