@@ -34,8 +34,9 @@ public class KubernetesResourceStatusUpdateIT {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());
       assertThat(d.getStatus()).isNotNull();
       assertThat(d.getStatus().getConditions()).isNotNull();
-      assertThat(d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
-          .count()).isEqualTo(1);
+      assertThat(
+          d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
+              .count()).isEqualTo(1);
       System.out.println("ok");
     });
     System.out.println("ok");

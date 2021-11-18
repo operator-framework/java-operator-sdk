@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 
-@ControllerConfiguration(finalizerName = NO_FINALIZER,generationAwareEventProcessing = false)
+@ControllerConfiguration(finalizerName = NO_FINALIZER, generationAwareEventProcessing = false)
 public class DeploymentReconciler
     implements Reconciler<Deployment>, TestExecutionInfoProvider {
 
@@ -39,10 +39,11 @@ public class DeploymentReconciler
       resource.getStatus().setConditions(new ArrayList<>());
     }
     var conditions = resource.getStatus().getConditions();
-    var condition = conditions.stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE)).findFirst();
+    var condition =
+        conditions.stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE)).findFirst();
     if (condition.isEmpty()) {
       conditions.add(new DeploymentCondition(null, null, STATUS_MESSAGE, null,
-              "unknown", "DeploymentReconciler"));
+          "unknown", "DeploymentReconciler"));
       return UpdateControl.updateStatusSubResource(resource);
     } else {
       return UpdateControl.noUpdate();
