@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 /**
  * Convenience implementations of, and utility methods for, {@link ResourceEventFilter}.
  */
-public final class CustomResourceEventFilters {
+public final class ResourceEventFilters {
 
   private static final ResourceEventFilter<HasMetadata> USE_FINALIZER =
       (configuration, oldResource, newResource) -> {
@@ -48,7 +48,7 @@ public final class CustomResourceEventFilters {
   private static final ResourceEventFilter<HasMetadata> MARKED_FOR_DELETION =
       (configuration, oldResource, newResource) -> newResource.isMarkedForDeletion();
 
-  private CustomResourceEventFilters() {}
+  private ResourceEventFilters() {}
 
   /**
    * Retrieves a filter that accepts all events.

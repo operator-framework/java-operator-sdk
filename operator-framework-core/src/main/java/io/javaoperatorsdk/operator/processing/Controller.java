@@ -171,7 +171,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
       eventSourceManager = new EventSourceManager<>(this);
       eventProcessor =
-          new EventProcessor<>(this, eventSourceManager.getCustomResourceEventSource());
+          new EventProcessor<>(this, eventSourceManager.getControllerResourceEventSource());
       eventProcessor.setEventSourceManager(eventSourceManager);
       eventSourceManager.setEventProcessor(eventProcessor);
       if (reconciler instanceof EventSourceInitializer) {

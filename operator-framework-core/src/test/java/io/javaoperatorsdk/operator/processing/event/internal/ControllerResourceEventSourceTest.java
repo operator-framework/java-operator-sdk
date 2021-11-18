@@ -24,19 +24,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class CustomResourceEventSourceTest {
+class ControllerResourceEventSourceTest {
 
   public static final String FINALIZER = "finalizer";
   private static final MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> client =
       mock(MixedOperation.class);
   EventHandler eventHandler = mock(EventHandler.class);
 
-  private CustomResourceEventSource<TestCustomResource> customResourceEventSource =
-      new CustomResourceEventSource<>(new TestController(true));
+  private ControllerResourceEventSource<TestCustomResource> controllerResourceEventSource =
+      new ControllerResourceEventSource<>(new TestController(true));
 
   @BeforeEach
   public void setup() {
-    customResourceEventSource.setEventHandler(eventHandler);
+    controllerResourceEventSource.setEventHandler(eventHandler);
   }
 
   @Test
@@ -48,11 +48,11 @@ class CustomResourceEventSourceTest {
     TestCustomResource oldCustomResource = TestUtils.testCustomResource();
     oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
         oldCustomResource);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
         customResource);
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -61,13 +61,13 @@ class CustomResourceEventSourceTest {
   public void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
     // mark for deletion
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
@@ -76,29 +76,29 @@ class CustomResourceEventSourceTest {
   public void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setGeneration(2L);
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
   @Test
   public void handlesAllEventIfNotGenerationAware() {
-    customResourceEventSource =
-        new CustomResourceEventSource<>(new TestController(false));
+    controllerResourceEventSource =
+        new ControllerResourceEventSource<>(new TestController(false));
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
     verify(eventHandler, times(2)).handleEvent(any());
   }
@@ -107,7 +107,7 @@ class CustomResourceEventSourceTest {
   public void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
         customResource1);
 
     verify(eventHandler, times(1)).handleEvent(any());
@@ -117,9 +117,9 @@ class CustomResourceEventSourceTest {
   public void handlesNextEventIfWhitelisted() {
     TestCustomResource customResource = TestUtils.testCustomResource();
     customResource.getMetadata().setFinalizers(List.of(FINALIZER));
-    customResourceEventSource.whitelistNextEvent(ResourceID.fromResource(customResource));
+    controllerResourceEventSource.whitelistNextEvent(ResourceID.fromResource(customResource));
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
         customResource);
 
     verify(eventHandler, times(1)).handleEvent(any());
@@ -130,7 +130,7 @@ class CustomResourceEventSourceTest {
     TestCustomResource customResource = TestUtils.testCustomResource();
     customResource.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    customResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource,
         customResource);
 
     verify(eventHandler, times(0)).handleEvent(any());

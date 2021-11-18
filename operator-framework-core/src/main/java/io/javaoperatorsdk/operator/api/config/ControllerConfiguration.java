@@ -7,8 +7,8 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilters;
 
 public interface ControllerConfiguration<R extends HasMetadata> {
 
@@ -112,6 +112,6 @@ public interface ControllerConfiguration<R extends HasMetadata> {
    * @return filter
    */
   default ResourceEventFilter<R> getEventFilter() {
-    return CustomResourceEventFilters.passthrough();
+    return ResourceEventFilters.passthrough();
   }
 }

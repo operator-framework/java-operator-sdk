@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.EventProcessor;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata>
@@ -27,7 +27,7 @@ public class EventSourceManager<R extends HasMetadata>
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
-  private CustomResourceEventSource<R> customResourceEventSource;
+  private ControllerResourceEventSource<R> controllerResourceEventSource;
 
   EventSourceManager() {
     init();
@@ -35,8 +35,8 @@ public class EventSourceManager<R extends HasMetadata>
 
   public EventSourceManager(Controller<R> controller) {
     init();
-    customResourceEventSource = new CustomResourceEventSource<>(controller);
-    registerEventSource(customResourceEventSource);
+    controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+    registerEventSource(controllerResourceEventSource);
   }
 
   private void init() {
@@ -46,8 +46,8 @@ public class EventSourceManager<R extends HasMetadata>
 
   public EventSourceManager<R> setEventProcessor(EventProcessor<R> eventProcessor) {
     this.eventProcessor = eventProcessor;
-    if (customResourceEventSource != null) {
-      customResourceEventSource.setEventHandler(eventProcessor);
+    if (controllerResourceEventSource != null) {
+      controllerResourceEventSource.setEventHandler(eventProcessor);
     }
     if (retryAndRescheduleTimerEventSource != null) {
       retryAndRescheduleTimerEventSource.setEventHandler(eventProcessor);
@@ -131,8 +131,8 @@ public class EventSourceManager<R extends HasMetadata>
   }
 
   @Override
-  public CustomResourceEventSource<R> getCustomResourceEventSource() {
-    return customResourceEventSource;
+  public ControllerResourceEventSource<R> getControllerResourceEventSource() {
+    return controllerResourceEventSource;
   }
 
 }

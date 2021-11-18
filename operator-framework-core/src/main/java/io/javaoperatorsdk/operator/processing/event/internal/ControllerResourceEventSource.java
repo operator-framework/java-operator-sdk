@@ -29,12 +29,12 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * This is a special case since is not bound to a single custom resource
  */
-public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEventSource
+public class ControllerResourceEventSource<T extends HasMetadata> extends AbstractEventSource
     implements ResourceEventHandler<T>, ResourceCache<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
-  private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
+  private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
@@ -44,16 +44,16 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final Cloner cloner;
 
-  public CustomResourceEventSource(Controller<T> controller) {
+  public ControllerResourceEventSource(Controller<T> controller) {
     this.controller = controller;
     this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
 
     var filters = new ResourceEventFilter[] {
-        CustomResourceEventFilters.finalizerNeededAndApplied(),
-        CustomResourceEventFilters.markedForDeletion(),
-        CustomResourceEventFilters.and(
+        ResourceEventFilters.finalizerNeededAndApplied(),
+        ResourceEventFilters.markedForDeletion(),
+        ResourceEventFilters.and(
             controller.getConfiguration().getEventFilter(),
-            CustomResourceEventFilters.generationAware()),
+            ResourceEventFilters.generationAware()),
         null
     };
 
@@ -63,7 +63,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
     } else {
       onceWhitelistEventFilterEventFilter = null;
     }
-    filter = CustomResourceEventFilters.or(filters);
+    filter = ResourceEventFilters.or(filters);
   }
 
   @Override
@@ -132,7 +132,7 @@ public class CustomResourceEventSource<T extends HasMetadata> extends AbstractEv
       MDCUtils.addCustomResourceInfo(customResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
         eventHandler.handleEvent(
-            new CustomResourceEvent(action, ResourceID.fromResource(customResource)));
+            new ResourceEvent(action, ResourceID.fromResource(customResource)));
       } else {
         log.debug(
             "Skipping event handling resource {} with version: {}",

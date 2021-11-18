@@ -23,8 +23,8 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -156,8 +156,8 @@ public class EventProcessor<R extends HasMetadata>
   }
 
   private void handleEventMarking(Event event) {
-    if (event instanceof CustomResourceEvent &&
-        ((CustomResourceEvent) event).getAction() == ResourceAction.DELETED) {
+    if (event instanceof ResourceEvent &&
+        ((ResourceEvent) event).getAction() == ResourceAction.DELETED) {
       eventMarker.markDeleteEventReceived(event);
     } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
       eventMarker.markEventReceived(event);
@@ -213,7 +213,7 @@ public class EventProcessor<R extends HasMetadata>
   }
 
   private void postponeReconciliationAndHandleCacheSyncEvent(ResourceID resourceID) {
-    eventSourceManager.getCustomResourceEventSource().whitelistNextEvent(resourceID);
+    eventSourceManager.getControllerResourceEventSource().whitelistNextEvent(resourceID);
   }
 
   private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,

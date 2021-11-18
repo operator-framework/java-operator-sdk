@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilters;
 
 public class AnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
@@ -99,7 +99,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
     }
     return answer != null
         ? answer
-        : CustomResourceEventFilters.passthrough();
+        : ResourceEventFilters.passthrough();
   }
 
   public static <T> T valueOrDefault(ControllerConfiguration controllerConfiguration,

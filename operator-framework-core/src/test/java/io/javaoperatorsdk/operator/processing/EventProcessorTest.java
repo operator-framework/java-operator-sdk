@@ -15,9 +15,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -205,7 +205,7 @@ class EventProcessorTest {
   @Test
   public void cleansUpWhenDeleteEventReceivedAndNoEventPresent() {
     Event deleteEvent =
-        new CustomResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
+        new ResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
 
     eventProcessor.handleEvent(deleteEvent);
 
@@ -233,10 +233,10 @@ class EventProcessorTest {
     var cr = testCustomResource(crID);
     var updatedCr = testCustomResource(crID);
     updatedCr.getMetadata().setResourceVersion("2");
-    var mockCREventSource = mock(CustomResourceEventSource.class);
+    var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getCustomResourceEventSource())
+    when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -253,10 +253,10 @@ class EventProcessorTest {
     updatedCr.getMetadata().setResourceVersion("2");
     var otherChangeCR = testCustomResource(crID);
     otherChangeCR.getMetadata().setResourceVersion("3");
-    var mockCREventSource = mock(CustomResourceEventSource.class);
+    var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
-    when(eventSourceManagerMock.getCustomResourceEventSource())
+    when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -269,10 +269,10 @@ class EventProcessorTest {
   public void dontWhitelistsEventIfUpdatedEventInCache() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
-    var mockCREventSource = mock(CustomResourceEventSource.class);
+    var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventMarker.markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getCustomResourceEventSource())
+    when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -304,14 +304,14 @@ class EventProcessorTest {
     return event.getRelatedCustomResourceID();
   }
 
-  private CustomResourceEvent prepareCREvent() {
+  private ResourceEvent prepareCREvent() {
     return prepareCREvent(new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private CustomResourceEvent prepareCREvent(ResourceID uid) {
+  private ResourceEvent prepareCREvent(ResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
     when(resourceCacheMock.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
-    return new CustomResourceEvent(ResourceAction.UPDATED,
+    return new ResourceEvent(ResourceAction.UPDATED,
         ResourceID.fromResource(customResource));
   }
 

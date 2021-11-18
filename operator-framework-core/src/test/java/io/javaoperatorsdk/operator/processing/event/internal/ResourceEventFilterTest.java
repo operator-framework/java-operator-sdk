@@ -46,7 +46,7 @@ class ResourceEventFilterTest {
             newResource.getStatus().getConfigMapStatus()));
 
     var controller = new TestController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     TestCustomResource cr = TestUtils.testCustomResource();
@@ -74,7 +74,7 @@ class ResourceEventFilterTest {
             newResource.getStatus().getConfigMapStatus()));
 
     var controller = new TestController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     TestCustomResource cr = TestUtils.testCustomResource();
@@ -104,7 +104,7 @@ class ResourceEventFilterTest {
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var controller = new ObservedGenController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     ObservedGenCustomResource cr = new ObservedGenCustomResource();
@@ -135,7 +135,7 @@ class ResourceEventFilterTest {
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var controller = new TestController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     TestCustomResource cr = TestUtils.testCustomResource();

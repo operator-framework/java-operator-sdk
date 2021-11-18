@@ -3,11 +3,11 @@ package io.javaoperatorsdk.operator.processing.event.internal;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class CustomResourceEvent extends Event {
+public class ResourceEvent extends Event {
 
   private final ResourceAction action;
 
-  public CustomResourceEvent(ResourceAction action,
+  public ResourceEvent(ResourceAction action,
       ResourceID resourceID) {
     super(resourceID);
     this.action = action;
