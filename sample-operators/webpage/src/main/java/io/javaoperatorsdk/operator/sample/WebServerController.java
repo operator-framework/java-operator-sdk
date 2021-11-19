@@ -16,11 +16,16 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.Context;
+import io.javaoperatorsdk.operator.api.*;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @ControllerConfiguration
 public class WebServerController implements Reconciler<WebServer> {
@@ -90,8 +95,8 @@ public class WebServerController implements Reconciler<WebServer> {
     log.info("Creating or updating Deployment {} in {}", deployment.getMetadata().getName(), ns);
     kubernetesClient.apps().deployments().inNamespace(ns).createOrReplace(deployment);
 
-    if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName())
-        .get() == null) {
+    if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName()).get()
+        == null) {
       log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
       kubernetesClient.services().inNamespace(ns).createOrReplace(service);
     }
@@ -113,7 +118,6 @@ public class WebServerController implements Reconciler<WebServer> {
     status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
     status.setAreWeGood("Yes!");
     webServer.setStatus(status);
-    // throw new RuntimeException("Creating object failed, because it failed");
     return UpdateControl.updateStatusSubResource(webServer);
   }
 
@@ -173,5 +177,4 @@ public class WebServerController implements Reconciler<WebServer> {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
     }
   }
-
 }
