@@ -16,8 +16,7 @@ public class OnceWhitelistEventFilterEventFilter<T extends HasMetadata>
   private static final Logger log =
       LoggerFactory.getLogger(OnceWhitelistEventFilterEventFilter.class);
 
-  private final ConcurrentMap<ResourceID, ResourceID> whiteList =
-      new ConcurrentHashMap<>();
+  private final ConcurrentMap<ResourceID, ResourceID> whiteList = new ConcurrentHashMap<>();
 
   @Override
   public boolean acceptChange(ControllerConfiguration<T> configuration, T oldResource,
