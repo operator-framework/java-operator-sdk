@@ -19,9 +19,10 @@ public interface ConfigurationService {
     private final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public CustomResource<?, ?> clone(CustomResource<?, ?> object) {
+    public <T extends CustomResource<?, ?>> T clone(T object) {
       try {
-        return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object), object.getClass());
+        return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object),
+            (Class<T>) object.getClass());
       } catch (JsonProcessingException e) {
         throw new IllegalStateException(e);
       }
