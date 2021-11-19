@@ -106,7 +106,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
     } else {
       try {
         var resourceForExecution =
-            cloneResourceIfErrorStatusHandlerIfCouldBeCalled(resource, context);
+            cloneResourceIfErrorStatusHandlerIfNeeded(resource, context);
         return createOrUpdateExecution(executionScope, resourceForExecution, context);
       } catch (RuntimeException e) {
         handleLastAttemptErrorStatusHandler(resource, context, e);
@@ -121,7 +121,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
    * common that the custom resource is changed during an execution, and it's much cleaner to have
    * to original resource in place for status update.
    */
-  private R cloneResourceIfErrorStatusHandlerIfCouldBeCalled(R resource, Context context) {
+  private R cloneResourceIfErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context)) {
       return (R) this.controller.getConfiguration().getConfigurationService().getResourceCloner()
           .clone(resource);
