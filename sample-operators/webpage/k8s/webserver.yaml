@@ -1,0 +1,14 @@
+apiVersion: "sample.javaoperatorsdk/v1"
+kind: WebServer
+metadata:
+  name: hellows
+spec:
+  html: |
+    <html>
+      <head>
+        <title>Hello Operator World</title>
+      </head>
+      <body>
+        Hello World!
+      </body>
+    </html>
