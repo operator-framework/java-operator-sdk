@@ -190,6 +190,8 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private void updateStatusObservedGenerationIfRequired(R resource) {
+    // todo: change this to check for HasStatus (or similar) when
+    // https://github.com/fabric8io/kubernetes-client/issues/3586 is fixed
     if (controller.getConfiguration().isGenerationAware()
         && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
