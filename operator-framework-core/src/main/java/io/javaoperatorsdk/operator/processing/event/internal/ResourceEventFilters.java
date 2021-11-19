@@ -25,6 +25,8 @@ public final class ResourceEventFilters {
   private static final ResourceEventFilter<HasMetadata> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
         final var generationAware = configuration.isGenerationAware();
+        // todo: change this to check for HasStatus (or similar) when
+        // https://github.com/fabric8io/kubernetes-client/issues/3586 is fixed
         if (newResource instanceof CustomResource<?, ?>) {
           var newCustomResource = (CustomResource<?, ?>) newResource;
           final var status = newCustomResource.getStatus();
