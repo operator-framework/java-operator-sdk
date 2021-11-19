@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -110,27 +111,76 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
       updateCustomResourceWithFinalizer(resource);
       return PostExecutionControl.onlyFinalizerAdded();
     } else {
-      log.debug(
-          "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
-          getName(resource),
-          getVersion(resource),
-          executionScope);
-
-      UpdateControl<R> updateControl = controller.reconcile(resource, context);
-      R updatedCustomResource = null;
-      if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
-        updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
-        updateControl
-            .getCustomResource()
-            .getMetadata()
-            .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
-        updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
-      } else if (updateControl.isUpdateStatusSubResource()) {
-        updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
-      } else if (updateControl.isUpdateCustomResource()) {
-        updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      try {
+        var resourceForExecution =
+            cloneResourceForErrorStatusHandlerIfNeeded(resource, context);
+        return createOrUpdateExecution(executionScope, resourceForExecution, context);
+      } catch (RuntimeException e) {
+        handleLastAttemptErrorStatusHandler(resource, context, e);
+        throw e;
       }
-      return createPostExecutionControl(updatedCustomResource, updateControl);
+    }
+  }
+
+  /**
+   * Resource make sense only to clone for the ErrorStatusHandler. Otherwise, this operation can be
+   * skipped since it can be memory and time-consuming. However, it needs to be cloned since it's
+   * common that the custom resource is changed during an execution, and it's much cleaner to have
+   * to original resource in place for status update.
+   */
+  private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
+    if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context)) {
+      return controller.getConfiguration().getConfigurationService().getResourceCloner()
+          .clone(resource);
+    } else {
+      return resource;
+    }
+  }
+
+  private PostExecutionControl<R> createOrUpdateExecution(ExecutionScope<R> executionScope,
+      R resource, Context context) {
+    log.debug(
+        "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
+        getName(resource),
+        getVersion(resource),
+        executionScope);
+
+    UpdateControl<R> updateControl = controller.reconcile(resource, context);
+    R updatedCustomResource = null;
+    if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
+      updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      updateControl
+          .getCustomResource()
+          .getMetadata()
+          .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
+      updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
+    } else if (updateControl.isUpdateStatusSubResource()) {
+      updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
+    } else if (updateControl.isUpdateCustomResource()) {
+      updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+    }
+    return createPostExecutionControl(updatedCustomResource, updateControl);
+  }
+
+  private void handleLastAttemptErrorStatusHandler(R resource, Context context,
+      RuntimeException e) {
+    if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context)) {
+      try {
+        var updatedResource = ((ErrorStatusHandler<R>) controller.getReconciler())
+            .updateErrorStatus(resource, e);
+        customResourceFacade.updateStatus(updatedResource);
+      } catch (RuntimeException ex) {
+        log.error("Error during error status handling.", ex);
+      }
+    }
+  }
+
+  private boolean isLastAttemptOfRetryAndErrorStatusHandlerPresent(Context context) {
+    if (context.getRetryInfo().isPresent()) {
+      return context.getRetryInfo().get().isLastAttempt()
+          && controller.getReconciler() instanceof ErrorStatusHandler;
+    } else {
+      return false;
     }
   }
 

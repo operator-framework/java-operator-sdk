@@ -172,7 +172,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     if (resource == null) {
       return Optional.empty();
     } else {
-      return Optional.of((T) (cloner.clone(resource)));
+      return Optional.of(cloner.clone(resource));
     }
   }
 
