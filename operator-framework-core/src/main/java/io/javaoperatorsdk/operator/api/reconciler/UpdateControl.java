@@ -5,21 +5,21 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 @SuppressWarnings("rawtypes")
 public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
-  private final T customResource;
+  private final T resource;
   private final boolean updateStatusSubResource;
-  private final boolean updateCustomResource;
+  private final boolean updateResource;
 
   private UpdateControl(
-      T customResource, boolean updateStatusSubResource, boolean updateCustomResource) {
-    if ((updateCustomResource || updateStatusSubResource) && customResource == null) {
+      T resource, boolean updateStatusSubResource, boolean updateResource) {
+    if ((updateResource || updateStatusSubResource) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
-    this.customResource = customResource;
+    this.resource = resource;
     this.updateStatusSubResource = updateStatusSubResource;
-    this.updateCustomResource = updateCustomResource;
+    this.updateResource = updateResource;
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> updateCustomResource(T customResource) {
+  public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
     return new UpdateControl<>(customResource, false, true);
   }
 
@@ -44,19 +44,19 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(null, false, false);
   }
 
-  public T getCustomResource() {
-    return customResource;
+  public T getResource() {
+    return resource;
   }
 
   public boolean isUpdateStatusSubResource() {
     return updateStatusSubResource;
   }
 
-  public boolean isUpdateCustomResource() {
-    return updateCustomResource;
+  public boolean isUpdateResource() {
+    return updateResource;
   }
 
   public boolean isUpdateCustomResourceAndStatusSubResource() {
-    return updateCustomResource && updateStatusSubResource;
+    return updateResource && updateStatusSubResource;
   }
 }

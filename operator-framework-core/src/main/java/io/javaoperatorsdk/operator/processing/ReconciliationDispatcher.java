@@ -148,16 +148,16 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     UpdateControl<R> updateControl = controller.reconcile(resource, context);
     R updatedCustomResource = null;
     if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
-      updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      updatedCustomResource = updateCustomResource(updateControl.getResource());
       updateControl
-          .getCustomResource()
+          .getResource()
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
-      updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
+      updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
     } else if (updateControl.isUpdateStatusSubResource()) {
-      updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
-    } else if (updateControl.isUpdateCustomResource()) {
-      updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
+    } else if (updateControl.isUpdateResource()) {
+      updatedCustomResource = updateCustomResource(updateControl.getResource());
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }

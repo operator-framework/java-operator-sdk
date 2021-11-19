@@ -57,7 +57,7 @@ class ReconciliationDispatcherTest {
     when(configuration.getConfigurationService()).thenReturn(configService);
     when(configService.getResourceCloner()).thenReturn(ConfigurationService.DEFAULT_CLONER);
     when(reconciler.reconcile(eq(customResource), any()))
-        .thenReturn(UpdateControl.updateCustomResource(customResource));
+        .thenReturn(UpdateControl.updateResource(customResource));
     when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
     when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
