@@ -4,6 +4,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 public interface Cloner {
 
-  CustomResource<?, ?> clone(CustomResource<?, ?> object);
+  <T extends CustomResource<?, ?>> T clone(T object);
 
 }

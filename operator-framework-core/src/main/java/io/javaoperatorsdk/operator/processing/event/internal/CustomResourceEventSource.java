@@ -172,7 +172,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     if (resource == null) {
       return Optional.empty();
     } else {
-      return Optional.of((T) (cloner.clone(resource)));
+      return Optional.of(cloner.clone(resource));
     }
   }
 
