@@ -1,5 +1,14 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -7,19 +16,14 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.*;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-
-@Controller
-public class WebServerController implements ResourceController<WebServer> {
+@ControllerConfiguration
+public class WebServerController implements Reconciler<WebServer> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -30,8 +34,7 @@ public class WebServerController implements ResourceController<WebServer> {
   }
 
   @Override
-  public UpdateControl<WebServer> createOrUpdateResource(
-      WebServer webServer, Context<WebServer> context) {
+  public UpdateControl<WebServer> reconcile(WebServer webServer, Context context) {
     if (webServer.getSpec().getHtml().contains("error")) {
       throw new ErrorSimulationException("Simulating error");
     }
@@ -87,8 +90,8 @@ public class WebServerController implements ResourceController<WebServer> {
     log.info("Creating or updating Deployment {} in {}", deployment.getMetadata().getName(), ns);
     kubernetesClient.apps().deployments().inNamespace(ns).createOrReplace(deployment);
 
-    if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName()).get()
-        == null) {
+    if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName())
+        .get() == null) {
       log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
       kubernetesClient.services().inNamespace(ns).createOrReplace(service);
     }
@@ -110,13 +113,12 @@ public class WebServerController implements ResourceController<WebServer> {
     status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
     status.setAreWeGood("Yes!");
     webServer.setStatus(status);
-    //        throw new RuntimeException("Creating object failed, because it failed");
+    // throw new RuntimeException("Creating object failed, because it failed");
     return UpdateControl.updateStatusSubResource(webServer);
   }
 
   @Override
-  public DeleteControl deleteResource(
-      WebServer nginx, io.javaoperatorsdk.operator.api.Context<WebServer> context) {
+  public DeleteControl cleanup(WebServer nginx, Context context) {
     log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
     log.info("Deleting ConfigMap {}", configMapName(nginx));
@@ -149,7 +151,7 @@ public class WebServerController implements ResourceController<WebServer> {
     if (service.get() != null) {
       service.delete();
     }
-    return DeleteControl.DEFAULT_DELETE;
+    return DeleteControl.defaultDelete();
   }
 
   private static String configMapName(WebServer nginx) {
@@ -171,4 +173,5 @@ public class WebServerController implements ResourceController<WebServer> {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
     }
   }
+
 }
