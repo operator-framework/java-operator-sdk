@@ -10,7 +10,13 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -123,7 +129,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
    */
   private R cloneResourceIfErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context)) {
-      return (R) this.controller.getConfiguration().getConfigurationService().getResourceCloner()
+      return controller.getConfiguration().getConfigurationService().getResourceCloner()
           .clone(resource);
     } else {
       return resource;
