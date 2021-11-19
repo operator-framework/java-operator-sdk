@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public interface ErrorStatusHandler<T extends CustomResource<?, ?>> {
+public interface ErrorStatusHandler<T extends HasMetadata> {
 
   /**
    * <p>
