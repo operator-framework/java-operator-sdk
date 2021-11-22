@@ -5,22 +5,22 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class CustomResourceID {
+public class ResourceID {
 
-  public static CustomResourceID fromResource(HasMetadata resource) {
-    return new CustomResourceID(resource.getMetadata().getName(),
+  public static ResourceID fromResource(HasMetadata resource) {
+    return new ResourceID(resource.getMetadata().getName(),
         resource.getMetadata().getNamespace());
   }
 
   private final String name;
   private final String namespace;
 
-  public CustomResourceID(String name, String namespace) {
+  public ResourceID(String name, String namespace) {
     this.name = name;
     this.namespace = namespace;
   }
 
-  public CustomResourceID(String name) {
+  public ResourceID(String name) {
     this(name, null);
   }
 
@@ -38,7 +38,7 @@ public class CustomResourceID {
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    CustomResourceID that = (CustomResourceID) o;
+    ResourceID that = (ResourceID) o;
     return Objects.equals(name, that.name) && Objects.equals(namespace,
         that.namespace);
   }

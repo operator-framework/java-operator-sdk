@@ -1,35 +1,35 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class ExecutionScope<R extends CustomResource<?, ?>> {
+public class ExecutionScope<R extends HasMetadata> {
 
   // the latest custom resource from cache
-  private final R customResource;
+  private final R resource;
   private final RetryInfo retryInfo;
 
-  public ExecutionScope(R customResource, RetryInfo retryInfo) {
-    this.customResource = customResource;
+  public ExecutionScope(R resource, RetryInfo retryInfo) {
+    this.resource = resource;
     this.retryInfo = retryInfo;
   }
 
-  public R getCustomResource() {
-    return customResource;
+  public R getResource() {
+    return resource;
   }
 
-  public CustomResourceID getCustomResourceID() {
-    return CustomResourceID.fromResource(customResource);
+  public ResourceID getCustomResourceID() {
+    return ResourceID.fromResource(resource);
   }
 
   @Override
   public String toString() {
     return "ExecutionScope{"
-        + ", customResource uid: "
-        + customResource.getMetadata().getUid()
+        + " resource id: "
+        + ResourceID.fromResource(resource)
         + ", version: "
-        + customResource.getMetadata().getResourceVersion()
+        + resource.getMetadata().getResourceVersion()
         + '}';
   }
 

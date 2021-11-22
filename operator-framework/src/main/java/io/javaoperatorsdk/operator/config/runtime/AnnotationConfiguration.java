@@ -3,15 +3,15 @@ package io.javaoperatorsdk.operator.config.runtime;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilters;
 
-public class AnnotationConfiguration<R extends CustomResource<?, ?>>
+public class AnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
   private final Reconciler<R> reconciler;
@@ -31,7 +31,7 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
   @Override
   public String getFinalizer() {
     if (annotation == null || annotation.finalizerName().isBlank()) {
-      return ControllerUtils.getDefaultFinalizerName(getCRDName());
+      return ControllerUtils.getDefaultFinalizerName(getResourceTypeName());
     } else {
       return annotation.finalizerName();
     }
@@ -44,8 +44,8 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public Class<R> getCustomResourceClass() {
-    return RuntimeControllerMetadata.getCustomResourceClass(reconciler);
+  public Class<R> getResourceClass() {
+    return RuntimeControllerMetadata.getResourceClass(reconciler);
   }
 
   @Override
@@ -75,17 +75,17 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
 
   @SuppressWarnings("unchecked")
   @Override
-  public CustomResourceEventFilter<R> getEventFilter() {
-    CustomResourceEventFilter<R> answer = null;
+  public ResourceEventFilter<R> getEventFilter() {
+    ResourceEventFilter<R> answer = null;
 
-    Class<CustomResourceEventFilter<R>>[] filterTypes =
-        (Class<CustomResourceEventFilter<R>>[]) valueOrDefault(annotation,
+    Class<ResourceEventFilter<R>>[] filterTypes =
+        (Class<ResourceEventFilter<R>>[]) valueOrDefault(annotation,
             ControllerConfiguration::eventFilters,
             new Object[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
         try {
-          CustomResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
+          ResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
 
           if (answer == null) {
             answer = filter;
@@ -99,7 +99,7 @@ public class AnnotationConfiguration<R extends CustomResource<?, ?>>
     }
     return answer != null
         ? answer
-        : CustomResourceEventFilters.passthrough();
+        : ResourceEventFilters.passthrough();
   }
 
   public static <T> T valueOrDefault(ControllerConfiguration controllerConfiguration,

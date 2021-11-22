@@ -2,11 +2,11 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.Set;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
 
-public interface EventSourceRegistry<T extends CustomResource<?, ?>> {
+public interface EventSourceRegistry<T extends HasMetadata> {
 
   /**
    * Add the {@link EventSource} identified by the given <code>name</code> to the event manager.
@@ -21,6 +21,6 @@ public interface EventSourceRegistry<T extends CustomResource<?, ?>> {
 
   Set<EventSource> getRegisteredEventSources();
 
-  CustomResourceEventSource<T> getCustomResourceEventSource();
+  ControllerResourceEventSource<T> getControllerResourceEventSource();
 
 }

@@ -4,17 +4,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
 
-public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
+public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
   private boolean generationAware;
   private final Set<String> namespaces;
   private RetryConfiguration retry;
   private String labelSelector;
-  private CustomResourceEventFilter<R> customResourcePredicate;
+  private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -69,7 +69,7 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
   }
 
   public ControllerConfigurationOverrider<R> withCustomResourcePredicate(
-      CustomResourceEventFilter<R> customResourcePredicate) {
+      ResourceEventFilter<R> customResourcePredicate) {
     this.customResourcePredicate = customResourcePredicate;
     return this;
   }
@@ -78,18 +78,18 @@ public class ControllerConfigurationOverrider<R extends CustomResource<?, ?>> {
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
         original.getName(),
-        original.getCRDName(),
+        original.getResourceTypeName(),
         finalizer,
         generationAware,
         namespaces,
         retry,
         labelSelector,
         customResourcePredicate,
-        original.getCustomResourceClass(),
+        original.getResourceClass(),
         original.getConfigurationService());
   }
 
-  public static <R extends CustomResource<?, ?>> ControllerConfigurationOverrider<R> override(
+  public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
       ControllerConfiguration<R> original) {
     return new ControllerConfigurationOverrider<>(original);
   }

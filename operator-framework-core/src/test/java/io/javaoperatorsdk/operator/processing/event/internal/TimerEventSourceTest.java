@@ -12,9 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +52,7 @@ class TimerEventSourceTest {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
-    timerEventSource.cancelOnceSchedule(CustomResourceID.fromResource(customResource));
+    timerEventSource.cancelOnceSchedule(ResourceID.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }
@@ -73,7 +73,7 @@ class TimerEventSourceTest {
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource
-        .cleanupForCustomResource(CustomResourceID.fromResource(customResource));
+        .cleanupForResource(ResourceID.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }

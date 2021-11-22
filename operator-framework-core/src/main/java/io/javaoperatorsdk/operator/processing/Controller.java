@@ -2,9 +2,9 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.Objects;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -22,7 +22,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 
-public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>,
+public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration<R> configuration;
@@ -138,7 +138,7 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
   }
 
   public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
-    return kubernetesClient.resources(configuration.getCustomResourceClass());
+    return kubernetesClient.resources(configuration.getResourceClass());
   }
 
   /**
@@ -150,9 +150,9 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
    * @throws OperatorException if a problem occurred during the registration process
    */
   public void start() throws OperatorException {
-    final Class<R> resClass = configuration.getCustomResourceClass();
+    final Class<R> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
-    final var crdName = configuration.getCRDName();
+    final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
     try {
       // check that the custom resource is known by the cluster if configured that way
@@ -171,7 +171,7 @@ public class Controller<R extends CustomResource<?, ?>> implements Reconciler<R>
 
       eventSourceManager = new EventSourceManager<>(this);
       eventProcessor =
-          new EventProcessor<>(this, eventSourceManager.getCustomResourceEventSource());
+          new EventProcessor<>(this, eventSourceManager.getControllerResourceEventSource());
       eventProcessor.setEventSourceManager(eventSourceManager);
       eventSourceManager.setEventProcessor(eventProcessor);
       if (reconciler instanceof EventSourceInitializer) {

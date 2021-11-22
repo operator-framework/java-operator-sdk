@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -19,12 +19,12 @@ public class DefaultConfigurationService extends BaseConfigurationService {
   }
 
   @Override
-  public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+  public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> reconciler) {
     return getConfigurationFor(reconciler, true);
   }
 
-  <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+  <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> reconciler, boolean createIfNeeded) {
     var config = super.getConfigurationFor(reconciler);
     if (config == null) {

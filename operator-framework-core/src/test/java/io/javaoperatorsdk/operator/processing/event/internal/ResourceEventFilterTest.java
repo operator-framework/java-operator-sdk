@@ -6,9 +6,9 @@ import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class CustomResourceEventFilterTest {
+class ResourceEventFilterTest {
   public static final String FINALIZER = "finalizer";
 
   private EventHandler eventHandler;
@@ -46,7 +46,7 @@ class CustomResourceEventFilterTest {
             newResource.getStatus().getConfigMapStatus()));
 
     var controller = new TestController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     TestCustomResource cr = TestUtils.testCustomResource();
@@ -74,7 +74,7 @@ class CustomResourceEventFilterTest {
             newResource.getStatus().getConfigMapStatus()));
 
     var controller = new TestController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     TestCustomResource cr = TestUtils.testCustomResource();
@@ -104,7 +104,7 @@ class CustomResourceEventFilterTest {
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var controller = new ObservedGenController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     ObservedGenCustomResource cr = new ObservedGenCustomResource();
@@ -135,7 +135,7 @@ class CustomResourceEventFilterTest {
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var controller = new TestController(config);
-    var eventSource = new CustomResourceEventSource<>(controller);
+    var eventSource = new ControllerResourceEventSource<>(controller);
     eventSource.setEventHandler(eventHandler);
 
     TestCustomResource cr = TestUtils.testCustomResource();
@@ -154,23 +154,23 @@ class CustomResourceEventFilterTest {
 
   private static class TestControllerConfig extends ControllerConfig<TestCustomResource> {
     public TestControllerConfig(String finalizer, boolean generationAware,
-        CustomResourceEventFilter<TestCustomResource> eventFilter) {
+        ResourceEventFilter<TestCustomResource> eventFilter) {
       super(finalizer, generationAware, eventFilter, TestCustomResource.class);
     }
   }
   private static class ObservedGenControllerConfig
       extends ControllerConfig<ObservedGenCustomResource> {
     public ObservedGenControllerConfig(String finalizer, boolean generationAware,
-        CustomResourceEventFilter<ObservedGenCustomResource> eventFilter) {
+        ResourceEventFilter<ObservedGenCustomResource> eventFilter) {
       super(finalizer, generationAware, eventFilter, ObservedGenCustomResource.class);
     }
   }
 
-  private static class ControllerConfig<T extends CustomResource<?, ?>> extends
+  private static class ControllerConfig<T extends HasMetadata> extends
       DefaultControllerConfiguration<T> {
 
     public ControllerConfig(String finalizer, boolean generationAware,
-        CustomResourceEventFilter<T> eventFilter, Class<T> customResourceClass) {
+        ResourceEventFilter<T> eventFilter, Class<T> customResourceClass) {
       super(
           null,
           null,

@@ -9,16 +9,16 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.EventProcessor;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
 
-public class EventSourceManager<R extends CustomResource<?, ?>>
+public class EventSourceManager<R extends HasMetadata>
     implements EventSourceRegistry<R>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
@@ -27,7 +27,7 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
-  private CustomResourceEventSource<R> customResourceEventSource;
+  private ControllerResourceEventSource<R> controllerResourceEventSource;
 
   EventSourceManager() {
     init();
@@ -35,8 +35,8 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
 
   public EventSourceManager(Controller<R> controller) {
     init();
-    customResourceEventSource = new CustomResourceEventSource<>(controller);
-    registerEventSource(customResourceEventSource);
+    controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+    registerEventSource(controllerResourceEventSource);
   }
 
   private void init() {
@@ -46,8 +46,8 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
 
   public EventSourceManager<R> setEventProcessor(EventProcessor<R> eventProcessor) {
     this.eventProcessor = eventProcessor;
-    if (customResourceEventSource != null) {
-      customResourceEventSource.setEventHandler(eventProcessor);
+    if (controllerResourceEventSource != null) {
+      controllerResourceEventSource.setEventHandler(eventProcessor);
     }
     if (retryAndRescheduleTimerEventSource != null) {
       retryAndRescheduleTimerEventSource.setEventHandler(eventProcessor);
@@ -110,11 +110,11 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
     }
   }
 
-  public void cleanupForCustomResource(CustomResourceID customResourceUid) {
+  public void cleanupForCustomResource(ResourceID customResourceUid) {
     lock.lock();
     try {
       for (EventSource eventSource : this.eventSources) {
-        eventSource.cleanupForCustomResource(customResourceUid);
+        eventSource.cleanupForResource(customResourceUid);
       }
     } finally {
       lock.unlock();
@@ -131,8 +131,8 @@ public class EventSourceManager<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public CustomResourceEventSource<R> getCustomResourceEventSource() {
-    return customResourceEventSource;
+  public ControllerResourceEventSource<R> getControllerResourceEventSource() {
+    return controllerResourceEventSource;
   }
 
 }

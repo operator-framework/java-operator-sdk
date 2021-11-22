@@ -3,64 +3,64 @@ package io.javaoperatorsdk.operator.processing;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class EventMarkerTest {
 
   private final EventMarker eventMarker = new EventMarker();
-  private CustomResourceID sampleCustomResourceID = new CustomResourceID("test-name");
+  private ResourceID sampleResourceID = new ResourceID("test-name");
 
   @Test
   public void returnsNoEventPresentIfNotMarkedYet() {
-    assertThat(eventMarker.noEventPresent(sampleCustomResourceID)).isTrue();
+    assertThat(eventMarker.noEventPresent(sampleResourceID)).isTrue();
   }
 
   @Test
   public void marksEvent() {
-    eventMarker.markEventReceived(sampleCustomResourceID);
+    eventMarker.markEventReceived(sampleResourceID);
 
-    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isTrue();
-    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleResourceID)).isTrue();
+    assertThat(eventMarker.deleteEventPresent(sampleResourceID)).isFalse();
   }
 
   @Test
   public void marksDeleteEvent() {
-    eventMarker.markDeleteEventReceived(sampleCustomResourceID);
+    eventMarker.markDeleteEventReceived(sampleResourceID);
 
-    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID))
+    assertThat(eventMarker.deleteEventPresent(sampleResourceID))
         .isTrue();
-    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleResourceID)).isFalse();
   }
 
   @Test
   public void afterDeleteEventMarkEventIsNotRelevant() {
-    eventMarker.markEventReceived(sampleCustomResourceID);
+    eventMarker.markEventReceived(sampleResourceID);
 
-    eventMarker.markDeleteEventReceived(sampleCustomResourceID);
+    eventMarker.markDeleteEventReceived(sampleResourceID);
 
-    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID))
+    assertThat(eventMarker.deleteEventPresent(sampleResourceID))
         .isTrue();
-    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleResourceID)).isFalse();
   }
 
   @Test
   public void cleansUp() {
-    eventMarker.markEventReceived(sampleCustomResourceID);
-    eventMarker.markDeleteEventReceived(sampleCustomResourceID);
+    eventMarker.markEventReceived(sampleResourceID);
+    eventMarker.markDeleteEventReceived(sampleResourceID);
 
-    eventMarker.cleanup(sampleCustomResourceID);
+    eventMarker.cleanup(sampleResourceID);
 
-    assertThat(eventMarker.deleteEventPresent(sampleCustomResourceID)).isFalse();
-    assertThat(eventMarker.eventPresent(sampleCustomResourceID)).isFalse();
+    assertThat(eventMarker.deleteEventPresent(sampleResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleResourceID)).isFalse();
   }
 
   @Test
   public void cannotMarkEventAfterDeleteEventReceived() {
     Assertions.assertThrows(IllegalStateException.class, () -> {
-      eventMarker.markDeleteEventReceived(sampleCustomResourceID);
-      eventMarker.markEventReceived(sampleCustomResourceID);
+      eventMarker.markDeleteEventReceived(sampleResourceID);
+      eventMarker.markEventReceived(sampleResourceID);
     });
   }
 

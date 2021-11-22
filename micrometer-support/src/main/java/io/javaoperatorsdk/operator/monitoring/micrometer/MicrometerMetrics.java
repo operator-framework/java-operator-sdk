@@ -7,8 +7,8 @@ import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -53,30 +53,30 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void cleanupDoneFor(CustomResourceID customResourceUid) {
+  public void cleanupDoneFor(ResourceID customResourceUid) {
     incrementCounter(customResourceUid, "events.delete");
   }
 
-  public void reconcileCustomResource(CustomResourceID customResourceID,
+  public void reconcileCustomResource(ResourceID resourceID,
       RetryInfo retryInfo) {
-    incrementCounter(customResourceID, RECONCILIATIONS + "started",
+    incrementCounter(resourceID, RECONCILIATIONS + "started",
         RECONCILIATIONS + "retries.number", "" + retryInfo.getAttemptCount(),
         RECONCILIATIONS + "retries.last", "" + retryInfo.isLastAttempt());
   }
 
   @Override
-  public void finishedReconciliation(CustomResourceID customResourceID) {
-    incrementCounter(customResourceID, RECONCILIATIONS + "success");
+  public void finishedReconciliation(ResourceID resourceID) {
+    incrementCounter(resourceID, RECONCILIATIONS + "success");
   }
 
-  public void failedReconciliation(CustomResourceID customResourceID, RuntimeException exception) {
+  public void failedReconciliation(ResourceID resourceID, RuntimeException exception) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;
     } else if (cause instanceof RuntimeException) {
       cause = cause.getCause() != null ? cause.getCause() : cause;
     }
-    incrementCounter(customResourceID, RECONCILIATIONS + "failed", "exception",
+    incrementCounter(resourceID, RECONCILIATIONS + "failed", "exception",
         cause.getClass().getSimpleName());
   }
 
@@ -84,7 +84,7 @@ public class MicrometerMetrics implements Metrics {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
 
-  private void incrementCounter(CustomResourceID id, String counterName, String... additionalTags) {
+  private void incrementCounter(ResourceID id, String counterName, String... additionalTags) {
     var tags = List.of(
         "name", id.getName(),
         "name", id.getName(), "namespace", id.getNamespace().orElse(""),

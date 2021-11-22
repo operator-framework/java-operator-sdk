@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -18,15 +18,15 @@ public class AbstractConfigurationService implements ConfigurationService {
     this.version = version;
   }
 
-  protected <R extends CustomResource<?, ?>> void register(ControllerConfiguration<R> config) {
+  protected <R extends HasMetadata> void register(ControllerConfiguration<R> config) {
     put(config, true);
   }
 
-  protected <R extends CustomResource<?, ?>> void replace(ControllerConfiguration<R> config) {
+  protected <R extends HasMetadata> void replace(ControllerConfiguration<R> config) {
     put(config, false);
   }
 
-  private <R extends CustomResource<?, ?>> void put(
+  private <R extends HasMetadata> void put(
       ControllerConfiguration<R> config, boolean failIfExisting) {
     final var name = config.getName();
     if (failIfExisting) {
@@ -39,7 +39,7 @@ public class AbstractConfigurationService implements ConfigurationService {
     config.setConfigurationService(this);
   }
 
-  protected <R extends CustomResource<?, ?>> void throwExceptionOnNameCollision(
+  protected <R extends HasMetadata> void throwExceptionOnNameCollision(
       String newControllerClassName, ControllerConfiguration<R> existing) {
     throw new IllegalArgumentException(
         "Controller name '"
@@ -51,7 +51,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   @Override
-  public <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+  public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> controller) {
     final var key = keyFor(controller);
     final var configuration = configurations.get(key);
@@ -73,7 +73,7 @@ public class AbstractConfigurationService implements ConfigurationService {
         + ".";
   }
 
-  protected <R extends CustomResource<?, ?>> String keyFor(Reconciler<R> controller) {
+  protected <R extends HasMetadata> String keyFor(Reconciler<R> controller) {
     return ControllerUtils.getNameFor(controller);
   }
 

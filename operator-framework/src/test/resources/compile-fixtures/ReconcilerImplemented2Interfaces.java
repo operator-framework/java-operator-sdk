@@ -16,7 +16,7 @@ public class ReconcilerImplemented2Interfaces implements Serializable, Reconcile
 
     @Override
     public UpdateControl<MyCustomResource> reconcile(MyCustomResource customResource, Context context) {
-        return UpdateControl.updateCustomResource(null);
+        return UpdateControl.updateResource(null);
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -19,10 +20,9 @@ public interface ConfigurationService {
     private final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public <T extends CustomResource<?, ?>> T clone(T object) {
+    public HasMetadata clone(HasMetadata object) {
       try {
-        return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object),
-            (Class<T>) object.getClass());
+        return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object), object.getClass());
       } catch (JsonProcessingException e) {
         throw new IllegalStateException(e);
       }
@@ -37,7 +37,7 @@ public interface ConfigurationService {
    * @return the {@link ControllerConfiguration} associated with the specified controller or {@code
    * null} if no configuration exists for the controller
    */
-  <R extends CustomResource<?, ?>> ControllerConfiguration<R> getConfigurationFor(
+  <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> controller);
 
   /**

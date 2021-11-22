@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 
-public interface EventSourceInitializer<T extends CustomResource<?, ?>> {
+public interface EventSourceInitializer<T extends HasMetadata> {
 
   /**
    * In this typically you might want to register event sources. But can access

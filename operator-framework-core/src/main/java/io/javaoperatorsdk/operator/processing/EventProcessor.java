@@ -12,19 +12,19 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -36,15 +36,15 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
  * UID, while buffering events which are received during an execution.
  */
-public class EventProcessor<R extends CustomResource<?, ?>>
+public class EventProcessor<R extends HasMetadata>
     implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
 
-  private final Set<CustomResourceID> underProcessing = new HashSet<>();
+  private final Set<ResourceID> underProcessing = new HashSet<>();
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
-  private final Map<CustomResourceID, RetryExecution> retryState = new HashMap<>();
+  private final Map<ResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
   private final String controllerName;
   private final ReentrantLock lock = new ReentrantLock();
@@ -120,7 +120,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
     }
   }
 
-  private void submitReconciliationExecution(CustomResourceID customResourceUid) {
+  private void submitReconciliationExecution(ResourceID customResourceUid) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
       Optional<R> latestCustomResource =
@@ -156,15 +156,15 @@ public class EventProcessor<R extends CustomResource<?, ?>>
   }
 
   private void handleEventMarking(Event event) {
-    if (event instanceof CustomResourceEvent &&
-        ((CustomResourceEvent) event).getAction() == ResourceAction.DELETED) {
+    if (event instanceof ResourceEvent &&
+        ((ResourceEvent) event).getAction() == ResourceAction.DELETED) {
       eventMarker.markDeleteEventReceived(event);
     } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
       eventMarker.markEventReceived(event);
     }
   }
 
-  private RetryInfo retryInfo(CustomResourceID customResourceUid) {
+  private RetryInfo retryInfo(ResourceID customResourceUid) {
     return retryState.get(customResourceUid);
   }
 
@@ -175,36 +175,36 @@ public class EventProcessor<R extends CustomResource<?, ?>>
       if (!running) {
         return;
       }
-      CustomResourceID customResourceID = executionScope.getCustomResourceID();
+      ResourceID resourceID = executionScope.getCustomResourceID();
       log.debug(
           "Event processing finished. Scope: {}, PostExecutionControl: {}",
           executionScope,
           postExecutionControl);
-      unsetUnderExecution(customResourceID);
+      unsetUnderExecution(resourceID);
 
       // If a delete event present at this phase, it was received during reconciliation.
       // So we either removed the finalizer during reconciliation or we don't use finalizers.
       // Either way we don't want to retry.
       if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
-          !eventMarker.deleteEventPresent(customResourceID)) {
+          !eventMarker.deleteEventPresent(resourceID)) {
         handleRetryOnException(executionScope,
             postExecutionControl.getRuntimeException().orElseThrow());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
-      metrics.finishedReconciliation(customResourceID);
-      if (eventMarker.deleteEventPresent(customResourceID)) {
+      metrics.finishedReconciliation(resourceID);
+      if (eventMarker.deleteEventPresent(resourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
-        if (eventMarker.eventPresent(customResourceID)) {
+        if (eventMarker.eventPresent(resourceID)) {
           if (isCacheReadyForInstantReconciliation(executionScope, postExecutionControl)) {
-            submitReconciliationExecution(customResourceID);
+            submitReconciliationExecution(resourceID);
           } else {
-            postponeReconciliationAndHandleCacheSyncEvent(customResourceID);
+            postponeReconciliationAndHandleCacheSyncEvent(resourceID);
           }
         } else {
           reScheduleExecutionIfInstructed(postExecutionControl,
-              executionScope.getCustomResource());
+              executionScope.getResource());
         }
       }
     } finally {
@@ -212,8 +212,8 @@ public class EventProcessor<R extends CustomResource<?, ?>>
     }
   }
 
-  private void postponeReconciliationAndHandleCacheSyncEvent(CustomResourceID customResourceID) {
-    eventSourceManager.getCustomResourceEventSource().whitelistNextEvent(customResourceID);
+  private void postponeReconciliationAndHandleCacheSyncEvent(ResourceID resourceID) {
+    eventSourceManager.getControllerResourceEventSource().whitelistNextEvent(resourceID);
   }
 
   private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,
@@ -221,7 +221,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
     if (!postExecutionControl.customResourceUpdatedDuringExecution()) {
       return true;
     }
-    String originalResourceVersion = getVersion(executionScope.getCustomResource());
+    String originalResourceVersion = getVersion(executionScope.getResource());
     String customResourceVersionAfterExecution = getVersion(postExecutionControl
         .getUpdatedCustomResource()
         .orElseThrow(() -> new IllegalStateException(
@@ -277,7 +277,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
           metrics.failedReconciliation(customResourceID, exception);
           eventSourceManager
               .getRetryAndRescheduleTimerEventSource()
-              .scheduleOnce(executionScope.getCustomResource(), delay);
+              .scheduleOnce(executionScope.getResource(), delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
   }
@@ -285,7 +285,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
   private void cleanupOnSuccessfulExecution(ExecutionScope<R> executionScope) {
     log.debug(
         "Cleanup for successful execution for resource: {}",
-        getName(executionScope.getCustomResource()));
+        getName(executionScope.getResource()));
     if (isRetryConfigured()) {
       retryState.remove(executionScope.getCustomResourceID());
     }
@@ -303,21 +303,21 @@ public class EventProcessor<R extends CustomResource<?, ?>>
     return retryExecution;
   }
 
-  private void cleanupForDeletedEvent(CustomResourceID customResourceUid) {
+  private void cleanupForDeletedEvent(ResourceID customResourceUid) {
     eventSourceManager.cleanupForCustomResource(customResourceUid);
     eventMarker.cleanup(customResourceUid);
     metrics.cleanupDoneFor(customResourceUid);
   }
 
-  private boolean isControllerUnderExecution(CustomResourceID customResourceUid) {
+  private boolean isControllerUnderExecution(ResourceID customResourceUid) {
     return underProcessing.contains(customResourceUid);
   }
 
-  private void setUnderExecutionProcessing(CustomResourceID customResourceUid) {
+  private void setUnderExecutionProcessing(ResourceID customResourceUid) {
     underProcessing.add(customResourceUid);
   }
 
-  private void unsetUnderExecution(CustomResourceID customResourceUid) {
+  private void unsetUnderExecution(ResourceID customResourceUid) {
     underProcessing.remove(customResourceUid);
   }
 
@@ -358,7 +358,7 @@ public class EventProcessor<R extends CustomResource<?, ?>>
       final var thread = Thread.currentThread();
       final var name = thread.getName();
       try {
-        MDCUtils.addCustomResourceInfo(executionScope.getCustomResource());
+        MDCUtils.addCustomResourceInfo(executionScope.getResource());
         thread.setName("EventHandler-" + controllerName);
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);

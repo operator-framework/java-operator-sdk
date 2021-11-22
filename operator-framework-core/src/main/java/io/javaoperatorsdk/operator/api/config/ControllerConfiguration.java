@@ -4,23 +4,24 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 import java.util.Set;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilters;
 
-public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
+public interface ControllerConfiguration<R extends HasMetadata> {
 
   default String getName() {
     return ControllerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
 
-  default String getCRDName() {
-    return CustomResource.getCRDName(getCustomResourceClass());
+  default String getResourceTypeName() {
+    return CustomResource.getCRDName(getResourceClass());
   }
 
   default String getFinalizer() {
-    return ControllerUtils.getDefaultFinalizerName(getCRDName());
+    return ControllerUtils.getDefaultFinalizerName(getResourceTypeName());
   }
 
   /**
@@ -39,7 +40,7 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
     return true;
   }
 
-  default Class<R> getCustomResourceClass() {
+  default Class<R> getResourceClass() {
     ParameterizedType type = (ParameterizedType) getClass().getGenericInterfaces()[0];
     return (Class<R>) type.getActualTypeArguments()[0];
   }
@@ -110,7 +111,7 @@ public interface ControllerConfiguration<R extends CustomResource<?, ?>> {
    *
    * @return filter
    */
-  default CustomResourceEventFilter<R> getEventFilter() {
-    return CustomResourceEventFilters.passthrough();
+  default ResourceEventFilter<R> getEventFilter() {
+    return ResourceEventFilters.passthrough();
   }
 }

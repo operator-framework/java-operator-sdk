@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -25,7 +26,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * Handles calls and results of a Reconciler and finalizer related logic
  */
-public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
+public class ReconciliationDispatcher<R extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
@@ -59,7 +60,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
   }
 
   private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope) {
-    R resource = executionScope.getCustomResource();
+    R resource = executionScope.getResource();
     log.debug("Handling dispatch for resource {}", getName(resource));
 
     final var markedForDeletion = resource.isMarkedForDeletion();
@@ -86,7 +87,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
 
   /**
    * Determines whether the given resource should be dispatched to the controller's
-   * {@link Reconciler#cleanup(CustomResource, Context)} method
+   * {@link Reconciler#cleanup(HasMetadata, Context)} method
    *
    * @param resource the resource to be potentially deleted
    * @return {@code true} if the resource should be handed to the controller's {@code
@@ -147,16 +148,16 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
     UpdateControl<R> updateControl = controller.reconcile(resource, context);
     R updatedCustomResource = null;
     if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
-      updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      updatedCustomResource = updateCustomResource(updateControl.getResource());
       updateControl
-          .getCustomResource()
+          .getResource()
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
-      updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
+      updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
     } else if (updateControl.isUpdateStatusSubResource()) {
-      updatedCustomResource = updateStatusGenerationAware(updateControl.getCustomResource());
-    } else if (updateControl.isUpdateCustomResource()) {
-      updatedCustomResource = updateCustomResource(updateControl.getCustomResource());
+      updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
+    } else if (updateControl.isUpdateResource()) {
+      updatedCustomResource = updateCustomResource(updateControl.getResource());
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -188,13 +189,17 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
     return customResourceFacade.updateStatus(customResource);
   }
 
-  private void updateStatusObservedGenerationIfRequired(R customResource) {
-    if (controller.getConfiguration().isGenerationAware()) {
+  private void updateStatusObservedGenerationIfRequired(R resource) {
+    // todo: change this to check for HasStatus (or similar) when
+    // https://github.com/fabric8io/kubernetes-client/issues/3586 is fixed
+    if (controller.getConfiguration().isGenerationAware()
+        && resource instanceof CustomResource<?, ?>) {
+      var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
       // Note that if status is null we won't update the observed generation.
       if (status instanceof ObservedGenerationAware) {
         ((ObservedGenerationAware) status)
-            .setObservedGeneration(customResource.getMetadata().getGeneration());
+            .setObservedGeneration(resource.getMetadata().getGeneration());
       }
     }
   }
@@ -276,7 +281,7 @@ public class ReconciliationDispatcher<R extends CustomResource<?, ?>> {
   }
 
   // created to support unit testing
-  static class CustomResourceFacade<R extends CustomResource<?, ?>> {
+  static class CustomResourceFacade<R extends HasMetadata> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
 

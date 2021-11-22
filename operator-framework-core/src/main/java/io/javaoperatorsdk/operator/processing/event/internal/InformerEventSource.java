@@ -14,41 +14,41 @@ import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet;
+  private final Function<T, Set<ResourceID>> secondaryToPrimaryResourcesIdSet;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet) {
-    this(sharedInformer, resourceToCustomResourceIDSet, null, true);
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
+    this(sharedInformer, resourceToTargetResourceIDSet, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet) {
-    this(client, type, resourceToCustomResourceIDSet, false);
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
+    this(client, type, resourceToTargetResourceIDSet, false);
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet,
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), resourceToCustomResourceIDSet, null,
+    this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<CustomResourceID>> resourceToCustomResourceIDSet,
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.resourceToCustomResourceIDSet = resourceToCustomResourceIDSet;
+    this.secondaryToPrimaryResourcesIdSet = resourceToTargetResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
       log.warn(
@@ -86,12 +86,12 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(T object) {
-    var customResourceIDSet = resourceToCustomResourceIDSet.apply(object);
-    if (customResourceIDSet.isEmpty()) {
+    var primaryResourceIdSet = secondaryToPrimaryResourcesIdSet.apply(object);
+    if (primaryResourceIdSet.isEmpty()) {
       return;
     }
-    customResourceIDSet.forEach(customResourceId -> {
-      Event event = new Event(customResourceId);
+    primaryResourceIdSet.forEach(resourceId -> {
+      Event event = new Event(resourceId);
       /*
        * In fabric8 client for certain cases informers can be created on in a way that they are
        * automatically started, what would cause a NullPointerException here, since an event might

@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public interface Cloner {
 
-  <T extends CustomResource<?, ?>> T clone(T object);
+  <R extends HasMetadata> R clone(R object);
 
 }

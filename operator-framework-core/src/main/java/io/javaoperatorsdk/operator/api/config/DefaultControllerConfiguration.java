@@ -3,10 +3,10 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Collections;
 import java.util.Set;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.processing.event.internal.CustomResourceEventFilter;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.internal.ResourceEventFilter;
 
-public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
+public class DefaultControllerConfiguration<R extends HasMetadata>
     implements ControllerConfiguration<R> {
 
   private final String associatedControllerClassName;
@@ -18,8 +18,8 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
-  private final CustomResourceEventFilter<R> customResourceEventFilter;
-  private final Class<R> customResourceClass;
+  private final ResourceEventFilter<R> resourceEventFilter;
+  private final Class<R> resourceClass;
   private ConfigurationService service;
 
   public DefaultControllerConfiguration(
@@ -31,8 +31,8 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
       Set<String> namespaces,
       RetryConfiguration retryConfiguration,
       String labelSelector,
-      CustomResourceEventFilter<R> customResourceEventFilter,
-      Class<R> customResourceClass,
+      ResourceEventFilter<R> resourceEventFilter,
+      Class<R> resourceClass,
       ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -47,10 +47,10 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
     this.labelSelector = labelSelector;
-    this.customResourceEventFilter = customResourceEventFilter;
-    this.customResourceClass =
-        customResourceClass == null ? ControllerConfiguration.super.getCustomResourceClass()
-            : customResourceClass;
+    this.resourceEventFilter = resourceEventFilter;
+    this.resourceClass =
+        resourceClass == null ? ControllerConfiguration.super.getResourceClass()
+            : resourceClass;
     setConfigurationService(service);
   }
 
@@ -60,7 +60,7 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public String getCRDName() {
+  public String getResourceTypeName() {
     return crdName;
   }
 
@@ -114,12 +114,12 @@ public class DefaultControllerConfiguration<R extends CustomResource<?, ?>>
   }
 
   @Override
-  public Class<R> getCustomResourceClass() {
-    return customResourceClass;
+  public Class<R> getResourceClass() {
+    return resourceClass;
   }
 
   @Override
-  public CustomResourceEventFilter<R> getEventFilter() {
-    return customResourceEventFilter;
+  public ResourceEventFilter<R> getEventFilter() {
+    return resourceEventFilter;
   }
 }

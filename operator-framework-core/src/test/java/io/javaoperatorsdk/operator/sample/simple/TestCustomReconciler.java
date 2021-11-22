@@ -103,7 +103,7 @@ public class TestCustomReconciler implements Reconciler<TestCustomResource> {
       }
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
     }
-    return UpdateControl.updateCustomResource(resource);
+    return UpdateControl.updateResource(resource);
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {

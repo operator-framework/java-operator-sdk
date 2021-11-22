@@ -6,8 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.CustomResourceID;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -29,31 +29,31 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * This is a special case since is not bound to a single custom resource
  */
-public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends AbstractEventSource
+public class ControllerResourceEventSource<T extends HasMetadata> extends AbstractEventSource
     implements ResourceEventHandler<T>, ResourceCache<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
-  private static final Logger log = LoggerFactory.getLogger(CustomResourceEventSource.class);
+  private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
   private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
       new ConcurrentHashMap<>();
 
-  private final CustomResourceEventFilter<T> filter;
+  private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final Cloner cloner;
 
-  public CustomResourceEventSource(Controller<T> controller) {
+  public ControllerResourceEventSource(Controller<T> controller) {
     this.controller = controller;
     this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
 
-    var filters = new CustomResourceEventFilter[] {
-        CustomResourceEventFilters.finalizerNeededAndApplied(),
-        CustomResourceEventFilters.markedForDeletion(),
-        CustomResourceEventFilters.and(
+    var filters = new ResourceEventFilter[] {
+        ResourceEventFilters.finalizerNeededAndApplied(),
+        ResourceEventFilters.markedForDeletion(),
+        ResourceEventFilters.and(
             controller.getConfiguration().getEventFilter(),
-            CustomResourceEventFilters.generationAware()),
+            ResourceEventFilters.generationAware()),
         null
     };
 
@@ -63,7 +63,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
     } else {
       onceWhitelistEventFilterEventFilter = null;
     }
-    filter = CustomResourceEventFilters.or(filters);
+    filter = ResourceEventFilters.or(filters);
   }
 
   @Override
@@ -94,7 +94,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
         KubernetesClientException ke = (KubernetesClientException) e;
         if (404 == ke.getCode()) {
           // only throw MissingCRDException if the 404 error occurs on the target CRD
-          final var targetCRDName = controller.getConfiguration().getCRDName();
+          final var targetCRDName = controller.getConfiguration().getResourceTypeName();
           if (targetCRDName.equals(ke.getFullResourceName())) {
             throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
           }
@@ -132,7 +132,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
       MDCUtils.addCustomResourceInfo(customResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
         eventHandler.handleEvent(
-            new CustomResourceEvent(action, CustomResourceID.fromResource(customResource)));
+            new ResourceEvent(action, ResourceID.fromResource(customResource)));
       } else {
         log.debug(
             "Skipping event handling resource {} with version: {}",
@@ -160,7 +160,7 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
   }
 
   @Override
-  public Optional<T> getCustomResource(CustomResourceID resourceID) {
+  public Optional<T> getCustomResource(ResourceID resourceID) {
     var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
     if (sharedIndexInformer == null) {
       sharedIndexInformer =
@@ -194,11 +194,11 @@ public class CustomResourceEventSource<T extends CustomResource<?, ?>> extends A
    * This will ensure that the next event received after this method is called will not be filtered
    * out.
    *
-   * @param customResourceID - to which the event is related
+   * @param resourceID - to which the event is related
    */
-  public void whitelistNextEvent(CustomResourceID customResourceID) {
+  public void whitelistNextEvent(ResourceID resourceID) {
     if (onceWhitelistEventFilterEventFilter != null) {
-      onceWhitelistEventFilterEventFilter.whitelistNextEvent(customResourceID);
+      onceWhitelistEventFilterEventFilter.whitelistNextEvent(resourceID);
     }
   }
 

@@ -24,8 +24,8 @@ class ClassMappingProvider {
     Map<T, V> result = new HashMap<>();
     try {
       final var classLoader = Thread.currentThread().getContextClassLoader();
-      final Enumeration<URL> customResourcesMetadataList = classLoader.getResources(resourcePath);
-      for (Iterator<URL> it = customResourcesMetadataList.asIterator(); it.hasNext();) {
+      final Enumeration<URL> resourcesMetadataList = classLoader.getResources(resourcePath);
+      for (Iterator<URL> it = resourcesMetadataList.asIterator(); it.hasNext();) {
         URL url = it.next();
 
         List<String> classNamePairs = retrieveClassNamePairs(url);
@@ -47,7 +47,7 @@ class ClassMappingProvider {
               }
             });
       }
-      log.debug("Loaded Controller to CustomResource mappings {}", result);
+      log.debug("Loaded Controller to resource mappings {}", result);
       return result;
     } catch (IOException e) {
       throw new RuntimeException(e);
