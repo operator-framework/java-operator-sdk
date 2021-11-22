@@ -17,7 +17,7 @@ public class MultilevelReconciler extends
   public UpdateControl<MultilevelReconciler.MyCustomResource> reconcile(
           MultilevelReconciler.MyCustomResource customResource,
       Context context) {
-    return UpdateControl.updateCustomResource(null);
+    return UpdateControl.updateResource(null);
   }
 
   public DeleteControl cleanup(MultilevelReconciler.MyCustomResource customResource,

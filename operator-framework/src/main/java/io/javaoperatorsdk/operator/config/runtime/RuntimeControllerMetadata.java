@@ -3,31 +3,30 @@ package io.javaoperatorsdk.operator.config.runtime;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
 public class RuntimeControllerMetadata {
 
   public static final String RECONCILERS_RESOURCE_PATH = "javaoperatorsdk/reconcilers";
-  private static final Map<Class<? extends Reconciler>, Class<? extends CustomResource>> controllerToCustomResourceMappings;
+  private static final Map<Class<? extends Reconciler>, Class<? extends HasMetadata>> controllerToCustomResourceMappings;
 
   static {
     controllerToCustomResourceMappings =
         ClassMappingProvider.provide(
-            RECONCILERS_RESOURCE_PATH, Reconciler.class, CustomResource.class);
+            RECONCILERS_RESOURCE_PATH, Reconciler.class, HasMetadata.class);
   }
 
-  static <R extends HasMetadata> Class<R> getCustomResourceClass(
+  static <R extends HasMetadata> Class<R> getResourceClass(
       Reconciler<R> reconciler) {
-    final Class<? extends HasMetadata> customResourceClass =
+    final Class<? extends HasMetadata> resourceClass =
         controllerToCustomResourceMappings.get(reconciler.getClass());
-    if (customResourceClass == null) {
+    if (resourceClass == null) {
       throw new IllegalArgumentException(
           String.format(
               "No custom resource has been found for controller %s",
               reconciler.getClass().getCanonicalName()));
     }
-    return (Class<R>) customResourceClass;
+    return (Class<R>) resourceClass;
   }
 }

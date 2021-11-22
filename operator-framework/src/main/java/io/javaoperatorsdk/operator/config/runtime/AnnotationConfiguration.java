@@ -45,7 +45,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
 
   @Override
   public Class<R> getResourceClass() {
-    return RuntimeControllerMetadata.getCustomResourceClass(reconciler);
+    return RuntimeControllerMetadata.getResourceClass(reconciler);
   }
 
   @Override

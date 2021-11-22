@@ -22,7 +22,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<ResourceID>> resourceToCustomResourceIDSet;
+  private final Function<T, Set<ResourceID>> secondaryToPrimaryResourcesIdSet;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
@@ -48,7 +48,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.resourceToCustomResourceIDSet = resourceToTargetResourceIDSet;
+    this.secondaryToPrimaryResourcesIdSet = resourceToTargetResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
       log.warn(
@@ -86,11 +86,11 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   }
 
   private void propagateEvent(T object) {
-    var customResourceIDSet = resourceToCustomResourceIDSet.apply(object);
-    if (customResourceIDSet.isEmpty()) {
+    var primaryResourceIdSet = secondaryToPrimaryResourcesIdSet.apply(object);
+    if (primaryResourceIdSet.isEmpty()) {
       return;
     }
-    customResourceIDSet.forEach(resourceId -> {
+    primaryResourceIdSet.forEach(resourceId -> {
       Event event = new Event(resourceId);
       /*
        * In fabric8 client for certain cases informers can be created on in a way that they are

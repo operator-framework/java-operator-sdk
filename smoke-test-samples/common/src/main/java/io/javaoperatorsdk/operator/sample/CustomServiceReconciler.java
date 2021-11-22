@@ -57,6 +57,6 @@ public class CustomServiceReconciler implements Reconciler<CustomService> {
                 .endMetadata()
                 .withSpec(serviceSpec)
                 .build());
-    return UpdateControl.updateCustomResource(resource);
+    return UpdateControl.updateResource(resource);
   }
 }

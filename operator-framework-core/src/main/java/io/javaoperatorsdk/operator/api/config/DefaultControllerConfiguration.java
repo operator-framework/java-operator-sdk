@@ -19,7 +19,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final Class<R> customResourceClass;
+  private final Class<R> resourceClass;
   private ConfigurationService service;
 
   public DefaultControllerConfiguration(
@@ -32,7 +32,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       RetryConfiguration retryConfiguration,
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
-      Class<R> customResourceClass,
+      Class<R> resourceClass,
       ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -48,9 +48,9 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             : retryConfiguration;
     this.labelSelector = labelSelector;
     this.resourceEventFilter = resourceEventFilter;
-    this.customResourceClass =
-        customResourceClass == null ? ControllerConfiguration.super.getResourceClass()
-            : customResourceClass;
+    this.resourceClass =
+        resourceClass == null ? ControllerConfiguration.super.getResourceClass()
+            : resourceClass;
     setConfigurationService(service);
   }
 
@@ -115,7 +115,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
 
   @Override
   public Class<R> getResourceClass() {
-    return customResourceClass;
+    return resourceClass;
   }
 
   @Override
