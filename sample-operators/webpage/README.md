@@ -8,7 +8,7 @@ the HTML.
 This is an example input:
 ```yaml
 apiVersion: "sample.javaoperatorsdk/v1"
-kind: WebServer
+kind: WebPage
 metadata:
   name: mynginx-hello
 spec:
@@ -31,7 +31,7 @@ Kubernetes cluster. When you start it, it will use the current kubectl context o
 Before you run it you have to install the CRD on your cluster by running `kubectl apply -f k8s/crd.yaml`
 
 When the Operator is running you can create some Webserver Custom Resources. You can find a sample custom resource in
-`k8s/webserver.yaml`. You can create it by running `kubectl apply -f k8s/webserver.yaml`
+`k8s/webpage.yaml`. You can create it by running `kubectl apply -f k8s/webpage.yaml`
 
 After the Operator has picked up the new webserver resource (see the logs) it should create the NGINX server in the 
 same namespace where the webserver resource is created. To connect to the server using your browser you can
@@ -39,7 +39,7 @@ run `kubectl get service` and view the service created by the Operator. It shoul
 running a single-node cluster (e.g. Docker for Mac or Minikube) you can connect to the VM on this port to access the
 page. Otherwise you can change the service to a LoadBalancer (e.g on a public cloud).
 
-You can also try to change the HTML code in `k8s/webserver.yaml` and do another `kubectl apply -f k8s/webserver.yaml`.
+You can also try to change the HTML code in `k8s/webpage.yaml` and do another `kubectl apply -f k8s/webpage.yaml`.
 This should update the actual NGINX deployment with the new configuration.  
 
 ### Build
