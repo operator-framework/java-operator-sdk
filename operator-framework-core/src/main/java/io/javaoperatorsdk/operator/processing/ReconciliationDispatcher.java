@@ -138,7 +138,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
-                                                     R resource, Context context) {
+      R resource, Context context) {
     log.debug(
         "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
         getName(resource),

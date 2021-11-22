@@ -1,11 +1,9 @@
 package io.javaoperatorsdk.operator.sample.observedgeneration;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 
 import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 
@@ -17,8 +15,9 @@ public class ObservedGenerationTestReconciler
 
   @Override
   public UpdateControl<ObservedGenerationTestCustomResource> reconcile(
-          ObservedGenerationTestCustomResource resource, Context context) {
-    log.info("Reconcile ObservedGenerationTestCustomResource: {}",resource.getMetadata().getName());
+      ObservedGenerationTestCustomResource resource, Context context) {
+    log.info("Reconcile ObservedGenerationTestCustomResource: {}",
+        resource.getMetadata().getName());
     return UpdateControl.updateStatusSubResource(resource);
   }
 }
