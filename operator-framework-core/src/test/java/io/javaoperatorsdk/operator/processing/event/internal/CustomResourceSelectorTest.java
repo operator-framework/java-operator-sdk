@@ -173,7 +173,7 @@ public class CustomResourceSelectorTest {
 
       consumer.accept(resource);
 
-      return UpdateControl.updateStatusSubResource(resource);
+      return UpdateControl.updateStatus(resource);
     }
   }
 }

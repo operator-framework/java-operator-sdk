@@ -42,7 +42,7 @@ public class DeploymentReconciler
     if (condition.isEmpty()) {
       conditions.add(new DeploymentCondition(null, null, STATUS_MESSAGE, null,
           "unknown", "DeploymentReconciler"));
-      return UpdateControl.updateStatusSubResource(resource);
+      return UpdateControl.updateStatus(resource);
     } else {
       return UpdateControl.noUpdate();
     }

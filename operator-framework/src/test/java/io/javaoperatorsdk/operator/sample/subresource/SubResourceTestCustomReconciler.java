@@ -36,7 +36,7 @@ public class SubResourceTestCustomReconciler
     ensureStatusExists(resource);
     resource.getStatus().setState(SubResourceTestCustomResourceStatus.State.SUCCESS);
 
-    return UpdateControl.updateStatusSubResource(resource);
+    return UpdateControl.updateStatus(resource);
   }
 
   private void ensureStatusExists(SubResourceTestCustomResource resource) {

@@ -92,7 +92,7 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.updateStatusSubResource(testCustomResource));
+        .thenReturn(UpdateControl.updateStatus(testCustomResource));
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
@@ -105,7 +105,7 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.updateCustomResourceAndStatus(testCustomResource));
+        .thenReturn(UpdateControl.updateResourceAndStatus(testCustomResource));
     when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -281,7 +281,7 @@ class ReconciliationDispatcherTest {
 
     when(reconciler.reconcile(eq(testCustomResource), any()))
         .thenReturn(
-            UpdateControl.updateStatusSubResource(testCustomResource).rescheduleAfter(1000L));
+            UpdateControl.updateStatus(testCustomResource).rescheduleAfter(1000L));
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -315,7 +315,7 @@ class ReconciliationDispatcherTest {
 
     when(lConfiguration.isGenerationAware()).thenReturn(true);
     when(lController.reconcile(eq(observedGenResource), any()))
-        .thenReturn(UpdateControl.updateStatusSubResource(observedGenResource));
+        .thenReturn(UpdateControl.updateStatus(observedGenResource));
     when(lFacade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
 
     PostExecutionControl<ObservedGenCustomResource> control = lDispatcher.handleExecution(
