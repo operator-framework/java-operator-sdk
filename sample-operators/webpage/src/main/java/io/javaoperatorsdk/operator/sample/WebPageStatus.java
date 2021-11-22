@@ -1,10 +1,14 @@
 package io.javaoperatorsdk.operator.sample;
 
-public class WebPageStatus {
+import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
+
+public class WebPageStatus extends ObservedGenerationAwareStatus {
 
   private String htmlConfigMap;
 
   private String areWeGood;
+
+  private String errorMessage;
 
   public String getHtmlConfigMap() {
     return htmlConfigMap;
@@ -22,4 +26,12 @@ public class WebPageStatus {
     this.areWeGood = areWeGood;
   }
 
+  public String getErrorMessage() {
+    return errorMessage;
+  }
+
+  public WebPageStatus setErrorMessage(String errorMessage) {
+    this.errorMessage = errorMessage;
+    return this;
+  }
 }

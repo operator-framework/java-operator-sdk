@@ -9,4 +9,9 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
     implements Namespaced {
+
+  @Override
+  protected WebPageStatus initStatus() {
+    return new WebPageStatus();
+  }
 }
