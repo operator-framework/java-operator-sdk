@@ -199,7 +199,7 @@ public class OperatorExtension
           LOGGER.info("Waiting for namespace {} to be deleted", namespace);
           Awaitility.await("namespace deleted")
               .pollInterval(50, TimeUnit.MILLISECONDS)
-              .atMost(60, TimeUnit.SECONDS)
+              .atMost(90, TimeUnit.SECONDS)
               .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
         }
       }
