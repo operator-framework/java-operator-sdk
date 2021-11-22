@@ -75,7 +75,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
           tomcat.getMetadata().getName(),
           tomcat.getMetadata().getNamespace(),
           tomcat.getStatus().getReadyReplicas());
-      return UpdateControl.updateStatusSubResource(updatedTomcat);
+      return UpdateControl.updateStatus(updatedTomcat);
     }
     return UpdateControl.noUpdate();
   }

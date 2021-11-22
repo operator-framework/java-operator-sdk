@@ -34,7 +34,7 @@ public class DoubleUpdateTestCustomReconciler
     ensureStatusExists(resource);
     resource.getStatus().setState(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
 
-    return UpdateControl.updateCustomResourceAndStatus(resource);
+    return UpdateControl.updateResourceAndStatus(resource);
   }
 
   private void ensureStatusExists(DoubleUpdateTestCustomResource resource) {

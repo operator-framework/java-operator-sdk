@@ -23,7 +23,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, false, true);
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> updateStatusSubResource(
+  public static <T extends HasMetadata> UpdateControl<T> updateStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, false);
   }
@@ -35,7 +35,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
    */
-  public static <T extends HasMetadata> UpdateControl<T> updateCustomResourceAndStatus(
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }

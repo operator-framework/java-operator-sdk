@@ -55,7 +55,7 @@ public class InformerEventSourceTestCustomReconciler implements
     LOGGER.debug("Setting target status for CR: {}", targetStatus);
     resource.setStatus(new InformerEventSourceTestCustomResourceStatus());
     resource.getStatus().setConfigMapValue(targetStatus);
-    return UpdateControl.updateStatusSubResource(resource);
+    return UpdateControl.updateStatus(resource);
   }
 
   @Override
