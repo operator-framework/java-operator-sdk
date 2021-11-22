@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
-public class WebServerSpec {
+public class WebPageSpec {
 
   private String html;
 

@@ -16,9 +16,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 
-public class WebServerOperator {
+public class WebPageOperator {
 
-  private static final Logger log = LoggerFactory.getLogger(WebServerOperator.class);
+  private static final Logger log = LoggerFactory.getLogger(WebPageOperator.class);
 
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
@@ -26,7 +26,8 @@ public class WebServerOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
-    operator.register(new WebServerController(client));
+    operator.register(new WebPageController(client));
+    operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
   }

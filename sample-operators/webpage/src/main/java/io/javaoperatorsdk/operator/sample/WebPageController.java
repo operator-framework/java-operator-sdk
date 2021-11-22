@@ -23,47 +23,47 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
-public class WebServerController implements Reconciler<WebServer> {
+public class WebPageController implements Reconciler<WebPage> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
 
-  public WebServerController(KubernetesClient kubernetesClient) {
+  public WebPageController(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
   }
 
   @Override
-  public UpdateControl<WebServer> reconcile(WebServer webServer, Context context) {
-    if (webServer.getSpec().getHtml().contains("error")) {
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context context) {
+    if (webPage.getSpec().getHtml().contains("error")) {
       throw new ErrorSimulationException("Simulating error");
     }
 
-    String ns = webServer.getMetadata().getNamespace();
+    String ns = webPage.getMetadata().getNamespace();
 
     Map<String, String> data = new HashMap<>();
-    data.put("index.html", webServer.getSpec().getHtml());
+    data.put("index.html", webPage.getSpec().getHtml());
 
     ConfigMap htmlConfigMap =
         new ConfigMapBuilder()
             .withMetadata(
                 new ObjectMetaBuilder()
-                    .withName(configMapName(webServer))
+                    .withName(configMapName(webPage))
                     .withNamespace(ns)
                     .build())
             .withData(data)
             .build();
 
     Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
-    deployment.getMetadata().setName(deploymentName(webServer));
+    deployment.getMetadata().setName(deploymentName(webPage));
     deployment.getMetadata().setNamespace(ns);
-    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName(webServer));
+    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName(webPage));
     deployment
         .getSpec()
         .getTemplate()
         .getMetadata()
         .getLabels()
-        .put("app", deploymentName(webServer));
+        .put("app", deploymentName(webPage));
     deployment
         .getSpec()
         .getTemplate()
@@ -71,10 +71,10 @@ public class WebServerController implements Reconciler<WebServer> {
         .getVolumes()
         .get(0)
         .setConfigMap(
-            new ConfigMapVolumeSourceBuilder().withName(configMapName(webServer)).build());
+            new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
 
     Service service = loadYaml(Service.class, "service.yaml");
-    service.getMetadata().setName(serviceName(webServer));
+    service.getMetadata().setName(serviceName(webPage));
     service.getMetadata().setNamespace(ns);
     service.getSpec().setSelector(deployment.getSpec().getTemplate().getMetadata().getLabels());
 
@@ -104,20 +104,21 @@ public class WebServerController implements Reconciler<WebServer> {
         kubernetesClient
             .pods()
             .inNamespace(ns)
-            .withLabel("app", deploymentName(webServer))
+            .withLabel("app", deploymentName(webPage))
             .delete();
       }
     }
 
-    WebServerStatus status = new WebServerStatus();
+    WebPageStatus status = new WebPageStatus();
     status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
     status.setAreWeGood("Yes!");
-    webServer.setStatus(status);
-    return UpdateControl.updateStatusSubResource(webServer);
+    webPage.setStatus(status);
+    // throw new RuntimeException("Creating object failed, because it failed");
+    return UpdateControl.updateStatusSubResource(webPage);
   }
 
   @Override
-  public DeleteControl cleanup(WebServer nginx, Context context) {
+  public DeleteControl cleanup(WebPage nginx, Context context) {
     log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
 
     log.info("Deleting ConfigMap {}", configMapName(nginx));
@@ -153,15 +154,15 @@ public class WebServerController implements Reconciler<WebServer> {
     return DeleteControl.defaultDelete();
   }
 
-  private static String configMapName(WebServer nginx) {
+  private static String configMapName(WebPage nginx) {
     return nginx.getMetadata().getName() + "-html";
   }
 
-  private static String deploymentName(WebServer nginx) {
+  private static String deploymentName(WebPage nginx) {
     return nginx.getMetadata().getName();
   }
 
-  private static String serviceName(WebServer nginx) {
+  private static String serviceName(WebPage nginx) {
     return nginx.getMetadata().getName();
   }
 
