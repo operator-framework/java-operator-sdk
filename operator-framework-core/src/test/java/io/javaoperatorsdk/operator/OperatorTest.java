@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +42,9 @@ class OperatorTest {
     verify(configuration).watchAllNamespaces();
     verify(configuration).getName();
     verify(configuration).getResourceClass();
+
+    assertThat(operator.getControllers().size()).isEqualTo(1);
+    assertThat(operator.getControllers().get(0).getReconciler()).isEqualTo(fooReconciler);
   }
 
   @Test
