@@ -30,7 +30,7 @@ public class KubernetesResourceStatusUpdateIT {
   @Test
   public void testReconciliationOfNonCustomResourceAndStatusUpdate() {
     var deployment = operator.create(Deployment.class, testDeployment());
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+    await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());
       assertThat(d.getStatus()).isNotNull();
       assertThat(d.getStatus().getConditions()).isNotNull();
@@ -38,7 +38,6 @@ public class KubernetesResourceStatusUpdateIT {
           d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
               .count()).isEqualTo(1);
     });
-    System.out.println("ok");
   }
 
   private Deployment testDeployment() {
