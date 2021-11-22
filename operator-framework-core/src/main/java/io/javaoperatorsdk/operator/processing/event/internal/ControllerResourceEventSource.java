@@ -197,6 +197,24 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   }
 
   /**
+   * Use only if the operator is watching specific namespace(s).
+   * @param namespace - namespace to filter on
+   * @return stream of cached resources from the specified namespace
+   */
+  public Stream<T> getCachedCustomResources(String namespace) {
+    return sharedIndexInformers.get(namespace).getStore().list().stream();
+  }
+
+  /**
+   * Use only if the operator is watching specific namespace(s).
+   * @param namespace - namespace to filter on
+   * @return stream of cached resources from the specified namespace
+   */
+  public Stream<T> getCachedCustomResources(String namespace, Predicate<T> predicate) {
+    return sharedIndexInformers.get(namespace).getStore().list().stream().filter(predicate);
+  }
+
+  /**
    * @return shared informers by namespace. If custom resource is not namespace scoped use
    *         CustomResourceEventSource.ANY_NAMESPACE_MAP_KEY
    */
