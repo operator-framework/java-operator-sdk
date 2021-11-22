@@ -204,7 +204,7 @@ public class EventProcessor<R extends HasMetadata>
           }
         } else {
           reScheduleExecutionIfInstructed(postExecutionControl,
-              executionScope.getCustomResource());
+              executionScope.getResource());
         }
       }
     } finally {
@@ -221,7 +221,7 @@ public class EventProcessor<R extends HasMetadata>
     if (!postExecutionControl.customResourceUpdatedDuringExecution()) {
       return true;
     }
-    String originalResourceVersion = getVersion(executionScope.getCustomResource());
+    String originalResourceVersion = getVersion(executionScope.getResource());
     String customResourceVersionAfterExecution = getVersion(postExecutionControl
         .getUpdatedCustomResource()
         .orElseThrow(() -> new IllegalStateException(
@@ -277,7 +277,7 @@ public class EventProcessor<R extends HasMetadata>
           metrics.failedReconciliation(customResourceID, exception);
           eventSourceManager
               .getRetryAndRescheduleTimerEventSource()
-              .scheduleOnce(executionScope.getCustomResource(), delay);
+              .scheduleOnce(executionScope.getResource(), delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
   }
@@ -285,7 +285,7 @@ public class EventProcessor<R extends HasMetadata>
   private void cleanupOnSuccessfulExecution(ExecutionScope<R> executionScope) {
     log.debug(
         "Cleanup for successful execution for resource: {}",
-        getName(executionScope.getCustomResource()));
+        getName(executionScope.getResource()));
     if (isRetryConfigured()) {
       retryState.remove(executionScope.getCustomResourceID());
     }
@@ -358,7 +358,7 @@ public class EventProcessor<R extends HasMetadata>
       final var thread = Thread.currentThread();
       final var name = thread.getName();
       try {
-        MDCUtils.addCustomResourceInfo(executionScope.getCustomResource());
+        MDCUtils.addCustomResourceInfo(executionScope.getResource());
         thread.setName("EventHandler-" + controllerName);
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);

@@ -60,7 +60,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope) {
-    R resource = executionScope.getCustomResource();
+    R resource = executionScope.getResource();
     log.debug("Handling dispatch for resource {}", getName(resource));
 
     final var markedForDeletion = resource.isMarkedForDeletion();

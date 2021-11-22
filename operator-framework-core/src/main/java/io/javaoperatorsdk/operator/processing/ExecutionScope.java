@@ -7,29 +7,29 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class ExecutionScope<R extends HasMetadata> {
 
   // the latest custom resource from cache
-  private final R customResource;
+  private final R resource;
   private final RetryInfo retryInfo;
 
-  public ExecutionScope(R customResource, RetryInfo retryInfo) {
-    this.customResource = customResource;
+  public ExecutionScope(R resource, RetryInfo retryInfo) {
+    this.resource = resource;
     this.retryInfo = retryInfo;
   }
 
-  public R getCustomResource() {
-    return customResource;
+  public R getResource() {
+    return resource;
   }
 
   public ResourceID getCustomResourceID() {
-    return ResourceID.fromResource(customResource);
+    return ResourceID.fromResource(resource);
   }
 
   @Override
   public String toString() {
     return "ExecutionScope{"
-        + ", customResource uid: "
-        + customResource.getMetadata().getUid()
+        + " resource id: "
+        + ResourceID.fromResource(resource)
         + ", version: "
-        + customResource.getMetadata().getResourceVersion()
+        + resource.getMetadata().getResourceVersion()
         + '}';
   }
 
