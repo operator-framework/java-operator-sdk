@@ -196,8 +196,6 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     return resStream;
   }
 
-
-
   /**
    * @return shared informers by namespace. If custom resource is not namespace scoped use
    *         CustomResourceEventSource.ANY_NAMESPACE_MAP_KEY
