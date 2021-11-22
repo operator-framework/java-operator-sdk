@@ -16,20 +16,17 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
-public class WebPageController implements Reconciler<WebPage> {
+public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
 
-  public WebPageController(KubernetesClient kubernetesClient) {
+  public WebPageReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
   }
 
@@ -112,6 +109,7 @@ public class WebPageController implements Reconciler<WebPage> {
     WebPageStatus status = new WebPageStatus();
     status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
     status.setAreWeGood("Yes!");
+    status.setErrorMessage(null);
     webPage.setStatus(status);
     // throw new RuntimeException("Creating object failed, because it failed");
     return UpdateControl.updateStatusSubResource(webPage);
@@ -174,4 +172,9 @@ public class WebPageController implements Reconciler<WebPage> {
     }
   }
 
+  @Override
+  public WebPage updateErrorStatus(WebPage resource, RuntimeException e) {
+    resource.getStatus().setErrorMessage("Error: " + e.getMessage());
+    return resource;
+  }
 }

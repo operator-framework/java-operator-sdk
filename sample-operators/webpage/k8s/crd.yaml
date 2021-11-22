@@ -20,9 +20,13 @@ spec:
             status:
               type: object
               properties:
+                observedGeneration:
+                  type: integer
                 htmlConfigMap:
                   type: string
                 areWeGood:
+                  type: string
+                errorMessage:
                   type: string
       subresources:
         status: { }

@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.api;
 
-import java.util.Optional;
-
 /**
  * A helper base class for status sub-resources classes to extend to support generate awareness.
  */
@@ -15,7 +13,7 @@ public class ObservedGenerationAwareStatus implements ObservedGenerationAware {
   }
 
   @Override
-  public Optional<Long> getObservedGeneration() {
-    return Optional.ofNullable(observedGeneration);
+  public Long getObservedGeneration() {
+    return observedGeneration;
   }
 }

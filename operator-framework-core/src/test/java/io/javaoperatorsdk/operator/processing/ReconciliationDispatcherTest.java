@@ -320,7 +320,7 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = lDispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration().get())
+    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
         .isEqualTo(1L);
   }
 

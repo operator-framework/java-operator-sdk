@@ -34,7 +34,7 @@ public final class ResourceEventFilters {
             var actualGeneration = newResource.getMetadata().getGeneration();
             var observedGeneration = ((ObservedGenerationAware) status)
                 .getObservedGeneration();
-            return observedGeneration.map(aLong -> actualGeneration > aLong).orElse(true);
+            return observedGeneration == null || actualGeneration > observedGeneration;
           }
         }
         return oldResource == null || !generationAware ||
