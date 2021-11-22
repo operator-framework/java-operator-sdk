@@ -75,9 +75,9 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     Context context =
         new DefaultContext(executionScope.getRetryInfo());
     if (markedForDeletion) {
-      return handleDelete(resource, context);
+      return handleCleanup(resource, context);
     } else {
-      return handleCreateOrUpdate(executionScope, resource, context);
+      return handleReconcile(executionScope, resource, context);
     }
   }
 
@@ -99,7 +99,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     return configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer());
   }
 
-  private PostExecutionControl<R> handleCreateOrUpdate(
+  private PostExecutionControl<R> handleReconcile(
       ExecutionScope<R> executionScope, R resource, Context context) {
     if (configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer())) {
       /*
@@ -114,7 +114,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
       try {
         var resourceForExecution =
             cloneResourceForErrorStatusHandlerIfNeeded(resource, context);
-        return createOrUpdateExecution(executionScope, resourceForExecution, context);
+        return reconcileExecution(executionScope, resourceForExecution, context);
       } catch (RuntimeException e) {
         handleLastAttemptErrorStatusHandler(resource, context, e);
         throw e;
@@ -137,8 +137,8 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private PostExecutionControl<R> createOrUpdateExecution(ExecutionScope<R> executionScope,
-      R resource, Context context) {
+  private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
+                                                     R resource, Context context) {
     log.debug(
         "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
         getName(resource),
@@ -222,7 +222,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
-  private PostExecutionControl<R> handleDelete(R resource, Context context) {
+  private PostExecutionControl<R> handleCleanup(R resource, Context context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),
