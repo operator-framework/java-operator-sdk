@@ -7,6 +7,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-public class WebServer extends CustomResource<WebServerSpec, WebServerStatus>
+public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
     implements Namespaced {
 }

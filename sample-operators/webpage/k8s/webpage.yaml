@@ -1,5 +1,5 @@
 apiVersion: "sample.javaoperatorsdk/v1"
-kind: WebServer
+kind: WebPage
 metadata:
   name: hellows
 spec:

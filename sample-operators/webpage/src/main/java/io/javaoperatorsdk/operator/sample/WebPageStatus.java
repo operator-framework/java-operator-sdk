@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
-public class WebServerStatus {
+public class WebPageStatus {
 
   private String htmlConfigMap;
 
