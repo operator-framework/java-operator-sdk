@@ -198,6 +198,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
 
   /**
    * Use only if the operator is watching specific namespace(s).
+   * 
    * @param namespace - namespace to filter on
    * @return stream of cached resources from the specified namespace
    */
@@ -207,6 +208,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
 
   /**
    * Use only if the operator is watching specific namespace(s).
+   * 
    * @param namespace - namespace to filter on
    * @return stream of cached resources from the specified namespace
    */
