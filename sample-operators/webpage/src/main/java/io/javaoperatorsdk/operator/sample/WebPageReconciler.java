@@ -111,7 +111,7 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
     status.setAreWeGood("Yes!");
     status.setErrorMessage(null);
     webPage.setStatus(status);
-    // throw new RuntimeException("Creating object failed, because it failed");
+
     return UpdateControl.updateStatusSubResource(webPage);
   }
 
