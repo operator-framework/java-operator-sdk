@@ -159,7 +159,7 @@ public class OperatorExtension
     for (var ref : controllers) {
       final var config = configurationService.getConfigurationFor(ref.controller);
       final var oconfig = override(config).settingNamespace(namespace);
-      final var path = "/META-INF/fabric8/" + config.getCRDName() + "-v1.yml";
+      final var path = "/META-INF/fabric8/" + config.getResourceTypeName() + "-v1.yml";
 
       if (ref.retry != null) {
         oconfig.withRetry(ref.retry);
@@ -172,7 +172,7 @@ public class OperatorExtension
         // when the operator started. This seems to be fixing this issue (maybe a problem with
         // minikube?)
         Thread.sleep(2000);
-        LOGGER.debug("Applied CRD with name: {}", config.getCRDName());
+        LOGGER.debug("Applied CRD with name: {}", config.getResourceTypeName());
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
       }

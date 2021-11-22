@@ -52,7 +52,7 @@ public class ControllerManagerTest {
     assertTrue(
         msg.contains("Cannot register controller '" + duplicated.getControllerName() + "'")
             && msg.contains(registered.getControllerName())
-            && msg.contains(registered.getCRDName()));
+            && msg.contains(registered.getResourceTypeName()));
   }
 
   private static class TestControllerConfiguration<R extends HasMetadata>

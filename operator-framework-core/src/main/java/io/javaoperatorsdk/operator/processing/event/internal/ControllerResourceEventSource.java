@@ -94,7 +94,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
         KubernetesClientException ke = (KubernetesClientException) e;
         if (404 == ke.getCode()) {
           // only throw MissingCRDException if the 404 error occurs on the target CRD
-          final var targetCRDName = controller.getConfiguration().getCRDName();
+          final var targetCRDName = controller.getConfiguration().getResourceTypeName();
           if (targetCRDName.equals(ke.getFullResourceName())) {
             throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
           }

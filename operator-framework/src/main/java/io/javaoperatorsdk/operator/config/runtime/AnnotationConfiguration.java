@@ -31,7 +31,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
   @Override
   public String getFinalizer() {
     if (annotation == null || annotation.finalizerName().isBlank()) {
-      return ControllerUtils.getDefaultFinalizerName(getCRDName());
+      return ControllerUtils.getDefaultFinalizerName(getResourceTypeName());
     } else {
       return annotation.finalizerName();
     }

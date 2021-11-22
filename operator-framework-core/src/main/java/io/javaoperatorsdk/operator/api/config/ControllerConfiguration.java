@@ -16,12 +16,12 @@ public interface ControllerConfiguration<R extends HasMetadata> {
     return ControllerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
 
-  default String getCRDName() {
+  default String getResourceTypeName() {
     return CustomResource.getCRDName(getResourceClass());
   }
 
   default String getFinalizer() {
-    return ControllerUtils.getDefaultFinalizerName(getCRDName());
+    return ControllerUtils.getDefaultFinalizerName(getResourceTypeName());
   }
 
   /**

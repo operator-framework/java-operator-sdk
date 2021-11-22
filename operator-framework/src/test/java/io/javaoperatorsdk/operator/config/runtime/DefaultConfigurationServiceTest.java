@@ -78,9 +78,9 @@ public class DefaultConfigurationServiceTest {
     final var configuration =
         DefaultConfigurationService.instance().getConfigurationFor(reconciler);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class),
-        configuration.getCRDName());
+        configuration.getResourceTypeName());
     assertEquals(
-        ControllerUtils.getDefaultFinalizerName(configuration.getCRDName()),
+        ControllerUtils.getDefaultFinalizerName(configuration.getResourceTypeName()),
         configuration.getFinalizer());
     assertEquals(TestCustomResource.class, configuration.getResourceClass());
     assertFalse(configuration.isGenerationAware());

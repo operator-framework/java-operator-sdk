@@ -152,7 +152,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   public void start() throws OperatorException {
     final Class<R> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
-    final var crdName = configuration.getCRDName();
+    final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
     try {
       // check that the custom resource is known by the cluster if configured that way

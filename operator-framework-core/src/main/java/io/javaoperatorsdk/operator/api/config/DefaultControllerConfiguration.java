@@ -60,7 +60,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public String getCRDName() {
+  public String getResourceTypeName() {
     return crdName;
   }
 

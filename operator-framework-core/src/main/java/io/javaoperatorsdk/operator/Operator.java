@@ -195,7 +195,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
 
     public synchronized void add(Controller controller) {
       final var configuration = controller.getConfiguration();
-      final var crdName = configuration.getCRDName();
+      final var crdName = configuration.getResourceTypeName();
       final var existing = controllers.get(crdName);
       if (existing != null) {
         throw new OperatorException("Cannot register controller '" + configuration.getName()

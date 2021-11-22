@@ -78,7 +78,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
         original.getName(),
-        original.getCRDName(),
+        original.getResourceTypeName(),
         finalizer,
         generationAware,
         namespaces,
