@@ -36,7 +36,7 @@ public class KubernetesResourceStatusUpdateIT {
       assertThat(d.getStatus()).isNotNull();
       assertThat(d.getStatus().getConditions()).isNotNull();
       // wait until the pod is ready, if not this is causing some test stability issues with
-      // namespace cleanup
+      // namespace cleanup in k8s version 1.22
       assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
       assertThat(
           d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
