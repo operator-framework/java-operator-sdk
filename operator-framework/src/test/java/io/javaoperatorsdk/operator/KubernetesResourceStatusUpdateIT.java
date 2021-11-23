@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -42,9 +43,12 @@ public class KubernetesResourceStatusUpdateIT {
 
   private Deployment testDeployment() {
     Deployment resource = new Deployment();
+    Map<String,String> labels = new HashMap<>();
+    labels.put("test","KubernetesResourceStatusUpdateIT");
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("test-deployment")
+                .withLabels(labels)
             .build());
     DeploymentSpec spec = new DeploymentSpec();
     resource.setSpec(spec);
@@ -61,7 +65,7 @@ public class KubernetesResourceStatusUpdateIT {
 
     Container container = new Container();
     container.setName("nginx");
-    container.setImage("nginx:1.14.2");
+    container.setImage("nginx:1.21.4");
     ContainerPort port = new ContainerPort();
     port.setContainerPort(80);
     container.setPorts(List.of(port));
