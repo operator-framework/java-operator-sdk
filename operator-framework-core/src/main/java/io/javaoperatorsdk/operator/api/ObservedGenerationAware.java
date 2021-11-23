@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.api;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -24,6 +22,6 @@ public interface ObservedGenerationAware {
 
   void setObservedGeneration(Long generation);
 
-  Optional<Long> getObservedGeneration();
+  Long getObservedGeneration();
 
 }
