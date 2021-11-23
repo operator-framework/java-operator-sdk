@@ -112,7 +112,7 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
     status.setErrorMessage(null);
     webPage.setStatus(status);
 
-    return UpdateControl.updateStatusSubResource(webPage);
+    return UpdateControl.updateStatus(webPage);
   }
 
   @Override

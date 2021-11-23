@@ -18,6 +18,6 @@ public class ObservedGenerationTestReconciler
       ObservedGenerationTestCustomResource resource, Context context) {
     log.info("Reconcile ObservedGenerationTestCustomResource: {}",
         resource.getMetadata().getName());
-    return UpdateControl.updateStatusSubResource(resource);
+    return UpdateControl.updateStatus(resource);
   }
 }
