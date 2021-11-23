@@ -35,7 +35,8 @@ public class KubernetesResourceStatusUpdateIT {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());
       assertThat(d.getStatus()).isNotNull();
       assertThat(d.getStatus().getConditions()).isNotNull();
-      // wait until the pod is ready, if not this is causing some test stability issues with namespace cleanup
+      // wait until the pod is ready, if not this is causing some test stability issues with
+      // namespace cleanup
       assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
       assertThat(
           d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
