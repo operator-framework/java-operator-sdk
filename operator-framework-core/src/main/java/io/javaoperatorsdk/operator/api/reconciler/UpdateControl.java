@@ -6,16 +6,16 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
   private final T resource;
-  private final boolean updateStatusSubResource;
+  private final boolean updateStatus;
   private final boolean updateResource;
 
   private UpdateControl(
-      T resource, boolean updateStatusSubResource, boolean updateResource) {
-    if ((updateResource || updateStatusSubResource) && resource == null) {
+      T resource, boolean updateStatus, boolean updateResource) {
+    if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
     this.resource = resource;
-    this.updateStatusSubResource = updateStatusSubResource;
+    this.updateStatus = updateStatus;
     this.updateResource = updateResource;
   }
 
@@ -48,15 +48,19 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return resource;
   }
 
-  public boolean isUpdateStatusSubResource() {
-    return updateStatusSubResource;
+  public boolean isUpdateStatus() {
+    return updateStatus;
   }
 
   public boolean isUpdateResource() {
     return updateResource;
   }
 
+  public boolean isNoUpdate() {
+    return !updateResource && !updateStatus;
+  }
+
   public boolean isUpdateCustomResourceAndStatusSubResource() {
-    return updateResource && updateStatusSubResource;
+    return updateResource && updateStatus;
   }
 }

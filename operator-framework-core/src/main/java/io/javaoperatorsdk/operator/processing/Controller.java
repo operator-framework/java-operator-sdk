@@ -81,7 +81,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           @Override
           public String successTypeName(UpdateControl<R> result) {
             String successType = "cr";
-            if (result.isUpdateStatusSubResource()) {
+            if (result.isUpdateStatus()) {
               successType = "status";
             }
             if (result.isUpdateCustomResourceAndStatusSubResource()) {
