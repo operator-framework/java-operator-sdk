@@ -72,7 +72,7 @@ class OperatorTest {
 
     @Override
     public UpdateControl<FooCustomResource> reconcile(FooCustomResource resource, Context context) {
-      return UpdateControl.updateStatusSubResource(resource);
+      return UpdateControl.noUpdate();
     }
   }
 
