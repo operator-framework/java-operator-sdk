@@ -307,21 +307,41 @@ class ReconciliationDispatcherTest {
   void setObservedGenerationForStatusIfNeeded() {
     var observedGenResource = createObservedGenCustomResource();
 
-    Reconciler<ObservedGenCustomResource> lController = mock(Reconciler.class);
-    ControllerConfiguration<ObservedGenCustomResource> lConfiguration =
+    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
+    ControllerConfiguration<ObservedGenCustomResource> config =
         mock(ControllerConfiguration.class);
-    CustomResourceFacade<ObservedGenCustomResource> lFacade = mock(CustomResourceFacade.class);
-    var lDispatcher = init(observedGenResource, lController, lConfiguration, lFacade);
+    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
+    var dispatcher = init(observedGenResource, reconciler, config, facade);
 
-    when(lConfiguration.isGenerationAware()).thenReturn(true);
-    when(lController.reconcile(eq(observedGenResource), any()))
+    when(config.isGenerationAware()).thenReturn(true);
+    when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.updateStatus(observedGenResource));
-    when(lFacade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
+    when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
 
-    PostExecutionControl<ObservedGenCustomResource> control = lDispatcher.handleExecution(
+    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
         .isEqualTo(1L);
+  }
+
+  @Test
+  void updatesObservedGenerationOnNoUpdateUpdateControl() {
+    var observedGenResource = createObservedGenCustomResource();
+
+    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
+    ControllerConfiguration<ObservedGenCustomResource> config =
+            mock(ControllerConfiguration.class);
+    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
+    when(config.isGenerationAware()).thenReturn(true);
+    when(reconciler.reconcile(any(), any()))
+            .thenReturn(UpdateControl.noUpdate());
+    when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
+    var dispatcher = init(observedGenResource, reconciler, config, facade);
+
+    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
+            executionScopeWithCREvent(observedGenResource));
+    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
+            .isEqualTo(1L);
   }
 
   @Test

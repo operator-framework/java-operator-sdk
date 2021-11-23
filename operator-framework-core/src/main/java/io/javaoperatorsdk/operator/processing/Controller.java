@@ -84,7 +84,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
             if (result.isUpdateStatus()) {
               successType = "status";
             }
-            if (result.isUpdateCustomResourceAndStatusSubResource()) {
+            if (result.isUpdateResourceAndStatus()) {
               successType = "both";
             }
             return successType;

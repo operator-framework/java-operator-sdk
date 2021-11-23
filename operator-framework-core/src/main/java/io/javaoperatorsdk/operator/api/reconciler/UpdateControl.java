@@ -60,7 +60,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return !updateResource && !updateStatus;
   }
 
-  public boolean isUpdateCustomResourceAndStatusSubResource() {
+  public boolean isUpdateResourceAndStatus() {
     return updateResource && updateStatus;
   }
 }

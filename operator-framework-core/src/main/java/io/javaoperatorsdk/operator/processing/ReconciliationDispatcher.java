@@ -97,7 +97,8 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
 
   private PostExecutionControl<R> handleReconcile(
       ExecutionScope<R> executionScope, R originalResource, Context context) {
-    if (configuration().useFinalizer() && !originalResource.hasFinalizer(configuration().getFinalizer())) {
+    if (configuration().useFinalizer()
+        && !originalResource.hasFinalizer(configuration().getFinalizer())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
        * We execute the controller processing only for processing the event sent as a results of the
@@ -110,7 +111,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
       try {
         var resourceForExecution =
             cloneResourceForErrorStatusHandlerIfNeeded(originalResource, context);
-        return reconcileExecution(executionScope, resourceForExecution,originalResource, context);
+        return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
       } catch (RuntimeException e) {
         handleLastAttemptErrorStatusHandler(originalResource, context, e);
         throw e;
@@ -127,7 +128,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
    */
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context) ||
-        isObservedGenerationHandledAutomatically(resource)) {
+        shouldUpdateObservedGenerationAutomatically(resource)) {
       return controller.getConfiguration().getConfigurationService().getResourceCloner()
           .clone(resource);
     } else {
@@ -136,16 +137,16 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
-      R clonedResource, R originalResource, Context context) {
+      R resourceForExecution, R originalResource, Context context) {
     log.debug(
         "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
-        getName(clonedResource),
-        getVersion(clonedResource),
+        getName(resourceForExecution),
+        getVersion(resourceForExecution),
         executionScope);
 
-    UpdateControl<R> updateControl = controller.reconcile(clonedResource, context);
+    UpdateControl<R> updateControl = controller.reconcile(resourceForExecution, context);
     R updatedCustomResource = null;
-    if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
+    if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource = updateCustomResource(updateControl.getResource());
       updateControl
           .getResource()
@@ -157,7 +158,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource = updateCustomResource(updateControl.getResource());
     } else if (updateControl.isNoUpdate()
-        && isObservedGenerationHandledAutomatically(clonedResource)) {
+        && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
       updatedCustomResource = updateStatusGenerationAware(originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
@@ -185,21 +186,24 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private R updateStatusGenerationAware(R customResource) {
-    updateStatusObservedGenerationIfRequired(customResource);
-    return customResourceFacade.updateStatus(customResource);
+  private R updateStatusGenerationAware(R resource) {
+    updateStatusObservedGenerationIfRequired(resource);
+    return customResourceFacade.updateStatus(resource);
   }
 
-  private boolean isObservedGenerationHandledAutomatically(R resource) {
+  private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
     if (controller.getConfiguration().isGenerationAware()
         && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
       // Note that if status is null we won't update the observed generation.
-      return status instanceof ObservedGenerationAware;
-    } else {
-      return false;
+      if (status instanceof ObservedGenerationAware) {
+        var observedGen = ((ObservedGenerationAware) status).getObservedGeneration();
+        var currentGen = resource.getMetadata().getGeneration();
+        return !currentGen.equals(observedGen);
+      }
     }
+    return false;
   }
 
   private void updateStatusObservedGenerationIfRequired(R resource) {
