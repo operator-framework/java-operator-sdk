@@ -43,12 +43,12 @@ public class KubernetesResourceStatusUpdateIT {
 
   private Deployment testDeployment() {
     Deployment resource = new Deployment();
-    Map<String,String> labels = new HashMap<>();
-    labels.put("test","KubernetesResourceStatusUpdateIT");
+    Map<String, String> labels = new HashMap<>();
+    labels.put("test", "KubernetesResourceStatusUpdateIT");
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("test-deployment")
-                .withLabels(labels)
+            .withLabels(labels)
             .build());
     DeploymentSpec spec = new DeploymentSpec();
     resource.setSpec(spec);
