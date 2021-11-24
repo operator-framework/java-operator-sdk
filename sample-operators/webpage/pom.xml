@@ -10,9 +10,9 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>webserver</artifactId>
-    <name>Operator SDK - Samples - Webserver</name>
-    <description>Provisions an nginx Webserver based on a CRD</description>
+    <artifactId>webpage</artifactId>
+    <name>Operator SDK - Samples - WebPage</name>
+    <description>Provisions an nginx Webserver based on a CRD with give html</description>
     <packaging>jar</packaging>
 
     <properties>
