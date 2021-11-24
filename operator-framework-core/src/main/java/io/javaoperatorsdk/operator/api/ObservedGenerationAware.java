@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -11,10 +12,9 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
  * is ignored.
  *
  * In order to work the status object returned by CustomResource.getStatus() should not be null. In
- * addition to that from the controller that the
- * {@link UpdateControl#updateStatusSubResource(CustomResource)} or
- * {@link UpdateControl#updateCustomResourceAndStatus(CustomResource)} should be returned. The
- * observed generation is not updated in other cases.
+ * addition to that from the controller that the {@link UpdateControl#updateStatus(HasMetadata)} or
+ * {@link UpdateControl#updateResourceAndStatus(HasMetadata)} should be returned. The observed
+ * generation is not updated in other cases.
  *
  * @see ObservedGenerationAwareStatus
  */
