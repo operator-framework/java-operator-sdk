@@ -31,6 +31,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
   /**
    * As a results of this there will be two call to K8S API. First the custom resource will be
    * updates then the status sub-resource.
+   * 
    * @param <T> resource type
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
