@@ -81,10 +81,6 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private ControllerConfiguration<R> configuration() {
-    return controller.getConfiguration();
-  }
-
   /**
    * Determines whether the given resource should be dispatched to the controller's
    * {@link Reconciler#cleanup(HasMetadata, Context)} method
@@ -100,36 +96,39 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> handleReconcile(
-      ExecutionScope<R> executionScope, R resource, Context context) {
-    if (configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer())) {
+      ExecutionScope<R> executionScope, R originalResource, Context context) {
+    if (configuration().useFinalizer()
+        && !originalResource.hasFinalizer(configuration().getFinalizer())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
        * We execute the controller processing only for processing the event sent as a results of the
        * finalizer add. This will make sure that the resources are not created before there is a
        * finalizer.
        */
-      updateCustomResourceWithFinalizer(resource);
+      updateCustomResourceWithFinalizer(originalResource);
       return PostExecutionControl.onlyFinalizerAdded();
     } else {
       try {
         var resourceForExecution =
-            cloneResourceForErrorStatusHandlerIfNeeded(resource, context);
-        return reconcileExecution(executionScope, resourceForExecution, context);
+            cloneResourceForErrorStatusHandlerIfNeeded(originalResource, context);
+        return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
       } catch (RuntimeException e) {
-        handleLastAttemptErrorStatusHandler(resource, context, e);
+        handleLastAttemptErrorStatusHandler(originalResource, context, e);
         throw e;
       }
     }
   }
 
   /**
-   * Resource make sense only to clone for the ErrorStatusHandler. Otherwise, this operation can be
-   * skipped since it can be memory and time-consuming. However, it needs to be cloned since it's
-   * common that the custom resource is changed during an execution, and it's much cleaner to have
-   * to original resource in place for status update.
+   * Resource make sense only to clone for the ErrorStatusHandler or if the observed generation in
+   * status is handled automatically. Otherwise, this operation can be skipped since it can be
+   * memory and time-consuming. However, it needs to be cloned since it's common that the custom
+   * resource is changed during an execution, and it's much cleaner to have to original resource in
+   * place for status update.
    */
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
-    if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context)) {
+    if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context) ||
+        shouldUpdateObservedGenerationAutomatically(resource)) {
       return controller.getConfiguration().getConfigurationService().getResourceCloner()
           .clone(resource);
     } else {
@@ -138,26 +137,29 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
-      R resource, Context context) {
+      R resourceForExecution, R originalResource, Context context) {
     log.debug(
         "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
-        getName(resource),
-        getVersion(resource),
+        getName(resourceForExecution),
+        getVersion(resourceForExecution),
         executionScope);
 
-    UpdateControl<R> updateControl = controller.reconcile(resource, context);
+    UpdateControl<R> updateControl = controller.reconcile(resourceForExecution, context);
     R updatedCustomResource = null;
-    if (updateControl.isUpdateCustomResourceAndStatusSubResource()) {
+    if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource = updateCustomResource(updateControl.getResource());
       updateControl
           .getResource()
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
       updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
-    } else if (updateControl.isUpdateStatusSubResource()) {
+    } else if (updateControl.isUpdateStatus()) {
       updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource = updateCustomResource(updateControl.getResource());
+    } else if (updateControl.isNoUpdate()
+        && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
+      updatedCustomResource = updateStatusGenerationAware(originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -184,14 +186,27 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private R updateStatusGenerationAware(R customResource) {
-    updateStatusObservedGenerationIfRequired(customResource);
-    return customResourceFacade.updateStatus(customResource);
+  private R updateStatusGenerationAware(R resource) {
+    updateStatusObservedGenerationIfRequired(resource);
+    return customResourceFacade.updateStatus(resource);
+  }
+
+  private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
+    if (controller.getConfiguration().isGenerationAware()
+        && resource instanceof CustomResource<?, ?>) {
+      var customResource = (CustomResource) resource;
+      var status = customResource.getStatus();
+      // Note that if status is null we won't update the observed generation.
+      if (status instanceof ObservedGenerationAware) {
+        var observedGen = ((ObservedGenerationAware) status).getObservedGeneration();
+        var currentGen = resource.getMetadata().getGeneration();
+        return !currentGen.equals(observedGen);
+      }
+    }
+    return false;
   }
 
   private void updateStatusObservedGenerationIfRequired(R resource) {
-    // todo: change this to check for HasStatus (or similar) when
-    // https://github.com/fabric8io/kubernetes-client/issues/3586 is fixed
     if (controller.getConfiguration().isGenerationAware()
         && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
@@ -278,6 +293,10 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
         getName(resource),
         resource.getMetadata().getResourceVersion());
     return customResourceFacade.replaceWithLock(resource);
+  }
+
+  private ControllerConfiguration<R> configuration() {
+    return controller.getConfiguration();
   }
 
   // created to support unit testing
