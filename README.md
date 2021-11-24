@@ -26,7 +26,7 @@ Table of Contents
 
 Check out
 this [blog post](https://csviri.medium.com/deep-dive-building-a-kubernetes-operator-sdk-for-java-developers-5008218822cb)
-about the non-trivial yet common problems needed to be solved for every operator. In case you are
+about the non-trivial yet common problems needed to be solved for everyUpdateControl operator. In case you are
 interested how to handle more complex scenarios take a look
 on [event sources](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b)
 .
