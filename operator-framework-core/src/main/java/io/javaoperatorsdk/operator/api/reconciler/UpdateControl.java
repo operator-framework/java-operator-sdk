@@ -19,6 +19,11 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     this.updateResource = updateResource;
   }
 
+  /**
+   * Creates an update control instance that instructs the framework to do an update on resource
+   * itself, not on the status. Note that usually as a results of a reconciliation should be a
+   * status update not an update to the resource itself.
+   */
   public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
     return new UpdateControl<>(customResource, false, true);
   }
@@ -31,7 +36,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
   /**
    * As a results of this there will be two call to K8S API. First the custom resource will be
    * updates then the status sub-resource.
-   * 
+   *
    * @param <T> resource type
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
