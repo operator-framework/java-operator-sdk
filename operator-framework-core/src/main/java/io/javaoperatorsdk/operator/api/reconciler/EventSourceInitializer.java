@@ -6,8 +6,8 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 public interface EventSourceInitializer<T extends HasMetadata> {
 
   /**
-   * In this typically you might want to register event sources. But can access
-   * CustomResourceEventSource, what might be handy for some edge cases.
+   * Reconciler can implement this interface typically to register event sources. But can access
+   * CustomResourceEventSource, what might be useful for some edge cases.
    * 
    * @param eventSourceRegistry the {@link EventSourceRegistry} where event sources can be
    *        registered.
