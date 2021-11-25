@@ -130,8 +130,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context) ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
-      return controller.getConfiguration().getConfigurationService().getResourceCloner()
-          .clone(resource);
+      return configuration().getConfigurationService().getResourceCloner().clone(resource);
     } else {
       return resource;
     }
@@ -193,8 +192,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
-    if (controller.getConfiguration().isGenerationAware()
-        && resource instanceof CustomResource<?, ?>) {
+    if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
       // Note that if status is null we won't update the observed generation.
@@ -208,8 +206,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private void updateStatusObservedGenerationIfRequired(R resource) {
-    if (controller.getConfiguration().isGenerationAware()
-        && resource instanceof CustomResource<?, ?>) {
+    if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
       // Note that if status is null we won't update the observed generation.
