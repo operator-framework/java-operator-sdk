@@ -60,22 +60,19 @@ public class EventProcessor<R extends HasMetadata>
         controller.getConfiguration().getName(),
         new ReconciliationDispatcher<>(controller),
         GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
-        controller.getConfiguration().getConfigurationService().getMetrics(),
-        new EventMarker());
+        controller.getConfiguration().getConfigurationService().getMetrics());
   }
 
   EventProcessor(ReconciliationDispatcher<R> reconciliationDispatcher,
       ResourceCache<R> resourceCache,
       String relatedControllerName,
-      Retry retry, EventMarker eventMarker) {
-    this(resourceCache, null, relatedControllerName, reconciliationDispatcher, retry, null,
-        eventMarker);
+      Retry retry) {
+    this(resourceCache, null, relatedControllerName, reconciliationDispatcher, retry, null);
   }
 
   private EventProcessor(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
-      ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics,
-      EventMarker eventMarker) {
+      ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics) {
     this.running = true;
     this.executor =
         executor == null
@@ -87,7 +84,11 @@ public class EventProcessor<R extends HasMetadata>
     this.retry = retry;
     this.resourceCache = resourceCache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
-    this.eventMarker = eventMarker;
+    this.eventMarker = new EventMarker();
+  }
+
+  EventMarker getEventMarker() {
+    return eventMarker;
   }
 
   public void setEventSourceManager(EventSourceManager<R> eventSourceManager) {

@@ -10,7 +10,7 @@ import java.util.HashMap;
  * events are irrelevant for us from this point. Note that the dependant resources are either
  * cleaned up by K8S garbage collection or by the controller implementation for cleanup.
  */
-public class EventMarker {
+class EventMarker {
 
   public enum EventingState {
     /** Event but NOT Delete event present */

@@ -33,7 +33,6 @@ class EventProcessorTest {
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
-  private EventMarker eventMarker = new EventMarker();
   private ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
   private EventSourceManager eventSourceManagerMock =
@@ -43,12 +42,11 @@ class EventProcessorTest {
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
 
   private EventProcessor eventProcessor =
-      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test", null,
-          eventMarker);
+      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test", null);
 
   private EventProcessor eventProcessorWithRetry =
       new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test",
-          GenericRetry.defaultLimitedExponentialRetry(), eventMarker);
+          GenericRetry.defaultLimitedExponentialRetry());
 
   @BeforeEach
   public void setup() {
@@ -215,7 +213,7 @@ class EventProcessorTest {
   public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
     var cr = testCustomResource();
     var crEvent = prepareCREvent(ResourceID.fromResource(cr));
-    eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
+    eventProcessor.getEventMarker().markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
     var executionScope = new ExecutionScope(cr, null);
 
     eventProcessor.eventProcessingFinished(executionScope,
@@ -232,7 +230,7 @@ class EventProcessorTest {
     var updatedCr = testCustomResource(crID);
     updatedCr.getMetadata().setResourceVersion("2");
     var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventMarker.markEventReceived(crID);
+    eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
@@ -252,7 +250,7 @@ class EventProcessorTest {
     var otherChangeCR = testCustomResource(crID);
     otherChangeCR.getMetadata().setResourceVersion("3");
     var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventMarker.markEventReceived(crID);
+    eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
@@ -268,7 +266,7 @@ class EventProcessorTest {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
     var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventMarker.markEventReceived(crID);
+    eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
