@@ -18,7 +18,6 @@ import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 
@@ -28,7 +27,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
   private EventSourceManager<R> eventSourceManager;
-  private EventProcessor<R> eventProcessor;
 
   public Controller(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration,
@@ -170,10 +168,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       }
 
       eventSourceManager = new EventSourceManager<>(this);
-      eventProcessor =
-          new EventProcessor<>(this, eventSourceManager.getControllerResourceEventSource());
-      eventProcessor.setEventSourceManager(eventSourceManager);
-      eventSourceManager.setEventProcessor(eventProcessor);
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler).prepareEventSources(eventSourceManager);
       }
@@ -183,7 +177,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
                 + controllerName
                 + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
       }
-      eventProcessor.start();
       eventSourceManager.start();
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
@@ -222,9 +215,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   public void stop() {
     if (eventSourceManager != null) {
       eventSourceManager.stop();
-    }
-    if (eventProcessor != null) {
-      eventProcessor.stop();
     }
   }
 }

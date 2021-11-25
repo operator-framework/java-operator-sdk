@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
-import io.javaoperatorsdk.operator.processing.event.source.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata>
     implements EventSourceRegistry<R>, LifecycleAware {
@@ -26,38 +25,25 @@ public class EventSourceManager<R extends HasMetadata>
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
-  private EventProcessor<R> eventProcessor;
-  private TimerEventSource<R> retryAndRescheduleTimerEventSource;
+  private final EventProcessor<R> eventProcessor;
   private ControllerResourceEventSource<R> controllerResourceEventSource;
+  private final Controller<R> controller;
 
-  EventSourceManager() {
-    init();
+  EventSourceManager(EventProcessor<R> eventProcessor) {
+    this.eventProcessor = eventProcessor;
+    controller = null;
   }
 
   public EventSourceManager(Controller<R> controller) {
-    init();
+    this.controller = controller;
     controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+    this.eventProcessor = new EventProcessor<>(this);
     registerEventSource(controllerResourceEventSource);
-  }
-
-  private void init() {
-    this.retryAndRescheduleTimerEventSource = new TimerEventSource<>();
-    registerEventSource(retryAndRescheduleTimerEventSource);
-  }
-
-  public EventSourceManager<R> setEventProcessor(EventProcessor<R> eventProcessor) {
-    this.eventProcessor = eventProcessor;
-    if (controllerResourceEventSource != null) {
-      controllerResourceEventSource.setEventHandler(eventProcessor);
-    }
-    if (retryAndRescheduleTimerEventSource != null) {
-      retryAndRescheduleTimerEventSource.setEventHandler(eventProcessor);
-    }
-    return this;
   }
 
   @Override
   public void start() throws OperatorException {
+    eventProcessor.start();
     lock.lock();
     try {
       log.debug("Starting event sources.");
@@ -89,6 +75,7 @@ public class EventSourceManager<R extends HasMetadata>
     } finally {
       lock.unlock();
     }
+    eventProcessor.stop();
   }
 
   @Override
@@ -122,10 +109,6 @@ public class EventSourceManager<R extends HasMetadata>
     }
   }
 
-  public TimerEventSource<R> getRetryAndRescheduleTimerEventSource() {
-    return retryAndRescheduleTimerEventSource;
-  }
-
   @Override
   public Set<EventSource> getRegisteredEventSources() {
     return Collections.unmodifiableSet(eventSources);
@@ -136,4 +119,7 @@ public class EventSourceManager<R extends HasMetadata>
     return controllerResourceEventSource;
   }
 
+  Controller<R> getController() {
+    return controller;
+  }
 }

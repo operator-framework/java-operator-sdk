@@ -18,12 +18,12 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -35,8 +35,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * Event handler that makes sure that events are processed in a "single threaded" way per resource
  * UID, while buffering events which are received during an execution.
  */
-public class EventProcessor<R extends HasMetadata>
-    implements EventHandler, LifecycleAware {
+class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
 
@@ -50,29 +49,35 @@ public class EventProcessor<R extends HasMetadata>
   private final Metrics metrics;
   private volatile boolean running;
   private final ResourceCache<R> resourceCache;
-  private EventSourceManager<R> eventSourceManager;
+  private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker;
+  private final TimerEventSource<R> retryAndRescheduleTimerEventSource;
 
-  public EventProcessor(Controller<R> controller, ResourceCache<R> resourceCache) {
+  EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
-        resourceCache,
+        eventSourceManager.getControllerResourceEventSource(),
         ExecutorServiceManager.instance().executorService(),
-        controller.getConfiguration().getName(),
-        new ReconciliationDispatcher<>(controller),
-        GenericRetry.fromConfiguration(controller.getConfiguration().getRetryConfiguration()),
-        controller.getConfiguration().getConfigurationService().getMetrics());
+        eventSourceManager.getController().getConfiguration().getName(),
+        new ReconciliationDispatcher<>(eventSourceManager.getController()),
+        GenericRetry.fromConfiguration(
+            eventSourceManager.getController().getConfiguration().getRetryConfiguration()),
+        eventSourceManager.getController().getConfiguration().getConfigurationService()
+            .getMetrics(),
+        eventSourceManager);
   }
 
   EventProcessor(ReconciliationDispatcher<R> reconciliationDispatcher,
-      ResourceCache<R> resourceCache,
+      EventSourceManager<R> eventSourceManager,
       String relatedControllerName,
       Retry retry) {
-    this(resourceCache, null, relatedControllerName, reconciliationDispatcher, retry, null);
+    this(eventSourceManager.getControllerResourceEventSource(), null, relatedControllerName,
+        reconciliationDispatcher, retry, null, eventSourceManager);
   }
 
   private EventProcessor(ResourceCache<R> resourceCache, ExecutorService executor,
       String relatedControllerName,
-      ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics) {
+      ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics,
+      EventSourceManager<R> eventSourceManager) {
     this.running = true;
     this.executor =
         executor == null
@@ -85,14 +90,13 @@ public class EventProcessor<R extends HasMetadata>
     this.resourceCache = resourceCache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventMarker = new EventMarker();
+    this.retryAndRescheduleTimerEventSource = new TimerEventSource<>();
+    this.retryAndRescheduleTimerEventSource.setEventHandler(this);
+    this.eventSourceManager = eventSourceManager;
   }
 
   EventMarker getEventMarker() {
     return eventMarker;
-  }
-
-  public void setEventSourceManager(EventSourceManager<R> eventSourceManager) {
-    this.eventSourceManager = eventSourceManager;
   }
 
   @Override
@@ -243,9 +247,12 @@ public class EventProcessor<R extends HasMetadata>
 
   private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,
       R customResource) {
-    postExecutionControl.getReScheduleDelay().ifPresent(delay -> eventSourceManager
-        .getRetryAndRescheduleTimerEventSource()
-        .scheduleOnce(customResource, delay));
+    postExecutionControl.getReScheduleDelay()
+        .ifPresent(delay -> retryEventSource().scheduleOnce(customResource, delay));
+  }
+
+  TimerEventSource<R> retryEventSource() {
+    return retryAndRescheduleTimerEventSource;
   }
 
   /**
@@ -275,9 +282,7 @@ public class EventProcessor<R extends HasMetadata>
               delay,
               customResourceID);
           metrics.failedReconciliation(customResourceID, exception);
-          eventSourceManager
-              .getRetryAndRescheduleTimerEventSource()
-              .scheduleOnce(executionScope.getResource(), delay);
+          retryEventSource().scheduleOnce(executionScope.getResource(), delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
   }
@@ -289,9 +294,7 @@ public class EventProcessor<R extends HasMetadata>
     if (isRetryConfigured()) {
       retryState.remove(executionScope.getCustomResourceID());
     }
-    eventSourceManager
-        .getRetryAndRescheduleTimerEventSource()
-        .cancelOnceSchedule(executionScope.getCustomResourceID());
+    retryEventSource().cancelOnceSchedule(executionScope.getCustomResourceID());
   }
 
   private RetryExecution getOrInitRetryExecution(ExecutionScope<R> executionScope) {

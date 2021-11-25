@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEvent;
@@ -24,7 +23,14 @@ import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static io.javaoperatorsdk.operator.processing.event.source.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EventProcessorTest {
 
@@ -35,25 +41,25 @@ class EventProcessorTest {
   public static final String TEST_NAMESPACE = "default-event-handler-test";
   private ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
-  private EventSourceManager eventSourceManagerMock =
-      mock(EventSourceManager.class);
-  private ResourceCache resourceCacheMock = mock(ResourceCache.class);
-
+  private EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
+  private ControllerResourceEventSource resourceCacheMock =
+      mock(ControllerResourceEventSource.class);
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
-
-  private EventProcessor eventProcessor =
-      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test", null);
-
-  private EventProcessor eventProcessorWithRetry =
-      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test",
-          GenericRetry.defaultLimitedExponentialRetry());
+  private EventProcessor eventProcessor;
+  private EventProcessor eventProcessorWithRetry;
 
   @BeforeEach
   public void setup() {
-    when(eventSourceManagerMock.getRetryAndRescheduleTimerEventSource())
-        .thenReturn(retryTimerEventSourceMock);
-    eventProcessor.setEventSourceManager(eventSourceManagerMock);
-    eventProcessorWithRetry.setEventSourceManager(eventSourceManagerMock);
+    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(resourceCacheMock);
+
+    eventProcessor =
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+    eventProcessorWithRetry =
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
+            GenericRetry.defaultLimitedExponentialRetry()));
+
+    when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+    when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
   }
 
   @Test
