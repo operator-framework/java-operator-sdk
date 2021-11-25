@@ -27,7 +27,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * Handles calls and results of a Reconciler and finalizer related logic
  */
-public class ReconciliationDispatcher<R extends HasMetadata> {
+class ReconciliationDispatcher<R extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 

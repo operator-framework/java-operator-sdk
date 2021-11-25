@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.processing.event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 
-public class ExecutionScope<R extends HasMetadata> {
+class ExecutionScope<R extends HasMetadata> {
 
   // the latest custom resource from cache
   private final R resource;

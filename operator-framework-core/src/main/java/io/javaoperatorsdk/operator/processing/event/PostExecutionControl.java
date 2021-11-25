@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public final class PostExecutionControl<R extends HasMetadata> {
+final class PostExecutionControl<R extends HasMetadata> {
 
   private final boolean onlyFinalizerHandled;
   private final R updatedCustomResource;
