@@ -332,6 +332,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   public void stop() {
     lock.lock();
     try {
+      retryEventSource().stop();
       this.running = false;
     } finally {
       lock.unlock();
@@ -342,6 +343,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   public void start() throws OperatorException {
     lock.lock();
     try {
+      retryEventSource().start();
       this.running = true;
     } finally {
       lock.unlock();
