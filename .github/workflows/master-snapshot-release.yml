@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
 jobs:
   test:
