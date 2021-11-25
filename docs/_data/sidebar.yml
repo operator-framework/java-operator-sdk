@@ -13,4 +13,6 @@
     url: /docs/faq
   - title: Contributing
     url: /docs/contributing
+  - title: Migrating to v2
+    url: /docs/v2-migration
 
