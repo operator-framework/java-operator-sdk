@@ -50,7 +50,7 @@
         <compile-testing.version>0.19</compile-testing.version>
         <javapoet.version>1.13.0</javapoet.version>
         <assertj.version>3.21.0</assertj.version>
-        <awaitility.version>4.1.0</awaitility.version>
+        <awaitility.version>4.1.1</awaitility.version>
         <spring-boot.version>2.5.5</spring-boot.version>
         <micrometer-core.version>1.7.4</micrometer-core.version>
 
