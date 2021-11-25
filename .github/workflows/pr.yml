@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 on:
   pull_request:
-    branches: [ master, v1 ]
+    branches: [ main, v1 ]
   workflow_dispatch:
 jobs:
   build:
