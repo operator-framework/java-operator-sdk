@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.EventProcessor;
-import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
+import io.javaoperatorsdk.operator.processing.LifecycleAware;
+import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata>
     implements EventSourceRegistry<R>, LifecycleAware {

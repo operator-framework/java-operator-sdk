@@ -4,7 +4,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
 
 public interface EventSourceRegistry<T extends HasMetadata> {
 

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.internal;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;

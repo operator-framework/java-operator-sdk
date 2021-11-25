@@ -20,7 +20,7 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 
 import static java.util.Collections.EMPTY_SET;
 

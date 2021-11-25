@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.javaoperatorsdk.operator.api.LifecycleAware;
+import io.javaoperatorsdk.operator.processing.LifecycleAware;
 
 public interface EventSource extends LifecycleAware {
 

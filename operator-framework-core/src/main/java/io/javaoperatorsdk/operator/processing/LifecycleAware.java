@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api;
+package io.javaoperatorsdk.operator.processing;
 
 import io.javaoperatorsdk.operator.OperatorException;
 
