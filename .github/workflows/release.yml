@@ -25,14 +25,14 @@ jobs:
         run: ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
         env:
           RELEASE_VERSION: ${{ github.event.release.tag_name }}
-  #      - name: Release Maven package
-  #        uses: samuelmeuli/action-maven-publish@v1
-  #        with:
-  #          maven_profiles: "release"
-  #          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-  #          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-  #          nexus_username: ${{ secrets.OSSRH_USERNAME }}
-  #          nexus_password: ${{ secrets.OSSRH_TOKEN }}
+        - name: Release Maven package
+          uses: samuelmeuli/action-maven-publish@v1
+          with:
+            maven_profiles: "release"
+            gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+            gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+            nexus_username: ${{ secrets.OSSRH_USERNAME }}
+            nexus_password: ${{ secrets.OSSRH_TOKEN }}
 
   # This is separate job because there were issues with git after release step, was not able to commit changes. See history.
   update-working-version:
