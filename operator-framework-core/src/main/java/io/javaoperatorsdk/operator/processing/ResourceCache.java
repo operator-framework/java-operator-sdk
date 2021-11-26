@@ -16,4 +16,8 @@ public interface ResourceCache<T extends HasMetadata> {
   }
 
   Stream<T> list(Predicate<T> predicate);
+
+  Stream<T> list(String namespace);
+
+  Stream<T> list(String namespace, Predicate<T> predicate);
 }

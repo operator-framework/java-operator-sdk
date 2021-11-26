@@ -7,9 +7,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,41 +185,31 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     return sharedIndexInformers.values().stream()
         .flatMap(i -> i.getStore().list().stream().filter(predicate));
   }
-  public Stream<T> getCachedCustomResources() {
-    return getCachedCustomResources(a -> true);
-  }
 
-  public Stream<T> getCachedCustomResources(Predicate<T> predicate) {
-    var streamList = sharedIndexInformers.values().stream()
-        .map(i -> i.getStore().list().stream().filter(predicate)).collect(Collectors.toList());
-    if (streamList.size() == 1) {
-      return streamList.get(0);
+  @Override
+  public Stream<T> list(String namespace) {
+    if (isWatchingAllNamespaces()) {
+      return sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
+          .filter(r -> r.getMetadata()
+              .getNamespace().equals(namespace));
+    } else {
+      return sharedIndexInformers.get(namespace).getStore().list().stream();
     }
-    var resStream = streamList.get(0);
-    for (int i = 1; i < streamList.size(); i++) {
-      resStream = Stream.concat(resStream, streamList.get(i));
+  }
+
+  @Override
+  public Stream<T> list(String namespace, Predicate<T> predicate) {
+    if (isWatchingAllNamespaces()) {
+      return sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
+          .filter(r -> r.getMetadata()
+              .getNamespace().equals(namespace) && predicate.test(r));
+    } else {
+      return sharedIndexInformers.get(namespace).getStore().list().stream().filter(predicate);
     }
-    return resStream;
   }
 
-  /**
-   * Use only if the operator is watching specific namespace(s).
-   *
-   * @param namespace - namespace to filter on
-   * @return stream of cached resources from the specified namespace
-   */
-  public Stream<T> getCachedResources(String namespace) {
-    return sharedIndexInformers.get(namespace).getStore().list().stream();
-  }
-
-  /**
-   * Use only if the operator is watching specific namespace(s).
-   *
-   * @param namespace - namespace to filter on
-   * @return stream of cached resources from the specified namespace
-   */
-  public Stream<T> getCachedResources(String namespace, Predicate<T> predicate) {
-    return sharedIndexInformers.get(namespace).getStore().list().stream().filter(predicate);
+  private boolean isWatchingAllNamespaces() {
+    return sharedIndexInformers.containsKey(ANY_NAMESPACE_MAP_KEY);
   }
 
   /**
