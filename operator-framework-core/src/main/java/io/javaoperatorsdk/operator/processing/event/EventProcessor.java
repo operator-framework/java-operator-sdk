@@ -50,7 +50,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private volatile boolean running;
   private final ResourceCache<R> resourceCache;
   private final EventSourceManager<R> eventSourceManager;
-  private final EventMarker eventMarker;
+  private final EventMarker eventMarker = new EventMarker();
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
@@ -88,7 +88,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.retry = retry;
     this.resourceCache = resourceCache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
-    this.eventMarker = new EventMarker();
     this.eventSourceManager = eventSourceManager;
   }
 
