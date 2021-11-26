@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,21 +12,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.internal.ResourceEvent;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static io.javaoperatorsdk.operator.processing.event.internal.ResourceAction.DELETED;
+import static io.javaoperatorsdk.operator.processing.event.source.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EventProcessorTest {
 
@@ -35,29 +39,27 @@ class EventProcessorTest {
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
-  private EventMarker eventMarker = new EventMarker();
   private ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
-  private EventSourceManager eventSourceManagerMock =
-      mock(EventSourceManager.class);
-  private ResourceCache resourceCacheMock = mock(ResourceCache.class);
-
+  private EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
+  private ControllerResourceEventSource resourceCacheMock =
+      mock(ControllerResourceEventSource.class);
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
-
-  private EventProcessor eventProcessor =
-      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test", null,
-          eventMarker);
-
-  private EventProcessor eventProcessorWithRetry =
-      new EventProcessor(reconciliationDispatcherMock, resourceCacheMock, "Test",
-          GenericRetry.defaultLimitedExponentialRetry(), eventMarker);
+  private EventProcessor eventProcessor;
+  private EventProcessor eventProcessorWithRetry;
 
   @BeforeEach
   public void setup() {
-    when(eventSourceManagerMock.getRetryAndRescheduleTimerEventSource())
-        .thenReturn(retryTimerEventSourceMock);
-    eventProcessor.setEventSourceManager(eventSourceManagerMock);
-    eventProcessorWithRetry.setEventSourceManager(eventSourceManagerMock);
+    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(resourceCacheMock);
+
+    eventProcessor =
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+    eventProcessorWithRetry =
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
+            GenericRetry.defaultLimitedExponentialRetry()));
+
+    when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+    when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
   }
 
   @Test
@@ -217,7 +219,7 @@ class EventProcessorTest {
   public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
     var cr = testCustomResource();
     var crEvent = prepareCREvent(ResourceID.fromResource(cr));
-    eventMarker.markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
+    eventProcessor.getEventMarker().markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
     var executionScope = new ExecutionScope(cr, null);
 
     eventProcessor.eventProcessingFinished(executionScope,
@@ -234,7 +236,7 @@ class EventProcessorTest {
     var updatedCr = testCustomResource(crID);
     updatedCr.getMetadata().setResourceVersion("2");
     var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventMarker.markEventReceived(crID);
+    eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
@@ -254,7 +256,7 @@ class EventProcessorTest {
     var otherChangeCR = testCustomResource(crID);
     otherChangeCR.getMetadata().setResourceVersion("3");
     var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventMarker.markEventReceived(crID);
+    eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
@@ -270,7 +272,7 @@ class EventProcessorTest {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
     var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventMarker.markEventReceived(crID);
+    eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);

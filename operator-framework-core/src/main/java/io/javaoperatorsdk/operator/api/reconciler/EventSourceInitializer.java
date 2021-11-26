@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 
 public interface EventSourceInitializer<T extends HasMetadata> {
 
