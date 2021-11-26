@@ -8,6 +8,9 @@ by [operator-sdk](https://github.com/operator-framework/operator-sdk).
 
 Our webpage with documentation is getting better every day: https://javaoperatorsdk.io/
 
+**!! NOTE the main branch now contains source code for v2, which is under development, for actual
+version see [v1 branch](https://github.com/java-operator-sdk/java-operator-sdk/tree/v1) !!**
+
 Table of Contents
 ==========
 
