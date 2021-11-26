@@ -15,17 +15,17 @@ public class MDCUtils {
   private static final String GENERATION = "resource.generation";
   private static final String UID = "resource.uid";
 
-  public static void addCustomResourceIDInfo(ResourceID resourceID) {
+  public static void addResourceIDInfo(ResourceID resourceID) {
     MDC.put(NAME, resourceID.getName());
     MDC.put(NAMESPACE, resourceID.getNamespace().orElse("no namespace"));
   }
 
-  public static void removeCustomResourceIDInfo() {
+  public static void removeResourceIDInfo() {
     MDC.remove(NAME);
     MDC.remove(NAMESPACE);
   }
 
-  public static void addCustomResourceInfo(HasMetadata resource) {
+  public static void addResourceInfo(HasMetadata resource) {
     MDC.put(API_VERSION, resource.getApiVersion());
     MDC.put(KIND, resource.getKind());
     MDC.put(NAME, resource.getMetadata().getName());
@@ -37,7 +37,7 @@ public class MDCUtils {
     MDC.put(UID, resource.getMetadata().getUid());
   }
 
-  public static void removeCustomResourceInfo() {
+  public static void removeResourceInfo() {
     MDC.remove(API_VERSION);
     MDC.remove(KIND);
     MDC.remove(NAME);

@@ -105,7 +105,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         return;
       }
       final var resourceID = event.getRelatedCustomResourceID();
-      MDCUtils.addCustomResourceIDInfo(resourceID);
+      MDCUtils.addResourceIDInfo(resourceID);
       metrics.receivedEvent(event);
 
       handleEventMarking(event);
@@ -116,41 +116,35 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       }
     } finally {
       lock.unlock();
-      MDCUtils.removeCustomResourceIDInfo();
+      MDCUtils.removeResourceIDInfo();
     }
   }
 
-  private void submitReconciliationExecution(ResourceID customResourceUid) {
+  private void submitReconciliationExecution(ResourceID resourceID) {
     try {
-      boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
-      Optional<R> latestCustomResource = resourceCache.get(customResourceUid);
-      latestCustomResource.ifPresent(MDCUtils::addCustomResourceInfo);
-      if (!controllerUnderExecution
-          && latestCustomResource.isPresent()) {
-        setUnderExecutionProcessing(customResourceUid);
-        final var retryInfo = retryInfo(customResourceUid);
-        ExecutionScope<R> executionScope =
-            new ExecutionScope<>(
-                latestCustomResource.get(),
-                retryInfo);
-        eventMarker.unMarkEventReceived(customResourceUid);
-        metrics.reconcileCustomResource(customResourceUid, retryInfo);
+      boolean controllerUnderExecution = isControllerUnderExecution(resourceID);
+      Optional<R> latest = resourceCache.get(resourceID);
+      latest.ifPresent(MDCUtils::addResourceInfo);
+      if (!controllerUnderExecution && latest.isPresent()) {
+        setUnderExecutionProcessing(resourceID);
+        final var retryInfo = retryInfo(resourceID);
+        ExecutionScope<R> executionScope = new ExecutionScope<>(latest.get(), retryInfo);
+        eventMarker.unMarkEventReceived(resourceID);
+        metrics.reconcileCustomResource(resourceID, retryInfo);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ControllerExecution(executionScope));
       } else {
         log.debug(
-            "Skipping executing controller for resource id: {}."
-                + " Controller in execution: {}. Latest CustomResource present: {}",
-            customResourceUid,
+            "Skipping executing controller for resource id: {}. Controller in execution: {}. Latest Resource present: {}",
+            resourceID,
             controllerUnderExecution,
-            latestCustomResource.isPresent());
-        if (latestCustomResource.isEmpty()) {
-          log.warn("no custom resource found in cache for CustomResourceID: {}",
-              customResourceUid);
+            latest.isPresent());
+        if (latest.isEmpty()) {
+          log.warn("no custom resource found in cache for ResourceID: {}", resourceID);
         }
       }
     } finally {
-      MDCUtils.removeCustomResourceInfo();
+      MDCUtils.removeResourceInfo();
     }
   }
 
@@ -356,7 +350,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       final var thread = Thread.currentThread();
       final var name = thread.getName();
       try {
-        MDCUtils.addCustomResourceInfo(executionScope.getResource());
+        MDCUtils.addResourceInfo(executionScope.getResource());
         thread.setName("EventHandler-" + controllerName);
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
@@ -364,7 +358,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       } finally {
         // restore original name
         thread.setName(name);
-        MDCUtils.removeCustomResourceInfo();
+        MDCUtils.removeResourceInfo();
       }
     }
 

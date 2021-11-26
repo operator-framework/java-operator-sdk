@@ -133,7 +133,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     try {
       log.debug(
           "Event received for resource: {}", getName(customResource));
-      MDCUtils.addCustomResourceInfo(customResource);
+      MDCUtils.addResourceInfo(customResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
         eventHandler.handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(customResource)));
@@ -144,7 +144,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
             getVersion(customResource));
       }
     } finally {
-      MDCUtils.removeCustomResourceInfo();
+      MDCUtils.removeResourceInfo();
     }
   }
 

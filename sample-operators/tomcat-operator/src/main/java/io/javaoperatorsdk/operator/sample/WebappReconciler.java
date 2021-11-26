@@ -9,6 +9,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -25,8 +28,6 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 
 import okhttp3.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ControllerConfiguration
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
