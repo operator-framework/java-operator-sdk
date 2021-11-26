@@ -58,7 +58,7 @@ The Controller implements the business logic and describes all the classes neede
 
 ```java
 
-@Controller
+@ControllerConfiguration
 public class WebServerController implements Reconciler<WebServer> {
 
     // Return the changed resource, so it gets updated. See javadoc for details.

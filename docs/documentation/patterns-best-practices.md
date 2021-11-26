@@ -12,9 +12,9 @@ of Java Operator SDK.
 
 ## Implementing a Controller
 
-### Sync of Async Way of Resource Handling
-
 ### Idempotency
+
+### Sync of Async Way of Resource Handling
 
 ## Why to Have Automated Retries?
 
