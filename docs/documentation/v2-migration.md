@@ -22,8 +22,8 @@ The following items are renamed and slightly changed:
   interface is renamed
   to [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
   . In addition, methods:
-    - `createOrUpdate` renamed to `reconcile`
-    - `delete` renamed to `cleanup`
+    - `createOrUpdateResource` renamed to `reconcile`
+    - `deleteResource` renamed to `cleanup`
 - Events are removed from
   the [`Context`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Context.java)
   of `Reconciler` methods . The rationale behind this, is that there is a consensus now on the pattern that the events
