@@ -188,23 +188,19 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
 
   @Override
   public Stream<T> list(String namespace) {
-    if (isWatchingAllNamespaces()) {
-      return sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
-          .filter(r -> r.getMetadata()
-              .getNamespace().equals(namespace));
-    } else {
-      return sharedIndexInformers.get(namespace).getStore().list().stream();
-    }
+    return list(namespace, null);
   }
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     if (isWatchingAllNamespaces()) {
-      return sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
-          .filter(r -> r.getMetadata()
-              .getNamespace().equals(namespace) && predicate.test(r));
+      final var stream = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
+          .filter(r -> r.getMetadata().getNamespace().equals(namespace));
+      return predicate != null ? stream.filter(predicate) : stream;
     } else {
-      return sharedIndexInformers.get(namespace).getStore().list().stream().filter(predicate);
+      final var informer = sharedIndexInformers.get(namespace);
+      return informer != null ? informer.getStore().list().stream().filter(predicate)
+          : Stream.empty();
     }
   }
 
