@@ -1,9 +1,6 @@
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.HashMap;
-
-import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
  * Manages the state of received events. Basically there can be only three distinct states relevant
@@ -13,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * events are irrelevant for us from this point. Note that the dependant resources are either
  * cleaned up by K8S garbage collection or by the controller implementation for cleanup.
  */
-public class EventMarker {
+class EventMarker {
 
   public enum EventingState {
     /** Event but NOT Delete event present */

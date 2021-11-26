@@ -1,10 +1,9 @@
-package io.javaoperatorsdk.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
 
 public interface EventSourceRegistry<T extends HasMetadata> {
 

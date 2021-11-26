@@ -11,9 +11,9 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
-import io.javaoperatorsdk.operator.processing.event.internal.InformerEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.Mappers;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.Mappers;
 
 import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 

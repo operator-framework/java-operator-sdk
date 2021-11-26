@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.internal;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

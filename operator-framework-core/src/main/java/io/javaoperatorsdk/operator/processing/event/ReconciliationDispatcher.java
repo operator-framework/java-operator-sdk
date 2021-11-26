@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator.processing.event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +18,7 @@ import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.Controller;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -26,7 +27,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * Handles calls and results of a Reconciler and finalizer related logic
  */
-public class ReconciliationDispatcher<R extends HasMetadata> {
+class ReconciliationDispatcher<R extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
@@ -129,8 +130,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context) ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
-      return controller.getConfiguration().getConfigurationService().getResourceCloner()
-          .clone(resource);
+      return configuration().getConfigurationService().getResourceCloner().clone(resource);
     } else {
       return resource;
     }
@@ -192,8 +192,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
-    if (controller.getConfiguration().isGenerationAware()
-        && resource instanceof CustomResource<?, ?>) {
+    if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
       // Note that if status is null we won't update the observed generation.
@@ -207,8 +206,7 @@ public class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private void updateStatusObservedGenerationIfRequired(R resource) {
-    if (controller.getConfiguration().isGenerationAware()
-        && resource instanceof CustomResource<?, ?>) {
+    if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
       // Note that if status is null we won't update the observed generation.
