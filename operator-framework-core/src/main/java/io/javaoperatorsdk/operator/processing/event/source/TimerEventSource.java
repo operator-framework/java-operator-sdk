@@ -13,7 +13,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource {
+public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
+    implements ResourceEventAware {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private final Timer timer = new Timer();
@@ -35,8 +36,8 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   @Override
-  public void cleanupForResource(ResourceID resourceUid) {
-    cancelOnceSchedule(resourceUid);
+  public void onResourceDeleted(HasMetadata resource) {
+    cancelOnceSchedule(ResourceID.fromResource(resource));
   }
 
   public void cancelOnceSchedule(ResourceID customResourceUid) {
