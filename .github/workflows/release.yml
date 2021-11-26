@@ -9,6 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
+        with:
+          ref: "v1"
+      - uses: actions/checkout@v2
+        if: ${{ startsWith(github.event.release.tag_name, 'v2.') }}
       - name: Set up Java and Maven
         uses: actions/setup-java@v2
         with:
@@ -34,6 +39,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
+        with:
+          ref: "v1"
+      - uses: actions/checkout@v2
+        if: ${{ startsWith(github.event.release.tag_name, 'v2.') }}
       - name: Set up Java and Maven
         uses: actions/setup-java@v2
         with:
@@ -49,7 +59,14 @@ jobs:
           git commit -m "Set new SNAPSHOT version into pom files." -a
         env:
           RELEASE_VERSION: ${{ github.event.release.tag_name }}
-      - name: Push changes
+      - name: Push changes v1
         uses: ad-m/github-push-action@master
+        if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "v1"
+      - name: Push changes v2
+        uses: ad-m/github-push-action@master
+        if: ${{ startsWith(github.event.release.tag_name, 'v2.' ) }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

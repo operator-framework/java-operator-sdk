@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -20,7 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
@@ -28,7 +27,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
   private EventSourceManager<R> eventSourceManager;
-  private EventProcessor<R> eventProcessor;
 
   public Controller(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration,
@@ -81,10 +79,10 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           @Override
           public String successTypeName(UpdateControl<R> result) {
             String successType = "cr";
-            if (result.isUpdateStatusSubResource()) {
+            if (result.isUpdateStatus()) {
               successType = "status";
             }
-            if (result.isUpdateCustomResourceAndStatusSubResource()) {
+            if (result.isUpdateResourceAndStatus()) {
               successType = "both";
             }
             return successType;
@@ -170,10 +168,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       }
 
       eventSourceManager = new EventSourceManager<>(this);
-      eventProcessor =
-          new EventProcessor<>(this, eventSourceManager.getControllerResourceEventSource());
-      eventProcessor.setEventSourceManager(eventSourceManager);
-      eventSourceManager.setEventProcessor(eventProcessor);
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler).prepareEventSources(eventSourceManager);
       }
@@ -183,7 +177,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
                 + controllerName
                 + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
       }
-      eventProcessor.start();
       eventSourceManager.start();
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
@@ -222,9 +215,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   public void stop() {
     if (eventSourceManager != null) {
       eventSourceManager.stop();
-    }
-    if (eventProcessor != null) {
-      eventProcessor.stop();
     }
   }
 }

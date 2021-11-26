@@ -10,7 +10,7 @@ permalink: /docs/getting-started
 ## Introduction & Resources on Operators
 
 Operators are easy and simple way to manage resource on Kubernetes clusters but
-also outside of the cluster. The goal of this SDK is to allow writing operators in Java by
+also outside the cluster. The goal of this SDK is to allow writing operators in Java by
 providing a nice API and handling common issues regarding the operators on framework level.
    
 For an introduction, what is an operator see this [blog post](https://blog.container-solutions.com/kubernetes-operators-explained).

@@ -46,7 +46,7 @@ public class RetryTestCustomReconciler
     ensureStatusExists(resource);
     resource.getStatus().setState(RetryTestCustomResourceStatus.State.SUCCESS);
 
-    return UpdateControl.updateStatusSubResource(resource);
+    return UpdateControl.updateStatus(resource);
   }
 
   private void ensureStatusExists(RetryTestCustomResource resource) {

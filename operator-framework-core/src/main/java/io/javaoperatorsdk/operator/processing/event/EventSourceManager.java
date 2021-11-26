@@ -12,11 +12,13 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.EventProcessor;
-import io.javaoperatorsdk.operator.processing.event.internal.ControllerResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.internal.TimerEventSource;
+import io.javaoperatorsdk.operator.processing.LifecycleAware;
+import io.javaoperatorsdk.operator.processing.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata>
     implements EventSourceRegistry<R>, LifecycleAware {
@@ -25,38 +27,33 @@ public class EventSourceManager<R extends HasMetadata>
 
   private final ReentrantLock lock = new ReentrantLock();
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
-  private EventProcessor<R> eventProcessor;
+  private final EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
   private ControllerResourceEventSource<R> controllerResourceEventSource;
+  private final Controller<R> controller;
 
-  EventSourceManager() {
-    init();
+  EventSourceManager(EventProcessor<R> eventProcessor) {
+    this.eventProcessor = eventProcessor;
+    controller = null;
+    initRetryEventSource();
   }
 
   public EventSourceManager(Controller<R> controller) {
-    init();
+    this.controller = controller;
     controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+    this.eventProcessor = new EventProcessor<>(this);
     registerEventSource(controllerResourceEventSource);
+    initRetryEventSource();
   }
 
-  private void init() {
-    this.retryAndRescheduleTimerEventSource = new TimerEventSource<>();
+  private void initRetryEventSource() {
+    retryAndRescheduleTimerEventSource = new TimerEventSource<>();
     registerEventSource(retryAndRescheduleTimerEventSource);
-  }
-
-  public EventSourceManager<R> setEventProcessor(EventProcessor<R> eventProcessor) {
-    this.eventProcessor = eventProcessor;
-    if (controllerResourceEventSource != null) {
-      controllerResourceEventSource.setEventHandler(eventProcessor);
-    }
-    if (retryAndRescheduleTimerEventSource != null) {
-      retryAndRescheduleTimerEventSource.setEventHandler(eventProcessor);
-    }
-    return this;
   }
 
   @Override
   public void start() throws OperatorException {
+    eventProcessor.start();
     lock.lock();
     try {
       log.debug("Starting event sources.");
@@ -88,6 +85,7 @@ public class EventSourceManager<R extends HasMetadata>
     } finally {
       lock.unlock();
     }
+    eventProcessor.stop();
   }
 
   @Override
@@ -121,18 +119,25 @@ public class EventSourceManager<R extends HasMetadata>
     }
   }
 
-  public TimerEventSource<R> getRetryAndRescheduleTimerEventSource() {
-    return retryAndRescheduleTimerEventSource;
-  }
-
   @Override
   public Set<EventSource> getRegisteredEventSources() {
     return Collections.unmodifiableSet(eventSources);
   }
 
   @Override
-  public ControllerResourceEventSource<R> getControllerResourceEventSource() {
+  public ResourceCache<R> getResourceCache() {
+    return controllerResourceEventSource();
+  }
+
+  ControllerResourceEventSource<R> controllerResourceEventSource() {
     return controllerResourceEventSource;
   }
 
+  TimerEventSource<R> retryEventSource() {
+    return retryAndRescheduleTimerEventSource;
+  }
+
+  Controller<R> getController() {
+    return controller;
+  }
 }

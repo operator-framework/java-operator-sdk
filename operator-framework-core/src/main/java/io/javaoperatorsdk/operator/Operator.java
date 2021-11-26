@@ -13,12 +13,12 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.LifecycleAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.LifecycleAware;
 
 @SuppressWarnings("rawtypes")
 public class Operator implements AutoCloseable, LifecycleAware {
@@ -70,7 +70,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
 
     log.info("Client version: {}", Version.clientVersion());
     try {
-      final var k8sVersion = kubernetesClient.getVersion();
+      final var k8sVersion = kubernetesClient.getKubernetesVersion();
       if (k8sVersion != null) {
         log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
       }
@@ -110,13 +110,14 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * Add a registration requests for the specified controller with this operator. The effective
    * registration of the controller is delayed till the operator is started.
    *
-   * @param controller the controller to register
+   * @param reconciler the controller to register
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends HasMetadata> void register(Reconciler<R> controller)
+  public <R extends HasMetadata> void register(Reconciler<R> reconciler)
       throws OperatorException {
-    register(controller, null);
+    final var defaultConfiguration = configurationService.getConfigurationFor(reconciler);
+    register(reconciler, defaultConfiguration);
   }
 
   /**
@@ -127,39 +128,34 @@ public class Operator implements AutoCloseable, LifecycleAware {
    * controller is delayed till the operator is started.
    *
    * @param reconciler part of the controller to register
-   * @param configuration the configuration with which we want to register the controller, if {@code
-   *     null}, the controller's original configuration is used
+   * @param configuration the configuration with which we want to register the controller
    * @param <R> the {@code CustomResource} type associated with the controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends HasMetadata> void register(
-      Reconciler<R> reconciler, ControllerConfiguration<R> configuration)
+  public <R extends HasMetadata> void register(Reconciler<R> reconciler,
+      ControllerConfiguration<R> configuration)
       throws OperatorException {
-    final var existing = configurationService.getConfigurationFor(reconciler);
-    if (existing == null) {
+
+    if (configuration == null) {
       throw new OperatorException(
           "Cannot register controller with name " + reconciler.getClass().getCanonicalName() +
               " controller named " + ControllerUtils.getNameFor(reconciler)
               + " because its configuration cannot be found.\n" +
               " Known controllers are: " + configurationService.getKnownControllerNames());
-    } else {
-      if (configuration == null) {
-        configuration = existing;
-      }
-      final var controller =
-          new Controller<>(reconciler, configuration, kubernetesClient);
-      controllers.add(controller);
-
-      final var watchedNS =
-          configuration.watchAllNamespaces()
-              ? "[all namespaces]"
-              : configuration.getEffectiveNamespaces();
-      log.info(
-          "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
-          configuration.getName(),
-          configuration.getResourceClass(),
-          watchedNS);
     }
+
+    final var controller = new Controller<>(reconciler, configuration, kubernetesClient);
+
+    controllers.add(controller);
+
+    final var watchedNS = configuration.watchAllNamespaces() ? "[all namespaces]"
+        : configuration.getEffectiveNamespaces();
+
+    log.info(
+        "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
+        configuration.getName(),
+        configuration.getResourceClass(),
+        watchedNS);
   }
 
   static class ControllerManager implements LifecycleAware {

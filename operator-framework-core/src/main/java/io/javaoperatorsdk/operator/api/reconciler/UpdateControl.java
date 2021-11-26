@@ -6,24 +6,29 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
   private final T resource;
-  private final boolean updateStatusSubResource;
+  private final boolean updateStatus;
   private final boolean updateResource;
 
   private UpdateControl(
-      T resource, boolean updateStatusSubResource, boolean updateResource) {
-    if ((updateResource || updateStatusSubResource) && resource == null) {
+      T resource, boolean updateStatus, boolean updateResource) {
+    if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
     this.resource = resource;
-    this.updateStatusSubResource = updateStatusSubResource;
+    this.updateStatus = updateStatus;
     this.updateResource = updateResource;
   }
 
+  /**
+   * Creates an update control instance that instructs the framework to do an update on resource
+   * itself, not on the status. Note that usually as a results of a reconciliation should be a
+   * status update not an update to the resource itself.
+   */
   public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
     return new UpdateControl<>(customResource, false, true);
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> updateStatusSubResource(
+  public static <T extends HasMetadata> UpdateControl<T> updateStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, false);
   }
@@ -32,10 +37,11 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
    * As a results of this there will be two call to K8S API. First the custom resource will be
    * updates then the status sub-resource.
    *
+   * @param <T> resource type
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
    */
-  public static <T extends HasMetadata> UpdateControl<T> updateCustomResourceAndStatus(
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }
@@ -48,15 +54,19 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return resource;
   }
 
-  public boolean isUpdateStatusSubResource() {
-    return updateStatusSubResource;
+  public boolean isUpdateStatus() {
+    return updateStatus;
   }
 
   public boolean isUpdateResource() {
     return updateResource;
   }
 
-  public boolean isUpdateCustomResourceAndStatusSubResource() {
-    return updateResource && updateStatusSubResource;
+  public boolean isNoUpdate() {
+    return !updateResource && !updateStatus;
+  }
+
+  public boolean isUpdateResourceAndStatus() {
+    return updateResource && updateStatus;
   }
 }

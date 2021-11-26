@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -30,10 +31,13 @@ public class KubernetesResourceStatusUpdateIT {
   @Test
   public void testReconciliationOfNonCustomResourceAndStatusUpdate() {
     var deployment = operator.create(Deployment.class, testDeployment());
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+    await().atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());
       assertThat(d.getStatus()).isNotNull();
       assertThat(d.getStatus().getConditions()).isNotNull();
+      // wait until the pod is ready, if not this is causing some test stability issues with
+      // namespace cleanup in k8s version 1.22
+      assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
       assertThat(
           d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
               .count()).isEqualTo(1);
@@ -42,9 +46,12 @@ public class KubernetesResourceStatusUpdateIT {
 
   private Deployment testDeployment() {
     Deployment resource = new Deployment();
+    Map<String, String> labels = new HashMap<>();
+    labels.put("test", "KubernetesResourceStatusUpdateIT");
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("test-deployment")
+            .withLabels(labels)
             .build());
     DeploymentSpec spec = new DeploymentSpec();
     resource.setSpec(spec);
@@ -61,7 +68,7 @@ public class KubernetesResourceStatusUpdateIT {
 
     Container container = new Container();
     container.setName("nginx");
-    container.setImage("nginx:1.14.2");
+    container.setImage("nginx:1.21.4");
     ContainerPort port = new ContainerPort();
     port.setContainerPort(80);
     container.setPorts(List.of(port));
