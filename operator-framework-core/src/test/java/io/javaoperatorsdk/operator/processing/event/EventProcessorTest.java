@@ -72,8 +72,7 @@ class EventProcessorTest {
   @Test
   public void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
-    when(resourceCacheMock.getCustomResource(event.getRelatedCustomResourceID()))
-        .thenReturn(Optional.empty());
+    when(resourceCacheMock.get(event.getRelatedCustomResourceID())).thenReturn(Optional.empty());
 
     eventProcessor.handleEvent(event);
 
@@ -237,7 +236,7 @@ class EventProcessorTest {
     updatedCr.getMetadata().setResourceVersion("2");
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
-    when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
+    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getResourceCache()).thenReturn(mockCREventSource);
     when(eventSourceManagerMock.controllerResourceEventSource()).thenReturn(mockCREventSource);
 
@@ -257,7 +256,7 @@ class EventProcessorTest {
     otherChangeCR.getMetadata().setResourceVersion("3");
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
-    when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
+    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(otherChangeCR));
     when(eventSourceManagerMock.getResourceCache())
         .thenReturn(mockCREventSource);
 
@@ -273,7 +272,7 @@ class EventProcessorTest {
     var cr = testCustomResource(crID);
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
-    when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
+    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
     when(eventSourceManagerMock.getResourceCache())
         .thenReturn(mockCREventSource);
 
@@ -312,7 +311,7 @@ class EventProcessorTest {
 
   private ResourceEvent prepareCREvent(ResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
-    when(resourceCacheMock.getCustomResource(eq(uid))).thenReturn(Optional.of(customResource));
+    when(resourceCacheMock.get(eq(uid))).thenReturn(Optional.of(customResource));
     return new ResourceEvent(ResourceAction.UPDATED,
         ResourceID.fromResource(customResource));
   }

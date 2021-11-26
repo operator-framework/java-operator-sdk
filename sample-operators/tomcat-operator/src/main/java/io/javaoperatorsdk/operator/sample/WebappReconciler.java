@@ -9,20 +9,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ControllerConfiguration
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
@@ -44,10 +48,9 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
           // To find the related customResourceId of the WebApp resource we traverse the cache to
           // and identify it based on naming convention.
           return eventSourceRegistry.getResourceCache()
-              .getCachedCustomResources(
-                  (Webapp webApp) -> webApp.getSpec().getTomcat()
-                      .equals(t.getMetadata().getName()))
-              .map(ResourceID::fromResource).collect(Collectors.toSet());
+              .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
+              .map(ResourceID::fromResource)
+              .collect(Collectors.toSet());
         });
     eventSourceRegistry.registerEventSource(tomcatEventSource);
   }

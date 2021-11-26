@@ -164,7 +164,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   }
 
   @Override
-  public Optional<T> getCustomResource(ResourceID resourceID) {
+  public Optional<T> get(ResourceID resourceID) {
     var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
     if (sharedIndexInformer == null) {
       sharedIndexInformer =
@@ -181,7 +181,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   }
 
   @Override
-  public Stream<T> getCachedCustomResources(Predicate<T> predicate) {
+  public Stream<T> list(Predicate<T> predicate) {
     return sharedIndexInformers.values().stream()
         .flatMap(i -> i.getStore().list().stream().filter(predicate));
   }

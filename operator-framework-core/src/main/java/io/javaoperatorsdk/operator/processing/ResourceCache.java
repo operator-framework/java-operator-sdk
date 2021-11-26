@@ -9,11 +9,11 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface ResourceCache<T extends HasMetadata> {
 
-  Optional<T> getCustomResource(ResourceID resourceID);
+  Optional<T> get(ResourceID resourceID);
 
-  default Stream<T> getCachedCustomResources() {
-    return getCachedCustomResources(a -> true);
+  default Stream<T> list() {
+    return list(a -> true);
   }
 
-  Stream<T> getCachedCustomResources(Predicate<T> predicate);
+  Stream<T> list(Predicate<T> predicate);
 }

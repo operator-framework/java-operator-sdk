@@ -123,8 +123,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void submitReconciliationExecution(ResourceID customResourceUid) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(customResourceUid);
-      Optional<R> latestCustomResource =
-          resourceCache.getCustomResource(customResourceUid);
+      Optional<R> latestCustomResource = resourceCache.get(customResourceUid);
       latestCustomResource.ifPresent(MDCUtils::addCustomResourceInfo);
       if (!controllerUnderExecution
           && latestCustomResource.isPresent()) {
@@ -227,7 +226,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         .orElseThrow(() -> new IllegalStateException(
             "Updated custom resource must be present at this point of time")));
     String cachedCustomResourceVersion = getVersion(resourceCache
-        .getCustomResource(executionScope.getCustomResourceID())
+        .get(executionScope.getCustomResourceID())
         .orElseThrow(() -> new IllegalStateException(
             "Cached custom resource must be present at this point")));
 
