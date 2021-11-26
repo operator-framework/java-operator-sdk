@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
+import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
@@ -124,7 +125,11 @@ public class EventSourceManager<R extends HasMetadata>
   }
 
   @Override
-  public ControllerResourceEventSource<R> getControllerResourceEventSource() {
+  public ResourceCache<R> getResourceCache() {
+    return controllerResourceEventSource();
+  }
+
+  ControllerResourceEventSource<R> controllerResourceEventSource() {
     return controllerResourceEventSource;
   }
 

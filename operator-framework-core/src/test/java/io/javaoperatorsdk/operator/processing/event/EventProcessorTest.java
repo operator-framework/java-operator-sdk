@@ -50,7 +50,7 @@ class EventProcessorTest {
 
   @BeforeEach
   public void setup() {
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(resourceCacheMock);
+    when(eventSourceManagerMock.getResourceCache()).thenReturn(resourceCacheMock);
 
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
@@ -238,8 +238,8 @@ class EventProcessorTest {
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getControllerResourceEventSource())
-        .thenReturn(mockCREventSource);
+    when(eventSourceManagerMock.getResourceCache()).thenReturn(mockCREventSource);
+    when(eventSourceManagerMock.controllerResourceEventSource()).thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
@@ -258,7 +258,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(otherChangeCR));
-    when(eventSourceManagerMock.getControllerResourceEventSource())
+    when(eventSourceManagerMock.getResourceCache())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -274,7 +274,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.getCustomResource(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getControllerResourceEventSource())
+    when(eventSourceManagerMock.getResourceCache())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
