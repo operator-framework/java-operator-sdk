@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata>
     implements EventSourceRegistry<R>, LifecycleAware {
@@ -26,12 +27,14 @@ public class EventSourceManager<R extends HasMetadata>
   private final ReentrantLock lock = new ReentrantLock();
   private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
   private final EventProcessor<R> eventProcessor;
+  private TimerEventSource<R> retryAndRescheduleTimerEventSource;
   private ControllerResourceEventSource<R> controllerResourceEventSource;
   private final Controller<R> controller;
 
   EventSourceManager(EventProcessor<R> eventProcessor) {
     this.eventProcessor = eventProcessor;
     controller = null;
+    initRetryEventSource();
   }
 
   public EventSourceManager(Controller<R> controller) {
@@ -39,6 +42,12 @@ public class EventSourceManager<R extends HasMetadata>
     controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
     this.eventProcessor = new EventProcessor<>(this);
     registerEventSource(controllerResourceEventSource);
+    initRetryEventSource();
+  }
+
+  private void initRetryEventSource() {
+    retryAndRescheduleTimerEventSource = new TimerEventSource<>();
+    registerEventSource(retryAndRescheduleTimerEventSource);
   }
 
   @Override
@@ -117,6 +126,10 @@ public class EventSourceManager<R extends HasMetadata>
   @Override
   public ControllerResourceEventSource<R> getControllerResourceEventSource() {
     return controllerResourceEventSource;
+  }
+
+  TimerEventSource<R> retryEventSource() {
+    return retryAndRescheduleTimerEventSource;
   }
 
   Controller<R> getController() {

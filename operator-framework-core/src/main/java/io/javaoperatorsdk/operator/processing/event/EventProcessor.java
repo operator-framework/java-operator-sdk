@@ -51,7 +51,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final ResourceCache<R> resourceCache;
   private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker;
-  private final TimerEventSource<R> retryAndRescheduleTimerEventSource;
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
@@ -90,8 +89,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.resourceCache = resourceCache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventMarker = new EventMarker();
-    this.retryAndRescheduleTimerEventSource = new TimerEventSource<>();
-    this.retryAndRescheduleTimerEventSource.setEventHandler(this);
     this.eventSourceManager = eventSourceManager;
   }
 
@@ -252,7 +249,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   TimerEventSource<R> retryEventSource() {
-    return retryAndRescheduleTimerEventSource;
+    return eventSourceManager.retryEventSource();
   }
 
   /**
@@ -332,7 +329,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   public void stop() {
     lock.lock();
     try {
-      retryEventSource().stop();
       this.running = false;
     } finally {
       lock.unlock();
@@ -343,7 +339,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   public void start() throws OperatorException {
     lock.lock();
     try {
-      retryEventSource().start();
       this.running = true;
     } finally {
       lock.unlock();
