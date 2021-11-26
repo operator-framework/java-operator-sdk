@@ -6,11 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -26,6 +22,9 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -186,16 +185,8 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   }
 
   public Stream<T> getCachedCustomResources(Predicate<T> predicate) {
-    var streamList = sharedIndexInformers.values().stream()
-        .map(i -> i.getStore().list().stream().filter(predicate)).collect(Collectors.toList());
-    if (streamList.size() == 1) {
-      return streamList.get(0);
-    }
-    var resStream = streamList.get(0);
-    for (int i = 1; i < streamList.size(); i++) {
-      resStream = Stream.concat(resStream, streamList.get(i));
-    }
-    return resStream;
+    return sharedIndexInformers.values().stream()
+        .flatMap(i -> i.getStore().list().stream().filter(predicate));
   }
 
   /**
