@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Collections;
 import java.util.Map;
@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;

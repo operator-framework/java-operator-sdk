@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.Map;
 import java.util.Timer;
@@ -12,9 +12,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
-    implements ResourceEventAware {
+    implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private final Timer timer = new Timer();

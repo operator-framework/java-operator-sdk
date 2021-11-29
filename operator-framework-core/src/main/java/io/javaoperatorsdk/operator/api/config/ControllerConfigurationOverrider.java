@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 

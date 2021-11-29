@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.Map;
 import java.util.Optional;
@@ -12,7 +12,9 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 
 public class PollingEventSource<T> extends AbstractEventSource {
 
@@ -45,22 +47,33 @@ public class PollingEventSource<T> extends AbstractEventSource {
 
   private void getStateAndFillCache() {
     var values = supplierToPoll.get();
-    values.forEach((k, v) -> cache.put(k, v));
+    values.forEach((k, v) -> {
+      var cachedValue = cache.get(k);
+      if (cachedValue == null || !cachedValue.equals(v)) {
+        cache.put(k, v);
+        eventHandler.handleEvent(new Event(k));
+      }
+    });
   }
 
   @Override
   public void stop() throws OperatorException {
     timer.cancel();
     cacheManager.close();
+    // todo check cache vs cache manager
   }
 
-  public Optional<T> getState(ResourceID customResourceID) {
-    return Optional.ofNullable(cache.get(customResourceID));
+  public Optional<T> getResourceFromCache(ResourceID resourceID) {
+    return Optional.ofNullable(cache.get(resourceID));
   }
 
-  public Optional<T> getStateFromSupplier(ResourceID customResourceID) {
+  public Optional<T> getResourceFromCacheOrSupplier(ResourceID resourceID) {
+    var resource = getResourceFromCache(resourceID);
+    if (resource.isPresent()) {
+      return resource;
+    }
     getStateAndFillCache();
-    return getState(customResourceID);
+    return getResourceFromCache(resourceID);
   }
 
 }

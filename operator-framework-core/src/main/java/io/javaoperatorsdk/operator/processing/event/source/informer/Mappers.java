@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Collections;
 import java.util.Set;

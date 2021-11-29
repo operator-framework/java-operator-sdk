@@ -2,12 +2,12 @@ package io.javaoperatorsdk.operator.processing.event.source;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public interface ResourceEventAware {
+public interface ResourceEventAware<T extends HasMetadata> {
 
-  default void onResourceCreated(HasMetadata resource) {}
+  default void onResourceCreated(T resource) {}
 
-  default void onResourceUpdated(HasMetadata newResource, HasMetadata oldResource) {}
+  default void onResourceUpdated(T newResource, T oldResource) {}
 
-  default void onResourceDeleted(HasMetadata resource) {}
+  default void onResourceDeleted(T resource) {}
 
 }

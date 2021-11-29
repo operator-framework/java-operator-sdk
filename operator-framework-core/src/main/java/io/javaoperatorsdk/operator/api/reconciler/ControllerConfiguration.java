@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

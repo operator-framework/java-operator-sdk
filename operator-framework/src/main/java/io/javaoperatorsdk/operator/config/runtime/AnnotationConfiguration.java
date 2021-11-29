@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
 public class AnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {

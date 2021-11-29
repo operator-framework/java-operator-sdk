@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +74,7 @@ class TimerEventSourceTest {
 
     timerEventSource.scheduleOnce(customResource, PERIOD);
     timerEventSource
-        .cleanupForResource(ResourceID.fromResource(customResource));
+        .onResourceDeleted(customResource);
 
     untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
   }
