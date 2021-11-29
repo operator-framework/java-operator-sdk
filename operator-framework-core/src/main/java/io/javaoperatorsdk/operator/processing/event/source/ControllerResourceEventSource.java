@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +15,10 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.MissingCRDException;
-import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
-import io.javaoperatorsdk.operator.processing.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
@@ -34,7 +29,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * This is a special case since is not bound to a single custom resource
  */
 public class ControllerResourceEventSource<T extends HasMetadata> extends AbstractEventSource
-    implements ResourceEventHandler<T>, ResourceCache<T> {
+    implements ResourceEventHandler<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
@@ -46,11 +41,12 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
 
   private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
-  private final Cloner cloner;
+  private final ControllerResourceCache<T> cache;
 
   public ControllerResourceEventSource(Controller<T> controller) {
     this.controller = controller;
-    this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
+    var cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
+    this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
 
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
@@ -163,49 +159,12 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     eventReceived(ResourceAction.DELETED, resource, null);
   }
 
-  @Override
   public Optional<T> get(ResourceID resourceID) {
-    var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
-    if (sharedIndexInformer == null) {
-      sharedIndexInformer =
-          sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
-    }
-    var resource = sharedIndexInformer.getStore()
-        .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
-            resourceID.getName()));
-    if (resource == null) {
-      return Optional.empty();
-    } else {
-      return Optional.of(cloner.clone(resource));
-    }
+    return cache.get(resourceID);
   }
 
-  @Override
-  public Stream<T> list(Predicate<T> predicate) {
-    return sharedIndexInformers.values().stream()
-        .flatMap(i -> i.getStore().list().stream().filter(predicate));
-  }
-
-  @Override
-  public Stream<T> list(String namespace) {
-    return list(namespace, null);
-  }
-
-  @Override
-  public Stream<T> list(String namespace, Predicate<T> predicate) {
-    if (isWatchingAllNamespaces()) {
-      final var stream = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
-          .filter(r -> r.getMetadata().getNamespace().equals(namespace));
-      return predicate != null ? stream.filter(predicate) : stream;
-    } else {
-      final var informer = sharedIndexInformers.get(namespace);
-      return informer != null ? informer.getStore().list().stream().filter(predicate)
-          : Stream.empty();
-    }
-  }
-
-  private boolean isWatchingAllNamespaces() {
-    return sharedIndexInformers.containsKey(ANY_NAMESPACE_MAP_KEY);
+  public ControllerResourceCache<T> getResourceCache() {
+    return cache;
   }
 
   /**

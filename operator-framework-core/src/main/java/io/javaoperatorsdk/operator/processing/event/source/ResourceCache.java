@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.Optional;
 import java.util.function.Predicate;

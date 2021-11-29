@@ -48,7 +48,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
           // we need to find which WebApp this Tomcat custom resource is related to.
           // To find the related customResourceId of the WebApp resource we traverse the cache to
           // and identify it based on naming convention.
-          return eventSourceRegistry.getControllerResourceEventSource()
+          return eventSourceRegistry.getControllerResourceEventSource().getResourceCache()
               .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
               .map(ResourceID::fromResource)
               .collect(Collectors.toSet());
