@@ -50,7 +50,7 @@ class EventProcessorTest {
 
   @BeforeEach
   public void setup() {
-    when(eventSourceManagerMock.getResourceCache()).thenReturn(resourceCacheMock);
+    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(resourceCacheMock);
 
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
@@ -237,8 +237,8 @@ class EventProcessorTest {
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getResourceCache()).thenReturn(mockCREventSource);
-    when(eventSourceManagerMock.controllerResourceEventSource()).thenReturn(mockCREventSource);
+    when(eventSourceManagerMock.getControllerResourceEventSource())
+        .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
         PostExecutionControl.customResourceUpdated(updatedCr));
@@ -257,7 +257,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(otherChangeCR));
-    when(eventSourceManagerMock.getResourceCache())
+    when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -273,7 +273,7 @@ class EventProcessorTest {
     var mockCREventSource = mock(ControllerResourceEventSource.class);
     eventProcessor.getEventMarker().markEventReceived(crID);
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getResourceCache())
+    when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(mockCREventSource);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),

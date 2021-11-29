@@ -4,7 +4,6 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.ResourceCache;
 
 public interface EventSourceRegistry<T extends HasMetadata> {
 
@@ -21,5 +20,6 @@ public interface EventSourceRegistry<T extends HasMetadata> {
 
   Set<EventSource> getRegisteredEventSources();
 
-  ResourceCache<T> getResourceCache();
+  ControllerResourceEventSource<T> getControllerResourceEventSource();
+
 }

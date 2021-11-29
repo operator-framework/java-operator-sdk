@@ -54,7 +54,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
-        eventSourceManager.getResourceCache(),
+        eventSourceManager.getControllerResourceEventSource(),
         ExecutorServiceManager.instance().executorService(),
         eventSourceManager.getController().getConfiguration().getName(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
@@ -69,7 +69,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       EventSourceManager<R> eventSourceManager,
       String relatedControllerName,
       Retry retry) {
-    this(eventSourceManager.getResourceCache(), null, relatedControllerName,
+    this(eventSourceManager.getControllerResourceEventSource(), null, relatedControllerName,
         reconciliationDispatcher, retry, null, eventSourceManager);
   }
 
@@ -206,7 +206,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void postponeReconciliationAndHandleCacheSyncEvent(ResourceID resourceID) {
-    eventSourceManager.controllerResourceEventSource().whitelistNextEvent(resourceID);
+    eventSourceManager.getControllerResourceEventSource().whitelistNextEvent(resourceID);
   }
 
   private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,
