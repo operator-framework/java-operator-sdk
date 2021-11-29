@@ -6,14 +6,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 // todo register predicate?
 // todo event filter?
@@ -57,8 +58,8 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata> extends Abs
       public void run() {
         var resourceID = ResourceID.fromResource(resource);
         var res = resourceCache.get(resourceID);
-        res.ifPresentOrElse( r -> pollForResource(r),
-                ()-> log.warn("No resource in cache for resource ID: {}",resourceID) );
+        res.ifPresentOrElse(r -> pollForResource(r),
+            () -> log.warn("No resource in cache for resource ID: {}", resourceID));
 
       }
     }, period, period);
