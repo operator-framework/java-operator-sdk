@@ -1,33 +1,40 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.LifecycleAwareEventSource;
 
-public class PollingEventSource<T> extends AbstractEventSource {
+public class PollingEventSource<T> extends LifecycleAwareEventSource {
+
+  private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
   private final Timer timer = new Timer();
   private Supplier<Map<ResourceID, T>> supplierToPoll;
   private CacheManager cacheManager;
   private Cache<ResourceID, T> cache;
+  private EventFilter<T> eventFilter;
   private long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
       CachingProvider cachingProvider,
-      long period) {
+      long period, EventFilter<T> eventFilter) {
     this.supplierToPoll = supplier;
+    this.eventFilter = eventFilter;
     cacheManager = cachingProvider.getCacheManager();
     this.period = period;
     // todo
@@ -40,6 +47,10 @@ public class PollingEventSource<T> extends AbstractEventSource {
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
+        if (!isStarted()) {
+          log.debug("Event source not start yet. Will not run.");
+          return;
+        }
         getStateAndFillCache();
       }
     }, period, period);
@@ -51,13 +62,23 @@ public class PollingEventSource<T> extends AbstractEventSource {
       var cachedValue = cache.get(k);
       if (cachedValue == null || !cachedValue.equals(v)) {
         cache.put(k, v);
-        eventHandler.handleEvent(new Event(k));
+        if (eventFilter == null || eventFilter.accept(v, cachedValue, k)) {
+          eventHandler.handleEvent(new Event(k));
+        }
       }
+    });
+    var keysToRemove = StreamSupport.stream(cache.spliterator(), false)
+        .filter(e -> !values.containsKey(e.getKey())).map(Cache.Entry::getKey)
+        .collect(Collectors.toList());
+    keysToRemove.forEach(k -> {
+      cache.remove(k);
+      eventHandler.handleEvent(new Event(k));
     });
   }
 
   @Override
   public void stop() throws OperatorException {
+    super.stop();
     timer.cancel();
     cacheManager.close();
     // todo check cache vs cache manager
@@ -75,5 +96,4 @@ public class PollingEventSource<T> extends AbstractEventSource {
     getStateAndFillCache();
     return getResourceFromCache(resourceID);
   }
-
 }
