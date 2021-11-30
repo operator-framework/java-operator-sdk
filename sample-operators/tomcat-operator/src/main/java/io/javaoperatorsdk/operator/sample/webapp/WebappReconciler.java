@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.webapp;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -7,7 +7,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,40 +19,24 @@ import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
-import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
+import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
+import io.javaoperatorsdk.operator.sample.webapp.resource.WebappStatus;
 
 import okhttp3.Response;
 
 @ControllerConfiguration
-public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
+public class WebappReconciler extends WebappEventSourceInitializer implements Reconciler<Webapp> {
 
   private KubernetesClient kubernetesClient;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   public WebappReconciler(KubernetesClient kubernetesClient) {
+    super(kubernetesClient);
     this.kubernetesClient = kubernetesClient;
-  }
-
-  @Override
-  public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    InformerEventSource<Tomcat> tomcatEventSource =
-        new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
-          // To create an event to a related WebApp resource and trigger the reconciliation
-          // we need to find which WebApp this Tomcat custom resource is related to.
-          // To find the related customResourceId of the WebApp resource we traverse the cache to
-          // and identify it based on naming convention.
-          return eventSourceRegistry.getControllerResourceEventSource().getResourceCache()
-              .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-              .map(ResourceID::fromResource)
-              .collect(Collectors.toSet());
-        });
-    eventSourceRegistry.registerEventSource(tomcatEventSource);
   }
 
   /**
@@ -82,10 +65,12 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
           "Tomcat is ready and webapps not yet deployed. Commencing deployment of {} in Tomcat {}",
           webapp.getMetadata().getName(), tomcat.getMetadata().getName());
       String[] command = new String[] {"wget", "-O",
-          "/data/" + webapp.getSpec().getContextPath() + ".war", webapp.getSpec().getUrl()};
+          "/data/" + webapp.getSpec().getContextPath() + ".war",
+          webapp.getSpec().getUrl()};
       if (log.isInfoEnabled()) {
         command = new String[] {"time", "wget", "-O",
-            "/data/" + webapp.getSpec().getContextPath() + ".war", webapp.getSpec().getUrl()};
+            "/data/" + webapp.getSpec().getContextPath() + ".war",
+            webapp.getSpec().getUrl()};
       }
 
       String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);
