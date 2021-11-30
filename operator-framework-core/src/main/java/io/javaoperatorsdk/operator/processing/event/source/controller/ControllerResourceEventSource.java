@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

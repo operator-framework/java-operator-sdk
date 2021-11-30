@@ -7,6 +7,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import javax.cache.Cache;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +19,6 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingFilteringEvent
 import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
-
-import javax.cache.Cache;
 
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
     extends CachingFilteringEventSource<T>
@@ -34,23 +34,25 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   private final long period;
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID,T> cache, EventFilter<T> eventFilter) {
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
+      EventFilter<T> eventFilter) {
     this(resourceSupplier, resourceCache, period, cache, eventFilter, null);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID,T> cache, Predicate<R> registerPredicate) {
-    this(resourceSupplier, resourceCache, period, cache,null, registerPredicate);
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
+      Predicate<R> registerPredicate) {
+    this(resourceSupplier, resourceCache, period, cache, null, registerPredicate);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period,Cache<ResourceID,T> cache) {
-    this(resourceSupplier, resourceCache, period, cache, null,null);
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache) {
+    this(resourceSupplier, resourceCache, period, cache, null, null);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-                                       ResourceCache<R> resourceCache, long period,Cache<ResourceID,T> cache,
-                                       EventFilter<T> eventFilter, Predicate<R> registerPredicate) {
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
+      EventFilter<T> eventFilter, Predicate<R> registerPredicate) {
     super(cache, eventFilter);
     this.resourceSupplier = resourceSupplier;
     this.resourceCache = resourceCache;

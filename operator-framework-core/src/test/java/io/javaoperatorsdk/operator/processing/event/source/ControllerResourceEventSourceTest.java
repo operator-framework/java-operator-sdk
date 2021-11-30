@@ -146,16 +146,17 @@ class ControllerResourceEventSourceTest {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
     controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
-            customResource1);
+        customResource1);
 
-    verify(testController.getEventSourceManager(),times(1))
-            .broadcastOnResourceEvent(eq(ResourceAction.UPDATED),eq(customResource1),
-                    eq(customResource1));
+    verify(testController.getEventSourceManager(), times(1))
+        .broadcastOnResourceEvent(eq(ResourceAction.UPDATED), eq(customResource1),
+            eq(customResource1));
   }
 
   private static class TestController extends Controller<TestCustomResource> {
 
-    private EventSourceManager<TestCustomResource> eventSourceManager = mock(EventSourceManager.class);
+    private EventSourceManager<TestCustomResource> eventSourceManager =
+        mock(EventSourceManager.class);
 
     public TestController(boolean generationAware) {
       super(null, new TestConfiguration(generationAware), null);

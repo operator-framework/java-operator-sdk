@@ -24,7 +24,7 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
   private final long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, EventFilter<T> eventFilter, Cache<ResourceID,T> cache) {
+      long period, EventFilter<T> eventFilter, Cache<ResourceID, T> cache) {
     super(cache, eventFilter);
     this.supplierToPoll = supplier;
     this.period = period;
