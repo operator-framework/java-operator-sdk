@@ -111,26 +111,21 @@ public class EventSourceManager<R extends HasMetadata>
   }
 
   public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
-    lock.lock();
-    try {
-      for (EventSource eventSource : this.eventSources) {
-        if (eventSource instanceof LifecycleAwareEventSource) {
-          var lifecycleAwareES = ((ResourceEventAware<R>) eventSource);
-          switch (action) {
-            case ADDED:
-              lifecycleAwareES.onResourceCreated(resource);
-              break;
-            case UPDATED:
-              lifecycleAwareES.onResourceUpdated(resource, oldResource);
-              break;
-            case DELETED:
-              lifecycleAwareES.onResourceDeleted(resource);
-              break;
-          }
+    for (EventSource eventSource : this.eventSources) {
+      if (eventSource instanceof ResourceEventAware) {
+        var lifecycleAwareES = ((ResourceEventAware<R>) eventSource);
+        switch (action) {
+          case ADDED:
+            lifecycleAwareES.onResourceCreated(resource);
+            break;
+          case UPDATED:
+            lifecycleAwareES.onResourceUpdated(resource, oldResource);
+            break;
+          case DELETED:
+            lifecycleAwareES.onResourceDeleted(resource);
+            break;
         }
       }
-    } finally {
-      lock.unlock();
     }
   }
 
