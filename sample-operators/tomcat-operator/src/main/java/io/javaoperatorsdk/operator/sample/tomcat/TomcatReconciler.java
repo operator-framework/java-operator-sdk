@@ -1,9 +1,8 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.tomcat;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,50 +14,25 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
-import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
-
-import static java.util.Collections.EMPTY_SET;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatStatus;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
  * creates a Service over which the Pods can be accessed.
  */
 @ControllerConfiguration
-public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
+public class TomcatReconciler extends TomcatEventSourceInitializer implements Reconciler<Tomcat> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
 
-  private volatile InformerEventSource<Deployment> informerEventSource;
-
   public TomcatReconciler(KubernetesClient client) {
+    super(client);
     this.kubernetesClient = client;
-  }
-
-  @Override
-  public void prepareEventSources(EventSourceRegistry<Tomcat> eventSourceRegistry) {
-    SharedIndexInformer<Deployment> deploymentInformer =
-        kubernetesClient.apps().deployments().inAnyNamespace()
-            .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
-            .runnableInformer(0);
-
-    this.informerEventSource = new InformerEventSource<>(deploymentInformer, d -> {
-      var ownerReferences = d.getMetadata().getOwnerReferences();
-      if (!ownerReferences.isEmpty()) {
-        return Set.of(new ResourceID(ownerReferences.get(0).getName(),
-            d.getMetadata().getNamespace()));
-      } else {
-        return EMPTY_SET;
-      }
-    });
-    eventSourceRegistry.registerEventSource(this.informerEventSource);
   }
 
   @Override
@@ -66,7 +40,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment = informerEventSource.getAssociated(tomcat);
+    Deployment deployment = getInformerEventSource().getAssociated(tomcat);
 
     if (deployment != null) {
       Tomcat updatedTomcat =
@@ -78,6 +52,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
           tomcat.getStatus().getReadyReplicas());
       return UpdateControl.updateStatus(updatedTomcat);
     }
+
     return UpdateControl.noUpdate();
   }
 
@@ -107,13 +82,16 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
             .inNamespace(ns)
             .withName(tomcat.getMetadata().getName())
             .get();
+
     if (existingDeployment == null) {
-      Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
+      Deployment deployment = loadYaml(Deployment.class, "../deployment.yaml");
+
       deployment.getMetadata().setName(tomcat.getMetadata().getName());
       deployment.getMetadata().setNamespace(ns);
       deployment.getMetadata().getLabels().put("app.kubernetes.io/part-of",
           tomcat.getMetadata().getName());
       deployment.getMetadata().getLabels().put("app.kubernetes.io/managed-by", "tomcat-operator");
+
       // set tomcat version
       deployment
           .getSpec()
@@ -170,7 +148,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
   }
 
   private void createOrUpdateService(Tomcat tomcat) {
-    Service service = loadYaml(Service.class, "service.yaml");
+    Service service = loadYaml(Service.class, "../service.yaml");
     service.getMetadata().setName(tomcat.getMetadata().getName());
     String ns = tomcat.getMetadata().getNamespace();
     service.getMetadata().setNamespace(ns);
@@ -198,4 +176,5 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
     }
   }
+
 }
