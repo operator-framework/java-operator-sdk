@@ -142,11 +142,11 @@ The Controller implements the business logic and describes all the classes neede
 ```java
 
 @ControllerConfiguration
-public class WebServerController implements Reconciler<WebServer> {
+public class WebPageReconciler implements Reconciler<WebPage> {
 
     // Return the changed resource, so it gets updated. See javadoc for details.
     @Override
-    public UpdateControl<CustomService> reconcile(CustomService resource,
+    public UpdateControl<WebPage> reconcile(WebPage resource,
                                                   Context context) {
         // ... your logic ...
         return UpdateControl.updateStatus(resource);
