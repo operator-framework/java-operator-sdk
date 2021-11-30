@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample.tomcat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +15,16 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatStatus;
+
+import static java.util.Collections.EMPTY_SET;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
@@ -30,17 +36,29 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
-  private final TomcatEventSourceInitializer tomcatEventSourceInitializer;
+  private InformerEventSource<Deployment> informerEventSource;
 
-  public TomcatReconciler(KubernetesClient client,
-      TomcatEventSourceInitializer tomcatEventSourceInitializer) {
+  public TomcatReconciler(KubernetesClient client) {
     this.kubernetesClient = client;
-    this.tomcatEventSourceInitializer = tomcatEventSourceInitializer;
   }
 
   @Override
   public void prepareEventSources(EventSourceRegistry<Tomcat> eventSourceRegistry) {
-    tomcatEventSourceInitializer.prepareEventSources(eventSourceRegistry);
+    SharedIndexInformer<Deployment> deploymentInformer =
+        kubernetesClient.apps().deployments().inAnyNamespace()
+            .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
+            .runnableInformer(0);
+
+    this.informerEventSource = new InformerEventSource<>(deploymentInformer, d -> {
+      var ownerReferences = d.getMetadata().getOwnerReferences();
+      if (!ownerReferences.isEmpty()) {
+        return Set.of(new ResourceID(ownerReferences.get(0).getName(),
+            d.getMetadata().getNamespace()));
+      } else {
+        return EMPTY_SET;
+      }
+    });
+    eventSourceRegistry.registerEventSource(this.informerEventSource);
   }
 
   @Override
@@ -48,8 +66,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment =
-        tomcatEventSourceInitializer.getInformerEventSource().getAssociated(tomcat);
+    Deployment deployment = informerEventSource.getAssociated(tomcat);
 
     if (deployment != null) {
       Tomcat updatedTomcat =

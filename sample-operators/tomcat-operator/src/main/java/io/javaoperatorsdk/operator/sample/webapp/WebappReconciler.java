@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,10 @@ import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
 import io.javaoperatorsdk.operator.sample.webapp.resource.WebappStatus;
@@ -33,19 +37,36 @@ import okhttp3.Response;
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
 
   private KubernetesClient kubernetesClient;
-  private final WebappEventSourceInitializer webappEventSourceInitializer;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  public WebappReconciler(KubernetesClient kubernetesClient,
-      WebappEventSourceInitializer webappEventSourceInitializer) {
+  public WebappReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
-    this.webappEventSourceInitializer = webappEventSourceInitializer;
   }
 
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    webappEventSourceInitializer.prepareEventSources(eventSourceRegistry);
+    InformerEventSource<Tomcat> tomcatEventSource =
+        new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
+          // To create an event to a related WebApp resource and trigger the reconciliation
+          // we need to find which WebApp this Tomcat custom resource is related to.
+          // To find the related customResourceId of the WebApp resource we traverse the cache to
+          // and identify it based on naming convention.
+          var webAppInformer =
+              eventSourceRegistry.getControllerResourceEventSource()
+                  .getInformer(ControllerResourceEventSource.ANY_NAMESPACE_MAP_KEY);
+
+          var ids = webAppInformer.getStore().list().stream()
+              .filter(
+                  (Webapp webApp) -> webApp.getSpec().getTomcat()
+                      .equals(t.getMetadata().getName()))
+              .map(webapp -> new ResourceID(webapp.getMetadata().getName(),
+                  webapp.getMetadata().getNamespace()))
+              .collect(Collectors.toSet());
+          return ids;
+        });
+
+    eventSourceRegistry.registerEventSource(tomcatEventSource);
   }
 
   /**
