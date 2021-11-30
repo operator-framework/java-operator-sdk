@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
@@ -142,6 +143,11 @@ class ControllerResourceEventSourceTest {
 
     public TestController(boolean generationAware) {
       super(null, new TestConfiguration(generationAware), null);
+    }
+
+    @Override
+    public EventSourceManager<TestCustomResource> getEventSourceManager() {
+      return mock(EventSourceManager.class);
     }
 
     @Override

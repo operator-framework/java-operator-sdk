@@ -38,7 +38,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
   }
 
   @Override
-  public void onResourceDeleted(HasMetadata resource) {
+  public void onResourceDeleted(R resource) {
     cancelOnceSchedule(ResourceID.fromResource(resource));
   }
 

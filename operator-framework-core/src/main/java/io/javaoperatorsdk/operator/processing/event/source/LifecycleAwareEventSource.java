@@ -4,24 +4,24 @@ import io.javaoperatorsdk.operator.OperatorException;
 
 public abstract class LifecycleAwareEventSource extends AbstractEventSource {
 
-  private volatile boolean started = false;
+  private volatile boolean running = false;
 
-  public boolean isStarted() {
-    return started;
+  public boolean isRunning() {
+    return running;
   }
 
-  public LifecycleAwareEventSource setStarted(boolean started) {
-    this.started = started;
+  public LifecycleAwareEventSource setStarted(boolean running) {
+    this.running = running;
     return this;
   }
 
   @Override
   public void start() throws OperatorException {
-    started = true;
+    running = true;
   }
 
   @Override
   public void stop() throws OperatorException {
-    started = false;
+    running = false;
   }
 }

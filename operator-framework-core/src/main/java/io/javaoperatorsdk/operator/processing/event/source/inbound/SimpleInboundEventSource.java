@@ -12,7 +12,7 @@ public class SimpleInboundEventSource extends LifecycleAwareEventSource {
   private static final Logger log = LoggerFactory.getLogger(SimpleInboundEventSource.class);
 
   public void propagateEvent(ResourceID resourceID) {
-    if (isStarted()) {
+    if (isRunning()) {
       eventHandler.handleEvent(new Event(resourceID));
     } else {
       log.debug("Event source not started yet, not propagating event for: {}", resourceID);

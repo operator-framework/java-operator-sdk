@@ -6,4 +6,7 @@ public interface EventFilter<T> {
 
   boolean accept(T newValue, T oldValue, ResourceID relatedResourceID);
 
+  default boolean acceptDelete(T value, ResourceID relatedResourceID) {
+    return true;
+  }
 }

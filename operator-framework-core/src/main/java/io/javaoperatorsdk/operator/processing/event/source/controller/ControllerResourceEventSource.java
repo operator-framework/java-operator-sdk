@@ -131,6 +131,8 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
       log.debug(
           "Event received for resource: {}", getName(customResource));
       MDCUtils.addResourceInfo(customResource);
+      controller.getEventSourceManager().broadcastOnResourceEvent(action, customResource,
+          oldResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
         eventHandler.handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(customResource)));

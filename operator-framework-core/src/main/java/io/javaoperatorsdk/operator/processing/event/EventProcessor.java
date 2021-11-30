@@ -297,7 +297,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void cleanupForDeletedEvent(ResourceID customResourceUid) {
-    eventSourceManager.cleanupForCustomResource(customResourceUid);
     eventMarker.cleanup(customResourceUid);
     metrics.cleanupDoneFor(customResourceUid);
   }

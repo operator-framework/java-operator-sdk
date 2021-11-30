@@ -13,7 +13,10 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.LifecycleAwareEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata>
@@ -107,12 +110,24 @@ public class EventSourceManager<R extends HasMetadata>
     }
   }
 
-  public void cleanupForCustomResource(ResourceID customResourceUid) {
+  public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
     lock.lock();
     try {
       for (EventSource eventSource : this.eventSources) {
-        // todo
-        // eventSource.cleanupForResource(customResourceUid);
+        if (eventSource instanceof LifecycleAwareEventSource) {
+          var lifecycleAwareES = ((ResourceEventAware<R>) eventSource);
+          switch (action) {
+            case ADDED:
+              lifecycleAwareES.onResourceCreated(resource);
+              break;
+            case UPDATED:
+              lifecycleAwareES.onResourceUpdated(resource, oldResource);
+              break;
+            case DELETED:
+              lifecycleAwareES.onResourceDeleted(resource);
+              break;
+          }
+        }
       }
     } finally {
       lock.unlock();
