@@ -60,7 +60,7 @@ public class EventSourceManager<R extends HasMetadata>
         try {
           eventSource.start();
         } catch (Exception e) {
-          log.warn("Error closing {} -> {}", eventSource, e);
+          log.warn("Error starting {} -> {}", eventSource, e);
         }
       }
     } finally {

@@ -102,7 +102,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     try {
       log.debug("Received event: {}", event);
       if (!this.running) {
-        log.debug("Skipping event: {} because the event handler is shutting down", event);
+        log.debug("Skipping event: {} because the event handler is not started", event);
         return;
       }
       final var resourceID = event.getRelatedCustomResourceID();
