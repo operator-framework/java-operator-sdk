@@ -21,7 +21,6 @@ public abstract class WebappEventSourceInitializer implements EventSourceInitial
 
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    System.out.println("WebappEventSourceInitializer : " + eventSourceRegistry);
     InformerEventSource<Tomcat> tomcatEventSource =
         new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation
