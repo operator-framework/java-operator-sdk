@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.tomcat.resource;
 
 public class TomcatStatus {
 
