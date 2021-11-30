@@ -1,11 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.sample.tomcat.TomcatReconciler;
-import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
-import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatSpec;
-import io.javaoperatorsdk.operator.sample.webapp.WebappReconciler;
-import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
-import io.javaoperatorsdk.operator.sample.webapp.resource.WebappSpec;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +11,12 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.sample.tomcat.TomcatReconciler;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatSpec;
+import io.javaoperatorsdk.operator.sample.webapp.WebappReconciler;
+import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
+import io.javaoperatorsdk.operator.sample.webapp.resource.WebappSpec;
 
 import static java.util.concurrent.TimeUnit.*;
 import static org.awaitility.Awaitility.await;
