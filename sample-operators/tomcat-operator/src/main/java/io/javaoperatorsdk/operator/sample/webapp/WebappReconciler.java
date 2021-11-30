@@ -19,8 +19,10 @@ import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
 import io.javaoperatorsdk.operator.sample.webapp.resource.WebappStatus;
@@ -28,15 +30,22 @@ import io.javaoperatorsdk.operator.sample.webapp.resource.WebappStatus;
 import okhttp3.Response;
 
 @ControllerConfiguration
-public class WebappReconciler extends WebappEventSourceInitializer implements Reconciler<Webapp> {
+public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
 
   private KubernetesClient kubernetesClient;
+  private final WebappEventSourceInitializer webappEventSourceInitializer;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
-  public WebappReconciler(KubernetesClient kubernetesClient) {
-    super(kubernetesClient);
+  public WebappReconciler(KubernetesClient kubernetesClient,
+      WebappEventSourceInitializer webappEventSourceInitializer) {
     this.kubernetesClient = kubernetesClient;
+    this.webappEventSourceInitializer = webappEventSourceInitializer;
+  }
+
+  @Override
+  public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
+    webappEventSourceInitializer.prepareEventSources(eventSourceRegistry);
   }
 
   /**

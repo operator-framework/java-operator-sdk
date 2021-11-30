@@ -11,9 +11,11 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.sample.tomcat.TomcatEventSourceInitializer;
 import io.javaoperatorsdk.operator.sample.tomcat.TomcatReconciler;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatSpec;
+import io.javaoperatorsdk.operator.sample.webapp.WebappEventSourceInitializer;
 import io.javaoperatorsdk.operator.sample.webapp.WebappReconciler;
 import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
 import io.javaoperatorsdk.operator.sample.webapp.resource.WebappSpec;
@@ -39,8 +41,15 @@ public class TomcatOperatorE2E {
     // Use this if you want to run the test without deploying the Operator to Kubernetes
     if ("true".equals(System.getenv("RUN_OPERATOR_IN_TEST"))) {
       Operator operator = new Operator(client, DefaultConfigurationService.instance());
-      operator.register(new TomcatReconciler(client));
-      operator.register(new WebappReconciler(client));
+
+      TomcatEventSourceInitializer tomcatEventSourceInitializer =
+          TomcatEventSourceInitializer.createInstance(client);
+      operator.register(new TomcatReconciler(client, tomcatEventSourceInitializer));
+
+      WebappEventSourceInitializer webappEventSourceInitializer =
+          WebappEventSourceInitializer.createInstance(client);
+      operator.register(new WebappReconciler(client, webappEventSourceInitializer));
+
       operator.start();
     }
 

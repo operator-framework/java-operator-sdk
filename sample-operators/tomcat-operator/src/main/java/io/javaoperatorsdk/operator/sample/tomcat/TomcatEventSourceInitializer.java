@@ -11,12 +11,16 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 
-public abstract class TomcatEventSourceInitializer implements EventSourceInitializer<Tomcat> {
+public class TomcatEventSourceInitializer implements EventSourceInitializer<Tomcat> {
 
   private final KubernetesClient kubernetesClient;
   private final InformerEventSource<Deployment> informerEventSource;
 
-  public TomcatEventSourceInitializer(KubernetesClient kubernetesClient) {
+  public static TomcatEventSourceInitializer createInstance(KubernetesClient kubernetesClient) {
+    return new TomcatEventSourceInitializer(kubernetesClient);
+  }
+
+  private TomcatEventSourceInitializer(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
     this.informerEventSource = initInformer();
   }
@@ -50,5 +54,4 @@ public abstract class TomcatEventSourceInitializer implements EventSourceInitial
   public void prepareEventSources(EventSourceRegistry<Tomcat> eventSourceRegistry) {
     eventSourceRegistry.registerEventSource(informerEventSource);
   }
-
 }

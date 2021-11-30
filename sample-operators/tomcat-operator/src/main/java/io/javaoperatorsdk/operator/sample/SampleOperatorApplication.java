@@ -13,7 +13,9 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.sample.tomcat.TomcatEventSourceInitializer;
 import io.javaoperatorsdk.operator.sample.tomcat.TomcatReconciler;
+import io.javaoperatorsdk.operator.sample.webapp.WebappEventSourceInitializer;
 import io.javaoperatorsdk.operator.sample.webapp.WebappReconciler;
 
 public class SampleOperatorApplication {
@@ -23,8 +25,11 @@ public class SampleOperatorApplication {
     final var client = new DefaultKubernetesClient(config);
     final var operator = new Operator(client, DefaultConfigurationService.instance());
 
+    final var tomcatEventSourceInitializer = TomcatEventSourceInitializer.createInstance(client);
+    final var webAppEventSourceInitializer = WebappEventSourceInitializer.createInstance(client);
     final List<Reconciler<?>> reconcilerList =
-        List.of(new TomcatReconciler(client), new WebappReconciler(client));
+        List.of(new TomcatReconciler(client, tomcatEventSourceInitializer),
+            new WebappReconciler(client, webAppEventSourceInitializer));
 
     reconcilerList.forEach(operator::register);
 

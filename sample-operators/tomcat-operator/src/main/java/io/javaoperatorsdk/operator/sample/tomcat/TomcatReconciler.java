@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatStatus;
 
@@ -24,15 +25,22 @@ import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatStatus;
  * creates a Service over which the Pods can be accessed.
  */
 @ControllerConfiguration
-public class TomcatReconciler extends TomcatEventSourceInitializer implements Reconciler<Tomcat> {
+public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
+  private final TomcatEventSourceInitializer tomcatEventSourceInitializer;
 
-  public TomcatReconciler(KubernetesClient client) {
-    super(client);
+  public TomcatReconciler(KubernetesClient client,
+      TomcatEventSourceInitializer tomcatEventSourceInitializer) {
     this.kubernetesClient = client;
+    this.tomcatEventSourceInitializer = tomcatEventSourceInitializer;
+  }
+
+  @Override
+  public void prepareEventSources(EventSourceRegistry<Tomcat> eventSourceRegistry) {
+    tomcatEventSourceInitializer.prepareEventSources(eventSourceRegistry);
   }
 
   @Override
@@ -40,7 +48,8 @@ public class TomcatReconciler extends TomcatEventSourceInitializer implements Re
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment = getInformerEventSource().getAssociated(tomcat);
+    Deployment deployment =
+        tomcatEventSourceInitializer.getInformerEventSource().getAssociated(tomcat);
 
     if (deployment != null) {
       Tomcat updatedTomcat =

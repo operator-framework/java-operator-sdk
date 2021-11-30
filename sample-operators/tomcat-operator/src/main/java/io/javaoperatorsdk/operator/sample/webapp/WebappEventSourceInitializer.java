@@ -11,11 +11,15 @@ import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
 import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
 
-public abstract class WebappEventSourceInitializer implements EventSourceInitializer<Webapp> {
+public class WebappEventSourceInitializer implements EventSourceInitializer<Webapp> {
 
   private final KubernetesClient kubernetesClient;
 
-  public WebappEventSourceInitializer(KubernetesClient kubernetesClient) {
+  public static WebappEventSourceInitializer createInstance(KubernetesClient kubernetesClient) {
+    return new WebappEventSourceInitializer(kubernetesClient);
+  }
+
+  private WebappEventSourceInitializer(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
   }
 
