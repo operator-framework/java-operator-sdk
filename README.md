@@ -151,7 +151,7 @@ public class WebServerController implements ResourceController<WebServer> {
 
   // Return the changed resource, so it gets updated. See javadoc for details.
   @Override
-  public UpdateControl<CustomService> createOrUpdateResource(CustomService resource,
+  public UpdateControl<WebServer> createOrUpdateResource(WebServer resource,
       Context<WebServer> context) {
     // ... your logic ...
     return UpdateControl.updateStatusSubResource(resource);
