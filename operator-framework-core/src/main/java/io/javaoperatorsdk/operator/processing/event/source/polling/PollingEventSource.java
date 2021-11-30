@@ -24,8 +24,8 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
   private final long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, EventFilter<T> eventFilter) {
-    super(null, eventFilter);
+      long period, EventFilter<T> eventFilter, Cache<ResourceID,T> cache) {
+    super(cache, eventFilter);
     this.supplierToPoll = supplier;
     this.period = period;
   }
@@ -44,7 +44,7 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
     }, period, period);
   }
 
-  private void getStateAndFillCache() {
+  protected void getStateAndFillCache() {
     var values = supplierToPoll.get();
     values.forEach((k, v) -> super.handleEvent(v, k));
     var keysToRemove = StreamSupport.stream(cache.spliterator(), false)
@@ -59,16 +59,12 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
     timer.cancel();
   }
 
-  public Optional<T> getResourceFromCache(ResourceID resourceID) {
-    return Optional.ofNullable(cache.get(resourceID));
-  }
-
   public Optional<T> getResourceFromCacheOrSupplier(ResourceID resourceID) {
-    var resource = getResourceFromCache(resourceID);
+    var resource = getCachedValue(resourceID);
     if (resource.isPresent()) {
       return resource;
     }
     getStateAndFillCache();
-    return getResourceFromCache(resourceID);
+    return getCachedValue(resourceID);
   }
 }

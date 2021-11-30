@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class ResourceID {
+public class ResourceID implements Serializable {
 
   public static ResourceID fromResource(HasMetadata resource) {
     return new ResourceID(resource.getMetadata().getName(),

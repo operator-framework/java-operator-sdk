@@ -10,11 +10,6 @@ public abstract class LifecycleAwareEventSource extends AbstractEventSource {
     return running;
   }
 
-  public LifecycleAwareEventSource setStarted(boolean running) {
-    this.running = running;
-    return this;
-  }
-
   @Override
   public void start() throws OperatorException {
     running = true;

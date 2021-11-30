@@ -18,6 +18,8 @@ import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
+import javax.cache.Cache;
+
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
     extends CachingFilteringEventSource<T>
     implements ResourceEventAware<R> {
@@ -32,26 +34,24 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   private final long period;
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, EventFilter<T> eventFilter) {
-    this(resourceSupplier, resourceCache, period, eventFilter, null);
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID,T> cache, EventFilter<T> eventFilter) {
+    this(resourceSupplier, resourceCache, period, cache, eventFilter, null);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Predicate<R> registerPredicate) {
-    this(resourceSupplier, resourceCache, period, null, registerPredicate);
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID,T> cache, Predicate<R> registerPredicate) {
+    this(resourceSupplier, resourceCache, period, cache,null, registerPredicate);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period) {
-    this(resourceSupplier, resourceCache, period, null, null);
+      ResourceCache<R> resourceCache, long period,Cache<ResourceID,T> cache) {
+    this(resourceSupplier, resourceCache, period, cache, null,null);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period,
-      EventFilter<T> eventFilter,
-      Predicate<R> registerPredicate) {
-    // todo,
-    super(null, eventFilter);
+                                       ResourceCache<R> resourceCache, long period,Cache<ResourceID,T> cache,
+                                       EventFilter<T> eventFilter, Predicate<R> registerPredicate) {
+    super(cache, eventFilter);
     this.resourceSupplier = resourceSupplier;
     this.resourceCache = resourceCache;
     this.period = period;

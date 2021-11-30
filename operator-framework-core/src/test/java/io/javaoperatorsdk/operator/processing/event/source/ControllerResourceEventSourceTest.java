@@ -21,6 +21,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -34,8 +35,9 @@ class ControllerResourceEventSourceTest {
       mock(MixedOperation.class);
   EventHandler eventHandler = mock(EventHandler.class);
 
+  private TestController testController = new TestController(true);
   private ControllerResourceEventSource<TestCustomResource> controllerResourceEventSource =
-      new ControllerResourceEventSource<>(new TestController(true));
+      new ControllerResourceEventSource<>(testController);
 
   @BeforeEach
   public void setup() {
@@ -139,7 +141,21 @@ class ControllerResourceEventSourceTest {
     verify(eventHandler, times(0)).handleEvent(any());
   }
 
+  @Test
+  public void callsBroadcastsOnResourceEvents() {
+    TestCustomResource customResource1 = TestUtils.testCustomResource();
+
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+            customResource1);
+
+    verify(testController.getEventSourceManager(),times(1))
+            .broadcastOnResourceEvent(eq(ResourceAction.UPDATED),eq(customResource1),
+                    eq(customResource1));
+  }
+
   private static class TestController extends Controller<TestCustomResource> {
+
+    private EventSourceManager<TestCustomResource> eventSourceManager = mock(EventSourceManager.class);
 
     public TestController(boolean generationAware) {
       super(null, new TestConfiguration(generationAware), null);
@@ -147,7 +163,7 @@ class ControllerResourceEventSourceTest {
 
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
-      return mock(EventSourceManager.class);
+      return eventSourceManager;
     }
 
     @Override
