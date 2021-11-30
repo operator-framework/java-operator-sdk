@@ -1,5 +1,11 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.javaoperatorsdk.operator.sample.tomcat.TomcatReconciler;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.Tomcat;
+import io.javaoperatorsdk.operator.sample.tomcat.resource.TomcatSpec;
+import io.javaoperatorsdk.operator.sample.webapp.WebappReconciler;
+import io.javaoperatorsdk.operator.sample.webapp.resource.Webapp;
+import io.javaoperatorsdk.operator.sample.webapp.resource.WebappSpec;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
