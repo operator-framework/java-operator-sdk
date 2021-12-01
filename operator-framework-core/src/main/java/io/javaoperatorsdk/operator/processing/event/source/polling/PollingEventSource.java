@@ -24,6 +24,11 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
   private final long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
+                            long period, Cache<ResourceID, T> cache) {
+    this(supplier,period,null, cache);
+  }
+
+  public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
       long period, EventFilter<T> eventFilter, Cache<ResourceID, T> cache) {
     super(cache, eventFilter);
     this.supplierToPoll = supplier;
@@ -32,6 +37,7 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
 
   @Override
   public void start() throws OperatorException {
+    super.start();
     timer.schedule(new TimerTask() {
       @Override
       public void run() {

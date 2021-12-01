@@ -92,8 +92,8 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
 
   private void checkAndRegisterTask(R resource) {
     var resourceID = ResourceID.fromResource(resource);
-    if (timerTasks.get(resourceID) == null || registerPredicate == null
-        || registerPredicate.test(resource)) {
+    if (timerTasks.get(resourceID) == null && (registerPredicate == null
+        || registerPredicate.test(resource))) {
       timer.schedule(new TimerTask() {
         @Override
         public void run() {

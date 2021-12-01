@@ -1,0 +1,92 @@
+package io.javaoperatorsdk.operator.processing.event.source.polling;
+
+import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
+import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.spi.CachingProvider;
+
+import java.util.Optional;
+import java.util.function.Predicate;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+class PerResourcePollingEventSourceTest {
+
+    public static final int PERIOD = 50;
+    private PerResourcePollingEventSource<SampleExternalResource, TestCustomResource> pollingEventSource;
+    private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource>
+            supplier = mock(PerResourcePollingEventSource.ResourceSupplier.class);
+    private ResourceCache<TestCustomResource> resourceCache = mock(ResourceCache.class);
+    private Cache<ResourceID, SampleExternalResource> cache;
+    private EventHandler eventHandler = mock(EventHandler.class);
+    private TestCustomResource testCustomResource = TestUtils.testCustomResource();
+
+    @BeforeEach
+    public void setup() {
+        CachingProvider cachingProvider = new CaffeineCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        cache = cacheManager.createCache("test-caching", new MutableConfiguration<>());
+
+        when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
+        when(supplier.getResources(any())).thenReturn(Optional.of(SampleExternalResource.testResource1()));
+
+        pollingEventSource = new PerResourcePollingEventSource<>
+                (supplier, resourceCache, PERIOD, cache);
+        pollingEventSource.setEventHandler(eventHandler);
+    }
+
+    @Test
+    public void pollsTheResourceAfterAwareOfIt() throws InterruptedException {
+        pollingEventSource.start();
+        pollingEventSource.onResourceCreated(testCustomResource);
+
+        Thread.sleep(3*PERIOD);
+        verify(supplier,atLeast(2)).getResources(eq(testCustomResource));
+        verify(eventHandler, times(1)).handleEvent(any());
+    }
+
+    @Test
+    public void registeringTaskOnAPredicate() throws InterruptedException {
+        pollingEventSource = new PerResourcePollingEventSource<>
+                (supplier, resourceCache, PERIOD, cache,
+                        testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1);
+        pollingEventSource.setEventHandler(eventHandler);
+        pollingEventSource.start();
+        pollingEventSource.onResourceCreated(testCustomResource);
+        Thread.sleep(2*PERIOD);
+
+        verify(supplier, times(0)).getResources(eq(testCustomResource));
+        testCustomResource.getMetadata().setGeneration(2L);
+        pollingEventSource.onResourceUpdated(testCustomResource, testCustomResource);
+
+        Thread.sleep(2*PERIOD);
+
+        verify(supplier, atLeast(1)).getResources(eq(testCustomResource));
+    }
+
+    @Test
+    public void propagateEventOnDeletedResource() throws InterruptedException {
+        pollingEventSource.start();
+        pollingEventSource.onResourceCreated(testCustomResource);
+        when(supplier.getResources(any()))
+                .thenReturn(Optional.of(SampleExternalResource.testResource1()))
+                .thenReturn(Optional.empty());
+
+        Thread.sleep(3*PERIOD);
+        verify(supplier,atLeast(2)).getResources(eq(testCustomResource));
+        verify(eventHandler, times(2)).handleEvent(any());
+    }
+}

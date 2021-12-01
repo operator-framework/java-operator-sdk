@@ -18,4 +18,5 @@ public class SimpleInboundEventSource extends LifecycleAwareEventSource {
       log.debug("Event source not started yet, not propagating event for: {}", resourceID);
     }
   }
+
 }
