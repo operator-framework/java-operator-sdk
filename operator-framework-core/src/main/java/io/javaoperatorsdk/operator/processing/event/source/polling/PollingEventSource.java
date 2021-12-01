@@ -24,8 +24,8 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
   private final long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-                            long period, Cache<ResourceID, T> cache) {
-    this(supplier,period,null, cache);
+      long period, Cache<ResourceID, T> cache) {
+    this(supplier, period, null, cache);
   }
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,

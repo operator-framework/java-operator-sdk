@@ -115,7 +115,7 @@ class CachingFilteringEventSourceTest {
 
     verify(eventHandlerMock, times(1)).handleEvent(eq(new Event(testResource1ID())));
   }
-  
+
   public static class SimpleCachingFilteringEventSource
       extends CachingFilteringEventSource<SampleExternalResource> {
     public SimpleCachingFilteringEventSource(Cache<ResourceID, SampleExternalResource> cache,
@@ -123,5 +123,5 @@ class CachingFilteringEventSourceTest {
       super(cache, eventFilter);
     }
   }
-  
+
 }
