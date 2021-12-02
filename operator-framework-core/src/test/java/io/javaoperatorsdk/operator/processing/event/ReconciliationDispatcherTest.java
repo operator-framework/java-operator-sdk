@@ -66,6 +66,7 @@ class ReconciliationDispatcherTest {
     });
     when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
+    when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
     Controller<R> controller =
         new Controller<>(reconciler, configuration, null);
 
