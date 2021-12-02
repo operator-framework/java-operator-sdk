@@ -11,6 +11,18 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+/**
+ * Base class for event sources with filtering and caching capabilities.
+ * <p>
+ * {@link #handleDelete(ResourceID)} - if the related resource is present in the cache it is
+ * removed. and event propagated. There is no event propagated if the resource is not in the cache.
+ * <p>
+ * {@link #handleEvent(Object, ResourceID)} - caches the resource if changed (or nto present
+ * before). Propagates an event if the resource is new or not equals to the one in the cache, and if
+ * accepted by the filter if one is present.
+ *
+ * @param <T> represents the resource (usually external non-kubernetes one) handled.
+ */
 public abstract class CachingFilteringEventSource<T> extends LifecycleAwareEventSource {
 
   private static final Logger log = LoggerFactory.getLogger(CachingFilteringEventSource.class);

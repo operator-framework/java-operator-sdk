@@ -20,6 +20,17 @@ import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
+/**
+ *
+ * Polls the supplier for each controlled resource registered. Resource is registered when created
+ * if there is no registerPredicate provided. If register predicate provided it is evaluated on
+ * resource create and/or update to register polling for the event source.
+ * <p>
+ * For other behavior see {@link CachingFilteringEventSource}
+ *
+ * @param <T> the resource polled by the event source
+ * @param <R> related custom resource
+ */
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
     extends CachingFilteringEventSource<T>
     implements ResourceEventAware<R> {
