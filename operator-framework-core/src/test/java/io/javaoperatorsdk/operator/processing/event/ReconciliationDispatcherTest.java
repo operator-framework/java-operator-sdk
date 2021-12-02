@@ -66,7 +66,6 @@ class ReconciliationDispatcherTest {
     });
     when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
-    when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
     Controller<R> controller =
         new Controller<>(reconciler, configuration, null);
 
@@ -348,6 +347,27 @@ class ReconciliationDispatcherTest {
         executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
         .isEqualTo(1L);
+  }
+
+  @Test
+  void updateObservedGenerationOnCustomResourceUpdate() {
+    var observedGenResource = createObservedGenCustomResource();
+
+    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
+    ControllerConfiguration<ObservedGenCustomResource> config =
+            mock(ControllerConfiguration.class);
+    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
+    when(config.isGenerationAware()).thenReturn(true);
+    when(reconciler.reconcile(any(), any()))
+            .thenReturn(UpdateControl.updateResource(observedGenResource));
+    when(facade.replaceWithLock(any())).thenReturn(observedGenResource);
+    when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
+    var dispatcher = init(observedGenResource, reconciler, config, facade);
+
+    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
+            executionScopeWithCREvent(observedGenResource));
+    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
+            .isEqualTo(1L);
   }
 
   @Test

@@ -151,6 +151,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource = updateCustomResource(updateControl.getResource());
+      if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
+        updatedCustomResource = updateStatusGenerationAware(originalResource);
+      }
     } else if (updateControl.isNoUpdate()
         && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
       updatedCustomResource = updateStatusGenerationAware(originalResource);
