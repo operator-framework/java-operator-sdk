@@ -30,7 +30,7 @@ public class DefaultConfigurationService extends BaseConfigurationService {
     if (config == null) {
       if (createIfNeeded) {
         // create the configuration on demand and register it
-        config = new AnnotationConfiguration<>(reconciler);
+        config = new ClassAndAnnotationConfiguration<>(reconciler);
         register(config);
         getLogger().info(
             "Created configuration for controller {} with name {}",

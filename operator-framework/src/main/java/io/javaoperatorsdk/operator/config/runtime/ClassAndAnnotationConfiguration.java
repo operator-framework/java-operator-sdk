@@ -11,14 +11,20 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilters;
 
-public class AnnotationConfiguration<R extends HasMetadata>
+/**
+ * Reads the configuration from the @{@link ControllerConfiguration} annotation. If the annotation
+ * not presents still uses defaults from annotation.
+ * 
+ * @param <R> class of the managed resource.
+ */
+public class ClassAndAnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
 
-  public AnnotationConfiguration(Reconciler<R> reconciler) {
+  public ClassAndAnnotationConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
   }
@@ -81,7 +87,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
     Class<ResourceEventFilter<R>>[] filterTypes =
         (Class<ResourceEventFilter<R>>[]) valueOrDefault(annotation,
             ControllerConfiguration::eventFilters,
-            new Object[] {});
+            new Class[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
         try {

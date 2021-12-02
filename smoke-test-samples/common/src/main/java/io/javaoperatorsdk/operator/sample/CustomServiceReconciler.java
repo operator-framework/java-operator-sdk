@@ -11,10 +11,9 @@ import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 /** A very simple sample controller that creates a service with a label. */
-@ControllerConfiguration
+// @ControllerConfiguration
 public class CustomServiceReconciler implements Reconciler<CustomService> {
 
   public static final String KIND = "CustomService";
