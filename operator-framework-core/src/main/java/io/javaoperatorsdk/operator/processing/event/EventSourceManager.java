@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -25,7 +22,10 @@ public class EventSourceManager<R extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  private final Set<EventSource> eventSources = Collections.synchronizedSet(new HashSet<>());
+  // This needs to be a list since the event source must be started in a deterministic order. The
+  // controllerResourceEventSource must be always the first to have informers available for other
+  // informers to access the main controller cache.
+  private final List<EventSource> eventSources = Collections.synchronizedList(new ArrayList<>());
   private final EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
   private ControllerResourceEventSource<R> controllerResourceEventSource;
@@ -120,7 +120,7 @@ public class EventSourceManager<R extends HasMetadata>
 
   @Override
   public Set<EventSource> getRegisteredEventSources() {
-    return Collections.unmodifiableSet(eventSources);
+    return new HashSet<>(eventSources);
   }
 
   @Override
