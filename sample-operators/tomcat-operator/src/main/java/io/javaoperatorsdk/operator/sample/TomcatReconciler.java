@@ -81,13 +81,6 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     return UpdateControl.noUpdate();
   }
 
-  @Override
-  public DeleteControl cleanup(Tomcat tomcat, Context context) {
-    deleteDeployment(tomcat);
-    deleteService(tomcat);
-    return DeleteControl.defaultDelete();
-  }
-
   private Tomcat updateTomcatStatus(Tomcat tomcat, Deployment deployment) {
     DeploymentStatus deploymentStatus =
         Objects.requireNonNullElse(deployment.getStatus(), new DeploymentStatus());
@@ -156,39 +149,16 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     }
   }
 
-  private void deleteDeployment(Tomcat tomcat) {
-    log.info("Deleting Deployment {}", tomcat.getMetadata().getName());
-    RollableScalableResource<Deployment> deployment =
-        kubernetesClient
-            .apps()
-            .deployments()
-            .inNamespace(tomcat.getMetadata().getNamespace())
-            .withName(tomcat.getMetadata().getName());
-    if (deployment.get() != null) {
-      deployment.delete();
-    }
-  }
-
   private void createOrUpdateService(Tomcat tomcat) {
     Service service = loadYaml(Service.class, "service.yaml");
     service.getMetadata().setName(tomcat.getMetadata().getName());
     String ns = tomcat.getMetadata().getNamespace();
     service.getMetadata().setNamespace(ns);
+    service.getMetadata().getOwnerReferences().get(0).setName(tomcat.getMetadata().getName());
+    service.getMetadata().getOwnerReferences().get(0).setUid(tomcat.getMetadata().getUid());
     service.getSpec().getSelector().put("app", tomcat.getMetadata().getName());
     log.info("Creating or updating Service {} in {}", service.getMetadata().getName(), ns);
     kubernetesClient.services().inNamespace(ns).createOrReplace(service);
-  }
-
-  private void deleteService(Tomcat tomcat) {
-    log.info("Deleting Service {}", tomcat.getMetadata().getName());
-    ServiceResource<Service> service =
-        kubernetesClient
-            .services()
-            .inNamespace(tomcat.getMetadata().getNamespace())
-            .withName(tomcat.getMetadata().getName());
-    if (service.get() != null) {
-      service.delete();
-    }
   }
 
   private <T> T loadYaml(Class<T> clazz, String yaml) {

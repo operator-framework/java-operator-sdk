@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import io.fabric8.kubernetes.client.informers.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +40,10 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   public WebappReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
   }
-
+  private InformerEventSource<Tomcat> tomcatEventSource;
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    InformerEventSource<Tomcat> tomcatEventSource =
+    tomcatEventSource =
         new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation
           // we need to find which WebApp this Tomcat custom resource is related to.
@@ -67,9 +68,8 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
       return UpdateControl.noUpdate();
     }
 
-    var tomcatClient = kubernetesClient.customResources(Tomcat.class);
-    Tomcat tomcat = tomcatClient.inNamespace(webapp.getMetadata().getNamespace())
-        .withName(webapp.getSpec().getTomcat()).get();
+    Tomcat tomcat = tomcatEventSource.getStore()
+            .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),webapp.getSpec().getTomcat()));
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
