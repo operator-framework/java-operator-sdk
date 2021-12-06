@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -40,7 +40,9 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   public WebappReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
   }
+
   private InformerEventSource<Tomcat> tomcatEventSource;
+
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
     tomcatEventSource =
@@ -69,7 +71,8 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     }
 
     Tomcat tomcat = tomcatEventSource.getStore()
-            .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),webapp.getSpec().getTomcat()));
+        .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),
+            webapp.getSpec().getTomcat()));
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
