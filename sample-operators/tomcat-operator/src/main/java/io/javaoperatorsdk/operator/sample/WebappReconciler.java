@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -40,9 +41,11 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     this.kubernetesClient = kubernetesClient;
   }
 
+  private InformerEventSource<Tomcat> tomcatEventSource;
+
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    InformerEventSource<Tomcat> tomcatEventSource =
+    tomcatEventSource =
         new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation
           // we need to find which WebApp this Tomcat custom resource is related to.
@@ -67,9 +70,9 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
       return UpdateControl.noUpdate();
     }
 
-    var tomcatClient = kubernetesClient.customResources(Tomcat.class);
-    Tomcat tomcat = tomcatClient.inNamespace(webapp.getMetadata().getNamespace())
-        .withName(webapp.getSpec().getTomcat()).get();
+    Tomcat tomcat = tomcatEventSource.getStore()
+        .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),
+            webapp.getSpec().getTomcat()));
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "

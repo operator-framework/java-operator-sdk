@@ -13,23 +13,21 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 
+import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 import static java.util.Collections.EMPTY_SET;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
  * creates a Service over which the Pods can be accessed.
  */
-@ControllerConfiguration
+@ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
@@ -79,13 +77,6 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
       return UpdateControl.updateStatus(updatedTomcat);
     }
     return UpdateControl.noUpdate();
-  }
-
-  @Override
-  public DeleteControl cleanup(Tomcat tomcat, Context context) {
-    deleteDeployment(tomcat);
-    deleteService(tomcat);
-    return DeleteControl.defaultDelete();
   }
 
   private Tomcat updateTomcatStatus(Tomcat tomcat, Deployment deployment) {
@@ -156,39 +147,16 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     }
   }
 
-  private void deleteDeployment(Tomcat tomcat) {
-    log.info("Deleting Deployment {}", tomcat.getMetadata().getName());
-    RollableScalableResource<Deployment> deployment =
-        kubernetesClient
-            .apps()
-            .deployments()
-            .inNamespace(tomcat.getMetadata().getNamespace())
-            .withName(tomcat.getMetadata().getName());
-    if (deployment.get() != null) {
-      deployment.delete();
-    }
-  }
-
   private void createOrUpdateService(Tomcat tomcat) {
     Service service = loadYaml(Service.class, "service.yaml");
     service.getMetadata().setName(tomcat.getMetadata().getName());
     String ns = tomcat.getMetadata().getNamespace();
     service.getMetadata().setNamespace(ns);
+    service.getMetadata().getOwnerReferences().get(0).setName(tomcat.getMetadata().getName());
+    service.getMetadata().getOwnerReferences().get(0).setUid(tomcat.getMetadata().getUid());
     service.getSpec().getSelector().put("app", tomcat.getMetadata().getName());
     log.info("Creating or updating Service {} in {}", service.getMetadata().getName(), ns);
     kubernetesClient.services().inNamespace(ns).createOrReplace(service);
-  }
-
-  private void deleteService(Tomcat tomcat) {
-    log.info("Deleting Service {}", tomcat.getMetadata().getName());
-    ServiceResource<Service> service =
-        kubernetesClient
-            .services()
-            .inNamespace(tomcat.getMetadata().getNamespace())
-            .withName(tomcat.getMetadata().getName());
-    if (service.get() != null) {
-      service.delete();
-    }
   }
 
   private <T> T loadYaml(Class<T> clazz, String yaml) {
