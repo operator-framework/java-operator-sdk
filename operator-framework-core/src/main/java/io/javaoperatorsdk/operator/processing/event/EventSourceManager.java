@@ -24,7 +24,7 @@ public class EventSourceManager<R extends HasMetadata>
   private final ReentrantLock lock = new ReentrantLock();
   // This needs to be a list since the event source must be started in a deterministic order. The
   // controllerResourceEventSource must be always the first to have informers available for other
-  // informers to access the cache
+  // informers to access the main controller cache.
   private final List<EventSource> eventSources = Collections.synchronizedList(new ArrayList<>());
   private final EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
