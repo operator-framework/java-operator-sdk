@@ -15,19 +15,19 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.*;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.InformerEventSource;
 
+import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
 import static java.util.Collections.EMPTY_SET;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
  * creates a Service over which the Pods can be accessed.
  */
-@ControllerConfiguration
+@ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
