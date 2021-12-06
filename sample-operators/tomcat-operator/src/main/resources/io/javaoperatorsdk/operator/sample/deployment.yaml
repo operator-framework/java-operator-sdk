@@ -29,11 +29,11 @@ spec:
             - mountPath: /usr/local/tomcat/webapps
               name: webapps-volume
         - name: war-downloader
-          image: busybox:1.28
+          image: busybox:1.34.1
           command: ['tail', '-f', '/dev/null']
           volumeMounts:
             - name: webapps-volume
               mountPath: /data
       volumes:
         - name: webapps-volume
-          emptydir: {}
+          emptyDir: {}
