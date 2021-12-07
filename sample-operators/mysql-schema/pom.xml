@@ -10,9 +10,9 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>sample-tomcat-operator</artifactId>
-    <name>Operator SDK - Samples - Tomcat</name>
-    <description>Provisions Tomcat Pods and deploys Webapplications in them</description>
+    <artifactId>sample-mysql-schema-operator</artifactId>
+    <name>Operator SDK - Samples - MySQL Schema</name>
+    <description>Provisions Schemas in a MySQL database</description>
     <packaging>jar</packaging>
 
     <properties>
@@ -28,6 +28,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.takes</groupId>
+            <artifactId>takes</artifactId>
+            <version>1.19</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.26</version>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
             <scope>provided</scope>
@@ -36,11 +46,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.13.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.takes</groupId>
-            <artifactId>takes</artifactId>
-            <version>1.19</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -55,8 +60,13 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>4.1.1</version>
+            <version>4.1.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.13.0</version>
         </dependency>
     </dependencies>
 
@@ -71,7 +81,7 @@
                         <image>gcr.io/distroless/java:11</image>
                     </from>
                     <to>
-                        <image>tomcat-operator</image>
+                        <image>mysql-schema-operator</image>
                     </to>
                 </configuration>
             </plugin>

@@ -21,5 +21,6 @@
     <modules>
         <module>tomcat-operator</module>
         <module>webpage</module>
+        <module>mysql-schema</module>
     </modules>
 </project>
