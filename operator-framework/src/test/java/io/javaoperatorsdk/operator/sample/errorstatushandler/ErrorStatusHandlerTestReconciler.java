@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.errorstatushandler;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -45,11 +46,11 @@ public class ErrorStatusHandlerTestReconciler
   }
 
   @Override
-  public ErrorStatusHandlerTestCustomResource updateErrorStatus(
-      ErrorStatusHandlerTestCustomResource resource, RuntimeException e) {
+  public Optional<ErrorStatusHandlerTestCustomResource> updateErrorStatus(
+      ErrorStatusHandlerTestCustomResource resource, RetryInfo retryInfo, RuntimeException e) {
     log.info("Setting status.");
     ensureStatusExists(resource);
     resource.getStatus().setMessage(ERROR_STATUS_MESSAGE);
-    return resource;
+    return Optional.of(resource);
   }
 }

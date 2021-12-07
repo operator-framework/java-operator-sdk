@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -173,8 +174,9 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
   }
 
   @Override
-  public WebPage updateErrorStatus(WebPage resource, RuntimeException e) {
+  public Optional<WebPage> updateErrorStatus(WebPage resource, RetryInfo retryInfo,
+      RuntimeException e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-    return resource;
+    return Optional.of(resource);
   }
 }

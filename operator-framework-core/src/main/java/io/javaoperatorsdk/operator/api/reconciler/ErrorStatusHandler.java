@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public interface ErrorStatusHandler<T extends HasMetadata> {
@@ -19,9 +21,10 @@ public interface ErrorStatusHandler<T extends HasMetadata> {
    * should not be updates on custom resource after it is marked for deletion.
    *
    * @param resource to update the status on
+   * @param retryInfo
    * @param e exception thrown from the reconciler
    * @return the updated resource
    */
-  T updateErrorStatus(T resource, RuntimeException e);
+  Optional<T> updateErrorStatus(T resource, RetryInfo retryInfo, RuntimeException e);
 
 }
