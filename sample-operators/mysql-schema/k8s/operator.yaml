@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mysql-schema-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+spec:
+  selector:
+    matchLabels:
+      app: mysql-schema-operator
+  replicas: 1 # we always run a single replica of the operator to avoid duplicate handling of events
+  strategy:
+    type: Recreate # during an upgrade the operator will shut down before the new version comes up to prevent two instances running at the same time
+  template:
+    metadata:
+      labels:
+        app: mysql-schema-operator
+    spec:
+      serviceAccountName: mysql-schema-operator # specify the ServiceAccount under which's RBAC persmissions the operator will be executed under
+      containers:
+      - name: operator
+        image: ${DOCKER_REGISTRY}/mysql-schema-operator:${OPERATOR_VERSION}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: MYSQL_HOST
+          value: mysql.mysql # assuming the MySQL server runs in a namespace called "mysql" on Kubernetes
+        - name: MYSQL_USER
+          value: root
+        - name: MYSQL_PASSWORD
+          value: password # sample-level security
+        readinessProbe:
+          httpGet:
+            path: /health # when this returns 200 the operator is considered up and running
+            port: 8080
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /health # when this endpoint doesn't return 200 the operator is considered broken and get's restarted
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: mysql-schema-operator
+rules:
+- apiGroups:
+  - mysql.sample.javaoperatorsdk
+  resources:
+  - schemas
+  verbs:
+  - "*"
+- apiGroups:
+  - mysql.sample.javaoperatorsdk
+  resources:
+  - schemas/status
+  verbs:
+  - "*"
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - "get"
+  - "list"
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - "*"
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mysql-schema-operator
+subjects:
+- kind: ServiceAccount
+  name: mysql-schema-operator
+  namespace: mysql-schema-operator
+roleRef:
+  kind: ClusterRole
+  name: mysql-schema-operator
+  apiGroup: ""
