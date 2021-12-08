@@ -170,7 +170,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
 
           @Override
           public boolean isLastAttempt() {
-            return false;
+            return controller.getConfiguration().getRetryConfiguration() == null;
           }
         });
         var updatedResource = ((ErrorStatusHandler<R>) controller.getReconciler())

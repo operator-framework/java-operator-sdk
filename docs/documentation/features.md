@@ -177,7 +177,10 @@ public interface ErrorStatusHandler<T extends HasMetadata> {
 }
 ```
 
-The `updateErrorStatus` resource is called in case an exception is thrown from the reconciler. 
+The `updateErrorStatus` is called in case an exception is thrown from the reconciler. It is also called when
+there is no retry configured, just after the reconciler execution. 
+In the first call the `RetryInfo.getAttemptCount()` is always zero, since it is not a result of a retry 
+(regardless if retry is configured or not). 
 
 The result of the method call is used to make a status update on the custom resource. This is always a sub-resource
 update request, so no update on custom resource itself (like spec of metadata) happens. Note that this update request
