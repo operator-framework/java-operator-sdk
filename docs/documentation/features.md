@@ -177,7 +177,7 @@ public interface ErrorStatusHandler<T extends HasMetadata> {
 }
 ```
 
-The `updateErrorStatus` is called in case an exception is thrown from the reconciler. It is also called when
+The `updateErrorStatus` method is called in case an exception is thrown from the reconciler. It is also called when
 there is no retry configured, just after the reconciler execution. 
 In the first call the `RetryInfo.getAttemptCount()` is always zero, since it is not a result of a retry 
 (regardless if retry is configured or not). 
