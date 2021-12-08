@@ -166,19 +166,18 @@ A successful execution resets the retry.
 
 ### Setting Error Status After Last Retry Attempt
 
-In order to facilitate error reporting in case a last retry attempt fails, Reconciler can implement the following
+In order to facilitate error reporting Reconciler can implement the following
 [interface](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java):
 
 ```java
-public interface ErrorStatusHandler<T extends CustomResource<?, ?>> {
+public interface ErrorStatusHandler<T extends HasMetadata> {
 
-    T updateErrorStatus(T resource, RuntimeException e);
+    Optional<T> updateErrorStatus(T resource, RetryInfo retryInfo, RuntimeException e);
 
 }
 ```
 
-The `updateErrorStatus` resource is called when it's the last retry attempt according the retry configuration and the
-reconciler execution still resulted in a runtime exception.
+The `updateErrorStatus` resource is called in case an exception is thrown from the reconciler. 
 
 The result of the method call is used to make a status update on the custom resource. This is always a sub-resource
 update request, so no update on custom resource itself (like spec of metadata) happens. Note that this update request
