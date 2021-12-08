@@ -381,6 +381,24 @@ class ReconciliationDispatcherTest {
         any(), any());
   }
 
+  @Test
+  void callErrorStatusHandlerEvenOnFirstError() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    when(reconciler.reconcile(any(), any()))
+        .thenThrow(new IllegalStateException("Error Status Test"));
+    when(((ErrorStatusHandler) reconciler).updateErrorStatus(any(), any(), any())).then(a -> {
+      testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
+      return Optional.of(testCustomResource);
+    });
+    reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+        any(), any());
+  }
+
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();
     observedGenCustomResource.setMetadata(new ObjectMeta());

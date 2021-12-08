@@ -17,14 +17,18 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class RetryTestCustomReconciler
     implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
 
-  public static final int NUMBER_FAILED_EXECUTIONS = 2;
-
   public static final String FINALIZER_NAME =
       ControllerUtils.getDefaultFinalizerName(
           CustomResource.getCRDName(RetryTestCustomResource.class));
   private static final Logger log =
       LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+
+  private int numberOfExecutionFails;
+
+  public RetryTestCustomReconciler(int numberOfExecutionFails) {
+    this.numberOfExecutionFails = numberOfExecutionFails;
+  }
 
   @Override
   public UpdateControl<RetryTestCustomResource> reconcile(
@@ -36,7 +40,7 @@ public class RetryTestCustomReconciler
     }
     log.info("Value: " + resource.getSpec().getValue());
 
-    if (numberOfExecutions.get() < NUMBER_FAILED_EXECUTIONS + 1) {
+    if (numberOfExecutions.get() < numberOfExecutionFails + 1) {
       throw new RuntimeException("Testing Retry");
     }
     if (context.getRetryInfo().isEmpty() || context.getRetryInfo().get().isLastAttempt()) {
