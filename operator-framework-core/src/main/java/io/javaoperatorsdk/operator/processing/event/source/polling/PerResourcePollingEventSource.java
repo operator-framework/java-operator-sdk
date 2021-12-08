@@ -117,7 +117,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
           res.ifPresentOrElse(r -> pollForResource(r),
               () -> log.warn("No resource in cache for resource ID: {}", resourceID));
         }
-      }, period, period);
+      }, 0, period);
     }
   }
 

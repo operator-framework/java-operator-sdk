@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Base64;
+import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
@@ -20,7 +21,8 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import static java.lang.String.format;
 
 @ControllerConfiguration
-public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
+public class MySQLSchemaReconciler
+    implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
   static final String USERNAME_FORMAT = "%s-user";
   static final String SECRET_FORMAT = "%s-secret";
 
@@ -87,7 +89,6 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
       return UpdateControl.noUpdate();
     } catch (SQLException e) {
       log.error("Error while creating Schema", e);
-
       SchemaStatus status = new SchemaStatus();
       status.setUrl(null);
       status.setUserName(null);
@@ -97,6 +98,13 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
 
       return UpdateControl.updateStatus(schema);
     }
+  }
+
+  @Override
+  public Optional<MySQLSchema> updateErrorStatus(MySQLSchema resource, RetryInfo retryInfo,
+      RuntimeException e) {
+
+    return Optional.empty();
   }
 
   @Override
@@ -140,7 +148,7 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
     String connectionString =
         format("jdbc:mysql://%1$s:%2$s", mysqlDbConfig.getHost(), mysqlDbConfig.getPort());
 
-    log.info("Connecting to '{}' with user '{}'", connectionString, mysqlDbConfig.getUser());
+    log.debug("Connecting to '{}' with user '{}'", connectionString, mysqlDbConfig.getUser());
     return DriverManager.getConnection(connectionString, mysqlDbConfig.getUser(),
         mysqlDbConfig.getPassword());
   }
@@ -148,10 +156,12 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
   private boolean schemaExists(Connection connection, String schemaName) throws SQLException {
     try (PreparedStatement ps =
         connection.prepareStatement(
-            "SELECT schema_name FROM information_schema.schemata WHERE schema_name = ?")) {
+            "SELECT * FROM information_schema.schemata WHERE schema_name = ?")) {
       ps.setString(1, schemaName);
       try (ResultSet resultSet = ps.executeQuery()) {
-        return resultSet.next();
+        // CATALOG_NAME, SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME, SQL_PATH
+        var exists = resultSet.next();
+        return exists;
       }
     }
   }
