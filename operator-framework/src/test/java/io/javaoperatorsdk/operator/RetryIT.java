@@ -20,15 +20,18 @@ import static org.awaitility.Awaitility.await;
 
 public class RetryIT {
   public static final int RETRY_INTERVAL = 150;
+  public static final int MAX_RETRY_ATTEMPTS = 5;
+
+  public static final int NUMBER_FAILED_EXECUTIONS = 3;
 
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
           .withReconciler(
-              new RetryTestCustomReconciler(),
+              new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
-                  .setMaxAttempts(5))
+                  .setMaxAttempts(MAX_RETRY_ATTEMPTS))
           .build();
 
 
@@ -40,7 +43,7 @@ public class RetryIT {
 
     await("cr status updated")
         .pollDelay(
-            RETRY_INTERVAL * (RetryTestCustomReconciler.NUMBER_FAILED_EXECUTIONS + 2),
+            RETRY_INTERVAL * (NUMBER_FAILED_EXECUTIONS + 2),
             TimeUnit.MILLISECONDS)
         .pollInterval(
             RETRY_INTERVAL,
@@ -49,7 +52,7 @@ public class RetryIT {
         .untilAsserted(() -> {
           assertThat(
               TestUtils.getNumberOfExecutions(operator))
-                  .isEqualTo(RetryTestCustomReconciler.NUMBER_FAILED_EXECUTIONS + 1);
+                  .isEqualTo(NUMBER_FAILED_EXECUTIONS + 1);
 
           RetryTestCustomResource finalResource =
               operator.get(RetryTestCustomResource.class,
@@ -59,7 +62,7 @@ public class RetryIT {
         });
   }
 
-  public RetryTestCustomResource createTestCustomResource(String id) {
+  public static RetryTestCustomResource createTestCustomResource(String id) {
     RetryTestCustomResource resource = new RetryTestCustomResource();
     resource.setMetadata(
         new ObjectMetaBuilder()

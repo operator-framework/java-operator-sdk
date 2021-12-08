@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -56,9 +58,12 @@ class ReconciliationDispatcherTest {
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configService.getMetrics()).thenReturn(Metrics.NOOP);
     when(configuration.getConfigurationService()).thenReturn(configService);
-    when(configService.getResourceCloner()).thenReturn(ConfigurationService.DEFAULT_CLONER);
-    when(reconciler.reconcile(eq(customResource), any()))
-        .thenReturn(UpdateControl.updateResource(customResource));
+    when(configService.getResourceCloner()).thenReturn(new Cloner() {
+      @Override
+      public <R extends HasMetadata> R clone(R object) {
+        return object;
+      }
+    });
     when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
     when(customResourceFacade.replaceWithLock(any())).thenReturn(null);
@@ -351,9 +356,9 @@ class ReconciliationDispatcherTest {
 
     when(reconciler.reconcile(any(), any()))
         .thenThrow(new IllegalStateException("Error Status Test"));
-    when(((ErrorStatusHandler) reconciler).updateErrorStatus(any(), any())).then(a -> {
+    when(((ErrorStatusHandler) reconciler).updateErrorStatus(any(), any(), any())).then(a -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
-      return testCustomResource;
+      return Optional.of(testCustomResource);
     });
 
     reconciliationDispatcher.handleExecution(
@@ -373,7 +378,25 @@ class ReconciliationDispatcherTest {
 
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
-        any());
+        any(), any());
+  }
+
+  @Test
+  void callErrorStatusHandlerEvenOnFirstError() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    when(reconciler.reconcile(any(), any()))
+        .thenThrow(new IllegalStateException("Error Status Test"));
+    when(((ErrorStatusHandler) reconciler).updateErrorStatus(any(), any(), any())).then(a -> {
+      testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
+      return Optional.of(testCustomResource);
+    });
+    reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+        any(), any());
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {

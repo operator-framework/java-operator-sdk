@@ -11,13 +11,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
@@ -114,7 +108,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
             cloneResourceForErrorStatusHandlerIfNeeded(originalResource, context);
         return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
       } catch (RuntimeException e) {
-        handleLastAttemptErrorStatusHandler(originalResource, context, e);
+        handleErrorStatusHandler(originalResource, context, e);
         throw e;
       }
     }
@@ -128,7 +122,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
    * place for status update.
    */
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
-    if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context) ||
+    if (isErrorStatusHandlerPresent() ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
       return configuration().getConfigurationService().getResourceCloner().clone(resource);
     } else {
@@ -164,26 +158,32 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
 
-  private void handleLastAttemptErrorStatusHandler(R resource, Context context,
+  private void handleErrorStatusHandler(R resource, Context context,
       RuntimeException e) {
-    if (isLastAttemptOfRetryAndErrorStatusHandlerPresent(context)) {
+    if (isErrorStatusHandlerPresent()) {
       try {
+        var retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
+          @Override
+          public int getAttemptCount() {
+            return 0;
+          }
+
+          @Override
+          public boolean isLastAttempt() {
+            return controller.getConfiguration().getRetryConfiguration() == null;
+          }
+        });
         var updatedResource = ((ErrorStatusHandler<R>) controller.getReconciler())
-            .updateErrorStatus(resource, e);
-        customResourceFacade.updateStatus(updatedResource);
+            .updateErrorStatus(resource, retryInfo, e);
+        updatedResource.ifPresent(customResourceFacade::updateStatus);
       } catch (RuntimeException ex) {
         log.error("Error during error status handling.", ex);
       }
     }
   }
 
-  private boolean isLastAttemptOfRetryAndErrorStatusHandlerPresent(Context context) {
-    if (context.getRetryInfo().isPresent()) {
-      return context.getRetryInfo().get().isLastAttempt()
-          && controller.getReconciler() instanceof ErrorStatusHandler;
-    } else {
-      return false;
-    }
+  private boolean isErrorStatusHandlerPresent() {
+    return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
   private R updateStatusGenerationAware(R resource) {

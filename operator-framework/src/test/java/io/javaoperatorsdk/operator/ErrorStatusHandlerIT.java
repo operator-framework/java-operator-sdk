@@ -17,13 +17,15 @@ import static org.awaitility.Awaitility.await;
 
 public class ErrorStatusHandlerIT {
 
+  public static final int MAX_RETRY_ATTEMPTS = 3;
   ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
 
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
           .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(reconciler, new GenericRetry().setMaxAttempts(3).withLinearRetry())
+          .withReconciler(reconciler,
+              new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
           .build();
 
   @Test
@@ -32,16 +34,18 @@ public class ErrorStatusHandlerIT {
         operator.create(ErrorStatusHandlerTestCustomResource.class, createCustomResource());
 
     await()
-        .atMost(15, TimeUnit.SECONDS)
-        .pollInterval(1L, TimeUnit.SECONDS)
+        .atMost(10, TimeUnit.SECONDS)
+        .pollInterval(250, TimeUnit.MICROSECONDS)
         .untilAsserted(
             () -> {
               ErrorStatusHandlerTestCustomResource res =
                   operator.get(ErrorStatusHandlerTestCustomResource.class,
                       resource.getMetadata().getName());
               assertThat(res.getStatus()).isNotNull();
-              assertThat(res.getStatus().getMessage())
-                  .isEqualTo(ErrorStatusHandlerTestReconciler.ERROR_STATUS_MESSAGE);
+              for (int i = 0; i < MAX_RETRY_ATTEMPTS + 1; i++) {
+                assertThat(res.getStatus().getMessages())
+                    .contains(ErrorStatusHandlerTestReconciler.ERROR_STATUS_MESSAGE + i);
+              }
             });
   }
 
