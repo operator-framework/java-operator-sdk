@@ -50,7 +50,7 @@ public class ErrorStatusHandlerTestReconciler
       ErrorStatusHandlerTestCustomResource resource, RetryInfo retryInfo, RuntimeException e) {
     log.info("Setting status.");
     ensureStatusExists(resource);
-    resource.getStatus().setMessage(ERROR_STATUS_MESSAGE);
+    resource.getStatus().getMessages().add(ERROR_STATUS_MESSAGE + retryInfo.getAttemptCount());
     return Optional.of(resource);
   }
 }

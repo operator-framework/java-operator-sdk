@@ -1,15 +1,21 @@
 package io.javaoperatorsdk.operator.sample.errorstatushandler;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ErrorStatusHandlerTestCustomResourceStatus {
 
-  private String message;
+  private List<String> messages;
 
-  public String getMessage() {
-    return message;
+  public List<String> getMessages() {
+    if (messages == null) {
+      messages = new ArrayList<>();
+    }
+    return messages;
   }
 
-  public ErrorStatusHandlerTestCustomResourceStatus setMessage(String message) {
-    this.message = message;
+  public ErrorStatusHandlerTestCustomResourceStatus setMessages(List<String> messages) {
+    this.messages = messages;
     return this;
   }
 }
