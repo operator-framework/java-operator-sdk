@@ -65,7 +65,7 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
     timer.cancel();
   }
 
-  public Optional<T> getResourceFromCacheOrSupplier(ResourceID resourceID) {
+  public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
     var resource = getCachedValue(resourceID);
     if (resource.isPresent()) {
       return resource;
