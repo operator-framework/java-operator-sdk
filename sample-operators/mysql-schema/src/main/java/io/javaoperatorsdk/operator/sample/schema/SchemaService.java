@@ -40,11 +40,11 @@ public class SchemaService {
                 "CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
                 schemaName, encoding));
       }
-
-      try (Statement statement = connection.createStatement()) {
-        statement.execute(format("CREATE USER '%1$s' IDENTIFIED BY '%2$s'", userName, password));
+      if (!userExists(connection, userName)) {
+        try (Statement statement = connection.createStatement()) {
+          statement.execute(format("CREATE USER '%1$s' IDENTIFIED BY '%2$s'", userName, password));
+        }
       }
-
       try (Statement statement = connection.createStatement()) {
         statement.execute(
             format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
@@ -68,6 +68,19 @@ public class SchemaService {
         log.info("Deleted User '{}'", userName);
       }
 
+    } catch (SQLException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private static boolean userExists(Connection connection, String username) {
+    try (PreparedStatement ps =
+        connection.prepareStatement(
+            "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = ?)")) {
+      ps.setString(1, username);
+      try (ResultSet resultSet = ps.executeQuery()) {
+        return resultSet.next();
+      }
     } catch (SQLException e) {
       throw new IllegalStateException(e);
     }

@@ -81,6 +81,16 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     }
   }
 
+  private Optional<T> getAndCacheResource(ResourceID resourceID) {
+    var resource = resourceCache.get(resourceID);
+    if (resource.isPresent()) {
+      var value = resourceSupplier.getResources(resource.get());
+      value.ifPresent(v -> cache.put(resourceID, v));
+      return value;
+    }
+    return Optional.empty();
+  }
+
   @Override
   public void onResourceCreated(R resource) {
     checkAndRegisterTask(resource);
@@ -118,6 +128,22 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
               () -> log.warn("No resource in cache for resource ID: {}", resourceID));
         }
       }, 0, period);
+    }
+  }
+
+  /**
+   *
+   * @param resourceID of the target related resource
+   * @return the cached value of the resource, if not present it gets the resource from the
+   *         supplier. If the supplier provides a value it is cached, so there will be no new event
+   *         related for the new event.
+   */
+  public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
+    var cachedValue = getCachedValue(resourceID);
+    if (cachedValue.isPresent()) {
+      return cachedValue;
+    } else {
+      return getAndCacheResource(resourceID);
     }
   }
 

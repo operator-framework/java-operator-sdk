@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.sample;
 
-public class SchemaStatus {
+import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
+
+public class SchemaStatus extends ObservedGenerationAwareStatus {
 
   private String url;
 

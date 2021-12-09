@@ -6,6 +6,11 @@ import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Optional;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.spi.CachingProvider;
+
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,19 +20,28 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
+
+import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
 
 import static java.lang.String.format;
 
 @ControllerConfiguration
 public class MySQLSchemaReconciler
-    implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
+    implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
+    EventSourceInitializer<MySQLSchema> {
   public static final String SECRET_FORMAT = "%s-secret";
   public static final String USERNAME_FORMAT = "%s-user";
+  public static final int POLL_PERIOD = 500;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
   private final MySQLDbConfig mysqlDbConfig;
+  PerResourcePollingEventSource<Schema, MySQLSchema> perResourcePollingEventSource;
 
   public MySQLSchemaReconciler(KubernetesClient kubernetesClient, MySQLDbConfig mysqlDbConfig) {
     this.kubernetesClient = kubernetesClient;
@@ -35,10 +49,26 @@ public class MySQLSchemaReconciler
   }
 
   @Override
+  public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry) {
+    CachingProvider cachingProvider = new CaffeineCachingProvider();
+    CacheManager cacheManager = cachingProvider.getCacheManager();
+    Cache<ResourceID, Schema> schemaCache =
+        cacheManager.createCache("schema-cache", new MutableConfiguration<>());
+
+    perResourcePollingEventSource =
+        new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
+            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD,
+            schemaCache);
+
+    eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
+  }
+
+  @Override
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema,
       Context context) {
+    var dbSchema = perResourcePollingEventSource
+        .getValueFromCacheOrSupplier(ResourceID.fromResource(schema));
     try (Connection connection = getConnection()) {
-      var dbSchema = SchemaService.getSchema(connection, schema.getMetadata().getName());
       if (!dbSchema.isPresent()) {
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
@@ -115,6 +145,12 @@ public class MySQLSchemaReconciler
 
   private void createSecret(MySQLSchema schema, String password, String secretName,
       String userName) {
+
+    var currentSecret = kubernetesClient.secrets().inNamespace(schema.getMetadata().getNamespace())
+        .withName(secretName).get();
+    if (currentSecret != null) {
+      return;
+    }
     Secret credentialsSecret =
         new SecretBuilder()
             .withNewMetadata()
@@ -133,4 +169,6 @@ public class MySQLSchemaReconciler
         .inNamespace(schema.getMetadata().getNamespace())
         .create(credentialsSecret);
   }
+
+
 }

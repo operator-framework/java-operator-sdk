@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.sample.schema;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Schema {
+public class Schema implements Serializable {
 
   private String name;
   private String characterSet;
