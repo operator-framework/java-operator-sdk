@@ -97,12 +97,13 @@ class PerResourcePollingEventSourceTest {
     pollingEventSource.start();
     pollingEventSource.onResourceCreated(testCustomResource);
     when(supplier.getResources(any()))
-            .thenReturn(Optional.empty())
-            .thenReturn(Optional.of(SampleExternalResource.testResource1()));
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
     Thread.sleep(PERIOD / 2);
 
-    var value = pollingEventSource.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
+    var value =
+        pollingEventSource.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
 
     Thread.sleep(PERIOD * 2);
 
