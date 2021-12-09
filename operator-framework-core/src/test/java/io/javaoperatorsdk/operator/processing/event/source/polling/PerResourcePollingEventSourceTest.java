@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 class PerResourcePollingEventSourceTest {
 
-  public static final int PERIOD = 50;
+  public static final int PERIOD = 80;
   private PerResourcePollingEventSource<SampleExternalResource, TestCustomResource> pollingEventSource;
   private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource> supplier =
       mock(PerResourcePollingEventSource.ResourceSupplier.class);
@@ -90,4 +91,23 @@ class PerResourcePollingEventSourceTest {
     verify(supplier, atLeast(2)).getResources(eq(testCustomResource));
     verify(eventHandler, times(2)).handleEvent(any());
   }
+
+  @Test
+  public void getsValueFromCacheOrSupplier() throws InterruptedException {
+    pollingEventSource.start();
+    pollingEventSource.onResourceCreated(testCustomResource);
+    when(supplier.getResources(any()))
+            .thenReturn(Optional.empty())
+            .thenReturn(Optional.of(SampleExternalResource.testResource1()));
+
+    Thread.sleep(PERIOD / 2);
+
+    var value = pollingEventSource.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
+
+    Thread.sleep(PERIOD * 2);
+
+    assertThat(value).isPresent();
+    verify(eventHandler, never()).handleEvent(any());
+  }
+
 }
