@@ -6,14 +6,14 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilters;
 
 public interface ControllerConfiguration<R extends HasMetadata> {
 
   default String getName() {
-    return ControllerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
+    return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
 
   default String getResourceTypeName() {
@@ -21,7 +21,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   }
 
   default String getFinalizer() {
-    return ControllerUtils.getDefaultFinalizerName(getResourceTypeName());
+    return ReconcilerUtils.getDefaultFinalizerName(getResourceTypeName());
   }
 
   /**

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -80,7 +80,7 @@ public class DefaultConfigurationServiceTest {
     assertEquals(CustomResource.getCRDName(TestCustomResource.class),
         configuration.getResourceTypeName());
     assertEquals(
-        ControllerUtils.getDefaultFinalizerName(configuration.getResourceTypeName()),
+        ReconcilerUtils.getDefaultFinalizerName(configuration.getResourceTypeName()),
         configuration.getFinalizer());
     assertEquals(TestCustomResource.class, configuration.getResourceClass());
     assertFalse(configuration.isGenerationAware());
@@ -96,11 +96,11 @@ public class DefaultConfigurationServiceTest {
 
   @Test
   public void supportsInnerClassCustomResources() {
-    final var controller = new TestCustomFinalizerReconciler();
+    final var reconciler = new TestCustomFinalizerReconciler();
     assertDoesNotThrow(
         () -> {
           DefaultConfigurationService.instance()
-              .getConfigurationFor(controller)
+              .getConfigurationFor(reconciler)
               .getAssociatedReconcilerClassName();
         });
   }

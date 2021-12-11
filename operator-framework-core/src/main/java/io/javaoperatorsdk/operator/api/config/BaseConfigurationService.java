@@ -13,9 +13,9 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   }
 
   @Override
-  protected void logMissingControllerWarning(String controllerKey, String controllersNameMessage) {
-    logger.warn("Configuration for controller '{}' was not found. {}", controllerKey,
-        controllersNameMessage);
+  protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
+    logger.warn("Configuration for reconciler '{}' was not found. {}", reconcilerKey,
+        reconcilersNameMessage);
   }
 
   public String getLoggerName() {

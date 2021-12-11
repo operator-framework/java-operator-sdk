@@ -62,13 +62,13 @@ public class ConfigurationServiceOverrider {
     return new ConfigurationService() {
       @Override
       public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
-          Reconciler<R> controller) {
-        return original.getConfigurationFor(controller);
+          Reconciler<R> reconciler) {
+        return original.getConfigurationFor(reconciler);
       }
 
       @Override
-      public Set<String> getKnownControllerNames() {
-        return original.getKnownControllerNames();
+      public Set<String> getKnownReconcilerNames() {
+        return original.getKnownReconcilerNames();
       }
 
       @Override

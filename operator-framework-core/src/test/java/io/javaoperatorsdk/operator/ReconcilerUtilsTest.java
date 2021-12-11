@@ -6,13 +6,13 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ControllerUtilsTest {
+class ReconcilerUtilsTest {
 
   @Test
   void getDefaultResourceControllerName() {
     assertEquals(
         "testcustomreconciler",
-        ControllerUtils.getDefaultReconcilerName(
+        ReconcilerUtils.getDefaultReconcilerName(
             TestCustomReconciler.class.getCanonicalName()));
   }
 }
