@@ -29,7 +29,7 @@ jobs:
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
       - name: Set up Minikube
-        uses: manusa/actions-setup-minikube@v2.4.2
+        uses: manusa/actions-setup-minikube@v2.4.3
         with:
           minikube version: 'v1.22.0'
           kubernetes version: ${{ matrix.kubernetes }}
