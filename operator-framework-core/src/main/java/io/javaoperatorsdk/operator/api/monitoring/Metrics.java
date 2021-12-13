@@ -11,11 +11,9 @@ public interface Metrics {
 
   default void receivedEvent(Event event) {}
 
-  default void reconcileCustomResource(ResourceID resourceID,
-      RetryInfo retryInfo) {}
+  default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo) {}
 
-  default void failedReconciliation(ResourceID resourceID,
-      RuntimeException exception) {}
+  default void failedReconciliation(ResourceID resourceID, RuntimeException exception) {}
 
   default void cleanupDoneFor(ResourceID customResourceUid) {}
 

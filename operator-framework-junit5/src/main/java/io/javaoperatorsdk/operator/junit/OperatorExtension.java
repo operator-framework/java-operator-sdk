@@ -47,7 +47,7 @@ public class OperatorExtension
   private final KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
   private final Operator operator;
-  private final List<ControllerSpec> controllers;
+  private final List<ReconcilerSpec> reconcilers;
   private final boolean preserveNamespaceOnError;
   private final boolean waitForNamespaceDeletion;
 
@@ -55,13 +55,13 @@ public class OperatorExtension
 
   private OperatorExtension(
       ConfigurationService configurationService,
-      List<ControllerSpec> controllers,
+      List<ReconcilerSpec> reconcilers,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion) {
 
     this.kubernetesClient = new DefaultKubernetesClient();
     this.configurationService = configurationService;
-    this.controllers = controllers;
+    this.reconcilers = reconcilers;
     this.operator = new Operator(this.kubernetesClient, this.configurationService);
     this.preserveNamespaceOnError = preserveNamespaceOnError;
     this.waitForNamespaceDeletion = waitForNamespaceDeletion;
@@ -120,7 +120,7 @@ public class OperatorExtension
         .map(type::cast)
         .findFirst()
         .orElseThrow(
-            () -> new IllegalArgumentException("Unable to find a controller of type: " + type));
+            () -> new IllegalArgumentException("Unable to find a reconciler of type: " + type));
   }
 
   public <T extends HasMetadata> NonNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> resources(
@@ -156,8 +156,8 @@ public class OperatorExtension
         .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
 
 
-    for (var ref : controllers) {
-      final var config = configurationService.getConfigurationFor(ref.controller);
+    for (var ref : reconcilers) {
+      final var config = configurationService.getConfigurationFor(ref.reconciler);
       final var oconfig = override(config).settingNamespace(namespace);
       final var path = "/META-INF/fabric8/" + config.getResourceTypeName() + "-v1.yml";
 
@@ -177,12 +177,12 @@ public class OperatorExtension
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
       }
 
-      if (ref.controller instanceof KubernetesClientAware) {
-        ((KubernetesClientAware) ref.controller).setKubernetesClient(kubernetesClient);
+      if (ref.reconciler instanceof KubernetesClientAware) {
+        ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
       }
 
 
-      this.operator.register(ref.controller, oconfig.build());
+      this.operator.register(ref.reconciler, oconfig.build());
     }
 
     this.operator.start();
@@ -214,14 +214,14 @@ public class OperatorExtension
 
   @SuppressWarnings("rawtypes")
   public static class Builder {
-    private final List<ControllerSpec> controllers;
+    private final List<ReconcilerSpec> reconcilers;
     private ConfigurationService configurationService;
     private boolean preserveNamespaceOnError;
     private boolean waitForNamespaceDeletion;
 
     protected Builder() {
       this.configurationService = new BaseConfigurationService(Version.UNKNOWN);
-      this.controllers = new ArrayList<>();
+      this.reconcilers = new ArrayList<>();
 
       this.preserveNamespaceOnError = Utils.getSystemPropertyOrEnvVar(
           "josdk.it.preserveNamespaceOnError",
@@ -249,20 +249,20 @@ public class OperatorExtension
 
     @SuppressWarnings("rawtypes")
     public Builder withReconciler(Reconciler value) {
-      controllers.add(new ControllerSpec(value, null));
+      reconcilers.add(new ReconcilerSpec(value, null));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
     public Builder withReconciler(Reconciler value, Retry retry) {
-      controllers.add(new ControllerSpec(value, retry));
+      reconcilers.add(new ReconcilerSpec(value, retry));
       return this;
     }
 
     @SuppressWarnings("rawtypes")
     public Builder withReconciler(Class<? extends Reconciler> value) {
       try {
-        controllers.add(new ControllerSpec(value.getConstructor().newInstance(), null));
+        reconcilers.add(new ReconcilerSpec(value.getConstructor().newInstance(), null));
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -272,21 +272,19 @@ public class OperatorExtension
     public OperatorExtension build() {
       return new OperatorExtension(
           configurationService,
-          controllers,
+          reconcilers,
           preserveNamespaceOnError,
           waitForNamespaceDeletion);
     }
   }
 
   @SuppressWarnings("rawtypes")
-  private static class ControllerSpec {
-    final Reconciler controller;
+  private static class ReconcilerSpec {
+    final Reconciler reconciler;
     final Retry retry;
 
-    public ControllerSpec(
-        Reconciler controller,
-        Retry retry) {
-      this.controller = controller;
+    public ReconcilerSpec(Reconciler reconciler, Retry retry) {
+      this.reconciler = reconciler;
       this.retry = retry;
     }
   }

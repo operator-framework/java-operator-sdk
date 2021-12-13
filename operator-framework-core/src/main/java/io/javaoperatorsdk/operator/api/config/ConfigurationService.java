@@ -30,15 +30,14 @@ public interface ConfigurationService {
   };
 
   /**
-   * Retrieves the configuration associated with the specified controller
+   * Retrieves the configuration associated with the specified reconciler
    *
-   * @param controller the controller we want the configuration of
-   * @param <R> the {@code CustomResource} type associated with the specified controller
-   * @return the {@link ControllerConfiguration} associated with the specified controller or {@code
-   * null} if no configuration exists for the controller
+   * @param reconciler the reconciler we want the configuration of
+   * @param <R> the {@code CustomResource} type associated with the specified reconciler
+   * @return the {@link ControllerConfiguration} associated with the specified reconciler or {@code
+   * null} if no configuration exists for the reconciler
    */
-  <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
-      Reconciler<R> controller);
+  <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler);
 
   /**
    * Retrieves the Kubernetes client configuration
@@ -51,11 +50,11 @@ public interface ConfigurationService {
   }
 
   /**
-   * Retrieves the set of the names of controllers for which a configuration exists
+   * Retrieves the set of the names of reconcilers for which a configuration exists
    *
-   * @return the set of known controller names
+   * @return the set of known reconciler names
    */
-  Set<String> getKnownControllerNames();
+  Set<String> getKnownReconcilerNames();
 
   /**
    * Retrieves the {@link Version} information associated with this particular instance of the SDK
@@ -67,7 +66,7 @@ public interface ConfigurationService {
   /**
    * Whether the operator should query the CRD to make sure it's deployed and validate
    * {@link CustomResource} implementations before attempting to register the associated
-   * controllers.
+   * reconcilers.
    *
    * <p>
    * Note that this might require elevating the privileges associated with the operator to gain read
@@ -83,7 +82,7 @@ public interface ConfigurationService {
 
   /**
    * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
-   * requests to controllers
+   * requests to reconcilers
    *
    * @return the maximum number of concurrent reconciliation threads
    */

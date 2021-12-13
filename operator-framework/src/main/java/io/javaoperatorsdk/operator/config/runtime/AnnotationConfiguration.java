@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -25,13 +25,13 @@ public class AnnotationConfiguration<R extends HasMetadata>
 
   @Override
   public String getName() {
-    return ControllerUtils.getNameFor(reconciler);
+    return ReconcilerUtils.getNameFor(reconciler);
   }
 
   @Override
   public String getFinalizer() {
     if (annotation == null || annotation.finalizerName().isBlank()) {
-      return ControllerUtils.getDefaultFinalizerName(getResourceTypeName());
+      return ReconcilerUtils.getDefaultFinalizerName(getResourceTypeName());
     } else {
       return annotation.finalizerName();
     }

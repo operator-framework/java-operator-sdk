@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -18,7 +18,7 @@ public class SubResourceTestCustomReconciler
     implements Reconciler<SubResourceTestCustomResource>, TestExecutionInfoProvider {
 
   public static final String FINALIZER_NAME =
-      ControllerUtils.getDefaultFinalizerName(
+      ReconcilerUtils.getDefaultFinalizerName(
           CustomResource.getCRDName(SubResourceTestCustomResource.class));
   private static final Logger log =
       LoggerFactory.getLogger(SubResourceTestCustomReconciler.class);

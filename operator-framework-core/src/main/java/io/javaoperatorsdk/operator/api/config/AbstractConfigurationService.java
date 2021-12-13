@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
@@ -40,45 +40,44 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   protected <R extends HasMetadata> void throwExceptionOnNameCollision(
-      String newControllerClassName, ControllerConfiguration<R> existing) {
+      String newReconcilerClassName, ControllerConfiguration<R> existing) {
     throw new IllegalArgumentException(
-        "Controller name '"
+        "Reconciler name '"
             + existing.getName()
             + "' is used by both "
             + existing.getAssociatedReconcilerClassName()
             + " and "
-            + newControllerClassName);
+            + newReconcilerClassName);
   }
 
   @Override
   public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
-      Reconciler<R> controller) {
-    final var key = keyFor(controller);
+      Reconciler<R> reconciler) {
+    final var key = keyFor(reconciler);
     final var configuration = configurations.get(key);
     if (configuration == null) {
-      logMissingControllerWarning(key, getControllersNameMessage());
+      logMissingReconcilerWarning(key, getReconcilersNameMessage());
     }
     return configuration;
   }
 
-  protected void logMissingControllerWarning(String controllerKey,
-      String controllersNameMessage) {
+  protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
     System.out
-        .println("Cannot find controller named '" + controllerKey + "'. " + controllersNameMessage);
+        .println("Cannot find reconciler named '" + reconcilerKey + "'. " + reconcilersNameMessage);
   }
 
-  private String getControllersNameMessage() {
-    return "Known controllers: "
-        + getKnownControllerNames().stream().reduce((s, s2) -> s + ", " + s2).orElse("None")
+  private String getReconcilersNameMessage() {
+    return "Known reconcilers: "
+        + getKnownReconcilerNames().stream().reduce((s, s2) -> s + ", " + s2).orElse("None")
         + ".";
   }
 
-  protected <R extends HasMetadata> String keyFor(Reconciler<R> controller) {
-    return ControllerUtils.getNameFor(controller);
+  protected <R extends HasMetadata> String keyFor(Reconciler<R> reconciler) {
+    return ReconcilerUtils.getNameFor(reconciler);
   }
 
-  protected ControllerConfiguration getFor(String controllerName) {
-    return configurations.get(controllerName);
+  protected ControllerConfiguration getFor(String reconcilerName) {
+    return configurations.get(reconcilerName);
   }
 
   protected Stream<ControllerConfiguration> controllerConfigurations() {
@@ -86,7 +85,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   @Override
-  public Set<String> getKnownControllerNames() {
+  public Set<String> getKnownReconcilerNames() {
     return configurations.keySet();
   }
 

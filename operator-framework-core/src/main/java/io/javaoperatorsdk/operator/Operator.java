@@ -107,11 +107,11 @@ public class Operator implements AutoCloseable, LifecycleAware {
   }
 
   /**
-   * Add a registration requests for the specified controller with this operator. The effective
-   * registration of the controller is delayed till the operator is started.
+   * Add a registration requests for the specified reconciler with this operator. The effective
+   * registration of the reconciler is delayed till the operator is started.
    *
-   * @param reconciler the controller to register
-   * @param <R> the {@code CustomResource} type associated with the controller
+   * @param reconciler the reconciler to register
+   * @param <R> the {@code CustomResource} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler)
@@ -121,15 +121,15 @@ public class Operator implements AutoCloseable, LifecycleAware {
   }
 
   /**
-   * Add a registration requests for the specified controller with this operator, overriding its
+   * Add a registration requests for the specified reconciler with this operator, overriding its
    * default configuration by the specified one (usually created via
    * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
-   * passing it the controller's original configuration. The effective registration of the
-   * controller is delayed till the operator is started.
+   * passing it the reconciler's original configuration. The effective registration of the
+   * reconciler is delayed till the operator is started.
    *
-   * @param reconciler part of the controller to register
-   * @param configuration the configuration with which we want to register the controller
-   * @param <R> the {@code CustomResource} type associated with the controller
+   * @param reconciler part of the reconciler to register
+   * @param configuration the configuration with which we want to register the reconciler
+   * @param <R> the {@code CustomResource} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler,
@@ -138,10 +138,10 @@ public class Operator implements AutoCloseable, LifecycleAware {
 
     if (configuration == null) {
       throw new OperatorException(
-          "Cannot register controller with name " + reconciler.getClass().getCanonicalName() +
-              " controller named " + ControllerUtils.getNameFor(reconciler)
+          "Cannot register reconciler with name " + reconciler.getClass().getCanonicalName() +
+              " reconciler named " + ReconcilerUtils.getNameFor(reconciler)
               + " because its configuration cannot be found.\n" +
-              " Known controllers are: " + configurationService.getKnownControllerNames());
+              " Known reconcilers are: " + configurationService.getKnownReconcilerNames());
     }
 
     final var controller = new Controller<>(reconciler, configuration, kubernetesClient);
@@ -152,7 +152,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
         : configuration.getEffectiveNamespaces();
 
     log.info(
-        "Registered Controller: '{}' for CRD: '{}' for namespace(s): {}",
+        "Registered reconciler: '{}' for resource: '{}' for namespace(s): {}",
         configuration.getName(),
         configuration.getResourceClass(),
         watchedNS);
@@ -191,14 +191,14 @@ public class Operator implements AutoCloseable, LifecycleAware {
 
     public synchronized void add(Controller controller) {
       final var configuration = controller.getConfiguration();
-      final var crdName = configuration.getResourceTypeName();
-      final var existing = controllers.get(crdName);
+      final var resourceTypeName = configuration.getResourceTypeName();
+      final var existing = controllers.get(resourceTypeName);
       if (existing != null) {
         throw new OperatorException("Cannot register controller '" + configuration.getName()
             + "': another controller named '" + existing.getConfiguration().getName()
-            + "' is already registered for CRD '" + crdName + "'");
+            + "' is already registered for resource '" + resourceTypeName + "'");
       }
-      this.controllers.put(crdName, controller);
+      this.controllers.put(resourceTypeName, controller);
       if (started) {
         controller.start();
       }

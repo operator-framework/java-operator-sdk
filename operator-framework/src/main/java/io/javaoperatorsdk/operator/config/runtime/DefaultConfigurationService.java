@@ -33,12 +33,12 @@ public class DefaultConfigurationService extends BaseConfigurationService {
         config = new AnnotationConfiguration<>(reconciler);
         register(config);
         getLogger().info(
-            "Created configuration for controller {} with name {}",
+            "Created configuration for reconciler {} with name {}",
             reconciler.getClass().getName(),
             config.getName());
       }
     } else {
-      // check that we don't have a controller name collision
+      // check that we don't have a reconciler name collision
       final var newControllerClassName = reconciler.getClass().getCanonicalName();
       if (!config.getAssociatedReconcilerClassName().equals(newControllerClassName)) {
         throwExceptionOnNameCollision(newControllerClassName, config);
