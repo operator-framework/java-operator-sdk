@@ -17,7 +17,7 @@ jobs:
       matrix:
         java: [ 11, 17 ]
         distribution: [ temurin ]
-        kubernetes: [ 'v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.4', 'v1.22.1' ]
+        kubernetes: [ 'v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.4', 'v1.22.1', 'v1.23.0' ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Java and Maven
@@ -31,7 +31,7 @@ jobs:
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.4.3
         with:
-          minikube version: 'v1.22.0'
+          minikube version: 'v1.24.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
       - name: Run integration tests
