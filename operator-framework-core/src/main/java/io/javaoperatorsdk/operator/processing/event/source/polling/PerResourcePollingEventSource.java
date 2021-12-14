@@ -119,7 +119,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
         @Override
         public void run() {
           if (!isRunning()) {
-            log.debug("Event source not start yet. Will not run for: {}", resourceID);
+            log.debug("Event source not yet started. Will not run for: {}", resourceID);
             return;
           }
           // always use up-to-date resource from cache

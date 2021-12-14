@@ -42,7 +42,7 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
       @Override
       public void run() {
         if (!isRunning()) {
-          log.debug("Event source not start yet. Will not run.");
+          log.debug("Event source not yet started. Will not run.");
           return;
         }
         getStateAndFillCache();
