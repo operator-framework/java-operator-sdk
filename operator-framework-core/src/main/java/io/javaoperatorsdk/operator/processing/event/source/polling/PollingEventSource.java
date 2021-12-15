@@ -9,11 +9,12 @@ import javax.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
-public class PollingEventSource<T> extends CachingEventSource<T> {
+public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSource<T, P> {
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
@@ -22,8 +23,8 @@ public class PollingEventSource<T> extends CachingEventSource<T> {
   private final long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, Cache<ResourceID, T> cache) {
-    super(cache);
+      long period, Cache<ResourceID, T> cache, Class<P> resourceClass) {
+    super(cache, resourceClass);
     this.supplierToPoll = supplier;
     this.period = period;
   }

@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
 @FunctionalInterface
 public interface Fetcher<R extends HasMetadata> {

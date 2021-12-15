@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCa
  * @param <R> related custom resource
  */
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
-    extends CachingEventSource<T>
+    extends CachingEventSource<T, R>
     implements ResourceEventAware<R> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
@@ -44,14 +44,15 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   private final long period;
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache) {
-    this(resourceSupplier, resourceCache, period, cache, null);
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
+      Class<R> resourceClass) {
+    this(resourceSupplier, resourceCache, period, cache, null, resourceClass);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
       ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
-      Predicate<R> registerPredicate) {
-    super(cache);
+      Predicate<R> registerPredicate, Class<R> resourceClass) {
+    super(cache, resourceClass);
     this.resourceSupplier = resourceSupplier;
     this.resourceCache = resourceCache;
     this.period = period;

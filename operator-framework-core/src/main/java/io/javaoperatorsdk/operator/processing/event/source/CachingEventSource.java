@@ -7,6 +7,7 @@ import javax.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -23,13 +24,15 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  *
  * @param <T> represents the type of resources (usually external non-kubernetes ones) being handled.
  */
-public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
+public abstract class CachingEventSource<T, P extends HasMetadata>
+    extends LifecycleAwareEventSource<P> {
 
   private static final Logger log = LoggerFactory.getLogger(CachingEventSource.class);
 
   protected Cache<ResourceID, T> cache;
 
-  public CachingEventSource(Cache<ResourceID, T> cache) {
+  public CachingEventSource(Cache<ResourceID, T> cache, Class<P> resourceClass) {
+    super(resourceClass);
     this.cache = cache;
   }
 
@@ -41,7 +44,7 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     cache.remove(relatedResourceID);
     // we only propagate event if the resource was previously in cache
     if (cachedValue != null) {
-      eventHandler.handleEvent(new Event(relatedResourceID));
+      getEventHandler().handleEvent(new Event(relatedResourceID));
     }
   }
 
@@ -52,7 +55,7 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     var cachedValue = cache.get(relatedResourceID);
     if (cachedValue == null || !cachedValue.equals(value)) {
       cache.put(relatedResourceID, value);
-      eventHandler.handleEvent(new Event(relatedResourceID));
+      getEventHandler().handleEvent(new Event(relatedResourceID));
     }
   }
 

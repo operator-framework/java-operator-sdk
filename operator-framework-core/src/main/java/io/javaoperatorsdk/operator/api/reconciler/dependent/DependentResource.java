@@ -4,8 +4,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DefaultDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
 public class DependentResource<R extends HasMetadata, P extends HasMetadata>
     implements Builder<R, P>, Updater<R, P> {

@@ -17,6 +17,10 @@ import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -61,7 +65,7 @@ public abstract class AbstractResourceEventSource<T extends HasMetadata, U exten
       FilterWatchListDeletable<T, KubernetesResourceList<T>> filteredBySelectorClient,
       Cloner cloner);
 
-  void eventReceived(ResourceAction action, T resource, T oldResource) {
+  protected void eventReceived(ResourceAction action, T resource, T oldResource) {
     log.debug("Event received for resource: {}", getName(resource));
     if (filter.acceptChange(configuration, oldResource, resource)) {
       getEventHandler().handleEvent(new ResourceEvent(action, ResourceID.fromResource(resource)));

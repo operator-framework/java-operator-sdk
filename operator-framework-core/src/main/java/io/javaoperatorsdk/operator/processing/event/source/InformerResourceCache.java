@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
 public class InformerResourceCache<T extends HasMetadata> implements ResourceCache<T> {
 

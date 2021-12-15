@@ -5,9 +5,9 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends
     ResourceConfiguration<R, ControllerConfiguration<R>> {

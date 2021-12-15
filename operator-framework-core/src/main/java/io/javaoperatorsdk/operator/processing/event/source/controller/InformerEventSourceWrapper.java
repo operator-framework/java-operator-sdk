@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceWrapper;
+import io.javaoperatorsdk.operator.processing.event.source.InformerResourceCache;
 
 class InformerEventSourceWrapper<T extends HasMetadata> implements EventSourceWrapper<T> {
 

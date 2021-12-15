@@ -10,7 +10,8 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 
 /**
  * This is a special case since is not bound to a single custom resource

@@ -5,6 +5,8 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryIdentifier;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
 
 public class Mappers {
 

@@ -4,8 +4,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryRetriever;
-import io.javaoperatorsdk.operator.processing.event.source.Mappers;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 import static io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfiguration.CREATABLE_DEFAULT;
 import static io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfiguration.OWNED_DEFAULT;

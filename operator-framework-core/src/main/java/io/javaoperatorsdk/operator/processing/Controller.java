@@ -33,7 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEvent
 import io.javaoperatorsdk.operator.processing.event.source.DependentResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceWrapper;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {

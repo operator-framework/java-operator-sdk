@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
@@ -49,7 +50,8 @@ public class MySQLSchemaReconciler
   }
 
   @Override
-  public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry) {
+  public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry,
+      Cloner cloner) {
     CachingProvider cachingProvider = new CaffeineCachingProvider();
     CacheManager cacheManager = cachingProvider.getCacheManager();
     Cache<ResourceID, Schema> schemaCache =
@@ -58,7 +60,7 @@ public class MySQLSchemaReconciler
     perResourcePollingEventSource =
         new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
             eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD,
-            schemaCache);
+            schemaCache, MySQLSchema.class);
 
     eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
   }
@@ -169,6 +171,4 @@ public class MySQLSchemaReconciler
         .inNamespace(schema.getMetadata().getNamespace())
         .create(credentialsSecret);
   }
-
-
 }

@@ -7,8 +7,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 

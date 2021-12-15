@@ -11,6 +11,8 @@ import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 public class DependentResourceEventSource<T extends HasMetadata, P extends HasMetadata>
     extends InformerEventSource<T, P>

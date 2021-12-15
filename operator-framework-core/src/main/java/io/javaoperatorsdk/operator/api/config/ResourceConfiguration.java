@@ -6,8 +6,8 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
 public interface ResourceConfiguration<R extends HasMetadata, T extends ResourceConfiguration<R, T>> {
 

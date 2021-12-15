@@ -13,6 +13,10 @@ import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.InformerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
 public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSource<P> {
