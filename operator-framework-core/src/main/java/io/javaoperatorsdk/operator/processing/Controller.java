@@ -212,6 +212,10 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     return false;
   }
 
+  public EventSourceManager<R> getEventSourceManager() {
+    return eventSourceManager;
+  }
+
   public void stop() {
     if (eventSourceManager != null) {
       eventSourceManager.stop();

@@ -70,6 +70,8 @@
         <formatter-maven-plugin.version>2.17.1</formatter-maven-plugin.version>
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.6.2</impsort-maven-plugin.version>
+        <jcache.version>1.1.1</jcache.version>
+        <caffein.version>3.0.4</caffein.version>
     </properties>
 
     <modules>
@@ -167,6 +169,21 @@
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>operator-framework</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.cache</groupId>
+                <artifactId>cache-api</artifactId>
+                <version>${jcache.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffein.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>jcache</artifactId>
+                <version>${caffein.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

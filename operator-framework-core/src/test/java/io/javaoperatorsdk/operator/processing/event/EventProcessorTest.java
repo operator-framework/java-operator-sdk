@@ -12,12 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.*;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
-import static io.javaoperatorsdk.operator.processing.event.source.ResourceAction.DELETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
@@ -203,31 +206,6 @@ class EventProcessorTest {
     eventProcessor.handleEvent(prepareCREvent());
 
     verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
-  }
-
-  @Test
-  public void cleansUpWhenDeleteEventReceivedAndNoEventPresent() {
-    Event deleteEvent =
-        new ResourceEvent(DELETED, prepareCREvent().getRelatedCustomResourceID());
-
-    eventProcessor.handleEvent(deleteEvent);
-
-    verify(eventSourceManagerMock, times(1))
-        .cleanupForCustomResource(eq(deleteEvent.getRelatedCustomResourceID()));
-  }
-
-  @Test
-  public void cleansUpAfterExecutionIfOnlyDeleteEventMarkLeft() {
-    var cr = testCustomResource();
-    var crEvent = prepareCREvent(ResourceID.fromResource(cr));
-    eventProcessor.getEventMarker().markDeleteEventReceived(crEvent.getRelatedCustomResourceID());
-    var executionScope = new ExecutionScope(cr, null);
-
-    eventProcessor.eventProcessingFinished(executionScope,
-        PostExecutionControl.defaultDispatch());
-
-    verify(eventSourceManagerMock, times(1))
-        .cleanupForCustomResource(eq(crEvent.getRelatedCustomResourceID()));
   }
 
   @Test

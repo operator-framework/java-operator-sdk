@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Collections;
 import java.util.Map;
@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -75,30 +76,20 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-        final var filteredBySelectorClient = client.inAnyNamespace()
-            .withLabelSelector(labelSelector);
         final var informer =
-            createAndRunInformerFor(filteredBySelectorClient, ANY_NAMESPACE_MAP_KEY);
+            createAndRunInformerFor(client.inAnyNamespace()
+                .withLabelSelector(labelSelector), ANY_NAMESPACE_MAP_KEY);
         log.debug("Registered {} -> {} for any namespace", controller, informer);
       } else {
-        targetNamespaces.forEach(
-            ns -> {
-              final var informer = createAndRunInformerFor(
-                  client.inNamespace(ns).withLabelSelector(labelSelector), ns);
-              log.debug("Registered {} -> {} for namespace: {}", controller, informer,
-                  ns);
-            });
+        targetNamespaces.forEach(ns -> {
+          final var informer = createAndRunInformerFor(
+              client.inNamespace(ns).withLabelSelector(labelSelector), ns);
+          log.debug("Registered {} -> {} for namespace: {}", controller, informer, ns);
+        });
       }
     } catch (Exception e) {
       if (e instanceof KubernetesClientException) {
-        KubernetesClientException ke = (KubernetesClientException) e;
-        if (404 == ke.getCode()) {
-          // only throw MissingCRDException if the 404 error occurs on the target CRD
-          final var targetCRDName = controller.getConfiguration().getResourceTypeName();
-          if (targetCRDName.equals(ke.getFullResourceName())) {
-            throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
-          }
-        }
+        handleKubernetesClientException(e);
       }
       throw e;
     }
@@ -130,6 +121,8 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
       log.debug(
           "Event received for resource: {}", getName(customResource));
       MDCUtils.addResourceInfo(customResource);
+      controller.getEventSourceManager().broadcastOnResourceEvent(action, customResource,
+          oldResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
         eventHandler.handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(customResource)));
@@ -188,6 +181,18 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   public void whitelistNextEvent(ResourceID resourceID) {
     if (onceWhitelistEventFilterEventFilter != null) {
       onceWhitelistEventFilterEventFilter.whitelistNextEvent(resourceID);
+    }
+  }
+
+
+  private void handleKubernetesClientException(Exception e) {
+    KubernetesClientException ke = (KubernetesClientException) e;
+    if (404 == ke.getCode()) {
+      // only throw MissingCRDException if the 404 error occurs on the target CRD
+      final var targetCRDName = controller.getConfiguration().getResourceTypeName();
+      if (targetCRDName.equals(ke.getFullResourceName())) {
+        throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
+      }
     }
   }
 

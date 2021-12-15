@@ -5,8 +5,6 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,18 +54,5 @@ class EventSourceManagerTest {
 
     verify(eventSource, times(1)).start();
     verify(eventSource2, times(1)).start();
-  }
-
-  @Test
-  public void deRegistersEventSources() {
-    CustomResource customResource = TestUtils.testCustomResource();
-    EventSource eventSource = mock(EventSource.class);
-    eventSourceManager.registerEventSource(eventSource);
-
-    eventSourceManager
-        .cleanupForCustomResource(ResourceID.fromResource(customResource));
-
-    verify(eventSource, times(1))
-        .cleanupForResource(eq(ResourceID.fromResource(customResource)));
   }
 }

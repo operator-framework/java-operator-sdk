@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,9 +15,11 @@ import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -31,8 +33,9 @@ class ControllerResourceEventSourceTest {
       mock(MixedOperation.class);
   EventHandler eventHandler = mock(EventHandler.class);
 
+  private TestController testController = new TestController(true);
   private ControllerResourceEventSource<TestCustomResource> controllerResourceEventSource =
-      new ControllerResourceEventSource<>(new TestController(true));
+      new ControllerResourceEventSource<>(testController);
 
   @BeforeEach
   public void setup() {
@@ -136,10 +139,30 @@ class ControllerResourceEventSourceTest {
     verify(eventHandler, times(0)).handleEvent(any());
   }
 
+  @Test
+  public void callsBroadcastsOnResourceEvents() {
+    TestCustomResource customResource1 = TestUtils.testCustomResource();
+
+    controllerResourceEventSource.eventReceived(ResourceAction.UPDATED, customResource1,
+        customResource1);
+
+    verify(testController.getEventSourceManager(), times(1))
+        .broadcastOnResourceEvent(eq(ResourceAction.UPDATED), eq(customResource1),
+            eq(customResource1));
+  }
+
   private static class TestController extends Controller<TestCustomResource> {
+
+    private EventSourceManager<TestCustomResource> eventSourceManager =
+        mock(EventSourceManager.class);
 
     public TestController(boolean generationAware) {
       super(null, new TestConfiguration(generationAware), null);
+    }
+
+    @Override
+    public EventSourceManager<TestCustomResource> getEventSourceManager() {
+      return eventSourceManager;
     }
 
     @Override

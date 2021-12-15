@@ -17,6 +17,10 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -196,6 +200,11 @@ class ResourceEventFilterTest {
     }
 
     @Override
+    public EventSourceManager<TestCustomResource> getEventSourceManager() {
+      return mock(EventSourceManager.class);
+    }
+
+    @Override
     public MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> getCRClient() {
       return mock(MixedOperation.class);
     }
@@ -207,6 +216,11 @@ class ResourceEventFilterTest {
     public ObservedGenController(
         ControllerConfiguration<ObservedGenCustomResource> configuration) {
       super(null, configuration, null);
+    }
+
+    @Override
+    public EventSourceManager<ObservedGenCustomResource> getEventSourceManager() {
+      return mock(EventSourceManager.class);
     }
 
     @Override

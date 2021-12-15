@@ -2,32 +2,46 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Base64;
+import java.util.Optional;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.spi.CachingProvider;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import io.javaoperatorsdk.operator.sample.schema.Schema;
+import io.javaoperatorsdk.operator.sample.schema.SchemaService;
+
+import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
 
 import static java.lang.String.format;
 
 @ControllerConfiguration
-public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
-  static final String USERNAME_FORMAT = "%s-user";
-  static final String SECRET_FORMAT = "%s-secret";
-
+public class MySQLSchemaReconciler
+    implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
+    EventSourceInitializer<MySQLSchema> {
+  public static final String SECRET_FORMAT = "%s-secret";
+  public static final String USERNAME_FORMAT = "%s-user";
+  public static final int POLL_PERIOD = 500;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final KubernetesClient kubernetesClient;
   private final MySQLDbConfig mysqlDbConfig;
+  PerResourcePollingEventSource<Schema, MySQLSchema> perResourcePollingEventSource;
 
   public MySQLSchemaReconciler(KubernetesClient kubernetesClient, MySQLDbConfig mysqlDbConfig) {
     this.kubernetesClient = kubernetesClient;
@@ -35,95 +49,55 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
   }
 
   @Override
+  public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry) {
+    CachingProvider cachingProvider = new CaffeineCachingProvider();
+    CacheManager cacheManager = cachingProvider.getCacheManager();
+    Cache<ResourceID, Schema> schemaCache =
+        cacheManager.createCache("schema-cache", new MutableConfiguration<>());
+
+    perResourcePollingEventSource =
+        new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
+            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD,
+            schemaCache);
+
+    eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
+  }
+
+  @Override
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema,
       Context context) {
+    var dbSchema = perResourcePollingEventSource
+        .getValueFromCacheOrSupplier(ResourceID.fromResource(schema));
     try (Connection connection = getConnection()) {
-      if (!schemaExists(connection, schema.getMetadata().getName())) {
-        try (Statement statement = connection.createStatement()) {
-          statement.execute(
-              format(
-                  "CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
-                  schema.getMetadata().getName(), schema.getSpec().getEncoding()));
-        }
-
+      if (!dbSchema.isPresent()) {
+        var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
-        String userName = String.format(USERNAME_FORMAT, schema.getMetadata().getName());
-        String secretName = String.format(SECRET_FORMAT, schema.getMetadata().getName());
-        try (Statement statement = connection.createStatement()) {
-          statement.execute(format("CREATE USER '%1$s' IDENTIFIED BY '%2$s'", userName, password));
-        }
-        try (Statement statement = connection.createStatement()) {
-          statement.execute(
-              format("GRANT ALL ON `%1$s`.* TO '%2$s'", schema.getMetadata().getName(), userName));
-        }
-        Secret credentialsSecret =
-            new SecretBuilder()
-                .withNewMetadata()
-                .withName(secretName)
-                .endMetadata()
-                .addToData(
-                    "MYSQL_USERNAME", Base64.getEncoder().encodeToString(userName.getBytes()))
-                .addToData(
-                    "MYSQL_PASSWORD", Base64.getEncoder().encodeToString(password.getBytes()))
-                .build();
-        this.kubernetesClient
-            .secrets()
-            .inNamespace(schema.getMetadata().getNamespace())
-            .create(credentialsSecret);
+        String secretName = String.format(SECRET_FORMAT, schemaName);
+        String userName = String.format(USERNAME_FORMAT, schemaName);
 
-        SchemaStatus status = new SchemaStatus();
-        status.setUrl(
-            format(
-                "jdbc:mysql://%1$s/%2$s",
-                System.getenv("MYSQL_HOST"), schema.getMetadata().getName()));
-        status.setUserName(userName);
-        status.setSecretName(secretName);
-        status.setStatus("CREATED");
-        schema.setStatus(status);
+        SchemaService.createSchemaAndRelatedUser(connection, schemaName,
+            schema.getSpec().getEncoding(), userName, password);
+        createSecret(schema, password, secretName, userName);
+        updateStatusPojo(schema, secretName, userName);
         log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
-
         return UpdateControl.updateStatus(schema);
       }
       return UpdateControl.noUpdate();
     } catch (SQLException e) {
       log.error("Error while creating Schema", e);
-
-      SchemaStatus status = new SchemaStatus();
-      status.setUrl(null);
-      status.setUserName(null);
-      status.setSecretName(null);
-      status.setStatus("ERROR: " + e.getMessage());
-      schema.setStatus(status);
-
-      return UpdateControl.updateStatus(schema);
+      throw new IllegalStateException(e);
     }
   }
 
   @Override
   public DeleteControl cleanup(MySQLSchema schema, Context context) {
     log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
-
     try (Connection connection = getConnection()) {
-      if (schemaExists(connection, schema.getMetadata().getName())) {
-        try (Statement statement = connection.createStatement()) {
-          statement.execute(format("DROP DATABASE `%1$s`", schema.getMetadata().getName()));
-        }
-        log.info("Deleted Schema '{}'", schema.getMetadata().getName());
-
-        if (schema.getStatus() != null) {
-          if (userExists(connection, schema.getStatus().getUserName())) {
-            try (Statement statement = connection.createStatement()) {
-              statement.execute(format("DROP USER '%1$s'", schema.getStatus().getUserName()));
-            }
-            log.info("Deleted User '{}'", schema.getStatus().getUserName());
-          }
-        }
-
-        this.kubernetesClient
-            .secrets()
-            .inNamespace(schema.getMetadata().getNamespace())
-            .withName(schema.getStatus().getSecretName())
-            .delete();
+      var dbSchema = SchemaService.getSchema(connection, schema.getMetadata().getName());
+      if (dbSchema.isPresent()) {
+        var userName = schema.getStatus() != null ? schema.getStatus().getUserName() : null;
+        SchemaService.deleteSchemaAndRelatedUser(connection, schema.getMetadata().getName(),
+            userName);
       } else {
         log.info(
             "Delete event ignored for schema '{}', real schema doesn't exist",
@@ -136,33 +110,65 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
     }
   }
 
+  @Override
+  public Optional<MySQLSchema> updateErrorStatus(MySQLSchema schema, RetryInfo retryInfo,
+      RuntimeException e) {
+    SchemaStatus status = new SchemaStatus();
+    status.setUrl(null);
+    status.setUserName(null);
+    status.setSecretName(null);
+    status.setStatus("ERROR: " + e.getMessage());
+    schema.setStatus(status);
+    return Optional.empty();
+  }
+
   private Connection getConnection() throws SQLException {
     String connectionString =
         format("jdbc:mysql://%1$s:%2$s", mysqlDbConfig.getHost(), mysqlDbConfig.getPort());
 
-    log.info("Connecting to '{}' with user '{}'", connectionString, mysqlDbConfig.getUser());
+    log.debug("Connecting to '{}' with user '{}'", connectionString, mysqlDbConfig.getUser());
     return DriverManager.getConnection(connectionString, mysqlDbConfig.getUser(),
         mysqlDbConfig.getPassword());
   }
 
-  private boolean schemaExists(Connection connection, String schemaName) throws SQLException {
-    try (PreparedStatement ps =
-        connection.prepareStatement(
-            "SELECT schema_name FROM information_schema.schemata WHERE schema_name = ?")) {
-      ps.setString(1, schemaName);
-      try (ResultSet resultSet = ps.executeQuery()) {
-        return resultSet.next();
-      }
-    }
+  private void updateStatusPojo(MySQLSchema schema, String secretName, String userName) {
+    SchemaStatus status = new SchemaStatus();
+    status.setUrl(
+        format(
+            "jdbc:mysql://%1$s/%2$s",
+            System.getenv("MYSQL_HOST"), schema.getMetadata().getName()));
+    status.setUserName(userName);
+    status.setSecretName(secretName);
+    status.setStatus("CREATED");
+    schema.setStatus(status);
   }
 
-  private boolean userExists(Connection connection, String userName) throws SQLException {
-    try (PreparedStatement ps =
-        connection.prepareStatement("SELECT User FROM mysql.user WHERE User = ?")) {
-      ps.setString(1, userName);
-      try (ResultSet resultSet = ps.executeQuery()) {
-        return resultSet.first();
-      }
+  private void createSecret(MySQLSchema schema, String password, String secretName,
+      String userName) {
+
+    var currentSecret = kubernetesClient.secrets().inNamespace(schema.getMetadata().getNamespace())
+        .withName(secretName).get();
+    if (currentSecret != null) {
+      return;
     }
+    Secret credentialsSecret =
+        new SecretBuilder()
+            .withNewMetadata()
+            .withName(secretName)
+            .withOwnerReferences(new OwnerReference("mysql.sample.javaoperatorsdk/v1",
+                false, false, "MySQLSchema",
+                schema.getMetadata().getName(), schema.getMetadata().getUid()))
+            .endMetadata()
+            .addToData(
+                "MYSQL_USERNAME", Base64.getEncoder().encodeToString(userName.getBytes()))
+            .addToData(
+                "MYSQL_PASSWORD", Base64.getEncoder().encodeToString(password.getBytes()))
+            .build();
+    this.kubernetesClient
+        .secrets()
+        .inNamespace(schema.getMetadata().getNamespace())
+        .create(credentialsSecret);
   }
+
+
 }
