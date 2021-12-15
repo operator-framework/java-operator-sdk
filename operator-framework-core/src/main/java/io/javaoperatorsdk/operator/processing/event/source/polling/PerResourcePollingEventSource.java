@@ -15,8 +15,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CachingFilteringEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
@@ -26,13 +25,13 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCa
  * if there is no registerPredicate provided. If register predicate provided it is evaluated on
  * resource create and/or update to register polling for the event source.
  * <p>
- * For other behavior see {@link CachingFilteringEventSource}
+ * For other behavior see {@link CachingEventSource}
  *
  * @param <T> the resource polled by the event source
  * @param <R> related custom resource
  */
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
-    extends CachingFilteringEventSource<T>
+    extends CachingEventSource<T>
     implements ResourceEventAware<R> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
@@ -45,26 +44,14 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   private final long period;
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
-      EventFilter<T> eventFilter) {
-    this(resourceSupplier, resourceCache, period, cache, eventFilter, null);
+      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache) {
+    this(resourceSupplier, resourceCache, period, cache, null);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
       ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
       Predicate<R> registerPredicate) {
-    this(resourceSupplier, resourceCache, period, cache, null, registerPredicate);
-  }
-
-  public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache) {
-    this(resourceSupplier, resourceCache, period, cache, null, null);
-  }
-
-  public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
-      EventFilter<T> eventFilter, Predicate<R> registerPredicate) {
-    super(cache, eventFilter);
+    super(cache);
     this.resourceSupplier = resourceSupplier;
     this.resourceCache = resourceCache;
     this.period = period;
@@ -135,8 +122,8 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
    *
    * @param resourceID of the target related resource
    * @return the cached value of the resource, if not present it gets the resource from the
-   *         supplier. If the supplier provides a value it is cached, so there will be no new event
-   *         related for the new event.
+   *         supplier. The value provided from the supplier is cached, but no new event is
+   *         propagated.
    */
   public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
     var cachedValue = getCachedValue(resourceID);

@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import javax.cache.Cache;
@@ -12,10 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CachingFilteringEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
-public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
+public class PollingEventSource<T> extends CachingEventSource<T> {
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
@@ -25,12 +23,7 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
       long period, Cache<ResourceID, T> cache) {
-    this(supplier, period, null, cache);
-  }
-
-  public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, EventFilter<T> eventFilter, Cache<ResourceID, T> cache) {
-    super(cache, eventFilter);
+    super(cache);
     this.supplierToPoll = supplier;
     this.period = period;
   }
@@ -53,10 +46,9 @@ public class PollingEventSource<T> extends CachingFilteringEventSource<T> {
   protected void getStateAndFillCache() {
     var values = supplierToPoll.get();
     values.forEach((k, v) -> super.handleEvent(v, k));
-    var keysToRemove = StreamSupport.stream(cache.spliterator(), false)
+    StreamSupport.stream(cache.spliterator(), false)
         .filter(e -> !values.containsKey(e.getKey())).map(Cache.Entry::getKey)
-        .collect(Collectors.toList());
-    keysToRemove.forEach(super::handleDelete);
+        .forEach(super::handleDelete);
   }
 
   @Override

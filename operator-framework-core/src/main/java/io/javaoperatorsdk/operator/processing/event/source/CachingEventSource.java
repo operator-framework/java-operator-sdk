@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
- * Base class for event sources with filtering and caching capabilities.
+ * Base class for event sources with caching capabilities.
  * <p>
  * {@link #handleDelete(ResourceID)} - if the related resource is present in the cache it is removed
  * and event propagated. There is no event propagated if the resource is not in the cache.
@@ -23,43 +23,36 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  *
  * @param <T> represents the type of resources (usually external non-kubernetes ones) being handled.
  */
-public abstract class CachingFilteringEventSource<T> extends LifecycleAwareEventSource {
+public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
 
-  private static final Logger log = LoggerFactory.getLogger(CachingFilteringEventSource.class);
+  private static final Logger log = LoggerFactory.getLogger(CachingEventSource.class);
 
   protected Cache<ResourceID, T> cache;
-  protected EventFilter<T> eventFilter;
 
-  public CachingFilteringEventSource(Cache<ResourceID, T> cache, EventFilter<T> eventFilter) {
+  public CachingEventSource(Cache<ResourceID, T> cache) {
     this.cache = cache;
-    this.eventFilter = eventFilter;
   }
 
   protected void handleDelete(ResourceID relatedResourceID) {
     if (!isRunning()) {
-      log.debug("Received event but event for {} source is not running", relatedResourceID);
       return;
     }
     var cachedValue = cache.get(relatedResourceID);
     cache.remove(relatedResourceID);
     // we only propagate event if the resource was previously in cache
-    if (cachedValue != null
-        && (eventFilter == null || eventFilter.acceptDelete(cachedValue, relatedResourceID))) {
+    if (cachedValue != null) {
       eventHandler.handleEvent(new Event(relatedResourceID));
     }
   }
 
   protected void handleEvent(T value, ResourceID relatedResourceID) {
     if (!isRunning()) {
-      log.debug("Received event but event for {} source is not running", relatedResourceID);
       return;
     }
     var cachedValue = cache.get(relatedResourceID);
     if (cachedValue == null || !cachedValue.equals(value)) {
       cache.put(relatedResourceID, value);
-      if (eventFilter == null || eventFilter.accept(value, cachedValue, relatedResourceID)) {
-        eventHandler.handleEvent(new Event(relatedResourceID));
-      }
+      eventHandler.handleEvent(new Event(relatedResourceID));
     }
   }
 

@@ -3,17 +3,12 @@ package io.javaoperatorsdk.operator.processing.event.source.inbound;
 import javax.cache.Cache;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CachingFilteringEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
-public class CachingInboundEventSource<T> extends CachingFilteringEventSource<T> {
+public class CachingInboundEventSource<T> extends CachingEventSource<T> {
 
   public CachingInboundEventSource(Cache<ResourceID, T> cache) {
-    this(cache, null);
-  }
-
-  public CachingInboundEventSource(Cache<ResourceID, T> cache, EventFilter<T> eventFilter) {
-    super(cache, eventFilter);
+    super(cache);
   }
 
   public void handleResourceEvent(T resource, ResourceID relatedResourceID) {
