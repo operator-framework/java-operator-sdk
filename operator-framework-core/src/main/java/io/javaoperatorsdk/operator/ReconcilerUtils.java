@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import java.util.Locale;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -19,7 +20,7 @@ public class ReconcilerUtils {
     final var annotation = reconcilerClass.getAnnotation(ControllerConfiguration.class);
     if (annotation != null) {
       final var name = annotation.name();
-      if (!ControllerConfiguration.EMPTY_STRING.equals(name)) {
+      if (!Constants.EMPTY_STRING.equals(name)) {
         return name;
       }
     }
