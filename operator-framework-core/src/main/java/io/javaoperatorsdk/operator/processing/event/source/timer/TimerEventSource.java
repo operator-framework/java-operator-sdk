@@ -15,7 +15,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
-public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
+public class TimerEventSource<R extends HasMetadata>
+    extends AbstractEventSource<R>
     implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
@@ -73,7 +74,7 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
     public void run() {
       if (running.get()) {
         log.debug("Producing event for custom resource id: {}", customResourceUid);
-        eventHandler.handleEvent(new Event(customResourceUid));
+        getEventHandler().handleEvent(new Event(customResourceUid));
       }
     }
   }

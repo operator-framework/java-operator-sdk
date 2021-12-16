@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -15,16 +16,20 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-class PerResourcePollingEventSourceTest {
+class PerResourcePollingEventSourceTest extends
+    AbstractEventSourceTest<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
   public static final int PERIOD = 80;
-  private PerResourcePollingEventSource<SampleExternalResource, TestCustomResource> pollingEventSource;
   private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource> supplier =
       mock(PerResourcePollingEventSource.ResourceSupplier.class);
   private ResourceCache<TestCustomResource> resourceCache = mock(ResourceCache.class);
-  private EventHandler eventHandler = mock(EventHandler.class);
   private TestCustomResource testCustomResource = TestUtils.testCustomResource();
 
   @BeforeEach
@@ -33,15 +38,13 @@ class PerResourcePollingEventSourceTest {
     when(supplier.getResources(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
-    pollingEventSource =
-        new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD);
-    pollingEventSource.setEventHandler(eventHandler);
+    setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
+        SampleExternalResource.class));
   }
 
   @Test
   public void pollsTheResourceAfterAwareOfIt() throws InterruptedException {
-    pollingEventSource.start();
-    pollingEventSource.onResourceCreated(testCustomResource);
+    source.onResourceCreated(testCustomResource);
 
     Thread.sleep(3 * PERIOD);
     verify(supplier, atLeast(2)).getResources(eq(testCustomResource));
@@ -50,16 +53,15 @@ class PerResourcePollingEventSourceTest {
 
   @Test
   public void registeringTaskOnAPredicate() throws InterruptedException {
-    pollingEventSource = new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
-        testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1);
-    pollingEventSource.setEventHandler(eventHandler);
-    pollingEventSource.start();
-    pollingEventSource.onResourceCreated(testCustomResource);
+    setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
+        testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
+        SampleExternalResource.class));
+    source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
     verify(supplier, times(0)).getResources(eq(testCustomResource));
     testCustomResource.getMetadata().setGeneration(2L);
-    pollingEventSource.onResourceUpdated(testCustomResource, testCustomResource);
+    source.onResourceUpdated(testCustomResource, testCustomResource);
 
     Thread.sleep(2 * PERIOD);
 
@@ -68,8 +70,7 @@ class PerResourcePollingEventSourceTest {
 
   @Test
   public void propagateEventOnDeletedResource() throws InterruptedException {
-    pollingEventSource.start();
-    pollingEventSource.onResourceCreated(testCustomResource);
+    source.onResourceCreated(testCustomResource);
     when(supplier.getResources(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()))
         .thenReturn(Optional.empty());
@@ -81,16 +82,14 @@ class PerResourcePollingEventSourceTest {
 
   @Test
   public void getsValueFromCacheOrSupplier() throws InterruptedException {
-    pollingEventSource.start();
-    pollingEventSource.onResourceCreated(testCustomResource);
+    source.onResourceCreated(testCustomResource);
     when(supplier.getResources(any()))
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
     Thread.sleep(PERIOD / 2);
 
-    var value =
-        pollingEventSource.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
+    var value = source.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
 
     Thread.sleep(PERIOD * 2);
 

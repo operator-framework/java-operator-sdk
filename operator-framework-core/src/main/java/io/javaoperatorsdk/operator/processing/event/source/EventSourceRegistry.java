@@ -4,6 +4,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 
 public interface EventSourceRegistry<T extends HasMetadata> {
@@ -16,11 +17,12 @@ public interface EventSourceRegistry<T extends HasMetadata> {
    *         registered.
    * @throws OperatorException if an error occurred during the registration process
    */
-  void registerEventSource(EventSource eventSource)
+  void registerEventSource(EventSource<T> eventSource)
       throws IllegalStateException, OperatorException;
 
-  Set<EventSource> getRegisteredEventSources();
+  Set<EventSource<T>> getRegisteredEventSources();
 
   ControllerResourceEventSource<T> getControllerResourceEventSource();
 
+  EventHandler getEventHandler();
 }

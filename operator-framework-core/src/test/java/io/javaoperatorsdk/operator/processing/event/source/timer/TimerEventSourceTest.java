@@ -15,84 +15,80 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
+import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourceTest.CapturingEventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-class TimerEventSourceTest {
+class TimerEventSourceTest
+    extends AbstractEventSourceTest<TimerEventSource<TestCustomResource>, CapturingEventHandler> {
 
   public static final int INITIAL_DELAY = 50;
   public static final int PERIOD = 50;
 
-  private TimerEventSource<TestCustomResource> timerEventSource;
-  private CapturingEventHandler eventHandlerMock;
 
   @BeforeEach
   public void setup() {
-    eventHandlerMock = new CapturingEventHandler();
-
-    timerEventSource = new TimerEventSource<>();
-    timerEventSource.setEventHandler(eventHandlerMock);
-    timerEventSource.start();
+    setUpSource(new TimerEventSource<>(), new CapturingEventHandler());
   }
 
   @Test
   public void schedulesOnce() {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    timerEventSource.scheduleOnce(customResource, PERIOD);
+    source.scheduleOnce(customResource, PERIOD);
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).hasSize(1));
-    untilAsserted(PERIOD * 2, 0, () -> assertThat(eventHandlerMock.events).hasSize(1));
+    untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
+    untilAsserted(PERIOD * 2, 0, () -> assertThat(eventHandler.events).hasSize(1));
   }
 
   @Test
   public void canCancelOnce() {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    timerEventSource.scheduleOnce(customResource, PERIOD);
-    timerEventSource.cancelOnceSchedule(ResourceID.fromResource(customResource));
+    source.scheduleOnce(customResource, PERIOD);
+    source.cancelOnceSchedule(ResourceID.fromResource(customResource));
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
+    untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   @Test
   public void canRescheduleOnceEvent() {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    timerEventSource.scheduleOnce(customResource, PERIOD);
-    timerEventSource.scheduleOnce(customResource, 2 * PERIOD);
+    source.scheduleOnce(customResource, PERIOD);
+    source.scheduleOnce(customResource, 2 * PERIOD);
 
-    untilAsserted(PERIOD * 2, PERIOD, () -> assertThat(eventHandlerMock.events).hasSize(1));
+    untilAsserted(PERIOD * 2, PERIOD, () -> assertThat(eventHandler.events).hasSize(1));
   }
 
   @Test
   public void deRegistersOnceEventSources() {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    timerEventSource.scheduleOnce(customResource, PERIOD);
-    timerEventSource
-        .onResourceDeleted(customResource);
+    source.scheduleOnce(customResource, PERIOD);
+    source.onResourceDeleted(customResource);
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
+    untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   @Test
   public void eventNotRegisteredIfStopped() throws IOException {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    timerEventSource.stop();
+    source.stop();
     assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
-        () -> timerEventSource.scheduleOnce(customResource, PERIOD));
+        () -> source.scheduleOnce(customResource, PERIOD));
   }
 
   @Test
   public void eventNotFiredIfStopped() throws IOException {
-    timerEventSource.scheduleOnce(TestUtils.testCustomResource(), PERIOD);
-    timerEventSource.stop();
+    source.scheduleOnce(TestUtils.testCustomResource(), PERIOD);
+    source.stop();
 
-    untilAsserted(() -> assertThat(eventHandlerMock.events).isEmpty());
+    untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   private void untilAsserted(ThrowingRunnable assertion) {
@@ -118,7 +114,7 @@ class TimerEventSourceTest {
     cf.untilAsserted(assertion);
   }
 
-  private static class CapturingEventHandler implements EventHandler {
+  public static class CapturingEventHandler implements EventHandler {
     private final List<Event> events = new CopyOnWriteArrayList<>();
 
     @Override

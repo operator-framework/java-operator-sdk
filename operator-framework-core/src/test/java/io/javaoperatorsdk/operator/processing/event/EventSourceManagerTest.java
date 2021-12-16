@@ -6,6 +6,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.eq;
@@ -15,8 +16,8 @@ import static org.mockito.Mockito.verify;
 
 class EventSourceManagerTest {
 
-  private EventProcessor eventProcessorMock = mock(EventProcessor.class);
-  private EventSourceManager eventSourceManager = new EventSourceManager(eventProcessorMock);
+  private EventSourceManager eventSourceManager =
+      new EventSourceManager(mock(EventProcessor.class));
 
   @Test
   public void registersEventSource() {
@@ -27,13 +28,14 @@ class EventSourceManagerTest {
     Set<EventSource> registeredSources = eventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).contains(eventSource);
 
-    verify(eventSource, times(1)).setEventHandler(eq(eventProcessorMock));
+    verify(eventSource, times(1)).setEventRegistry(eq(eventSourceManager));
   }
 
   @Test
   public void closeShouldCascadeToEventSources() throws IOException {
     EventSource eventSource = mock(EventSource.class);
-    EventSource eventSource2 = mock(EventSource.class);
+    EventSource eventSource2 = mock(TimerEventSource.class);
+
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 
@@ -46,7 +48,7 @@ class EventSourceManagerTest {
   @Test
   public void startCascadesToEventSources() {
     EventSource eventSource = mock(EventSource.class);
-    EventSource eventSource2 = mock(EventSource.class);
+    EventSource eventSource2 = mock(TimerEventSource.class);
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 

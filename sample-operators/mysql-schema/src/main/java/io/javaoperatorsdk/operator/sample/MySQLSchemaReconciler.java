@@ -46,7 +46,8 @@ public class MySQLSchemaReconciler
 
     perResourcePollingEventSource =
         new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
-            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD);
+            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD,
+            Schema.class);
 
     eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
   }

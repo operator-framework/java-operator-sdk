@@ -17,11 +17,13 @@ import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
-public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource
+public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
+    extends AbstractResourceEventSource<P, T>
     implements ResourceCache<T> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
@@ -52,6 +54,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
       Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
+    super(sharedInformer.getApiTypeClass());
     this.sharedInformer = sharedInformer;
     this.secondaryToPrimaryResourcesIdSet = resourceToTargetResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
@@ -102,8 +105,9 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
        * automatically started, what would cause a NullPointerException here, since an event might
        * be received between creation and registration.
        */
+      final EventHandler eventHandler = getEventHandler();
       if (eventHandler != null) {
-        this.eventHandler.handleEvent(event);
+        eventHandler.handleEvent(event);
       }
     });
   }

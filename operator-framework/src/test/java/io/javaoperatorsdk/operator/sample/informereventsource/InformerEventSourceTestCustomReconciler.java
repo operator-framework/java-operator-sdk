@@ -33,7 +33,7 @@ public class InformerEventSourceTestCustomReconciler implements
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
 
   private KubernetesClient kubernetesClient;
-  private InformerEventSource<ConfigMap> eventSource;
+  private InformerEventSource<ConfigMap, InformerEventSourceTestCustomResource> eventSource;
 
   @Override
   public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {

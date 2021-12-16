@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -14,6 +16,7 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
@@ -24,10 +27,8 @@ public class EventSourceManager<R extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  // This needs to be a list since the event source must be started in a deterministic order. The
-  // controllerResourceEventSource must be always the first to have informers available for other
-  // informers to access the main controller cache.
-  private final List<EventSource> eventSources = Collections.synchronizedList(new ArrayList<>());
+  private final ConcurrentNavigableMap<String, EventSource<R>> eventSources =
+      new ConcurrentSkipListMap<>();
   private final EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
   private ControllerResourceEventSource<R> controllerResourceEventSource;
@@ -53,12 +54,17 @@ public class EventSourceManager<R extends HasMetadata>
   }
 
   @Override
+  public EventHandler getEventHandler() {
+    return eventProcessor;
+  }
+
+  @Override
   public void start() throws OperatorException {
     eventProcessor.start();
     lock.lock();
     try {
       log.debug("Starting event sources.");
-      for (var eventSource : eventSources) {
+      for (var eventSource : eventSources.values()) {
         try {
           eventSource.start();
         } catch (Exception e) {
@@ -75,7 +81,7 @@ public class EventSourceManager<R extends HasMetadata>
     lock.lock();
     try {
       log.debug("Closing event sources.");
-      for (var eventSource : eventSources) {
+      for (var eventSource : eventSources.values()) {
         try {
           eventSource.stop();
         } catch (Exception e) {
@@ -90,13 +96,13 @@ public class EventSourceManager<R extends HasMetadata>
   }
 
   @Override
-  public final void registerEventSource(EventSource eventSource)
+  public final void registerEventSource(EventSource<R> eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     lock.lock();
     try {
-      eventSources.add(eventSource);
-      eventSource.setEventHandler(eventProcessor);
+      eventSources.put(keyFor(eventSource), eventSource);
+      eventSource.setEventRegistry(this);
     } catch (Throwable e) {
       if (e instanceof IllegalStateException || e instanceof MissingCRDException) {
         // leave untouched
@@ -109,8 +115,34 @@ public class EventSourceManager<R extends HasMetadata>
     }
   }
 
+  private String keyFor(EventSource<R> source) {
+    return keyFor(
+        source instanceof ResourceEventSource ? ((ResourceEventSource) source).getResourceClass()
+            : source.getClass());
+  }
+
+  private String keyFor(Class<?> dependentType, String... qualifier) {
+    final var className = dependentType.getCanonicalName();
+    var key = className;
+    if (qualifier != null && qualifier.length > 0) {
+      key += "-" + qualifier[0];
+    }
+
+    // make sure timer event source is started first, then controller event source
+    // this is needed so that these sources are set when informer sources start so that events can
+    // properly be processed
+    if (controllerResourceEventSource != null
+        && className.equals(controllerResourceEventSource.getResourceClass().getCanonicalName())) {
+      key = 1 + key;
+    } else if (retryAndRescheduleTimerEventSource != null && className
+        .equals(retryAndRescheduleTimerEventSource.getClass().getCanonicalName())) {
+      key = 0 + key;
+    }
+    return key;
+  }
+
   public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
-    for (EventSource eventSource : this.eventSources) {
+    for (var eventSource : eventSources.values()) {
       if (eventSource instanceof ResourceEventAware) {
         var lifecycleAwareES = ((ResourceEventAware<R>) eventSource);
         switch (action) {
@@ -129,8 +161,8 @@ public class EventSourceManager<R extends HasMetadata>
   }
 
   @Override
-  public Set<EventSource> getRegisteredEventSources() {
-    return new HashSet<>(eventSources);
+  public Set<EventSource<R>> getRegisteredEventSources() {
+    return Set.copyOf(eventSources.values());
   }
 
   @Override

@@ -34,7 +34,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
 
   private final KubernetesClient kubernetesClient;
 
-  private volatile InformerEventSource<Deployment> informerEventSource;
+  private volatile InformerEventSource<Deployment, Tomcat> informerEventSource;
 
   public TomcatReconciler(KubernetesClient client) {
     this.kubernetesClient = client;

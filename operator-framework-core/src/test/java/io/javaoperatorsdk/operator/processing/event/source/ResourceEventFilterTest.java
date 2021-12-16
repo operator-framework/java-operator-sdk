@@ -40,6 +40,14 @@ class ResourceEventFilterTest {
     this.eventHandler = mock(EventHandler.class);
   }
 
+  private <T extends HasMetadata> ControllerResourceEventSource<T> init(Controller<T> controller) {
+    var eventSource = new ControllerResourceEventSource<>(controller);
+    final EventSourceRegistry registry = mock(EventSourceRegistry.class);
+    when(registry.getEventHandler()).thenReturn(eventHandler);
+    eventSource.setEventRegistry(registry);
+    return eventSource;
+  }
+
   @Test
   public void eventFilteredByCustomPredicate() {
     var config = new TestControllerConfig(
@@ -49,9 +57,7 @@ class ResourceEventFilterTest {
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
 
-    var controller = new TestController(config);
-    var eventSource = new ControllerResourceEventSource<>(controller);
-    eventSource.setEventHandler(eventHandler);
+    final var eventSource = init(new TestController(config));
 
     TestCustomResource cr = TestUtils.testCustomResource();
     cr.getMetadata().setFinalizers(List.of(FINALIZER));
@@ -77,9 +83,7 @@ class ResourceEventFilterTest {
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
 
-    var controller = new TestController(config);
-    var eventSource = new ControllerResourceEventSource<>(controller);
-    eventSource.setEventHandler(eventHandler);
+    final var eventSource = init(new TestController(config));
 
     TestCustomResource cr = TestUtils.testCustomResource();
     cr.getMetadata().setFinalizers(List.of(FINALIZER));
@@ -107,9 +111,7 @@ class ResourceEventFilterTest {
     when(config.getConfigurationService().getResourceCloner())
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
-    var controller = new ObservedGenController(config);
-    var eventSource = new ControllerResourceEventSource<>(controller);
-    eventSource.setEventHandler(eventHandler);
+    var eventSource = init(new ObservedGenController(config));
 
     ObservedGenCustomResource cr = new ObservedGenCustomResource();
     cr.setMetadata(new ObjectMeta());
@@ -138,9 +140,7 @@ class ResourceEventFilterTest {
     when(config.getConfigurationService().getResourceCloner())
         .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
-    var controller = new TestController(config);
-    var eventSource = new ControllerResourceEventSource<>(controller);
-    eventSource.setEventHandler(eventHandler);
+    final var eventSource = init(new TestController(config));
 
     TestCustomResource cr = TestUtils.testCustomResource();
     cr.getMetadata().setGeneration(1L);

@@ -4,38 +4,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
 import static org.mockito.Mockito.*;
 
-class PollingEventSourceTest {
+class PollingEventSourceTest
+    extends
+    AbstractEventSourceTest<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
-  private PollingEventSource<SampleExternalResource> pollingEventSource;
   private Supplier<Map<ResourceID, SampleExternalResource>> supplier = mock(Supplier.class);
-  private EventHandler eventHandler = mock(EventHandler.class);
 
   @BeforeEach
   public void setup() {
-    pollingEventSource = new PollingEventSource<>(supplier, 50);
-    pollingEventSource.setEventHandler(eventHandler);
-  }
-
-  @AfterEach
-  public void teardown() {
-    pollingEventSource.stop();
+    setUpSource(new PollingEventSource<>(supplier, 50, SampleExternalResource.class));
   }
 
   @Test
   public void pollsAndProcessesEvents() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
-    pollingEventSource.start();
 
     Thread.sleep(100);
 
@@ -46,7 +40,6 @@ class PollingEventSourceTest {
   public void propagatesEventForRemovedResources() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
-    pollingEventSource.start();
 
     Thread.sleep(150);
 
@@ -56,7 +49,6 @@ class PollingEventSourceTest {
   @Test
   public void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
-    pollingEventSource.start();
 
     Thread.sleep(250);
 

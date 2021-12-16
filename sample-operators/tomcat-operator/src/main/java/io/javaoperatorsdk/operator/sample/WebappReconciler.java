@@ -41,7 +41,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     this.kubernetesClient = kubernetesClient;
   }
 
-  private InformerEventSource<Tomcat> tomcatEventSource;
+  private InformerEventSource<Tomcat, Webapp> tomcatEventSource;
 
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {

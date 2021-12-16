@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -21,11 +22,14 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  *
  * @param <T> represents the type of resources (usually external non-kubernetes ones) being handled.
  */
-public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
+public abstract class CachingEventSource<T, P extends HasMetadata>
+    extends AbstractResourceEventSource<P, T> {
 
   protected Map<ResourceID, T> cache = new ConcurrentHashMap<>();
 
-  public CachingEventSource() {}
+  public CachingEventSource(Class<T> resourceClass) {
+    super(resourceClass);
+  }
 
   protected void handleDelete(ResourceID relatedResourceID) {
     if (!isRunning()) {
@@ -35,7 +39,7 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     cache.remove(relatedResourceID);
     // we only propagate event if the resource was previously in cache
     if (cachedValue != null) {
-      eventHandler.handleEvent(new Event(relatedResourceID));
+      getEventHandler().handleEvent(new Event(relatedResourceID));
     }
   }
 
@@ -46,7 +50,7 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     var cachedValue = cache.get(relatedResourceID);
     if (cachedValue == null || !cachedValue.equals(value)) {
       cache.put(relatedResourceID, value);
-      eventHandler.handleEvent(new Event(relatedResourceID));
+      getEventHandler().handleEvent(new Event(relatedResourceID));
     }
   }
 
@@ -61,5 +65,10 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
   @Override
   public void stop() throws OperatorException {
     super.stop();
+  }
+
+  @Override
+  public T getAssociated(P primary) {
+    return cache.get(ResourceID.fromResource(primary));
   }
 }
