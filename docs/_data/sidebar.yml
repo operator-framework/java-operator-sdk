@@ -11,6 +11,8 @@
     url: /docs/patterns-best-practices
   - title: FAQ
     url: /docs/faq
+  - title: Architecture and Internals
+    url: /docs/architecture-and-internals
   - title: Contributing
     url: /docs/contributing
   - title: Migrating from v1 to v2
