@@ -1,8 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +21,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
-public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
+public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource
+    implements ResourceCache<T> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -26,7 +30,6 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   private final Function<T, Set<ResourceID>> secondaryToPrimaryResourcesIdSet;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
-  private final InformerResourceCache<T> informerResourceCache;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
       Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
@@ -50,7 +53,6 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
-    this.informerResourceCache = new InformerResourceCache<>(sharedInformer);
     this.secondaryToPrimaryResourcesIdSet = resourceToTargetResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
@@ -106,10 +108,6 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
     });
   }
 
-  public ResourceCache<T> getResourceCache() {
-    return informerResourceCache;
-  }
-
   @Override
   public void start() {
     sharedInformer.run();
@@ -138,5 +136,23 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
 
   public SharedInformer<T> getSharedInformer() {
     return sharedInformer;
+  }
+
+  @Override
+  public Optional<T> get(ResourceID resourceID) {
+    return Optional.ofNullable(sharedInformer.getStore()
+        .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
+            resourceID.getName())));
+  }
+
+  @Override
+  public Stream<T> list(Predicate<T> predicate) {
+    return sharedInformer.getStore().list().stream().filter(predicate);
+  }
+
+  @Override
+  public Stream<T> list(String namespace, Predicate<T> predicate) {
+    return sharedInformer.getStore().list().stream()
+        .filter(v -> namespace.equals(v.getMetadata().getNamespace()) && predicate.test(v));
   }
 }
