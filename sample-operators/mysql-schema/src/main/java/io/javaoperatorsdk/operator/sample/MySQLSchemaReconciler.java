@@ -6,11 +6,6 @@ import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Optional;
 
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.spi.CachingProvider;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +20,6 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
-
-import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
 
 import static java.lang.String.format;
 
@@ -50,15 +43,10 @@ public class MySQLSchemaReconciler
 
   @Override
   public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry) {
-    CachingProvider cachingProvider = new CaffeineCachingProvider();
-    CacheManager cacheManager = cachingProvider.getCacheManager();
-    Cache<ResourceID, Schema> schemaCache =
-        cacheManager.createCache("schema-cache", new MutableConfiguration<>());
 
     perResourcePollingEventSource =
         new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
-            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD,
-            schemaCache);
+            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD);
 
     eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
   }

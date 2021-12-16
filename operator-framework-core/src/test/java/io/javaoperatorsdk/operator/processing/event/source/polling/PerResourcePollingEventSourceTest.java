@@ -2,11 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.Optional;
 
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.spi.CachingProvider;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,10 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResourc
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -32,22 +24,17 @@ class PerResourcePollingEventSourceTest {
   private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource> supplier =
       mock(PerResourcePollingEventSource.ResourceSupplier.class);
   private ResourceCache<TestCustomResource> resourceCache = mock(ResourceCache.class);
-  private Cache<ResourceID, SampleExternalResource> cache;
   private EventHandler eventHandler = mock(EventHandler.class);
   private TestCustomResource testCustomResource = TestUtils.testCustomResource();
 
   @BeforeEach
   public void setup() {
-    CachingProvider cachingProvider = new CaffeineCachingProvider();
-    CacheManager cacheManager = cachingProvider.getCacheManager();
-    cache = cacheManager.createCache("test-caching", new MutableConfiguration<>());
-
     when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
     when(supplier.getResources(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
     pollingEventSource =
-        new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD, cache);
+        new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD);
     pollingEventSource.setEventHandler(eventHandler);
   }
 
@@ -63,7 +50,7 @@ class PerResourcePollingEventSourceTest {
 
   @Test
   public void registeringTaskOnAPredicate() throws InterruptedException {
-    pollingEventSource = new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD, cache,
+    pollingEventSource = new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1);
     pollingEventSource.setEventHandler(eventHandler);
     pollingEventSource.start();

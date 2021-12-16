@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
   private final Function<T, Set<ResourceID>> secondaryToPrimaryResourcesIdSet;
   private final Function<HasMetadata, T> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
+  private final InformerResourceCache<T> informerResourceCache;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
       Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
@@ -48,6 +50,7 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
       Function<HasMetadata, T> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this.sharedInformer = sharedInformer;
+    this.informerResourceCache = new InformerResourceCache<>(sharedInformer);
     this.secondaryToPrimaryResourcesIdSet = resourceToTargetResourceIDSet;
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
@@ -101,6 +104,10 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
         this.eventHandler.handleEvent(event);
       }
     });
+  }
+
+  public ResourceCache<T> getResourceCache() {
+    return informerResourceCache;
   }
 
   @Override

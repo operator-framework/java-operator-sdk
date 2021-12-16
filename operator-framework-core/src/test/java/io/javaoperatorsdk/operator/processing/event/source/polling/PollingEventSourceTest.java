@@ -4,11 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.spi.CachingProvider;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,8 +12,6 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 
-import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
-
 import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
 import static org.mockito.Mockito.*;
 
@@ -26,16 +19,11 @@ class PollingEventSourceTest {
 
   private PollingEventSource<SampleExternalResource> pollingEventSource;
   private Supplier<Map<ResourceID, SampleExternalResource>> supplier = mock(Supplier.class);
-  private Cache<ResourceID, SampleExternalResource> cache;
   private EventHandler eventHandler = mock(EventHandler.class);
 
   @BeforeEach
   public void setup() {
-    CachingProvider cachingProvider = new CaffeineCachingProvider();
-    CacheManager cacheManager = cachingProvider.getCacheManager();
-    cache = cacheManager.createCache("test-caching", new MutableConfiguration<>());
-
-    pollingEventSource = new PollingEventSource<>(supplier, 50, cache);
+    pollingEventSource = new PollingEventSource<>(supplier, 50);
     pollingEventSource.setEventHandler(eventHandler);
   }
 
