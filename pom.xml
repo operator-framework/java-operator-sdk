@@ -71,7 +71,7 @@
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.6.2</impsort-maven-plugin.version>
         <jcache.version>1.1.1</jcache.version>
-        <caffein.version>3.0.4</caffein.version>
+        <caffein.version>3.0.5</caffein.version>
     </properties>
 
     <modules>
