@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -24,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
 
   protected Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  private final ReentrantLock lock = new ReentrantLock();
 
   public CachingEventSource() {}
 
@@ -43,10 +45,15 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     if (!isRunning()) {
       return;
     }
-    var cachedValue = cache.get(relatedResourceID);
-    if (cachedValue == null || !cachedValue.equals(value)) {
-      cache.put(relatedResourceID, value);
-      eventHandler.handleEvent(new Event(relatedResourceID));
+    lock.lock();
+    try {
+      var cachedValue = cache.get(relatedResourceID);
+      if (cachedValue == null || !cachedValue.equals(value)) {
+        cache.put(relatedResourceID, value);
+        eventHandler.handleEvent(new Event(relatedResourceID));
+      }
+    } finally {
+      lock.unlock();
     }
   }
 
