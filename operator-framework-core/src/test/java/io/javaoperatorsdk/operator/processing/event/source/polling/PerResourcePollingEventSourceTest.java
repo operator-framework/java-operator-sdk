@@ -9,8 +9,8 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +29,7 @@ class PerResourcePollingEventSourceTest extends
   public static final int PERIOD = 80;
   private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource> supplier =
       mock(PerResourcePollingEventSource.ResourceSupplier.class);
-  private ResourceCache<TestCustomResource> resourceCache = mock(ResourceCache.class);
+  private Cache<TestCustomResource> resourceCache = mock(Cache.class);
   private TestCustomResource testCustomResource = TestUtils.testCustomResource();
 
   @BeforeEach

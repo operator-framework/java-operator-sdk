@@ -14,13 +14,12 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedInformer;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     extends AbstractResourceEventSource<P, T>
@@ -66,8 +65,9 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
     this.associatedWith = Objects.requireNonNullElseGet(associatedWith, () -> cr -> {
       final var metadata = cr.getMetadata();
-      return getStore().getByKey(Cache.namespaceKeyFunc(metadata.getNamespace(),
-          metadata.getName()));
+      return getStore().getByKey(io.fabric8.kubernetes.client.informers.cache.Cache
+          .namespaceKeyFunc(metadata.getNamespace(),
+              metadata.getName()));
     });
 
     sharedInformer.addEventHandler(new ResourceEventHandler<>() {
@@ -145,18 +145,24 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   @Override
   public Optional<T> get(ResourceID resourceID) {
     return Optional.ofNullable(sharedInformer.getStore()
-        .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
+        .getByKey(io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
+            resourceID.getNamespace().orElse(null),
             resourceID.getName())));
   }
 
   @Override
   public Stream<T> list(Predicate<T> predicate) {
-    return sharedInformer.getStore().list().stream().filter(predicate);
+    return getStore().list().stream().filter(predicate);
   }
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
-    return sharedInformer.getStore().list().stream()
+    return getStore().list().stream()
         .filter(v -> namespace.equals(v.getMetadata().getNamespace()) && predicate.test(v));
+  }
+
+  @Override
+  public Stream<ResourceID> keys() {
+    return getStore().listKeys().stream().map(Mappers::fromString);
   }
 }

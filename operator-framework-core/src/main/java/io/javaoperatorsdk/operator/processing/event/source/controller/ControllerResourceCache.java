@@ -7,9 +7,11 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 import static io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource.ANY_NAMESPACE_MAP_KEY;
 
@@ -51,13 +53,20 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
           sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
     }
     var resource = sharedIndexInformer.getStore()
-        .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
+        .getByKey(io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
+            resourceID.getNamespace().orElse(null),
             resourceID.getName()));
     if (resource == null) {
       return Optional.empty();
     } else {
       return Optional.of(cloner.clone(resource));
     }
+  }
+
+  @Override
+  public Stream<ResourceID> keys() {
+    return sharedIndexInformers.values().stream()
+        .flatMap(i -> i.getStore().listKeys().stream().map(Mappers::fromString));
   }
 
   private boolean isWatchingAllNamespaces() {

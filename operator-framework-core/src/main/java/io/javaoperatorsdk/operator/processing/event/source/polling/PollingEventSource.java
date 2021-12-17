@@ -44,9 +44,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   protected void getStateAndFillCache() {
     var values = supplierToPoll.get();
     values.forEach((k, v) -> super.handleEvent(v, k));
-    cache.keySet().stream()
-        .filter(e -> !values.containsKey(e))
-        .forEach(super::handleDelete);
+    cache.keys().filter(e -> !values.containsKey(e)).forEach(super::handleDelete);
   }
 
   @Override

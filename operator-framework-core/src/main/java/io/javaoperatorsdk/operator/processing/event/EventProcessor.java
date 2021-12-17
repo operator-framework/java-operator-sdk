@@ -20,8 +20,8 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -44,7 +44,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final ReentrantLock lock = new ReentrantLock();
   private final Metrics metrics;
   private volatile boolean running;
-  private final ResourceCache<R> resourceCache;
+  private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker = new EventMarker();
 
@@ -70,7 +70,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         reconciliationDispatcher, retry, null, eventSourceManager);
   }
 
-  private EventProcessor(ResourceCache<R> resourceCache, ExecutorService executor,
+  private EventProcessor(Cache<R> cache, ExecutorService executor,
       String relatedControllerName,
       ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics,
       EventSourceManager<R> eventSourceManager) {
@@ -83,7 +83,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.controllerName = relatedControllerName;
     this.reconciliationDispatcher = reconciliationDispatcher;
     this.retry = retry;
-    this.resourceCache = resourceCache;
+    this.cache = cache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
   }
@@ -120,7 +120,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void submitReconciliationExecution(ResourceID resourceID) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(resourceID);
-      Optional<R> latest = resourceCache.get(resourceID);
+      Optional<R> latest = cache.get(resourceID);
       latest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && latest.isPresent()) {
         setUnderExecutionProcessing(resourceID);
@@ -216,7 +216,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         .getUpdatedCustomResource()
         .orElseThrow(() -> new IllegalStateException(
             "Updated custom resource must be present at this point of time")));
-    String cachedCustomResourceVersion = getVersion(resourceCache
+    String cachedCustomResourceVersion = getVersion(cache
         .get(executionScope.getCustomResourceID())
         .orElseThrow(() -> new IllegalStateException(
             "Cached custom resource must be present at this point")));
