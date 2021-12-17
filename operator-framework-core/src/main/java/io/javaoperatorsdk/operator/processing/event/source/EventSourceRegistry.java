@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -23,6 +24,9 @@ public interface EventSourceRegistry<T extends HasMetadata> {
   Set<EventSource<T>> getRegisteredEventSources();
 
   ControllerResourceEventSource<T> getControllerResourceEventSource();
+
+  <R> Optional<ResourceEventSource<T, R>> getResourceEventSourceFor(Class<R> dependentType,
+      String... qualifier);
 
   EventHandler getEventHandler();
 }

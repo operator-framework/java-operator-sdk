@@ -162,12 +162,45 @@ public class EventSourceManager<R extends HasMetadata>
 
   @Override
   public Set<EventSource<R>> getRegisteredEventSources() {
-    return Set.copyOf(eventSources.values());
+    return new LinkedHashSet<>(eventSources.values());
   }
 
   @Override
   public ControllerResourceEventSource<R> getControllerResourceEventSource() {
     return controllerResourceEventSource;
+  }
+
+  @Override
+  public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
+      Class<S> dependentType, String... qualifier) {
+    if (dependentType == null) {
+      return Optional.empty();
+    }
+    final var eventSource = eventSources.get(keyFor(dependentType, qualifier));
+    if (eventSource == null) {
+      return Optional.empty();
+    }
+    if (!(eventSource instanceof ResourceEventSource)) {
+      throw new IllegalArgumentException(eventSource + " associated with "
+          + keyAsString(dependentType, qualifier) + " is not a "
+          + ResourceEventSource.class.getSimpleName());
+    }
+    final var source = (ResourceEventSource<R, S>) eventSource;
+    final var resourceClass = source.getResourceClass();
+    if (!resourceClass.isAssignableFrom(dependentType)) {
+      throw new IllegalArgumentException(eventSource + " associated with "
+          + keyAsString(dependentType, qualifier)
+          + " is handling " + resourceClass.getName() + " resources but asked for "
+          + dependentType.getName());
+    }
+    return Optional.of((ResourceEventSource<R, S>) eventSource);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private String keyAsString(Class dependentType, String... qualifier) {
+    return qualifier != null && qualifier.length > 0
+        ? "(" + dependentType.getName() + ", " + qualifier[0] + ")"
+        : dependentType.getName();
   }
 
   TimerEventSource<R> retryEventSource() {
