@@ -1,11 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
-
-import javax.cache.Cache;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -25,13 +23,9 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
 
-  private static final Logger log = LoggerFactory.getLogger(CachingEventSource.class);
+  protected Map<ResourceID, T> cache = new ConcurrentHashMap<>();
 
-  protected Cache<ResourceID, T> cache;
-
-  public CachingEventSource(Cache<ResourceID, T> cache) {
-    this.cache = cache;
-  }
+  public CachingEventSource() {}
 
   protected void handleDelete(ResourceID relatedResourceID) {
     if (!isRunning()) {
@@ -56,8 +50,8 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     }
   }
 
-  public Cache<ResourceID, T> getCache() {
-    return cache;
+  public Map<ResourceID, T> getCache() {
+    return Collections.unmodifiableMap(cache);
   }
 
   public Optional<T> getCachedValue(ResourceID resourceID) {
@@ -67,6 +61,5 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
   @Override
   public void stop() throws OperatorException {
     super.stop();
-    cache.close();
   }
 }

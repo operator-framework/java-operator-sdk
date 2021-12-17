@@ -2,9 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.StreamSupport;
-
-import javax.cache.Cache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +19,7 @@ public class PollingEventSource<T> extends CachingEventSource<T> {
   private final long period;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, Cache<ResourceID, T> cache) {
-    super(cache);
+      long period) {
     this.supplierToPoll = supplier;
     this.period = period;
   }
@@ -46,8 +42,8 @@ public class PollingEventSource<T> extends CachingEventSource<T> {
   protected void getStateAndFillCache() {
     var values = supplierToPoll.get();
     values.forEach((k, v) -> super.handleEvent(v, k));
-    StreamSupport.stream(cache.spliterator(), false)
-        .filter(e -> !values.containsKey(e.getKey())).map(Cache.Entry::getKey)
+    cache.keySet().stream()
+        .filter(e -> !values.containsKey(e))
         .forEach(super::handleDelete);
   }
 

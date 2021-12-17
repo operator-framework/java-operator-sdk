@@ -7,8 +7,6 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import javax.cache.Cache;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,14 +42,13 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   private final long period;
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache) {
-    this(resourceSupplier, resourceCache, period, cache, null);
+      ResourceCache<R> resourceCache, long period) {
+    this(resourceSupplier, resourceCache, period, null);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period, Cache<ResourceID, T> cache,
+      ResourceCache<R> resourceCache, long period,
       Predicate<R> registerPredicate) {
-    super(cache);
     this.resourceSupplier = resourceSupplier;
     this.resourceCache = resourceCache;
     this.period = period;

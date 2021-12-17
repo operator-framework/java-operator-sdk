@@ -1,8 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +19,10 @@ import io.fabric8.kubernetes.client.informers.cache.Store;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
-public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource {
+public class InformerEventSource<T extends HasMetadata> extends AbstractEventSource
+    implements ResourceCache<T> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -131,5 +136,23 @@ public class InformerEventSource<T extends HasMetadata> extends AbstractEventSou
 
   public SharedInformer<T> getSharedInformer() {
     return sharedInformer;
+  }
+
+  @Override
+  public Optional<T> get(ResourceID resourceID) {
+    return Optional.ofNullable(sharedInformer.getStore()
+        .getByKey(Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null),
+            resourceID.getName())));
+  }
+
+  @Override
+  public Stream<T> list(Predicate<T> predicate) {
+    return sharedInformer.getStore().list().stream().filter(predicate);
+  }
+
+  @Override
+  public Stream<T> list(String namespace, Predicate<T> predicate) {
+    return sharedInformer.getStore().list().stream()
+        .filter(v -> namespace.equals(v.getMetadata().getNamespace()) && predicate.test(v));
   }
 }
