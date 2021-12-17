@@ -44,7 +44,7 @@ class ResourceEventFilterTest {
     var eventSource = new ControllerResourceEventSource<>(controller);
     final EventSourceRegistry registry = mock(EventSourceRegistry.class);
     when(registry.getEventHandler()).thenReturn(eventHandler);
-    eventSource.setEventRegistry(registry);
+    eventSource.setEventSourceRegistry(registry);
     return eventSource;
   }
 

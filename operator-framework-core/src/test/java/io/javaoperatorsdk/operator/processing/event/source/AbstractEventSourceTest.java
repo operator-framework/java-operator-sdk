@@ -29,7 +29,7 @@ public class AbstractEventSourceTest<S extends EventSource, T extends EventHandl
     this.source = source;
     EventSourceRegistry registry = mock(EventSourceRegistry.class);
     when(registry.getEventHandler()).thenReturn(eventHandler);
-    source.setEventRegistry(registry);
+    source.setEventSourceRegistry(registry);
     source.start();
   }
 
@@ -38,7 +38,7 @@ public class AbstractEventSourceTest<S extends EventSource, T extends EventHandl
     this.source = source;
     EventSourceRegistry registry = mock(EventSourceRegistry.class);
     when(registry.getEventHandler()).thenReturn(eventHandler);
-    source.setEventRegistry(registry);
+    source.setEventSourceRegistry(registry);
     if (start) {
       source.start();
     }

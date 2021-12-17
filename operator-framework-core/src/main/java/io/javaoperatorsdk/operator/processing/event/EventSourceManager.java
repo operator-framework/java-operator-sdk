@@ -102,7 +102,7 @@ public class EventSourceManager<R extends HasMetadata>
     lock.lock();
     try {
       eventSources.put(keyFor(eventSource), eventSource);
-      eventSource.setEventRegistry(this);
+      eventSource.setEventSourceRegistry(this);
     } catch (Throwable e) {
       if (e instanceof IllegalStateException || e instanceof MissingCRDException) {
         // leave untouched

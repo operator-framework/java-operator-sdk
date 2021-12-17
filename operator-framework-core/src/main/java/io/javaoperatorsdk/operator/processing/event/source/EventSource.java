@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 
 public interface EventSource<P extends HasMetadata> extends LifecycleAware {
 
-  void setEventRegistry(EventSourceRegistry<P> registry);
+  void setEventSourceRegistry(EventSourceRegistry<P> registry);
 
-  EventSourceRegistry<P> getEventRegistry();
+  EventSourceRegistry<P> getEventSourceRegistry();
 }

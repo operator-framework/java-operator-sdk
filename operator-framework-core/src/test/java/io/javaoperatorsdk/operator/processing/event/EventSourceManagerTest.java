@@ -28,7 +28,7 @@ class EventSourceManagerTest {
     Set<EventSource> registeredSources = eventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).contains(eventSource);
 
-    verify(eventSource, times(1)).setEventRegistry(eq(eventSourceManager));
+    verify(eventSource, times(1)).setEventSourceRegistry(eq(eventSourceManager));
   }
 
   @Test

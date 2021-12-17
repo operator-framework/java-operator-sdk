@@ -14,12 +14,12 @@ public abstract class AbstractEventSource<P extends HasMetadata> implements Even
   }
 
   @Override
-  public void setEventRegistry(EventSourceRegistry<P> registry) {
+  public void setEventSourceRegistry(EventSourceRegistry<P> registry) {
     this.eventSourceRegistry = registry;
   }
 
   @Override
-  public EventSourceRegistry<P> getEventRegistry() {
+  public EventSourceRegistry<P> getEventSourceRegistry() {
     return eventSourceRegistry;
   }
 
