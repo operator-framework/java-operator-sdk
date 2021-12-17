@@ -122,7 +122,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     sharedInformer.close();
   }
 
-  public Store<T> getStore() {
+  private Store<T> getStore() {
     return sharedInformer.getStore();
   }
 

@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -70,9 +69,8 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
       return UpdateControl.noUpdate();
     }
 
-    Tomcat tomcat = tomcatEventSource.getStore()
-        .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),
-            webapp.getSpec().getTomcat()));
+    Tomcat tomcat = tomcatEventSource.get(new ResourceID(
+        webapp.getSpec().getTomcat(), webapp.getMetadata().getNamespace())).orElse(null);
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
