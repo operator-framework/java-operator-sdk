@@ -10,18 +10,14 @@ public interface Reconciler<R extends HasMetadata> {
    *
    * @param resource the resource that has been created or updated
    * @param context the context with which the operation is executed
-   * @return The resource is updated in api server if the return value is not
-   *         {@link UpdateControl#noUpdate()}. This the common use cases. However in cases, for
-   *         example the operator is restarted, and we don't want to have an update call to k8s api
-   *         to be made unnecessarily, by returning {@link UpdateControl#noUpdate()} this update can
-   *         be skipped. <b>However we will always call an update if there is no finalizer on object
-   *         and it's not marked for deletion.</b>
+   * @return UpdateControl to manage updates on the custom resource (usually the status) after
+   *         reconciliation.
    */
   UpdateControl<R> reconcile(R resource, Context context);
 
   /**
-   * Note that this method is used in combination with finalizers. If automatic finalizer handling is
-   * turned off for the controller, this method is not called.
+   * Note that this method is used in combination with finalizers. If automatic finalizer handling
+   * is turned off for the controller, this method is not called.
    *
    * The implementation should delete the associated component(s). This method is called when an
    * object is marked for deletion. After it's executed the custom resource finalizer is
