@@ -37,7 +37,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public DeleteControl cleanup(R resource, Context context) {
+  public DeleteControl cleanup(R resource, Context<R> context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -63,7 +63,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public UpdateControl<R> reconcile(R resource, Context context) {
+  public UpdateControl<R> reconcile(R resource, Context<R> context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override

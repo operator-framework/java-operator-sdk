@@ -60,11 +60,11 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
   }
 
   @Override
-  public UpdateControl<Tomcat> reconcile(Tomcat tomcat, Context context) {
+  public UpdateControl<Tomcat> reconcile(Tomcat tomcat, Context<Tomcat> context) {
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment = informerEventSource.getAssociated(tomcat);
+    Deployment deployment = context.getSecondaryResource(Deployment.class);
 
     if (deployment != null) {
       Tomcat updatedTomcat =

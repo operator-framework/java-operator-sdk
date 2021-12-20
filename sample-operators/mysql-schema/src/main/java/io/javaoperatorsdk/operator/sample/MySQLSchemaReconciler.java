@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
@@ -54,11 +53,10 @@ public class MySQLSchemaReconciler
 
   @Override
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema,
-      Context context) {
-    var dbSchema = perResourcePollingEventSource
-        .getValueFromCacheOrSupplier(ResourceID.fromResource(schema));
+      Context<MySQLSchema> context) {
+    var dbSchema = context.getSecondaryResource(Schema.class);
     try (Connection connection = getConnection()) {
-      if (!dbSchema.isPresent()) {
+      if (dbSchema != null) {
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
         String secretName = String.format(SECRET_FORMAT, schemaName);

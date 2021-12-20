@@ -2,8 +2,14 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
 
-public interface Context {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+
+public interface Context<P extends HasMetadata> {
 
   Optional<RetryInfo> getRetryInfo();
 
+  EventSourceRegistry<P> getEventSourceRegistry();
+
+  <T> T getSecondaryResource(Class<T> expectedType, String... qualifier);
 }

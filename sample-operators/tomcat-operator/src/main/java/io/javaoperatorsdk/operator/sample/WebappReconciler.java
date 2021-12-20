@@ -63,14 +63,13 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
    * change.
    */
   @Override
-  public UpdateControl<Webapp> reconcile(Webapp webapp, Context context) {
+  public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();
     }
 
-    Tomcat tomcat = tomcatEventSource.get(new ResourceID(
-        webapp.getSpec().getTomcat(), webapp.getMetadata().getNamespace())).orElse(null);
+    Tomcat tomcat = context.getSecondaryResource(Tomcat.class);
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
