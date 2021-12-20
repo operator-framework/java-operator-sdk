@@ -9,7 +9,7 @@ public interface ErrorStatusHandler<T extends HasMetadata> {
   /**
    * <p>
    * Reconciler can implement this interface in order to update the status sub-resource in the case
-   * an exception in thrown. In that case that updateErrorStatus is called automatically.
+   * an exception in thrown. In that case {@link #updateErrorStatus(HasMetadata, RetryInfo, RuntimeException)} is called automatically.
    * <p>
    * The result of the method call is used to make a status update on the custom resource. This is
    * always a sub-resource update request, so no update on custom resource itself (like spec of
