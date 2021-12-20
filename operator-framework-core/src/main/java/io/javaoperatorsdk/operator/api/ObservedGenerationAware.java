@@ -7,8 +7,8 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 /**
  * If the custom resource's status implements this interface, the observed generation will be
  * automatically handled. The last observed generation will be updated on status. In addition to
- * that, controller configuration will be checked if is set to be generation aware. If generation aware
- * config is turned off, this interface is ignored.
+ * that, controller configuration will be checked if is set to be generation aware. If generation
+ * aware config is turned off, this interface is ignored.
  * <p>
  * In order to work the status object returned by CustomResource.getStatus() should not be null.
  * <p>
