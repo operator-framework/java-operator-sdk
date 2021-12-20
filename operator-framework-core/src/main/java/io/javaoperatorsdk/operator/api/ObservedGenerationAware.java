@@ -6,16 +6,17 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 /**
  * If the custom resource's status implements this interface, the observed generation will be
- * automatically handled. The last observed generation will be updated on status when the status is
- * instructed to be updated (see below). In addition to that, controller configuration will be
- * checked if is set to generation aware. If generation aware config is turned off, this interface
- * is ignored.
- *
- * In order to work the status object returned by CustomResource.getStatus() should not be null. In
- * addition to that from the controller that the {@link UpdateControl#updateStatus(HasMetadata)} or
- * {@link UpdateControl#updateResourceAndStatus(HasMetadata)} should be returned. The observed
- * generation is not updated in other cases.
- *
+ * automatically handled. The last observed generation will be updated on status. In addition to
+ * that, controller configuration will be checked if is set to generation aware. If generation aware
+ * config is turned off, this interface is ignored.
+ * <p>
+ * In order to work the status object returned by CustomResource.getStatus() should not be null.
+ * <p>
+ * The observed generation is updated even the {@link UpdateControl#noUpdate()} or
+ * {@link UpdateControl#updateResource(HasMetadata)} is called. Although those results call normally
+ * does not result in a status update, there will be a subsequent status update Kubernetes API call
+ * in this case.
+ * 
  * @see ObservedGenerationAwareStatus
  */
 public interface ObservedGenerationAware {
