@@ -20,7 +20,7 @@ public interface Reconciler<R extends HasMetadata> {
   UpdateControl<R> reconcile(R resource, Context context);
 
   /**
-   * Note that this method is used in combination of finalizers. If automatic finalizer handling is
+   * Note that this method is used in combination with finalizers. If automatic finalizer handling is
    * turned off for the controller, this method is not called.
    *
    * The implementation should delete the associated component(s). This method is called when an
