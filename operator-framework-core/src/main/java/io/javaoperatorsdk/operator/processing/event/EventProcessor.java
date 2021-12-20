@@ -31,10 +31,6 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-/**
- * Event handler that makes sure that events are processed in a "single threaded" way per resource
- * UID, while buffering events which are received during an execution.
- */
 class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);

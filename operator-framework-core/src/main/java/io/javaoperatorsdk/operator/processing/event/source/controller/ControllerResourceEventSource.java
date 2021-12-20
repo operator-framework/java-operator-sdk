@@ -26,9 +26,6 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-/**
- * This is a special case since is not bound to a single custom resource
- */
 public class ControllerResourceEventSource<T extends HasMetadata> extends AbstractEventSource
     implements ResourceEventHandler<T> {
 

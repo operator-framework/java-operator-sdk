@@ -87,7 +87,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private boolean shouldNotDispatchToDelete(R resource) {
     // we don't dispatch to delete if the controller is configured to use a finalizer but that
     // finalizer is not present (which means it's already been removed)
-    return configuration().useFinalizer() && !resource.hasFinalizer(configuration().getFinalizer());
+    return !configuration().useFinalizer() || (configuration().useFinalizer()
+        && !resource.hasFinalizer(configuration().getFinalizer()));
   }
 
   private PostExecutionControl<R> handleReconcile(

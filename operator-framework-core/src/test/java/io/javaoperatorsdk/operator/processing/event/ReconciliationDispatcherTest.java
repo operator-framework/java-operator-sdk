@@ -139,17 +139,14 @@ class ReconciliationDispatcherTest {
     verify(reconciler, times(1)).cleanup(eq(testCustomResource), any());
   }
 
-  /**
-   * Note that there could be more finalizers. Out of our control.
-   */
   @Test
-  void callDeleteOnControllerIfMarkedForDeletionWhenNoFinalizerIsConfigured() {
+  void doesNotCallDeleteOnControllerIfMarkedForDeletionWhenNoFinalizerIsConfigured() {
     configureToNotUseFinalizer();
     markForDeletion(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(reconciler).cleanup(eq(testCustomResource), any());
+    verify(reconciler, times(0)).cleanup(eq(testCustomResource), any());
   }
 
   @Test
