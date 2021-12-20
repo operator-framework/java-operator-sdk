@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
  * <p>
  * In order to work the status object returned by CustomResource.getStatus() should not be null.
  * <p>
- * The observed generation is updated even the {@link UpdateControl#noUpdate()} or
+ * The observed generation is updated even when {@link UpdateControl#noUpdate()} or
  * {@link UpdateControl#updateResource(HasMetadata)} is called. Although those results call normally
  * does not result in a status update, there will be a subsequent status update Kubernetes API call
  * in this case.
