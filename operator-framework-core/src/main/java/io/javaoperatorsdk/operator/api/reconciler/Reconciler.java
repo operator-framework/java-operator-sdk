@@ -31,7 +31,7 @@ public interface Reconciler<R extends HasMetadata> {
    * tried again eventually.
    *
    * <p>
-   * It's important that implementation of this method to be idempotent, since it can be called
+   * It's important for implementations of this method to be idempotent, since it can be called
    * several times.
    *
    * @param resource the resource that is marked for deletion
