@@ -40,12 +40,10 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     this.kubernetesClient = kubernetesClient;
   }
 
-  private InformerEventSource<Tomcat, Webapp> tomcatEventSource;
-
   @Override
   public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    tomcatEventSource =
-        new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
+    InformerEventSource<Tomcat, Webapp> tomcatEventSource = new InformerEventSource<>(
+        kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation
           // we need to find which WebApp this Tomcat custom resource is related to.
           // To find the related customResourceId of the WebApp resource we traverse the cache to
@@ -54,7 +52,9 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
               .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
               .map(ResourceID::fromResource)
               .collect(Collectors.toSet());
-        });
+        },
+        webapp -> new ResourceID(webapp.getSpec().getTomcat(), webapp.getMetadata().getNamespace()),
+        true);
     eventSourceRegistry.registerEventSource(tomcatEventSource);
   }
 

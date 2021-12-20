@@ -29,7 +29,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
   private final SharedInformer<T> sharedInformer;
   private final Function<T, Set<ResourceID>> secondaryToPrimaryResourcesIdSet;
-  private final Function<HasMetadata, T> associatedWith;
+  private final Function<P, ResourceID> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
@@ -42,6 +42,15 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     this(client, type, resourceToTargetResourceIDSet, false);
   }
 
+  public InformerEventSource(KubernetesClient client, Class<T> type,
+      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
+      Function<P, ResourceID> associatedWith,
+      boolean skipUpdateEventPropagationIfNoChange) {
+    this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet,
+        associatedWith,
+        skipUpdateEventPropagationIfNoChange);
+  }
+
   InformerEventSource(KubernetesClient client, Class<T> type,
       Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
@@ -51,7 +60,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
       Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
-      Function<HasMetadata, T> associatedWith,
+      Function<P, ResourceID> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     super(sharedInformer.getApiTypeClass());
     this.sharedInformer = sharedInformer;
@@ -63,12 +72,8 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
               "lead to non deterministic behavior.");
     }
 
-    this.associatedWith = Objects.requireNonNullElseGet(associatedWith, () -> cr -> {
-      final var metadata = cr.getMetadata();
-      return getStore().getByKey(io.fabric8.kubernetes.client.informers.cache.Cache
-          .namespaceKeyFunc(metadata.getNamespace(),
-              metadata.getName()));
-    });
+    this.associatedWith =
+        Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
 
     sharedInformer.addEventHandler(new ResourceEventHandler<>() {
       @Override
@@ -133,8 +138,10 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
    * @param resource the primary resource we want to retrieve the associated resource for
    * @return the informed resource associated with the specified primary resource
    */
-  public T getAssociated(HasMetadata resource) {
-    return associatedWith.apply(resource);
+  public T getAssociated(P resource) {
+    final var id = associatedWith.apply(resource);
+    return getStore().getByKey(io.fabric8.kubernetes.client.informers.cache.Cache
+        .namespaceKeyFunc(id.getNamespace().orElse(null), id.getName()));
   }
 
 
