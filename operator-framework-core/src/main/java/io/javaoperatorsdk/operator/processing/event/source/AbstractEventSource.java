@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
-public abstract class AbstractEventSource<P extends HasMetadata> implements EventSource {
+public abstract class AbstractEventSource implements EventSource {
 
   private volatile EventHandler handler;
   private volatile boolean running = false;

@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 public class TimerEventSource<R extends HasMetadata>
-    extends AbstractEventSource<R>
+    extends AbstractEventSource
     implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 

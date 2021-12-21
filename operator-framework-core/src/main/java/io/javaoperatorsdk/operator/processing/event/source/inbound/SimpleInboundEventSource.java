@@ -3,12 +3,11 @@ package io.javaoperatorsdk.operator.processing.event.source.inbound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 
-public class SimpleInboundEventSource<P extends HasMetadata> extends AbstractEventSource<P> {
+public class SimpleInboundEventSource extends AbstractEventSource {
 
   private static final Logger log = LoggerFactory.getLogger(SimpleInboundEventSource.class);
 
