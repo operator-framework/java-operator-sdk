@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -41,7 +40,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
   }
 
   @Override
-  public List<EventSource> prepareEventSources(ResourceCache<Tomcat> primaryCache) {
+  public List<EventSource> prepareEventSources(EventSourceInitializationContext<Tomcat> context) {
     SharedIndexInformer<Deployment> deploymentInformer =
         kubernetesClient.apps().deployments().inAnyNamespace()
             .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")

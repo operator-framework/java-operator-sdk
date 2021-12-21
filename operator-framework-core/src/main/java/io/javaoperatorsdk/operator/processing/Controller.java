@@ -16,12 +16,12 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
@@ -98,7 +98,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public List<EventSource> prepareEventSources(ResourceCache<R> primaryCache) {
+  public List<EventSource> prepareEventSources(EventSourceInitializationContext<R> context) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -172,8 +172,8 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       eventSourceManager = new EventSourceManager<>(this);
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler)
-            .prepareEventSources(
-                eventSourceManager.getControllerResourceEventSource().getResourceCache())
+            .prepareEventSources(new EventSourceInitializationContext<>(
+                eventSourceManager.getControllerResourceEventSource().getResourceCache()))
             .forEach(eventSourceManager::registerEventSource);
       }
       if (failOnMissingCurrentNS()) {

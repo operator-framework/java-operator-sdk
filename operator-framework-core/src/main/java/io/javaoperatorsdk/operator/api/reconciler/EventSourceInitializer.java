@@ -4,7 +4,6 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 /**
  * An interface that a {@link Reconciler} can implement to have the SDK register the provided
@@ -20,6 +19,6 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    * @param primaryCache a cache providing direct access to primary resources so that event sources
    *        can extract relevant information from primary resources as needed
    */
-  List<EventSource> prepareEventSources(ResourceCache<P> primaryCache);
+  List<EventSource> prepareEventSources(EventSourceInitializationContext<P> context);
 
 }

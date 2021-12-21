@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
@@ -42,9 +41,11 @@ public class MySQLSchemaReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(ResourceCache<MySQLSchema> primaryCache) {
+  public List<EventSource> prepareEventSources(
+      EventSourceInitializationContext<MySQLSchema> context) {
     return List.of(new PerResourcePollingEventSource<>(
-        new SchemaPollingResourceSupplier(mysqlDbConfig), primaryCache, POLL_PERIOD, Schema.class));
+        new SchemaPollingResourceSupplier(mysqlDbConfig), context.getPrimaryCache(), POLL_PERIOD,
+        Schema.class));
   }
 
   @Override

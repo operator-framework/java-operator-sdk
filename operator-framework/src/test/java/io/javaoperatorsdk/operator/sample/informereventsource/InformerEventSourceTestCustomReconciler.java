@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -39,7 +39,7 @@ public class InformerEventSourceTestCustomReconciler implements
 
   @Override
   public List<EventSource> prepareEventSources(
-      ResourceCache<InformerEventSourceTestCustomResource> primaryCache) {
+      EventSourceInitializationContext<InformerEventSourceTestCustomResource> context) {
     return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
         Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
   }
