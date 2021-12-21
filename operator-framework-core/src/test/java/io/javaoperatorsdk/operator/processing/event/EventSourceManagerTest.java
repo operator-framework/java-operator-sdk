@@ -8,17 +8,20 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.eq;
@@ -89,6 +92,59 @@ class EventSourceManagerTest {
     source = manager.getResourceEventSourceFor(String.class);
     assertTrue(source.isPresent());
     assertEquals(eventSource, source.get());
+  }
+
+  @Test
+  void shouldNotBePossibleToAddEventSourcesForSameTypeAndQualifier() {
+    EventSourceManager manager = initManager();
+
+    CachingEventSource eventSource = mock(CachingEventSource.class);
+    when(eventSource.getResourceClass()).thenReturn(String.class);
+    var config = mock(EventSourceConfiguration.class);
+    when(config.name()).thenReturn("name1");
+    when(eventSource.getConfiguration()).thenReturn(config);
+    manager.registerEventSource(eventSource);
+
+    eventSource = mock(CachingEventSource.class);
+    when(eventSource.getResourceClass()).thenReturn(String.class);
+    config = mock(EventSourceConfiguration.class);
+    when(config.name()).thenReturn("name1");
+    when(eventSource.getConfiguration()).thenReturn(config);
+    final var source = eventSource;
+
+    final var exception = assertThrows(OperatorException.class,
+        () -> manager.registerEventSource(source));
+    final var cause = exception.getCause();
+    assertTrue(cause instanceof IllegalArgumentException);
+    assertTrue(cause.getMessage().contains(
+        "An event source is already registered for the (java.lang.String, name1) class/name combination"));
+  }
+
+  @Test
+  void retrievingAnEventSourceWhenMultipleAreRegisteredForATypeShouldRequireAQualifier() {
+    EventSourceManager manager = initManager();
+
+    CachingEventSource eventSource = mock(CachingEventSource.class);
+    when(eventSource.getResourceClass()).thenReturn(String.class);
+    var config = mock(EventSourceConfiguration.class);
+    when(config.name()).thenReturn("name1");
+    when(eventSource.getConfiguration()).thenReturn(config);
+    manager.registerEventSource(eventSource);
+
+    CachingEventSource eventSource2 = mock(CachingEventSource.class);
+    when(eventSource2.getResourceClass()).thenReturn(String.class);
+    config = mock(EventSourceConfiguration.class);
+    when(config.name()).thenReturn("name2");
+    when(eventSource2.getConfiguration()).thenReturn(config);
+    manager.registerEventSource(eventSource2);
+
+    final var exception = assertThrows(IllegalArgumentException.class,
+        () -> manager.getResourceEventSourceFor(String.class));
+    assertTrue(exception.getMessage().contains("name1"));
+    assertTrue(exception.getMessage().contains("name2"));
+
+    assertTrue(manager.getResourceEventSourceFor(String.class, "name2").get().equals(eventSource2));
+    assertTrue(manager.getResourceEventSourceFor(String.class, "name1").get().equals(eventSource));
   }
 
   @Test
