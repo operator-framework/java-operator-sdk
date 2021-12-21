@@ -35,7 +35,6 @@ public class MySQLSchemaReconciler
 
   private final KubernetesClient kubernetesClient;
   private final MySQLDbConfig mysqlDbConfig;
-  PerResourcePollingEventSource<Schema, MySQLSchema> perResourcePollingEventSource;
 
   public MySQLSchemaReconciler(KubernetesClient kubernetesClient, MySQLDbConfig mysqlDbConfig) {
     this.kubernetesClient = kubernetesClient;

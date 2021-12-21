@@ -140,8 +140,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
    */
   public T getAssociated(P resource) {
     final var id = associatedWith.apply(resource);
-    return getStore().getByKey(io.fabric8.kubernetes.client.informers.cache.Cache
-        .namespaceKeyFunc(id.getNamespace().orElse(null), id.getName()));
+    return get(id).orElse(null);
   }
 
 
