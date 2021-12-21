@@ -67,7 +67,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return PostExecutionControl.defaultDispatch();
     }
 
-    Context<R> context = new DefaultContext<>(executionScope.getRetryInfo(), controller, resource);
+    Context context = new DefaultContext<>(executionScope.getRetryInfo(), controller, resource);
     if (markedForDeletion) {
       return handleCleanup(resource, context);
     } else {
@@ -91,7 +91,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> handleReconcile(
-      ExecutionScope<R> executionScope, R originalResource, Context<R> context) {
+      ExecutionScope<R> executionScope, R originalResource, Context context) {
     if (configuration().useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizer())) {
       /*
@@ -121,7 +121,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
    * resource is changed during an execution, and it's much cleaner to have to original resource in
    * place for status update.
    */
-  private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context<R> context) {
+  private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isErrorStatusHandlerPresent() ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
       return configuration().getConfigurationService().getResourceCloner().clone(resource);
@@ -131,7 +131,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
-      R resourceForExecution, R originalResource, Context<R> context) {
+      R resourceForExecution, R originalResource, Context context) {
     log.debug(
         "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
         getName(resourceForExecution),
@@ -161,7 +161,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
 
-  private void handleErrorStatusHandler(R resource, Context<R> context,
+  private void handleErrorStatusHandler(R resource, Context context,
       RuntimeException e) {
     if (isErrorStatusHandlerPresent()) {
       try {
@@ -238,7 +238,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
-  private PostExecutionControl<R> handleCleanup(R resource, Context<R> context) {
+  private PostExecutionControl<R> handleCleanup(R resource, Context context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),

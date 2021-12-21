@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,20 +17,18 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
-public class EventSourceManager<R extends HasMetadata>
-    implements EventSourceRegistry<R>, LifecycleAware {
+public class EventSourceManager<R extends HasMetadata> implements LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
   private final ReentrantLock lock = new ReentrantLock();
-  private final ConcurrentNavigableMap<String, EventSource<R>> eventSources =
+  private final ConcurrentNavigableMap<String, EventSource> eventSources =
       new ConcurrentSkipListMap<>();
   private final EventProcessor<R> eventProcessor;
   private TimerEventSource<R> retryAndRescheduleTimerEventSource;
@@ -51,11 +52,6 @@ public class EventSourceManager<R extends HasMetadata>
   private void initRetryEventSource() {
     retryAndRescheduleTimerEventSource = new TimerEventSource<>();
     registerEventSource(retryAndRescheduleTimerEventSource);
-  }
-
-  @Override
-  public EventHandler getEventHandler() {
-    return eventProcessor;
   }
 
   @Override
@@ -95,14 +91,13 @@ public class EventSourceManager<R extends HasMetadata>
     eventProcessor.stop();
   }
 
-  @Override
-  public final void registerEventSource(EventSource<R> eventSource)
+  public final void registerEventSource(EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     lock.lock();
     try {
       eventSources.put(keyFor(eventSource), eventSource);
-      eventSource.setEventSourceRegistry(this);
+      eventSource.setEventHandler(eventProcessor);
     } catch (Throwable e) {
       if (e instanceof IllegalStateException || e instanceof MissingCRDException) {
         // leave untouched
@@ -115,7 +110,7 @@ public class EventSourceManager<R extends HasMetadata>
     }
   }
 
-  private String keyFor(EventSource<R> source) {
+  private String keyFor(EventSource source) {
     return keyFor(
         source instanceof ResourceEventSource ? ((ResourceEventSource) source).getResourceClass()
             : source.getClass());
@@ -160,17 +155,18 @@ public class EventSourceManager<R extends HasMetadata>
     }
   }
 
-  @Override
-  public Set<EventSource<R>> getRegisteredEventSources() {
+  EventHandler getEventHandler() {
+    return eventProcessor;
+  }
+
+  Set<EventSource> getRegisteredEventSources() {
     return new LinkedHashSet<>(eventSources.values());
   }
 
-  @Override
   public ControllerResourceEventSource<R> getControllerResourceEventSource() {
     return controllerResourceEventSource;
   }
 
-  @Override
   public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
       Class<S> dependentType, String... qualifier) {
     if (dependentType == null) {

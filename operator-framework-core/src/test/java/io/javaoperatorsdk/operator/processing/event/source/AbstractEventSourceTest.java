@@ -5,7 +5,6 @@ import org.junit.jupiter.api.AfterEach;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class AbstractEventSourceTest<S extends EventSource, T extends EventHandler> {
   protected T eventHandler;
@@ -25,20 +24,13 @@ public class AbstractEventSourceTest<S extends EventSource, T extends EventHandl
   }
 
   public void setUpSource(S source, T eventHandler) {
-    this.eventHandler = eventHandler;
-    this.source = source;
-    EventSourceRegistry registry = mock(EventSourceRegistry.class);
-    when(registry.getEventHandler()).thenReturn(eventHandler);
-    source.setEventSourceRegistry(registry);
-    source.start();
+    setUpSource(source, eventHandler, true);
   }
 
   public void setUpSource(S source, T eventHandler, boolean start) {
     this.eventHandler = eventHandler;
     this.source = source;
-    EventSourceRegistry registry = mock(EventSourceRegistry.class);
-    when(registry.getEventHandler()).thenReturn(eventHandler);
-    source.setEventSourceRegistry(registry);
+    source.setEventHandler(eventHandler);
     if (start) {
       source.start();
     }

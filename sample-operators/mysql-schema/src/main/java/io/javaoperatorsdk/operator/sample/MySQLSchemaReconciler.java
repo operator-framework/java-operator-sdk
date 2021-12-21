@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -15,7 +16,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
@@ -41,19 +43,13 @@ public class MySQLSchemaReconciler
   }
 
   @Override
-  public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry) {
-
-    perResourcePollingEventSource =
-        new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
-            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD,
-            Schema.class);
-
-    eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
+  public List<EventSource> prepareEventSources(ResourceCache<MySQLSchema> primaryCache) {
+    return List.of(new PerResourcePollingEventSource<>(
+        new SchemaPollingResourceSupplier(mysqlDbConfig), primaryCache, POLL_PERIOD, Schema.class));
   }
 
   @Override
-  public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema,
-      Context<MySQLSchema> context) {
+  public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
     var dbSchema = context.getSecondaryResource(Schema.class);
     try (Connection connection = getConnection()) {
       if (dbSchema != null) {

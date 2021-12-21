@@ -42,9 +42,7 @@ class ResourceEventFilterTest {
 
   private <T extends HasMetadata> ControllerResourceEventSource<T> init(Controller<T> controller) {
     var eventSource = new ControllerResourceEventSource<>(controller);
-    final EventSourceRegistry registry = mock(EventSourceRegistry.class);
-    when(registry.getEventHandler()).thenReturn(eventHandler);
-    eventSource.setEventSourceRegistry(registry);
+    eventSource.setEventHandler(eventHandler);
     return eventSource;
   }
 

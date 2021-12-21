@@ -29,8 +29,8 @@ import static org.mockito.Mockito.when;
 
 class EventSourceManagerTest {
 
-  private EventSourceManager eventSourceManager =
-      new EventSourceManager(mock(EventProcessor.class));
+  private final EventProcessor eventHandler = mock(EventProcessor.class);
+  private final EventSourceManager eventSourceManager = new EventSourceManager(eventHandler);
 
   @Test
   public void registersEventSource() {
@@ -41,7 +41,7 @@ class EventSourceManagerTest {
     Set<EventSource> registeredSources = eventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).contains(eventSource);
 
-    verify(eventSource, times(1)).setEventSourceRegistry(eq(eventSourceManager));
+    verify(eventSource, times(1)).setEventHandler(eq(eventSourceManager.getEventHandler()));
   }
 
   @Test

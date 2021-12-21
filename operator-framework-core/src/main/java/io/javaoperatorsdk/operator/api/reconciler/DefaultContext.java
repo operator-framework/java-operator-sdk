@@ -4,9 +4,8 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
 
-public class DefaultContext<P extends HasMetadata> implements Context<P> {
+public class DefaultContext<P extends HasMetadata> implements Context {
 
   private final RetryInfo retryInfo;
   private final Controller<P> controller;
@@ -24,14 +23,9 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public EventSourceRegistry<P> getEventSourceRegistry() {
-    return controller.getEventSourceManager();
-  }
-
-  @Override
   public <T> T getSecondaryResource(Class<T> expectedType, String... qualifier) {
     final var eventSource =
-        getEventSourceRegistry().getResourceEventSourceFor(expectedType, qualifier);
+        controller.getEventSourceManager().getResourceEventSourceFor(expectedType, qualifier);
     return eventSource.map(es -> es.getAssociated(primaryResource)).orElse(null);
   }
 }

@@ -4,23 +4,18 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
-public abstract class AbstractEventSource<P extends HasMetadata> implements EventSource<P> {
+public abstract class AbstractEventSource<P extends HasMetadata> implements EventSource {
 
-  private volatile EventSourceRegistry<P> eventSourceRegistry;
+  private volatile EventHandler handler;
   private volatile boolean running = false;
 
   protected EventHandler getEventHandler() {
-    return eventSourceRegistry.getEventHandler();
+    return handler;
   }
 
   @Override
-  public void setEventSourceRegistry(EventSourceRegistry<P> registry) {
-    this.eventSourceRegistry = registry;
-  }
-
-  @Override
-  public EventSourceRegistry<P> getEventSourceRegistry() {
-    return eventSourceRegistry;
+  public void setEventHandler(EventHandler handler) {
+    this.handler = handler;
   }
 
   public boolean isRunning() {

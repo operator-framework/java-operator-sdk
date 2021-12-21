@@ -1,17 +1,25 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import java.util.List;
 
-public interface EventSourceInitializer<T extends HasMetadata> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+
+/**
+ * An interface that a {@link Reconciler} can implement to have the SDK register the provided
+ * {@link EventSource}
+ * 
+ * @param <P> the primary resource type handled by the associated {@link Reconciler}
+ */
+public interface EventSourceInitializer<P extends HasMetadata> {
 
   /**
-   * Reconciler can implement this interface typically to register event sources. But can access
-   * CustomResourceEventSource, what might be useful for some edge cases.
+   * Prepares a list of {@link EventSource} implementations to be registered by the SDK.
    * 
-   * @param eventSourceRegistry the {@link EventSourceRegistry} where event sources can be
-   *        registered.
+   * @param primaryCache a cache providing direct access to primary resources so that event sources
+   *        can extract relevant information from primary resources as needed
    */
-  void prepareEventSources(EventSourceRegistry<T> eventSourceRegistry);
+  List<EventSource> prepareEventSources(ResourceCache<P> primaryCache);
 
 }

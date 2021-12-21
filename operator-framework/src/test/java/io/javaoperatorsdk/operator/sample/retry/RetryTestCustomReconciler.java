@@ -31,8 +31,8 @@ public class RetryTestCustomReconciler
   }
 
   @Override
-  public UpdateControl<RetryTestCustomResource> reconcile(
-      RetryTestCustomResource resource, Context<RetryTestCustomResource> context) {
+  public UpdateControl<RetryTestCustomResource> reconcile(RetryTestCustomResource resource,
+      Context context) {
     numberOfExecutions.addAndGet(1);
 
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {

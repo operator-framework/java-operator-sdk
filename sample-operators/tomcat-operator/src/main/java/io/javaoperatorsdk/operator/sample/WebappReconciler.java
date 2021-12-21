@@ -24,7 +24,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import okhttp3.Response;
@@ -41,21 +42,21 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   }
 
   @Override
-  public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    InformerEventSource<Tomcat, Webapp> tomcatEventSource = new InformerEventSource<>(
+  public List<EventSource> prepareEventSources(ResourceCache<Webapp> primaryCache) {
+    return List.of(new InformerEventSource<>(
         kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation
           // we need to find which WebApp this Tomcat custom resource is related to.
           // To find the related customResourceId of the WebApp resource we traverse the cache to
           // and identify it based on naming convention.
-          return eventSourceRegistry.getControllerResourceEventSource().getResourceCache()
+          return primaryCache
               .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
               .map(ResourceID::fromResource)
               .collect(Collectors.toSet());
         },
-        webapp -> new ResourceID(webapp.getSpec().getTomcat(), webapp.getMetadata().getNamespace()),
-        true);
-    eventSourceRegistry.registerEventSource(tomcatEventSource);
+        (Webapp webapp) -> new ResourceID(webapp.getSpec().getTomcat(),
+            webapp.getMetadata().getNamespace()),
+        true));
   }
 
   /**
@@ -63,7 +64,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
    * change.
    */
   @Override
-  public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
+  public UpdateControl<Webapp> reconcile(Webapp webapp, Context context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();

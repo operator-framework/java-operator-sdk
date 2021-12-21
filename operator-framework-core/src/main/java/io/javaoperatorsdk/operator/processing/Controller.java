@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.List;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -19,7 +20,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
@@ -37,7 +39,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public DeleteControl cleanup(R resource, Context<R> context) {
+  public DeleteControl cleanup(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -63,7 +65,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public UpdateControl<R> reconcile(R resource, Context<R> context) {
+  public UpdateControl<R> reconcile(R resource, Context context) {
     return configuration.getConfigurationService().getMetrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -96,7 +98,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public void prepareEventSources(EventSourceRegistry<R> eventSourceRegistry) {
+  public List<EventSource> prepareEventSources(ResourceCache<R> primaryCache) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -169,7 +171,10 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
       eventSourceManager = new EventSourceManager<>(this);
       if (reconciler instanceof EventSourceInitializer) {
-        ((EventSourceInitializer<R>) reconciler).prepareEventSources(eventSourceManager);
+        ((EventSourceInitializer<R>) reconciler)
+            .prepareEventSources(
+                eventSourceManager.getControllerResourceEventSource().getResourceCache())
+            .forEach(eventSourceManager::registerEventSource);
       }
       if (failOnMissingCurrentNS()) {
         throw new OperatorException(
