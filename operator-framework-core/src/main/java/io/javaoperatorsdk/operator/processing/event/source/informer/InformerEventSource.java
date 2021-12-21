@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -19,6 +17,8 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
@@ -28,23 +28,23 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final SharedInformer<T> sharedInformer;
-  private final Function<T, Set<ResourceID>> secondaryToPrimaryResourcesIdSet;
-  private final Function<P, ResourceID> associatedWith;
+  private final PrimaryResourcesRetriever<T> secondaryToPrimaryResourcesIdSet;
+  private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
+      PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet) {
     this(sharedInformer, resourceToTargetResourceIDSet, null, true);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet) {
+      PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet) {
     this(client, type, resourceToTargetResourceIDSet, false);
   }
 
   public InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
-      Function<P, ResourceID> associatedWith,
+      PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet,
+      AssociatedSecondaryResourceIdentifier<P> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet,
         associatedWith,
@@ -52,15 +52,15 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   }
 
   InformerEventSource(KubernetesClient client, Class<T> type,
-      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
+      PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
     this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet, null,
         skipUpdateEventPropagationIfNoChange);
   }
 
   public InformerEventSource(SharedInformer<T> sharedInformer,
-      Function<T, Set<ResourceID>> resourceToTargetResourceIDSet,
-      Function<P, ResourceID> associatedWith,
+      PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet,
+      AssociatedSecondaryResourceIdentifier<P> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
     super(sharedInformer.getApiTypeClass());
     this.sharedInformer = sharedInformer;
@@ -99,7 +99,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   }
 
   private void propagateEvent(T object) {
-    var primaryResourceIdSet = secondaryToPrimaryResourcesIdSet.apply(object);
+    var primaryResourceIdSet = secondaryToPrimaryResourcesIdSet.associatedPrimaryResources(object);
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
@@ -139,7 +139,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
    * @return the informed resource associated with the specified primary resource
    */
   public T getAssociated(P resource) {
-    final var id = associatedWith.apply(resource);
+    final var id = associatedWith.associatedSecondaryID(resource);
     return get(id).orElse(null);
   }
 
