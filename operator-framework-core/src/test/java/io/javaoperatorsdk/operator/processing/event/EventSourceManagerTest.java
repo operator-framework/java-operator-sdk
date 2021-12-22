@@ -15,7 +15,6 @@ import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
@@ -100,16 +99,12 @@ class EventSourceManagerTest {
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
     when(eventSource.getResourceClass()).thenReturn(String.class);
-    var config = mock(EventSourceConfiguration.class);
-    when(config.name()).thenReturn("name1");
-    when(eventSource.getConfiguration()).thenReturn(config);
+    when(eventSource.name()).thenReturn("name1");
     manager.registerEventSource(eventSource);
 
     eventSource = mock(CachingEventSource.class);
     when(eventSource.getResourceClass()).thenReturn(String.class);
-    config = mock(EventSourceConfiguration.class);
-    when(config.name()).thenReturn("name1");
-    when(eventSource.getConfiguration()).thenReturn(config);
+    when(eventSource.name()).thenReturn("name1");
     final var source = eventSource;
 
     final var exception = assertThrows(OperatorException.class,
@@ -126,16 +121,12 @@ class EventSourceManagerTest {
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
     when(eventSource.getResourceClass()).thenReturn(String.class);
-    var config = mock(EventSourceConfiguration.class);
-    when(config.name()).thenReturn("name1");
-    when(eventSource.getConfiguration()).thenReturn(config);
+    when(eventSource.name()).thenReturn("name1");
     manager.registerEventSource(eventSource);
 
     CachingEventSource eventSource2 = mock(CachingEventSource.class);
     when(eventSource2.getResourceClass()).thenReturn(String.class);
-    config = mock(EventSourceConfiguration.class);
-    when(config.name()).thenReturn("name2");
-    when(eventSource2.getConfiguration()).thenReturn(config);
+    when(eventSource2.name()).thenReturn("name2");
     manager.registerEventSource(eventSource2);
 
     final var exception = assertThrows(IllegalArgumentException.class,

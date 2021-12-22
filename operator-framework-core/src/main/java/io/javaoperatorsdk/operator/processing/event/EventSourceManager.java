@@ -211,8 +211,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
 
     private String qualifier(EventSource source) {
-      final var configuration = source.getConfiguration();
-      return configuration != null ? configuration.name() : "";
+      return source.name();
     }
 
     private String keyFor(EventSource source) {
