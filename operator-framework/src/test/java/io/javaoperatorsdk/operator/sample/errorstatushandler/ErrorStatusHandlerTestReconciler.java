@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class ErrorStatusHandlerTestReconciler

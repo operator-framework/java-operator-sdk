@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -21,11 +23,35 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  *
  * @param <T> represents the type of resources (usually external non-kubernetes ones) being handled.
  */
-public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
+public abstract class CachingEventSource<T, P extends HasMetadata>
+    extends AbstractResourceEventSource<P, T> implements Cache<T> {
 
-  protected Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  protected UpdatableCache<T> cache;
 
-  public CachingEventSource() {}
+  public CachingEventSource(Class<T> resourceClass) {
+    super(resourceClass);
+    cache = initCache();
+  }
+
+  @Override
+  public Optional<T> get(ResourceID resourceID) {
+    return cache.get(resourceID);
+  }
+
+  @Override
+  public boolean contains(ResourceID resourceID) {
+    return cache.contains(resourceID);
+  }
+
+  @Override
+  public Stream<ResourceID> keys() {
+    return cache.keys();
+  }
+
+  @Override
+  public Stream<T> list(Predicate<T> predicate) {
+    return cache.list(predicate);
+  }
 
   protected void handleDelete(ResourceID relatedResourceID) {
     if (!isRunning()) {
@@ -34,8 +60,8 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
     var cachedValue = cache.get(relatedResourceID);
     cache.remove(relatedResourceID);
     // we only propagate event if the resource was previously in cache
-    if (cachedValue != null) {
-      eventHandler.handleEvent(new Event(relatedResourceID));
+    if (cachedValue.isPresent()) {
+      getEventHandler().handleEvent(new Event(relatedResourceID));
     }
   }
 
@@ -44,22 +70,56 @@ public abstract class CachingEventSource<T> extends LifecycleAwareEventSource {
       return;
     }
     var cachedValue = cache.get(relatedResourceID);
-    if (cachedValue == null || !cachedValue.equals(value)) {
+    if (cachedValue.map(v -> !v.equals(value)).orElse(true)) {
       cache.put(relatedResourceID, value);
-      eventHandler.handleEvent(new Event(relatedResourceID));
+      getEventHandler().handleEvent(new Event(relatedResourceID));
     }
   }
 
-  public Map<ResourceID, T> getCache() {
-    return Collections.unmodifiableMap(cache);
+  protected UpdatableCache<T> initCache() {
+    return new MapCache<>();
   }
 
   public Optional<T> getCachedValue(ResourceID resourceID) {
-    return Optional.ofNullable(cache.get(resourceID));
+    return cache.get(resourceID);
   }
 
   @Override
   public void stop() throws OperatorException {
     super.stop();
+  }
+
+  @Override
+  public T getAssociated(P primary) {
+    return cache.get(ResourceID.fromResource(primary)).orElse(null);
+  }
+
+  protected static class MapCache<T> implements UpdatableCache<T> {
+    private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+
+    @Override
+    public Optional<T> get(ResourceID resourceID) {
+      return Optional.ofNullable(cache.get(resourceID));
+    }
+
+    @Override
+    public Stream<ResourceID> keys() {
+      return cache.keySet().stream();
+    }
+
+    @Override
+    public Stream<T> list(Predicate<T> predicate) {
+      return cache.values().stream().filter(predicate);
+    }
+
+    @Override
+    public T remove(ResourceID key) {
+      return cache.remove(key);
+    }
+
+    @Override
+    public void put(ResourceID key, T resource) {
+      cache.put(key, resource);
+    }
   }
 }

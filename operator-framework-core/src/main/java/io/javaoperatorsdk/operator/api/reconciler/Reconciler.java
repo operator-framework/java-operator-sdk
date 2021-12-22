@@ -40,5 +40,4 @@ public interface Reconciler<R extends HasMetadata> {
   default DeleteControl cleanup(R resource, Context context) {
     return DeleteControl.defaultDelete();
   }
-
 }

@@ -21,11 +21,12 @@ public class GenericRetry implements Retry {
   }
 
   public static Retry fromConfiguration(RetryConfiguration configuration) {
-    return new GenericRetry()
-        .setInitialInterval(configuration.getInitialInterval())
-        .setMaxAttempts(configuration.getMaxAttempts())
-        .setIntervalMultiplier(configuration.getIntervalMultiplier())
-        .setMaxInterval(configuration.getMaxInterval());
+    return configuration == null ? defaultLimitedExponentialRetry()
+        : new GenericRetry()
+            .setInitialInterval(configuration.getInitialInterval())
+            .setMaxAttempts(configuration.getMaxAttempts())
+            .setIntervalMultiplier(configuration.getIntervalMultiplier())
+            .setMaxInterval(configuration.getMaxInterval());
   }
 
   @Override

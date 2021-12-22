@@ -25,8 +25,7 @@ class OnceWhitelistEventFilterEventFilterTest {
 
     filter.whitelistNextEvent(ResourceID.fromResource(cr));
 
-    assertThat(filter.acceptChange(null,
-        cr, cr)).isTrue();
+    assertThat(filter.acceptChange(null, cr, cr)).isTrue();
   }
 
   @Test
@@ -35,10 +34,8 @@ class OnceWhitelistEventFilterEventFilterTest {
 
     filter.whitelistNextEvent(ResourceID.fromResource(cr));
 
-    assertThat(filter.acceptChange(null,
-        cr, cr)).isTrue();
-    assertThat(filter.acceptChange(null,
-        cr, cr)).isFalse();
+    assertThat(filter.acceptChange(null, cr, cr)).isTrue();
+    assertThat(filter.acceptChange(null, cr, cr)).isFalse();
   }
 
 }

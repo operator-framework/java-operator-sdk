@@ -20,13 +20,14 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-public class ControllerResourceEventSource<T extends HasMetadata> extends AbstractEventSource
+public class ControllerResourceEventSource<T extends HasMetadata>
+    extends AbstractResourceEventSource<T, T>
     implements ResourceEventHandler<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
@@ -42,6 +43,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
   private final ControllerResourceCache<T> cache;
 
   public ControllerResourceEventSource(Controller<T> controller) {
+    super(controller.getConfiguration().getResourceClass());
     this.controller = controller;
     var cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
     this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
@@ -90,6 +92,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
       }
       throw e;
     }
+    super.start();
   }
 
   private SharedIndexInformer<T> createAndRunInformerFor(
@@ -111,6 +114,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
         log.warn("Error stopping informer {} -> {}", controller, informer, e);
       }
     }
+    super.stop();
   }
 
   public void eventReceived(ResourceAction action, T customResource, T oldResource) {
@@ -121,7 +125,7 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
       controller.getEventSourceManager().broadcastOnResourceEvent(action, customResource,
           oldResource);
       if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
-        eventHandler.handleEvent(
+        getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(customResource)));
       } else {
         log.debug(
@@ -193,4 +197,8 @@ public class ControllerResourceEventSource<T extends HasMetadata> extends Abstra
     }
   }
 
+  @Override
+  public T getAssociated(T primary) {
+    return cache.get(ResourceID.fromResource(primary)).orElse(null);
+  }
 }

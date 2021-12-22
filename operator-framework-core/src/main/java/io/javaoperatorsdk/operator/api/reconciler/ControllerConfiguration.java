@@ -11,20 +11,16 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 @Target({ElementType.TYPE})
 public @interface ControllerConfiguration {
 
-  String EMPTY_STRING = "";
-  String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";
-  String NO_FINALIZER = "JOSDK_NO_FINALIZER";
-
-  String name() default EMPTY_STRING;
+  String name() default Constants.EMPTY_STRING;
 
   /**
    * Optional finalizer name, if it is not provided, one will be automatically generated. If the
-   * provided value is the value specified by {@link #NO_FINALIZER}, then no finalizer will be added
-   * to custom resources.
+   * provided value is the value specified by {@link Constants#NO_FINALIZER}, then no finalizer will
+   * be added to custom resources.
    *
    * @return the finalizer name
    */
-  String finalizerName() default EMPTY_STRING;
+  String finalizerName() default Constants.EMPTY_STRING;
 
   /**
    * If true, will dispatch new event to the controller if generation increased since the last
@@ -50,7 +46,7 @@ public @interface ControllerConfiguration {
    *
    * @return the label selector
    */
-  String labelSelector() default EMPTY_STRING;
+  String labelSelector() default Constants.EMPTY_STRING;
 
 
   /**

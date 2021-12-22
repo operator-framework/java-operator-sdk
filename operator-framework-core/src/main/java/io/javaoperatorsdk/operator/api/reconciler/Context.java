@@ -6,4 +6,5 @@ public interface Context {
 
   Optional<RetryInfo> getRetryInfo();
 
+  <T> T getSecondaryResource(Class<T> expectedType, String... qualifier);
 }

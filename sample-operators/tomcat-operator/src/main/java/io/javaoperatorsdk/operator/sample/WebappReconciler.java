@@ -17,15 +17,15 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import okhttp3.Response;
@@ -41,22 +41,22 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     this.kubernetesClient = kubernetesClient;
   }
 
-  private InformerEventSource<Tomcat> tomcatEventSource;
-
   @Override
-  public void prepareEventSources(EventSourceRegistry<Webapp> eventSourceRegistry) {
-    tomcatEventSource =
-        new InformerEventSource<>(kubernetesClient, Tomcat.class, t -> {
+  public List<EventSource> prepareEventSources(EventSourceInitializationContext<Webapp> context) {
+    return List.of(new InformerEventSource<>(
+        kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation
           // we need to find which WebApp this Tomcat custom resource is related to.
           // To find the related customResourceId of the WebApp resource we traverse the cache to
           // and identify it based on naming convention.
-          return eventSourceRegistry.getControllerResourceEventSource().getResourceCache()
+          return context.getPrimaryCache()
               .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
               .map(ResourceID::fromResource)
               .collect(Collectors.toSet());
-        });
-    eventSourceRegistry.registerEventSource(tomcatEventSource);
+        },
+        (Webapp webapp) -> new ResourceID(webapp.getSpec().getTomcat(),
+            webapp.getMetadata().getNamespace()),
+        true));
   }
 
   /**
@@ -70,9 +70,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
       return UpdateControl.noUpdate();
     }
 
-    Tomcat tomcat = tomcatEventSource.getStore()
-        .getByKey(Cache.namespaceKeyFunc(webapp.getMetadata().getNamespace(),
-            webapp.getSpec().getTomcat()));
+    Tomcat tomcat = context.getSecondaryResource(Tomcat.class);
     if (tomcat == null) {
       throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
           + " for Webapp " + webapp.getMetadata().getName() + " in namespace "

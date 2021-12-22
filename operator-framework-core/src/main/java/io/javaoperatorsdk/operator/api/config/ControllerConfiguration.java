@@ -7,6 +7,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -67,7 +68,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
     return namespaces != null
         && namespaces.size() == 1
         && namespaces.contains(
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.WATCH_CURRENT_NAMESPACE);
+            Constants.WATCH_CURRENT_NAMESPACE);
   }
 
   /**
@@ -99,7 +100,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   default void setConfigurationService(ConfigurationService service) {}
 
   default boolean useFinalizer() {
-    return !io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER
+    return !Constants.NO_FINALIZER
         .equals(getFinalizer());
   }
 

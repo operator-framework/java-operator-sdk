@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -17,10 +18,10 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static java.util.Collections.EMPTY_SET;
 
 /**
@@ -34,29 +35,27 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
 
   private final KubernetesClient kubernetesClient;
 
-  private volatile InformerEventSource<Deployment> informerEventSource;
-
   public TomcatReconciler(KubernetesClient client) {
     this.kubernetesClient = client;
   }
 
   @Override
-  public void prepareEventSources(EventSourceRegistry<Tomcat> eventSourceRegistry) {
+  public List<EventSource> prepareEventSources(EventSourceInitializationContext<Tomcat> context) {
     SharedIndexInformer<Deployment> deploymentInformer =
         kubernetesClient.apps().deployments().inAnyNamespace()
             .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
             .runnableInformer(0);
 
-    this.informerEventSource = new InformerEventSource<>(deploymentInformer, d -> {
-      var ownerReferences = d.getMetadata().getOwnerReferences();
-      if (!ownerReferences.isEmpty()) {
-        return Set.of(new ResourceID(ownerReferences.get(0).getName(),
-            d.getMetadata().getNamespace()));
-      } else {
-        return EMPTY_SET;
-      }
-    });
-    eventSourceRegistry.registerEventSource(this.informerEventSource);
+    return List.of(new InformerEventSource<>(
+        deploymentInformer, d -> {
+          var ownerReferences = d.getMetadata().getOwnerReferences();
+          if (!ownerReferences.isEmpty()) {
+            return Set.of(new ResourceID(ownerReferences.get(0).getName(),
+                d.getMetadata().getNamespace()));
+          } else {
+            return EMPTY_SET;
+          }
+        }));
   }
 
   @Override
@@ -64,7 +63,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment = informerEventSource.getAssociated(tomcat);
+    Deployment deployment = context.getSecondaryResource(Deployment.class);
 
     if (deployment != null) {
       Tomcat updatedTomcat =

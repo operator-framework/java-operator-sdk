@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,15 +9,16 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.NO_FINALIZER;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 /**
  * Copies the config map value from spec into status. The main purpose is to test and demonstrate
@@ -24,7 +27,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class InformerEventSourceTestCustomReconciler implements
     Reconciler<InformerEventSourceTestCustomResource>, KubernetesClientAware,
-    EventSourceInitializer {
+    EventSourceInitializer<InformerEventSourceTestCustomResource> {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
@@ -33,13 +36,12 @@ public class InformerEventSourceTestCustomReconciler implements
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
 
   private KubernetesClient kubernetesClient;
-  private InformerEventSource<ConfigMap> eventSource;
 
   @Override
-  public void prepareEventSources(EventSourceRegistry eventSourceRegistry) {
-    eventSource = new InformerEventSource<>(kubernetesClient, ConfigMap.class,
-        Mappers.fromAnnotation(RELATED_RESOURCE_NAME));
-    eventSourceRegistry.registerEventSource(eventSource);
+  public List<EventSource> prepareEventSources(
+      EventSourceInitializationContext<InformerEventSourceTestCustomResource> context) {
+    return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
+        Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
   }
 
   @Override
@@ -49,7 +51,7 @@ public class InformerEventSourceTestCustomReconciler implements
 
     // Reading the config map from the informer not from the API
     // name of the config map same as custom resource for sake of simplicity
-    ConfigMap configMap = eventSource.getAssociated(resource);
+    ConfigMap configMap = context.getSecondaryResource(ConfigMap.class);
 
     String targetStatus = configMap.getData().get(TARGET_CONFIG_MAP_KEY);
     LOGGER.debug("Setting target status for CR: {}", targetStatus);

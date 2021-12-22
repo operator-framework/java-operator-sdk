@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -15,8 +16,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
@@ -34,7 +34,6 @@ public class MySQLSchemaReconciler
 
   private final KubernetesClient kubernetesClient;
   private final MySQLDbConfig mysqlDbConfig;
-  PerResourcePollingEventSource<Schema, MySQLSchema> perResourcePollingEventSource;
 
   public MySQLSchemaReconciler(KubernetesClient kubernetesClient, MySQLDbConfig mysqlDbConfig) {
     this.kubernetesClient = kubernetesClient;
@@ -42,22 +41,18 @@ public class MySQLSchemaReconciler
   }
 
   @Override
-  public void prepareEventSources(EventSourceRegistry<MySQLSchema> eventSourceRegistry) {
-
-    perResourcePollingEventSource =
-        new PerResourcePollingEventSource<>(new SchemaPollingResourceSupplier(mysqlDbConfig),
-            eventSourceRegistry.getControllerResourceEventSource().getResourceCache(), POLL_PERIOD);
-
-    eventSourceRegistry.registerEventSource(perResourcePollingEventSource);
+  public List<EventSource> prepareEventSources(
+      EventSourceInitializationContext<MySQLSchema> context) {
+    return List.of(new PerResourcePollingEventSource<>(
+        new SchemaPollingResourceSupplier(mysqlDbConfig), context.getPrimaryCache(), POLL_PERIOD,
+        Schema.class));
   }
 
   @Override
-  public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema,
-      Context context) {
-    var dbSchema = perResourcePollingEventSource
-        .getValueFromCacheOrSupplier(ResourceID.fromResource(schema));
+  public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
+    var dbSchema = context.getSecondaryResource(Schema.class);
     try (Connection connection = getConnection()) {
-      if (!dbSchema.isPresent()) {
+      if (dbSchema != null) {
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
         String secretName = String.format(SECRET_FORMAT, schemaName);

@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCache;
 
 /**
  *
@@ -29,7 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceCa
  * @param <R> related custom resource
  */
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
-    extends CachingEventSource<T>
+    extends CachingEventSource<T, R>
     implements ResourceEventAware<R> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
@@ -37,18 +37,19 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   private final Timer timer = new Timer();
   private final Map<ResourceID, TimerTask> timerTasks = new ConcurrentHashMap<>();
   private final ResourceSupplier<T, R> resourceSupplier;
-  private final ResourceCache<R> resourceCache;
+  private final Cache<R> resourceCache;
   private final Predicate<R> registerPredicate;
   private final long period;
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period) {
-    this(resourceSupplier, resourceCache, period, null);
+      Cache<R> resourceCache, long period, Class<T> resourceClass) {
+    this(resourceSupplier, resourceCache, period, null, resourceClass);
   }
 
   public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      ResourceCache<R> resourceCache, long period,
-      Predicate<R> registerPredicate) {
+      Cache<R> resourceCache, long period,
+      Predicate<R> registerPredicate, Class<T> resourceClass) {
+    super(resourceClass);
     this.resourceSupplier = resourceSupplier;
     this.resourceCache = resourceCache;
     this.period = period;
