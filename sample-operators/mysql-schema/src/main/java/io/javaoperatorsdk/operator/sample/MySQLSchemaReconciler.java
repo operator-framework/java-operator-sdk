@@ -52,7 +52,7 @@ public class MySQLSchemaReconciler
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
     var dbSchema = context.getSecondaryResource(Schema.class);
     try (Connection connection = getConnection()) {
-      if (dbSchema != null) {
+      if (dbSchema == null) {
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
         String secretName = String.format(SECRET_FORMAT, schemaName);

@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,16 +95,16 @@ class EventSourceManagerTest {
   }
 
   @Test
-  void shouldNotBePossibleToAddEventSourcesForSameTypeAndQualifier() {
+  void shouldNotBePossibleToAddEventSourcesForSameTypeAndName() {
     EventSourceManager manager = initManager();
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(String.class);
+    when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
     when(eventSource.name()).thenReturn("name1");
     manager.registerEventSource(eventSource);
 
     eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(String.class);
+    when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
     when(eventSource.name()).thenReturn("name1");
     final var source = eventSource;
 
@@ -111,8 +112,8 @@ class EventSourceManagerTest {
         () -> manager.registerEventSource(source));
     final var cause = exception.getCause();
     assertTrue(cause instanceof IllegalArgumentException);
-    assertTrue(cause.getMessage().contains(
-        "An event source is already registered for the (java.lang.String, name1) class/name combination"));
+    assertThat(cause.getMessage()).contains(
+        "An event source is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, name1) class/name combination");
   }
 
   @Test
@@ -120,22 +121,24 @@ class EventSourceManagerTest {
     EventSourceManager manager = initManager();
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(String.class);
+    when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
     when(eventSource.name()).thenReturn("name1");
     manager.registerEventSource(eventSource);
 
     CachingEventSource eventSource2 = mock(CachingEventSource.class);
-    when(eventSource2.getResourceClass()).thenReturn(String.class);
+    when(eventSource2.getResourceClass()).thenReturn(TestCustomResource.class);
     when(eventSource2.name()).thenReturn("name2");
     manager.registerEventSource(eventSource2);
 
     final var exception = assertThrows(IllegalArgumentException.class,
-        () -> manager.getResourceEventSourceFor(String.class));
+        () -> manager.getResourceEventSourceFor(TestCustomResource.class));
     assertTrue(exception.getMessage().contains("name1"));
     assertTrue(exception.getMessage().contains("name2"));
 
-    assertTrue(manager.getResourceEventSourceFor(String.class, "name2").get().equals(eventSource2));
-    assertTrue(manager.getResourceEventSourceFor(String.class, "name1").get().equals(eventSource));
+    assertTrue(manager.getResourceEventSourceFor(TestCustomResource.class, "name2").get()
+        .equals(eventSource2));
+    assertTrue(manager.getResourceEventSourceFor(TestCustomResource.class, "name1").get()
+        .equals(eventSource));
   }
 
   @Test

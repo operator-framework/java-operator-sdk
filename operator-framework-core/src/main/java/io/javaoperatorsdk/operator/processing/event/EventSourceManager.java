@@ -140,11 +140,16 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
-      Class<S> dependentType, String... qualifier) {
+      Class<S> dependentType) {
+    return getResourceEventSourceFor(dependentType, null);
+  }
+
+  public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
+      Class<S> dependentType, String qualifier) {
     if (dependentType == null) {
       return Optional.empty();
     }
-    String name = (qualifier != null && qualifier.length >= 1) ? qualifier[0] : "";
+    String name = qualifier == null ? "" : qualifier;
     final var eventSource = eventSources.get(dependentType, name);
     return Optional.ofNullable(eventSource);
   }
@@ -192,13 +197,13 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       if (eventSources == null || eventSources.isEmpty()) {
         return false;
       }
-      return findMatchingSource(qualifier(source), eventSources).isPresent();
+      return findMatchingSource(name(source), eventSources).isPresent();
     }
 
     public void add(EventSource eventSource) {
       if (contains(eventSource)) {
         throw new IllegalArgumentException("An event source is already registered for the "
-            + keyAsString(getDependentType(eventSource), qualifier(eventSource))
+            + keyAsString(getDependentType(eventSource), name(eventSource))
             + " class/name combination");
       }
       sources.computeIfAbsent(keyFor(eventSource), k -> new ArrayList<>()).add(eventSource);
@@ -210,7 +215,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
           : source.getClass();
     }
 
-    private String qualifier(EventSource source) {
+    private String name(EventSource source) {
       return source.name();
     }
 
@@ -233,7 +238,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       return key;
     }
 
-    public <S> ResourceEventSource<R, S> get(Class<S> dependentType, String qualifier) {
+    public <S> ResourceEventSource<R, S> get(Class<S> dependentType, String name) {
       final var sourcesForType = sources.get(keyFor(dependentType));
       if (sourcesForType == null || sourcesForType.isEmpty()) {
         return null;
@@ -244,13 +249,13 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       if (size == 1) {
         source = sourcesForType.get(0);
       } else {
-        if (qualifier == null || qualifier.isBlank()) {
+        if (name == null || name.isBlank()) {
           throw new IllegalArgumentException("There are multiple EventSources registered for type "
               + dependentType.getCanonicalName()
-              + ", you need to provide a qualifier to specify which EventSource you want to query. Known qualifiers: "
-              + sourcesForType.stream().map(this::qualifier).collect(Collectors.joining(",")));
+              + ", you need to provide a name to specify which EventSource you want to query. Known names: "
+              + sourcesForType.stream().map(this::name).collect(Collectors.joining(",")));
         }
-        source = findMatchingSource(qualifier, sourcesForType).orElse(null);
+        source = findMatchingSource(name, sourcesForType).orElse(null);
 
         if (source == null) {
           return null;
@@ -259,29 +264,29 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
 
       if (!(source instanceof ResourceEventSource)) {
         throw new IllegalArgumentException(source + " associated with "
-            + keyAsString(dependentType, qualifier) + " is not a "
+            + keyAsString(dependentType, name) + " is not a "
             + ResourceEventSource.class.getSimpleName());
       }
       final var res = (ResourceEventSource<R, S>) source;
       final var resourceClass = res.getResourceClass();
       if (!resourceClass.isAssignableFrom(dependentType)) {
         throw new IllegalArgumentException(source + " associated with "
-            + keyAsString(dependentType, qualifier)
+            + keyAsString(dependentType, name)
             + " is handling " + resourceClass.getName() + " resources but asked for "
             + dependentType.getName());
       }
       return res;
     }
 
-    private Optional<EventSource> findMatchingSource(String qualifier,
+    private Optional<EventSource> findMatchingSource(String name,
         List<EventSource> sourcesForType) {
-      return sourcesForType.stream().filter(es -> qualifier(es).equals(qualifier)).findAny();
+      return sourcesForType.stream().filter(es -> name(es).equals(name)).findAny();
     }
 
     @SuppressWarnings("rawtypes")
-    private String keyAsString(Class dependentType, String qualifier) {
-      return qualifier != null && qualifier.length() > 0
-          ? "(" + dependentType.getName() + ", " + qualifier + ")"
+    private String keyAsString(Class dependentType, String name) {
+      return name != null && name.length() > 0
+          ? "(" + dependentType.getName() + ", " + name + ")"
           : dependentType.getName();
     }
   }
