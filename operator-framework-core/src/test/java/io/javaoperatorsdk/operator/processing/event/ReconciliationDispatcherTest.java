@@ -12,6 +12,7 @@ import org.mockito.ArgumentMatchers;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -90,7 +91,9 @@ class ReconciliationDispatcherTest {
     });
     when(reconciler.cleanup(eq(customResource), any()))
         .thenReturn(DeleteControl.defaultDelete());
-    Controller<R> controller = new Controller<>(reconciler, configuration, null);
+    Controller<R> controller = new Controller<>(reconciler, configuration,
+        MockKubernetesClient.client(customResource.getClass()));
+    controller.start();
 
     return new ReconciliationDispatcher<>(controller, customResourceFacade);
   }

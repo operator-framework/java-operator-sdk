@@ -19,7 +19,8 @@ import static org.mockito.Mockito.when;
 
 class OperatorTest {
 
-  private final KubernetesClient kubernetesClient = mock(KubernetesClient.class);
+  private final KubernetesClient kubernetesClient =
+      MockKubernetesClient.client(FooCustomResource.class);
   private final ConfigurationService configurationService = mock(ConfigurationService.class);
   private final ControllerConfiguration configuration = mock(ControllerConfiguration.class);
   private final Operator operator = new Operator(kubernetesClient, configurationService);

@@ -33,7 +33,7 @@ public class TomcatOperatorE2E {
     // Use this if you want to run the test without deploying the Operator to Kubernetes
     if ("true".equals(System.getenv("RUN_OPERATOR_IN_TEST"))) {
       Operator operator = new Operator(client, DefaultConfigurationService.instance());
-      operator.register(new TomcatReconciler(client));
+      operator.register(new TomcatReconciler());
       operator.register(new WebappReconciler(client));
       operator.start();
     }

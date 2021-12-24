@@ -86,7 +86,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         labelSelector,
         customResourcePredicate,
         original.getResourceClass(),
-        original.getConfigurationService());
+        original.getConfigurationService(),
+        original.getDependentResources());
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

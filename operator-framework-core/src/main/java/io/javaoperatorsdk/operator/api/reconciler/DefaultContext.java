@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
 
-public class DefaultContext<P extends HasMetadata> implements Context {
+public class DefaultContext<P extends HasMetadata> extends MapAttributeHolder implements Context {
 
   private final RetryInfo retryInfo;
   private final Controller<P> controller;

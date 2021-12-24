@@ -32,10 +32,9 @@ public class MySQLSchemaOperator {
         new ConfigurationServiceOverrider(DefaultConfigurationService.instance())
             .withMetrics(new MicrometerMetrics(new LoggingMeterRegistry()))
             .build());
-    operator.register(new MySQLSchemaReconciler(client, MySQLDbConfig.loadFromEnvironmentVars()));
+    operator.register(new MySQLSchemaReconciler(MySQLDbConfig.loadFromEnvironmentVars()));
     operator.installShutdownHook();
     operator.start();
-
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
   }

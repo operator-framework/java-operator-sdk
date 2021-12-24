@@ -37,7 +37,7 @@ public class MySQLSchemaOperatorE2E {
     if ("true".equals(System.getenv("RUN_OPERATOR_IN_TEST"))) {
       Operator operator = new Operator(client, DefaultConfigurationService.instance());
       MySQLDbConfig dbConfig = new MySQLDbConfig("mysql", null, "root", "password");
-      operator.register(new MySQLSchemaReconciler(client, dbConfig));
+      operator.register(new MySQLSchemaReconciler(dbConfig));
       operator.start();
     }
 

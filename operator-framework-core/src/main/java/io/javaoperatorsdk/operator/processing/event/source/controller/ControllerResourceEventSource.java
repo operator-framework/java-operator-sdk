@@ -1,34 +1,27 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.MissingCRDException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
-    extends AbstractResourceEventSource<T, T>
+    extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
     implements ResourceEventHandler<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
@@ -36,20 +29,12 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
-  private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
-      new ConcurrentHashMap<>();
-
   private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
-  private final ControllerResourceCache<T> cache;
 
   public ControllerResourceEventSource(Controller<T> controller) {
-    super(controller.getConfiguration().getResourceClass());
+    super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
-    final var configurationService = controller.getConfiguration().getConfigurationService();
-    var cloner = configurationService != null ? configurationService.getResourceCloner()
-        : ConfigurationService.DEFAULT_CLONER;
-    this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
 
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
@@ -73,70 +58,27 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public void start() {
-    final var configuration = controller.getConfiguration();
-    final var targetNamespaces = configuration.getEffectiveNamespaces();
-    final var client = controller.getCRClient();
-    final var labelSelector = configuration.getLabelSelector();
-
     try {
-      if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-        final var informer =
-            createAndRunInformerFor(client.inAnyNamespace()
-                .withLabelSelector(labelSelector), ANY_NAMESPACE_MAP_KEY);
-        log.debug("Registered {} -> {} for any namespace", controller, informer);
-      } else {
-        targetNamespaces.forEach(ns -> {
-          final var informer = createAndRunInformerFor(
-              client.inNamespace(ns).withLabelSelector(labelSelector), ns);
-          log.debug("Registered {} -> {} for namespace: {}", controller, informer, ns);
-        });
-      }
+      super.start();
     } catch (Exception e) {
       if (e instanceof KubernetesClientException) {
         handleKubernetesClientException(e);
       }
       throw e;
     }
-    super.start();
   }
 
-  private SharedIndexInformer<T> createAndRunInformerFor(
-      FilterWatchListDeletable<T, KubernetesResourceList<T>> filteredBySelectorClient, String key) {
-    var informer = filteredBySelectorClient.runnableInformer(0);
-    informer.addEventHandler(this);
-    sharedIndexInformers.put(key, informer);
-    informer.run();
-    return informer;
-  }
-
-  @Override
-  public void stop() {
-    for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
-      try {
-        log.info("Stopping informer {} -> {}", controller, informer);
-        informer.stop();
-      } catch (Exception e) {
-        log.warn("Error stopping informer {} -> {}", controller, informer, e);
-      }
-    }
-    super.stop();
-  }
-
-  public void eventReceived(ResourceAction action, T customResource, T oldResource) {
+  public void eventReceived(ResourceAction action, T resource, T oldResource) {
     try {
-      log.debug(
-          "Event received for resource: {}", getName(customResource));
-      MDCUtils.addResourceInfo(customResource);
-      controller.getEventSourceManager().broadcastOnResourceEvent(action, customResource,
-          oldResource);
-      if (filter.acceptChange(controller.getConfiguration(), oldResource, customResource)) {
+      log.debug("Event received for resource: {}", getName(resource));
+      MDCUtils.addResourceInfo(resource);
+      controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
+      if (filter.acceptChange(controller.getConfiguration(), oldResource, resource)) {
         getEventHandler().handleEvent(
-            new ResourceEvent(action, ResourceID.fromResource(customResource)));
+            new ResourceEvent(action, ResourceID.fromResource(resource)));
       } else {
-        log.debug(
-            "Skipping event handling resource {} with version: {}",
-            getUID(customResource),
-            getVersion(customResource));
+        log.debug("Skipping event handling resource {} with version: {}", getUID(resource),
+            getVersion(resource));
       }
     } finally {
       MDCUtils.removeResourceInfo();
@@ -158,24 +100,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     eventReceived(ResourceAction.DELETED, resource, null);
   }
 
-  public Optional<T> get(ResourceID resourceID) {
-    return cache.get(resourceID);
-  }
-
-  public ControllerResourceCache<T> getResourceCache() {
-    return cache;
-  }
-
-  /**
-   * @return shared informers by namespace. If custom resource is not namespace scoped use
-   *         CustomResourceEventSource.ANY_NAMESPACE_MAP_KEY
-   */
-  public Map<String, SharedIndexInformer<T>> getInformers() {
-    return Collections.unmodifiableMap(sharedIndexInformers);
-  }
-
-  public SharedIndexInformer<T> getInformer(String namespace) {
-    return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
+  public ResourceCache<T> getResourceCache() {
+    return manager();
   }
 
   /**
@@ -204,6 +130,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public Optional<T> getAssociated(T primary) {
-    return cache.get(ResourceID.fromResource(primary));
+    return manager().get(ResourceID.fromResource(primary));
   }
 }

@@ -44,8 +44,10 @@ public class ControllerManagerTest {
       TestControllerConfiguration<U> duplicated) {
     final var exception = assertThrows(OperatorException.class, () -> {
       final var controllerManager = new ControllerManager();
-      controllerManager.add(new Controller<>(registered.controller, registered, null));
-      controllerManager.add(new Controller<>(duplicated.controller, duplicated, null));
+      controllerManager.add(new Controller<>(registered.controller, registered,
+          MockKubernetesClient.client(registered.getResourceClass())));
+      controllerManager.add(new Controller<>(duplicated.controller, duplicated,
+          MockKubernetesClient.client(duplicated.getResourceClass())));
     });
     final var msg = exception.getMessage();
     assertTrue(
@@ -60,7 +62,8 @@ public class ControllerManagerTest {
 
     public TestControllerConfiguration(Reconciler<R> controller, Class<R> crClass) {
       super(null, getControllerName(controller),
-          CustomResource.getCRDName(crClass), null, false, null, null, null, null, crClass, null);
+          CustomResource.getCRDName(crClass), null, false, null, null, null, null, crClass, null,
+          null);
       this.controller = controller;
     }
 

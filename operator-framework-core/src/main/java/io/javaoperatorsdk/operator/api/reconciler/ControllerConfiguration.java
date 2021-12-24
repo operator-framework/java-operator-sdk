@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.javaoperatorsdk.operator.api.config.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceController;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -56,4 +58,14 @@ public @interface ControllerConfiguration {
    */
   @SuppressWarnings("rawtypes")
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
+
+  /**
+   * Optional list of classes providing {@link DependentResourceController} implementations
+   * encapsulating logic to handle the associated
+   * {@link io.javaoperatorsdk.operator.processing.Controller}'s reconciliation of dependent
+   * resources
+   *
+   * @return the list of {@link DependentResourceController} implementations
+   */
+  Dependent[] dependents() default {};
 }
