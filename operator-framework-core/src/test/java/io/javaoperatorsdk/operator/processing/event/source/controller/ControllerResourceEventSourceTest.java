@@ -6,9 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -28,8 +26,6 @@ class ControllerResourceEventSourceTest extends
     AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
 
   public static final String FINALIZER = "finalizer";
-  private static final MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> client =
-      mock(MixedOperation.class);
 
   private TestController testController = new TestController(true);
 
@@ -141,17 +137,13 @@ class ControllerResourceEventSourceTest extends
         mock(EventSourceManager.class);
 
     public TestController(boolean generationAware) {
-      super(null, new TestConfiguration(generationAware), null);
+      super(null, new TestConfiguration(generationAware),
+          MockKubernetesClient.client(TestCustomResource.class));
     }
 
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
       return eventSourceManager;
-    }
-
-    @Override
-    public MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> getCRClient() {
-      return client;
     }
   }
 
@@ -170,6 +162,7 @@ class ControllerResourceEventSourceTest extends
           null,
           null,
           TestCustomResource.class,
+          null,
           null);
     }
   }

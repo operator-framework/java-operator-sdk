@@ -36,6 +36,9 @@ public class ExecutorServiceManager {
       log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
           configuration.getExecutorService().getClass(),
           configuration.getTerminationTimeoutSeconds());
+      log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
+          configuration.getExecutorService().getClass(),
+          configuration.getTerminationTimeoutSeconds());
     } else {
       log.debug("Already started, reusing already setup instance!");
     }

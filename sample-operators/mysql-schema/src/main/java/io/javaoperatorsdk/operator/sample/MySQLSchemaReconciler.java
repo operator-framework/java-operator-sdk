@@ -1,101 +1,107 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import io.javaoperatorsdk.operator.api.config.Dependent;
+import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Builder;
+import io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
-import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
 import static java.lang.String.format;
 
-@ControllerConfiguration
+@ControllerConfiguration(
+    dependents = {
+        @Dependent(resourceType = Secret.class, type = SecretDependentResource.class),
+        @Dependent(resourceType = Schema.class, type = SchemaDependentResource.class)
+    })
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
-    EventSourceInitializer<MySQLSchema> {
-  public static final String SECRET_FORMAT = "%s-secret";
-  public static final String USERNAME_FORMAT = "%s-user";
-  public static final int POLL_PERIOD = 500;
-  private final Logger log = LoggerFactory.getLogger(getClass());
+    ContextInitializer<MySQLSchema>, EventSourceContextInjector {
 
-  private final KubernetesClient kubernetesClient;
+  private static final String SECRET_FORMAT = "%s-secret";
+  private static final String USERNAME_FORMAT = "%s-user";
+
+  protected static final String MYSQL_SECRET_NAME = "mysql.secret.name";
+  protected static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
+  protected static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
+  protected static final String MYSQL_DB_CONFIG = "mysql.db.config";
+  protected static final String BUILT_SCHEMA = "built schema";
+  static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
+
   private final MySQLDbConfig mysqlDbConfig;
 
-  public MySQLSchemaReconciler(KubernetesClient kubernetesClient, MySQLDbConfig mysqlDbConfig) {
-    this.kubernetesClient = kubernetesClient;
+  public MySQLSchemaReconciler(MySQLDbConfig mysqlDbConfig) {
     this.mysqlDbConfig = mysqlDbConfig;
   }
 
+  public static class SecretDependentResource
+      implements DependentResource<Secret, MySQLSchema>, Builder<Secret, MySQLSchema> {
+
+    @Override
+    public Secret buildFor(MySQLSchema schema, Context context) {
+      return new SecretBuilder()
+          .withNewMetadata()
+          .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
+          .withNamespace(schema.getMetadata().getNamespace())
+          .endMetadata()
+          .addToData("MYSQL_USERNAME", encode(
+              context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
+          .addToData("MYSQL_PASSWORD", encode(
+              context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
+          .build();
+    }
+
+    private static String encode(String value) {
+      return Base64.getEncoder().encodeToString(value.getBytes());
+    }
+  }
+
   @Override
-  public List<EventSource> prepareEventSources(
-      EventSourceContext<MySQLSchema> context) {
-    return List.of(new PerResourcePollingEventSource<>(
-        new SchemaPollingResourceSupplier(mysqlDbConfig), context.getPrimaryCache(), POLL_PERIOD,
-        Schema.class));
+  public void injectInto(EventSourceContext context) {
+    context.put(MYSQL_DB_CONFIG, mysqlDbConfig);
+  }
+
+  @Override
+  public void initContext(MySQLSchema primary, Context context) {
+    final var name = primary.getMetadata().getName();
+    // NOSONAR we don't need cryptographically-strong randomness here
+    final var password = RandomStringUtils.randomAlphanumeric(16);
+    final var secretName = String.format(SECRET_FORMAT, name);
+    final var userName = String.format(USERNAME_FORMAT, name);
+
+    // put information in context for other dependents and reconciler to use
+    context.put(MYSQL_SECRET_PASSWORD, password);
+    context.put(MYSQL_SECRET_NAME, secretName);
+    context.put(MYSQL_SECRET_USERNAME, userName);
   }
 
   @Override
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
-    log.info("Reconciling MySQLSchema with name: {}", schema.getMetadata().getName());
-    var dbSchema = context.getSecondaryResource(Schema.class);
-    log.debug("Schema: {} found for: {} ", dbSchema, schema.getMetadata().getName());
-    try (Connection connection = getConnection()) {
-      if (dbSchema.isEmpty()) {
-        log.debug("Creating Schema and related resources for: {}", schema.getMetadata().getName());
-        var schemaName = schema.getMetadata().getName();
-        String password = RandomStringUtils.randomAlphanumeric(16);
-        String secretName = String.format(SECRET_FORMAT, schemaName);
-        String userName = String.format(USERNAME_FORMAT, schemaName);
-
-        SchemaService.createSchemaAndRelatedUser(connection, schemaName,
-            schema.getSpec().getEncoding(), userName, password);
-        createSecret(schema, password, secretName, userName);
-        updateStatusPojo(schema, secretName, userName);
-        log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
-        return UpdateControl.updateStatus(schema);
-      } else {
-        log.debug("No update on MySQLSchema with name: {}", schema.getMetadata().getName());
-        return UpdateControl.noUpdate();
-      }
-    } catch (SQLException e) {
-      log.error("Error while creating Schema", e);
-      throw new IllegalStateException(e);
-    }
-  }
-
-  @Override
-  public DeleteControl cleanup(MySQLSchema schema, Context context) {
-    log.info("Cleaning up for: {}", schema.getMetadata().getName());
-    try (Connection connection = getConnection()) {
-      var dbSchema = SchemaService.getSchema(connection, schema.getMetadata().getName());
-      if (dbSchema.isPresent()) {
-        var userName = schema.getStatus() != null ? schema.getStatus().getUserName() : null;
-        SchemaService.deleteSchemaAndRelatedUser(connection, schema.getMetadata().getName(),
-            userName);
-      } else {
-        log.info(
-            "Delete event ignored for schema '{}', real schema doesn't exist",
-            schema.getMetadata().getName());
-      }
-      return DeleteControl.defaultDelete();
-    } catch (SQLException e) {
-      log.error("Error while trying to delete Schema", e);
-      return DeleteControl.noFinalizerRemoval();
-    }
+    // we only need to update the status if we just built the schema, i.e. when it's present in the
+    // context
+    return context.get(BUILT_SCHEMA, Schema.class).map(s -> {
+      updateStatusPojo(schema, context.getMandatory(MYSQL_SECRET_NAME, String.class),
+          context.getMandatory(MYSQL_SECRET_USERNAME, String.class));
+      log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
+      return UpdateControl.updateStatus(schema);
+    }).orElse(UpdateControl.noUpdate());
   }
 
   @Override
@@ -110,14 +116,6 @@ public class MySQLSchemaReconciler
     return Optional.empty();
   }
 
-  private Connection getConnection() throws SQLException {
-    String connectionString =
-        format("jdbc:mysql://%1$s:%2$s", mysqlDbConfig.getHost(), mysqlDbConfig.getPort());
-
-    log.debug("Connecting to '{}' with user '{}'", connectionString, mysqlDbConfig.getUser());
-    return DriverManager.getConnection(connectionString, mysqlDbConfig.getUser(),
-        mysqlDbConfig.getPassword());
-  }
 
   private void updateStatusPojo(MySQLSchema schema, String secretName, String userName) {
     SchemaStatus status = new SchemaStatus();
@@ -130,33 +128,4 @@ public class MySQLSchemaReconciler
     status.setStatus("CREATED");
     schema.setStatus(status);
   }
-
-  private void createSecret(MySQLSchema schema, String password, String secretName,
-      String userName) {
-
-    var currentSecret = kubernetesClient.secrets().inNamespace(schema.getMetadata().getNamespace())
-        .withName(secretName).get();
-    if (currentSecret != null) {
-      return;
-    }
-    Secret credentialsSecret =
-        new SecretBuilder()
-            .withNewMetadata()
-            .withName(secretName)
-            .withOwnerReferences(new OwnerReference("mysql.sample.javaoperatorsdk/v1",
-                false, false, "MySQLSchema",
-                schema.getMetadata().getName(), schema.getMetadata().getUid()))
-            .endMetadata()
-            .addToData(
-                "MYSQL_USERNAME", Base64.getEncoder().encodeToString(userName.getBytes()))
-            .addToData(
-                "MYSQL_PASSWORD", Base64.getEncoder().encodeToString(password.getBytes()))
-            .build();
-    this.kubernetesClient
-        .secrets()
-        .inNamespace(schema.getMetadata().getNamespace())
-        .create(credentialsSecret);
-  }
-
-
 }

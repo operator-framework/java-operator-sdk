@@ -158,6 +158,9 @@ public class CustomResourceSelectorTest {
     public ConfigurationService getConfigurationService() {
       return service;
     }
+
+    @Override
+    public void setConfigurationService(ConfigurationService service) {}
   }
 
   @ControllerConfiguration(namespaces = NAMESPACE)

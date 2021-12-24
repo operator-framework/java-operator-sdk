@@ -9,6 +9,8 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetri
 
 public class Mappers {
 
+  private Mappers() {}
+
   public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromAnnotation(
       String nameKey) {
     return fromMetadata(nameKey, null, false);

@@ -1,22 +1,33 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.Dependent;
+import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceController;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConfiguration;
 
+@SuppressWarnings("rawtypes")
 public class AnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
+  private List<DependentResource> dependents;
 
   public AnnotationConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -108,14 +119,54 @@ public class AnnotationConfiguration<R extends HasMetadata>
         : ResourceEventFilters.passthrough();
   }
 
-  public static <T> T valueOrDefault(ControllerConfiguration controllerConfiguration,
-      Function<ControllerConfiguration, T> mapper,
-      T defaultValue) {
-    if (controllerConfiguration == null) {
-      return defaultValue;
-    } else {
-      return mapper.apply(controllerConfiguration);
+  @Override
+  public List<DependentResource> getDependentResources() {
+    if (dependents == null) {
+      final var dependentConfigs = valueOrDefault(annotation,
+          ControllerConfiguration::dependents, new Dependent[] {});
+      if (dependentConfigs.length > 0) {
+        dependents = new ArrayList<>(dependentConfigs.length);
+        for (Dependent dependentConfig : dependentConfigs) {
+          final Class<? extends DependentResource> dependentType = dependentConfig.type();
+          DependentResource dependent;
+          try {
+            dependent = dependentType.getConstructor().newInstance();
+          } catch (NoSuchMethodException | InvocationTargetException | InstantiationException
+              | IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+          }
+
+          final var resourceType = dependentConfig.resourceType();
+          if (HasMetadata.class.isAssignableFrom(resourceType)) {
+            final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
+            final var namespaces =
+                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[] {});
+            final var labelSelector =
+                valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
+            final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,
+                KubernetesDependent.OWNED_DEFAULT);
+            final var skipIfUnchanged =
+                valueOrDefault(kubeDependent, KubernetesDependent::skipUpdateIfUnchanged,
+                    KubernetesDependent.SKIP_UPDATE_DEFAULT);
+            final var configuration = InformerConfiguration.from(service, resourceType)
+                .withLabelSelector(labelSelector)
+                .skippingEventPropagationIfUnchanged(skipIfUnchanged)
+                .withNamespaces(namespaces)
+                .build();
+            dependent = new KubernetesDependentResourceController(dependent, configuration, owned);
+          }
+
+          dependents.add(dependent);
+        }
+      } else {
+        dependents = Collections.emptyList();
+      }
     }
+    return dependents;
+  }
+
+  private static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
+    return annotation == null ? defaultValue : mapper.apply(annotation);
   }
 }
 

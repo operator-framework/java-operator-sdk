@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -20,8 +21,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String labelSelector;
   private final ResourceEventFilter<R> resourceEventFilter;
   private final Class<R> resourceClass;
+  private final List<DependentResource> dependents;
   private ConfigurationService service;
 
+  // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
       String associatedControllerClassName,
       String name,
@@ -33,7 +36,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
-      ConfigurationService service) {
+      ConfigurationService service,
+      List<DependentResource> dependents) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -52,6 +56,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
         resourceClass == null ? ControllerConfiguration.super.getResourceClass()
             : resourceClass;
     setConfigurationService(service);
+    this.dependents = dependents != null ? dependents : Collections.emptyList();
   }
 
   @Override
@@ -102,7 +107,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public void setConfigurationService(ConfigurationService service) {
     if (this.service != null) {
-      throw new RuntimeException("A ConfigurationService is already associated with '" + name
+      throw new IllegalStateException("A ConfigurationService is already associated with '" + name
           + "' ControllerConfiguration. Cannot change it once set!");
     }
     this.service = service;
@@ -121,5 +126,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public ResourceEventFilter<R> getEventFilter() {
     return resourceEventFilter;
+  }
+
+  @Override
+  public List<DependentResource> getDependentResources() {
+    return dependents;
   }
 }

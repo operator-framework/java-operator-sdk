@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
  *
  * @param <P> the type associated with the primary resource that is handled by your reconciler
  */
-public class EventSourceContext<P extends HasMetadata> {
+public class EventSourceContext<P extends HasMetadata> extends MapAttributeHolder {
 
   private final ResourceCache<P> primaryCache;
   private final ConfigurationService configurationService;
@@ -49,7 +49,7 @@ public class EventSourceContext<P extends HasMetadata> {
   /**
    * Provides access to the {@link KubernetesClient} used by the current
    * {@link io.javaoperatorsdk.operator.Operator} instance.
-   * 
+   *
    * @return the {@link KubernetesClient} used by the current
    *         {@link io.javaoperatorsdk.operator.Operator} instance.
    */

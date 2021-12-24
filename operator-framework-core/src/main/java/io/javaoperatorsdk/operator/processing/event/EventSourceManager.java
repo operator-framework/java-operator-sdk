@@ -48,6 +48,9 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     // controller event source needs to be available before we create the event processor
     final var controllerEventSource = eventSources.initControllerEventSource(controller);
     this.eventProcessor = new EventProcessor<>(this);
+
+    // sources need to be registered after the event processor is created since it's set on the
+    // event source
     registerEventSource(eventSources.retryEventSource());
     registerEventSource(controllerEventSource);
   }
@@ -66,12 +69,15 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   public void start() {
     lock.lock();
     try {
-      log.debug("Starting event sources.");
       for (var eventSource : eventSources) {
         try {
+          logEventSourceEvent(eventSource, "Starting");
           eventSource.start();
+          logEventSourceEvent(eventSource, "Started");
+        } catch (MissingCRDException e) {
+          throw e; // leave untouched
         } catch (Exception e) {
-          log.warn("Error starting {} -> {}", eventSource, e);
+          throw new OperatorException("Couldn't start source " + eventSource.name(), e);
         }
       }
       eventProcessor.start();
@@ -80,16 +86,30 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
   }
 
+  @SuppressWarnings("rawtypes")
+  private void logEventSourceEvent(EventSource eventSource, String event) {
+    if (log.isDebugEnabled()) {
+      if (eventSource instanceof ResourceEventSource) {
+        ResourceEventSource source = (ResourceEventSource) eventSource;
+        log.debug("{} event source {} for {}", event, eventSource.name(),
+            source.getResourceClass());
+      } else {
+        log.debug("{} event source {}", event, eventSource.name());
+      }
+    }
+  }
+
   @Override
   public void stop() {
     lock.lock();
     try {
-      log.debug("Closing event sources.");
       for (var eventSource : eventSources) {
         try {
+          logEventSourceEvent(eventSource, "Stopping");
           eventSource.stop();
+          logEventSourceEvent(eventSource, "Stopped");
         } catch (Exception e) {
-          log.warn("Error closing {} -> {}", eventSource, e);
+          log.warn("Error closing {} -> {}", eventSource.name(), e);
         }
       }
       eventSources.clear();
@@ -106,13 +126,10 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     try {
       eventSources.add(eventSource);
       eventSource.setEventHandler(eventProcessor);
-    } catch (Throwable e) {
-      if (e instanceof IllegalStateException || e instanceof MissingCRDException) {
-        // leave untouched
-        throw e;
-      }
-      throw new OperatorException(
-          "Couldn't register event source: " + eventSource.getClass().getName(), e);
+    } catch (IllegalStateException | MissingCRDException e) {
+      throw e; // leave untouched
+    } catch (Exception e) {
+      throw new OperatorException("Couldn't register event source: " + eventSource.name(), e);
     } finally {
       lock.unlock();
     }
@@ -219,7 +236,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       sources.computeIfAbsent(keyFor(eventSource), k -> new ArrayList<>()).add(eventSource);
     }
 
-    private Class getDependentType(EventSource source) {
+    private Class<?> getDependentType(EventSource source) {
       return source instanceof ResourceEventSource
           ? ((ResourceEventSource) source).getResourceClass()
           : source.getClass();

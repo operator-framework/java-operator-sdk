@@ -25,15 +25,18 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
 
-  private KubernetesClient kubernetesClient;
+  private static final Logger log = LoggerFactory.getLogger(WebappReconciler.class);
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final KubernetesClient kubernetesClient;
 
   public WebappReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
@@ -41,20 +44,32 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
 
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
-    return List.of(new InformerEventSource<>(
-        kubernetesClient, Tomcat.class, t -> {
-          // To create an event to a related WebApp resource and trigger the reconciliation
-          // we need to find which WebApp this Tomcat custom resource is related to.
-          // To find the related customResourceId of the WebApp resource we traverse the cache to
-          // and identify it based on naming convention.
-          return context.getPrimaryCache()
-              .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-              .map(ResourceID::fromResource)
-              .collect(Collectors.toSet());
-        },
-        (Webapp webapp) -> new ResourceID(webapp.getSpec().getTomcat(),
-            webapp.getMetadata().getNamespace()),
-        true));
+    /*
+     * To create an event to a related WebApp resource and trigger the reconciliation we need to
+     * find which WebApp this Tomcat custom resource is related to. To find the related
+     * customResourceId of the WebApp resource we traverse the cache and identify it based on naming
+     * convention.
+     */
+    final PrimaryResourcesRetriever<Tomcat> webappsMatchingTomcatName =
+        (Tomcat t) -> context.getPrimaryCache()
+            .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
+            .map(ResourceID::fromResource)
+            .collect(Collectors.toSet());
+
+    /*
+     * We retrieve the Tomcat instance associated with out Webapp from its spec
+     */
+    final AssociatedSecondaryResourceIdentifier<Webapp> tomcatFromWebAppSpec =
+        (Webapp webapp) -> new ResourceID(
+            webapp.getSpec().getTomcat(),
+            webapp.getMetadata().getNamespace());
+
+    InformerConfiguration<Tomcat, Webapp> configuration =
+        InformerConfiguration.from(context, Tomcat.class)
+            .withPrimaryResourcesRetriever(webappsMatchingTomcatName)
+            .withAssociatedSecondaryResourceIdentifier(tomcatFromWebAppSpec)
+            .build();
+    return List.of(new InformerEventSource<>(configuration, context));
   }
 
   /**
@@ -144,7 +159,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
 
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = execCmd(pod, data, command)) {
-          status[i] = "" + pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);;
+          status[i] = "" + pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
           status[i] = "" + pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
         } catch (InterruptedException e) {
@@ -194,7 +209,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
 
     @Override
     public void onClose(int code, String reason) {
-      log.debug("Exit with: " + code + " and with reason: " + reason);
+      log.debug("Exit with: {} and with reason: {}", code, reason);
       data.complete(baos.toString());
     }
   }

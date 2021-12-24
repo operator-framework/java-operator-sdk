@@ -7,7 +7,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -28,7 +27,7 @@ public abstract class CachingEventSource<T, P extends HasMetadata>
 
   protected UpdatableCache<T> cache;
 
-  public CachingEventSource(Class<T> resourceClass) {
+  protected CachingEventSource(Class<T> resourceClass) {
     super(resourceClass);
     cache = initCache();
   }
@@ -82,11 +81,6 @@ public abstract class CachingEventSource<T, P extends HasMetadata>
 
   public Optional<T> getCachedValue(ResourceID resourceID) {
     return cache.get(resourceID);
-  }
-
-  @Override
-  public void stop() throws OperatorException {
-    super.stop();
   }
 
   @Override

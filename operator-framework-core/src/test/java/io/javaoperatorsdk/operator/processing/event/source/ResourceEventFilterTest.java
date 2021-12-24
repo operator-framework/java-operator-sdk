@@ -7,10 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
@@ -171,6 +169,7 @@ class ResourceEventFilterTest {
           null,
           eventFilter,
           customResourceClass,
+          null,
           null);
     }
   }
@@ -178,17 +177,12 @@ class ResourceEventFilterTest {
   private static class TestController extends Controller<TestCustomResource> {
 
     public TestController(ControllerConfiguration<TestCustomResource> configuration) {
-      super(null, configuration, null);
+      super(null, configuration, MockKubernetesClient.client(TestCustomResource.class));
     }
 
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
       return mock(EventSourceManager.class);
-    }
-
-    @Override
-    public MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> getCRClient() {
-      return mock(MixedOperation.class);
     }
   }
 
@@ -197,17 +191,12 @@ class ResourceEventFilterTest {
 
     public ObservedGenController(
         ControllerConfiguration<ObservedGenCustomResource> configuration) {
-      super(null, configuration, null);
+      super(null, configuration, MockKubernetesClient.client(ObservedGenCustomResource.class));
     }
 
     @Override
     public EventSourceManager<ObservedGenCustomResource> getEventSourceManager() {
       return mock(EventSourceManager.class);
-    }
-
-    @Override
-    public MixedOperation<ObservedGenCustomResource, KubernetesResourceList<ObservedGenCustomResource>, Resource<ObservedGenCustomResource>> getCRClient() {
-      return mock(MixedOperation.class);
     }
   }
 }
