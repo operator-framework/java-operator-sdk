@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -37,7 +37,6 @@ public class ControllerManagerTest {
         TestCustomResourceV2.class);
 
     checkException(registered, duplicated);
-
   }
 
   private <T extends HasMetadata, U extends HasMetadata> void checkException(

@@ -6,5 +6,9 @@ public interface Context {
 
   Optional<RetryInfo> getRetryInfo();
 
-  <T> T getSecondaryResource(Class<T> expectedType, String... qualifier);
+  default <T> T getSecondaryResource(Class<T> expectedType) {
+    return getSecondaryResource(expectedType, null);
+  }
+
+  <T> T getSecondaryResource(Class<T> expectedType, String eventSourceName);
 }
