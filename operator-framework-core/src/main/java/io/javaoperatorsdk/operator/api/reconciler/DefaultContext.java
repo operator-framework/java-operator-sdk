@@ -26,7 +26,6 @@ public class DefaultContext<P extends HasMetadata> implements Context {
   public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
     final var eventSource =
         controller.getEventSourceManager().getResourceEventSourceFor(expectedType, eventSourceName);
-    return eventSource.map(es -> Optional.ofNullable(es.getAssociated(primaryResource)))
-        .orElse(Optional.empty());
+    return eventSource.map(es -> es.getAssociated(primaryResource));
   }
 }

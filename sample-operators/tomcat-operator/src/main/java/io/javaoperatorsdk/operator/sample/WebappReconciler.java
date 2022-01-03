@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -71,13 +70,12 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
       return UpdateControl.noUpdate();
     }
 
-    Optional<Tomcat> tomcatValue = context.getSecondaryResource(Tomcat.class);
-    if (tomcatValue.isEmpty()) {
-      throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
-          + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
-          + webapp.getMetadata().getNamespace());
-    }
-    Tomcat tomcat = tomcatValue.get();
+    Tomcat tomcat = context.getSecondaryResource(Tomcat.class)
+        .orElseThrow(
+            () -> new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
+                + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
+                + webapp.getMetadata().getNamespace()));
+
     if (tomcat.getStatus() != null
         && Objects.equals(tomcat.getSpec().getReplicas(), tomcat.getStatus().getReadyReplicas())) {
       log.info(
