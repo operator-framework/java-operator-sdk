@@ -16,7 +16,7 @@ public class Event {
 
   @Override
   public String toString() {
-    return "DefaultEvent{" +
+    return "Event{" +
         "relatedCustomResource=" + relatedCustomResource +
         '}';
   }
