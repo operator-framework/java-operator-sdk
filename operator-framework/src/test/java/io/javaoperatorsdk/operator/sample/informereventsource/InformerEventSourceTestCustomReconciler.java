@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +52,12 @@ public class InformerEventSourceTestCustomReconciler implements
 
     // Reading the config map from the informer not from the API
     // name of the config map same as custom resource for sake of simplicity
-    ConfigMap configMap = context.getSecondaryResource(ConfigMap.class);
+    Optional<ConfigMap> configMap = context.getSecondaryResource(ConfigMap.class);
+    if (configMap.isEmpty()) {
+      throw new IllegalStateException("Config map should be present at this place.");
+    }
 
-    String targetStatus = configMap.getData().get(TARGET_CONFIG_MAP_KEY);
+    String targetStatus = configMap.get().getData().get(TARGET_CONFIG_MAP_KEY);
     LOGGER.debug("Setting target status for CR: {}", targetStatus);
     resource.setStatus(new InformerEventSourceTestCustomResourceStatus());
     resource.getStatus().setConfigMapValue(targetStatus);

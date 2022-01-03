@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -63,11 +64,11 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment = context.getSecondaryResource(Deployment.class);
+    Optional<Deployment> deployment = context.getSecondaryResource(Deployment.class);
 
-    if (deployment != null) {
+    if (deployment.isPresent()) {
       Tomcat updatedTomcat =
-          updateTomcatStatus(tomcat, deployment);
+          updateTomcatStatus(tomcat, deployment.get());
       log.info(
           "Updating status of Tomcat {} in namespace {} to {} ready replicas",
           tomcat.getMetadata().getName(),
