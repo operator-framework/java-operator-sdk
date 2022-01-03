@@ -15,8 +15,9 @@ public class ResourceEvent extends Event {
 
   @Override
   public String toString() {
-    return "CustomResourceEvent{" +
+    return "ResourceEvent{" +
         "action=" + action +
+        ", associated resource id=" + getRelatedCustomResourceID() +
         '}';
   }
 
