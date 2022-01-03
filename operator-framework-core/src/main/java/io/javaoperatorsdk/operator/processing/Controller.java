@@ -173,7 +173,8 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler)
             .prepareEventSources(new EventSourceInitializationContext<>(
-                eventSourceManager.getControllerResourceEventSource().getResourceCache()))
+                eventSourceManager.getControllerResourceEventSource().getResourceCache(),
+                configuration.getConfigurationService()))
             .forEach(eventSourceManager::registerEventSource);
       }
       if (failOnMissingCurrentNS()) {
