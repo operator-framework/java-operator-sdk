@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -18,7 +17,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   }
 
   default String getResourceTypeName() {
-    return CustomResource.getCRDName(getResourceClass());
+    return HasMetadata.getFullResourceName(getResourceClass());
   }
 
   default String getFinalizer() {
