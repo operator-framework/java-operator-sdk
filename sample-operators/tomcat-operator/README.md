@@ -62,15 +62,16 @@ run `kubectl apply -f k8s/operator.yaml`. Now you can create Tomcat instances wi
 above).
 
 ## EventSources
-The TomcatController is listening to events about Deployments created by the TomcatOperator by registering a
-InformerEventSource with the EventSourceManager. The InformerEventSource will in turn register a watch on
-all Deployments managed by the Controller (identified by the `app.kubernetes.io/managed-by` label). 
-When an event from a Deployment is received we have to identify which Tomcat object does the Deployment
-belong to. This is done when the InformerEventSource creates the event.
+The TomcatController is listening to events about Deployments created by the TomcatOperator by
+registering a InformerEventSource with the EventSourceManager. The InformerEventSource will in turn
+register a watch on all Deployments managed by the Controller (identified by
+the `app.kubernetes.io/managed-by` label). When an event from a Deployment is received we have to
+identify which Tomcat object does the Deployment belong to. This is done when the
+InformerEventSource creates the event.
 
-The TomcatController has to take care of setting the `app.kubernetes.io/managed-by` label on the Deployment so the
-InformerEventSource can watch the right Deployments.
-The TomcatController also has to set `ownerReference` on the Deployment so later the InformerEventSource can 
-identify which Tomcat does the Deployment belong to. This is necessary so the frameowork can call the Controller
-`createOrUpdate` method correctly.
+The TomcatController has to take care of setting the `app.kubernetes.io/managed-by` label on the
+Deployment so the InformerEventSource can watch the right Deployments. The TomcatController also has
+to set `ownerReference` on the Deployment so later the InformerEventSource can identify which Tomcat
+does the Deployment belong to. This is necessary so the framework can call the Controller
+`reconcile` method correctly.
 

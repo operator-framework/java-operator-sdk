@@ -96,13 +96,15 @@ Always update the custom resource with `UpdateControl`, not with the actual kube
 On resource updates there is always an optimistic version control in place, to make sure that another update is not
 overwritten (by setting `resourceVersion` ) .
 
-The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent resource are cleaned
-up in `cleanup` implementation.
+The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent
+resource are cleaned up in `cleanup` implementation.
 
-However, there is a possibility to not remove the finalizer, this allows to clean up the resources in a more async way,
-mostly for the cases when there is a long waiting period after a delete operation is initiated. Note that in this case
-you might want to either schedule a timed event to make sure the
-`deleteResource` is executed again or use event sources get notified about the state changes of a deleted resource.
+However, there is a possibility to not remove the finalizer, this allows to clean up the resources
+in a more async way, mostly for the cases when there is a long waiting period after a delete
+operation is initiated. Note that in this case you might want to either schedule a timed event to
+make sure
+`cleanup` is executed again or use event sources get notified about the state changes of a deleted
+resource.
 
 ## Generation Awareness and Automatic Observed Generation Handling
 

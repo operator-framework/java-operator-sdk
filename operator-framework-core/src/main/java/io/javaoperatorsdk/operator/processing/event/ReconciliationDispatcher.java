@@ -11,7 +11,14 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
@@ -80,8 +87,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
    * {@link Reconciler#cleanup(HasMetadata, Context)} method
    *
    * @param resource the resource to be potentially deleted
-   * @return {@code true} if the resource should be handed to the controller's {@code
-   *     deleteResource} method, {@code false} otherwise
+   * @return {@code true} if the resource should be handed to the controller's
+   *         {@link Reconciler#cleanup(HasMetadata, Context)} method, {@code false} otherwise
    */
   private boolean shouldNotDispatchToDelete(R resource) {
     // we don't dispatch to delete if the controller is configured to use a finalizer but that
@@ -133,7 +140,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
       R resourceForExecution, R originalResource, Context context) {
     log.debug(
-        "Executing createOrUpdate for resource {} with version: {} with execution scope: {}",
+        "Reconciling resource {} with version: {} with execution scope: {}",
         getName(resourceForExecution),
         getVersion(resourceForExecution),
         executionScope);

@@ -44,7 +44,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
         new ControllerExecution<>() {
           @Override
           public String name() {
-            return "delete";
+            return "cleanup";
           }
 
           @Override
@@ -70,7 +70,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
         new ControllerExecution<>() {
           @Override
           public String name() {
-            return "createOrUpdate";
+            return "reconcile";
           }
 
           @Override
@@ -80,7 +80,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
           @Override
           public String successTypeName(UpdateControl<R> result) {
-            String successType = "cr";
+            String successType = "resource";
             if (result.isUpdateStatus()) {
               successType = "status";
             }
