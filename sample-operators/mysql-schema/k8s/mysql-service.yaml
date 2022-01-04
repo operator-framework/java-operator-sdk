@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql
+  namespace: mysql-schema-operator
 spec:
   ports:
   - port: 3306

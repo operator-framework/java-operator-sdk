@@ -26,10 +26,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-@Disabled
 public class MySQLSchemaOperatorE2E {
 
   final static String TEST_NS = "mysql-schema-test";
+  final static String MY_SQL_NS = "mysql";
 
   final static Logger log = LoggerFactory.getLogger(MySQLSchemaOperatorE2E.class);
 
@@ -71,12 +71,12 @@ public class MySQLSchemaOperatorE2E {
     log.info("Creating test namespace {}", TEST_NS);
     client.namespaces().create(testNs);
 
-    log.info("Deploying MySQL server");
-    deployMySQLServer(client);
+    if ("true".equals(System.getenv("DEPLOY_MY_SQL_SERVER"))) {
+      log.info("Deploying MySQL server");
+      deployMySQLServer(client);
+    }
 
     log.info("Creating test MySQLSchema object: {}", testSchema);
-    // var mysqlSchemaClient = client.customResources(MySQLSchema.class);
-    // mysqlSchemaClient.inNamespace(TEST_NS).createOrReplace(testSchema);
     client.resource(testSchema).createOrReplace();
 
     log.info("Waiting 5 minutes for expected resources to be created and updated");
@@ -91,18 +91,29 @@ public class MySQLSchemaOperatorE2E {
   }
 
   private void deployMySQLServer(KubernetesClient client) throws IOException {
+    Namespace mysql = new NamespaceBuilder().withMetadata(
+            new ObjectMetaBuilder().withName(MY_SQL_NS).build()).build();
+
+    if (mysql != null) {
+      log.info("Cleanup: deleting mysql namespace {}", MY_SQL_NS);
+      client.namespaces().delete(mysql);
+      await().atMost(5, MINUTES)
+              .until(() -> client.namespaces().withName(MY_SQL_NS).get() == null);
+    }
+    client.namespaces().create(mysql);
+
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Deployment deployment =
         mapper.readValue(new File("k8s/mysql-deployment.yaml"), Deployment.class);
-    deployment.getMetadata().setNamespace(TEST_NS);
+    deployment.getMetadata().setNamespace(MY_SQL_NS);
     Service service = mapper.readValue(new File("k8s/mysql-service.yaml"), Service.class);
-    service.getMetadata().setNamespace(TEST_NS);
+    service.getMetadata().setNamespace(MY_SQL_NS);
     client.resource(deployment).createOrReplace();
     client.resource(service).createOrReplace();
 
     log.info("Waiting for MySQL server to start");
     await().atMost(5, MINUTES).until(() -> {
-      Deployment mysqlDeployment = client.apps().deployments().inNamespace(TEST_NS)
+      Deployment mysqlDeployment = client.apps().deployments().inNamespace(MY_SQL_NS)
           .withName(deployment.getMetadata().getName()).get();
       return mysqlDeployment.getStatus().getReadyReplicas() != null
           && mysqlDeployment.getStatus().getReadyReplicas() == 1;
