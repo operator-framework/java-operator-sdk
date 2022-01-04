@@ -70,11 +70,6 @@ public class MySQLSchemaOperatorE2E {
     log.info("Creating test namespace {}", TEST_NS);
     client.namespaces().create(testNs);
 
-    if ("true".equals(System.getenv("DEPLOY_MY_SQL_SERVER"))) {
-      log.info("Deploying MySQL server");
-      deployMySQLServer(client);
-    }
-
     log.info("Creating test MySQLSchema object: {}", testSchema);
     client.resource(testSchema).createOrReplace();
 
@@ -86,36 +81,6 @@ public class MySQLSchemaOperatorE2E {
       assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
       assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
       assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
-    });
-  }
-
-  private void deployMySQLServer(KubernetesClient client) throws IOException {
-    Namespace mysql = new NamespaceBuilder().withMetadata(
-        new ObjectMetaBuilder().withName(MY_SQL_NS).build()).build();
-
-    if (mysql != null) {
-      log.info("Cleanup: deleting mysql namespace {}", MY_SQL_NS);
-      client.namespaces().delete(mysql);
-      await().atMost(5, MINUTES)
-          .until(() -> client.namespaces().withName(MY_SQL_NS).get() == null);
-    }
-    client.namespaces().create(mysql);
-
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Deployment deployment =
-        mapper.readValue(new File("k8s/mysql-deployment.yaml"), Deployment.class);
-    deployment.getMetadata().setNamespace(MY_SQL_NS);
-    Service service = mapper.readValue(new File("k8s/mysql-service.yaml"), Service.class);
-    service.getMetadata().setNamespace(MY_SQL_NS);
-    client.resource(deployment).createOrReplace();
-    client.resource(service).createOrReplace();
-
-    log.info("Waiting for MySQL server to start");
-    await().atMost(5, MINUTES).until(() -> {
-      Deployment mysqlDeployment = client.apps().deployments().inNamespace(MY_SQL_NS)
-          .withName(deployment.getMetadata().getName()).get();
-      return mysqlDeployment.getStatus().getReadyReplicas() != null
-          && mysqlDeployment.getStatus().getReadyReplicas() == 1;
     });
   }
 

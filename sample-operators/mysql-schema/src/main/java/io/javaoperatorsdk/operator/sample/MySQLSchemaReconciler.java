@@ -52,10 +52,10 @@ public class MySQLSchemaReconciler
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
     log.info("Reconciling MySQLSchema with name: {}", schema.getMetadata().getName());
     var dbSchema = context.getSecondaryResource(Schema.class);
-    log.info("Schema: {} found for: {} ", dbSchema, schema.getMetadata().getName());
+    log.debug("Schema: {} found for: {} ", dbSchema, schema.getMetadata().getName());
     try (Connection connection = getConnection()) {
       if (dbSchema.isEmpty()) {
-        log.info("Creating Schema and related resources for: {}", schema.getMetadata().getName());
+        log.debug("Creating Schema and related resources for: {}", schema.getMetadata().getName());
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
         String secretName = String.format(SECRET_FORMAT, schemaName);
@@ -68,7 +68,7 @@ public class MySQLSchemaReconciler
         log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
         return UpdateControl.updateStatus(schema);
       } else {
-        log.info("No update on MySQLSchema with name: {}", schema.getMetadata().getName());
+        log.debug("No update on MySQLSchema with name: {}", schema.getMetadata().getName());
         return UpdateControl.noUpdate();
       }
     } catch (SQLException e) {
