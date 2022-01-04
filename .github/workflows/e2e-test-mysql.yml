@@ -31,6 +31,7 @@ jobs:
         - name: Deploy MySQL DB
           working-directory: sample-operators/mysql-schema
           run: |
+            kubectl create namespace mysql
             kubectl apply -f k8s/mysql-deployment.yaml
             kubectl apply -f k8s/mysql-service.yaml
 
