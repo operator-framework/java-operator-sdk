@@ -91,6 +91,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     var resourceID = ResourceID.fromResource(resource);
     TimerTask task = timerTasks.remove(resourceID);
     if (task != null) {
+      log.debug("Canceling task for resource: {}", resource);
       task.cancel();
     }
     cache.remove(resourceID);
@@ -100,7 +101,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     var resourceID = ResourceID.fromResource(resource);
     if (timerTasks.get(resourceID) == null && (registerPredicate == null
         || registerPredicate.test(resource))) {
-      timer.schedule(new TimerTask() {
+      var task =  new TimerTask() {
         @Override
         public void run() {
           if (!isRunning()) {
@@ -110,9 +111,11 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
           // always use up-to-date resource from cache
           var res = resourceCache.get(resourceID);
           res.ifPresentOrElse(r -> pollForResource(r),
-              () -> log.warn("No resource in cache for resource ID: {}", resourceID));
+                  () -> log.warn("No resource in cache for resource ID: {}", resourceID));
         }
-      }, 0, period);
+      };
+      timerTasks.put(resourceID, task);
+      timer.schedule(task, 0, period);
     }
   }
 
