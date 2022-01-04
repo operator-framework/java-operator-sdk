@@ -24,7 +24,7 @@ spec:
       containers:
       - name: operator
         image: mysql-schema-operator
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
         env:
@@ -55,7 +55,7 @@ metadata:
   namespace: mysql-schema-operator
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: mysql-schema-operator
@@ -63,7 +63,7 @@ rules:
 - apiGroups:
   - mysql.sample.javaoperatorsdk
   resources:
-  - schemas
+  - mysqlschemas
   verbs:
   - "*"
 - apiGroups:
