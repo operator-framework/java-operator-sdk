@@ -69,7 +69,7 @@ rules:
 - apiGroups:
   - mysql.sample.javaoperatorsdk
   resources:
-  - schemas/status
+  - mysqlschemas/status
   verbs:
   - "*"
 - apiGroups:

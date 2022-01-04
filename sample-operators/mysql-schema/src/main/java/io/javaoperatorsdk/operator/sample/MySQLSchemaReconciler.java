@@ -54,7 +54,7 @@ public class MySQLSchemaReconciler
     var dbSchema = context.getSecondaryResource(Schema.class);
     log.info("Schema: {} found for: {} ", dbSchema, schema.getMetadata().getName());
     try (Connection connection = getConnection()) {
-      if (dbSchema == null) {
+      if (dbSchema.isEmpty()) {
         log.info("Creating Schema and related resources for: {}", schema.getMetadata().getName());
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
