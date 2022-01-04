@@ -5,20 +5,26 @@ layout: docs
 permalink: /docs/using-samples
 ---
 
-# How to use sample Operators
+# Sample Operators we Provide
 
-We have several sample Operators under
-the [samples](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/smoke-test-samples) directory:
+We have few simple Operators under
+the [smoke-test-samples](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/smoke-test-samples) directory.
+These are used mainly to showcase some minimal operators, but also to do some sanity checks during development:
 
 * *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout. Implemented
   with and without Spring Boot support. The two samples share the common module.
 * *spring-boot-plain*: Sample showing integration with Spring Boot.
 
-There are also more samples in the standalone [samples repo](https://github.com/java-operator-sdk/samples):
+In addition to that, there are examples under [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/sample-operators)
+directory which are intended to show usage of different components in different scenarios, but mainly are more real world
+examples:
 
-* *webserver*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code.
-* *mysql-schema*: Operator managing schemas in a MySQL database.
-* *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps for these.
+* *webpage*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code.
+* *mysql-schema*: Operator managing schemas in a MySQL database. Shows how to manage non Kubernetes resources.
+* *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps running in Tomcat. The intention 
+  with this example to show how to manage multiple related custom resources and/or more controllers.
+
+# Implementing a Sample Operator
 
 Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
 
@@ -59,7 +65,7 @@ The Controller implements the business logic and describes all the classes neede
 ```java
 
 @ControllerConfiguration
-public class WebServerController implements Reconciler<WebServer> {
+public class WebPageReconciler implements Reconciler<WebPage> {
 
     // Return the changed resource, so it gets updated. See javadoc for details.
     @Override
@@ -77,9 +83,8 @@ A sample custom resource POJO representation
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-public class WebServer extends CustomResource<WebServerSpec, WebServerStatus> implements
+public class WebPage extends CustomResource<WebPageSpec, WebPageStatus> implements
         Namespaced {
-
 }
 
 public class WebServerSpec {
@@ -107,7 +112,7 @@ might want to skip this step. This is done by setting the `CHECK_CRD_ENV_KEY` en
 ### Automatic generation of CRDs
 
 To automatically generate CRD manifests from your annotated Custom Resource classes, you only need to add the following
-dependencies to your project:
+dependencies to your project (in the background an annotation processor is used), with Maven:
 
 ```xml
 
@@ -116,6 +121,15 @@ dependencies to your project:
     <artifactId>crd-generator-apt</artifactId>
     <scope>provided</scope>
 </dependency>
+```
+
+or with Gradle:
+
+```groovy
+dependencies {
+    annotationProcessor 'io.fabric8:crd-generator-apt:<version>'
+    ...
+}
 ```
 
 The CRD will be generated in `target/classes/META-INF/fabric8` (or in `target/test-classes/META-INF/fabric8`, if you use

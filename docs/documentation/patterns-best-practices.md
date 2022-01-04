@@ -10,7 +10,7 @@ permalink: /docs/patterns-best-practices
 This document describes patters and best practices, to build and run operators, and how to implement them in terms
 of Java Operator SDK.
 
-## Implementing a Controller
+## Implementing a Reconciler
 
 ### Idempotency
 
