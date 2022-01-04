@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,13 +91,13 @@ public class MySQLSchemaOperatorE2E {
 
   private void deployMySQLServer(KubernetesClient client) throws IOException {
     Namespace mysql = new NamespaceBuilder().withMetadata(
-            new ObjectMetaBuilder().withName(MY_SQL_NS).build()).build();
+        new ObjectMetaBuilder().withName(MY_SQL_NS).build()).build();
 
     if (mysql != null) {
       log.info("Cleanup: deleting mysql namespace {}", MY_SQL_NS);
       client.namespaces().delete(mysql);
       await().atMost(5, MINUTES)
-              .until(() -> client.namespaces().withName(MY_SQL_NS).get() == null);
+          .until(() -> client.namespaces().withName(MY_SQL_NS).get() == null);
     }
     client.namespaces().create(mysql);
 
