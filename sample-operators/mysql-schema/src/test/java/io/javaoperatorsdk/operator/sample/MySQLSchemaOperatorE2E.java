@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
@@ -14,9 +13,6 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
