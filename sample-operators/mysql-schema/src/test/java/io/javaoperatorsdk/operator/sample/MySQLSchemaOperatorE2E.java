@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.io.File;
 import java.io.IOException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +14,6 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -26,10 +21,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-@Disabled
 public class MySQLSchemaOperatorE2E {
 
   final static String TEST_NS = "mysql-schema-test";
+  final static String MY_SQL_NS = "mysql";
 
   final static Logger log = LoggerFactory.getLogger(MySQLSchemaOperatorE2E.class);
 
@@ -71,12 +66,7 @@ public class MySQLSchemaOperatorE2E {
     log.info("Creating test namespace {}", TEST_NS);
     client.namespaces().create(testNs);
 
-    log.info("Deploying MySQL server");
-    deployMySQLServer(client);
-
     log.info("Creating test MySQLSchema object: {}", testSchema);
-    // var mysqlSchemaClient = client.customResources(MySQLSchema.class);
-    // mysqlSchemaClient.inNamespace(TEST_NS).createOrReplace(testSchema);
     client.resource(testSchema).createOrReplace();
 
     log.info("Waiting 5 minutes for expected resources to be created and updated");
@@ -87,25 +77,6 @@ public class MySQLSchemaOperatorE2E {
       assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
       assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
       assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
-    });
-  }
-
-  private void deployMySQLServer(KubernetesClient client) throws IOException {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Deployment deployment =
-        mapper.readValue(new File("k8s/mysql-deployment.yaml"), Deployment.class);
-    deployment.getMetadata().setNamespace(TEST_NS);
-    Service service = mapper.readValue(new File("k8s/mysql-service.yaml"), Service.class);
-    service.getMetadata().setNamespace(TEST_NS);
-    client.resource(deployment).createOrReplace();
-    client.resource(service).createOrReplace();
-
-    log.info("Waiting for MySQL server to start");
-    await().atMost(5, MINUTES).until(() -> {
-      Deployment mysqlDeployment = client.apps().deployments().inNamespace(TEST_NS)
-          .withName(deployment.getMetadata().getName()).get();
-      return mysqlDeployment.getStatus().getReadyReplicas() != null
-          && mysqlDeployment.getStatus().getReadyReplicas() == 1;
     });
   }
 

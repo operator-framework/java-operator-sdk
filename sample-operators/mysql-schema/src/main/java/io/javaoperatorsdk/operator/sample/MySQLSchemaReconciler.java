@@ -50,9 +50,12 @@ public class MySQLSchemaReconciler
 
   @Override
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
+    log.info("Reconciling MySQLSchema with name: {}", schema.getMetadata().getName());
     var dbSchema = context.getSecondaryResource(Schema.class);
+    log.debug("Schema: {} found for: {} ", dbSchema, schema.getMetadata().getName());
     try (Connection connection = getConnection()) {
-      if (dbSchema == null) {
+      if (dbSchema.isEmpty()) {
+        log.debug("Creating Schema and related resources for: {}", schema.getMetadata().getName());
         var schemaName = schema.getMetadata().getName();
         String password = RandomStringUtils.randomAlphanumeric(16);
         String secretName = String.format(SECRET_FORMAT, schemaName);
@@ -64,8 +67,10 @@ public class MySQLSchemaReconciler
         updateStatusPojo(schema, secretName, userName);
         log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
         return UpdateControl.updateStatus(schema);
+      } else {
+        log.debug("No update on MySQLSchema with name: {}", schema.getMetadata().getName());
+        return UpdateControl.noUpdate();
       }
-      return UpdateControl.noUpdate();
     } catch (SQLException e) {
       log.error("Error while creating Schema", e);
       throw new IllegalStateException(e);

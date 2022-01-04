@@ -1,10 +1,9 @@
 # End to end integration test which deploys the Tomcat operator to a Kubernetes
 # (Kind) cluster and creates custom resources to verify the operator's functionality
-name: TomcatOperator End to End test
+name: Tomcat Operator End to End test
 on:
-   push:
-      branches:
-      - "*"
+  pull_request:
+    branches: [ main, v1 ]
 jobs: 
     tomcat_e2e_test:
        runs-on: ubuntu-latest
