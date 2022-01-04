@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -28,7 +27,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class ResourceEventFilterTest {
   public static final String FINALIZER = "finalizer";
@@ -106,8 +104,6 @@ class ResourceEventFilterTest {
   @Test
   public void observedGenerationFiltering() {
     var config = new ObservedGenControllerConfig(FINALIZER, true, null);
-    when(config.getConfigurationService().getResourceCloner())
-        .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     var eventSource = init(new ObservedGenController(config));
 
@@ -134,9 +130,6 @@ class ResourceEventFilterTest {
         (configuration, oldResource, newResource) -> !Objects.equals(
             oldResource.getStatus().getConfigMapStatus(),
             newResource.getStatus().getConfigMapStatus()));
-
-    when(config.getConfigurationService().getResourceCloner())
-        .thenReturn(ConfigurationService.DEFAULT_CLONER);
 
     final var eventSource = init(new TestController(config));
 
@@ -184,10 +177,7 @@ class ResourceEventFilterTest {
           null,
           eventFilter,
           customResourceClass,
-          mock(ConfigurationService.class));
-
-      when(getConfigurationService().getResourceCloner())
-          .thenReturn(ConfigurationService.DEFAULT_CLONER);
+          null);
     }
   }
 
