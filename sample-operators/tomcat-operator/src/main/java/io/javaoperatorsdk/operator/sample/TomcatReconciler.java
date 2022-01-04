@@ -16,7 +16,12 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -63,19 +68,18 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
     createOrUpdateDeployment(tomcat);
     createOrUpdateService(tomcat);
 
-    Deployment deployment = context.getSecondaryResource(Deployment.class);
-
-    if (deployment != null) {
-      Tomcat updatedTomcat =
-          updateTomcatStatus(tomcat, deployment);
-      log.info(
-          "Updating status of Tomcat {} in namespace {} to {} ready replicas",
-          tomcat.getMetadata().getName(),
-          tomcat.getMetadata().getNamespace(),
-          tomcat.getStatus().getReadyReplicas());
-      return UpdateControl.updateStatus(updatedTomcat);
-    }
-    return UpdateControl.noUpdate();
+    return context.getSecondaryResource(Deployment.class)
+        .map(deployment -> {
+          Tomcat updatedTomcat =
+              updateTomcatStatus(tomcat, deployment);
+          log.info(
+              "Updating status of Tomcat {} in namespace {} to {} ready replicas",
+              tomcat.getMetadata().getName(),
+              tomcat.getMetadata().getNamespace(),
+              tomcat.getStatus().getReadyReplicas());
+          return UpdateControl.updateStatus(updatedTomcat);
+        })
+        .orElse(UpdateControl.noUpdate());
   }
 
   private Tomcat updateTomcatStatus(Tomcat tomcat, Deployment deployment) {

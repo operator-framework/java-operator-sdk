@@ -51,7 +51,8 @@ public class InformerEventSourceTestCustomReconciler implements
 
     // Reading the config map from the informer not from the API
     // name of the config map same as custom resource for sake of simplicity
-    ConfigMap configMap = context.getSecondaryResource(ConfigMap.class);
+    ConfigMap configMap = context.getSecondaryResource(ConfigMap.class)
+        .orElseThrow(() -> new IllegalStateException("Config map should be present."));
 
     String targetStatus = configMap.getData().get(TARGET_CONFIG_MAP_KEY);
     LOGGER.debug("Setting target status for CR: {}", targetStatus);

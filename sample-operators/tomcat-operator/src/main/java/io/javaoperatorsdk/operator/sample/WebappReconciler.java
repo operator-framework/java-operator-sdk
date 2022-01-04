@@ -70,12 +70,11 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
       return UpdateControl.noUpdate();
     }
 
-    Tomcat tomcat = context.getSecondaryResource(Tomcat.class);
-    if (tomcat == null) {
-      throw new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
-          + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
-          + webapp.getMetadata().getNamespace());
-    }
+    Tomcat tomcat = context.getSecondaryResource(Tomcat.class)
+        .orElseThrow(
+            () -> new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
+                + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
+                + webapp.getMetadata().getNamespace()));
 
     if (tomcat.getStatus() != null
         && Objects.equals(tomcat.getSpec().getReplicas(), tomcat.getStatus().getReadyReplicas())) {
