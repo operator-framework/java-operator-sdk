@@ -4,6 +4,9 @@ name: MySQL Schema Operator End to End test
 on:
   pull_request:
     branches: [ main, v1 ]
+  push:
+    branches:
+      - main
 jobs: 
     tomcat_e2e_test:
        runs-on: ubuntu-latest
