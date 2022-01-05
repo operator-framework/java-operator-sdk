@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -131,7 +132,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isErrorStatusHandlerPresent() ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
-      return configuration().getConfigurationService().getResourceCloner().clone(resource);
+      final var configurationService = configuration().getConfigurationService();
+      return configurationService != null ? configurationService.getResourceCloner().clone(resource)
+          : ConfigurationService.DEFAULT_CLONER.clone(resource);
     } else {
       return resource;
     }

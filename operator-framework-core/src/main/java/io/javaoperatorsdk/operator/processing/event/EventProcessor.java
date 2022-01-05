@@ -56,8 +56,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
         GenericRetry.fromConfiguration(
             eventSourceManager.getController().getConfiguration().getRetryConfiguration()),
-        eventSourceManager.getController().getConfiguration().getConfigurationService()
-            .getMetrics(),
+        eventSourceManager.getController().getConfiguration().getConfigurationService() == null
+            ? Metrics.NOOP
+            : eventSourceManager.getController().getConfiguration().getConfigurationService()
+                .getMetrics(),
         eventSourceManager);
   }
 

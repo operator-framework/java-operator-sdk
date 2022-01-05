@@ -19,15 +19,22 @@ public class ExecutorServiceManager {
   private final ExecutorService executor;
   private final int terminationTimeoutSeconds;
 
-  private ExecutorServiceManager(ExecutorService executor, int terminationTimeoutSeconds) {
+  private ExecutorServiceManager(InstrumentedExecutorService executor,
+      int terminationTimeoutSeconds) {
     this.executor = executor;
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
 
   public static void init(ConfigurationService configuration) {
     if (instance == null) {
+      if (configuration == null) {
+        configuration = new BaseConfigurationService(Version.UNKNOWN);
+      }
       instance = new ExecutorServiceManager(
           new InstrumentedExecutorService(configuration.getExecutorService()),
+          configuration.getTerminationTimeoutSeconds());
+      log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
+          configuration.getExecutorService().getClass(),
           configuration.getTerminationTimeoutSeconds());
     } else {
       log.debug("Already started, reusing already setup instance!");
@@ -45,8 +52,8 @@ public class ExecutorServiceManager {
 
   public static ExecutorServiceManager instance() {
     if (instance == null) {
-      throw new IllegalStateException(
-          "ExecutorServiceManager hasn't been started. Call start method before using!");
+      // provide a default configuration if none has been provided by init
+      init(null);
     }
     return instance;
   }
@@ -72,6 +79,9 @@ public class ExecutorServiceManager {
     private final ExecutorService executor;
 
     private InstrumentedExecutorService(ExecutorService executor) {
+      if (executor == null) {
+        throw new NullPointerException();
+      }
       this.executor = executor;
       debug = Utils.debugThreadPool();
     }

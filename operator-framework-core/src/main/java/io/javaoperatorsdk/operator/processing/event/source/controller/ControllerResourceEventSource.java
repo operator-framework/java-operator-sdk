@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.MissingCRDException;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
@@ -45,7 +46,9 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getConfiguration().getResourceClass());
     this.controller = controller;
-    var cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
+    final var configurationService = controller.getConfiguration().getConfigurationService();
+    var cloner = configurationService != null ? configurationService.getResourceCloner()
+        : ConfigurationService.DEFAULT_CLONER;
     this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
 
     var filters = new ResourceEventFilter[] {

@@ -12,7 +12,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -29,6 +33,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
   private EventSourceManager<R> eventSourceManager;
+  private volatile ConfigurationService configurationService;
 
   public Controller(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration,
@@ -40,7 +45,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
   @Override
   public DeleteControl cleanup(R resource, Context context) {
-    return configuration.getConfigurationService().getMetrics().timeControllerExecution(
+    return metrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
           public String name() {
@@ -66,7 +71,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
   @Override
   public UpdateControl<R> reconcile(R resource, Context context) {
-    return configuration.getConfigurationService().getMetrics().timeControllerExecution(
+    return metrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
           public String name() {
@@ -95,6 +100,11 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
             return reconciler.reconcile(resource, context);
           }
         });
+  }
+
+  private Metrics metrics() {
+    final var metrics = configurationService().getMetrics();
+    return metrics != null ? metrics : Metrics.NOOP;
   }
 
   @Override
@@ -157,7 +167,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     try {
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (configuration.getConfigurationService().checkCRDAndValidateLocalModel()) {
+      if (configurationService().checkCRDAndValidateLocalModel()) {
         crd =
             kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
                 .get();
@@ -174,7 +184,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
         ((EventSourceInitializer<R>) reconciler)
             .prepareEventSources(new EventSourceInitializationContext<>(
                 eventSourceManager.getControllerResourceEventSource().getResourceCache(),
-                configuration.getConfigurationService()))
+                configurationService()))
             .forEach(eventSourceManager::registerEventSource);
       }
       if (failOnMissingCurrentNS()) {
@@ -187,6 +197,23 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
+  }
+
+  private ConfigurationService configurationService() {
+    if (configurationService == null) {
+      configurationService = configuration.getConfigurationService();
+      // make sure we always have a default configuration service
+      if (configurationService == null) {
+        // we shouldn't need to register the configuration with the default service
+        configurationService = new BaseConfigurationService(Version.UNKNOWN) {
+          @Override
+          public boolean checkCRDAndValidateLocalModel() {
+            return false;
+          }
+        };
+      }
+    }
+    return configurationService;
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
