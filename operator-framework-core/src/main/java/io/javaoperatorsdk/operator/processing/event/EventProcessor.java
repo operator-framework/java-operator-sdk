@@ -122,14 +122,14 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         log.debug("Skipping event: {} because the event handler is not started", event);
         return;
       }
-      reconcileResource(resourceID);
+      handleMarkedEventForResource(resourceID);
     } finally {
       lock.unlock();
       MDCUtils.removeResourceIDInfo();
     }
   }
 
-  private void reconcileResource(ResourceID resourceID) {
+  private void handleMarkedEventForResource(ResourceID resourceID) {
     if (!eventMarker.deleteEventPresent(resourceID)) {
       submitReconciliationExecution(resourceID);
     } else {
@@ -361,7 +361,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
 
   private void handleAlreadyMarkedEvents() {
     for (ResourceID resourceID : eventMarker.resourceIDSWithEventPresent()) {
-      reconcileResource(resourceID);
+      handleMarkedEventForResource(resourceID);
     }
   }
 
