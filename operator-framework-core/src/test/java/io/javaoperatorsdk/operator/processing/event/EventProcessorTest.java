@@ -59,9 +59,11 @@ class EventProcessorTest {
 
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+    eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
             GenericRetry.defaultLimitedExponentialRetry()));
+    eventProcessorWithRetry.start();
 
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
@@ -268,6 +270,21 @@ class EventProcessorTest {
         PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
+  }
+
+  @Test
+  public void startProcessedMarkedEventReceivedBefore() {
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
+    eventProcessor =
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(testCustomResource()));
+    eventProcessor.handleEvent(new Event(crID));
+
+    verify(reconciliationDispatcherMock, timeout(100).times(0)).handleExecution(any());
+
+    eventProcessor.start();
+
+    verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {

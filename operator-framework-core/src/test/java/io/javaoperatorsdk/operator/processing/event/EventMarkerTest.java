@@ -9,6 +9,7 @@ class EventMarkerTest {
 
   private final EventMarker eventMarker = new EventMarker();
   private ResourceID sampleResourceID = new ResourceID("test-name");
+  private ResourceID sampleResourceID2 = new ResourceID("test-name2");
 
   @Test
   public void returnsNoEventPresentIfNotMarkedYet() {
@@ -60,6 +61,18 @@ class EventMarkerTest {
       eventMarker.markDeleteEventReceived(sampleResourceID);
       eventMarker.markEventReceived(sampleResourceID);
     });
+  }
+
+  @Test
+  public void listsResourceIDSWithEventsPresent() {
+    eventMarker.markEventReceived(sampleResourceID);
+    eventMarker.markEventReceived(sampleResourceID2);
+    eventMarker.unMarkEventReceived(sampleResourceID);
+
+    var res = eventMarker.resourceIDsWithEventPresent();
+
+    assertThat(res).hasSize(1);
+    assertThat(res).contains(sampleResourceID2);
   }
 
 }
