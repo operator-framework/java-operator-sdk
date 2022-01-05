@@ -198,7 +198,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public T getAssociated(T primary) {
-    return cache.get(ResourceID.fromResource(primary)).orElse(null);
+  public Optional<T> getAssociated(T primary) {
+    return cache.get(ResourceID.fromResource(primary));
   }
 }
