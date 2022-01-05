@@ -119,6 +119,11 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     }
   }
 
+  @Override
+  public Optional<T> getAssociated(R primary) {
+    return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
+  }
+
   /**
    *
    * @param resourceID of the target related resource

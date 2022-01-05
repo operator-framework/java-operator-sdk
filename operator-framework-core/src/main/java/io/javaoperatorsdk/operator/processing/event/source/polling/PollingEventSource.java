@@ -53,6 +53,11 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
     timer.cancel();
   }
 
+  @Override
+  public Optional<T> getAssociated(P primary) {
+    return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
+  }
+
   public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
     var resource = getCachedValue(resourceID);
     if (resource.isPresent()) {
