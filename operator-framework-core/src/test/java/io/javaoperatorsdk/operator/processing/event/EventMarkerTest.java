@@ -69,7 +69,7 @@ class EventMarkerTest {
     eventMarker.markEventReceived(sampleResourceID2);
     eventMarker.unMarkEventReceived(sampleResourceID);
 
-    var res = eventMarker.resourceIDSWithEventPresent();
+    var res = eventMarker.resourceIDsWithEventPresent();
 
     assertThat(res).hasSize(1);
     assertThat(res).contains(sampleResourceID2);

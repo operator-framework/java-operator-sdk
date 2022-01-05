@@ -84,7 +84,7 @@ class EventMarker {
     eventingState.remove(resourceID);
   }
 
-  public List<ResourceID> resourceIDSWithEventPresent() {
+  public List<ResourceID> resourceIDsWithEventPresent() {
     return eventingState.entrySet().stream()
         .filter(e -> e.getValue() != NO_EVENT_PRESENT)
         .map(Map.Entry::getKey)

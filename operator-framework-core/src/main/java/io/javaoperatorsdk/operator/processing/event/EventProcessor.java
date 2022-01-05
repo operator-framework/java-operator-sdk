@@ -360,7 +360,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void handleAlreadyMarkedEvents() {
-    for (ResourceID resourceID : eventMarker.resourceIDSWithEventPresent()) {
+    for (ResourceID resourceID : eventMarker.resourceIDsWithEventPresent()) {
       handleMarkedEventForResource(resourceID);
     }
   }
