@@ -52,8 +52,18 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     registerEventSource(controllerEventSource);
   }
 
+  /**
+   * Starts the event sources first and then the processor. Note that it's not desired to start
+   * processing events while the event sources are not "synced". This not fully started and the
+   * caches propagated - although for non k8s related event sources this behavior might be different
+   * (see
+   * {@link io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}).
+   *
+   * Now the event sources are also started sequentially, mainly because others might depend on
+   * {@link ControllerResourceEventSource} , which is started first.
+   */
   @Override
-  public void start() throws OperatorException {
+  public void start() {
     lock.lock();
     try {
       log.debug("Starting event sources.");

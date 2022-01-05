@@ -119,6 +119,13 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     }
   }
 
+  /**
+   * When this event source is queried for the resource, it might not be fully "synced". Thus, the
+   * cache might not be propagated, therefore the supplier is checked for the resource too.
+   *
+   * @param primary resource of the controller
+   * @return the related resource for this event source
+   */
   @Override
   public Optional<T> getAssociated(R primary) {
     return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
