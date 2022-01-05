@@ -184,7 +184,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
         ((EventSourceInitializer<R>) reconciler)
             .prepareEventSources(new EventSourceInitializationContext<>(
                 eventSourceManager.getControllerResourceEventSource().getResourceCache(),
-                configurationService()))
+                configurationService(), kubernetesClient))
             .forEach(eventSourceManager::registerEventSource);
       }
       if (failOnMissingCurrentNS()) {
