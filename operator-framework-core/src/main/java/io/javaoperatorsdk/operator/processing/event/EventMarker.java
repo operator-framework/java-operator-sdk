@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static io.javaoperatorsdk.operator.processing.event.EventMarker.EventingState.NO_EVENT_PRESENT;
 
 /**
  * Manages the state of received events. Basically there can be only three distinct states relevant
@@ -23,7 +28,7 @@ class EventMarker {
 
   private EventingState getEventingState(ResourceID resourceID) {
     EventingState actualState = eventingState.get(resourceID);
-    return actualState == null ? EventingState.NO_EVENT_PRESENT : actualState;
+    return actualState == null ? NO_EVENT_PRESENT : actualState;
   }
 
   private void setEventingState(ResourceID resourceID, EventingState state) {
@@ -46,7 +51,7 @@ class EventMarker {
     switch (actualState) {
       case EVENT_PRESENT:
         setEventingState(resourceID,
-            EventingState.NO_EVENT_PRESENT);
+            NO_EVENT_PRESENT);
         break;
       case DELETE_EVENT_PRESENT:
         throw new IllegalStateException("Cannot unmark delete event.");
@@ -72,10 +77,18 @@ class EventMarker {
 
   public boolean noEventPresent(ResourceID resourceID) {
     var actualState = getEventingState(resourceID);
-    return actualState == EventingState.NO_EVENT_PRESENT;
+    return actualState == NO_EVENT_PRESENT;
   }
 
   public void cleanup(ResourceID resourceID) {
     eventingState.remove(resourceID);
   }
+
+  public List<ResourceID> resourceIDSWithEventPresent() {
+    return eventingState.entrySet().stream()
+        .filter(e -> e.getValue() != NO_EVENT_PRESENT)
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toList());
+  }
+
 }

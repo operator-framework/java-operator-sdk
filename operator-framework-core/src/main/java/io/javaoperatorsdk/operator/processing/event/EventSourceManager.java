@@ -54,7 +54,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
 
   @Override
   public void start() throws OperatorException {
-    eventProcessor.start();
     lock.lock();
     try {
       log.debug("Starting event sources.");
@@ -65,6 +64,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
           log.warn("Error starting {} -> {}", eventSource, e);
         }
       }
+      eventProcessor.start();
     } finally {
       lock.unlock();
     }

@@ -58,23 +58,36 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
             eventSourceManager.getController().getConfiguration().getRetryConfiguration()),
         eventSourceManager.getController().getConfiguration().getConfigurationService() == null
             ? Metrics.NOOP
-            : eventSourceManager.getController().getConfiguration().getConfigurationService()
+            : eventSourceManager
+                .getController()
+                .getConfiguration()
+                .getConfigurationService()
                 .getMetrics(),
         eventSourceManager);
   }
 
-  EventProcessor(ReconciliationDispatcher<R> reconciliationDispatcher,
+  EventProcessor(
+      ReconciliationDispatcher<R> reconciliationDispatcher,
       EventSourceManager<R> eventSourceManager,
       String relatedControllerName,
       Retry retry) {
-    this(eventSourceManager.getControllerResourceEventSource().getResourceCache(), null,
+    this(
+        eventSourceManager.getControllerResourceEventSource().getResourceCache(),
+        null,
         relatedControllerName,
-        reconciliationDispatcher, retry, null, eventSourceManager);
+        reconciliationDispatcher,
+        retry,
+        null,
+        eventSourceManager);
   }
 
-  private EventProcessor(Cache<R> cache, ExecutorService executor,
+  private EventProcessor(
+      Cache<R> cache,
+      ExecutorService executor,
       String relatedControllerName,
-      ReconciliationDispatcher<R> reconciliationDispatcher, Retry retry, Metrics metrics,
+      ReconciliationDispatcher<R> reconciliationDispatcher,
+      Retry retry,
+      Metrics metrics,
       EventSourceManager<R> eventSourceManager) {
     this.running = true;
     this.executor =
@@ -105,17 +118,22 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       metrics.receivedEvent(event);
       handleEventMarking(event);
       if (!this.running) {
+        // events are received and marked, but will be processed on after the processor started
         log.debug("Skipping event: {} because the event handler is not started", event);
         return;
       }
-      if (!eventMarker.deleteEventPresent(resourceID)) {
-        submitReconciliationExecution(resourceID);
-      } else {
-        cleanupForDeletedEvent(resourceID);
-      }
+      reconcileResource(resourceID);
     } finally {
       lock.unlock();
       MDCUtils.removeResourceIDInfo();
+    }
+  }
+
+  private void reconcileResource(ResourceID resourceID) {
+    if (!eventMarker.deleteEventPresent(resourceID)) {
+      submitReconciliationExecution(resourceID);
+    } else {
+      cleanupForDeletedEvent(resourceID);
     }
   }
 
@@ -148,8 +166,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void handleEventMarking(Event event) {
-    if (event instanceof ResourceEvent &&
-        ((ResourceEvent) event).getAction() == ResourceAction.DELETED) {
+    if (event instanceof ResourceEvent
+        && ((ResourceEvent) event).getAction() == ResourceAction.DELETED) {
       eventMarker.markDeleteEventReceived(event);
     } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
       eventMarker.markEventReceived(event);
@@ -177,10 +195,11 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       // If a delete event present at this phase, it was received during reconciliation.
       // So we either removed the finalizer during reconciliation or we don't use finalizers.
       // Either way we don't want to retry.
-      if (isRetryConfigured() && postExecutionControl.exceptionDuringExecution() &&
-          !eventMarker.deleteEventPresent(resourceID)) {
-        handleRetryOnException(executionScope,
-            postExecutionControl.getRuntimeException().orElseThrow());
+      if (isRetryConfigured()
+          && postExecutionControl.exceptionDuringExecution()
+          && !eventMarker.deleteEventPresent(resourceID)) {
+        handleRetryOnException(
+            executionScope, postExecutionControl.getRuntimeException().orElseThrow());
         return;
       }
       cleanupOnSuccessfulExecution(executionScope);
@@ -195,8 +214,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
             postponeReconciliationAndHandleCacheSyncEvent(resourceID);
           }
         } else {
-          reScheduleExecutionIfInstructed(postExecutionControl,
-              executionScope.getResource());
+          reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
         }
       }
     } finally {
@@ -208,20 +226,26 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     eventSourceManager.getControllerResourceEventSource().whitelistNextEvent(resourceID);
   }
 
-  private boolean isCacheReadyForInstantReconciliation(ExecutionScope<R> executionScope,
-      PostExecutionControl<R> postExecutionControl) {
+  private boolean isCacheReadyForInstantReconciliation(
+      ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
     if (!postExecutionControl.customResourceUpdatedDuringExecution()) {
       return true;
     }
     String originalResourceVersion = getVersion(executionScope.getResource());
-    String customResourceVersionAfterExecution = getVersion(postExecutionControl
-        .getUpdatedCustomResource()
-        .orElseThrow(() -> new IllegalStateException(
-            "Updated custom resource must be present at this point of time")));
-    String cachedCustomResourceVersion = getVersion(cache
-        .get(executionScope.getCustomResourceID())
-        .orElseThrow(() -> new IllegalStateException(
-            "Cached custom resource must be present at this point")));
+    String customResourceVersionAfterExecution =
+        getVersion(
+            postExecutionControl
+                .getUpdatedCustomResource()
+                .orElseThrow(
+                    () -> new IllegalStateException(
+                        "Updated custom resource must be present at this point of time")));
+    String cachedCustomResourceVersion =
+        getVersion(
+            cache
+                .get(executionScope.getCustomResourceID())
+                .orElseThrow(
+                    () -> new IllegalStateException(
+                        "Cached custom resource must be present at this point")));
 
     if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
       return true;
@@ -233,9 +257,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     return !cachedCustomResourceVersion.equals(originalResourceVersion);
   }
 
-  private void reScheduleExecutionIfInstructed(PostExecutionControl<R> postExecutionControl,
-      R customResource) {
-    postExecutionControl.getReScheduleDelay()
+  private void reScheduleExecutionIfInstructed(
+      PostExecutionControl<R> postExecutionControl, R customResource) {
+    postExecutionControl
+        .getReScheduleDelay()
         .ifPresent(delay -> retryEventSource().scheduleOnce(customResource, delay));
   }
 
@@ -248,16 +273,15 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(ExecutionScope<R> executionScope,
-      RuntimeException exception) {
+  private void handleRetryOnException(
+      ExecutionScope<R> executionScope, RuntimeException exception) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
     var customResourceID = executionScope.getCustomResourceID();
     boolean eventPresent = eventMarker.eventPresent(customResourceID);
     eventMarker.markEventReceived(customResourceID);
 
     if (eventPresent) {
-      log.debug("New events exists for for resource id: {}",
-          customResourceID);
+      log.debug("New events exists for for resource id: {}", customResourceID);
       submitReconciliationExecution(customResourceID);
       return;
     }
@@ -277,8 +301,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
 
   private void cleanupOnSuccessfulExecution(ExecutionScope<R> executionScope) {
     log.debug(
-        "Cleanup for successful execution for resource: {}",
-        getName(executionScope.getResource()));
+        "Cleanup for successful execution for resource: {}", getName(executionScope.getResource()));
     if (isRetryConfigured()) {
       retryState.remove(executionScope.getCustomResourceID());
     }
@@ -330,8 +353,15 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     lock.lock();
     try {
       this.running = true;
+      handleAlreadyMarkedEvents();
     } finally {
       lock.unlock();
+    }
+  }
+
+  private void handleAlreadyMarkedEvents() {
+    for (ResourceID resourceID : eventMarker.resourceIDSWithEventPresent()) {
+      reconcileResource(resourceID);
     }
   }
 
