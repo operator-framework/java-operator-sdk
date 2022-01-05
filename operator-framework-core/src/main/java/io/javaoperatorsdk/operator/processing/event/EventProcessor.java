@@ -99,15 +99,15 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     lock.lock();
     try {
       log.debug("Received event: {}", event);
+
+      final var resourceID = event.getRelatedCustomResourceID();
+      MDCUtils.addResourceIDInfo(resourceID);
+      metrics.receivedEvent(event);
+      handleEventMarking(event);
       if (!this.running) {
         log.debug("Skipping event: {} because the event handler is not started", event);
         return;
       }
-      final var resourceID = event.getRelatedCustomResourceID();
-      MDCUtils.addResourceIDInfo(resourceID);
-      metrics.receivedEvent(event);
-
-      handleEventMarking(event);
       if (!eventMarker.deleteEventPresent(resourceID)) {
         submitReconciliationExecution(resourceID);
       } else {
