@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true, https = false)
+@Disabled
 public class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);
