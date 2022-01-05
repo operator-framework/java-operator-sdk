@@ -37,7 +37,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true, https = false)
-@Disabled
 public class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);
