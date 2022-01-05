@@ -138,9 +138,9 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
    * @param resource the primary resource we want to retrieve the associated resource for
    * @return the informed resource associated with the specified primary resource
    */
-  public T getAssociated(P resource) {
+  public Optional<T> getAssociated(P resource) {
     final var id = associatedWith.associatedSecondaryID(resource);
-    return get(id).orElse(null);
+    return get(id);
   }
 
 

@@ -90,8 +90,8 @@ public abstract class CachingEventSource<T, P extends HasMetadata>
   }
 
   @Override
-  public T getAssociated(P primary) {
-    return cache.get(ResourceID.fromResource(primary)).orElse(null);
+  public Optional<T> getAssociated(P primary) {
+    return cache.get(ResourceID.fromResource(primary));
   }
 
   protected static class MapCache<T> implements UpdatableCache<T> {
