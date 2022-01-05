@@ -22,6 +22,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -270,6 +271,20 @@ class EventProcessorTest {
         PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
+  }
+
+  @Test
+  public void startProcessedMarkedEventReceivedBefore() {
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
+    eventProcessor = spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(testCustomResource()));
+    eventProcessor.handleEvent(new Event(crID));
+
+    verify(reconciliationDispatcherMock, timeout(100).times(0)).handleExecution(any());
+
+    eventProcessor.start();
+
+    verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {

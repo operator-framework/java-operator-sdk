@@ -119,7 +119,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       handleEventMarking(event);
       if (!this.running) {
         // events are received and marked, but will be processed on after the processor started
-        log.debug("Skipping event: {} because the event handler is not started", event);
+        log.debug("Skipping event: {} because the event processor is not started", event);
         return;
       }
       handleMarkedEventForResource(resourceID);
