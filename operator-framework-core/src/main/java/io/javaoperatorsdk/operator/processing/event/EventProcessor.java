@@ -89,7 +89,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       Retry retry,
       Metrics metrics,
       EventSourceManager<R> eventSourceManager) {
-    this.running = true;
+    this.running = false;
     this.executor =
         executor == null
             ? new ScheduledThreadPoolExecutor(

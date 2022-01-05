@@ -59,9 +59,11 @@ class EventProcessorTest {
 
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+    eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
             GenericRetry.defaultLimitedExponentialRetry()));
+    eventProcessorWithRetry.start();
 
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
