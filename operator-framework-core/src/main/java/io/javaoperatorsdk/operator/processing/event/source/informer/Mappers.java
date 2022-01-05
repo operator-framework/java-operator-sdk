@@ -37,10 +37,16 @@ public class Mappers {
         return Collections.emptySet();
       } else {
         final var map = isLabel ? metadata.getLabels() : metadata.getAnnotations();
+        if (map == null) {
+          return Collections.emptySet();
+        }
+        var name = map.get(nameKey);
+        if (name == null) {
+          return Collections.emptySet();
+        }
         var namespace =
             namespaceKey == null ? resource.getMetadata().getNamespace() : map.get(namespaceKey);
-        return map != null ? Set.of(new ResourceID(map.get(nameKey), namespace))
-            : Collections.emptySet();
+        return Set.of(new ResourceID(name, namespace));
       }
     };
   }
