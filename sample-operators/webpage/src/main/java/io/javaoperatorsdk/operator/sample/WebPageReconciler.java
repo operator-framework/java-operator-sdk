@@ -118,7 +118,7 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
 
   @Override
   public DeleteControl cleanup(WebPage nginx, Context context) {
-    log.info("Execution deleteResource for: {}", nginx.getMetadata().getName());
+    log.info("Cleaning up for: {}", nginx.getMetadata().getName());
 
     log.info("Deleting ConfigMap {}", configMapName(nginx));
     Resource<ConfigMap> configMap =

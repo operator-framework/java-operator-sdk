@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 @ControllerConfiguration
 public class CustomServiceReconciler implements Reconciler<CustomService> {
 
-  public static final String KIND = "CustomService";
   private static final Logger log = LoggerFactory.getLogger(CustomServiceReconciler.class);
 
   private final KubernetesClient kubernetesClient;
@@ -32,14 +31,14 @@ public class CustomServiceReconciler implements Reconciler<CustomService> {
 
   @Override
   public DeleteControl cleanup(CustomService resource, Context context) {
-    log.info("Execution deleteResource for: {}", resource.getMetadata().getName());
-    return DeleteControl.defaultDelete();
+    log.info("Cleaning up for: {}", resource.getMetadata().getName());
+    return Reconciler.super.cleanup(resource, context);
   }
 
   @Override
   public UpdateControl<CustomService> reconcile(
       CustomService resource, Context context) {
-    log.info("Execution createOrUpdateResource for: {}", resource.getMetadata().getName());
+    log.info("Reconciling: {}", resource.getMetadata().getName());
 
     ServicePort servicePort = new ServicePort();
     servicePort.setPort(8080);

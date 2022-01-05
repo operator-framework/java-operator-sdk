@@ -23,7 +23,7 @@ public class DeleteControl extends BaseControl<DeleteControl> {
   @Override
   public DeleteControl rescheduleAfter(long delay) {
     if (removeFinalizer) {
-      throw new IllegalStateException("Cannot reschedule deleteResource if removing finalizer");
+      throw new IllegalStateException("Cannot reschedule cleanup if removing finalizer");
     }
     return super.rescheduleAfter(delay);
   }

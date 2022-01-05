@@ -79,7 +79,7 @@ public class MySQLSchemaReconciler
 
   @Override
   public DeleteControl cleanup(MySQLSchema schema, Context context) {
-    log.info("Execution deleteResource for: {}", schema.getMetadata().getName());
+    log.info("Cleaning up for: {}", schema.getMetadata().getName());
     try (Connection connection = getConnection()) {
       var dbSchema = SchemaService.getSchema(connection, schema.getMetadata().getName());
       if (dbSchema.isPresent()) {
