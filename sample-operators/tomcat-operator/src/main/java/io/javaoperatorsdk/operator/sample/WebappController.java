@@ -187,13 +187,13 @@ public class WebappController implements ResourceController<Webapp> {
     }
 
     @Override
-    public void onOpen(Response response) {
-      log.debug("Reading data... " + response.message());
+    public void onOpen() {
+      log.debug("Reading data... ");
     }
 
     @Override
     public void onFailure(Throwable t, Response response) {
-      log.debug(t.getMessage() + " " + response.message());
+      log.debug(t.getMessage());
       data.completeExceptionally(t);
     }
 
