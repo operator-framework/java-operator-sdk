@@ -20,15 +20,13 @@ import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-
-import okhttp3.Response;
 
 @ControllerConfiguration
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
@@ -42,7 +40,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceInitializationContext<Webapp> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
     return List.of(new InformerEventSource<>(
         kubernetesClient, Tomcat.class, t -> {
           // To create an event to a related WebApp resource and trigger the reconciliation

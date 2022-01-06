@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -39,7 +39,7 @@ public class InformerEventSourceTestCustomReconciler implements
 
   @Override
   public List<EventSource> prepareEventSources(
-      EventSourceInitializationContext<InformerEventSourceTestCustomResource> context) {
+      EventSourceContext<InformerEventSourceTestCustomResource> context) {
     return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
         Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
   }

@@ -7,17 +7,17 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 /**
- * Contextual information made available to prepare event sources.
+ * Contextual information made available to event sources.
  *
  * @param <P> the type associated with the primary resource that is handled by your reconciler
  */
-public class EventSourceInitializationContext<P extends HasMetadata> {
+public class EventSourceContext<P extends HasMetadata> {
 
   private final ResourceCache<P> primaryCache;
   private final ConfigurationService configurationService;
   private final KubernetesClient client;
 
-  public EventSourceInitializationContext(ResourceCache<P> primaryCache,
+  public EventSourceContext(ResourceCache<P> primaryCache,
       ConfigurationService configurationService, KubernetesClient client) {
     this.primaryCache = primaryCache;
     this.configurationService = configurationService;

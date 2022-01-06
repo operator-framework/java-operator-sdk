@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -108,7 +108,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceInitializationContext<R> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<R> context) {
     throw new UnsupportedOperationException("This method should never be called directly");
   }
 
@@ -182,7 +182,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       eventSourceManager = new EventSourceManager<>(this);
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler)
-            .prepareEventSources(new EventSourceInitializationContext<>(
+            .prepareEventSources(new EventSourceContext<>(
                 eventSourceManager.getControllerResourceEventSource().getResourceCache(),
                 configurationService(), kubernetesClient))
             .forEach(eventSourceManager::registerEventSource);
