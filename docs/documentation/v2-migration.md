@@ -1,6 +1,8 @@
 ---
-title: Migrating from v1 to v2 description: Migrating from v1 to v2 layout: docs permalink:
-/docs/v2-migration
+title: Migrating from v1 to v2
+description: Migrating from v1 to v2
+layout: docs
+permalink: /docs/v2-migration
 ---
 
 # Migrating from v1 to v2
