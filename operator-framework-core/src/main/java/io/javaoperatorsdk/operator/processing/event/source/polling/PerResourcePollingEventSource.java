@@ -97,8 +97,8 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     cache.remove(resourceID);
   }
 
-  // This method is always called from the same Thread with for the same resource,
-  // since events from ResourceEventAware only the thread of the informer. This is important
+  // This method is always called from the same Thread for the same resource,
+  // since events from ResourceEventAware are propagated from the thread of the informer. This is important
   // because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(R resource) {
     var resourceID = ResourceID.fromResource(resource);
