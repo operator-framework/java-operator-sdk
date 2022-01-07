@@ -16,9 +16,9 @@ public interface EventSourceInitializer<P extends HasMetadata> {
   /**
    * Prepares a list of {@link EventSource} implementations to be registered by the SDK.
    * 
-   * @param context a {@link EventSourceInitializationContext} providing access to information
-   *        useful to event sources
+   * @param context a {@link EventSourceContext} providing access to information useful to event
+   *        sources
    */
-  List<EventSource> prepareEventSources(EventSourceInitializationContext<P> context);
+  List<EventSource> prepareEventSources(EventSourceContext<P> context);
 
 }

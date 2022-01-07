@@ -1,24 +1,27 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 /**
- * Contextual information made available to prepare event sources.
+ * Contextual information made available to event sources.
  *
  * @param <P> the type associated with the primary resource that is handled by your reconciler
  */
-public class EventSourceInitializationContext<P extends HasMetadata> {
+public class EventSourceContext<P extends HasMetadata> {
 
   private final ResourceCache<P> primaryCache;
   private final ConfigurationService configurationService;
+  private final KubernetesClient client;
 
-  public EventSourceInitializationContext(ResourceCache<P> primaryCache,
-      ConfigurationService configurationService) {
+  public EventSourceContext(ResourceCache<P> primaryCache,
+      ConfigurationService configurationService, KubernetesClient client) {
     this.primaryCache = primaryCache;
     this.configurationService = configurationService;
+    this.client = client;
   }
 
   /**
@@ -41,5 +44,16 @@ public class EventSourceInitializationContext<P extends HasMetadata> {
    */
   public ConfigurationService getConfigurationService() {
     return configurationService;
+  }
+
+  /**
+   * Provides access to the {@link KubernetesClient} used by the current
+   * {@link io.javaoperatorsdk.operator.Operator} instance.
+   * 
+   * @return the {@link KubernetesClient} used by the current
+   *         {@link io.javaoperatorsdk.operator.Operator} instance.
+   */
+  public KubernetesClient getClient() {
+    return client;
   }
 }
