@@ -39,6 +39,8 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <sonar.organization>java-operator-sdk</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <junit.version>5.8.2</junit.version>
         <fabric8-client.version>5.11.2</fabric8-client.version>
