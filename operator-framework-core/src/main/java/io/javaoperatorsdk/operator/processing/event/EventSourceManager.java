@@ -40,7 +40,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   EventSourceManager(EventProcessor<R> eventProcessor) {
     this.eventProcessor = eventProcessor;
     controller = null;
-    registerEventSource(eventSources.initRetryEventSource());
+    registerEventSource(eventSources.retryEventSource());
   }
 
   public EventSourceManager(Controller<R> controller) {
@@ -48,7 +48,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     // controller event source needs to be available before we create the event processor
     final var controllerEventSource = eventSources.initControllerEventSource(controller);
     this.eventProcessor = new EventProcessor<>(this);
-    registerEventSource(eventSources.initRetryEventSource());
+    registerEventSource(eventSources.retryEventSource());
     registerEventSource(controllerEventSource);
   }
 
@@ -184,7 +184,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       return controllerResourceEventSource;
     }
 
-    TimerEventSource<R> initRetryEventSource() {
+    TimerEventSource<R> retryEventSource() {
       return retryAndRescheduleTimerEventSource;
     }
 
