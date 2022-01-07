@@ -27,7 +27,9 @@ public class MySQLSchemaOperator {
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
     operator.register(new MySQLSchemaReconciler(client, MySQLDbConfig.loadFromEnvironmentVars()));
+    operator.installShutdownHook();
     operator.start();
+
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
   }

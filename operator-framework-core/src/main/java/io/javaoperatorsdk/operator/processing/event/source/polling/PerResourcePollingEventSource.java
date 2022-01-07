@@ -99,6 +99,9 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
 
   private void checkAndRegisterTask(R resource) {
     var resourceID = ResourceID.fromResource(resource);
+    // Events are coming always from the same thread, no need for explicit locking for timerTasks
+    // related
+    // (multiple) operations in this method
     if (timerTasks.get(resourceID) == null && (registerPredicate == null
         || registerPredicate.test(resource))) {
       var task = new TimerTask() {

@@ -27,6 +27,7 @@ public class TomcatOperator {
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
     operator.register(new TomcatReconciler(client));
     operator.register(new WebappReconciler(client));
+    operator.installShutdownHook();
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);
