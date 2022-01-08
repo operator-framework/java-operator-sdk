@@ -106,7 +106,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   /**
    * Allow controllers to filter events before they are provided to the
    * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}. Note that the provided
-   * filter is combined with {@link #isGenerationAware()} to compute the final set of fiolters that
+   * filter is combined with {@link #isGenerationAware()} to compute the final set of filters that
    * should be applied;
    *
    * @return filter
