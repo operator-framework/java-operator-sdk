@@ -7,18 +7,18 @@ on:
   push:
     branches:
       - main
-jobs: 
-    tomcat_e2e_test:
-       runs-on: ubuntu-latest
-       env:
-        KIND_CL_NAME: e2e-test
-       steps:
-        - name: Checkout
-          uses: actions/checkout@v2
+jobs:
+  mysql_e2e_test:
+    runs-on: ubuntu-latest
+    env:
+      KIND_CL_NAME: e2e-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
-        - name: clean resident local docker
-          if: ${{ env.ACT }}
-          continue-on-error: true
+      - name: clean resident local docker
+        if: ${{ env.ACT }}
+        continue-on-error: true
           run: |
             for DIMG in "$KIND_CL_NAME-control-plane "; do
               docker stop $DIMG ; docker rm $DIMG ;
