@@ -83,7 +83,7 @@ class ReconciliationDispatcherTest {
     when(configService.getResourceCloner()).thenReturn(new Cloner() {
       @Override
 
-      public <R extends HasMetadata> R clone(R object) {
+      public <T extends HasMetadata> T clone(T object) {
         return object;
       }
     });
