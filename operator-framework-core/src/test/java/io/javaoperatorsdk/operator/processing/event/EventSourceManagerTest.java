@@ -133,10 +133,10 @@ class EventSourceManagerTest {
     assertTrue(exception.getMessage().contains("name1"));
     assertTrue(exception.getMessage().contains("name2"));
 
-    assertTrue(manager.getResourceEventSourceFor(TestCustomResource.class, "name2").get()
-        .equals(eventSource2));
-    assertTrue(manager.getResourceEventSourceFor(TestCustomResource.class, "name1").get()
-        .equals(eventSource));
+    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name2").get(),
+        eventSource2);
+    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name1").get(),
+        eventSource);
   }
 
   @Test
