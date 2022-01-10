@@ -35,7 +35,7 @@ class PerResourcePollingEventSourceTest extends
   @BeforeEach
   public void setup() {
     when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
-    when(supplier.getResources(any()))
+    when(supplier.getResource(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
@@ -47,7 +47,7 @@ class PerResourcePollingEventSourceTest extends
     source.onResourceCreated(testCustomResource);
 
     Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).getResources(eq(testCustomResource));
+    verify(supplier, atLeast(2)).getResource(eq(testCustomResource));
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -59,31 +59,31 @@ class PerResourcePollingEventSourceTest extends
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
-    verify(supplier, times(0)).getResources(eq(testCustomResource));
+    verify(supplier, times(0)).getResource(eq(testCustomResource));
     testCustomResource.getMetadata().setGeneration(2L);
     source.onResourceUpdated(testCustomResource, testCustomResource);
 
     Thread.sleep(2 * PERIOD);
 
-    verify(supplier, atLeast(1)).getResources(eq(testCustomResource));
+    verify(supplier, atLeast(1)).getResource(eq(testCustomResource));
   }
 
   @Test
   public void propagateEventOnDeletedResource() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
-    when(supplier.getResources(any()))
+    when(supplier.getResource(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()))
         .thenReturn(Optional.empty());
 
     Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).getResources(eq(testCustomResource));
+    verify(supplier, atLeast(2)).getResource(eq(testCustomResource));
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
   @Test
   public void getsValueFromCacheOrSupplier() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
-    when(supplier.getResources(any()))
+    when(supplier.getResource(any()))
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
