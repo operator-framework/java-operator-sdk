@@ -167,7 +167,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
         return;
       }
       if (controllers.isEmpty()) {
-        throw new OperatorException("No ResourceController exists. Exiting!");
+        throw new OperatorException("No Controller exists. Exiting!");
       }
     }
 
