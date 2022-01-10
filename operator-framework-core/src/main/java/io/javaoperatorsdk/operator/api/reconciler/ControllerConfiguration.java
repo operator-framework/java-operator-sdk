@@ -55,5 +55,5 @@ public @interface ControllerConfiguration {
    * @return the list of event filters.
    */
   @SuppressWarnings("rawtypes")
-  Class<ResourceEventFilter>[] eventFilters() default {};
+  Class<? extends ResourceEventFilter>[] eventFilters() default {};
 }
