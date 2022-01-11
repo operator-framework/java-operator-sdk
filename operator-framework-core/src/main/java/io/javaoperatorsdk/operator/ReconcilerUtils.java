@@ -10,9 +10,15 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 public class ReconcilerUtils {
 
   private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+  protected static final String MISSING_GROUP_SUFFIX = ".javaoperatorsdk.io";
 
-  public static String getDefaultFinalizerName(String crdName) {
-    return crdName + FINALIZER_NAME_SUFFIX;
+  public static String getDefaultFinalizerName(String resourceName) {
+    // resource names for historic resources such as Pods are missing periods and therefore do not
+    // constitute valid domain names as mandated by Kubernetes so generate one that does
+    if (resourceName.indexOf('.') < 0) {
+      resourceName = resourceName + MISSING_GROUP_SUFFIX;
+    }
+    return resourceName + FINALIZER_NAME_SUFFIX;
   }
 
   public static String getNameFor(Class<? extends Reconciler> reconcilerClass) {
