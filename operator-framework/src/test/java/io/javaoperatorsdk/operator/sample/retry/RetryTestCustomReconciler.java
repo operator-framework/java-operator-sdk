@@ -24,10 +24,11 @@ public class RetryTestCustomReconciler
       LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private int numberOfExecutionFails;
+  private final AtomicInteger numberOfExecutionFails;
+
 
   public RetryTestCustomReconciler(int numberOfExecutionFails) {
-    this.numberOfExecutionFails = numberOfExecutionFails;
+    this.numberOfExecutionFails = new AtomicInteger(numberOfExecutionFails);
   }
 
   @Override
@@ -40,7 +41,7 @@ public class RetryTestCustomReconciler
     }
     log.info("Value: " + resource.getSpec().getValue());
 
-    if (numberOfExecutions.get() < numberOfExecutionFails + 1) {
+    if (numberOfExecutions.get() < numberOfExecutionFails.get() + 1) {
       throw new RuntimeException("Testing Retry");
     }
     if (context.getRetryInfo().isEmpty() || context.getRetryInfo().get().isLastAttempt()) {

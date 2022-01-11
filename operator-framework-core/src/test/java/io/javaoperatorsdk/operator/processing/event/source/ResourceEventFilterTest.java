@@ -123,7 +123,7 @@ class ResourceEventFilterTest {
   }
 
   @Test
-  public void eventNotFilteredByCustomPredicateIfFinalizerIsRequired() {
+  public void eventAlwaysFilteredByCustomPredicate() {
     var config = new TestControllerConfig(
         FINALIZER,
         false,
@@ -138,13 +138,7 @@ class ResourceEventFilterTest {
     cr.getStatus().setConfigMapStatus("1");
 
     eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
-    verify(eventHandler, times(1)).handleEvent(any());
-
-    cr.getMetadata().setGeneration(1L);
-    cr.getStatus().setConfigMapStatus("1");
-
-    eventSource.eventReceived(ResourceAction.UPDATED, cr, cr);
-    verify(eventHandler, times(2)).handleEvent(any());
+    verify(eventHandler, times(0)).handleEvent(any());
   }
 
   private static class TestControllerConfig extends ControllerConfig<TestCustomResource> {

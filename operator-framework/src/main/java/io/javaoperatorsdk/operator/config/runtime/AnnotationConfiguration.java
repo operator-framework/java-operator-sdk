@@ -90,7 +90,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
           if (answer == null) {
             answer = filter;
           } else {
-            answer = filter.and(filter);
+            answer = answer.and(filter);
           }
         } catch (Exception e) {
           throw new RuntimeException(e);
