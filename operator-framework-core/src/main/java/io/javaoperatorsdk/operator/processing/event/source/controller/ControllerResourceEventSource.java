@@ -54,9 +54,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
         ResourceEventFilters.markedForDeletion(),
-        ResourceEventFilters.and(
-            controller.getConfiguration().getEventFilter(),
-            ResourceEventFilters.generationAware()),
+        ResourceEventFilters.generationAware(),
         null
     };
 
@@ -66,7 +64,11 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     } else {
       onceWhitelistEventFilterEventFilter = null;
     }
-    filter = ResourceEventFilters.or(filters);
+    if (controller.getConfiguration().getEventFilter() != null) {
+      filter = controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
+    } else {
+      filter = ResourceEventFilters.or(filters);
+    }
   }
 
   @Override

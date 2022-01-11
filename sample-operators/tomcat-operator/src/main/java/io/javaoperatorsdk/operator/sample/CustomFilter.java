@@ -5,8 +5,9 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class CustomFilter implements ResourceEventFilter {
-    @Override
-    public boolean acceptChange(ControllerConfiguration configuration, HasMetadata oldResource, HasMetadata newResource) {
-        return false;
-    }
+  @Override
+  public boolean acceptChange(ControllerConfiguration configuration, HasMetadata oldResource,
+      HasMetadata newResource) {
+    return false;
+  }
 }
