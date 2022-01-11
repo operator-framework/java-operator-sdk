@@ -24,21 +24,21 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements AutoCloseable, LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
-  private volatile boolean closeKubernetesClientOnStop;
+  private final boolean closeKubernetesClientOnStop;
   private final ConfigurationService configurationService;
   private final ControllerManager controllers = new ControllerManager();
 
 
   public Operator(ConfigurationService configurationService) {
-    this(new DefaultKubernetesClient(), configurationService,true);
+    this(new DefaultKubernetesClient(), configurationService, true);
   }
 
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
-    this(kubernetesClient,configurationService,true);
+    this(kubernetesClient, configurationService, true);
   }
 
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService,
-                  boolean closeKubernetesClientOnStop) {
+      boolean closeKubernetesClientOnStop) {
     this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
     this.closeKubernetesClientOnStop = closeKubernetesClientOnStop;
