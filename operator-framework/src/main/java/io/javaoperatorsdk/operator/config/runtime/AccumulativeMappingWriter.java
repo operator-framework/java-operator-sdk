@@ -21,8 +21,6 @@ import org.slf4j.LoggerFactory;
  */
 class AccumulativeMappingWriter {
 
-  private static final Logger log = LoggerFactory.getLogger(AccumulativeMappingWriter.class);
-
   private final Map<String, String> mappings = new ConcurrentHashMap<>();
   private final String resourcePath;
   private final ProcessingEnvironment processingEnvironment;
