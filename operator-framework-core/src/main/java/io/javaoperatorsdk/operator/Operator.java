@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,22 +75,8 @@ public class Operator implements AutoCloseable, LifecycleAware {
         version.getCommit(),
         version.getBuiltTime());
 
-    log.info("Client version: {}", Version.clientVersion());
-    try {
-      final var k8sVersion = kubernetesClient.getKubernetesVersion();
-      if (k8sVersion != null) {
-        log.info("Server version: {}.{}", k8sVersion.getMajor(), k8sVersion.getMinor());
-      }
-    } catch (Exception e) {
-      final String error;
-      if (e.getCause() instanceof ConnectException) {
-        error = "Cannot connect to cluster";
-      } else {
-        error = "Error retrieving the server version";
-      }
-      log.error(error, e);
-      throw new OperatorException(error, e);
-    }
+    final var clientVersion = Version.clientVersion();
+    log.info("Client version: {}", clientVersion);
 
     ExecutorServiceManager.init(configurationService);
     controllers.start();
