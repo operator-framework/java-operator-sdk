@@ -11,9 +11,6 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.StandardLocation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * The writer is able to load an existing resource file as a Map and override it with the new
  * mappings added to the existing mappings. Every entry corresponds to a line in the resource file
