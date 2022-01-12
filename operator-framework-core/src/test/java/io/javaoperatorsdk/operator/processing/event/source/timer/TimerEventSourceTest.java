@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourceTest.CapturingEventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -23,7 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class TimerEventSourceTest
-    extends AbstractEventSourceTest<TimerEventSource<TestCustomResource>, CapturingEventHandler> {
+    extends
+    AbstractEventSourceTestBase<TimerEventSource<TestCustomResource>, CapturingEventHandler> {
 
   public static final int INITIAL_DELAY = 50;
   public static final int PERIOD = 50;

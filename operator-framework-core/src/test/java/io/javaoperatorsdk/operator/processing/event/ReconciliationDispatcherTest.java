@@ -103,7 +103,7 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, times(1))
         .replaceWithLock(
             argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
-    assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
+    assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER)).isTrue();
   }
 
   @Test

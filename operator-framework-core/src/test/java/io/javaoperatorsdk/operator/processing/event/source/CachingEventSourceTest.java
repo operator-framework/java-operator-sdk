@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class CachingEventSourceTest extends
-    AbstractEventSourceTest<CachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+    AbstractEventSourceTestBase<CachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   @BeforeEach
   public void setup() {
