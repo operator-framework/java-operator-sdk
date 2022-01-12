@@ -24,24 +24,24 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements AutoCloseable, LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
-  private final boolean closeKubernetesClientOnStop;
   private final ConfigurationService configurationService;
   private final ControllerManager controllers = new ControllerManager();
 
 
   public Operator(ConfigurationService configurationService) {
-    this(new DefaultKubernetesClient(), configurationService, true);
+    this(new DefaultKubernetesClient(), configurationService);
   }
 
+  /**
+   * Note that Operator by default closes the client on stop, this can be changed using
+   * {@link ConfigurationService}
+   *
+   * @param kubernetesClient client to use to all Kubernetes related operations
+   * @param configurationService provides configuration
+   */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
-    this(kubernetesClient, configurationService, true);
-  }
-
-  public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService,
-      boolean closeKubernetesClientOnStop) {
     this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
-    this.closeKubernetesClientOnStop = closeKubernetesClientOnStop;
   }
 
   /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
@@ -105,7 +105,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
     controllers.stop();
 
     ExecutorServiceManager.stop();
-    if (closeKubernetesClientOnStop) {
+    if (configurationService.getCloseClientOnStop()) {
       kubernetesClient.close();
     }
   }

@@ -15,6 +15,7 @@ public class ConfigurationServiceOverrider {
   private int threadNumber;
   private Cloner cloner;
   private int timeoutSeconds;
+  private boolean closeClientOnStop;
 
   public ConfigurationServiceOverrider(
       ConfigurationService original) {
@@ -25,6 +26,7 @@ public class ConfigurationServiceOverrider {
     this.cloner = original.getResourceCloner();
     this.timeoutSeconds = original.getTerminationTimeoutSeconds();
     this.metrics = original.getMetrics();
+    this.closeClientOnStop = original.getCloseClientOnStop();
   }
 
 
@@ -55,6 +57,11 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withMetrics(Metrics metrics) {
     this.metrics = metrics;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withCloseClientOnStop(boolean close) {
+    this.closeClientOnStop = close;
     return this;
   }
 
@@ -104,6 +111,11 @@ public class ConfigurationServiceOverrider {
       @Override
       public Metrics getMetrics() {
         return metrics;
+      }
+
+      @Override
+      public boolean getCloseClientOnStop() {
+        return closeClientOnStop;
       }
     };
   }
