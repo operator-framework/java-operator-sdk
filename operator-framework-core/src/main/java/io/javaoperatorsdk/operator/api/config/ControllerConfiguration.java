@@ -17,19 +17,11 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   }
 
   default String getResourceTypeName() {
-    return getResourceTypeName(getResourceClass());
-  }
-
-  static <T extends HasMetadata> String getResourceTypeName(Class<T> resourceClass) {
-    final var group = HasMetadata.getGroup(resourceClass);
-    final var plural = HasMetadata.getPlural(resourceClass);
-    return (group == null || group.isEmpty()) ? plural : plural + "." + group;
-    // use when fabric8 5.12 is released
-    // return HasMetadata.getFullResourceName(getResourceClass());
+    return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
   default String getFinalizer() {
-    return ReconcilerUtils.getDefaultFinalizerName(getResourceTypeName());
+    return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
   }
 
   /**

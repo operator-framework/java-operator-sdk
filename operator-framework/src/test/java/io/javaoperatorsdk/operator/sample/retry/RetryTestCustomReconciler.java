@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -18,8 +17,7 @@ public class RetryTestCustomReconciler
     implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
 
   public static final String FINALIZER_NAME =
-      ReconcilerUtils.getDefaultFinalizerName(
-          CustomResource.getCRDName(RetryTestCustomResource.class));
+      ReconcilerUtils.getDefaultFinalizerName(RetryTestCustomResource.class);
   private static final Logger log =
       LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);

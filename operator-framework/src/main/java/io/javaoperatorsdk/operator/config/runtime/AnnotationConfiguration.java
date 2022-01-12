@@ -31,9 +31,15 @@ public class AnnotationConfiguration<R extends HasMetadata>
   @Override
   public String getFinalizer() {
     if (annotation == null || annotation.finalizerName().isBlank()) {
-      return ReconcilerUtils.getDefaultFinalizerName(getResourceTypeName());
+      return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
     } else {
-      return annotation.finalizerName();
+      final var finalizer = annotation.finalizerName();
+      if (ReconcilerUtils.isFinalizerValid(finalizer)) {
+        return finalizer;
+      } else {
+        throw new IllegalArgumentException(finalizer
+            + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
+      }
     }
   }
 
@@ -93,7 +99,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
             answer = answer.and(filter);
           }
         } catch (Exception e) {
-          throw new RuntimeException(e);
+          throw new IllegalArgumentException(e);
         }
       }
     }
