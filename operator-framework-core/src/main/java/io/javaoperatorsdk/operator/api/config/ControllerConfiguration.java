@@ -17,11 +17,11 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   }
 
   default String getResourceTypeName() {
-    return HasMetadata.getFullResourceName(getResourceClass());
+    return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
   default String getFinalizer() {
-    return ReconcilerUtils.getDefaultFinalizerName(getResourceTypeName());
+    return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
   }
 
   /**

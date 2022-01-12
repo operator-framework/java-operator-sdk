@@ -2,6 +2,8 @@ package io.javaoperatorsdk.operator;
 
 import java.util.Locale;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -10,9 +12,50 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 public class ReconcilerUtils {
 
   private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
+  protected static final String MISSING_GROUP_SUFFIX = ".javaoperatorsdk.io";
 
-  public static String getDefaultFinalizerName(String crdName) {
-    return crdName + FINALIZER_NAME_SUFFIX;
+  // prevent instantiation of util class
+  private ReconcilerUtils() {}
+
+  public static boolean isFinalizerValid(String finalizer) {
+    // todo: use fabric8 method when 5.12 is released
+    // return HasMetadata.validateFinalizer(finalizer);
+    final var validator = new HasMetadata() {
+
+      @Override
+      public ObjectMeta getMetadata() {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public void setMetadata(ObjectMeta objectMeta) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public void setApiVersion(String s) {
+        throw new UnsupportedOperationException();
+      }
+    };
+    return validator.isFinalizerValid(finalizer);
+  }
+
+  public static String getResourceTypeName(Class<? extends HasMetadata> resourceClass) {
+    // todo: use fabric8 method when 5.12 is released
+    // return HasMetadata.getFullResourceName(resourceClass);
+    final var group = HasMetadata.getGroup(resourceClass);
+    final var plural = HasMetadata.getPlural(resourceClass);
+    return (group == null || group.isEmpty()) ? plural : plural + "." + group;
+  }
+
+  public static String getDefaultFinalizerName(Class<? extends HasMetadata> resourceClass) {
+    var resourceName = getResourceTypeName(resourceClass);
+    // resource names for historic resources such as Pods are missing periods and therefore do not
+    // constitute valid domain names as mandated by Kubernetes so generate one that does
+    if (resourceName.indexOf('.') < 0) {
+      resourceName = resourceName + MISSING_GROUP_SUFFIX;
+    }
+    return resourceName + FINALIZER_NAME_SUFFIX;
   }
 
   public static String getNameFor(Class<? extends Reconciler> reconcilerClass) {

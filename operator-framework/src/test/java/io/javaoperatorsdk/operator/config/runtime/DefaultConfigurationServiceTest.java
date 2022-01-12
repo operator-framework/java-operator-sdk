@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class DefaultConfigurationServiceTest {
+class DefaultConfigurationServiceTest {
 
   public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
 
@@ -73,21 +73,21 @@ public class DefaultConfigurationServiceTest {
   }
 
   @Test
-  public void returnsValuesFromControllerAnnotationFinalizer() {
+  void returnsValuesFromControllerAnnotationFinalizer() {
     final var reconciler = new TestCustomReconciler();
     final var configuration =
         DefaultConfigurationService.instance().getConfigurationFor(reconciler);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class),
         configuration.getResourceTypeName());
     assertEquals(
-        ReconcilerUtils.getDefaultFinalizerName(configuration.getResourceTypeName()),
+        ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class),
         configuration.getFinalizer());
     assertEquals(TestCustomResource.class, configuration.getResourceClass());
     assertFalse(configuration.isGenerationAware());
   }
 
   @Test
-  public void returnCustomerFinalizerNameIfSet() {
+  void returnCustomerFinalizerNameIfSet() {
     final var reconciler = new TestCustomFinalizerReconciler();
     final var configuration =
         DefaultConfigurationService.instance().getConfigurationFor(reconciler);
@@ -95,7 +95,7 @@ public class DefaultConfigurationServiceTest {
   }
 
   @Test
-  public void supportsInnerClassCustomResources() {
+  void supportsInnerClassCustomResources() {
     final var reconciler = new TestCustomFinalizerReconciler();
     assertDoesNotThrow(
         () -> {

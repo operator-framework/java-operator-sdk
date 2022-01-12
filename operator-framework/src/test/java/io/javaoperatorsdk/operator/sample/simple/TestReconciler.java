@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -26,7 +25,7 @@ public class TestReconciler
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
   public static final String FINALIZER_NAME =
-      ReconcilerUtils.getDefaultFinalizerName(CustomResource.getCRDName(TestCustomResource.class));
+      ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private KubernetesClient kubernetesClient;

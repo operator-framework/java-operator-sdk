@@ -6,6 +6,7 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -31,9 +32,15 @@ public class AnnotationConfiguration<R extends HasMetadata>
   @Override
   public String getFinalizer() {
     if (annotation == null || annotation.finalizerName().isBlank()) {
-      return ReconcilerUtils.getDefaultFinalizerName(getResourceTypeName());
+      return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
     } else {
-      return annotation.finalizerName();
+      final var finalizer = annotation.finalizerName();
+      if (Constants.NO_FINALIZER.equals(finalizer) || ReconcilerUtils.isFinalizerValid(finalizer)) {
+        return finalizer;
+      } else {
+        throw new IllegalArgumentException(finalizer
+            + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
+      }
     }
   }
 
@@ -93,7 +100,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
             answer = answer.and(filter);
           }
         } catch (Exception e) {
-          throw new RuntimeException(e);
+          throw new IllegalArgumentException(e);
         }
       }
     }

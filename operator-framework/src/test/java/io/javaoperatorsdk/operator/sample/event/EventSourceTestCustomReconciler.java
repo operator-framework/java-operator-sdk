@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample.event;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -14,8 +13,7 @@ public class EventSourceTestCustomReconciler
     TestExecutionInfoProvider {
 
   public static final String FINALIZER_NAME =
-      ReconcilerUtils.getDefaultFinalizerName(
-          CustomResource.getCRDName(EventSourceTestCustomResource.class));
+      ReconcilerUtils.getDefaultFinalizerName(EventSourceTestCustomResource.class);
   public static final int TIMER_PERIOD = 500;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
