@@ -119,7 +119,7 @@ public interface ConfigurationService {
     return Executors.newFixedThreadPool(concurrentReconciliationThreads());
   }
 
-  default boolean getCloseClientOnStop() {
+  default boolean closeClientOnStop() {
     return true;
   }
 }

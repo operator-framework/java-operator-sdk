@@ -105,7 +105,7 @@ public class Operator implements AutoCloseable, LifecycleAware {
     controllers.stop();
 
     ExecutorServiceManager.stop();
-    if (configurationService.getCloseClientOnStop()) {
+    if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
   }
