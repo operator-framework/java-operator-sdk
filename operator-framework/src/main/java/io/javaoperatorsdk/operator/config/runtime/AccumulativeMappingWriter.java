@@ -77,8 +77,7 @@ class AccumulativeMappingWriter {
         printWriter.println(entry.getKey() + "," + entry.getValue());
       }
     } catch (IOException e) {
-      log.warn("Error", e);
-      throw new RuntimeException(e);
+      throw new IllegalStateException(e);
     } finally {
       if (printWriter != null) {
         printWriter.close();
