@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,6 +21,8 @@ import javax.tools.StandardLocation;
  */
 class AccumulativeMappingWriter {
 
+  private static final Logger log = LoggerFactory.getLogger(AccumulativeMappingWriter.class);
+
   private final Map<String, String> mappings = new ConcurrentHashMap<>();
   private final String resourcePath;
   private final ProcessingEnvironment processingEnvironment;
@@ -35,14 +40,15 @@ class AccumulativeMappingWriter {
               .getFiler()
               .getResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
 
-      final var bufferedReader =
-          new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()));
-      final var existingLines =
-          bufferedReader
-              .lines()
-              .map(l -> l.split(","))
-              .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
-      mappings.putAll(existingLines);
+      try (BufferedReader bufferedReader =
+          new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()))) {
+        final var existingLines =
+            bufferedReader
+                .lines()
+                .map(l -> l.split(","))
+                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
+        mappings.putAll(existingLines);
+      }
     } catch (IOException e) {
     }
     return this;
@@ -71,7 +77,7 @@ class AccumulativeMappingWriter {
         printWriter.println(entry.getKey() + "," + entry.getValue());
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      log.warn("Error",e);
       throw new RuntimeException(e);
     } finally {
       if (printWriter != null) {

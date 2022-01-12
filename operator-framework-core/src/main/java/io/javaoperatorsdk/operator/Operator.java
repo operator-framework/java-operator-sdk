@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 
 @SuppressWarnings("rawtypes")
-public class Operator implements AutoCloseable, LifecycleAware {
+public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
@@ -44,9 +44,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
     this.configurationService = configurationService;
   }
 
-  /** Adds a shutdown hook that automatically calls {@link #close()} when the app shuts down. */
+  /** Adds a shutdown hook that automatically calls {@link #stop()} ()} when the app shuts down. */
   public void installShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+    Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
   }
 
   public KubernetesClient getKubernetesClient() {
@@ -108,12 +108,6 @@ public class Operator implements AutoCloseable, LifecycleAware {
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
-  }
-
-  /** Stop the operator. */
-  @Override
-  public void close() {
-    stop();
   }
 
   /**
