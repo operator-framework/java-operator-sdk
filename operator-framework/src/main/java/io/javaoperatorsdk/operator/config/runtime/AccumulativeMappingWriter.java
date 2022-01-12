@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,6 +10,9 @@ import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.StandardLocation;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The writer is able to load an existing resource file as a Map and override it with the new
@@ -77,7 +77,7 @@ class AccumulativeMappingWriter {
         printWriter.println(entry.getKey() + "," + entry.getValue());
       }
     } catch (IOException e) {
-      log.warn("Error",e);
+      log.warn("Error", e);
       throw new RuntimeException(e);
     } finally {
       if (printWriter != null) {

@@ -15,13 +15,14 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
@@ -30,7 +31,8 @@ import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetada
 @AutoService(Processor.class)
 public class ControllerConfigurationAnnotationProcessor extends AbstractProcessor {
 
-  private static final Logger log = LoggerFactory.getLogger(ControllerConfigurationAnnotationProcessor.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(ControllerConfigurationAnnotationProcessor.class);
 
   private AccumulativeMappingWriter controllersResourceWriter;
   private TypeParameterResolver typeParameterResolver;
@@ -93,7 +95,7 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
           controllerClassSymbol.getQualifiedName().toString(), customResourceType.toString());
 
     } catch (Exception ioException) {
-      log.error("Error",ioException);
+      log.error("Error", ioException);
     }
   }
 
@@ -103,7 +105,7 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
       return typeParameterResolver.resolve(
           processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
     } catch (Exception e) {
-      log.error("Error",e);
+      log.error("Error", e);
       return null;
     }
   }
