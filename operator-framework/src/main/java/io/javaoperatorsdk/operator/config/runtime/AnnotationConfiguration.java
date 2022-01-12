@@ -6,6 +6,7 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -34,7 +35,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
       return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
     } else {
       final var finalizer = annotation.finalizerName();
-      if (ReconcilerUtils.isFinalizerValid(finalizer)) {
+      if (Constants.NO_FINALIZER.equals(finalizer) || ReconcilerUtils.isFinalizerValid(finalizer)) {
         return finalizer;
       } else {
         throw new IllegalArgumentException(finalizer
