@@ -27,10 +27,18 @@ public class Operator implements AutoCloseable, LifecycleAware {
   private final ConfigurationService configurationService;
   private final ControllerManager controllers = new ControllerManager();
 
+
   public Operator(ConfigurationService configurationService) {
     this(new DefaultKubernetesClient(), configurationService);
   }
 
+  /**
+   * Note that Operator by default closes the client on stop, this can be changed using
+   * {@link ConfigurationService}
+   *
+   * @param kubernetesClient client to use to all Kubernetes related operations
+   * @param configurationService provides configuration
+   */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
     this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
@@ -97,7 +105,9 @@ public class Operator implements AutoCloseable, LifecycleAware {
     controllers.stop();
 
     ExecutorServiceManager.stop();
-    kubernetesClient.close();
+    if (configurationService.closeClientOnStop()) {
+      kubernetesClient.close();
+    }
   }
 
   /** Stop the operator. */
