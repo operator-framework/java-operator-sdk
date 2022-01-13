@@ -1,15 +1,19 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
+
+import javax.swing.text.html.Option;
 
 public class AnnotationConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
@@ -55,8 +59,8 @@ public class AnnotationConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Set<String> getNamespaces() {
-    return Set.of(valueOrDefault(annotation, ControllerConfiguration::namespaces, new String[] {}));
+  public String watchedNamespace() {
+    return valueOrDefault(annotation, ControllerConfiguration::namespace, Constants.WATCH_ALL_NAMESPACE);
   }
 
   @Override

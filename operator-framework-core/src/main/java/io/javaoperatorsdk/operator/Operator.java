@@ -138,7 +138,7 @@ public class Operator implements LifecycleAware {
     controllers.add(controller);
 
     final var watchedNS = configuration.watchAllNamespaces() ? "[all namespaces]"
-        : configuration.getEffectiveNamespaces();
+        : configuration.getEffectiveNamespace();
 
     log.info(
         "Registered reconciler: '{}' for resource: '{}' for namespace(s): {}",

@@ -5,13 +5,14 @@ import java.util.List;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
   private boolean generationAware;
-  private final Set<String> namespaces;
+  private String namespace;
   private RetryConfiguration retry;
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
@@ -20,7 +21,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
     generationAware = original.isGenerationAware();
-    namespaces = new HashSet<>(original.getNamespaces());
+    namespace = original.watchedNamespace();
     retry = original.getRetryConfiguration();
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
@@ -38,23 +39,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> withCurrentNamespace() {
-    namespaces.clear();
-    return this;
-  }
-
-  public ControllerConfigurationOverrider<R> addingNamespaces(String... namespaces) {
-    this.namespaces.addAll(List.of(namespaces));
-    return this;
-  }
-
-  public ControllerConfigurationOverrider<R> removingNamespaces(String... namespaces) {
-    List.of(namespaces).forEach(this.namespaces::remove);
+    namespace = Constants.WATCH_CURRENT_NAMESPACE;
     return this;
   }
 
   public ControllerConfigurationOverrider<R> settingNamespace(String namespace) {
-    this.namespaces.clear();
-    this.namespaces.add(namespace);
+    this.namespace = namespace;
     return this;
   }
 
@@ -81,7 +71,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         original.getResourceTypeName(),
         finalizer,
         generationAware,
-        namespaces,
+        namespace,
         retry,
         labelSelector,
         customResourcePredicate,

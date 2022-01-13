@@ -150,8 +150,8 @@ public class CustomResourceSelectorTest {
     }
 
     @Override
-    public Set<String> getNamespaces() {
-      return Sets.newSet(NAMESPACE);
+    public String watchedNamespace() {
+      return NAMESPACE;
     }
 
     @Override
@@ -160,7 +160,7 @@ public class CustomResourceSelectorTest {
     }
   }
 
-  @ControllerConfiguration(namespaces = NAMESPACE)
+  @ControllerConfiguration(namespace = NAMESPACE)
   public static class MyController implements Reconciler<TestCustomResource> {
 
     private final Consumer<TestCustomResource> consumer;

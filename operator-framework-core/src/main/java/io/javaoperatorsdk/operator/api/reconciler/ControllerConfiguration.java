@@ -37,7 +37,7 @@ public @interface ControllerConfiguration {
    *
    * @return the list of namespaces this controller monitors
    */
-  String[] namespaces() default {};
+  String namespace() default Constants.WATCH_ALL_NAMESPACE;
 
   /**
    * Optional label selector used to identify the set of custom resources the controller will acc

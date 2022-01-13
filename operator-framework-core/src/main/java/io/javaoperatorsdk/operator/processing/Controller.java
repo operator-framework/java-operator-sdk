@@ -239,7 +239,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
    */
   private boolean failOnMissingCurrentNS() {
     if (configuration.watchCurrentNamespace()) {
-      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
+      final var effectiveNamespaces = configuration.getEffectiveNamespace();
       return effectiveNamespaces.size() == 1
           && effectiveNamespaces.stream().allMatch(Objects::isNull);
     }

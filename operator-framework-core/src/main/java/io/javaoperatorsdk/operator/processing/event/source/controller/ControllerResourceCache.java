@@ -1,57 +1,38 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource.ANY_NAMESPACE_MAP_KEY;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class ControllerResourceCache<T extends HasMetadata> implements ResourceCache<T> {
 
-  private final Map<String, SharedIndexInformer<T>> sharedIndexInformers;
+  private final SharedIndexInformer<T> sharedIndexInformer;
   private final Cloner cloner;
 
-  public ControllerResourceCache(Map<String, SharedIndexInformer<T>> sharedIndexInformers,
-      Cloner cloner) {
-    this.sharedIndexInformers = sharedIndexInformers;
+  public ControllerResourceCache(SharedIndexInformer<T> sharedIndexInformer, Cloner cloner) {
+    this.sharedIndexInformer = sharedIndexInformer;
     this.cloner = cloner;
   }
 
   @Override
   public Stream<T> list(Predicate<T> predicate) {
-    return sharedIndexInformers.values().stream()
-        .flatMap(i -> i.getStore().list().stream().filter(predicate));
+    return sharedIndexInformer.getStore().list().stream().filter(predicate);
   }
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
-    if (isWatchingAllNamespaces()) {
-      final var stream = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
+      return sharedIndexInformer.getStore().list().stream()
           .filter(r -> r.getMetadata().getNamespace().equals(namespace));
-      return predicate != null ? stream.filter(predicate) : stream;
-    } else {
-      final var informer = sharedIndexInformers.get(namespace);
-      return informer != null ? informer.getStore().list().stream().filter(predicate)
-          : Stream.empty();
-    }
   }
 
   @Override
   public Optional<T> get(ResourceID resourceID) {
-    var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
-    if (sharedIndexInformer == null) {
-      sharedIndexInformer =
-          sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
-    }
     var resource = sharedIndexInformer.getStore()
         .getByKey(io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
             resourceID.getNamespace().orElse(null),
@@ -65,12 +46,7 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
 
   @Override
   public Stream<ResourceID> keys() {
-    return sharedIndexInformers.values().stream()
-        .flatMap(i -> i.getStore().listKeys().stream().map(Mappers::fromString));
-  }
+    return sharedIndexInformer.getStore().list().stream().map(ResourceID::fromResource);
 
-  private boolean isWatchingAllNamespaces() {
-    return sharedIndexInformers.containsKey(ANY_NAMESPACE_MAP_KEY);
   }
-
 }

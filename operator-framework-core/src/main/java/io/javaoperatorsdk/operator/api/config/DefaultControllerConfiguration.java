@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -14,7 +15,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final Set<String> namespaces;
+  private final String namespace;
   private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
   private final String labelSelector;
@@ -28,7 +29,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String crdName,
       String finalizer,
       boolean generationAware,
-      Set<String> namespaces,
+      String namespace,
       RetryConfiguration retryConfiguration,
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
@@ -39,9 +40,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.crdName = crdName;
     this.finalizer = finalizer;
     this.generationAware = generationAware;
-    this.namespaces =
-        namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
-    this.watchAllNamespaces = this.namespaces.isEmpty();
+    this.namespace = namespace;
+    this.watchAllNamespaces = namespace == null;
     this.retryConfiguration =
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
@@ -80,8 +80,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Set<String> getNamespaces() {
-    return namespaces;
+  public String watchedNamespace() {
+    return namespace;
   }
 
   @Override

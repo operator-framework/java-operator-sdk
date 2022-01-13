@@ -1,11 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +33,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
-  private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
-      new ConcurrentHashMap<>();
+  private SharedIndexInformer<T> sharedIndexInformer;
 
   private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
@@ -49,7 +45,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     final var configurationService = controller.getConfiguration().getConfigurationService();
     var cloner = configurationService != null ? configurationService.getResourceCloner()
         : ConfigurationService.DEFAULT_CLONER;
-    this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
+    this.cache = new ControllerResourceCache<>(sharedIndexInformer, cloner);
 
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
@@ -74,24 +70,21 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public void start() {
     final var configuration = controller.getConfiguration();
-    final var targetNamespaces = configuration.getEffectiveNamespaces();
+    final var targetNamespace = configuration.watchedNamespace();
     final var client = controller.getCRClient();
     final var labelSelector = configuration.getLabelSelector();
 
     try {
-      if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
-        final var informer =
-            createAndRunInformerFor(client.inAnyNamespace()
-                .withLabelSelector(labelSelector), ANY_NAMESPACE_MAP_KEY);
-        log.debug("Registered {} -> {} for any namespace", controller, informer);
+      if (targetNamespace.equals(Constants.WATCH_ALL_NAMESPACE)) {
+        sharedIndexInformer = createAndRunInformerFor(client.inAnyNamespace()
+                .withLabelSelector(labelSelector));
+        log.debug("Registered {} -> {} for any namespace", controller, sharedIndexInformer);
       } else {
-        targetNamespaces.forEach(ns -> {
           final var informer = createAndRunInformerFor(
-              client.inNamespace(ns).withLabelSelector(labelSelector), ns);
+              client.inNamespace(targetNamespace).withLabelSelector(labelSelector), ns);
           log.debug("Registered {} -> {} for namespace: {}", controller, informer, ns);
-        });
-      }
-    } catch (Exception e) {
+        }
+      } catch (Exception e) {
       if (e instanceof KubernetesClientException) {
         handleKubernetesClientException(e);
       }
@@ -101,24 +94,21 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   private SharedIndexInformer<T> createAndRunInformerFor(
-      FilterWatchListDeletable<T, KubernetesResourceList<T>> filteredBySelectorClient, String key) {
+      FilterWatchListDeletable<T, KubernetesResourceList<T>> filteredBySelectorClient) {
     var informer = filteredBySelectorClient.runnableInformer(0);
     informer.addEventHandler(this);
-    sharedIndexInformers.put(key, informer);
     informer.run();
     return informer;
   }
 
   @Override
   public void stop() {
-    for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
       try {
-        log.info("Stopping informer {} -> {}", controller, informer);
-        informer.stop();
+        log.info("Stopping informer {} -> {}", controller, sharedIndexInformer);
+        sharedIndexInformer.stop();
       } catch (Exception e) {
-        log.warn("Error stopping informer {} -> {}", controller, informer, e);
+        log.warn("Error stopping informer {} -> {}", controller, sharedIndexInformer, e);
       }
-    }
     super.stop();
   }
 
@@ -170,12 +160,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
    * @return shared informers by namespace. If custom resource is not namespace scoped use
    *         CustomResourceEventSource.ANY_NAMESPACE_MAP_KEY
    */
-  public Map<String, SharedIndexInformer<T>> getInformers() {
-    return Collections.unmodifiableMap(sharedIndexInformers);
-  }
-
-  public SharedIndexInformer<T> getInformer(String namespace) {
-    return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
+  public SharedIndexInformer<T> getSharedInformer() {
+    return sharedIndexInformer;
   }
 
   /**
