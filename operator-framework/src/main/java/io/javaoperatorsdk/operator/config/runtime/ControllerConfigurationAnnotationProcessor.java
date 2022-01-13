@@ -15,6 +15,9 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -27,6 +30,9 @@ import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetada
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class ControllerConfigurationAnnotationProcessor extends AbstractProcessor {
+
+  private static final Logger log =
+      LoggerFactory.getLogger(ControllerConfigurationAnnotationProcessor.class);
 
   private AccumulativeMappingWriter controllersResourceWriter;
   private TypeParameterResolver typeParameterResolver;
@@ -89,7 +95,7 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
           controllerClassSymbol.getQualifiedName().toString(), customResourceType.toString());
 
     } catch (Exception ioException) {
-      ioException.printStackTrace();
+      log.error("Error", ioException);
     }
   }
 
@@ -99,7 +105,7 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
       return typeParameterResolver.resolve(
           processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Error", e);
       return null;
     }
   }

@@ -206,7 +206,7 @@ public class OperatorExtension
     }
 
     try {
-      this.operator.close();
+      this.operator.stop();
     } catch (Exception e) {
       // ignored
     }

@@ -60,9 +60,9 @@ public class CustomResourceSelectorTest {
     assertThat(server).isNotNull();
     assertThat(client).isNotNull();
 
-    try (Operator o1 = new Operator(client, configurationService);
-        Operator o2 = new Operator(client, configurationService)) {
-
+    Operator o1 = new Operator(client, configurationService);
+    Operator o2 = new Operator(client, configurationService);
+    try {
       AtomicInteger c1 = new AtomicInteger();
       AtomicInteger c1err = new AtomicInteger();
       AtomicInteger c2 = new AtomicInteger();
@@ -113,7 +113,11 @@ public class CustomResourceSelectorTest {
       assertThrows(
           ConditionTimeoutException.class,
           () -> await().atMost(2, TimeUnit.SECONDS).untilAtomic(c2err, is(greaterThan(0))));
+    } finally {
+      o1.stop();
+      o2.stop();
     }
+
   }
 
   public TestCustomResource newMyResource(String app, String namespace) {

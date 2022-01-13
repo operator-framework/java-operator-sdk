@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 class PollingEventSourceTest
     extends
-    AbstractEventSourceTest<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+    AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   private Supplier<Map<ResourceID, SampleExternalResource>> supplier = mock(Supplier.class);
 

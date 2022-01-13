@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PerResourcePollingEventSourceTest extends
-    AbstractEventSourceTest<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
+    AbstractEventSourceTestBase<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
   public static final int PERIOD = 80;
   private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource> supplier =

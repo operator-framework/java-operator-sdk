@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
 import static org.mockito.Mockito.mock;
 
-public class AbstractEventSourceTest<S extends EventSource, T extends EventHandler> {
+public class AbstractEventSourceTestBase<S extends EventSource, T extends EventHandler> {
   protected T eventHandler;
   protected S source;
 

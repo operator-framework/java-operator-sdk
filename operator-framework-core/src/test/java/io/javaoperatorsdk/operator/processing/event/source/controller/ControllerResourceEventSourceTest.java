@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTest;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class ControllerResourceEventSourceTest extends
-    AbstractEventSourceTest<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
+    AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
 
   public static final String FINALIZER = "finalizer";
   private static final MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> client =

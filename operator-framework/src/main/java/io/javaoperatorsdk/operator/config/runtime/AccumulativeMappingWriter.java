@@ -35,14 +35,15 @@ class AccumulativeMappingWriter {
               .getFiler()
               .getResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
 
-      final var bufferedReader =
-          new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()));
-      final var existingLines =
-          bufferedReader
-              .lines()
-              .map(l -> l.split(","))
-              .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
-      mappings.putAll(existingLines);
+      try (BufferedReader bufferedReader =
+          new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()))) {
+        final var existingLines =
+            bufferedReader
+                .lines()
+                .map(l -> l.split(","))
+                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
+        mappings.putAll(existingLines);
+      }
     } catch (IOException e) {
     }
     return this;
@@ -71,8 +72,7 @@ class AccumulativeMappingWriter {
         printWriter.println(entry.getKey() + "," + entry.getValue());
       }
     } catch (IOException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
+      throw new IllegalStateException(e);
     } finally {
       if (printWriter != null) {
         printWriter.close();

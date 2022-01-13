@@ -55,8 +55,9 @@ class ClassMappingProvider {
   }
 
   private static List<String> retrieveClassNamePairs(URL url) throws IOException {
-    return new BufferedReader(new InputStreamReader(url.openStream()))
-        .lines()
-        .collect(Collectors.toList());
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
+      return br.lines()
+          .collect(Collectors.toList());
+    }
   }
 }

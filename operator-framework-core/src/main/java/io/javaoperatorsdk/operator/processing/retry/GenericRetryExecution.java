@@ -6,8 +6,8 @@ public class GenericRetryExecution implements RetryExecution {
 
   private final GenericRetry genericRetry;
 
-  private volatile int lastAttemptIndex = 0;
-  private volatile long currentInterval;
+  private int lastAttemptIndex = 0;
+  private long currentInterval;
 
   public GenericRetryExecution(GenericRetry genericRetry) {
     this.genericRetry = genericRetry;
@@ -15,7 +15,8 @@ public class GenericRetryExecution implements RetryExecution {
   }
 
   public Optional<Long> nextDelay() {
-    if (genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
+    if (genericRetry.getMaxAttempts() > -1
+        && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
       return Optional.empty();
     }
     if (lastAttemptIndex > 1) {
@@ -30,7 +31,8 @@ public class GenericRetryExecution implements RetryExecution {
 
   @Override
   public boolean isLastAttempt() {
-    return genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts();
+    return genericRetry.getMaxAttempts() > -1
+        && lastAttemptIndex >= genericRetry.getMaxAttempts();
   }
 
   @Override
