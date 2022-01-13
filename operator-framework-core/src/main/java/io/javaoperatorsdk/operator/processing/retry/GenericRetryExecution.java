@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class GenericRetryExecution implements RetryExecution {
 
   private final GenericRetry genericRetry;
 
-  private AtomicInteger lastAttemptIndex = new AtomicInteger(0);
-  private volatile long currentInterval;
+  private int lastAttemptIndex = 0;
+  private long currentInterval;
 
   public GenericRetryExecution(GenericRetry genericRetry) {
     this.genericRetry = genericRetry;
@@ -17,27 +16,27 @@ public class GenericRetryExecution implements RetryExecution {
 
   public Optional<Long> nextDelay() {
     if (genericRetry.getMaxAttempts() > -1
-        && lastAttemptIndex.get() >= genericRetry.getMaxAttempts()) {
+        && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
       return Optional.empty();
     }
-    if (lastAttemptIndex.get() > 1) {
+    if (lastAttemptIndex > 1) {
       currentInterval = (long) (currentInterval * genericRetry.getIntervalMultiplier());
       if (genericRetry.getMaxInterval() > -1 && currentInterval > genericRetry.getMaxInterval()) {
         currentInterval = genericRetry.getMaxInterval();
       }
     }
-    lastAttemptIndex.incrementAndGet();
+    lastAttemptIndex++;
     return Optional.of(currentInterval);
   }
 
   @Override
   public boolean isLastAttempt() {
     return genericRetry.getMaxAttempts() > -1
-        && lastAttemptIndex.get() >= genericRetry.getMaxAttempts();
+        && lastAttemptIndex >= genericRetry.getMaxAttempts();
   }
 
   @Override
   public int getAttemptCount() {
-    return lastAttemptIndex.get();
+    return lastAttemptIndex;
   }
 }
