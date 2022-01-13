@@ -37,7 +37,7 @@ public class ReconcilerUtils {
         throw new UnsupportedOperationException();
       }
     };
-    return validator.isFinalizerValid(finalizer);
+    return Constants.NO_FINALIZER.equals(finalizer) || validator.isFinalizerValid(finalizer);
   }
 
   public static String getResourceTypeName(Class<? extends HasMetadata> resourceClass) {
@@ -49,7 +49,10 @@ public class ReconcilerUtils {
   }
 
   public static String getDefaultFinalizerName(Class<? extends HasMetadata> resourceClass) {
-    var resourceName = getResourceTypeName(resourceClass);
+    return getDefaultFinalizerName(getResourceTypeName(resourceClass));
+  }
+
+  public static String getDefaultFinalizerName(String resourceName) {
     // resource names for historic resources such as Pods are missing periods and therefore do not
     // constitute valid domain names as mandated by Kubernetes so generate one that does
     if (resourceName.indexOf('.') < 0) {

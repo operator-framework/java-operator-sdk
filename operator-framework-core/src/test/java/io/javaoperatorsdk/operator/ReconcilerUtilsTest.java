@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -32,5 +33,10 @@ class ReconcilerUtilsTest {
   void defaultFinalizerShouldWork() {
     assertTrue(isFinalizerValid(getDefaultFinalizerName(Pod.class)));
     assertTrue(isFinalizerValid(getDefaultFinalizerName(TestCustomResource.class)));
+  }
+
+  @Test
+  void noFinalizerMarkerShouldWork() {
+    assertTrue(isFinalizerValid(Constants.NO_FINALIZER));
   }
 }
