@@ -23,14 +23,15 @@ See the [contribution](https://javaoperatorsdk.io/docs/contributing) guide on th
 ## What is Java Operator SDK
 
 Java Operator SDK is a higher level framework and related tooling to support writing Kubernetes Operators in Java.
-It makes it use to utilize best practices and patters of an Operator development. Features include: 
+It makes it easy to implement best practices and patters for an Operator. Features include: 
 
-* Framework for handling Kubernetes API events
-* Automatic registration of Custom Resource watches
-* Retry action on failure
-* Smart event scheduling (only handle the latest event for the same resource)
+* Optimal handling Kubernetes API events
+* Automatic Registration of Custom Resource Watches
+* Automatic Retries
+* Smart event scheduling
 * Handling Observed Generations automatically
-* Support For Intelligent Error Handling
+* Easy to use Error Handling
+* ... and everything that a batteries included framework needs 
 
 For all features and their usage see the [related section on the website](https://javaoperatorsdk.io/docs/features). 
 
