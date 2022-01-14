@@ -32,7 +32,7 @@ public class InformerEventSourceIT {
           .build();
 
   @Test
-  public void testUsingInformerToWatchChangesOfConfigMap() {
+  void testUsingInformerToWatchChangesOfConfigMap() {
     var customResource = initialCustomResource();
     customResource = operator.create(InformerEventSourceTestCustomResource.class, customResource);
     ConfigMap configMap =
@@ -46,7 +46,7 @@ public class InformerEventSourceIT {
   }
 
   @Test
-  public void deletingSecondaryResource() {
+  void deletingSecondaryResource() {
     var customResource = initialCustomResource();
     customResource = operator.create(InformerEventSourceTestCustomResource.class, customResource);
     ConfigMap configMap =
