@@ -281,6 +281,31 @@ following attributes are available in most parts of reconciliation logic and dur
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
 
+## Automatic generation of CRDs
+
+Note that this is feature of [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client) not the JOSDK. But it's worth to mention here.
+
+To automatically generate CRD manifests from your annotated Custom Resource classes, you only need to add the following
+dependencies to your project:
+
+```xml
+
+<dependency>
+    <groupId>io.fabric8</groupId>
+    <artifactId>crd-generator-apt</artifactId>
+    <scope>provided</scope>
+</dependency>
+```
+
+The CRD will be generated in `target/classes/META-INF/fabric8` (or in `target/test-classes/META-INF/fabric8`, if you use
+the `test` scope) with the CRD name suffixed by the generated spec version. For example, a CR using
+the `java-operator-sdk.io` group with a `mycrs` plural form will result in 2 files:
+
+- `mycrs.java-operator-sdk.io-v1.yml`
+- `mycrs.java-operator-sdk.io-v1beta1.yml`
+
+**NOTE:**
+> Quarkus users using the `quarkus-operator-sdk` extension do not need to add any extra dependency to get their CRD generated as this is handled by the extension itself.
 
 
 
