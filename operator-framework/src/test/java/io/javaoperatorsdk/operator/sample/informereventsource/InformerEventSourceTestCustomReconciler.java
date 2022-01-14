@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +36,10 @@ public class InformerEventSourceTestCustomReconciler implements
 
   public static final String RELATED_RESOURCE_NAME = "relatedResourceName";
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
+  public static final String MISSING_CONFIG_MAP = "Missing Config Map";
 
   private KubernetesClient kubernetesClient;
+  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
   public List<EventSource> prepareEventSources(
@@ -48,16 +52,20 @@ public class InformerEventSourceTestCustomReconciler implements
   public UpdateControl<InformerEventSourceTestCustomResource> reconcile(
       InformerEventSourceTestCustomResource resource,
       Context context) {
+    numberOfExecutions.incrementAndGet();
 
+    resource.setStatus(new InformerEventSourceTestCustomResourceStatus());
     // Reading the config map from the informer not from the API
     // name of the config map same as custom resource for sake of simplicity
-    ConfigMap configMap = context.getSecondaryResource(ConfigMap.class)
-        .orElseThrow(() -> new IllegalStateException("Config map should be present."));
+    Optional<ConfigMap> configMap = context.getSecondaryResource(ConfigMap.class);
+    if (configMap.isEmpty()) {
+      resource.getStatus().setConfigMapValue(MISSING_CONFIG_MAP);
+    } else {
+      String targetStatus = configMap.get().getData().get(TARGET_CONFIG_MAP_KEY);
+      LOGGER.debug("Setting target status for CR: {}", targetStatus);
+      resource.getStatus().setConfigMapValue(targetStatus);
+    }
 
-    String targetStatus = configMap.getData().get(TARGET_CONFIG_MAP_KEY);
-    LOGGER.debug("Setting target status for CR: {}", targetStatus);
-    resource.setStatus(new InformerEventSourceTestCustomResourceStatus());
-    resource.getStatus().setConfigMapValue(targetStatus);
     return UpdateControl.updateStatus(resource);
   }
 
@@ -69,5 +77,9 @@ public class InformerEventSourceTestCustomReconciler implements
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
+  }
+
+  public int getNumberOfExecutions() {
+    return numberOfExecutions.get();
   }
 }

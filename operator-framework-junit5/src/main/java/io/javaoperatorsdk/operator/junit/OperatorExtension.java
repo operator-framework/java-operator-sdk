@@ -140,6 +140,9 @@ public class OperatorExtension
     return kubernetesClient.resources(type).inNamespace(namespace).replace(resource);
   }
 
+  public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
+    return kubernetesClient.resources(type).inNamespace(namespace).delete(resource);
+  }
 
   @SuppressWarnings("unchecked")
   protected void before(ExtensionContext context) {

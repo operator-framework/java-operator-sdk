@@ -83,6 +83,13 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
       @Override
       public void onUpdate(T oldObject, T newObject) {
+        if (newObject == null) {
+          // this is a fix for this potential issue with informer:
+          // https://github.com/java-operator-sdk/java-operator-sdk/issues/830
+          propagateEvent(oldObject);
+          return;
+        }
+
         if (InformerEventSource.this.skipUpdateEventPropagationIfNoChange &&
             oldObject.getMetadata().getResourceVersion()
                 .equals(newObject.getMetadata().getResourceVersion())) {
