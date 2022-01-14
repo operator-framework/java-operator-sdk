@@ -3,7 +3,7 @@
 ![Java CI with Maven](https://github.com/java-operator-sdk/java-operator-sdk/workflows/Java%20CI%20with%20Maven/badge.svg)
 [![Discord](https://img.shields.io/discord/723455000604573736.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.com/channels/723455000604573736)
 
-#Build Kubernetes Operators in Java Without Hassle 
+# Build Kubernetes Operators in Java Without Hassle 
 
 ## Documentation
 
@@ -26,7 +26,7 @@ Java Operator SDK is a higher level framework and related tooling to support wri
 It makes it easy to implement best practices and patters for an Operator. Features include: 
 
 * Optimal handling Kubernetes API events
-* Automatic Registration of Custom Resource Watches
+* Handling dependent resources, related events, caching.
 * Automatic Retries
 * Smart event scheduling
 * Handling Observed Generations automatically
