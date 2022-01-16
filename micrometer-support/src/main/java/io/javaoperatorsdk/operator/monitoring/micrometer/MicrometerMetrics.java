@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
@@ -57,11 +58,13 @@ public class MicrometerMetrics implements Metrics {
     incrementCounter(customResourceUid, "events.delete");
   }
 
-  public void reconcileCustomResource(ResourceID resourceID,
-      RetryInfo retryInfo) {
+  public void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfoNullable) {
+    Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(resourceID, RECONCILIATIONS + "started",
-        RECONCILIATIONS + "retries.number", "" + retryInfo.getAttemptCount(),
-        RECONCILIATIONS + "retries.last", "" + retryInfo.isLastAttempt());
+        RECONCILIATIONS + "retries.number",
+        "" + retryInfo.map(RetryInfo::getAttemptCount).orElse(0),
+        RECONCILIATIONS + "retries.last",
+        "" + retryInfo.map(RetryInfo::isLastAttempt).orElse(true));
   }
 
   @Override

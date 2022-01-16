@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
@@ -23,6 +24,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -47,6 +49,7 @@ class EventProcessorTest {
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
   private ControllerResourceEventSource controllerResourceEventSourceMock =
       mock(ControllerResourceEventSource.class);
+  private Metrics metricsMock = mock(Metrics.class);
   private EventProcessor eventProcessor;
   private EventProcessor eventProcessorWithRetry;
 
@@ -276,7 +279,8 @@ class EventProcessorTest {
   public void startProcessedMarkedEventReceivedBefore() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
-        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
+            metricsMock));
     when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(testCustomResource()));
     eventProcessor.handleEvent(new Event(crID));
 
@@ -285,6 +289,7 @@ class EventProcessorTest {
     eventProcessor.start();
 
     verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
+    verify(metricsMock, times(1)).reconcileCustomResource(any(), isNull());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {
