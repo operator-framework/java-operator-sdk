@@ -52,15 +52,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
             .runnableInformer(0);
 
     return List.of(new InformerEventSource<>(
-        deploymentInformer, d -> {
-          var ownerReferences = d.getMetadata().getOwnerReferences();
-          if (!ownerReferences.isEmpty()) {
-            return Set.of(new ResourceID(ownerReferences.get(0).getName(),
-                d.getMetadata().getNamespace()));
-          } else {
-            return EMPTY_SET;
-          }
-        }));
+        deploymentInformer, d -> ResourceID.fromFirstOwnerReference(d).map(r->Set.of(r)).orElse(EMPTY_SET)));
   }
 
   @Override

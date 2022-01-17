@@ -13,6 +13,14 @@ public class ResourceID implements Serializable {
         resource.getMetadata().getNamespace());
   }
 
+  public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata dependentResource) {
+      var ownerReferences = dependentResource.getMetadata().getOwnerReferences();
+      if (ownerReferences == null || ownerReferences.isEmpty()) {
+        return Optional.empty();
+      }
+      return Optional.of(new ResourceID(ownerReferences.get(0).getName(),dependentResource.getMetadata().getNamespace()));
+  }
+  
   private final String name;
   private final String namespace;
 
