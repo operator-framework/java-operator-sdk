@@ -105,8 +105,8 @@ public class Operator implements LifecycleAware {
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler)
       throws OperatorException {
-    final var defaultConfiguration = configurationService.getConfigurationFor(reconciler);
-    register(reconciler, defaultConfiguration);
+    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
+    register(reconciler, controllerConfiguration);
   }
 
   /**

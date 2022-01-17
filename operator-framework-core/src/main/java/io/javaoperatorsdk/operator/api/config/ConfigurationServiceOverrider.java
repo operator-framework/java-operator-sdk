@@ -70,7 +70,10 @@ public class ConfigurationServiceOverrider {
       @Override
       public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
           Reconciler<R> reconciler) {
-        return original.getConfigurationFor(reconciler);
+        ControllerConfiguration<R> controllerConfiguration =
+            original.getConfigurationFor(reconciler);
+        controllerConfiguration.setConfigurationService(this);
+        return controllerConfiguration;
       }
 
       @Override
