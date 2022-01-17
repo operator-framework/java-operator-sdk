@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
 
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;
@@ -25,7 +28,10 @@ public class MySQLSchemaOperator {
 
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
-    Operator operator = new Operator(client, DefaultConfigurationService.instance());
+    Operator operator = new Operator(client,
+            new ConfigurationServiceOverrider(DefaultConfigurationService.instance())
+            .withMetrics(new MicrometerMetrics(new LoggingMeterRegistry()))
+                    .build());
     operator.register(new MySQLSchemaReconciler(client, MySQLDbConfig.loadFromEnvironmentVars()));
     operator.installShutdownHook();
     operator.start();

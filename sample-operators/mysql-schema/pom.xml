@@ -28,6 +28,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>micrometer-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.takes</groupId>
             <artifactId>takes</artifactId>
             <version>1.19</version>

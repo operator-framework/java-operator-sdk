@@ -61,11 +61,11 @@ class EventProcessorTest {
     when(controllerResourceEventSourceMock.getResourceCache()).thenReturn(resourceCacheMock);
 
     eventProcessor =
-        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null, null));
     eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
-            GenericRetry.defaultLimitedExponentialRetry()));
+            GenericRetry.defaultLimitedExponentialRetry(),null));
     eventProcessorWithRetry.start();
 
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
