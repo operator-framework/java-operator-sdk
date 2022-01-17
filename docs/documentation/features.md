@@ -84,7 +84,7 @@ If there is **no finalizer** in place (see Finalizer Support section), the `clea
 These two classes are used to control the outcome or the desired behavior after the reconciliation.
 
 The `UpdateControl` can instruct the framework to update the status sub-resource of the resource and/or re-schedule a
-reconciliation with a desired time delay. 
+reconciliation with a desired time delay.
 
 ```java 
   @Override
@@ -109,9 +109,8 @@ without an update:
 Note, that it's not always desirable to always schedule a retry, rather to use `EventSources` to trigger the
 reconciliation.
 
-Those are the typical use cases of resource updates, however in some cases there it can happen
-that the controller wants to update the custom resource itself (like adding annotations) or not to do any updates, which
-is also supported.
+Those are the typical use cases of resource updates, however in some cases there it can happen that the controller wants
+to update the custom resource itself (like adding annotations) or not to do any updates, which is also supported.
 
 It is also possible to update both the status and the custom resource with `updateCustomResourceAndStatus` method. In
 this case first the custom resource is updated then the status in two separate requests to K8S API.
@@ -121,8 +120,8 @@ Always update the custom resource with `UpdateControl`, not with the actual kube
 On resource updates there is always an optimistic version control in place, to make sure that another update is not
 overwritten (by setting `resourceVersion` ) .
 
-The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent
-resource are cleaned up in `cleanup` implementation.
+The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent resource are cleaned
+up in `cleanup` implementation.
 
 ```java
 
@@ -133,12 +132,10 @@ public DeleteControl cleanup(MyCustomResource customResource, Context context) {
 
 ```
 
-However, there is a possibility to not remove the finalizer, this allows to clean up the resources
-in a more async way, mostly for the cases when there is a long waiting period after a delete
-operation is initiated. Note that in this case you might want to either schedule a timed event to
-make sure
-`cleanup` is executed again or use event sources get notified about the state changes of a deleted
-resource.
+However, there is a possibility to not remove the finalizer, this allows to clean up the resources in a more async way,
+mostly for the cases when there is a long waiting period after a delete operation is initiated. Note that in this case
+you might want to either schedule a timed event to make sure
+`cleanup` is executed again or use event sources get notified about the state changes of a deleted resource.
 
 ## Generation Awareness and Automatic Observed Generation Handling
 
@@ -148,6 +145,7 @@ resource was reconciled, but it is used to decide if a reconciliation should hap
 generation is supported by the framework and turned on by default. There are two modes.
 
 ### Primary (preferred) Mode
+
 The first and the **preferred** one is to check after a resource event received, if the generation of the resource is
 larger than the `.observedGeneration` field on status. In order to have this feature working:
 
@@ -158,7 +156,8 @@ larger than the `.observedGeneration` field on status. In order to have this fea
   which can be also extended.
 - The other condition is that the `CustomResource.getStatus()` method should not return `null`
   , but an instance of the class representing `status`. The best way to achieve this is to
-  override [`CustomResource.initStatus()`](https://github.com/fabric8io/kubernetes-client/blob/865e0ddf67b99f954aa55ab14e5806d53ae149ec/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/CustomResource.java#L139).
+  override [`CustomResource.initStatus()`](https://github.com/fabric8io/kubernetes-client/blob/865e0ddf67b99f954aa55ab14e5806d53ae149ec/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/CustomResource.java#L139)
+  .
 
 If these conditions are fulfilled and generation awareness not turned off, the observed generation is automatically set
 by the framework after the `reconcile` method is called. There is just one exception, when the reconciler returns
@@ -171,9 +170,9 @@ the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blo
 ```java
 public class WebPageStatus extends ObservedGenerationAwareStatus {
 
-  private String htmlConfigMap;
+    private String htmlConfigMap;
   
-  ...  
+  ...
 }
 ```
 
@@ -209,7 +208,8 @@ Ingress,Deployment,...). Note that automatic observed generation handling is not
 in case adding a secondary controller for well known k8s resource, probably the observed generation should be handled by
 the primary controller.
 
-See the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)
+See
+the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)
 for reconciling deployments.
 
 ```java 
@@ -262,9 +262,9 @@ public interface ErrorStatusHandler<T extends HasMetadata> {
 ```
 
 The `updateErrorStatus` method is called in case an exception is thrown from the reconciler. It is also called when
-there is no retry configured, just after the reconciler execution. 
-In the first call the `RetryInfo.getAttemptCount()` is always zero, since it is not a result of a retry 
-(regardless if retry is configured or not). 
+there is no retry configured, just after the reconciler execution. In the first call the `RetryInfo.getAttemptCount()`
+is always zero, since it is not a result of a retry
+(regardless if retry is configured or not).
 
 The result of the method call is used to make a status update on the custom resource. This is always a sub-resource
 update request, so no update on custom resource itself (like spec of metadata) happens. Note that this update request
@@ -330,33 +330,36 @@ objects (in the Event Source) and read it from there if needed.
 
 ### Registering Event Sources
 
-To register event sources `Reconciler` has to implement [`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
-interface and init a list of event sources to register. The easiest way to see it is on [tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/TomcatReconciler.java)
-(irrelevant details omitted):   
+To register event sources `Reconciler` has to
+implement [`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
+interface and init a list of event sources to register. The easiest way to see it is
+on [tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/TomcatReconciler.java)
+(irrelevant details omitted):
 
 ```java
+
 @ControllerConfiguration
 public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
 
-  @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<Tomcat> context) {
-    SharedIndexInformer<Deployment> deploymentInformer =
-        kubernetesClient.apps()
-            .deployments()
-            .inAnyNamespace()
-            .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
-            .runnableInformer(0);
+    @Override
+    public List<EventSource> prepareEventSources(EventSourceContext<Tomcat> context) {
+        SharedIndexInformer<Deployment> deploymentInformer =
+                kubernetesClient.apps()
+                        .deployments()
+                        .inAnyNamespace()
+                        .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
+                        .runnableInformer(0);
 
-    return List.of(
-        new InformerEventSource<>(deploymentInformer, d -> {
-              var ownerReferences = d.getMetadata().getOwnerReferences();
-              if (!ownerReferences.isEmpty()) {
-                return Set.of(new ResourceID(ownerReferences.get(0).getName(), d.getMetadata().getNamespace()));
-              } else {
-                return EMPTY_SET;
-              }
-            }));
-  }
+        return List.of(
+                new InformerEventSource<>(deploymentInformer, d -> {
+                    var ownerReferences = d.getMetadata().getOwnerReferences();
+                    if (!ownerReferences.isEmpty()) {
+                        return Set.of(new ResourceID(ownerReferences.get(0).getName(), d.getMetadata().getNamespace()));
+                    } else {
+                        return EMPTY_SET;
+                    }
+                }));
+    }
   ...
 }
 ```
@@ -364,21 +367,27 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
 In the example above an `InformerEventSource` is registered (more on this specific eventsource later). Multiple things
 are going on here:
 
-1. An `SharedIndexInformer` (class from fabric8 Kubernetes client) is created. This will watch and produce events for 
+1. An `SharedIndexInformer` (class from fabric8 Kubernetes client) is created. This will watch and produce events for
    `Deployments` in every namespace, but will filter them based on label. So `Deployments` which are not managed by
-   `tomcat-operator` (the label is not present on them) will not trigger a reconciliation. 
-2. In the next step an [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
-   is created, which wraps the `SharedIndexInformer`. In addition to that a mapping functions is provided, **this maps 
-   the event of the watched resource (in this case `Deployment`) to the custom resources to reconcile**. Not that in this
-   case this is a simple task, since `Deployment` is already created with an owner reference. Therefore, the `ResourceID`
-   what identifies the custom resource to reconcile is created from the owner reference.
-   Note that a set of `ResourceID` is returned, this is usually just a set with one element. It is set just to cover 
-   some corner cases.
+   `tomcat-operator` (the label is not present on them) will not trigger a reconciliation.
+2. In the next step
+   an [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
+   is created, which wraps the `SharedIndexInformer`. In addition to that a mapping functions is provided, **this maps
+   the event of the watched resource (in this case `Deployment`) to the custom resources to reconcile**. Not that in
+   this case this is a simple task, since `Deployment` is already created with an owner reference. Therefore,
+   the `ResourceID`
+   what identifies the custom resource to reconcile is created from the owner reference. 
+
+Note that a set of `ResourceID` is returned, this is usually just a set with one element. The possibility to specify
+multiple values is there to cover some rare corner cases. If an irrelevant resource is observed, an empty set can 
+be returned to not reconcile any custom resource.
 
 ### Built-in EventSources
 
+There are multiple eventsources provided out of the box, the following are some more central ones:
+
 1. InformerEventSource - used to get event about other K8S resources, also provides a local cache for them.
-2. TimerEventSource - used to create timed events, mainly intended for internal usage.
+2. PerResourcePollingEventSource - 
 3. CustomResourceEventSource - an eventsource that is automatically registered to listen to the changes of the main
    resource the operation manages, it also maintains a cache of those objects that can be accessed from the Reconciler.
 
@@ -403,7 +412,8 @@ For more information about MDC see this [link](https://www.baeldung.com/mdc-in-l
 
 ## Automatic generation of CRDs
 
-Note that this is feature of [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client) not the JOSDK. But it's worth to mention here.
+Note that this is feature of [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client) not the JOSDK.
+But it's worth to mention here.
 
 To automatically generate CRD manifests from your annotated Custom Resource classes, you only need to add the following
 dependencies to your project:
