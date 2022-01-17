@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/faq
 ---
 
-## Q: How can I access events?
+### Q: How can I access the events which triggered the Reconciliation?
 In the v1.* version events were exposed to `Reconciler` (in v1 called `ResourceController`). This 
 included events (Create, Update) of the custom resource, but also events produced by Event Sources. After
 long discussions also with developers of golang version (controller-runtime), we decided to remove access to
