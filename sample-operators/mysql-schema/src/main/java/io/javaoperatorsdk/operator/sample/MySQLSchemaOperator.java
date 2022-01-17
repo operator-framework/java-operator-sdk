@@ -2,9 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
 
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
-import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
-import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;
@@ -17,7 +14,10 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 
 public class MySQLSchemaOperator {
 
@@ -29,9 +29,9 @@ public class MySQLSchemaOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client,
-            new ConfigurationServiceOverrider(DefaultConfigurationService.instance())
+        new ConfigurationServiceOverrider(DefaultConfigurationService.instance())
             .withMetrics(new MicrometerMetrics(new LoggingMeterRegistry()))
-                    .build());
+            .build());
     operator.register(new MySQLSchemaReconciler(client, MySQLDbConfig.loadFromEnvironmentVars()));
     operator.installShutdownHook();
     operator.start();
