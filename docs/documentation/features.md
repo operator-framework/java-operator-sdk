@@ -51,7 +51,7 @@ in some specific corner cases, when there would be a long waiting period for som
 The name of the finalizers can be specified, in case it is not, a name will be generated.
 
 Automatic finalizer handling can be turned off, so when configured no finalizer will be added or removed.  
-See [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ControllerConfiguration.java)
+See [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation for more details.
 
 ### When not to Use Finalizers?
@@ -66,7 +66,7 @@ When automatic finalizer handling is turned off, the `Reconciler.cleanup(...)` m
 case when a delete event received. So it does not make sense to implement this method and turn off finalizer at the same
 time.
 
-## The `reconcile` and `cleanup` Methods of `Reconciler`
+## The `reconcile` and `cleanup` Methods of [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
 
 The lifecycle of a custom resource can be clearly separated to two phases from a perspective of an operator. When a
 custom resource is created or update, or on the other hand when the custom resource is deleted - or rather marked for
@@ -79,7 +79,7 @@ method, unless the custom resource is
 
 If there is **no finalizer** in place (see Finalizer Support section), the `cleanup` method is **not called**.
 
-### Using `UpdateControl` and `DeleteControl`
+### Using [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java) and [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
 
 These two classes are used to control the outcome or the desired behavior after the reconciliation.
 
