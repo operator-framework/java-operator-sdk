@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,12 +21,11 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-import static java.util.Collections.EMPTY_SET;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
@@ -52,8 +50,7 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
             .runnableInformer(0);
 
     return List.of(new InformerEventSource<>(
-        deploymentInformer,
-        d -> ResourceID.fromFirstOwnerReference(d).map(r -> Set.of(r)).orElse(EMPTY_SET)));
+        deploymentInformer, Mappers.fromOwnerReference()));
   }
 
   @Override

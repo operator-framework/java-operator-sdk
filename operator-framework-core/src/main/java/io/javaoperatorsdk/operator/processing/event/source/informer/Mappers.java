@@ -29,6 +29,18 @@ public class Mappers {
     return fromMetadata(nameKey, namespaceKey, true);
   }
 
+  public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromOwnerReference() {
+    return resource -> {
+      var ownerReferences = resource.getMetadata().getOwnerReferences();
+      if (!ownerReferences.isEmpty()) {
+        return Set.of(new ResourceID(ownerReferences.get(0).getName(),
+            resource.getMetadata().getNamespace()));
+      } else {
+        return Collections.emptySet();
+      }
+    };
+  }
+
   private static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromMetadata(
       String nameKey, String namespaceKey, boolean isLabel) {
     return resource -> {
