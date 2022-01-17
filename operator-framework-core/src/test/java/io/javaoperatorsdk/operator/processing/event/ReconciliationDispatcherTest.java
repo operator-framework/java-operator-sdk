@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -309,7 +310,7 @@ class ReconciliationDispatcherTest {
     markForDeletion(testCustomResource);
 
     when(reconciler.cleanup(eq(testCustomResource), any()))
-        .thenReturn(DeleteControl.noFinalizerRemoval().rescheduleAfter(1000L));
+        .thenReturn(DeleteControl.noFinalizerRemoval().rescheduleAfter(1, TimeUnit.SECONDS));
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
