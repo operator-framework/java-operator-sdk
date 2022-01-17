@@ -325,7 +325,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(getName(resource))
-          .updateStatus(resource);
+          .replaceStatus(resource);
     }
 
     public R replaceWithLock(R resource) {
