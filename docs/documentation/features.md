@@ -84,7 +84,32 @@ If there is **no finalizer** in place (see Finalizer Support section), the `clea
 These two classes are used to control the outcome or the desired behavior after the reconciliation.
 
 The `UpdateControl` can instruct the framework to update the status sub-resource of the resource and/or re-schedule a
-reconciliation with a desired time delay. Those are the typical use cases, however in some cases there it can happen
+reconciliation with a desired time delay. 
+
+```java 
+  @Override
+  public UpdateControl<MyCustomResource> reconcile(
+     EventSourceTestCustomResource resource, Context context) {
+    ...
+    return UpdateControl.updateStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
+  }
+```
+
+without an update:
+
+```java 
+  @Override
+  public UpdateControl<MyCustomResource> reconcile(
+     EventSourceTestCustomResource resource, Context context) {
+    ...
+    return UpdateControl.<MyCustomResource>noUpdate().rescheduleAfter(10, TimeUnit.SECONDS);
+  }
+```
+
+Note, that it's not always desirable to always schedule a retry, rather to use `EventSources` to trigger the
+reconciliation.
+
+Those are the typical use cases of resource updates, however in some cases there it can happen
 that the controller wants to update the custom resource itself (like adding annotations) or not to do any updates, which
 is also supported.
 
@@ -98,6 +123,15 @@ overwritten (by setting `resourceVersion` ) .
 
 The `DeleteControl` typically instructs the framework to remove the finalizer after the dependent
 resource are cleaned up in `cleanup` implementation.
+
+```java
+
+public DeleteControl cleanup(MyCustomResource customResource, Context context) {
+    ...
+    return DeleteControl.defaultDelete();
+}
+
+```
 
 However, there is a possibility to not remove the finalizer, this allows to clean up the resources
 in a more async way, mostly for the cases when there is a long waiting period after a delete
@@ -113,6 +147,7 @@ the resource reconciled successfully by the controller. This helps the users / a
 resource was reconciled, but it is used to decide if a reconciliation should happen or not. Filtering events based on
 generation is supported by the framework and turned on by default. There are two modes.
 
+### Primary (preferred) Mode
 The first and the **preferred** one is to check after a resource event received, if the generation of the resource is
 larger than the `.observedGeneration` field on status. In order to have this feature working:
 
@@ -133,6 +168,32 @@ when `UpdateControl.noUpdate()` is returned from the reconciler. See this featur
 the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/b91221bb54af19761a617bf18eef381e8ceb3b4c/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
 .
 
+```java
+public class WebPageStatus extends ObservedGenerationAwareStatus {
+
+  private String htmlConfigMap;
+  
+  ...  
+}
+```
+
+Initializing status on custom resource:
+
+```java 
+@Group("sample.javaoperatorsdk")
+@Version("v1")
+public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
+    implements Namespaced {
+
+  @Override
+  protected WebPageStatus initStatus() {
+    return new WebPageStatus();
+  }
+}
+```
+
+### The Second (Fallback) Mode
+
 The second, fallback mode is (when the conditions from above are not met to handle the observed generation automatically
 in status) to handled generation filtering in memory. Thus, if an event is received, the generation of the received
 resource is compared with the resource in the cache.
@@ -148,6 +209,20 @@ Ingress,Deployment,...). Note that automatic observed generation handling is not
 in case adding a secondary controller for well known k8s resource, probably the observed generation should be handled by
 the primary controller.
 
+See the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)
+for reconciling deployments.
+
+```java 
+public class DeploymentReconciler
+    implements Reconciler<Deployment>, TestExecutionInfoProvider {
+
+  @Override
+  public UpdateControl<Deployment> reconcile(
+      Deployment resource, Context context) {
+  ...
+  }
+```
+
 ## Automatic Retries on Error
 
 When an exception is thrown from a controller, the framework will schedule an automatic retry of the reconciliation. The
@@ -159,6 +234,13 @@ It is possible to set a limit on the number of retries. In
 the [Context](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Context.java)
 object information is provided about the retry, particularly interesting is the `isLastAttempt`, since a different
 behavior could be implemented bases on this flag. Like setting an error message in the status in case of a last attempt;
+
+```java
+    GenericRetry.defaultLimitedExponentialRetry()
+        .setInitialInterval(5000)
+        .setIntervalMultiplier(1.5D)
+        .setMaxAttempts(5);
+```
 
 Event if the retry reached a limit, in case of a new event is received the reconciliation would happen again, it's just
 won't be a result of a retry, but the new event. However, in case of an error happens also in this case, it won't
@@ -200,13 +282,6 @@ from the controller (using `UpdateControl`) would fail on a conflict. The automa
 result in a reconciliation, even if normally an event would not be processed as a result of a custom resource update
 from previous example (like if there is no generation update as a result of the change and generation filtering is
 turned on)
-
-## Rescheduling Execution
-
-One way to implement an operator especially in simple cases is to periodically reconcile it. This is supported
-explicitly by
-`UpdateControl`, see method: `public UpdateControl<T> rescheduleAfter(long delay, TimeUnit timeUnit)`. This would
-schedule a reconciliation for the future.
 
 ## Retry and Rescheduling and Event Handling Common Behavior
 
@@ -253,13 +328,58 @@ we could read the object again from Kubernetes API. However since we watch for t
 receive the most up-to-date version in the Event Source. So naturally, what we can do is cache the latest received
 objects (in the Event Source) and read it from there if needed.
 
-### Implementing and EventSource
+### Registering Event Sources
 
-### Built-in Event Sources
+To register event sources `Reconciler` has to implement [`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
+interface and init a list of event sources to register. The easiest way to see it is on [tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/TomcatReconciler.java)
+(irrelevant details omitted):   
+
+```java
+@ControllerConfiguration
+public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
+
+  @Override
+  public List<EventSource> prepareEventSources(EventSourceContext<Tomcat> context) {
+    SharedIndexInformer<Deployment> deploymentInformer =
+        kubernetesClient.apps()
+            .deployments()
+            .inAnyNamespace()
+            .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
+            .runnableInformer(0);
+
+    return List.of(
+        new InformerEventSource<>(deploymentInformer, d -> {
+              var ownerReferences = d.getMetadata().getOwnerReferences();
+              if (!ownerReferences.isEmpty()) {
+                return Set.of(new ResourceID(ownerReferences.get(0).getName(), d.getMetadata().getNamespace()));
+              } else {
+                return EMPTY_SET;
+              }
+            }));
+  }
+  ...
+}
+```
+
+In the example above an `InformerEventSource` is registered (more on this specific eventsource later). Multiple things
+are going on here:
+
+1. An `SharedIndexInformer` (class from fabric8 Kubernetes client) is created. This will watch and produce events for 
+   `Deployments` in every namespace, but will filter them based on label. So `Deployments` which are not managed by
+   `tomcat-operator` (the label is not present on them) will not trigger a reconciliation. 
+2. In the next step an [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
+   is created, which wraps the `SharedIndexInformer`. In addition to that a mapping functions is provided, **this maps 
+   the event of the watched resource (in this case `Deployment`) to the custom resources to reconcile**. Not that in this
+   case this is a simple task, since `Deployment` is already created with an owner reference. Therefore, the `ResourceID`
+   what identifies the custom resource to reconcile is created from the owner reference.
+   Note that a set of `ResourceID` is returned, this is usually just a set with one element. It is set just to cover 
+   some corner cases.
+
+### Built-in EventSources
 
 1. InformerEventSource - used to get event about other K8S resources, also provides a local cache for them.
 2. TimerEventSource - used to create timed events, mainly intended for internal usage.
-3. CustomResourceEventSource - an event source that is automatically registered to listen to the changes of the main
+3. CustomResourceEventSource - an eventsource that is automatically registered to listen to the changes of the main
    resource the operation manages, it also maintains a cache of those objects that can be accessed from the Reconciler.
 
 ## Monitoring with Micrometer
