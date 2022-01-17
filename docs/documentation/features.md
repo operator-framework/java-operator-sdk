@@ -45,7 +45,7 @@ before the first reconciliation. The finalizer is added via a separate Kubernete
 the finalizer will be present. The subsequent event will be received, which will trigger the first reconciliation.
 
 The finalizer that is automatically added will be also removed after the `cleanup` is executed on the reconciler.
-However, the removal behavior can be further customized, and can be instructed to "not remove yet" - this is useful just
+However, the removal behaviour can be further customized, and can be instructed to "not remove yet" - this is useful just
 in some specific corner cases, when there would be a long waiting period for some dependent resource cleanup.
 
 The name of the finalizers can be specified, in case it is not, a name will be generated.
@@ -68,11 +68,11 @@ time.
 
 ## The `reconcile` and `cleanup` Methods of [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
 
-The lifecycle of a custom resource can be clearly separated to two phases from a perspective of an operator. When a
+The lifecycle of a custom resource can be clearly separated into two phases from the perspective of an operator. When a
 custom resource is created or update, or on the other hand when the custom resource is deleted - or rather marked for
 deletion in case a finalizer is used.
 
-This separation related logic is automatically handled by framework. The framework will always call `reconcile`
+This separation-related logic is automatically handled by the framework. The framework will always call `reconcile`
 method, unless the custom resource is
 [marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work)
 . From the point when the custom resource is marked from deletion, only the `cleanup` method is called.
@@ -81,7 +81,7 @@ If there is **no finalizer** in place (see Finalizer Support section), the `clea
 
 ### Using [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java) and [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
 
-These two classes are used to control the outcome or the desired behavior after the reconciliation.
+These two classes are used to control the outcome or the desired behaviour after the reconciliation.
 
 The `UpdateControl` can instruct the framework to update the status sub-resource of the resource and/or re-schedule a
 reconciliation with a desired time delay.
@@ -112,7 +112,7 @@ reconciliation.
 Those are the typical use cases of resource updates, however in some cases there it can happen that the controller wants
 to update the custom resource itself (like adding annotations) or not to do any updates, which is also supported.
 
-It is also possible to update both the status and the custom resource with `updateCustomResourceAndStatus` method. In
+It is also possible to update both the status and the custom resource with the `updateCustomResourceAndStatus` method. In
 this case first the custom resource is updated then the status in two separate requests to K8S API.
 
 Always update the custom resource with `UpdateControl`, not with the actual kubernetes client if possible.
@@ -135,7 +135,7 @@ public DeleteControl cleanup(MyCustomResource customResource, Context context) {
 However, there is a possibility to not remove the finalizer, this allows to clean up the resources in a more async way,
 mostly for the cases when there is a long waiting period after a delete operation is initiated. Note that in this case
 you might want to either schedule a timed event to make sure
-`cleanup` is executed again or use event sources get notified about the state changes of a deleted resource.
+`cleanup` is executed again or use event sources to get notified about the state changes of a deleted resource.
 
 ## Generation Awareness and Automatic Observed Generation Handling
 
@@ -153,7 +153,7 @@ larger than the `.observedGeneration` field on status. In order to have this fea
   [`ObservedGenerationAware`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAware.java)
   interface. See also
   the [`ObservedGenerationAwareStatus`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAwareStatus.java)
-  which can be also extended.
+  which can also be extended.
 - The other condition is that the `CustomResource.getStatus()` method should not return `null`
   , but an instance of the class representing `status`. The best way to achieve this is to
   override [`CustomResource.initStatus()`](https://github.com/fabric8io/kubernetes-client/blob/865e0ddf67b99f954aa55ab14e5806d53ae149ec/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/CustomResource.java#L139)
@@ -194,7 +194,7 @@ public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
 ### The Second (Fallback) Mode
 
 The second, fallback mode is (when the conditions from above are not met to handle the observed generation automatically
-in status) to handled generation filtering in memory. Thus, if an event is received, the generation of the received
+in status) to handle generation filtering in memory. Thus, if an event is received, the generation of the received
 resource is compared with the resource in the cache.
 
 Note that the **first approach has significant benefits** in the situation when the operator is restarted and there is
@@ -233,7 +233,7 @@ retry is behavior is configurable, an implementation is provided that should cov
 It is possible to set a limit on the number of retries. In
 the [Context](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Context.java)
 object information is provided about the retry, particularly interesting is the `isLastAttempt`, since a different
-behavior could be implemented bases on this flag. Like setting an error message in the status in case of a last attempt;
+behavior could be implemented based on this flag. Like setting an error message in the status in case of a last attempt;
 
 ```java
     GenericRetry.defaultLimitedExponentialRetry()
@@ -275,7 +275,7 @@ resource after it is marked for deletion.
 
 ### Correctness and Automatic Retries
 
-There is a possibility to turn of the automatic retries. This is not desirable, unless there is a very specific reason.
+There is a possibility to turn off the automatic retries. This is not desirable, unless there is a very specific reason.
 Errors naturally happen, typically network errors can cause some temporal issues, another case is when a custom resource
 is updated during the reconciliation (using `kubectl` for example), in this case if an update of the custom resource
 from the controller (using `UpdateControl`) would fail on a conflict. The automatic retries covers these cases and will
@@ -324,9 +324,16 @@ Typically, when we work with Kubernetes (but possibly with others), we manage th
 true also for Event Sources. For example if we watch for changes of a Kubernetes Deployment object in the
 InformerEventSource, we always receive the whole object from the Kubernetes API. Later when we try to reconcile in the
 controller (not using events) we would like to check the state of this deployment (but also other dependent resources),
-we could read the object again from Kubernetes API. However since we watch for the changes we know that we always
+we could read the object again from Kubernetes API. However since we watch for the changes, we know that we always
 receive the most up-to-date version in the Event Source. So naturally, what we can do is cache the latest received
-objects (in the Event Source) and read it from there if needed.
+objects (in the Event Source) and read it from there if needed. This is the preferred way, since it reduces the number
+of requests to Kubernetes API server, and leads to faster reconciliation cycles.
+
+Note that when an operator starts and the first reconciliation is executed the caches are already populated for example  
+for `InformerEventSource`. Currently, this is not true however for `PerResourceEventSource`, where the cache might or 
+might not be populated. To handle this situation elegantly methods are provided which checks the object in cache, if
+not found tries to get it from the supplier. See related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/e7fd79968a238d7e0acc446d949b83a06cea17b5/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java#L145)
+.
 
 ### Registering Event Sources
 
@@ -379,19 +386,31 @@ are going on here:
    what identifies the custom resource to reconcile is created from the owner reference. 
 
 Note that a set of `ResourceID` is returned, this is usually just a set with one element. The possibility to specify
-multiple values is there to cover some rare corner cases. If an irrelevant resource is observed, an empty set can 
+multiple values are there to cover some rare corner cases. If an irrelevant resource is observed, an empty set can 
 be returned to not reconcile any custom resource.
 
 ### Built-in EventSources
 
-There are multiple eventsources provided out of the box, the following are some more central ones:
+There are multiple event-sources provided out of the box, the following are some more central ones:
 
-1. InformerEventSource - used to get event about other K8S resources, also provides a local cache for them.
-2. PerResourcePollingEventSource - 
-3. CustomResourceEventSource - an eventsource that is automatically registered to listen to the changes of the main
+1. [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java) -
+   is there to cover events for all Kubernetes resources. Provides also a cache to use during the reconciliation.
+   Basically no other event source required to watch Kubernetes resources.
+2. [PerResourcePollingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java) -
+   is used to poll external API, which don't support webhooks or other event notifications. It extends the abstract
+   [CachingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/CachingEventSource.java)
+   to support caching. See [MySQL Schema sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/mysql-schema/src/main/java/io/javaoperatorsdk/operator/sample/MySQLSchemaReconciler.java) for usage.
+3. [PollingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PollingEventSource.java)
+   is similar to `PerResourceCachingEventSource` only it not polls a specific API separately per custom resource, but 
+   periodically and independently of actually observed custom resources.  
+5. [SimpleInboundEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/SimpleInboundEventSource.java)
+   and [CachingInboundEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/inbound/CachingInboundEventSource.java) 
+   is used to handle incoming events from webhooks and messaging systems.  
+6. [ControllerResourceEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/controller/ControllerResourceEventSource.java) -
+   an eventsource that is automatically registered to listen to the changes of the main
    resource the operation manages, it also maintains a cache of those objects that can be accessed from the Reconciler.
 
-## Monitoring with Micrometer
+More on the philosophy of the non Kubernetes API related event source see in issue [#729](https://github.com/java-operator-sdk/java-operator-sdk/issues/729).
 
 ## Contextual Info for Logging with MDC
 
@@ -409,6 +428,8 @@ following attributes are available in most parts of reconciliation logic and dur
 | `resource.uid`   | `.metadata.uid` |
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
+
+## Monitoring with Micrometer
 
 ## Automatic generation of CRDs
 
