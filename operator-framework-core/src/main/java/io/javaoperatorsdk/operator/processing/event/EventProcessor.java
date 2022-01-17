@@ -81,6 +81,22 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         eventSourceManager);
   }
 
+  EventProcessor(
+      ReconciliationDispatcher<R> reconciliationDispatcher,
+      EventSourceManager<R> eventSourceManager,
+      String relatedControllerName,
+      Retry retry,
+      Metrics metrics) {
+    this(
+        eventSourceManager.getControllerResourceEventSource().getResourceCache(),
+        null,
+        relatedControllerName,
+        reconciliationDispatcher,
+        retry,
+        metrics,
+        eventSourceManager);
+  }
+
   private EventProcessor(
       Cache<R> cache,
       ExecutorService executor,
