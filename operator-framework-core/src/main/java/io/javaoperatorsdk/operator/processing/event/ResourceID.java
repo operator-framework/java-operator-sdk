@@ -15,7 +15,7 @@ public class ResourceID implements Serializable {
 
   public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata resource) {
     var ownerReferences = resource.getMetadata().getOwnerReferences();
-    if (!ownerReferences.isEmpty()) {
+    if (ownerReferences == null || !ownerReferences.isEmpty()) {
       return Optional.of(new ResourceID(ownerReferences.get(0).getName(),
           resource.getMetadata().getNamespace()));
     } else {
