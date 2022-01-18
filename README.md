@@ -16,6 +16,9 @@ It's getting better every day! :)
 Join us on [Discord](https://discord.gg/DacEhAy) or feel free to ask any question on 
 [Kubernetes Slack Operator Channel](https://kubernetes.slack.com/archives/CAW0GV7A5)
 
+**Meet us** every Thursday (17:00 CET) at our **community meeting** on [Zoom](https://zoom.us/j/8415370125)
+(Password in the Discord channel, or just ask for it there!)
+
 ## How to Contribute
 
 See the [contribution](https://javaoperatorsdk.io/docs/contributing) guide on the website.
