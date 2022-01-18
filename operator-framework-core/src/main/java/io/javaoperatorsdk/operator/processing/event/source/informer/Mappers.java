@@ -30,15 +30,8 @@ public class Mappers {
   }
 
   public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromOwnerReference() {
-    return resource -> {
-      var ownerReferences = resource.getMetadata().getOwnerReferences();
-      if (!ownerReferences.isEmpty()) {
-        return Set.of(new ResourceID(ownerReferences.get(0).getName(),
-            resource.getMetadata().getNamespace()));
-      } else {
-        return Collections.emptySet();
-      }
-    };
+    return resource -> ResourceID.fromFirstOwnerReference(resource).map(Set::of)
+        .orElse(Collections.emptySet());
   }
 
   private static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromMetadata(
