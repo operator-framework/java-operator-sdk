@@ -169,12 +169,9 @@ public class OperatorExtension
       }
 
       try (InputStream is = getClass().getResourceAsStream(path)) {
-        kubernetesClient.load(is).createOrReplace();
-        // this fixes an issue with CRD registration, integration tests were failing, since the CRD
-        // was not found yet
-        // when the operator started. This seems to be fixing this issue (maybe a problem with
-        // minikube?)
-        Thread.sleep(2000);
+        final var crd = kubernetesClient.load(is);
+        crd.createOrReplace();
+        crd.waitUntilReady(2, TimeUnit.SECONDS);
         LOGGER.debug("Applied CRD with name: {}", config.getResourceTypeName());
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
