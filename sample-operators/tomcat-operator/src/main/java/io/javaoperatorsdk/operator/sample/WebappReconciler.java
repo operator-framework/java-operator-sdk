@@ -28,7 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(eventFilters = {CustomFilter.class})
+@ControllerConfiguration
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
 
   private KubernetesClient kubernetesClient;
