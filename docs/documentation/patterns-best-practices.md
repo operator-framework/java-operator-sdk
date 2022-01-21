@@ -12,7 +12,11 @@ of Java Operator SDK.
 
 ## Implementing a Reconciler
 
+### Reconcile All The Resource All the Time
+
 ### Idempotency
+
+### Managing Resources
 
 ### Sync of Async Way of Resource Handling
 
