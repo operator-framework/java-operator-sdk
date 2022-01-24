@@ -45,7 +45,8 @@ public class ReconcilerUtils {
     // return HasMetadata.getFullResourceName(resourceClass);
     final var group = HasMetadata.getGroup(resourceClass);
     final var plural = HasMetadata.getPlural(resourceClass);
-    return (group == null || group.isEmpty()) ? plural : plural + "." + group;
+    final var version = HasMetadata.getVersion(resourceClass);
+    return (group == null || group.isEmpty()) ? plural : plural + "." + group + "/" + version;
   }
 
   public static String getDefaultFinalizerName(Class<? extends HasMetadata> resourceClass) {
@@ -83,15 +84,16 @@ public class ReconcilerUtils {
   }
 
   public static String getDefaultNameFor(Class<? extends Reconciler> reconcilerClass) {
-    return getDefaultReconcilerName(reconcilerClass.getSimpleName());
+    return getDefaultReconcilerName(reconcilerClass.getCanonicalName());
   }
 
   public static String getDefaultReconcilerName(String reconcilerClassName) {
-    // if the name is fully qualified, extract the simple class name
-    final var lastDot = reconcilerClassName.lastIndexOf('.');
-    if (lastDot > 0) {
-      reconcilerClassName = reconcilerClassName.substring(lastDot + 1);
-    }
+    // TODO: check why this logic was imlpemented in first place
+    // // if the name is fully qualified, extract the simple class name
+    // final var lastDot = reconcilerClassName.lastIndexOf('.');
+    // if (lastDot > 0) {
+    // reconcilerClassName = reconcilerClassName.substring(lastDot + 1);
+    // }
     return reconcilerClassName.toLowerCase(Locale.ROOT);
   }
 }

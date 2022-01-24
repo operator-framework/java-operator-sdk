@@ -5,8 +5,10 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -17,10 +19,11 @@ import static io.javaoperatorsdk.operator.processing.event.source.controller.Con
 
 public class ControllerResourceCache<T extends HasMetadata> implements ResourceCache<T> {
 
-  private final Map<String, SharedIndexInformer<T>> sharedIndexInformers;
+  private final Map<String, SharedIndexInformer<GenericKubernetesResource>> sharedIndexInformers;
   private final Cloner cloner;
 
-  public ControllerResourceCache(Map<String, SharedIndexInformer<T>> sharedIndexInformers,
+  public ControllerResourceCache(
+      Map<String, SharedIndexInformer<GenericKubernetesResource>> sharedIndexInformers,
       Cloner cloner) {
     this.sharedIndexInformers = sharedIndexInformers;
     this.cloner = cloner;
@@ -29,18 +32,22 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
   @Override
   public Stream<T> list(Predicate<T> predicate) {
     return sharedIndexInformers.values().stream()
-        .flatMap(i -> i.getStore().list().stream().filter(predicate));
+        .flatMap(i -> i.getStore().list().stream()
+            .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v))).filter(predicate));
   }
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     if (isWatchingAllNamespaces()) {
       final var stream = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
+          .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v)))
           .filter(r -> r.getMetadata().getNamespace().equals(namespace));
       return predicate != null ? stream.filter(predicate) : stream;
     } else {
       final var informer = sharedIndexInformers.get(namespace);
-      return informer != null ? informer.getStore().list().stream().filter(predicate)
+      return informer != null
+          ? informer.getStore().list().stream()
+              .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v))).filter(predicate)
           : Stream.empty();
     }
   }
@@ -59,7 +66,8 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
     if (resource == null) {
       return Optional.empty();
     } else {
-      return Optional.of(cloner.clone(resource));
+      return Optional.of(cloner.clone(resource))
+          .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v)));
     }
   }
 

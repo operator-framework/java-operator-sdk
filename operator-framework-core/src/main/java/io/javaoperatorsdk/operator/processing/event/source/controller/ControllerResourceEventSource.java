@@ -9,12 +9,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -29,14 +32,14 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends AbstractResourceEventSource<T, T>
-    implements ResourceEventHandler<T> {
+    implements ResourceEventHandler<GenericKubernetesResource> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
-  private final Map<String, SharedIndexInformer<T>> sharedIndexInformers =
+  private final Map<String, SharedIndexInformer<GenericKubernetesResource>> sharedIndexInformers =
       new ConcurrentHashMap<>();
 
   private final ResourceEventFilter<T> filter;
@@ -49,7 +52,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     final var configurationService = controller.getConfiguration().getConfigurationService();
     var cloner = configurationService != null ? configurationService.getResourceCloner()
         : ConfigurationService.DEFAULT_CLONER;
-    this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
+    this.cache = new ControllerResourceCache<T>(sharedIndexInformers, cloner);
 
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
@@ -75,8 +78,14 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void start() {
     final var configuration = controller.getConfiguration();
     final var targetNamespaces = configuration.getEffectiveNamespaces();
-    final var client = controller.getCRClient();
+    // final var client = controller.getCRClient();
     final var labelSelector = configuration.getLabelSelector();
+
+    final var genericClient = controller.getClient();
+
+    final var client = genericClient
+        .genericKubernetesResources(
+            ResourceDefinitionContext.fromResourceType(configuration.getResourceClass()));
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
@@ -100,8 +109,9 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super.start();
   }
 
-  private SharedIndexInformer<T> createAndRunInformerFor(
-      FilterWatchListDeletable<T, KubernetesResourceList<T>> filteredBySelectorClient, String key) {
+  private SharedIndexInformer<GenericKubernetesResource> createAndRunInformerFor(
+      FilterWatchListDeletable<GenericKubernetesResource, GenericKubernetesResourceList> filteredBySelectorClient,
+      String key) {
     var informer = filteredBySelectorClient.runnableInformer(0);
     informer.addEventHandler(this);
     sharedIndexInformers.put(key, informer);
@@ -111,7 +121,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public void stop() {
-    for (SharedIndexInformer<T> informer : sharedIndexInformers.values()) {
+    for (SharedIndexInformer<GenericKubernetesResource> informer : sharedIndexInformers.values()) {
       try {
         log.info("Stopping informer {} -> {}", controller, informer);
         informer.stop();
@@ -143,25 +153,60 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     }
   }
 
+  // @Override
+  // public void onAdd(T resource) {
+  // eventReceived(ResourceAction.ADDED, resource, null);
+  // }
+  //
+  // @Override
+  // public void onUpdate(T oldCustomResource, T newCustomResource) {
+  // eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
+  // }
+  //
+  // @Override
+  // public void onDelete(T resource, boolean b) {
+  // eventReceived(ResourceAction.DELETED, resource, null);
+  // }
+  // TODO: Implement me!
+
   @Override
-  public void onAdd(T resource) {
-    eventReceived(ResourceAction.ADDED, resource, null);
+  public void onAdd(GenericKubernetesResource genericKubernetesResource) {
+    var controlledVersion =
+        HasMetadata.getGroup(this.controller.getConfiguration().getResourceClass()) + "/"
+            + HasMetadata.getVersion(this.controller.getConfiguration().getResourceClass());
+
+    // Any better way to extract the current version???
+    var actualCRVersion = genericKubernetesResource
+        .getMetadata()
+        .getManagedFields()
+        .get(0)
+        .getApiVersion();
+
+    // Something is still throwing an exception ???
+    if (controlledVersion.equals(actualCRVersion)) {
+      // System.out.println("Propagating event for " + controlledVersion);
+      var resource = Serialization.unmarshal(Serialization.asJson(genericKubernetesResource),
+          this.getResourceClass());
+      eventReceived(ResourceAction.ADDED, resource, null);
+    }
   }
 
   @Override
-  public void onUpdate(T oldCustomResource, T newCustomResource) {
-    eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
+  public void onUpdate(GenericKubernetesResource genericKubernetesResource,
+      GenericKubernetesResource t1) {
+
   }
 
   @Override
-  public void onDelete(T resource, boolean b) {
-    eventReceived(ResourceAction.DELETED, resource, null);
+  public void onDelete(GenericKubernetesResource genericKubernetesResource, boolean b) {
+
   }
 
   public Optional<T> get(ResourceID resourceID) {
     return cache.get(resourceID);
   }
 
+  // TODO: fixme
   public ControllerResourceCache<T> getResourceCache() {
     return cache;
   }
@@ -170,11 +215,11 @@ public class ControllerResourceEventSource<T extends HasMetadata>
    * @return shared informers by namespace. If custom resource is not namespace scoped use
    *         CustomResourceEventSource.ANY_NAMESPACE_MAP_KEY
    */
-  public Map<String, SharedIndexInformer<T>> getInformers() {
+  public Map<String, SharedIndexInformer<GenericKubernetesResource>> getInformers() {
     return Collections.unmodifiableMap(sharedIndexInformers);
   }
 
-  public SharedIndexInformer<T> getInformer(String namespace) {
+  public SharedIndexInformer<GenericKubernetesResource> getInformer(String namespace) {
     return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
   }
 
@@ -206,4 +251,5 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public Optional<T> getAssociated(T primary) {
     return cache.get(ResourceID.fromResource(primary));
   }
+
 }
