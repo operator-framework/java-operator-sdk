@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,7 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Ignore
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
 

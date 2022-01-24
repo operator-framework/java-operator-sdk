@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Ignore
 public class DependentResourceManager<R extends HasMetadata> implements EventSourceInitializer<R>,
     EventSourceContextInjector, Reconciler<R> {
 
