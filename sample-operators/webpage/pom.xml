@@ -28,6 +28,11 @@
             <version>2.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>operator-framework-dependent-resource-support</artifactId>
+            <version>2.0.3-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
