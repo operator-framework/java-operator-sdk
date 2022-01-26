@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -45,6 +44,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final ControllerResourceCache<T> cache;
+  private final String CRVersion;
 
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getConfiguration().getResourceClass());
@@ -72,20 +72,19 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     } else {
       filter = ResourceEventFilters.or(filters);
     }
+
+    var resourceClass = controller.getConfiguration().getResourceClass();
+    // TODO: check if we should use: HasMetadata.getFullResourceName(resourceClass);
+    this.CRVersion =
+        HasMetadata.getGroup(resourceClass) + "/" + HasMetadata.getVersion(resourceClass);
   }
 
   @Override
   public void start() {
     final var configuration = controller.getConfiguration();
     final var targetNamespaces = configuration.getEffectiveNamespaces();
-    // final var client = controller.getCRClient();
+    final var client = controller.getGenericClient();
     final var labelSelector = configuration.getLabelSelector();
-
-    final var genericClient = controller.getClient();
-
-    final var client = genericClient
-        .genericKubernetesResources(
-            ResourceDefinitionContext.fromResourceType(configuration.getResourceClass()));
 
     try {
       if (ControllerConfiguration.allNamespacesWatched(targetNamespaces)) {
@@ -153,60 +152,55 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     }
   }
 
-  // @Override
-  // public void onAdd(T resource) {
-  // eventReceived(ResourceAction.ADDED, resource, null);
-  // }
-  //
-  // @Override
-  // public void onUpdate(T oldCustomResource, T newCustomResource) {
-  // eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
-  // }
-  //
-  // @Override
-  // public void onDelete(T resource, boolean b) {
-  // eventReceived(ResourceAction.DELETED, resource, null);
-  // }
-  // TODO: Implement me!
-
-  @Override
-  public void onAdd(GenericKubernetesResource genericKubernetesResource) {
-    var controlledVersion =
-        HasMetadata.getGroup(this.controller.getConfiguration().getResourceClass()) + "/"
-            + HasMetadata.getVersion(this.controller.getConfiguration().getResourceClass());
-
-    // Any better way to extract the current version???
-    var actualCRVersion = genericKubernetesResource
+  private String extractUnderlyingCRVersion(GenericKubernetesResource resource) {
+    return resource
         .getMetadata()
         .getManagedFields()
         .get(0)
         .getApiVersion();
+  }
 
-    // Something is still throwing an exception ???
-    if (controlledVersion.equals(actualCRVersion)) {
-      // System.out.println("Propagating event for " + controlledVersion);
-      var resource = Serialization.unmarshal(Serialization.asJson(genericKubernetesResource),
-          this.getResourceClass());
+  @Override
+  public void onAdd(GenericKubernetesResource genericKubernetesResource) {
+    if (CRVersion.equals(extractUnderlyingCRVersion(genericKubernetesResource))) {
+      var resource = Serialization.unmarshal(
+          Serialization.asJson(genericKubernetesResource), this.getResourceClass());
       eventReceived(ResourceAction.ADDED, resource, null);
     }
   }
 
   @Override
-  public void onUpdate(GenericKubernetesResource genericKubernetesResource,
-      GenericKubernetesResource t1) {
+  public void onUpdate(GenericKubernetesResource oldResource,
+      GenericKubernetesResource newResource) {
+    if (CRVersion.equals(extractUnderlyingCRVersion(newResource))) {
+      var newCustomResource = Serialization.unmarshal(
+          Serialization.asJson(newResource), this.getResourceClass());
 
+      // Best effort try to deserialize the old CR with the same deserializer as the new
+      T oldCustomResource = null;
+      try {
+        oldCustomResource = Serialization.unmarshal(
+            Serialization.asJson(newResource), this.getResourceClass());
+      } catch (Exception e) {
+        // ignored
+      }
+      eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
+    }
   }
 
   @Override
   public void onDelete(GenericKubernetesResource genericKubernetesResource, boolean b) {
-
+    if (CRVersion.equals(extractUnderlyingCRVersion(genericKubernetesResource))) {
+      var resource = Serialization.unmarshal(
+          Serialization.asJson(genericKubernetesResource), this.getResourceClass());
+      eventReceived(ResourceAction.DELETED, resource, null);
+    }
   }
 
   public Optional<T> get(ResourceID resourceID) {
     return cache.get(resourceID);
   }
 
-  // TODO: fixme
   public ControllerResourceCache<T> getResourceCache() {
     return cache;
   }

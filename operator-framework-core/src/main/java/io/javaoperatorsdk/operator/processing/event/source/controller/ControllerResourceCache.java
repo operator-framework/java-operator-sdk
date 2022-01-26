@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -29,25 +30,27 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
     this.cloner = cloner;
   }
 
+  private Function<GenericKubernetesResource, T> CONVERT =
+      resource -> Serialization.unmarshal(Serialization.asJson(resource));
+
   @Override
   public Stream<T> list(Predicate<T> predicate) {
     return sharedIndexInformers.values().stream()
         .flatMap(i -> i.getStore().list().stream()
-            .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v))).filter(predicate));
+            .map(CONVERT).filter(predicate));
   }
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     if (isWatchingAllNamespaces()) {
       final var stream = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY).getStore().list().stream()
-          .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v)))
-          .filter(r -> r.getMetadata().getNamespace().equals(namespace));
+          .map(CONVERT).filter(r -> r.getMetadata().getNamespace().equals(namespace));
       return predicate != null ? stream.filter(predicate) : stream;
     } else {
       final var informer = sharedIndexInformers.get(namespace);
       return informer != null
           ? informer.getStore().list().stream()
-              .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v))).filter(predicate)
+              .map(CONVERT).filter(predicate)
           : Stream.empty();
     }
   }
@@ -66,8 +69,7 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
     if (resource == null) {
       return Optional.empty();
     } else {
-      return Optional.of(cloner.clone(resource))
-          .map(v -> Serialization.<T>unmarshal(Serialization.asJson(v)));
+      return Optional.of(cloner.clone(resource)).map(CONVERT);
     }
   }
 

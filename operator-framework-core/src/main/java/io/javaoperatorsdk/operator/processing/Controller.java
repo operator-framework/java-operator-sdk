@@ -3,6 +3,8 @@ package io.javaoperatorsdk.operator.processing;
 import java.util.List;
 import java.util.Objects;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
@@ -10,6 +12,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
+import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -150,6 +154,16 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
   public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
     return kubernetesClient.resources(configuration.getResourceClass());
+  }
+
+  public MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> getGenericClient() {
+    var context = ResourceDefinitionContext.fromResourceType(configuration.getResourceClass());
+
+    System.out.println("Version: " + context.getVersion());
+    System.out.println("Kind: " + context.getKind());
+    KubernetesDeserializer.registerCustomKind(context.getVersion(), context.getKind(),
+        GenericKubernetesResource.class);
+    return kubernetesClient.genericKubernetesResources(context);
   }
 
   /**
