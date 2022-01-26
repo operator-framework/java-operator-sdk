@@ -160,9 +160,7 @@ larger than the `.observedGeneration` field on status. In order to have this fea
   .
 
 If these conditions are fulfilled and generation awareness not turned off, the observed generation is automatically set
-by the framework after the `reconcile` method is called. There is just one exception, when the reconciler returns
-with `UpdateControl.updateResource`, in this case the status is not updated, just the custom resource - however, this
-update will lead to a new reconciliation. Note that the observed generation is updated also
+by the framework after the `reconcile` method is called. Note that the observed generation is updated also
 when `UpdateControl.noUpdate()` is returned from the reconciler. See this feature working in
 the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/b91221bb54af19761a617bf18eef381e8ceb3b4c/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
 .
@@ -198,8 +196,9 @@ in status) to handle generation filtering in memory. Thus, if an event is receiv
 resource is compared with the resource in the cache.
 
 Note that the **first approach has significant benefits** in the situation when the operator is restarted and there is
-no cached resource anymore. In case two this leads to a reconciliation of every resource, event if the resource is not
-changed while the operator was not running.
+no cached resource anymore. In case two this leads to a reconciliation of every resource in all cases, 
+event if the resource is not changed while the operator was not running. However, in case informers are used 
+the reconciliation from startup will happen anyway, since events will be propagated by the informer. 
 
 ## Support for Well Known (non-custom) Kubernetes Resources
 
@@ -222,6 +221,10 @@ public class DeploymentReconciler
   ...
   }
 ```
+
+## Max Interval Between Reconciliations
+
+
 
 ## Automatic Retries on Error
 

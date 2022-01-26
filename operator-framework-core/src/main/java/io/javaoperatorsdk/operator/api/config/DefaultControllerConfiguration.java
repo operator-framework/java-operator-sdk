@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -20,6 +21,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String labelSelector;
   private final ResourceEventFilter<R> resourceEventFilter;
   private final Class<R> resourceClass;
+  private final long reconciliationMaxInterval;
+  private final TimeUnit reconciliationMaxIntervalTimeUnit;
   private ConfigurationService service;
 
   public DefaultControllerConfiguration(
@@ -33,7 +36,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
-      ConfigurationService service) {
+      long reconciliationMaxInterval,
+      TimeUnit reconciliationMaxIntervalTimeUnit, ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -41,6 +45,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.generationAware = generationAware;
     this.namespaces =
         namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
+    this.reconciliationMaxIntervalTimeUnit = reconciliationMaxIntervalTimeUnit;
+    this.reconciliationMaxInterval = reconciliationMaxInterval;
     this.watchAllNamespaces = this.namespaces.isEmpty();
     this.retryConfiguration =
         retryConfiguration == null
@@ -121,5 +127,15 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public ResourceEventFilter<R> getEventFilter() {
     return resourceEventFilter;
+  }
+
+  @Override
+  public long reconciliationMaxInterval() {
+    return reconciliationMaxInterval;
+  }
+
+  @Override
+  public TimeUnit reconciliationMaxIntervalTimeUnit() {
+    return reconciliationMaxIntervalTimeUnit;
   }
 }

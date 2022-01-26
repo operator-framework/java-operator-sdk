@@ -457,7 +457,7 @@ class ReconciliationDispatcherTest {
     when(reconciler.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.noUpdate());
     when(configuration.reconciliationMaxInterval())
-        .thenReturn(Constants.NO_RECONCILIATION_MAX_DELAY);
+        .thenReturn(Constants.NO_RECONCILIATION_MAX_INTERVAL);
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
