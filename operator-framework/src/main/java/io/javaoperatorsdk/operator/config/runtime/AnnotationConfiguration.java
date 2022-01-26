@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -106,6 +107,18 @@ public class AnnotationConfiguration<R extends HasMetadata>
     return answer != null
         ? answer
         : ResourceEventFilters.passthrough();
+  }
+
+  @Override
+  public long reconciliationMaxDelay() {
+    return valueOrDefault(annotation, ControllerConfiguration::reconciliationMaxDelay,
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxDelay());
+  }
+
+  @Override
+  public TimeUnit reconciliationTimeUnit() {
+    return valueOrDefault(annotation, ControllerConfiguration::reconciliationTimeUnit,
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationTimeUnit());
   }
 
   public static <T> T valueOrDefault(ControllerConfiguration controllerConfiguration,

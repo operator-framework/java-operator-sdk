@@ -47,6 +47,7 @@ class ReconciliationDispatcherTest {
 
   private static final String DEFAULT_FINALIZER = "javaoperatorsdk.io/finalizer";
   public static final String ERROR_MESSAGE = "ErrorMessage";
+  public static final long RECONCILIATION_MAX_DELAY = 10L;
   private TestCustomResource testCustomResource;
   private ReconciliationDispatcher<TestCustomResource> reconciliationDispatcher;
   private final Reconciler<TestCustomResource> reconciler = mock(Reconciler.class,
@@ -54,25 +55,31 @@ class ReconciliationDispatcherTest {
   private final ConfigurationService configService = mock(ConfigurationService.class);
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
+  private ControllerConfiguration configuration = mock(ControllerConfiguration.class);
 
   @BeforeEach
   void setup() {
     testCustomResource = TestUtils.testCustomResource();
     reconciliationDispatcher =
-        init(testCustomResource, reconciler, null, customResourceFacade, true);
+        init(testCustomResource, reconciler,null, customResourceFacade, true);
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
-      Reconciler<R> reconciler, ControllerConfiguration<R> configuration,
+      Reconciler<R> reconciler,ControllerConfiguration configuration ,
       CustomResourceFacade<R> customResourceFacade, boolean useFinalizer) {
+
     configuration = configuration == null ? mock(ControllerConfiguration.class) : configuration;
+    ReconciliationDispatcherTest.this.configuration = configuration;
     final var finalizer = useFinalizer ? DEFAULT_FINALIZER : Constants.NO_FINALIZER;
     when(configuration.getFinalizer()).thenReturn(finalizer);
     when(configuration.useFinalizer()).thenCallRealMethod();
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn((Class<R>) customResource.getClass());
     when(configuration.getRetryConfiguration()).thenReturn(RetryConfiguration.DEFAULT);
+    when(configuration.reconciliationMaxDelay()).thenReturn(RECONCILIATION_MAX_DELAY);
+    when(configuration.reconciliationTimeUnit()).thenReturn(TimeUnit.HOURS);
     when(configuration.getConfigurationService()).thenReturn(configService);
+
 
     /*
      * We need this for mock reconcilers to properly generate the expected UpdateControl: without
@@ -427,6 +434,34 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
+  }
+
+  @Test
+  void schedulesReconciliationIfMaxDelayIsSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    when(reconciler.reconcile(eq(testCustomResource), any()))
+        .thenReturn(UpdateControl.noUpdate());
+
+    PostExecutionControl control =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    assertThat(control.getReScheduleDelay()).isPresent()
+        .hasValue(TimeUnit.HOURS.toMillis(RECONCILIATION_MAX_DELAY));
+  }
+
+  @Test
+  void canSkipSchedulingMaxDelayIf() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    when(reconciler.reconcile(eq(testCustomResource), any()))
+            .thenReturn(UpdateControl.noUpdate());
+    when(configuration.reconciliationMaxDelay()).thenReturn(Constants.NO_RECONCILIATION_MAX_DELAY);
+
+    PostExecutionControl control =
+            reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    assertThat(control.getReScheduleDelay()).isNotPresent();
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
