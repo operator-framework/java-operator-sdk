@@ -158,9 +158,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
   public MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> getGenericClient() {
     var context = ResourceDefinitionContext.fromResourceType(configuration.getResourceClass());
-
-    System.out.println("Version: " + context.getVersion());
-    System.out.println("Kind: " + context.getKind());
     KubernetesDeserializer.registerCustomKind(context.getVersion(), context.getKind(),
         GenericKubernetesResource.class);
     return kubernetesClient.genericKubernetesResources(context);
