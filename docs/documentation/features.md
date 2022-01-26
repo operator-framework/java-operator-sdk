@@ -224,7 +224,24 @@ public class DeploymentReconciler
 
 ## Max Interval Between Reconciliations
 
+In case informers are all in place and reconciler is implemented correctly the reconciliation is triggered when needed,
+and reconciliation happening as expected. However, it's a [common practice](https://github.com/java-operator-sdk/java-operator-sdk/issues/848#issuecomment-1016419966) having a failsafe periodic trigger in place,
+just to make sure the resources are reconciled after certain time. This functionality is in place by default, there
+is quite high interval (currently 10 hours) while the reconciliation is triggered. See how to override this using 
+the standard annotation:
 
+```java
+@ControllerConfiguration(finalizerName = NO_FINALIZER, reconciliationMaxInterval = 2L,
+    reconciliationMaxIntervalTimeUnit = TimeUnit.HOURS)
+```
+
+The event is not propagated in a fixed rate, rather it's scheduled after each reconciliation. So the 
+next reconciliation will after at most within the specified interval after last reconciliation.
+
+This feature can be turned off by setting `reconciliationMaxInterval` to [`Constants.NO_RECONCILIATION_MAX_INTERVAL`](https://github.com/java-operator-sdk/java-operator-sdk/blob/442e7d8718e992a36880e42bd0a5c01affaec9df/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L8-L8)
+or any non-positive number.
+
+The automatic retries are not affected by this feature, in case of an error no schedule is set by this feature. 
 
 ## Automatic Retries on Error
 
