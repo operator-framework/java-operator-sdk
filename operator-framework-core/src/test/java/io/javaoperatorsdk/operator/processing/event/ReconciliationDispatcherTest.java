@@ -61,11 +61,11 @@ class ReconciliationDispatcherTest {
   void setup() {
     testCustomResource = TestUtils.testCustomResource();
     reconciliationDispatcher =
-        init(testCustomResource, reconciler,null, customResourceFacade, true);
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
-      Reconciler<R> reconciler,ControllerConfiguration configuration ,
+      Reconciler<R> reconciler, ControllerConfiguration configuration,
       CustomResourceFacade<R> customResourceFacade, boolean useFinalizer) {
 
     configuration = configuration == null ? mock(ControllerConfiguration.class) : configuration;
@@ -455,11 +455,11 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     when(reconciler.reconcile(eq(testCustomResource), any()))
-            .thenReturn(UpdateControl.noUpdate());
+        .thenReturn(UpdateControl.noUpdate());
     when(configuration.reconciliationMaxDelay()).thenReturn(Constants.NO_RECONCILIATION_MAX_DELAY);
 
     PostExecutionControl control =
-            reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(control.getReScheduleDelay()).isNotPresent();
   }
