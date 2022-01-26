@@ -61,14 +61,18 @@ public @interface ControllerConfiguration {
   /**
    * A max delay between two reconciliations. Having this value larger than zero, will ensure that a
    * reconciliation is scheduled with a target interval after the last reconciliation. Note that
-   * this not applies in case of retries, thus the reconciliation is not scheduled.
-   * 
+   * this not applies for retries, in case of an exception reconciliation is not scheduled. This is
+   * not a fixed rate, in other words a new reconciliation is scheduled after each reconciliation.
+   *
+   * If an interval is specified by {@link UpdateControl} or {@link DeleteControl}, those take
+   * precedence.
+   *
    * @return max delay between reconciliations
    **/
-  long reconciliationMaxDelay() default 10;
+  long reconciliationMaxInterval() default 10;
 
   /**
    * @return time unit for max delay between reconciliations
    */
-  TimeUnit reconciliationTimeUnit() default TimeUnit.HOURS;
+  TimeUnit reconciliationMaxIntervalTimeUnit() default TimeUnit.HOURS;
 }

@@ -116,11 +116,11 @@ public interface ControllerConfiguration<R extends HasMetadata> {
     return ResourceEventFilters.passthrough();
   }
 
-  default long reconciliationMaxDelay() {
+  default long reconciliationMaxInterval() {
     return 10L;
   }
 
-  default TimeUnit reconciliationTimeUnit() {
+  default TimeUnit reconciliationMaxIntervalTimeUnit() {
     return TimeUnit.HOURS;
   }
 }

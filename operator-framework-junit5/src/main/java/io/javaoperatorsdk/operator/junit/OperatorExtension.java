@@ -112,6 +112,12 @@ public class OperatorExtension
         .collect(Collectors.toUnmodifiableList());
   }
 
+  public Reconciler getFirstReconciler() {
+    return operator.getControllers().stream()
+        .map(Controller::getReconciler)
+        .findFirst().orElseThrow();
+  }
+
   @SuppressWarnings({"rawtypes"})
   public <T extends Reconciler> T getControllerOfType(Class<T> type) {
     return operator.getControllers().stream()

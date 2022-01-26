@@ -110,15 +110,15 @@ public class AnnotationConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public long reconciliationMaxDelay() {
-    return valueOrDefault(annotation, ControllerConfiguration::reconciliationMaxDelay,
-        io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxDelay());
+  public long reconciliationMaxInterval() {
+    return valueOrDefault(annotation, ControllerConfiguration::reconciliationMaxInterval,
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval());
   }
 
   @Override
-  public TimeUnit reconciliationTimeUnit() {
-    return valueOrDefault(annotation, ControllerConfiguration::reconciliationTimeUnit,
-        io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationTimeUnit());
+  public TimeUnit reconciliationMaxIntervalTimeUnit() {
+    return valueOrDefault(annotation, ControllerConfiguration::reconciliationMaxIntervalTimeUnit,
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxIntervalTimeUnit());
   }
 
   public static <T> T valueOrDefault(ControllerConfiguration controllerConfiguration,

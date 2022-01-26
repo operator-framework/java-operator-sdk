@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class EventSourceIT {
+class EventSourceIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
@@ -25,7 +25,7 @@ public class EventSourceIT {
           .build();
 
   @Test
-  public void receivingPeriodicEvents() {
+  void receivingPeriodicEvents() {
     EventSourceTestCustomResource resource = createTestCustomResource("1");
 
     operator.create(EventSourceTestCustomResource.class, resource);

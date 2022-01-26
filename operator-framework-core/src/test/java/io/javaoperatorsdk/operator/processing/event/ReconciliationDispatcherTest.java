@@ -47,7 +47,7 @@ class ReconciliationDispatcherTest {
 
   private static final String DEFAULT_FINALIZER = "javaoperatorsdk.io/finalizer";
   public static final String ERROR_MESSAGE = "ErrorMessage";
-  public static final long RECONCILIATION_MAX_DELAY = 10L;
+  public static final long RECONCILIATION_MAX_INTERVAL = 10L;
   private TestCustomResource testCustomResource;
   private ReconciliationDispatcher<TestCustomResource> reconciliationDispatcher;
   private final Reconciler<TestCustomResource> reconciler = mock(Reconciler.class,
@@ -76,8 +76,8 @@ class ReconciliationDispatcherTest {
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn((Class<R>) customResource.getClass());
     when(configuration.getRetryConfiguration()).thenReturn(RetryConfiguration.DEFAULT);
-    when(configuration.reconciliationMaxDelay()).thenReturn(RECONCILIATION_MAX_DELAY);
-    when(configuration.reconciliationTimeUnit()).thenReturn(TimeUnit.HOURS);
+    when(configuration.reconciliationMaxInterval()).thenReturn(RECONCILIATION_MAX_INTERVAL);
+    when(configuration.reconciliationMaxIntervalTimeUnit()).thenReturn(TimeUnit.HOURS);
     when(configuration.getConfigurationService()).thenReturn(configService);
 
 
@@ -447,7 +447,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(control.getReScheduleDelay()).isPresent()
-        .hasValue(TimeUnit.HOURS.toMillis(RECONCILIATION_MAX_DELAY));
+        .hasValue(TimeUnit.HOURS.toMillis(RECONCILIATION_MAX_INTERVAL));
   }
 
   @Test
@@ -456,7 +456,8 @@ class ReconciliationDispatcherTest {
 
     when(reconciler.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.noUpdate());
-    when(configuration.reconciliationMaxDelay()).thenReturn(Constants.NO_RECONCILIATION_MAX_DELAY);
+    when(configuration.reconciliationMaxInterval())
+        .thenReturn(Constants.NO_RECONCILIATION_MAX_DELAY);
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
