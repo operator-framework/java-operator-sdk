@@ -13,14 +13,13 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 public class KubernetesDependentResourceController<R extends HasMetadata, P extends HasMetadata>
     extends DependentResourceController<R, P> {
-  private final InformerConfiguration<R, P> configuration;
-  private final boolean owned;
+  private final KubernetesDependentResourceConfiguration<R, P> configuration;
   private KubernetesClient client;
   private InformerEventSource<R, P> informer;
 
 
   public KubernetesDependentResourceController(DependentResource<R, P> delegate,
-      InformerConfiguration<R, P> configuration, boolean owned) {
+      KubernetesDependentResourceConfiguration<R, P> configuration) {
     super(delegate);
     // todo: check if we can validate that types actually match properly
     final var associatedPrimaries =
@@ -32,11 +31,12 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
             ? (AssociatedSecondaryResourceIdentifier<P>) delegate
             : configuration.getAssociatedResourceIdentifier();
 
-    this.configuration = InformerConfiguration.from(configuration)
+    final var augmented = InformerConfiguration.from(configuration)
         .withPrimaryResourcesRetriever(associatedPrimaries)
         .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
         .build();
-    this.owned = owned;
+    this.configuration =
+        KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned());
   }
 
   @Override
@@ -69,6 +69,6 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
   }
 
   public boolean owned() {
-    return owned;
+    return configuration.isOwned();
   }
 }
