@@ -13,7 +13,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 @ControllerConfiguration(
     finalizerName = NO_FINALIZER,
-        labelSelector = "version in (v2)")
+    labelSelector = "version in (v2)")
 public class MultiVersionCRDTestReconciler2
     implements Reconciler<MultiVersionCRDTestCustomResource2> {
 

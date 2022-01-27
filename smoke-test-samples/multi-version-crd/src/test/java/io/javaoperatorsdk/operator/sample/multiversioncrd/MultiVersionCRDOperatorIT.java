@@ -4,9 +4,9 @@ import org.junit.jupiter.api.Test;
 
 class MultiVersionCRDOperatorIT {
 
-    @Test
-    void multipleCRDVersions() {
-        // todo
-    }
+  @Test
+  void multipleCRDVersions() {
+    // todo
+  }
 
 }
