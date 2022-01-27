@@ -18,6 +18,7 @@
         <module>common</module>
         <module>pure-java</module>
         <module>spring-boot-plain</module>
+        <module>multi-version-crd</module>
     </modules>
 
     <build>

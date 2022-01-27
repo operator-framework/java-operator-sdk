@@ -181,12 +181,12 @@ public class Operator implements LifecycleAware {
     public synchronized void add(Controller controller) {
       final var configuration = controller.getConfiguration();
       final var resourceTypeName = configuration.getResourceTypeName();
-      final var existing = controllers.get(resourceTypeName);
-      if (existing != null) {
-        throw new OperatorException("Cannot register controller '" + configuration.getName()
-            + "': another controller named '" + existing.getConfiguration().getName()
-            + "' is already registered for resource '" + resourceTypeName + "'");
-      }
+//      final var existing = controllers.get(resourceTypeName);
+//      if (existing != null) {
+//        throw new OperatorException("Cannot register controller '" + configuration.getName()
+//            + "': another controller named '" + existing.getConfiguration().getName()
+//            + "' is already registered for resource '" + resourceTypeName + "'");
+//      }
       this.controllers.put(resourceTypeName, controller);
       if (started) {
         controller.start();
