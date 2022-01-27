@@ -224,8 +224,9 @@ public class DeploymentReconciler
 
 ## Max Interval Between Reconciliations
 
-In case informers are all in place and reconciler is implemented correctly the reconciliation is triggered when needed,
-and reconciliation happening as expected. However, it's a [common practice](https://github.com/java-operator-sdk/java-operator-sdk/issues/848#issuecomment-1016419966) having a failsafe periodic trigger in place,
+In case informers are all in place and reconciler is implemented correctly, there is no need for additional triggers. 
+However, it's a [common practice](https://github.com/java-operator-sdk/java-operator-sdk/issues/848#issuecomment-1016419966) 
+having a failsafe periodic trigger in place,
 just to make sure the resources are reconciled after certain time. This functionality is in place by default, there
 is quite high interval (currently 10 hours) while the reconciliation is triggered. See how to override this using 
 the standard annotation:
