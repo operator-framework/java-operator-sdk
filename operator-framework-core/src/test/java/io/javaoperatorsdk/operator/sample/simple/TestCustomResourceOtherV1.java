@@ -6,9 +6,9 @@ import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk.io")
-@Version("v2")
+@Version("v1")
 @Kind("TestCustomResource") // this is needed to override the automatically generated kind
-public class TestCustomResourceV2
+public class TestCustomResourceOtherV1
     extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus> {
 
 }
