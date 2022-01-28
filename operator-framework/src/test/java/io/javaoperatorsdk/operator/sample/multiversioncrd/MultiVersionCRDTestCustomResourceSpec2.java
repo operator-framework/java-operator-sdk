@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiversioncrd.cr;
+package io.javaoperatorsdk.operator.sample.multiversioncrd;
 
 public class MultiVersionCRDTestCustomResourceSpec2 {
 

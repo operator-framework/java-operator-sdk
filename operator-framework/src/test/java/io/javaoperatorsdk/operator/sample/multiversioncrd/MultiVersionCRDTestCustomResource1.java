@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiversioncrd.cr;
+package io.javaoperatorsdk.operator.sample.multiversioncrd;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;

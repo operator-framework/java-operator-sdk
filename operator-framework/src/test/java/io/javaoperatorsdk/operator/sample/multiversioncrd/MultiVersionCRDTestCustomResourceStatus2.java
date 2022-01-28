@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiversioncrd.cr;
+package io.javaoperatorsdk.operator.sample.multiversioncrd;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -7,7 +7,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.sample.multiversioncrd.cr.MultiVersionCRDTestCustomResource1;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 

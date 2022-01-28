@@ -1,8 +1,0 @@
-apiVersion: "sample.javaoperatorsdk/v2"
-kind: MultiVersionCRDTestCustomResource
-metadata:
-  name: mvcv2
-  labels:
-    version: v2
-spec:
-  value1: 1
