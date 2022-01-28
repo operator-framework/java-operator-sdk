@@ -1,15 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
+import java.time.Duration;
+import java.util.HashMap;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
-
-import java.time.Duration;
-import java.util.HashMap;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
 
 import static org.awaitility.Awaitility.await;
 
@@ -38,9 +38,11 @@ class MultiVersionCRDIT {
               var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
               var crV2Now = operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME);
               return crV1Now.getStatus().getReconciledBy().size() == 1
-                      && crV1Now.getStatus().getReconciledBy().contains(MultiVersionCRDTestReconciler1.class.getSimpleName())
-                      && crV2Now.getStatus().getReconciledBy().size() == 1
-                      && crV2Now.getStatus().getReconciledBy().contains(MultiVersionCRDTestReconciler2.class.getSimpleName());
+                  && crV1Now.getStatus().getReconciledBy()
+                      .contains(MultiVersionCRDTestReconciler1.class.getSimpleName())
+                  && crV2Now.getStatus().getReconciledBy().size() == 1
+                  && crV2Now.getStatus().getReconciledBy()
+                      .contains(MultiVersionCRDTestReconciler2.class.getSimpleName());
             });
   }
 
