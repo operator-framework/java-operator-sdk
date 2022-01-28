@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -42,13 +42,14 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
 
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<R> context) {
-    final List<DependentResource> configured = configuration.getDependentResources();
+    final List<DependentResourceConfiguration> configured = configuration.getDependentResources();
     dependents = new ArrayList<>(configured.size());
 
     List<EventSource> sources = new ArrayList<>(configured.size() + 5);
     configured.forEach(dependent -> {
-      dependents.add(configuration.dependentFactory().from(dependent));
-      sources.add(dependent.initEventSource(context));
+      final var dependentResourceController = configuration.dependentFactory().from(dependent);
+      dependents.add(dependentResourceController);
+      sources.add(dependentResourceController.initEventSource(context));
     });
 
     return sources;

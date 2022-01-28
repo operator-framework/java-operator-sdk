@@ -7,45 +7,57 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
 
-public class InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
-    extends DefaultResourceConfiguration<R> {
+public interface InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
+    extends ResourceConfiguration<R> {
 
-  private final PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
-  private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
-  private final boolean skipUpdateEventPropagationIfNoChange;
+  class DefaultInformerConfiguration<R extends HasMetadata, P extends HasMetadata> extends
+      DefaultResourceConfiguration<R> implements InformerConfiguration<R, P> {
 
-  protected InformerConfiguration(ConfigurationService service, String labelSelector,
-      Class<R> resourceClass,
-      PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet,
-      AssociatedSecondaryResourceIdentifier<P> associatedWith,
-      boolean skipUpdateEventPropagationIfNoChange, Set<String> namespaces) {
-    super(labelSelector, resourceClass, namespaces);
-    setConfigurationService(service);
-    this.secondaryToPrimaryResourcesIdSet =
-        Objects.requireNonNullElse(secondaryToPrimaryResourcesIdSet, Mappers.fromOwnerReference());
-    this.associatedWith =
-        Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
-    this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
+    private final PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
+    private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
+    private final boolean skipUpdateEventPropagationIfNoChange;
+
+    protected DefaultInformerConfiguration(ConfigurationService service, String labelSelector,
+        Class<R> resourceClass,
+        PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet,
+        AssociatedSecondaryResourceIdentifier<P> associatedWith,
+        boolean skipUpdateEventPropagationIfNoChange, Set<String> namespaces) {
+      super(labelSelector, resourceClass, namespaces);
+      setConfigurationService(service);
+      this.secondaryToPrimaryResourcesIdSet =
+          Objects.requireNonNullElse(secondaryToPrimaryResourcesIdSet,
+              Mappers.fromOwnerReference());
+      this.associatedWith =
+          Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
+      this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
+    }
+
+    public PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
+      return secondaryToPrimaryResourcesIdSet;
+    }
+
+    public AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier() {
+      return associatedWith;
+    }
+
+    public boolean isSkipUpdateEventPropagationIfNoChange() {
+      return skipUpdateEventPropagationIfNoChange;
+    }
   }
 
-  public PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
-    return secondaryToPrimaryResourcesIdSet;
-  }
+  PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever();
 
-  public AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier() {
-    return associatedWith;
-  }
+  AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier();
 
-  public boolean isSkipUpdateEventPropagationIfNoChange() {
-    return skipUpdateEventPropagationIfNoChange;
-  }
+  boolean isSkipUpdateEventPropagationIfNoChange();
 
-  public static class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
+  class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
 
     private PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
     private AssociatedSecondaryResourceIdentifier<P> associatedWith;
@@ -101,32 +113,32 @@ public class InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
     }
 
     public InformerConfiguration<R, P> build() {
-      return new InformerConfiguration<>(configurationService, labelSelector, resourceClass,
+      return new DefaultInformerConfiguration<>(configurationService, labelSelector, resourceClass,
           secondaryToPrimaryResourcesIdSet, associatedWith, skipUpdateEventPropagationIfNoChange,
           namespaces);
     }
   }
 
-  public static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
+  static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
       EventSourceContext<P> context, Class<R> resourceClass) {
     return new InformerConfigurationBuilder<>(resourceClass, context.getConfigurationService());
   }
 
-  public static InformerConfigurationBuilder from(ConfigurationService configurationService,
+  static InformerConfigurationBuilder from(ConfigurationService configurationService,
       Class resourceClass) {
     return new InformerConfigurationBuilder<>(resourceClass, configurationService);
   }
 
-  public static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
+  static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
       InformerConfiguration<R, P> configuration) {
     return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass(),
         configuration.getConfigurationService())
-            .withNamespaces(configuration.getNamespaces())
-            .withLabelSelector(configuration.getLabelSelector())
-            .skippingEventPropagationIfUnchanged(
-                configuration.isSkipUpdateEventPropagationIfNoChange())
-            .withAssociatedSecondaryResourceIdentifier(
-                configuration.getAssociatedResourceIdentifier())
-            .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
+        .withNamespaces(configuration.getNamespaces())
+        .withLabelSelector(configuration.getLabelSelector())
+        .skippingEventPropagationIfUnchanged(
+            configuration.isSkipUpdateEventPropagationIfNoChange())
+        .withAssociatedSecondaryResourceIdentifier(
+            configuration.getAssociatedResourceIdentifier())
+        .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
   }
 }

@@ -2,11 +2,12 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-public class DependentResourceController<R, P extends HasMetadata>
+public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>>
     implements DependentResource<R, P>, Builder<R, P>, Updater<R, P>, Persister<R, P>,
     Cleaner<R, P> {
 
@@ -15,14 +16,16 @@ public class DependentResourceController<R, P extends HasMetadata>
   private final Cleaner<R, P> cleaner;
   private final Persister<R, P> persister;
   private final DependentResource<R, P> delegate;
+  private final C configuration;
 
   @SuppressWarnings("unchecked")
-  public DependentResourceController(DependentResource<R, P> delegate) {
+  public DependentResourceController(DependentResource<R, P> delegate, C configuration) {
     this.delegate = delegate;
     builder = (delegate instanceof Builder) ? (Builder<R, P>) delegate : null;
     updater = (delegate instanceof Updater) ? (Updater<R, P>) delegate : null;
     cleaner = (delegate instanceof Cleaner) ? (Cleaner<R, P>) delegate : null;
     persister = initPersister(delegate);
+    this.configuration = configuration;
   }
 
   @SuppressWarnings("unchecked")
@@ -83,5 +86,9 @@ public class DependentResourceController<R, P extends HasMetadata>
   @Override
   public R getFor(P primary, Context context) {
     return persister.getFor(primary, context);
+  }
+
+  public C getConfiguration() {
+    return configuration;
   }
 }
