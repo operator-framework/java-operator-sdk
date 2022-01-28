@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.cr.MultiVersionCRDTest
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
-@ControllerConfiguration(finalizerName = NO_FINALIZER, labelSelector = "version in (v1)")
+@ControllerConfiguration(finalizerName = NO_FINALIZER, labelSelector = "!version")
 public class MultiVersionCRDTestReconciler1
     implements Reconciler<MultiVersionCRDTestCustomResource1> {
 
