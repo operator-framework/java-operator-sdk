@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class DefaultControllerConfiguration<R extends HasMetadata>
+    extends DefaultResourceConfiguration<R>
     implements ControllerConfiguration<R> {
 
   private final String associatedControllerClassName;
@@ -15,14 +16,9 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final Set<String> namespaces;
-  private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
-  private final String labelSelector;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final Class<R> resourceClass;
   private final List<DependentResource> dependents;
-  private ConfigurationService service;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -38,23 +34,18 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       Class<R> resourceClass,
       ConfigurationService service,
       List<DependentResource> dependents) {
+    super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
     this.finalizer = finalizer;
     this.generationAware = generationAware;
-    this.namespaces =
-        namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
-    this.watchAllNamespaces = this.namespaces.isEmpty();
     this.retryConfiguration =
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
-    this.labelSelector = labelSelector;
     this.resourceEventFilter = resourceEventFilter;
-    this.resourceClass =
-        resourceClass == null ? ControllerConfiguration.super.getResourceClass()
-            : resourceClass;
+
     setConfigurationService(service);
     this.dependents = dependents != null ? dependents : Collections.emptyList();
   }
@@ -85,42 +76,18 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Set<String> getNamespaces() {
-    return namespaces;
-  }
-
-  @Override
-  public boolean watchAllNamespaces() {
-    return watchAllNamespaces;
-  }
-
-  @Override
   public RetryConfiguration getRetryConfiguration() {
     return retryConfiguration;
   }
 
-  @Override
-  public ConfigurationService getConfigurationService() {
-    return service;
-  }
 
   @Override
   public void setConfigurationService(ConfigurationService service) {
-    if (this.service != null) {
+    if (getConfigurationService() != null) {
       throw new IllegalStateException("A ConfigurationService is already associated with '" + name
           + "' ControllerConfiguration. Cannot change it once set!");
     }
-    this.service = service;
-  }
-
-  @Override
-  public String getLabelSelector() {
-    return labelSelector;
-  }
-
-  @Override
-  public Class<R> getResourceClass() {
-    return resourceClass;
+    super.setConfigurationService(service);
   }
 
   @Override

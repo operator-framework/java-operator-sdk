@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.api.config.DependentResource;
 import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceController;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -153,7 +154,8 @@ public class AnnotationConfiguration<R extends HasMetadata>
                 .skippingEventPropagationIfUnchanged(skipIfUnchanged)
                 .withNamespaces(namespaces)
                 .build();
-            dependent = new KubernetesDependentResourceController(dependent, configuration, owned);
+            dependent = new KubernetesDependentResourceController(dependent,
+                KubernetesDependentResourceConfiguration.from(configuration, owned));
           }
 
           dependents.add(dependent);

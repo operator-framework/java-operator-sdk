@@ -19,7 +19,7 @@ public class InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
   private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
-  private InformerConfiguration(ConfigurationService service, String labelSelector,
+  protected InformerConfiguration(ConfigurationService service, String labelSelector,
       Class<R> resourceClass,
       PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet,
       AssociatedSecondaryResourceIdentifier<P> associatedWith,
