@@ -44,5 +44,5 @@ Operator SDK plugin: https://github.com/operator-framework/java-operator-plugins
 
 Quarkus Extension: https://github.com/quarkiverse/quarkus-operator-sdk
 
-
+Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
 
