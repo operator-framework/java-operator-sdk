@@ -10,6 +10,8 @@ permalink: /docs/patterns-best-practices
 This document describes patters and best practices, to build and run operators, and how to implement them in terms of
 Java Operator SDK.
 
+See also best practices in [Operator SDK](https://sdk.operatorframework.io/docs/best-practices/best-practices/).
+
 ## Implementing a Reconciler
 
 ### Reconcile All The Resources All the Time
