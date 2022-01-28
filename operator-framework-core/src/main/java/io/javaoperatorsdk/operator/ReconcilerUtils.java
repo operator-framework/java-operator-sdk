@@ -49,7 +49,6 @@ public class ReconcilerUtils {
       Class<? extends HasMetadata> resourceClass) {
     final var group = HasMetadata.getGroup(resourceClass);
     final var plural = HasMetadata.getPlural(resourceClass);
-    final var version = HasMetadata.getVersion(resourceClass);
     return (group == null || group.isEmpty()) ? plural : plural + "." + group;
   }
 
