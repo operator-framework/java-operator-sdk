@@ -58,26 +58,7 @@ public @interface ControllerConfiguration {
   @SuppressWarnings("rawtypes")
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
 
-  /**
-   * A max delay between two reconciliations. Having this value larger than zero, will ensure that a
-   * reconciliation is scheduled with a target interval after the last reconciliation. Note that
-   * this not applies for retries, in case of an exception reconciliation is not scheduled. This is
-   * not a fixed rate, in other words a new reconciliation is scheduled after each reconciliation.
-   * <p/>
-   * If an interval is specified by {@link UpdateControl} or {@link DeleteControl}, those take
-   * precedence.
-   * <p/>
-   * This is a fail-safe feature, in the sense that if informers are in place and the reconciler
-   * implementation is correct, this feature can be turned off.
-   * <p/>
-   * Use NO_RECONCILIATION_MAX_INTERVAL in {@link Constants} to turn off this feature.
-   *
-   * @return max delay between reconciliations
-   **/
-  long reconciliationMaxInterval() default 10;
+  ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
+      interval = 10, timeUnit = TimeUnit.HOURS);
 
-  /**
-   * @return time unit for max delay between reconciliations
-   */
-  TimeUnit reconciliationMaxIntervalTimeUnit() default TimeUnit.HOURS;
 }

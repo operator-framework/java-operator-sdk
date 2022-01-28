@@ -8,8 +8,9 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
-@ControllerConfiguration(finalizerName = NO_FINALIZER, reconciliationMaxInterval = 50,
-    reconciliationMaxIntervalTimeUnit = TimeUnit.MILLISECONDS)
+@ControllerConfiguration(finalizerName = NO_FINALIZER,
+    reconciliationMaxInterval = @ReconciliationMaxInterval(interval = 50,
+        timeUnit = TimeUnit.MILLISECONDS))
 public class MaxIntervalTestReconciler
     implements Reconciler<MaxIntervalTestCustomResource>, TestExecutionInfoProvider {
 
