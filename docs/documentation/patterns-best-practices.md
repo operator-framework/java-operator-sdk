@@ -35,7 +35,12 @@ retries of a reconciliation can happen naturally in operators, the implementatio
 needs to be idempotent. Luckily, since operators are usually managing already declarative resources, this is trivial
 to do in most cases.
 
-### Sync of Async Way of Resource Handling
+### Sync or Async Way of Resource Handling
+
+In an implementation of reconciliation there can be a point when reconciler needs to wait a non-insignificant amount
+of time while a resource gets up and running. For example, reconciler would do some additional step only if a Pod is ready
+to receive requests. This problem can  in two ways synchronously or asynchronously. 
+
 
 ## Why to Have Automated Retries?
 
