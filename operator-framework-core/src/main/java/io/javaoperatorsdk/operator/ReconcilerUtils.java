@@ -40,9 +40,13 @@ public class ReconcilerUtils {
     return Constants.NO_FINALIZER.equals(finalizer) || validator.isFinalizerValid(finalizer);
   }
 
-  public static String getResourceTypeName(Class<? extends HasMetadata> resourceClass) {
-    // todo: use fabric8 method when 5.12 is released
-    // return HasMetadata.getFullResourceName(resourceClass);
+  public static String getResourceTypeNameWithVersion(Class<? extends HasMetadata> resourceClass) {
+    final var version = HasMetadata.getVersion(resourceClass);
+    return getResourceTypeName(resourceClass) + "/" + version;
+  }
+
+  public static String getResourceTypeName(
+      Class<? extends HasMetadata> resourceClass) {
     final var group = HasMetadata.getGroup(resourceClass);
     final var plural = HasMetadata.getPlural(resourceClass);
     return (group == null || group.isEmpty()) ? plural : plural + "." + group;

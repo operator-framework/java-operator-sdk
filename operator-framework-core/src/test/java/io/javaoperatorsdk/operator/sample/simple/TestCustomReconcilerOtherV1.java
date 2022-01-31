@@ -6,10 +6,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
-public class TestCustomReconcilerV2 implements Reconciler<TestCustomResourceV2> {
+public class TestCustomReconcilerOtherV1 implements Reconciler<TestCustomResourceOtherV1> {
 
   @Override
-  public UpdateControl<TestCustomResourceV2> reconcile(TestCustomResourceV2 resource,
+  public UpdateControl<TestCustomResourceOtherV1> reconcile(TestCustomResourceOtherV1 resource,
       Context context) {
     return UpdateControl.noUpdate();
   }

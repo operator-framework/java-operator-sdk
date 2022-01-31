@@ -10,9 +10,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.sample.simple.DuplicateCRController;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomReconcilerV2;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomReconcilerOtherV1;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceV2;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceOtherV1;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,11 +30,11 @@ public class ControllerManagerTest {
   }
 
   @Test
-  public void addingMultipleControllersForCustomResourcesWithDifferentVersionsShouldNotWork() {
+  public void addingMultipleControllersForCustomResourcesWithSameVersionsShouldNotWork() {
     final var registered = new TestControllerConfiguration<>(new TestCustomReconciler(null),
         TestCustomResource.class);
-    final var duplicated = new TestControllerConfiguration<>(new TestCustomReconcilerV2(),
-        TestCustomResourceV2.class);
+    final var duplicated = new TestControllerConfiguration<>(new TestCustomReconcilerOtherV1(),
+        TestCustomResourceOtherV1.class);
 
     checkException(registered, duplicated);
   }
