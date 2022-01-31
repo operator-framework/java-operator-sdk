@@ -23,6 +23,10 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
    * Creates an update control instance that instructs the framework to do an update on resource
    * itself, not on the status. Note that usually as a results of a reconciliation should be a
    * status update not an update to the resource itself.
+   *
+   * @param <T> custom resource type
+   * @param customResource customResource to use for update
+   * @return initialized update control
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
     return new UpdateControl<>(customResource, false, true);
