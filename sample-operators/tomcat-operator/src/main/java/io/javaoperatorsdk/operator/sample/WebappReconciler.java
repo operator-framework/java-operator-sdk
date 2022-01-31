@@ -28,7 +28,9 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
+
+@ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
 
   private KubernetesClient kubernetesClient;
