@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,11 +11,11 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Dependent;
 import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceController;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConfiguration;
@@ -28,7 +27,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
-  private List<DependentResource> dependents;
+  private List<DependentResourceConfiguration> dependentConfigurations;
 
   public AnnotationConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -121,27 +120,20 @@ public class AnnotationConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public List<DependentResource> getDependentResources() {
-    if (dependents == null) {
-      final var dependentConfigs = valueOrDefault(annotation,
-          ControllerConfiguration::dependents, new Dependent[] {});
-      if (dependentConfigs.length > 0) {
-        dependents = new ArrayList<>(dependentConfigs.length);
-        for (Dependent dependentConfig : dependentConfigs) {
-          final Class<? extends DependentResource> dependentType = dependentConfig.type();
-          DependentResource dependent;
-          try {
-            dependent = dependentType.getConstructor().newInstance();
-          } catch (NoSuchMethodException | InvocationTargetException | InstantiationException
-              | IllegalAccessException e) {
-            throw new IllegalArgumentException(e);
-          }
+  public List<DependentResourceConfiguration> getDependentResources() {
+    if (dependentConfigurations == null) {
+      final var dependents = valueOrDefault(annotation, ControllerConfiguration::dependents,
+          new Dependent[]{});
+      if (dependents.length > 0) {
+        dependentConfigurations = new ArrayList<>(dependents.length);
+        for (Dependent dependent : dependents) {
+          final Class<? extends DependentResource> dependentType = dependent.type();
+          final var resourceType = dependent.resourceType();
 
-          final var resourceType = dependentConfig.resourceType();
           if (HasMetadata.class.isAssignableFrom(resourceType)) {
             final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
             final var namespaces =
-                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[] {});
+                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[]{});
             final var labelSelector =
                 valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
             final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,
@@ -154,17 +146,28 @@ public class AnnotationConfiguration<R extends HasMetadata>
                 .skippingEventPropagationIfUnchanged(skipIfUnchanged)
                 .withNamespaces(namespaces)
                 .build();
-            dependent = new KubernetesDependentResourceController(dependent,
-                KubernetesDependentResourceConfiguration.from(configuration, owned));
-          }
 
-          dependents.add(dependent);
+            dependentConfigurations.add(
+                KubernetesDependentResourceConfiguration.from(configuration, owned, dependentType));
+          } else {
+            dependentConfigurations.add(new DependentResourceConfiguration() {
+              @Override
+              public Class<? extends DependentResource> getDependentResourceClass() {
+                return dependentType;
+              }
+
+              @Override
+              public Class getResourceClass() {
+                return resourceType;
+              }
+            });
+          }
         }
       } else {
-        dependents = Collections.emptyList();
+        dependentConfigurations = Collections.emptyList();
       }
     }
-    return dependents;
+    return dependentConfigurations;
   }
 
   private static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {

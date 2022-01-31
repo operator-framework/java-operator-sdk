@@ -12,7 +12,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConf
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 public class KubernetesDependentResourceController<R extends HasMetadata, P extends HasMetadata>
-    extends DependentResourceController<R, P> {
+    extends DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>> {
+
   private final KubernetesDependentResourceConfiguration<R, P> configuration;
   private KubernetesClient client;
   private InformerEventSource<R, P> informer;
@@ -20,7 +21,7 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
 
   public KubernetesDependentResourceController(DependentResource<R, P> delegate,
       KubernetesDependentResourceConfiguration<R, P> configuration) {
-    super(delegate);
+    super(delegate, configuration);
     // todo: check if we can validate that types actually match properly
     final var associatedPrimaries =
         (delegate instanceof PrimaryResourcesRetriever)
@@ -36,7 +37,8 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
         .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
         .build();
     this.configuration =
-        KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned());
+        KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
+            configuration.getDependentResourceClass());
   }
 
   @Override
@@ -69,6 +71,6 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
   }
 
   public boolean owned() {
-    return configuration.isOwned();
+    return getConfiguration().isOwned();
   }
 }

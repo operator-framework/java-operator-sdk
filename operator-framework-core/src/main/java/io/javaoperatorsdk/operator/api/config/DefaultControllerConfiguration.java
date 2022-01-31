@@ -18,7 +18,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final boolean generationAware;
   private final RetryConfiguration retryConfiguration;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final List<DependentResource> dependents;
+  private final List<DependentResourceConfiguration> dependents;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -33,7 +33,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       ConfigurationService service,
-      List<DependentResource> dependents) {
+      List<DependentResourceConfiguration> dependents) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -96,7 +96,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public List<DependentResource> getDependentResources() {
+  public List<DependentResourceConfiguration> getDependentResources() {
     return dependents;
   }
 }

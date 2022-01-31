@@ -23,8 +23,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       Set<String> namespaces) {
     this.labelSelector = labelSelector;
-    this.resourceClass = resourceClass == null ? ResourceConfiguration.super.getResourceClass()
-        : resourceClass;
+    this.resourceClass = resourceClass;
     this.namespaces = namespaces != null ? namespaces : Collections.emptySet();
     this.watchAllNamespaces = this.namespaces.isEmpty();
   }
