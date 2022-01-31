@@ -118,6 +118,6 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   }
 
   default Optional<Duration> reconciliationMaxInterval() {
-    return Optional.of(Duration.ofMillis(10L));
+    return Optional.of(Duration.ofHours(10L));
   }
 }
