@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationT
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class ObservedGenerationHandlingIT {
+class ObservedGenerationHandlingIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
@@ -23,7 +23,7 @@ public class ObservedGenerationHandlingIT {
           .build();
 
   @Test
-  public void testReconciliationOfNonCustomResourceAndStatusUpdate() {
+  void testReconciliationOfNonCustomResourceAndStatusUpdate() {
     var resource = new ObservedGenerationTestCustomResource();
     resource.setMetadata(new ObjectMeta());
     resource.getMetadata().setName("observed-gen1");

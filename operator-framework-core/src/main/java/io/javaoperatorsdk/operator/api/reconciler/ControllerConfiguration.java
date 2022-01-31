@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
 
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
@@ -56,4 +57,8 @@ public @interface ControllerConfiguration {
    */
   @SuppressWarnings("rawtypes")
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
+
+  ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
+      interval = 10, timeUnit = TimeUnit.HOURS);
+
 }

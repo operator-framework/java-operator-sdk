@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class UpdatingResAndSubResIT {
+class UpdatingResAndSubResIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
@@ -26,7 +26,7 @@ public class UpdatingResAndSubResIT {
           .build();
 
   @Test
-  public void updatesSubResourceStatus() {
+  void updatesSubResourceStatus() {
     DoubleUpdateTestCustomResource resource = createTestCustomResource("1");
     operator.create(DoubleUpdateTestCustomResource.class, resource);
 

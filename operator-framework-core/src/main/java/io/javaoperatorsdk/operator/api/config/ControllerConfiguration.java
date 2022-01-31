@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.reflect.ParameterizedType;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -113,5 +115,9 @@ public interface ControllerConfiguration<R extends HasMetadata> {
    */
   default ResourceEventFilter<R> getEventFilter() {
     return ResourceEventFilters.passthrough();
+  }
+
+  default Optional<Duration> reconciliationMaxInterval() {
+    return Optional.of(Duration.ofHours(10L));
   }
 }

@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -20,6 +22,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String labelSelector;
   private final ResourceEventFilter<R> resourceEventFilter;
   private final Class<R> resourceClass;
+  private final Duration reconciliationMaxInterval;
   private ConfigurationService service;
 
   public DefaultControllerConfiguration(
@@ -33,6 +36,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
+      Duration reconciliationMaxInterval,
       ConfigurationService service) {
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -41,6 +45,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.generationAware = generationAware;
     this.namespaces =
         namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
+    this.reconciliationMaxInterval = reconciliationMaxInterval;
     this.watchAllNamespaces = this.namespaces.isEmpty();
     this.retryConfiguration =
         retryConfiguration == null
@@ -121,5 +126,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public ResourceEventFilter<R> getEventFilter() {
     return resourceEventFilter;
+  }
+
+  @Override
+  public Optional<Duration> reconciliationMaxInterval() {
+    return Optional.ofNullable(reconciliationMaxInterval);
   }
 }

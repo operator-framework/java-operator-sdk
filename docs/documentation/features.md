@@ -160,9 +160,7 @@ larger than the `.observedGeneration` field on status. In order to have this fea
   .
 
 If these conditions are fulfilled and generation awareness not turned off, the observed generation is automatically set
-by the framework after the `reconcile` method is called. There is just one exception, when the reconciler returns
-with `UpdateControl.updateResource`, in this case the status is not updated, just the custom resource - however, this
-update will lead to a new reconciliation. Note that the observed generation is updated also
+by the framework after the `reconcile` method is called. Note that the observed generation is updated also
 when `UpdateControl.noUpdate()` is returned from the reconciler. See this feature working in
 the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/b91221bb54af19761a617bf18eef381e8ceb3b4c/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
 .
@@ -223,6 +221,30 @@ public class DeploymentReconciler
   ...
   }
 ```
+
+## Max Interval Between Reconciliations
+
+In case informers are all in place and reconciler is implemented correctly, there is no need for additional triggers. 
+However, it's a [common practice](https://github.com/java-operator-sdk/java-operator-sdk/issues/848#issuecomment-1016419966) 
+to have a failsafe periodic trigger in place,
+just to make sure the resources are reconciled after certain time. This functionality is in place by default, there
+is quite high interval (currently 10 hours) while the reconciliation is triggered. See how to override this using 
+the standard annotation:
+
+```java
+@ControllerConfiguration(finalizerName = NO_FINALIZER,
+        reconciliationMaxInterval = @ReconciliationMaxInterval(
+                interval = 50,
+                timeUnit = TimeUnit.MILLISECONDS))
+```
+
+The event is not propagated in a fixed rate, rather it's scheduled after each reconciliation. So the 
+next reconciliation will after at most within the specified interval after last reconciliation.
+
+This feature can be turned off by setting `reconciliationMaxInterval` to [`Constants.NO_RECONCILIATION_MAX_INTERVAL`](https://github.com/java-operator-sdk/java-operator-sdk/blob/442e7d8718e992a36880e42bd0a5c01affaec9df/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L8-L8)
+or any non-positive number.
+
+The automatic retries are not affected by this feature, in case of an error no schedule is set by this feature. 
 
 ## Automatic Retries on Error
 

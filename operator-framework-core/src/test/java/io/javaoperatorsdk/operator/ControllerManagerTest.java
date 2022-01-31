@@ -60,7 +60,8 @@ public class ControllerManagerTest {
 
     public TestControllerConfiguration(Reconciler<R> controller, Class<R> crClass) {
       super(null, getControllerName(controller),
-          CustomResource.getCRDName(crClass), null, false, null, null, null, null, crClass, null);
+          CustomResource.getCRDName(crClass), null, false, null, null, null, null, crClass,
+          null, null);
       this.controller = controller;
     }
 

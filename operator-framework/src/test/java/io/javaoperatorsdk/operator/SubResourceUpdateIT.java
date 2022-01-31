@@ -18,7 +18,7 @@ import static io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCust
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class SubResourceUpdateIT {
+class SubResourceUpdateIT {
 
   @RegisterExtension
   OperatorExtension operator =
@@ -28,7 +28,7 @@ public class SubResourceUpdateIT {
           .build();
 
   @Test
-  public void updatesSubResourceStatus() {
+  void updatesSubResourceStatus() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     operator.create(SubResourceTestCustomResource.class, resource);
 
@@ -41,7 +41,7 @@ public class SubResourceUpdateIT {
   }
 
   @Test
-  public void updatesSubResourceStatusNoFinalizer() {
+  void updatesSubResourceStatusNoFinalizer() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().setFinalizers(Collections.emptyList());
 
@@ -57,7 +57,7 @@ public class SubResourceUpdateIT {
 
   /** Note that we check on controller impl if there is finalizer on execution. */
   @Test
-  public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
+  void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().getFinalizers().clear();
     operator.create(SubResourceTestCustomResource.class, resource);
@@ -77,7 +77,7 @@ public class SubResourceUpdateIT {
    * fail since its resource version is outdated already.
    */
   @Test
-  public void updateCustomResourceAfterSubResourceChange() {
+  void updateCustomResourceAfterSubResourceChange() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     operator.create(SubResourceTestCustomResource.class, resource);
 

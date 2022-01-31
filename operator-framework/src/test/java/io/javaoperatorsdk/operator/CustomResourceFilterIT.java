@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestResour
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CustomResourceFilterIT {
+class CustomResourceFilterIT {
 
   @RegisterExtension
   OperatorExtension operator =
@@ -22,7 +22,7 @@ public class CustomResourceFilterIT {
           .build();
 
   @Test
-  public void doesCustomFiltering() throws InterruptedException {
+  void doesCustomFiltering() throws InterruptedException {
     var filtered1 = createTestResource("filtered1", true, false);
     var filtered2 = createTestResource("filtered2", false, true);
     var notFiltered = createTestResource("notfiltered", true, true);
