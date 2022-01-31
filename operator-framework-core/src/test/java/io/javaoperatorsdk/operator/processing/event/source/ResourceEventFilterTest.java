@@ -171,7 +171,7 @@ class ResourceEventFilterTest {
           null,
           eventFilter,
           customResourceClass,
-          -1L, null, null);
+          null, null);
     }
   }
 

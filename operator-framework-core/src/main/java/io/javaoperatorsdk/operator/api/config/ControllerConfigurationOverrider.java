@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -17,8 +17,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
-  private long reconciliationMaxInterval;
-  private TimeUnit reconciliationMaxIntervalTimeUnit;
+  private Duration reconciliationMaxInterval;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
@@ -27,8 +26,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     retry = original.getRetryConfiguration();
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
-    reconciliationMaxInterval = original.reconciliationMaxInterval();
-    reconciliationMaxIntervalTimeUnit = original.reconciliationMaxIntervalTimeUnit();
+    reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
     this.original = original;
 
   }
@@ -81,14 +79,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> withReconciliationMaxInterval(
-      long reconciliationMaxInterval) {
+      Duration reconciliationMaxInterval) {
     this.reconciliationMaxInterval = reconciliationMaxInterval;
-    return this;
-  }
-
-  public ControllerConfigurationOverrider<R> withReconciliationMaxIntervalTimeUnit(
-      TimeUnit reconciliationMaxIntervalTimeUnit) {
-    this.reconciliationMaxIntervalTimeUnit = reconciliationMaxIntervalTimeUnit;
     return this;
   }
 
@@ -105,7 +97,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        reconciliationMaxIntervalTimeUnit, original.getConfigurationService());
+        original.getConfigurationService());
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

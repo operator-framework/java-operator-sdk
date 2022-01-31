@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.time.Duration;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -109,21 +110,18 @@ public class AnnotationConfiguration<R extends HasMetadata>
         : ResourceEventFilters.passthrough();
   }
 
-  @Override
-  public long reconciliationMaxInterval() {
-    if (annotation.reconciliationMaxInterval() != null) {
-      return annotation.reconciliationMaxInterval().interval();
-    } else {
-      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
-    }
-  }
+
 
   @Override
-  public TimeUnit reconciliationMaxIntervalTimeUnit() {
+  public Optional<Duration> reconciliationMaxInterval() {
     if (annotation.reconciliationMaxInterval() != null) {
-      return annotation.reconciliationMaxInterval().timeUnit();
+      if (annotation.reconciliationMaxInterval().interval() <= 0) {
+        return Optional.empty();
+      }
+      return Optional.of(Duration.of(annotation.reconciliationMaxInterval().interval(),
+          annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
     } else {
-      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxIntervalTimeUnit();
+      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
     }
   }
 

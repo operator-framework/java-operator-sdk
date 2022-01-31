@@ -170,8 +170,8 @@ class ControllerResourceEventSourceTest extends
           null,
           null,
           TestCustomResource.class,
-          -1L,
-          null, null);
+          null,
+          null);
     }
   }
 }

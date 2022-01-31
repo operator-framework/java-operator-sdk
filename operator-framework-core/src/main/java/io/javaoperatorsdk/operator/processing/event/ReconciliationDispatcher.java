@@ -246,14 +246,10 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       PostExecutionControl<R> postExecutionControl,
       BaseControl<?> baseControl) {
     baseControl.getScheduleDelay().ifPresentOrElse(postExecutionControl::withReSchedule,
-        () -> {
-          var maxDelay = controller.getConfiguration().reconciliationMaxInterval();
-          if (maxDelay > 0) {
-            postExecutionControl.withReSchedule(controller.getConfiguration()
-                .reconciliationMaxIntervalTimeUnit().toMillis(maxDelay));
-          }
-        });
+        () -> controller.getConfiguration().reconciliationMaxInterval()
+            .ifPresent(m -> postExecutionControl.withReSchedule(m.toMillis())));
   }
+
 
   private PostExecutionControl<R> handleCleanup(R resource, Context context) {
     log.debug(

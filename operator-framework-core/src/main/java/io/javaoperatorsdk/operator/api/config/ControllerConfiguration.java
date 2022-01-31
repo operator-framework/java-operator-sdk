@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.reflect.ParameterizedType;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -116,11 +117,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
     return ResourceEventFilters.passthrough();
   }
 
-  default long reconciliationMaxInterval() {
-    return 10L;
-  }
-
-  default TimeUnit reconciliationMaxIntervalTimeUnit() {
-    return TimeUnit.HOURS;
+  default Optional<Duration> reconciliationMaxInterval() {
+    return Optional.of(Duration.ofMillis(10L));
   }
 }

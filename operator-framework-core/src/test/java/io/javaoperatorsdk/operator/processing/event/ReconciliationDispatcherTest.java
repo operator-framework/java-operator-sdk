@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -76,8 +77,9 @@ class ReconciliationDispatcherTest {
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn((Class<R>) customResource.getClass());
     when(configuration.getRetryConfiguration()).thenReturn(RetryConfiguration.DEFAULT);
-    when(configuration.reconciliationMaxInterval()).thenReturn(RECONCILIATION_MAX_INTERVAL);
-    when(configuration.reconciliationMaxIntervalTimeUnit()).thenReturn(TimeUnit.HOURS);
+    when(configuration.reconciliationMaxInterval())
+        .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
+
     when(configuration.getConfigurationService()).thenReturn(configService);
 
 
@@ -457,7 +459,7 @@ class ReconciliationDispatcherTest {
     when(reconciler.reconcile(eq(testCustomResource), any()))
         .thenReturn(UpdateControl.noUpdate());
     when(configuration.reconciliationMaxInterval())
-        .thenReturn(Constants.NO_RECONCILIATION_MAX_INTERVAL);
+        .thenReturn(Optional.empty());
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
