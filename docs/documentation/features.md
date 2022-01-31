@@ -198,8 +198,9 @@ in status) to handle generation filtering in memory. Thus, if an event is receiv
 resource is compared with the resource in the cache.
 
 Note that the **first approach has significant benefits** in the situation when the operator is restarted and there is
-no cached resource anymore. In case two this leads to a reconciliation of every resource, event if the resource is not
-changed while the operator was not running.
+no cached resource anymore. In case two this leads to a reconciliation of every resource in all cases,
+event if the resource is not changed while the operator was not running. However, in case informers are used
+the reconciliation from startup will happen anyway, since events will be propagated by the informer.
 
 ## Support for Well Known (non-custom) Kubernetes Resources
 

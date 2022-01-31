@@ -158,7 +158,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
             controllerUnderExecution,
             latest.isPresent());
         if (latest.isEmpty()) {
-          log.warn("no custom resource found in cache for ResourceID: {}", resourceID);
+          log.debug("no custom resource found in cache for ResourceID: {}", resourceID);
         }
       }
     } finally {
