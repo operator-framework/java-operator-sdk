@@ -3,10 +3,11 @@
 name: Tomcat Operator End to End test
 on:
   pull_request:
-    branches: [ main, v1 ]
+    branches: [ main, v1, next ]
   push:
     branches:
       - main
+      - next
 jobs: 
     tomcat_e2e_test:
        runs-on: ubuntu-latest
