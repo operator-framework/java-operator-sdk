@@ -231,8 +231,10 @@ is quite high interval (currently 10 hours) while the reconciliation is triggere
 the standard annotation:
 
 ```java
-@ControllerConfiguration(finalizerName = NO_FINALIZER, reconciliationMaxInterval = 2L,
-    reconciliationMaxIntervalTimeUnit = TimeUnit.HOURS)
+@ControllerConfiguration(finalizerName = NO_FINALIZER,
+        reconciliationMaxInterval = @ReconciliationMaxInterval(
+                interval = 50,
+                timeUnit = TimeUnit.MILLISECONDS))
 ```
 
 The event is not propagated in a fixed rate, rather it's scheduled after each reconciliation. So the 
