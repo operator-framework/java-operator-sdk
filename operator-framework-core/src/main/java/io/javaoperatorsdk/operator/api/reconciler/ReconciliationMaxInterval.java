@@ -15,13 +15,13 @@ public @interface ReconciliationMaxInterval {
    * reconciliation is scheduled with a target interval after the last reconciliation. Note that
    * this not applies for retries, in case of an exception reconciliation is not scheduled. This is
    * not a fixed rate, in other words a new reconciliation is scheduled after each reconciliation.
-   * <p/>
+   * <p>
    * If an interval is specified by {@link UpdateControl} or {@link DeleteControl}, those take
    * precedence.
-   * <p/>
+   * <p>
    * This is a fail-safe feature, in the sense that if informers are in place and the reconciler
    * implementation is correct, this feature can be turned off.
-   * <p/>
+   * <p>
    * Use NO_RECONCILIATION_MAX_INTERVAL in {@link Constants} to turn off this feature.
    *
    * @return max delay between reconciliations
