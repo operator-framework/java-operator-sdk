@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
@@ -63,6 +64,8 @@ class MultiVersionCRDIT {
           return crV1Now.getStatus().getReconciledBy()
               .contains(MultiVersionCRDTestReconciler1.class.getSimpleName());
         });
+    assertThat(operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
+            .getStatus().getReconciledBy().size()).isEqualTo(0);
   }
 
 
