@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
@@ -67,7 +68,12 @@ public interface ResourceConfiguration<R extends HasMetadata> {
         throw new IllegalStateException(
             "Parent ConfigurationService must be set before calling this method");
       }
-      targetNamespaces = Collections.singleton(parent.getClientConfiguration().getNamespace());
+      String namespace = parent.getClientConfiguration().getNamespace();
+      if (namespace == null) {
+        throw new OperatorException(
+            "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");
+      }
+      targetNamespaces = Collections.singleton(namespace);
     }
     return targetNamespaces;
   }

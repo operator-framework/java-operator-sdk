@@ -123,7 +123,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
   public List<DependentResourceConfiguration> getDependentResources() {
     if (dependentConfigurations == null) {
       final var dependents = valueOrDefault(annotation, ControllerConfiguration::dependents,
-          new Dependent[]{});
+          new Dependent[] {});
       if (dependents.length > 0) {
         dependentConfigurations = new ArrayList<>(dependents.length);
         for (Dependent dependent : dependents) {
@@ -133,7 +133,7 @@ public class AnnotationConfiguration<R extends HasMetadata>
           if (HasMetadata.class.isAssignableFrom(resourceType)) {
             final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
             final var namespaces =
-                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[]{});
+                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[] {});
             final var labelSelector =
                 valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
             final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,
