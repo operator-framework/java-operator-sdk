@@ -17,6 +17,7 @@ class MultiVersionCRDIT {
 
   public static final String CR_V1_NAME = "crv1";
   public static final String CR_V2_NAME = "crv2";
+
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
@@ -51,8 +52,7 @@ class MultiVersionCRDIT {
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(CR_V1_NAME);
     cr.setSpec(new MultiVersionCRDTestCustomResourceSpec1());
-    cr.getSpec().setValue1(1);
-    cr.getSpec().setValue2(1);
+    cr.getSpec().setIntValue(1);
     return cr;
   }
 
@@ -63,7 +63,7 @@ class MultiVersionCRDIT {
     cr.getMetadata().setLabels(new HashMap<>());
     cr.getMetadata().getLabels().put("version", "v2");
     cr.setSpec(new MultiVersionCRDTestCustomResourceSpec2());
-    cr.getSpec().setValue1(1);
+    cr.getSpec().setStringValue("string value");
     return cr;
   }
 }

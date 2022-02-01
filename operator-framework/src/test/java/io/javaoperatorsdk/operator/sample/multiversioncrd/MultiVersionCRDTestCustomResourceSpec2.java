@@ -2,14 +2,14 @@ package io.javaoperatorsdk.operator.sample.multiversioncrd;
 
 public class MultiVersionCRDTestCustomResourceSpec2 {
 
-  private int value1;
+  private String stringValue;
 
-  public int getValue1() {
-    return value1;
+  public String getStringValue() {
+    return stringValue;
   }
 
-  public MultiVersionCRDTestCustomResourceSpec2 setValue1(int value1) {
-    this.value1 = value1;
+  public MultiVersionCRDTestCustomResourceSpec2 setStringValue(String stringValue) {
+    this.stringValue = stringValue;
     return this;
   }
 }
