@@ -11,12 +11,14 @@ import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
 
   public static final String CR_V1_NAME = "crv1";
   public static final String CR_V2_NAME = "crv2";
+
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
@@ -46,13 +48,38 @@ class MultiVersionCRDIT {
             });
   }
 
+  @Test
+  void invalidEventsDoesNotBreakEventHandling() {
+    var v2res = createTestResourceV2WithLabel();
+    v2res.getMetadata().getLabels().clear();
+    operator.create(MultiVersionCRDTestCustomResource2.class, v2res);
+    var v1res = createTestResourceV1WithoutLabel();
+    operator.create(MultiVersionCRDTestCustomResource1.class, v1res);
+
+    await()
+        .atMost(Duration.ofSeconds(2))
+        .pollInterval(Duration.ofMillis(50))
+        .until(() -> {
+          var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
+          return crV1Now.getStatus().getReconciledBy()
+              .contains(MultiVersionCRDTestReconciler1.class.getSimpleName());
+        });
+    assertThat(
+        operator
+            .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
+            .getStatus()
+            .getReconciledBy()
+            .size())
+                .isZero();
+  }
+
+
   MultiVersionCRDTestCustomResource1 createTestResourceV1WithoutLabel() {
     MultiVersionCRDTestCustomResource1 cr = new MultiVersionCRDTestCustomResource1();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(CR_V1_NAME);
     cr.setSpec(new MultiVersionCRDTestCustomResourceSpec1());
-    cr.getSpec().setValue1(1);
-    cr.getSpec().setValue2(1);
+    cr.getSpec().setValue(1);
     return cr;
   }
 
@@ -63,7 +90,7 @@ class MultiVersionCRDIT {
     cr.getMetadata().setLabels(new HashMap<>());
     cr.getMetadata().getLabels().put("version", "v2");
     cr.setSpec(new MultiVersionCRDTestCustomResourceSpec2());
-    cr.getSpec().setValue1(1);
+    cr.getSpec().setValue("string value");
     return cr;
   }
 }
