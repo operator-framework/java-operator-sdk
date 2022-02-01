@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
@@ -51,6 +52,11 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
     if (sharedIndexInformer == null) {
       sharedIndexInformer =
           sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
+    }
+    if (sharedIndexInformer == null) {
+      throw new OperatorException(
+          "Cannot find informer for ResourceID: " + resourceID + ". This is usually " +
+              "due to invalid resource id mapping for registered informers.");
     }
     var resource = sharedIndexInformer.getStore()
         .getByKey(io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
