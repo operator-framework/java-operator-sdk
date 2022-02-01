@@ -64,8 +64,13 @@ class MultiVersionCRDIT {
           return crV1Now.getStatus().getReconciledBy()
               .contains(MultiVersionCRDTestReconciler1.class.getSimpleName());
         });
-    assertThat(operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
-            .getStatus().getReconciledBy().size()).isEqualTo(0);
+    assertThat(
+        operator
+            .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
+            .getStatus()
+            .getReconciledBy()
+            .size())
+                .isZero();
   }
 
 
