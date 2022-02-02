@@ -84,6 +84,10 @@ public abstract class CachingEventSource<T, P extends HasMetadata>
     return cache.get(resourceID);
   }
 
+  public UpdatableCache<T> getCache() {
+    return cache;
+  }
+
   @Override
   public void stop() throws OperatorException {
     super.stop();

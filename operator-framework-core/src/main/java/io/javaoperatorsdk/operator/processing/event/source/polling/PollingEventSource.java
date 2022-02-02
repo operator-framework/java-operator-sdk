@@ -44,6 +44,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   @Override
   public void start() throws OperatorException {
     super.start();
+    getStateAndFillCache();
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
