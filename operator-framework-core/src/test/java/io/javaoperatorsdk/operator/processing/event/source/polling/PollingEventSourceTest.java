@@ -14,7 +14,6 @@ import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTe
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
-import static io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource.DEFAULT_INITIAL_DELAY;
 import static org.mockito.Mockito.*;
 
 class PollingEventSourceTest
@@ -34,7 +33,7 @@ class PollingEventSourceTest
   public void pollsAndProcessesEvents() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
-    Thread.sleep(DEFAULT_INITIAL_DELAY + 100);
+    Thread.sleep(100);
 
     verify(eventHandler, times(2)).handleEvent(any());
   }
@@ -44,7 +43,7 @@ class PollingEventSourceTest
     when(supplier.get()).thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
-    Thread.sleep(DEFAULT_INITIAL_DELAY + 150);
+    Thread.sleep(150);
 
     verify(eventHandler, times(3)).handleEvent(any());
   }
@@ -53,7 +52,7 @@ class PollingEventSourceTest
   public void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
-    Thread.sleep(DEFAULT_INITIAL_DELAY + 250);
+    Thread.sleep(250);
 
     verify(eventHandler, times(2)).handleEvent(any());
   }
