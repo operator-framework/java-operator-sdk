@@ -83,5 +83,5 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   public Optional<T> getAssociated(P primary) {
     return getCachedValue(ResourceID.fromResource(primary));
   }
-  
+
 }
