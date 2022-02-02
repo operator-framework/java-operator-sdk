@@ -13,32 +13,28 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
 /**
  * <p>
- * Pols resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases
- * but instead to calls supplier periodically and independently of the number of state of custom resources managed
- * by the operator. It is called on start (synced). This means that when the reconciler first time executed on startup
- * a poll already happened before. So if the cache does not contain the target resource it means it is not created yet or
- * was deleted while an operator was not running.
+ * Pols resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
+ * instead to calls supplier periodically and independently of the number of state of custom
+ * resources managed by the operator. It is called on start (synced). This means that when the
+ * reconciler first time executed on startup a poll already happened before. So if the cache does
+ * not contain the target resource it means it is not created yet or was deleted while an operator
+ * was not running.
  * </p>
  * <p>
- * Another caveat with this is if the cached object is checked in the reconciler and created since not in the cache
- * it should be manually added to the cache, since it can happen that the reconciler is triggered before the cache is
- * propagated with the new resource from a scheduled execution. See {@link PollingEventSource##put(ResourceID, Object)}.
+ * Another caveat with this is if the cached object is checked in the reconciler and created since
+ * not in the cache it should be manually added to the cache, since it can happen that the
+ * reconciler is triggered before the cache is propagated with the new resource from a scheduled
+ * execution. See {@link PollingEventSource##put(ResourceID, Object)}.
  * </p>
  * So the generic workflow in reconciler should be:
  *
  * <ul>
- *     <li>
- *         Check if the cache contains the resource.
- *     </li>
- *     <li>
- *         If cache contains the resource reconcile it - compare with target state, update if necessary
- *     </li>
- *     <li>
- *         if cache not contains the resource create it.
- *     </li>
- *     <li>
- *         If the resource was created or updated, put the new version of the resource manually to the cache.
- *     </li>
+ * <li>Check if the cache contains the resource.</li>
+ * <li>If cache contains the resource reconcile it - compare with target state, update if necessary
+ * </li>
+ * <li>if cache not contains the resource create it.</li>
+ * <li>If the resource was created or updated, put the new version of the resource manually to the
+ * cache.</li>
  * </ul>
  *
  * @param <T> type of the polled resource
