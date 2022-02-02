@@ -21,16 +21,18 @@ class PollingEventSourceTest
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   private Supplier<Map<ResourceID, SampleExternalResource>> supplier = mock(Supplier.class);
+  private PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
+      new PollingEventSource<>(supplier, 50, SampleExternalResource.class);
 
   @BeforeEach
   public void setup() {
-    setUpSource(new PollingEventSource<>(supplier, 50, SampleExternalResource.class));
+    setUpSource(pollingEventSource, false);
   }
 
   @Test
   public void pollsAndProcessesEvents() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
-
+    pollingEventSource.start();
     Thread.sleep(100);
 
     verify(eventHandler, times(2)).handleEvent(any());
@@ -40,7 +42,7 @@ class PollingEventSourceTest
   public void propagatesEventForRemovedResources() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
-
+    pollingEventSource.start();
     Thread.sleep(150);
 
     verify(eventHandler, times(3)).handleEvent(any());
@@ -49,7 +51,7 @@ class PollingEventSourceTest
   @Test
   public void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
-
+    pollingEventSource.start();
     Thread.sleep(250);
 
     verify(eventHandler, times(2)).handleEvent(any());
