@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.List;
-import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -28,6 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
+@SuppressWarnings({"unchecked"})
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
   private final Reconciler<R> reconciler;
@@ -165,6 +165,10 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     final String controllerName = configuration.getName();
     final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
+
+    // fail early if we're missing the current namespace information
+    failOnMissingCurrentNS();
+
     try {
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
@@ -188,12 +192,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
                 configurationService(), kubernetesClient))
             .forEach(eventSourceManager::registerEventSource);
       }
-      if (failOnMissingCurrentNS()) {
-        throw new OperatorException(
-            "Controller '"
-                + controllerName
-                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
-      }
+
       eventSourceManager.start();
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
@@ -231,19 +230,18 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   /**
-   * Determines whether we should fail because the current namespace is request as target namespace
-   * but is missing
-   *
-   * @return {@code true} if the current namespace is requested but is missing, {@code false}
-   *         otherwise
+   * Throws an {@link OperatorException} if the controller is configured to watch the current
+   * namespace but it's absent from the configuration.
    */
-  private boolean failOnMissingCurrentNS() {
-    if (configuration.watchCurrentNamespace()) {
-      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
-      return effectiveNamespaces.size() == 1
-          && effectiveNamespaces.stream().allMatch(Objects::isNull);
+  private void failOnMissingCurrentNS() {
+    try {
+      configuration.getEffectiveNamespaces();
+    } catch (OperatorException e) {
+      throw new OperatorException(
+          "Controller '"
+              + configuration.getName()
+              + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
     }
-    return false;
   }
 
   public EventSourceManager<R> getEventSourceManager() {

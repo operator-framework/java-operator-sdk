@@ -110,8 +110,6 @@ public class AnnotationConfiguration<R extends HasMetadata>
         : ResourceEventFilters.passthrough();
   }
 
-
-
   @Override
   public Optional<Duration> reconciliationMaxInterval() {
     if (annotation.reconciliationMaxInterval() != null) {
