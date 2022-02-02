@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
 /**
  * <p>
- * Pols resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
+ * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
  * instead to calls supplier periodically and independently of the number of state of custom
  * resources managed by the operator. It is called on start (synced). This means that when the
  * reconciler first time executed on startup a poll already happened before. So if the cache does
@@ -24,7 +24,7 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
  * Another caveat with this is if the cached object is checked in the reconciler and created since
  * not in the cache it should be manually added to the cache, since it can happen that the
  * reconciler is triggered before the cache is propagated with the new resource from a scheduled
- * execution. See {@link PollingEventSource##put(ResourceID, Object)}.
+ * execution. See {@link #put(ResourceID, Object)} method.
  * </p>
  * So the generic workflow in reconciler should be:
  *
