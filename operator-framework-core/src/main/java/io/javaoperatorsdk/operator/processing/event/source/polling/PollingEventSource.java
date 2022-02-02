@@ -20,6 +20,14 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   private final long period;
   private final long initialDelay;
 
+  /**
+   * The initial delay can be configured, however the default is set to period since on startup
+   * operator will reconcile so the first should happen naturally on period.
+   * 
+   * @param supplier poll the target API
+   * @param period of polling
+   * @param resourceClass type of resource polled
+   */
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
       long period, Class<T> resourceClass) {
     this(supplier, period, period, resourceClass);
