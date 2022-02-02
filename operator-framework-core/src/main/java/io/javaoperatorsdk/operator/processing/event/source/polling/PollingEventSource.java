@@ -15,15 +15,24 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
+  public static final long DEFAULT_INITIAL_DELAY = 1000;
+
   private final Timer timer = new Timer();
   private final Supplier<Map<ResourceID, T>> supplierToPoll;
   private final long period;
+  private final long initialDelay;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
+                            long period, Class<T> resourceClass) {
+    this(supplier,DEFAULT_INITIAL_DELAY,period,resourceClass);
+  }
+
+  public PollingEventSource(Supplier<Map<ResourceID, T>> supplier, long initialDelay,
       long period, Class<T> resourceClass) {
     super(resourceClass);
     this.supplierToPoll = supplier;
     this.period = period;
+    this.initialDelay = initialDelay;
   }
 
   @Override
@@ -38,7 +47,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
         }
         getStateAndFillCache();
       }
-    }, 0, period);
+    }, initialDelay, period);
   }
 
   protected void getStateAndFillCache() {
