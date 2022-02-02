@@ -81,15 +81,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
    */
   @Override
   public Optional<T> getAssociated(P primary) {
-    return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
+    return getCachedValue(ResourceID.fromResource(primary));
   }
-
-  public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
-    var resource = getCachedValue(resourceID);
-    if (resource.isPresent()) {
-      return resource;
-    }
-    getStateAndFillCache();
-    return getCachedValue(resourceID);
-  }
+  
 }
