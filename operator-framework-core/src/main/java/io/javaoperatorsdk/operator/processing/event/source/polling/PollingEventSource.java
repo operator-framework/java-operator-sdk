@@ -23,8 +23,8 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   private final long initialDelay;
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-                            long period, Class<T> resourceClass) {
-    this(supplier,DEFAULT_INITIAL_DELAY,period,resourceClass);
+      long period, Class<T> resourceClass) {
+    this(supplier, DEFAULT_INITIAL_DELAY, period, resourceClass);
   }
 
   public PollingEventSource(Supplier<Map<ResourceID, T>> supplier, long initialDelay,
