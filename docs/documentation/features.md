@@ -137,17 +137,13 @@ mostly for the cases when there is a long waiting period after a delete operatio
 you might want to either schedule a timed event to make sure
 `cleanup` is executed again or use event sources to get notified about the state changes of a deleted resource.
 
-## Generation Awareness and Automatic Observed Generation Handling
+## Automatic Observed Generation Handling
 
 Having `.observedGeneration` value on the status of the resource is a best practice to indicate the last generation of
 the resource reconciled successfully by the controller. This helps the users / administrators to check if the custom
-resource was reconciled, but it is used to decide if a reconciliation should happen or not. Filtering events based on
-generation is supported by the framework and turned on by default. There are two modes.
+resource was reconciled.
 
-### Primary (preferred) Mode
-
-The first and the **preferred** one is to check after a resource event received, if the generation of the resource is
-larger than the `.observedGeneration` field on status. In order to have this feature working:
+In order to have this feature working:
 
 - the **status class** (not the resource) must implement the
   [`ObservedGenerationAware`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAware.java)
@@ -189,16 +185,18 @@ public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
 }
 ```
 
-### The Second (Fallback) Mode
+## Generation Awareness and Event Filtering
 
-The second, fallback mode is (when the conditions from above are not met to handle the observed generation automatically
-in status) to handle generation filtering in memory. Thus, if an event is received, the generation of the received
-resource is compared with the resource in the cache.
+On an operator startup, the best practice is to reconcile all the resources. Since while operator was down, changes
+might have made both to custom resource and dependent resources. 
 
-Note that the **first approach has significant benefits** in the situation when the operator is restarted and there is
-no cached resource anymore. In case two this leads to a reconciliation of every resource in all cases,
-event if the resource is not changed while the operator was not running. However, in case informers are used
-the reconciliation from startup will happen anyway, since events will be propagated by the informer.
+When the first reconciliation is done successfully, the next reconciliation is triggered if either the dependent 
+resources are changed or the custom resource `.spec` is changed. If other fields like `.metadata` is changed on the 
+custom resource, the reconciliation could be skipped. This is supported out of the box, thus the reconciliation by 
+default is not triggered if the change to the main custom resource does not increase the `.metadata.generation` field.
+Note that the increase of `.metada.generation`  is handled automatically by Kubernetes.
+
+To turn on this feature set `generationAwareEventProcessing` to `false` for the `Reconciler`.
 
 ## Support for Well Known (non-custom) Kubernetes Resources
 

@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 
 /**
  * Convenience implementations of, and utility methods for, {@link ResourceEventFilter}.
@@ -25,16 +23,6 @@ public final class ResourceEventFilters {
   private static final ResourceEventFilter<HasMetadata> GENERATION_AWARE =
       (configuration, oldResource, newResource) -> {
         final var generationAware = configuration.isGenerationAware();
-        if (newResource instanceof CustomResource<?, ?>) {
-          var newCustomResource = (CustomResource<?, ?>) newResource;
-          final var status = newCustomResource.getStatus();
-          if (generationAware && status instanceof ObservedGenerationAware) {
-            var actualGeneration = newResource.getMetadata().getGeneration();
-            var observedGeneration = ((ObservedGenerationAware) status)
-                .getObservedGeneration();
-            return observedGeneration == null || actualGeneration > observedGeneration;
-          }
-        }
         return oldResource == null || !generationAware ||
             oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };
