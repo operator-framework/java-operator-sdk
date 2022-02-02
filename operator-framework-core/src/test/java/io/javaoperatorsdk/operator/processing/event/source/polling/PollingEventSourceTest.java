@@ -21,7 +21,7 @@ class PollingEventSourceTest
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   private Supplier<Map<ResourceID, SampleExternalResource>> supplier = mock(Supplier.class);
-  private PollingEventSource pollingEventSource =
+  private PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
       new PollingEventSource<>(supplier, 50, SampleExternalResource.class);
 
   @BeforeEach

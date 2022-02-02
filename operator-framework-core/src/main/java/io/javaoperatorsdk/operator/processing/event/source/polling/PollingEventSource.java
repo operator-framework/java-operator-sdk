@@ -63,6 +63,10 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
     cache.keys().filter(e -> !values.containsKey(e)).forEach(super::handleDelete);
   }
 
+  public void put(ResourceID key, T resource) {
+    cache.put(key, resource);
+  }
+
   @Override
   public void stop() throws OperatorException {
     super.stop();
