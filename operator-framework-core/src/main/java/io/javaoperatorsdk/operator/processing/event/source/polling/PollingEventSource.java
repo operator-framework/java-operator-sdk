@@ -38,7 +38,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
         }
         getStateAndFillCache();
       }
-    }, period, period);
+    }, 0, period);
   }
 
   protected void getStateAndFillCache() {
