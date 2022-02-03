@@ -16,17 +16,19 @@ See also best practices in [Operator SDK](https://sdk.operatorframework.io/docs/
 
 ### Reconcile All The Resources All the Time
 
-The reconciliation can be triggered by events from multiple sources. It could be tempting to check the events, and
+The reconciliation can be triggered by events from multiple sources. It could be tempting to check the events and
 reconcile just the related resource or subset of resources that the controller manages. However, this is **considered as an
-anti-pattern** in operators. If triggered, all resources should be reconciled. Note that usually this means only
-comparing the target state with the current state in the cache. The reason behind this is events not reliable in
-generally, this means events can be lost.
+anti-pattern** in operators. If triggered, all resources should be reconciled. Usually this means only
+comparing the target state with the current state in the cache for most of the resource. 
+The reason behind this is events not reliable in generally, this means events can be lost. In addition to that operator
+can crash and while down will miss events.
 
 In addition to that such approach might even complicate implementation logic in the `Reconciler`, since parallel
 execution of the reconciler is not allowed for the same custom resource, there can be multiple events received for the
 same resource or dependent resource during an ongoing execution, ordering those events could be also challenging.
 
-For this reason from v2 the events are not even accessible for the `Reconciler`.
+Since there is a consensus regarding this in the industry, from v2 the events are not even accessible for 
+the `Reconciler`.
 
 ### Idempotency
 
