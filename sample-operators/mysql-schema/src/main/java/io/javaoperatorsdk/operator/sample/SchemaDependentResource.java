@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import io.javaoperatorsdk.operator.api.config.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Builder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -18,8 +17,8 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 import static java.lang.String.format;
 
 public class SchemaDependentResource
-    implements DependentResource<Schema, MySQLSchema>, Builder<Schema, MySQLSchema>,
-    Cleaner<Schema, MySQLSchema>, Persister<Schema, MySQLSchema> {
+    implements DependentResource<Schema, MySQLSchema>, Cleaner<Schema, MySQLSchema>,
+    Persister<Schema, MySQLSchema> {
 
   private static final int POLL_PERIOD = 500;
   private MySQLDbConfig dbConfig;
@@ -33,7 +32,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public Schema buildFor(MySQLSchema primary, Context context) {
+  public Schema desired(MySQLSchema primary, Context context) {
     try (Connection connection = getConnection()) {
       final var schema = SchemaService.createSchemaAndRelatedUser(
           connection,

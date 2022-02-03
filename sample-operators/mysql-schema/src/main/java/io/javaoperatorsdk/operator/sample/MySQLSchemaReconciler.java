@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Builder;
 import io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 
@@ -51,11 +50,14 @@ public class MySQLSchemaReconciler
     this.mysqlDbConfig = mysqlDbConfig;
   }
 
-  public static class SecretDependentResource
-      implements DependentResource<Secret, MySQLSchema>, Builder<Secret, MySQLSchema> {
+  public static class SecretDependentResource implements DependentResource<Secret, MySQLSchema> {
+
+    private static String encode(String value) {
+      return Base64.getEncoder().encodeToString(value.getBytes());
+    }
 
     @Override
-    public Secret buildFor(MySQLSchema schema, Context context) {
+    public Secret desired(MySQLSchema schema, Context context) {
       return new SecretBuilder()
           .withNewMetadata()
           .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
@@ -66,10 +68,6 @@ public class MySQLSchemaReconciler
           .addToData("MYSQL_PASSWORD", encode(
               context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
           .build();
-    }
-
-    private static String encode(String value) {
-      return Base64.getEncoder().encodeToString(value.getBytes());
     }
   }
 

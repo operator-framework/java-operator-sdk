@@ -67,21 +67,15 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
   public UpdateControl<R> reconcile(R resource, Context context) {
     initContextIfNeeded(resource, context);
 
-    dependents.stream()
-        .filter(dependent -> dependent.creatable() || dependent.updatable())
-        .forEach(dependent -> {
-          var dependentResource = dependent.getFor(resource, context);
-          if (dependent.creatable() && dependentResource == null) {
-            // we need to create the dependent
-            dependentResource = dependent.buildFor(resource, context);
-            createOrReplaceDependent(resource, context, dependent, dependentResource, "Creating");
-          } else if (dependent.updatable()) {
-            dependentResource = dependent.update(dependentResource, resource, context);
-            createOrReplaceDependent(resource, context, dependent, dependentResource, "Updating");
-          } else {
-            logOperationInfo(resource, dependent, dependentResource, "Ignoring");
-          }
-        });
+    dependents.stream().forEach(dependent -> {
+      var actual = dependent.getFor(resource, context);
+      if (actual == null || !dependent.match(actual, resource, context)) {
+        final var desired = dependent.desired(resource, context);
+        if (desired != null) {
+          createOrReplaceDependent(resource, context, dependent, desired, "Reconciling");
+        }
+      }
+    });
 
     return UpdateControl.noUpdate();
   }

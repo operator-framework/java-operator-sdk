@@ -8,11 +8,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>>
-    implements DependentResource<R, P>, Builder<R, P>, Updater<R, P>, Persister<R, P>,
-    Cleaner<R, P> {
+    implements DependentResource<R, P>, Persister<R, P>, Cleaner<R, P> {
 
-  private final Builder<R, P> builder;
-  private final Updater<R, P> updater;
   private final Cleaner<R, P> cleaner;
   private final Persister<R, P> persister;
   private final DependentResource<R, P> delegate;
@@ -21,11 +18,24 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
   @SuppressWarnings("unchecked")
   public DependentResourceController(DependentResource<R, P> delegate, C configuration) {
     this.delegate = delegate;
-    builder = (delegate instanceof Builder) ? (Builder<R, P>) delegate : null;
-    updater = (delegate instanceof Updater) ? (Updater<R, P>) delegate : null;
     cleaner = (delegate instanceof Cleaner) ? (Cleaner<R, P>) delegate : null;
     persister = initPersister(delegate);
     this.configuration = configuration;
+  }
+
+  @Override
+  public Class<R> resourceType() {
+    return delegate.resourceType();
+  }
+
+  @Override
+  public boolean match(R actual, P primary, Context context) {
+    return delegate.match(actual, primary, context);
+  }
+
+  @Override
+  public R desired(P primary, Context context) {
+    return delegate.desired(primary, context);
   }
 
   @SuppressWarnings("unchecked")
@@ -43,16 +53,6 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
   }
 
   @Override
-  public R buildFor(P primary, Context context) {
-    return builder.buildFor(primary, context);
-  }
-
-  @Override
-  public R update(R fetched, P primary, Context context) {
-    return updater.update(fetched, primary, context);
-  }
-
-  @Override
   public void delete(R fetched, P primary, Context context) {
     cleaner.delete(fetched, primary, context);
   }
@@ -64,14 +64,6 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
   @Override
   public EventSource initEventSource(EventSourceContext<P> context) {
     return delegate.initEventSource(context);
-  }
-
-  public boolean creatable() {
-    return builder != null;
-  }
-
-  public boolean updatable() {
-    return updater != null;
   }
 
   public boolean deletable() {

@@ -159,7 +159,8 @@ public class AnnotationConfiguration<R extends HasMetadata>
           if (HasMetadata.class.isAssignableFrom(resourceType)) {
             final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
             final var namespaces =
-                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[] {});
+                valueOrDefault(kubeDependent, KubernetesDependent::namespaces,
+                    this.getNamespaces().toArray(new String[0]));
             final var labelSelector =
                 valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
             final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,
