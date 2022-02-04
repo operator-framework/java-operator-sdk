@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
-import io.javaoperatorsdk.operator.api.config.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceController;
+import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.dependent.DependentResourceController;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)

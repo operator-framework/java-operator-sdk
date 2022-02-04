@@ -1,10 +1,12 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>>

@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public class ServiceDependentResource implements DependentResource<Service, Tomcat> {
 

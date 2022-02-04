@@ -11,16 +11,16 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Dependent;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConfiguration;
 
 @SuppressWarnings("rawtypes")
 public class AnnotationConfiguration<R extends HasMetadata>

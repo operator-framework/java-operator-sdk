@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceControllerFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;

@@ -3,9 +3,9 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
-import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
 public class DeploymentDependentResource

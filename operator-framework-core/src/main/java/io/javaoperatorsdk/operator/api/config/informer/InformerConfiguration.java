@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source.informer;
+package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public interface InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
     extends ResourceConfiguration<R> {

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api.config;
+package io.javaoperatorsdk.operator.api.config.dependent;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

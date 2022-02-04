@@ -8,7 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -18,8 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceController;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceController;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 

@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.sample;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.javaoperatorsdk.operator.api.config.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceContextAware;

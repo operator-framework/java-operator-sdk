@@ -9,8 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.javaoperatorsdk.operator.api.config.Dependent;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -20,6 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 

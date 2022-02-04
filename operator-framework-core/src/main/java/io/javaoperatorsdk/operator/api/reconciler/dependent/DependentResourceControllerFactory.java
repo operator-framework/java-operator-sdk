@@ -3,7 +3,10 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 import java.lang.reflect.InvocationTargetException;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.processing.dependent.DependentResourceController;
+import io.javaoperatorsdk.operator.processing.dependent.KubernetesDependentResourceController;
 
 public interface DependentResourceControllerFactory<P extends HasMetadata> {
 
