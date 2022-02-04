@@ -1,10 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 
+@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface KubernetesDependent {
 

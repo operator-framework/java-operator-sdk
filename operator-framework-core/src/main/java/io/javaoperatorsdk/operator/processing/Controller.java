@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,7 @@ import io.javaoperatorsdk.operator.processing.dependent.DependentResourceManager
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"unchecked"})
 @Ignore
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
@@ -195,6 +194,10 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     final var specVersion = "v1";
     log.info("Starting '{}' controller for reconciler: {}, resource: {}", controllerName,
         reconciler.getClass().getCanonicalName(), resClass.getCanonicalName());
+
+    // fail early if we're missing the current namespace information
+    failOnMissingCurrentNS();
+
     try {
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
@@ -208,13 +211,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
         // Apply validations that are not handled by fabric8
         CustomResourceUtils.assertCustomResource(resClass, crd);
-      }
-
-      if (failOnMissingCurrentNS()) {
-        throw new OperatorException(
-            "Controller '"
-                + controllerName
-                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
       }
 
       final var context = new EventSourceContext<>(
@@ -263,19 +259,18 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   /**
-   * Determines whether we should fail because the current namespace is request as target namespace
-   * but is missing
-   *
-   * @return {@code true} if the current namespace is requested but is missing, {@code false}
-   *         otherwise
+   * Throws an {@link OperatorException} if the controller is configured to watch the current
+   * namespace but it's absent from the configuration.
    */
-  private boolean failOnMissingCurrentNS() {
-    if (configuration.watchCurrentNamespace()) {
-      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
-      return effectiveNamespaces.size() == 1
-          && effectiveNamespaces.stream().allMatch(Objects::isNull);
+  private void failOnMissingCurrentNS() {
+    try {
+      configuration.getEffectiveNamespaces();
+    } catch (OperatorException e) {
+      throw new OperatorException(
+          "Controller '"
+              + configuration.getName()
+              + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
     }
-    return false;
   }
 
   public EventSourceManager<R> getEventSourceManager() {

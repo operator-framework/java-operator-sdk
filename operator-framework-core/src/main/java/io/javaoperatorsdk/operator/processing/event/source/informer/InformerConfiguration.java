@@ -133,12 +133,12 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       InformerConfiguration<R, P> configuration) {
     return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass(),
         configuration.getConfigurationService())
-        .withNamespaces(configuration.getNamespaces())
-        .withLabelSelector(configuration.getLabelSelector())
-        .skippingEventPropagationIfUnchanged(
-            configuration.isSkipUpdateEventPropagationIfNoChange())
-        .withAssociatedSecondaryResourceIdentifier(
-            configuration.getAssociatedResourceIdentifier())
-        .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
+            .withNamespaces(configuration.getNamespaces())
+            .withLabelSelector(configuration.getLabelSelector())
+            .skippingEventPropagationIfUnchanged(
+                configuration.isSkipUpdateEventPropagationIfNoChange())
+            .withAssociatedSecondaryResourceIdentifier(
+                configuration.getAssociatedResourceIdentifier())
+            .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
   }
 }
