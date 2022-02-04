@@ -85,9 +85,7 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
   public DeleteControl cleanup(R resource, Context context) {
     initContextIfNeeded(resource, context);
 
-    dependents.stream()
-        .filter(DependentResourceController::deletable)
-        .forEach(dependent -> {
+    dependents.forEach(dependent -> {
           var dependentResource = dependent.getFor(resource, context);
           if (dependentResource != null) {
             dependent.delete(dependentResource, resource, context);

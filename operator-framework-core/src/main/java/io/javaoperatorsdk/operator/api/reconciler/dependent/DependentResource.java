@@ -11,9 +11,12 @@ public interface DependentResource<R, P extends HasMetadata> {
     throw new IllegalStateException("Must be implemented if not automatically provided by the SDK");
   }
 
+  @SuppressWarnings("unchecked")
   default Class<R> resourceType() {
     return (Class<R>) Utils.getFirstTypeArgumentFromInterface(getClass());
   }
+
+  default void delete(R fetched, P primary, Context context) {}
 
   /**
    * todo: return Optional<R></R> instead?
