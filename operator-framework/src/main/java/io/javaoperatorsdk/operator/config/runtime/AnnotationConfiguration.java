@@ -11,16 +11,16 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Dependent;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConfiguration;
 
 @SuppressWarnings("rawtypes")
 public class AnnotationConfiguration<R extends HasMetadata>
@@ -159,7 +159,8 @@ public class AnnotationConfiguration<R extends HasMetadata>
           if (HasMetadata.class.isAssignableFrom(resourceType)) {
             final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
             final var namespaces =
-                valueOrDefault(kubeDependent, KubernetesDependent::namespaces, new String[] {});
+                valueOrDefault(kubeDependent, KubernetesDependent::namespaces,
+                    this.getNamespaces().toArray(new String[0]));
             final var labelSelector =
                 valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
             final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,

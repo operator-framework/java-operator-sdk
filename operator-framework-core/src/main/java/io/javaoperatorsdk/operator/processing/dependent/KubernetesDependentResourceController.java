@@ -1,16 +1,20 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
+@Ignore
 public class KubernetesDependentResourceController<R extends HasMetadata, P extends HasMetadata>
     extends DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>> {
 
@@ -19,6 +23,7 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
   private InformerEventSource<R, P> informer;
 
 
+  @SuppressWarnings("unchecked")
   public KubernetesDependentResourceController(DependentResource<R, P> delegate,
       KubernetesDependentResourceConfiguration<R, P> configuration) {
     super(delegate, configuration);
@@ -41,6 +46,7 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
             configuration.getDependentResourceClass());
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected Persister<R, P> initPersister(DependentResource<R, P> delegate) {
     return (delegate instanceof Persister) ? (Persister<R, P>) delegate : this;
@@ -72,5 +78,13 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
 
   public boolean owned() {
     return getConfiguration().isOwned();
+  }
+
+  @Override
+  protected void createOrReplaceDependent(P primary, R dependent, Context context) {
+    if (owned()) {
+      dependent.addOwnerReference(primary);
+    }
+    super.createOrReplaceDependent(primary, dependent, context);
   }
 }

@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class DefaultControllerConfiguration<R extends HasMetadata>
