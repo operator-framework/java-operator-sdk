@@ -72,6 +72,12 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>2.13.1</version>
         </dependency>
+        <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>operator-framework-junit-5</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

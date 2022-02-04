@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
 import static java.lang.String.format;
 
-@ControllerConfiguration
+@ControllerConfiguration(finalizerName = Constants.NO_FINALIZER)
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
     EventSourceInitializer<MySQLSchema> {

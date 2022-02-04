@@ -1,0 +1,50 @@
+# Integration and end to end tests which runs locally and deploys the Operator to a Kubernetes
+# (Minikube) cluster and creates custom resources to verify the operator's functionality
+name: Integration & End to End tests
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches:
+      - main
+
+jobs:
+  sample_operators_tests:
+    strategy:
+      matrix:
+        sample_dir:
+          - "sample-operators/mysql-schema"
+          - "sample-operators/tomcat-operator"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Minikube-Kubernetes
+        uses: manusa/actions-setup-minikube@v2.4.3
+        with:
+          minikube version: v1.24.0
+          kubernetes version: v1.23.0
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v2
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: 'maven'
+
+      - name: Build SDK
+        run: mvn install -DskipTests
+
+      - name: Run integration tests in local mode
+        working-directory: ${{ matrix.sample_dir }}
+        run: |
+          mvn test -P end-to-end-tests
+
+      - name: Run E2E tests as a deployment
+        working-directory: ${{ matrix.sample_dir }}
+        run: |
+          eval $(minikube -p minikube docker-env)
+          mvn jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote
