@@ -21,6 +21,7 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
   private InformerEventSource<R, P> informer;
 
 
+  @SuppressWarnings("unchecked")
   public KubernetesDependentResourceController(DependentResource<R, P> delegate,
       KubernetesDependentResourceConfiguration<R, P> configuration) {
     super(delegate, configuration);
@@ -43,6 +44,7 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
             configuration.getDependentResourceClass());
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected Persister<R, P> initPersister(DependentResource<R, P> delegate) {
     return (delegate instanceof Persister) ? (Persister<R, P>) delegate : this;
@@ -74,5 +76,13 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
 
   public boolean owned() {
     return getConfiguration().isOwned();
+  }
+
+  @Override
+  protected void createOrReplaceDependent(P primary, R dependent, Context context) {
+    if (owned()) {
+      dependent.addOwnerReference(primary);
+    }
+    super.createOrReplaceDependent(primary, dependent, context);
   }
 }
