@@ -5,17 +5,17 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
@@ -51,25 +51,14 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
     return new Builder();
   }
 
-  @SuppressWarnings("unchecked")
   protected void before(ExtensionContext context) {
-    LOGGER.info("Initializing integration test in namespace {}", namespace);
-
-    kubernetesClient
-        .namespaces()
-        .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
-
-    kubernetesClient
-        .resourceList(infrastructure)
-        .createOrReplace();
-    kubernetesClient
-        .resourceList(infrastructure)
-        .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    super.before(context);
 
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
-    for (var crdFile : new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix))) {
+    final var kubernetesClient = getKubernetesClient();
+    for (var crdFile : Objects.requireNonNull(new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
@@ -81,7 +70,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
     }
 
     LOGGER.debug("Deploying the operator into Kubernetes");
-    operatorDeployment.stream().forEach(hm -> {
+    operatorDeployment.forEach(hm -> {
       hm.getMetadata().setNamespace(namespace);
       if (hm.getKind().toLowerCase(Locale.ROOT).equals("clusterrolebinding")) {
         var crb = (ClusterRoleBinding) hm;
@@ -100,76 +89,23 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
   }
 
-  protected void after(ExtensionContext context) {
-    if (namespace != null) {
-      if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
-        LOGGER.info("Preserving namespace {}", namespace);
-      } else {
-        kubernetesClient.resourceList(infrastructure).delete();
-        kubernetesClient.resourceList(operatorDeployment).inNamespace(namespace).delete();
-        LOGGER.info("Deleting namespace {} and stopping operator", namespace);
-        kubernetesClient.namespaces().withName(namespace).delete();
-        if (waitForNamespaceDeletion) {
-          LOGGER.info("Waiting for namespace {} to be deleted", namespace);
-          Awaitility.await("namespace deleted")
-              .pollInterval(50, TimeUnit.MILLISECONDS)
-              .atMost(90, TimeUnit.SECONDS)
-              .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
-        }
-      }
-    }
+  @Override
+  protected void deleteOperator() {
+    getKubernetesClient().resourceList(operatorDeployment).inNamespace(namespace).delete();
   }
 
-  @SuppressWarnings("rawtypes")
-  public static class Builder extends AbstractBuilder {
+  public static class Builder extends AbstractBuilder<Builder> {
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
 
     protected Builder() {
-      super();;
+      super();
       this.operatorDeployment = new ArrayList<>();
       this.deploymentTimeout = Duration.ofMinutes(1);
     }
 
-    public Builder preserveNamespaceOnError(boolean value) {
-      this.preserveNamespaceOnError = value;
-      return this;
-    }
-
-    public Builder waitForNamespaceDeletion(boolean value) {
-      this.waitForNamespaceDeletion = value;
-      return this;
-    }
-
-    public Builder oneNamespacePerClass(boolean value) {
-      this.oneNamespacePerClass = value;
-      return this;
-    }
-
-    public Builder withConfigurationService(ConfigurationService value) {
-      configurationService = value;
-      return this;
-    }
-
     public Builder withDeploymentTimeout(Duration value) {
       deploymentTimeout = value;
-      return this;
-    }
-
-    public Builder withInfrastructureTimeout(Duration value) {
-      infrastructureTimeout = value;
-      return this;
-    }
-
-    public Builder withInfrastructure(List<HasMetadata> hm) {
-      infrastructure.addAll(hm);
-      return this;
-    }
-
-    public Builder withInfrastructure(HasMetadata... hms) {
-      for (HasMetadata hm : hms) {
-        infrastructure.add(hm);
-      }
       return this;
     }
 
@@ -179,9 +115,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
     }
 
     public Builder withOperatorDeployment(HasMetadata... hms) {
-      for (HasMetadata hm : hms) {
-        operatorDeployment.add(hm);
-      }
+      operatorDeployment.addAll(Arrays.asList(hms));
       return this;
     }
 
