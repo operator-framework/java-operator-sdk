@@ -10,12 +10,14 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigu
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
+@Ignore
 public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>>
     implements DependentResource<R, P>, Persister<R, P>, Reconciler<P> {
 

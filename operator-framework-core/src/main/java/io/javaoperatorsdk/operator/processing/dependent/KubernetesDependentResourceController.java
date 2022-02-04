@@ -6,6 +6,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResou
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -13,6 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
+@Ignore
 public class KubernetesDependentResourceController<R extends HasMetadata, P extends HasMetadata>
     extends DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>> {
 
