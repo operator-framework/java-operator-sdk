@@ -57,8 +57,8 @@ public class MySQLSchemaReconciler
     }
 
     @Override
-    public Secret desired(MySQLSchema schema, Context context) {
-      return new SecretBuilder()
+    public Optional<Secret> desired(MySQLSchema schema, Context context) {
+      return Optional.of(new SecretBuilder()
           .withNewMetadata()
           .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
           .withNamespace(schema.getMetadata().getNamespace())
@@ -67,10 +67,11 @@ public class MySQLSchemaReconciler
               context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
           .addToData("MYSQL_PASSWORD", encode(
               context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
-          .build();
+          .build());
     }
   }
 
+  @SuppressWarnings("rawtypes")
   @Override
   public void injectInto(EventSourceContext context) {
     context.put(MYSQL_DB_CONFIG, mysqlDbConfig);

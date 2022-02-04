@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +42,7 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
   }
 
   @Override
-  public R desired(P primary, Context context) {
+  public Optional<R> desired(P primary, Context context) {
     return delegate.desired(primary, context);
   }
 
@@ -91,9 +93,7 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
     var actual = getFor(resource, context);
     if (actual == null || !match(actual, resource, context)) {
       final var desired = desired(resource, context);
-      if (desired != null) {
-        createOrReplaceDependent(resource, desired, context);
-      }
+      desired.ifPresent(d -> createOrReplaceDependent(resource, d, context));
     }
     return UpdateControl.noUpdate();
   }

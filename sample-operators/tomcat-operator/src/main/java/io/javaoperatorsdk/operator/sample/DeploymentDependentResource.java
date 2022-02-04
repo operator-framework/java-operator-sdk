@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -12,7 +14,7 @@ public class DeploymentDependentResource
     implements DependentResource<Deployment, Tomcat> {
 
   @Override
-  public Deployment desired(Tomcat tomcat, Context context) {
+  public Optional<Deployment> desired(Tomcat tomcat, Context context) {
     Deployment deployment = TomcatReconciler.loadYaml(Deployment.class, "deployment.yaml");
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
     final String tomcatName = tomcatMetadata.getName();
@@ -37,7 +39,7 @@ public class DeploymentDependentResource
         .endTemplate()
         .endSpec()
         .build();
-    return deployment;
+    return Optional.of(deployment);
   }
 
   private String tomcatImage(Tomcat tomcat) {

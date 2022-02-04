@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -19,23 +21,21 @@ public interface DependentResource<R, P extends HasMetadata> {
   default void delete(R fetched, P primary, Context context) {}
 
   /**
-   * todo: return Optional<R></R> instead?
-   * 
    * Computes the desired state of the dependent based on the state provided by the specified
    * primary resource.
    * 
-   * The default implementation returns {@code null} which corresponds to the case where the
+   * The default implementation returns {@code empty} which corresponds to the case where the
    * associated dependent should never be created by the associated reconciler or that the global
    * state of the cluster doesn't allow for the resource to be created at this point.
    * 
    * @param primary the primary resource associated with the reconciliation process
    * @param context the {@link Context} associated with the reconciliation process
    * @return an instance of the dependent resource matching the desired state specified by the
-   *         primary resource or {@code null} if the dependent shouldn't be created at this point
+   *         primary resource or {@code empty} if the dependent shouldn't be created at this point
    *         (or ever)
    */
-  default R desired(P primary, Context context) {
-    return null;
+  default Optional<R> desired(P primary, Context context) {
+    return Optional.empty();
   }
 
   /**

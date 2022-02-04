@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -30,7 +31,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public Schema desired(MySQLSchema primary, Context context) {
+  public Optional<Schema> desired(MySQLSchema primary, Context context) {
     try (Connection connection = getConnection()) {
       final var schema = SchemaService.createSchemaAndRelatedUser(
           connection,
@@ -41,7 +42,7 @@ public class SchemaDependentResource
 
       // put the newly built schema in the context to let the reconciler know we just built it
       context.put(MySQLSchemaReconciler.BUILT_SCHEMA, schema);
-      return schema;
+      return Optional.of(schema);
     } catch (SQLException e) {
       MySQLSchemaReconciler.log.error("Error while creating Schema", e);
       throw new IllegalStateException(e);
