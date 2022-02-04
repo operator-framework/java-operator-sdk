@@ -1,7 +1,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.lang.reflect.ParameterizedType;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -54,5 +58,9 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   default DependentResourceControllerFactory<R> dependentFactory() {
     return new DependentResourceControllerFactory<>() {};
+  }
+
+  default Optional<Duration> reconciliationMaxInterval() {
+    return Optional.of(Duration.ofHours(10L));
   }
 }

@@ -18,6 +18,7 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    * 
    * @param context a {@link EventSourceContext} providing access to information useful to event
    *        sources
+   * @return list of event sources to register
    */
   List<EventSource> prepareEventSources(EventSourceContext<P> context);
 

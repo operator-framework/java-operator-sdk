@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class ConcurrencyIT {
+class ConcurrencyIT {
   public static final int NUMBER_OF_RESOURCES_CREATED = 50;
   public static final int NUMBER_OF_RESOURCES_DELETED = 30;
   public static final int NUMBER_OF_RESOURCES_UPDATED = 20;
@@ -34,7 +34,7 @@ public class ConcurrencyIT {
           .build();
 
   @Test
-  public void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {
+  void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {
     log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
     for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
       TestCustomResource tcr = TestUtils.testCustomResourceWithPrefix(String.valueOf(i));

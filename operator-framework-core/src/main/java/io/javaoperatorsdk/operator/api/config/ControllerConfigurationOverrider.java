@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
+  private Duration reconciliationMaxInterval;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
@@ -24,7 +26,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     retry = original.getRetryConfiguration();
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
+    reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
     this.original = original;
+
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -74,6 +78,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withReconciliationMaxInterval(
+      Duration reconciliationMaxInterval) {
+    this.reconciliationMaxInterval = reconciliationMaxInterval;
+    return this;
+  }
+
   public ControllerConfiguration<R> build() {
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
@@ -86,6 +96,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         labelSelector,
         customResourcePredicate,
         original.getResourceClass(),
+        reconciliationMaxInterval,
         original.getConfigurationService(),
         original.getDependentResources());
   }

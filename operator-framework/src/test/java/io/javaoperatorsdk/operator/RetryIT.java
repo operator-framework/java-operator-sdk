@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class RetryIT {
+class RetryIT {
   public static final int RETRY_INTERVAL = 150;
   public static final int MAX_RETRY_ATTEMPTS = 5;
 
@@ -36,7 +36,7 @@ public class RetryIT {
 
 
   @Test
-  public void retryFailedExecution() {
+  void retryFailedExecution() {
     RetryTestCustomResource resource = createTestCustomResource("1");
 
     operator.create(RetryTestCustomResource.class, resource);

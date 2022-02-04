@@ -180,7 +180,8 @@ public class Operator implements LifecycleAware {
 
     public synchronized void add(Controller controller) {
       final var configuration = controller.getConfiguration();
-      final var resourceTypeName = configuration.getResourceTypeName();
+      final var resourceTypeName = ReconcilerUtils
+          .getResourceTypeNameWithVersion(configuration.getResourceClass());
       final var existing = controllers.get(resourceTypeName);
       if (existing != null) {
         throw new OperatorException("Cannot register controller '" + configuration.getName()

@@ -11,6 +11,35 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
+/**
+ * <p>
+ * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
+ * instead to calls supplier periodically and independently of the number of state of custom
+ * resources managed by the operator. It is called on start (synced). This means that when the
+ * reconciler first time executed on startup a poll already happened before. So if the cache does
+ * not contain the target resource it means it is not created yet or was deleted while an operator
+ * was not running.
+ * </p>
+ * <p>
+ * Another caveat with this is if the cached object is checked in the reconciler and created since
+ * not in the cache it should be manually added to the cache, since it can happen that the
+ * reconciler is triggered before the cache is propagated with the new resource from a scheduled
+ * execution. See {@link #put(ResourceID, Object)} method.
+ * </p>
+ * So the generic workflow in reconciler should be:
+ *
+ * <ul>
+ * <li>Check if the cache contains the resource.</li>
+ * <li>If cache contains the resource reconcile it - compare with target state, update if necessary
+ * </li>
+ * <li>if cache not contains the resource create it.</li>
+ * <li>If the resource was created or updated, put the new version of the resource manually to the
+ * cache.</li>
+ * </ul>
+ *
+ * @param <T> type of the polled resource
+ * @param <P> primary resource type
+ */
 public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSource<T, P> {
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
@@ -29,6 +58,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   @Override
   public void start() throws OperatorException {
     super.start();
+    getStateAndFillCache();
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
@@ -47,6 +77,10 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
     cache.keys().filter(e -> !values.containsKey(e)).forEach(super::handleDelete);
   }
 
+  public void put(ResourceID key, T resource) {
+    cache.put(key, resource);
+  }
+
   @Override
   public void stop() throws OperatorException {
     super.stop();
@@ -61,15 +95,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
    */
   @Override
   public Optional<T> getAssociated(P primary) {
-    return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
+    return getCachedValue(ResourceID.fromResource(primary));
   }
 
-  public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
-    var resource = getCachedValue(resourceID);
-    if (resource.isPresent()) {
-      return resource;
-    }
-    getStateAndFillCache();
-    return getCachedValue(resourceID);
-  }
 }

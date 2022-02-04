@@ -245,8 +245,11 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private void updatePostExecutionControlWithReschedule(
       PostExecutionControl<R> postExecutionControl,
       BaseControl<?> baseControl) {
-    baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
+    baseControl.getScheduleDelay().ifPresentOrElse(postExecutionControl::withReSchedule,
+        () -> controller.getConfiguration().reconciliationMaxInterval()
+            .ifPresent(m -> postExecutionControl.withReSchedule(m.toMillis())));
   }
+
 
   private PostExecutionControl<R> handleCleanup(R resource, Context context) {
     log.debug(

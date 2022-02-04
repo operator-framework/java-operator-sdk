@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 
-public class InformerEventSourceIT {
+class InformerEventSourceIT {
 
   public static final String RESOURCE_NAME = "informertestcr";
   public static final String INITIAL_STATUS_MESSAGE = "Initial Status";

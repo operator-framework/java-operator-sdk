@@ -19,7 +19,7 @@ import static io.javaoperatorsdk.operator.sample.deployment.DeploymentReconciler
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class KubernetesResourceStatusUpdateIT {
+class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension
   OperatorExtension operator =
@@ -29,7 +29,7 @@ public class KubernetesResourceStatusUpdateIT {
           .build();
 
   @Test
-  public void testReconciliationOfNonCustomResourceAndStatusUpdate() {
+  void testReconciliationOfNonCustomResourceAndStatusUpdate() {
     var deployment = operator.create(Deployment.class, testDeployment());
     await().atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());

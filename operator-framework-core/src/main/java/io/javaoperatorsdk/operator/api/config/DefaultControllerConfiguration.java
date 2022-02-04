@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 
@@ -19,6 +21,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final RetryConfiguration retryConfiguration;
   private final ResourceEventFilter<R> resourceEventFilter;
   private final List<DependentResourceConfiguration> dependents;
+  private final Duration reconciliationMaxInterval;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -32,6 +35,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
+      Duration reconciliationMaxInterval,
       ConfigurationService service,
       List<DependentResourceConfiguration> dependents) {
     super(labelSelector, resourceClass, namespaces);
@@ -40,6 +44,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.crdName = crdName;
     this.finalizer = finalizer;
     this.generationAware = generationAware;
+    this.namespaces =
+        namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
+    this.reconciliationMaxInterval = reconciliationMaxInterval;
+    this.watchAllNamespaces = this.namespaces.isEmpty();
     this.retryConfiguration =
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
@@ -98,5 +106,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public List<DependentResourceConfiguration> getDependentResources() {
     return dependents;
+  }
+
+  @Override
+  public Optional<Duration> reconciliationMaxInterval() {
+    return Optional.ofNullable(reconciliationMaxInterval);
   }
 }

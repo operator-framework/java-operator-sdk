@@ -78,7 +78,7 @@ public class SchemaService {
   private static boolean userExists(Connection connection, String username) {
     try (PreparedStatement ps =
         connection.prepareStatement(
-            "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = ?)")) {
+            "SELECT 1 FROM mysql.user WHERE user = ?")) {
       ps.setString(1, username);
       try (ResultSet resultSet = ps.executeQuery()) {
         return resultSet.next();

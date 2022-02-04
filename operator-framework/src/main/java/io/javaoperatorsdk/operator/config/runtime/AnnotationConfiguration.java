@@ -3,6 +3,8 @@ package io.javaoperatorsdk.operator.config.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -117,6 +119,30 @@ public class AnnotationConfiguration<R extends HasMetadata>
     return answer != null
         ? answer
         : ResourceEventFilters.passthrough();
+  }
+
+  @Override
+  public Optional<Duration> reconciliationMaxInterval() {
+    if (annotation.reconciliationMaxInterval() != null) {
+      if (annotation.reconciliationMaxInterval().interval() <= 0) {
+        return Optional.empty();
+      }
+      return Optional.of(Duration.of(annotation.reconciliationMaxInterval().interval(),
+          annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
+    } else {
+      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
+    }
+  }
+
+  public static <T> T valueOrDefault(
+      ControllerConfiguration controllerConfiguration,
+      Function<ControllerConfiguration, T> mapper,
+      T defaultValue) {
+    if (controllerConfiguration == null) {
+      return defaultValue;
+    } else {
+      return mapper.apply(controllerConfiguration);
+    }
   }
 
   @Override
