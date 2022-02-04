@@ -2,14 +2,20 @@ package io.javaoperatorsdk.operator.junit;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.extension.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -26,7 +32,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     AfterAllCallback,
     AfterEachCallback {
 
-  protected final KubernetesClient kubernetesClient;
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractOperatorExtension.class);
+
+  private final KubernetesClient kubernetesClient;
   protected final ConfigurationService configurationService;
   protected final List<HasMetadata> infrastructure;
   protected Duration infrastructureTimeout;
@@ -55,22 +63,22 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
 
   @Override
-  public void beforeAll(ExtensionContext context) throws Exception {
+  public void beforeAll(ExtensionContext context) {
     beforeAllImpl(context);
   }
 
   @Override
-  public void beforeEach(ExtensionContext context) throws Exception {
+  public void beforeEach(ExtensionContext context) {
     beforeEachImpl(context);
   }
 
   @Override
-  public void afterAll(ExtensionContext context) throws Exception {
+  public void afterAll(ExtensionContext context) {
     afterAllImpl(context);
   }
 
   @Override
-  public void afterEach(ExtensionContext context) throws Exception {
+  public void afterEach(ExtensionContext context) {
     afterEachImpl(context);
   }
 
@@ -100,6 +108,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     return kubernetesClient.resources(type).inNamespace(namespace).replace(resource);
   }
 
+  @SuppressWarnings("unchecked")
   public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
     return kubernetesClient.resources(type).inNamespace(namespace).delete(resource);
   }
@@ -130,7 +139,20 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     }
   }
 
-  protected abstract void before(ExtensionContext context);
+  protected void before(ExtensionContext context) {
+    LOGGER.info("Initializing integration test in namespace {}", namespace);
+
+    kubernetesClient
+        .namespaces()
+        .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+
+    kubernetesClient
+        .resourceList(infrastructure)
+        .createOrReplace();
+    kubernetesClient
+        .resourceList(infrastructure)
+        .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
+  }
 
   protected void afterAllImpl(ExtensionContext context) {
     if (oneNamespacePerClass) {
@@ -144,9 +166,32 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     }
   }
 
-  protected abstract void after(ExtensionContext context);
+  protected void after(ExtensionContext context) {
+    if (namespace != null) {
+      if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
+        LOGGER.info("Preserving namespace {}", namespace);
+      } else {
+        kubernetesClient.resourceList(infrastructure).delete();
+        deleteOperator();
+        LOGGER.info("Deleting namespace {} and stopping operator", namespace);
+        kubernetesClient.namespaces().withName(namespace).delete();
+        if (waitForNamespaceDeletion) {
+          LOGGER.info("Waiting for namespace {} to be deleted", namespace);
+          Awaitility.await("namespace deleted")
+              .pollInterval(50, TimeUnit.MILLISECONDS)
+              .atMost(90, TimeUnit.SECONDS)
+              .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
+        }
+      }
+    }
+  }
 
-  public static abstract class AbstractBuilder {
+  protected void deleteOperator() {
+    // nothing to do by default: only needed if the operator is deployed to the cluster
+  }
+
+  @SuppressWarnings("unchecked")
+  public static abstract class AbstractBuilder<T extends AbstractBuilder<T>> {
     protected ConfigurationService configurationService;
     protected final List<HasMetadata> infrastructure;
     protected Duration infrastructureTimeout;
@@ -172,5 +217,41 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
           "josdk.it.oneNamespacePerClass",
           false);
     }
+
+    public T preserveNamespaceOnError(boolean value) {
+      this.preserveNamespaceOnError = value;
+      return (T) this;
+    }
+
+    public T waitForNamespaceDeletion(boolean value) {
+      this.waitForNamespaceDeletion = value;
+      return (T) this;
+    }
+
+    public T oneNamespacePerClass(boolean value) {
+      this.oneNamespacePerClass = value;
+      return (T) this;
+    }
+
+    public T withConfigurationService(ConfigurationService value) {
+      configurationService = value;
+      return (T) this;
+    }
+
+    public T withInfrastructureTimeout(Duration value) {
+      infrastructureTimeout = value;
+      return (T) this;
+    }
+
+    public T withInfrastructure(List<HasMetadata> hm) {
+      infrastructure.addAll(hm);
+      return (T) this;
+    }
+
+    public T withInfrastructure(HasMetadata... hms) {
+      infrastructure.addAll(Arrays.asList(hms));
+      return (T) this;
+    }
+
   }
 }

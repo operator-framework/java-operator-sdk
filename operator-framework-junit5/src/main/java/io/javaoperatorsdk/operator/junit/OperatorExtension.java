@@ -6,24 +6,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override;
 
+@SuppressWarnings("rawtypes")
 public class OperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OperatorExtension.class);
@@ -43,7 +41,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
         preserveNamespaceOnError,
         waitForNamespaceDeletion);
     this.reconcilers = reconcilers;
-    this.operator = new Operator(this.kubernetesClient, this.configurationService);
+    this.operator = new Operator(getKubernetesClient(), this.configurationService);
   }
 
   /**
@@ -55,23 +53,20 @@ public class OperatorExtension extends AbstractOperatorExtension {
     return new Builder();
   }
 
-  @SuppressWarnings({"rawtypes"})
+  private Stream<Reconciler> reconcilers() {
+    return operator.getControllers().stream().map(Controller::getReconciler);
+  }
+
   public List<Reconciler> getReconcilers() {
-    return operator.getControllers().stream()
-        .map(Controller::getReconciler)
-        .collect(Collectors.toUnmodifiableList());
+    return reconcilers().collect(Collectors.toUnmodifiableList());
   }
 
   public Reconciler getFirstReconciler() {
-    return operator.getControllers().stream()
-        .map(Controller::getReconciler)
-        .findFirst().orElseThrow();
+    return reconcilers().findFirst().orElseThrow();
   }
 
-  @SuppressWarnings({"rawtypes"})
   public <T extends Reconciler> T getControllerOfType(Class<T> type) {
-    return operator.getControllers().stream()
-        .map(Controller::getReconciler)
+    return reconcilers()
         .filter(type::isInstance)
         .map(type::cast)
         .findFirst()
@@ -81,18 +76,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
 
   @SuppressWarnings("unchecked")
   protected void before(ExtensionContext context) {
-    LOGGER.info("Initializing integration test in namespace {}", namespace);
-
-    kubernetesClient
-        .namespaces()
-        .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
-
-    kubernetesClient
-        .resourceList(infrastructure)
-        .createOrReplace();
-    kubernetesClient
-        .resourceList(infrastructure)
-        .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    super.before(context);
 
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
@@ -103,6 +87,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
         oconfig.withRetry(ref.retry);
       }
 
+      final var kubernetesClient = getKubernetesClient();
       try (InputStream is = getClass().getResourceAsStream(path)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
@@ -116,7 +101,6 @@ public class OperatorExtension extends AbstractOperatorExtension {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
       }
 
-
       this.operator.register(ref.reconciler, oconfig.build());
     }
 
@@ -125,22 +109,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
   }
 
   protected void after(ExtensionContext context) {
-    if (namespace != null) {
-      if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
-        LOGGER.info("Preserving namespace {}", namespace);
-      } else {
-        kubernetesClient.resourceList(infrastructure).delete();
-        LOGGER.info("Deleting namespace {} and stopping operator", namespace);
-        kubernetesClient.namespaces().withName(namespace).delete();
-        if (waitForNamespaceDeletion) {
-          LOGGER.info("Waiting for namespace {} to be deleted", namespace);
-          Awaitility.await("namespace deleted")
-              .pollInterval(50, TimeUnit.MILLISECONDS)
-              .atMost(90, TimeUnit.SECONDS)
-              .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
-        }
-      }
-    }
+    super.after(context);
 
     try {
       this.operator.stop();
@@ -150,51 +119,12 @@ public class OperatorExtension extends AbstractOperatorExtension {
   }
 
   @SuppressWarnings("rawtypes")
-  public static class Builder extends AbstractBuilder {
+  public static class Builder extends AbstractBuilder<Builder> {
     private final List<ReconcilerSpec> reconcilers;
-    private ConfigurationService configurationService;
 
     protected Builder() {
       super();
-      this.configurationService = new BaseConfigurationService(Version.UNKNOWN);
       this.reconcilers = new ArrayList<>();
-    }
-
-    public Builder preserveNamespaceOnError(boolean value) {
-      this.preserveNamespaceOnError = value;
-      return this;
-    }
-
-    public Builder waitForNamespaceDeletion(boolean value) {
-      this.waitForNamespaceDeletion = value;
-      return this;
-    }
-
-    public Builder oneNamespacePerClass(boolean value) {
-      this.oneNamespacePerClass = value;
-      return this;
-    }
-
-    public Builder withConfigurationService(ConfigurationService value) {
-      configurationService = value;
-      return this;
-    }
-
-    public Builder withInfrastructureTimeout(Duration value) {
-      infrastructureTimeout = value;
-      return this;
-    }
-
-    public Builder withInfrastructure(List<HasMetadata> hm) {
-      infrastructure.addAll(hm);
-      return this;
-    }
-
-    public Builder withInfrastructure(HasMetadata... hms) {
-      for (HasMetadata hm : hms) {
-        infrastructure.add(hm);
-      }
-      return this;
     }
 
     @SuppressWarnings("rawtypes")
