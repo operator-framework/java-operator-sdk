@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
 
     List<EventSource> sources = new ArrayList<>(configured.size() + 5);
     configured.forEach(dependent -> {
-      final var dependentResourceController = configuration.dependentFactory().from(dependent);
+      final var dependentResourceController = from(dependent);
       dependents.add(dependentResourceController);
       sources.add(dependentResourceController.initEventSource(context));
     });
@@ -67,12 +68,12 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
   public UpdateControl<R> reconcile(R resource, Context context) {
     initContextIfNeeded(resource, context);
 
-    dependents.stream().forEach(dependent -> {
+    dependents.forEach(dependent -> {
       var actual = dependent.getFor(resource, context);
       if (actual == null || !dependent.match(actual, resource, context)) {
         final var desired = dependent.desired(resource, context);
         if (desired != null) {
-          createOrReplaceDependent(resource, context, dependent, desired, "Reconciling");
+          createOrReplaceDependent(resource, context, dependent, desired);
         }
       }
     });
@@ -104,14 +105,14 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
 
   private void createOrReplaceDependent(R primaryResource,
       Context context, DependentResourceController dependentController,
-      Object dependentResource, String operationDescription) {
+      Object dependentResource) {
     // add owner reference if needed
     if (dependentResource instanceof HasMetadata
         && ((KubernetesDependentResourceController) dependentController).owned()) {
       ((HasMetadata) dependentResource).addOwnerReference(primaryResource);
     }
 
-    logOperationInfo(primaryResource, dependentController, dependentResource, operationDescription);
+    logOperationInfo(primaryResource, dependentController, dependentResource, "Reconciling");
 
     // commit the changes
     // todo: add metrics timing for dependent resource
@@ -132,6 +133,23 @@ public class DependentResourceManager<R extends HasMetadata> implements EventSou
     if (reconciler instanceof ContextInitializer) {
       final var initializer = (ContextInitializer<R>) reconciler;
       initializer.initContext(resource, context);
+    }
+  }
+
+  private DependentResourceController from(DependentResourceConfiguration config) {
+    try {
+      final var dependentResource =
+          (DependentResource) config.getDependentResourceClass().getConstructor()
+              .newInstance();
+      if (config instanceof KubernetesDependentResourceConfiguration) {
+        return new KubernetesDependentResourceController(dependentResource,
+            (KubernetesDependentResourceConfiguration) config);
+      } else {
+        return new DependentResourceController(dependentResource, config);
+      }
+    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException
+        | IllegalAccessException e) {
+      throw new IllegalArgumentException(e);
     }
   }
 }
