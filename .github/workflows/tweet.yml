@@ -1,7 +1,9 @@
 name: tweet-release
 
 # Listen to the `release` event
-on: [push]
+on:
+  release:
+    types: [released]
 
 jobs:
   tweet:
@@ -13,7 +15,7 @@ jobs:
         with:
           # GitHub event payload
           # https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#release
-          tweet-message: "New ${{ github.event.repository.name }} release ${{ github.event.release.tag_name }}! Try it will it is HOT! ${{ github.event.release.html_url }} #nodejs #release"
+          tweet-message: "New ${{ github.event.repository.name }} release ${{ github.event.release.tag_name }}! Try it will it is HOT! ${{ github.event.release.html_url }} #release"
         env:
           # Get your tokens from https://developer.twitter.com/apps
           TWITTER_CONSUMER_API_KEY: ${{ secrets.TWITTER_CONSUMER_API_KEY }}
