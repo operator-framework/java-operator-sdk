@@ -7,8 +7,7 @@ import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
@@ -16,22 +15,21 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
 import static java.lang.String.format;
 
-public class SchemaDependentResource
-    implements DependentResource<Schema, MySQLSchema>, Persister<Schema, MySQLSchema> {
+public class SchemaDependentResource extends AbstractDependentResource<Schema, MySQLSchema> {
 
   private static final int POLL_PERIOD = 500;
   private MySQLDbConfig dbConfig;
 
   @Override
-  public EventSource initEventSource(EventSourceContext<MySQLSchema> context) {
+  public Optional<EventSource> initEventSource(EventSourceContext<MySQLSchema> context) {
     dbConfig = context.getMandatory(MySQLSchemaReconciler.MYSQL_DB_CONFIG, MySQLDbConfig.class);
-    return new PerResourcePollingEventSource<>(
+    return Optional.of(new PerResourcePollingEventSource<>(
         new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), POLL_PERIOD,
-        Schema.class);
+        Schema.class));
   }
 
   @Override
-  public Optional<Schema> desired(MySQLSchema primary, Context context) {
+  public Schema desired(MySQLSchema primary, Context context) {
     try (Connection connection = getConnection()) {
       final var schema = SchemaService.createSchemaAndRelatedUser(
           connection,
@@ -42,11 +40,21 @@ public class SchemaDependentResource
 
       // put the newly built schema in the context to let the reconciler know we just built it
       context.put(MySQLSchemaReconciler.BUILT_SCHEMA, schema);
-      return Optional.of(schema);
+      return schema;
     } catch (SQLException e) {
       MySQLSchemaReconciler.log.error("Error while creating Schema", e);
       throw new IllegalStateException(e);
     }
+  }
+
+  @Override
+  protected Schema create(Schema target, Context context) {
+    return null;
+  }
+
+  @Override
+  protected Schema update(Schema actual, Schema target, Context context) {
+    return null;
   }
 
   private Connection getConnection() throws SQLException {
@@ -58,7 +66,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public void delete(Schema fetched, MySQLSchema primary, Context context) {
+  public void delete(MySQLSchema primary, Context context) {
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
       SchemaService.deleteSchemaAndRelatedUser(connection, primary.getMetadata().getName(),
@@ -69,18 +77,14 @@ public class SchemaDependentResource
   }
 
   @Override
-  public void createOrReplace(Schema dependentResource, Context context) {
-    // this is actually implemented in buildFor, the cleaner way to do this would be to have all
-    // the needed information in Schema instead of creating both the schema and user from
-    // heterogeneous information
-  }
-
-  @Override
-  public Schema getFor(MySQLSchema primary, Context context) {
+  public Optional<Schema> getResource(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
-      return SchemaService.getSchema(connection, primary.getMetadata().getName()).orElse(null);
+      var schema =
+          SchemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);
+      return Optional.ofNullable(schema);
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying to delete Schema", e);
     }
   }
+
 }

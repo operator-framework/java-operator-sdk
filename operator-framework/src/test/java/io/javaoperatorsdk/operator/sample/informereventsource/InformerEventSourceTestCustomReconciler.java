@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -40,7 +40,8 @@ public class InformerEventSourceTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   public static class ConfigMapDR
-      implements DependentResource<ConfigMap, InformerEventSourceTestCustomResource>,
+      extends KubernetesDependentResource<ConfigMap, InformerEventSourceTestCustomResource>
+      implements
       PrimaryResourcesRetriever<ConfigMap> {
     private final PrimaryResourcesRetriever<ConfigMap> retriever = Mappers.fromAnnotation(
         RELATED_RESOURCE_NAME);
@@ -48,6 +49,11 @@ public class InformerEventSourceTestCustomReconciler
     @Override
     public Set<ResourceID> associatedPrimaryResources(ConfigMap dependentResource) {
       return retriever.associatedPrimaryResources(dependentResource);
+    }
+
+    @Override
+    protected ConfigMap desired(InformerEventSourceTestCustomResource primary, Context context) {
+      return null;
     }
   }
 

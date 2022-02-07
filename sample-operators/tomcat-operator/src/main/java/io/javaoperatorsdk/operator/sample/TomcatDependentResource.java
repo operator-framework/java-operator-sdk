@@ -3,16 +3,18 @@ package io.javaoperatorsdk.operator.sample;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceContextAware;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
-public class TomcatDependentResource
-    implements DependentResource<Tomcat, Webapp>, PrimaryResourcesRetriever<Tomcat>,
+public class TomcatDependentResource extends KubernetesDependentResource<Tomcat, Webapp>
+    implements PrimaryResourcesRetriever<Tomcat>,
+    // todo discuss these kind of implementations, since cannot be used in standalone mode
     AssociatedSecondaryResourceIdentifier<Webapp>, EventSourceContextAware<Webapp> {
 
   private ResourceCache<Webapp> primaryCache;
@@ -37,5 +39,10 @@ public class TomcatDependentResource
   @Override
   public ResourceID associatedSecondaryID(Webapp primary) {
     return new ResourceID(primary.getSpec().getTomcat(), primary.getMetadata().getNamespace());
+  }
+
+  @Override
+  protected Tomcat desired(Webapp primary, Context context) {
+    return null;
   }
 }

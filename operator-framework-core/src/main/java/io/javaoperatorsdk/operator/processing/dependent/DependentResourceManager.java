@@ -44,7 +44,9 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
     configured.forEach(dependent -> {
       final var dependentResourceController = from(dependent);
       dependents.add(dependentResourceController);
-      sources.add(dependentResourceController.initEventSource(context));
+      dependentResourceController.initEventSource(context)
+          .ifPresent(es -> sources.add((EventSource) es));
+
     });
 
     return sources;
@@ -68,7 +70,7 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
   @Override
   public DeleteControl cleanup(P resource, Context context) {
     initContextIfNeeded(resource, context);
-    dependents.forEach(dependent -> dependent.cleanup(resource, context));
+    dependents.forEach(dependent -> dependent.delete(resource, context));
     return Reconciler.super.cleanup(resource, context);
   }
 
