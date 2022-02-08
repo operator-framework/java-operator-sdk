@@ -44,7 +44,7 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
 
     List<EventSource> sources = new ArrayList<>(configured.size() + 5);
     configured.forEach(dependent -> {
-      final var dependentResourceController = from(dependent,context.getClient());
+      final var dependentResourceController = from(dependent, context.getClient());
       dependents.add(dependentResourceController);
       dependentResourceController.eventSource(context)
           .ifPresent(es -> sources.add((EventSource) es));
@@ -84,14 +84,15 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
     }
   }
 
-  private DependentResourceController from(DependentResourceConfiguration config, KubernetesClient client) {
+  private DependentResourceController from(DependentResourceConfiguration config,
+      KubernetesClient client) {
     try {
       final var dependentResource =
           (DependentResource) config.getDependentResourceClass().getConstructor()
               .newInstance();
       if (config instanceof KubernetesDependentResourceConfiguration) {
         if (dependentResource instanceof KubernetesDependentResource) {
-          ((KubernetesDependentResource)dependentResource).setClient(client);
+          ((KubernetesDependentResource) dependentResource).setClient(client);
         }
         return new KubernetesDependentResourceController(dependentResource,
             (KubernetesDependentResourceConfiguration) config);

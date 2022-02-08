@@ -14,7 +14,6 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class TomcatDependentResource extends KubernetesDependentResource<Tomcat, Webapp>
     implements PrimaryResourcesRetriever<Tomcat>,
-    // todo discuss these kind of implementations, since cannot be used in standalone mode
     AssociatedSecondaryResourceIdentifier<Webapp>, EventSourceContextAware<Webapp> {
 
   private ResourceCache<Webapp> primaryCache;
