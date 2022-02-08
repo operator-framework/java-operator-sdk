@@ -47,7 +47,7 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
     var informer = new InformerEventSource<>(configuration, context);
     ((KubernetesDependentResource) delegate).withInformerEventSource(informer);
-    return this.eventSource(context);
+    return super.eventSource(context);
   }
 
   @Override
