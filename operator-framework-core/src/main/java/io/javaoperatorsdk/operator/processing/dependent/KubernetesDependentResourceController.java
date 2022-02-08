@@ -3,12 +3,12 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
@@ -19,9 +19,6 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
     extends DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>> {
 
   private final KubernetesDependentResourceConfiguration<R, P> configuration;
-  private KubernetesClient client;
-  private InformerEventSource<R, P> informer;
-
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResourceController(DependentResource<R, P> delegate,
@@ -47,15 +44,16 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
   }
 
   @Override
-  public Optional<EventSource> initEventSource(EventSourceContext<P> context) {
-    this.client = context.getClient();
-    informer = new InformerEventSource<>(configuration, context);
-    return Optional.of(informer);
+  public Optional<EventSource> eventSource(EventSourceContext<P> context) {
+    var client = context.getClient();
+    var informer = new InformerEventSource<>(configuration, context);
+    ((KubernetesDependentResource)delegate).setInformerEventSource(informer);
+    return this.eventSource(context);
   }
 
   @Override
   public Optional<R> getResource(P primaryResource) {
-    return Optional.ofNullable(informer.getAssociated(primaryResource).orElse(null));
+    return delegate.getResource(primaryResource);
   }
 
 }

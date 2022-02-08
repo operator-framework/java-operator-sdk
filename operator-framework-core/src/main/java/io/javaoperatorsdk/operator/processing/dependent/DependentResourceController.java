@@ -19,7 +19,7 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
 
   private static final Logger log = LoggerFactory.getLogger(DependentResourceController.class);
 
-  private final DependentResource<R, P> delegate;
+  protected final DependentResource<R, P> delegate;
   private final C configuration;
 
   public DependentResourceController(DependentResource<R, P> delegate, C configuration) {
@@ -44,8 +44,8 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
 
 
   @Override
-  public Optional<EventSource> initEventSource(EventSourceContext<P> context) {
-    return delegate.initEventSource(context);
+  public Optional<EventSource> eventSource(EventSourceContext<P> context) {
+    return delegate.eventSource(context);
   }
 
 

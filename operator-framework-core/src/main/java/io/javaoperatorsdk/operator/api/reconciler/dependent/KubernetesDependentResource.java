@@ -42,10 +42,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public Optional<EventSource> initEventSource(EventSourceContext<P> context) {
+  public Optional<EventSource> eventSource(EventSourceContext<P> context) {
+    if (informerEventSource != null) {
+      return Optional.of(informerEventSource);
+    }
     InformerConfiguration config = InformerConfiguration.from(context, resourceType()).build();
     informerEventSource = new InformerEventSource(config, context);
     return Optional.of(informerEventSource);
+  }
+
+  public KubernetesDependentResource<R, P> setInformerEventSource(InformerEventSource<R, P> informerEventSource) {
+    this.informerEventSource = informerEventSource;
+    return this;
   }
 
   @Override

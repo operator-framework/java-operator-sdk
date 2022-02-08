@@ -21,7 +21,7 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
   private MySQLDbConfig dbConfig;
 
   @Override
-  public Optional<EventSource> initEventSource(EventSourceContext<MySQLSchema> context) {
+  public Optional<EventSource> eventSource(EventSourceContext<MySQLSchema> context) {
     dbConfig = context.getMandatory(MySQLSchemaReconciler.MYSQL_DB_CONFIG, MySQLDbConfig.class);
     return Optional.of(new PerResourcePollingEventSource<>(
         new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), POLL_PERIOD,

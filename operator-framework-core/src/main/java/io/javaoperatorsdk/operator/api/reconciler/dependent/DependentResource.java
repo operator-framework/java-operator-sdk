@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 public interface DependentResource<R, P extends HasMetadata> {
 
-  Optional<EventSource> initEventSource(EventSourceContext<P> context);
+  Optional<EventSource> eventSource(EventSourceContext<P> context);
 
   @SuppressWarnings("unchecked")
   default Class<R> resourceType() {
