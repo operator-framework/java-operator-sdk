@@ -1,5 +1,12 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -8,12 +15,6 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
@@ -24,8 +25,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class InformerEventSourceTestCustomReconciler
     implements Reconciler<InformerEventSourceTestCustomResource>,
-        KubernetesClientAware,
-        EventSourceInitializer<InformerEventSourceTestCustomResource> {
+    KubernetesClientAware,
+    EventSourceInitializer<InformerEventSourceTestCustomResource> {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
@@ -48,8 +49,8 @@ public class InformerEventSourceTestCustomReconciler
 
     return List.of(new InformerEventSource<>(config, context));
     //
-    //    return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
-    //        Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
+    // return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
+    // Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
   }
 
   @Override
