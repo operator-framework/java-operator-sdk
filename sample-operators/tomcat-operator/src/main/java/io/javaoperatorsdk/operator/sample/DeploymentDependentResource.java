@@ -51,7 +51,7 @@ public class DeploymentDependentResource
 
   @Override
   public boolean match(Deployment fetched, Deployment target, Context context) {
-     return fetched.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
-             .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+    return fetched.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+        .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
   }
 }
