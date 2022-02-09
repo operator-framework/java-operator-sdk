@@ -44,7 +44,7 @@ public class TomcatOperatorE2E {
   AbstractOperatorExtension operator = isLocal() ? OperatorExtension.builder()
       .waitForNamespaceDeletion(false)
       .withConfigurationService(DefaultConfigurationService.instance())
-      .withReconciler(new TomcatReconciler(client))
+      .withReconciler(new TomcatReconciler())
       .withReconciler(new WebappReconciler(client))
       .build()
       : E2EOperatorExtension.builder()

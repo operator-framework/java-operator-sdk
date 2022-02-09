@@ -65,8 +65,8 @@ public class MySQLSchemaOperatorE2E {
   @RegisterExtension
   AbstractOperatorExtension operator = isLocal() ? OperatorExtension.builder()
       .withConfigurationService(DefaultConfigurationService.instance())
-      .withReconciler(new MySQLSchemaReconciler(client,
-          new MySQLDbConfig("127.0.0.1", "3306", "root", "password")))
+      .withReconciler(
+          new MySQLSchemaReconciler(new MySQLDbConfig("127.0.0.1", "3306", "root", "password")))
       .withInfrastructure(infrastructure)
       .build()
       : E2EOperatorExtension.builder()
