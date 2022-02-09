@@ -48,6 +48,11 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
   }
 
   @Override
+  protected boolean match(Schema actual, Schema target, Context context) {
+    return actual.equals(target);
+  }
+
+  @Override
   protected Schema create(Schema target, Context context) {
     return null;
   }

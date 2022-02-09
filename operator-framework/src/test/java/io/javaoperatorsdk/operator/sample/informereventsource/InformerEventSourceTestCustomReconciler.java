@@ -48,9 +48,6 @@ public class InformerEventSourceTestCustomReconciler
             .build();
 
     return List.of(new InformerEventSource<>(config, context));
-    //
-    // return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
-    // Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
   }
 
   @Override

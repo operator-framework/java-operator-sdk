@@ -21,9 +21,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected abstract R desired(P primary, Context context);
 
-  protected boolean match(R actual, R target, Context context) {
-    return actual.equals(target);
-  }
+  protected abstract boolean match(R actual, R target, Context context);
 
   protected abstract R create(R target, Context context);
 

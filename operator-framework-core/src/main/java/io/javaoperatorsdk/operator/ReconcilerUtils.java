@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Locale;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -7,6 +9,10 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.OBJECT_MAPPER;
 
 @SuppressWarnings("rawtypes")
 public class ReconcilerUtils {
@@ -98,4 +104,25 @@ public class ReconcilerUtils {
     }
     return reconcilerClassName.toLowerCase(Locale.ROOT);
   }
+
+  public static boolean specsEqual(HasMetadata r1, HasMetadata r2) {
+    try {
+      var c1json = OBJECT_MAPPER.writeValueAsString(getSpec(r1));
+      var c2json = OBJECT_MAPPER.writeValueAsString(getSpec(r2));
+      return OBJECT_MAPPER.readTree(c1json).equals(OBJECT_MAPPER.readTree(c2json));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  // will be replaced with: https://github.com/fabric8io/kubernetes-client/issues/3816
+  public static Object getSpec(HasMetadata resource) {
+    try {
+      Method getSpecMethod = resource.getClass().getMethod("getSpec");
+      return getSpecMethod.invoke(resource);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
 }
