@@ -30,11 +30,21 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
 
   @Override
   public Schema desired(MySQLSchema primary, Context context) {
+    return new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding());
+  }
+
+  @Override
+  protected boolean match(Schema actual, Schema target, Context context) {
+    return actual.equals(target);
+  }
+
+  @Override
+  protected Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
     try (Connection connection = getConnection()) {
       final var schema = SchemaService.createSchemaAndRelatedUser(
           connection,
-          primary.getMetadata().getName(),
-          primary.getSpec().getEncoding(),
+          target.getName(),
+          target.getCharacterSet(),
           context.getMandatory(MySQLSchemaReconciler.MYSQL_SECRET_USERNAME, String.class),
           context.getMandatory(MySQLSchemaReconciler.MYSQL_SECRET_PASSWORD, String.class));
 
@@ -48,18 +58,8 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
   }
 
   @Override
-  protected boolean match(Schema actual, Schema target, Context context) {
-    return actual.equals(target);
-  }
-
-  @Override
-  protected Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
-    return null;
-  }
-
-  @Override
   protected Schema update(Schema actual, Schema target, MySQLSchema mySQLSchema, Context context) {
-    return null;
+    throw new IllegalStateException("Target schema should not be changed: " + mySQLSchema);
   }
 
   private Connection getConnection() throws SQLException {
