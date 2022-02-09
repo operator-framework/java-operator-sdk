@@ -17,34 +17,25 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 // todo owned: owner reference setting
-public class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
+public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
   private KubernetesClient client;
-  private boolean manageDelete;
+  private boolean explicitDelete = false;
+  private boolean owned = true;
   private InformerEventSource<R, P> informerEventSource;
-  private DesiredSupplier<R, P> desiredSupplier = null;
 
   public KubernetesDependentResource() {
-    this(null, false);
+    this(null);
   }
 
   public KubernetesDependentResource(KubernetesClient client) {
-    this(client, false);
-  }
-
-  public KubernetesDependentResource(KubernetesClient client, boolean manageDelete) {
     this.client = client;
-    this.manageDelete = manageDelete;
   }
 
-  @Override
-  protected R desired(P primary, Context context) {
-    if (desiredSupplier != null) {
-      return desiredSupplier.getDesired(primary, context);
-    } else {
-      throw new OperatorException(
-          "No DesiredSupplier provided. Either provide one or override this method");
+  protected void postProcessDesired(R desired, P primary) {
+    if (owned) {
+      ReconcilerUtils.addOwnerReference(desired,primary);
     }
   }
 
@@ -54,15 +45,17 @@ public class KubernetesDependentResource<R extends HasMetadata, P extends HasMet
   }
 
   @Override
-  protected R create(R target, Context context) {
-    // todo implement here https://github.com/java-operator-sdk/java-operator-sdk/issues/870
-    return client.resource(target).createOrReplace();
+  protected R create(R target,P primary, Context context) {
+    postProcessDesired(target,primary);
+    Class<R> targetClass = (Class<R>) target.getClass();
+    var res = client.resources(targetClass).create(target);
+    return res;
+
   }
 
   @Override
-  protected R update(R actual, R target, Context context) {
-    // todo implement here https://github.com/java-operator-sdk/java-operator-sdk/issues/870
-    // todo map annotation and labels ?
+  protected R update(R actual, R target,P primary, Context context) {
+    postProcessDesired(target,primary);
     return client.resource(target).createOrReplace();
   }
 
@@ -101,7 +94,7 @@ public class KubernetesDependentResource<R extends HasMetadata, P extends HasMet
 
   @Override
   public void delete(P primary, Context context) {
-    if (manageDelete) {
+    if (explicitDelete) {
       var resource = getResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());
     }
@@ -117,22 +110,22 @@ public class KubernetesDependentResource<R extends HasMetadata, P extends HasMet
     return this;
   }
 
-  public KubernetesDependentResource<R, P> setDesiredSupplier(
-      DesiredSupplier<R, P> desiredSupplier) {
-    this.desiredSupplier = desiredSupplier;
+
+  public KubernetesDependentResource<R, P> setExplicitDelete(boolean explicitDelete) {
+    this.explicitDelete = explicitDelete;
     return this;
   }
 
-  public KubernetesDependentResource<R, P> setManageDelete(boolean manageDelete) {
-    this.manageDelete = manageDelete;
+  public boolean isExplicitDelete() {
+    return explicitDelete;
+  }
+
+  public boolean isOwned() {
+    return owned;
+  }
+
+  public KubernetesDependentResource<R, P> setOwned(boolean owned) {
+    this.owned = owned;
     return this;
-  }
-
-  public boolean isManageDelete() {
-    return manageDelete;
-  }
-
-  public DesiredSupplier<R, P> getDesiredSupplier() {
-    return desiredSupplier;
   }
 }

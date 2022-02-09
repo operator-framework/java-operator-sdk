@@ -6,6 +6,7 @@ import java.util.Locale;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -106,6 +107,10 @@ public class ReconcilerUtils {
   }
 
   public static boolean specsEqual(HasMetadata r1, HasMetadata r2) {
+    return getSpec(r1).equals(getSpec(r2));
+  }
+
+  public static boolean specsSame(HasMetadata r1, HasMetadata r2) {
     try {
       var c1json = OBJECT_MAPPER.writeValueAsString(getSpec(r1));
       var c2json = OBJECT_MAPPER.writeValueAsString(getSpec(r2));
@@ -123,6 +128,17 @@ public class ReconcilerUtils {
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public static void addOwnerReference(HasMetadata resource, HasMetadata owner) {
+    OwnerReference ownerReference = new OwnerReference();
+    ownerReference.setName(owner.getMetadata().getName());
+    ownerReference.setKind(owner.getKind());
+    ownerReference.setApiVersion(owner.getApiVersion());
+    ownerReference.setBlockOwnerDeletion(true);
+    ownerReference.setController(false);
+    ownerReference.setUid(owner.getMetadata().getUid());
+    resource.getMetadata().getOwnerReferences().add(ownerReference);
   }
 
 }

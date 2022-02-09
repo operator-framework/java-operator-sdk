@@ -53,12 +53,12 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
   }
 
   @Override
-  protected Schema create(Schema target, Context context) {
+  protected Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
     return null;
   }
 
   @Override
-  protected Schema update(Schema actual, Schema target, Context context) {
+  protected Schema update(Schema actual, Schema target, MySQLSchema mySQLSchema, Context context) {
     return null;
   }
 
