@@ -16,10 +16,6 @@ public class DeploymentDependentResource
     super(client);
   }
 
-  public DeploymentDependentResource(KubernetesClient client, boolean manageDelete) {
-    super(client, manageDelete);
-  }
-
   @Override
   public Deployment desired(Tomcat tomcat, Context context) {
     Deployment deployment = TomcatReconciler.loadYaml(Deployment.class, "deployment.yaml");

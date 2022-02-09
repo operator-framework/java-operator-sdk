@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: ""
 spec:
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: "test-dependent"

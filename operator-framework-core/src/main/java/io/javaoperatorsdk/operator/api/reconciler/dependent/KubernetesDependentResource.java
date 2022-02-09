@@ -2,9 +2,11 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -19,6 +21,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 // todo owned: owner reference setting
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
+
+  private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   private KubernetesClient client;
   private boolean explicitDelete = false;
@@ -35,28 +39,36 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void postProcessDesired(R desired, P primary) {
     if (owned) {
-      ReconcilerUtils.addOwnerReference(desired,primary);
+      ReconcilerUtils.addOwnerReference(desired, primary);
     }
   }
 
   @Override
   protected boolean match(R actual, R target, Context context) {
+    // todo handle this more smart: deployment created is updated with defaults, won't be equal
+    // use the created to compare from that point? or just compare the non null values from target
+    // for deployment?
     return ReconcilerUtils.specsEqual(actual, target);
   }
 
   @Override
-  protected R create(R target,P primary, Context context) {
-    postProcessDesired(target,primary);
+  protected R create(R target, P primary, Context context) {
+    log.debug("Creating target resource with type: " +
+        "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
+    postProcessDesired(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    var res = client.resources(targetClass).create(target);
-    return res;
-
+    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+        .create(target);
   }
 
   @Override
-  protected R update(R actual, R target,P primary, Context context) {
-    postProcessDesired(target,primary);
-    return client.resource(target).createOrReplace();
+  protected R update(R actual, R target, P primary, Context context) {
+    log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
+        ResourceID.fromResource(target));
+    postProcessDesired(target, primary);
+    Class<R> targetClass = (Class<R>) target.getClass();
+    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+        .replace(target);
   }
 
   @Override
