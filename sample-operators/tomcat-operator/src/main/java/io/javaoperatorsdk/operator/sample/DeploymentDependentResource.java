@@ -51,9 +51,7 @@ public class DeploymentDependentResource
 
   @Override
   public boolean match(Deployment fetched, Deployment target, Context context) {
-    // todo compare spec
-    return true;
-    // return fetched.getSpec().getTemplate().getSpec().getContainers().stream()
-    // .findFirst().map(c -> tomcatImage(tomcat).equals(c.getImage())).orElse(false);
+     return fetched.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+             .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
   }
 }
