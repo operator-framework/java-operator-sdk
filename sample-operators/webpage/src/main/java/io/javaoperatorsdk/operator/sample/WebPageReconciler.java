@@ -38,6 +38,8 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
     }
 
     String ns = webPage.getMetadata().getNamespace();
+    String configMapName = configMapName(webPage);
+    String deploymentName = deploymentName(webPage);
 
     Map<String, String> data = new HashMap<>();
     data.put("index.html", webPage.getSpec().getHtml());
@@ -46,22 +48,23 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
         new ConfigMapBuilder()
             .withMetadata(
                 new ObjectMetaBuilder()
-                    .withName(configMapName(webPage))
+                    .withName(configMapName)
                     .withNamespace(ns)
                     .build())
             .withData(data)
             .build();
 
     Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
-    deployment.getMetadata().setName(deploymentName(webPage));
+    deployment.getMetadata().setName(deploymentName);
     deployment.getMetadata().setNamespace(ns);
-    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName(webPage));
+    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
+
     deployment
         .getSpec()
         .getTemplate()
         .getMetadata()
         .getLabels()
-        .put("app", deploymentName(webPage));
+        .put("app", deploymentName);
     deployment
         .getSpec()
         .getTemplate()
@@ -69,7 +72,7 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
         .getVolumes()
         .get(0)
         .setConfigMap(
-            new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
+            new ConfigMapVolumeSourceBuilder().withName(configMapName).build());
 
     Service service = loadYaml(Service.class, "service.yaml");
     service.getMetadata().setName(serviceName(webPage));
