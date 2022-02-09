@@ -3,10 +3,11 @@
 name: Integration & End to End tests
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, next ]
   push:
     branches:
       - main
+      - next
 
 jobs:
   sample_operators_tests:
