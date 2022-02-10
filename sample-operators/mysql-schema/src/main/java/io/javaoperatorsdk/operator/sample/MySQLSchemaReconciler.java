@@ -23,9 +23,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentR
 import io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static java.lang.String.format;
 
-@ControllerConfiguration(
+// todo handle this, should work with finalizer
+@ControllerConfiguration(finalizerName = NO_FINALIZER,
     dependents = {
         @Dependent(resourceType = Secret.class, type = SecretDependentResource.class),
         @Dependent(resourceType = Schema.class, type = SchemaDependentResource.class)
