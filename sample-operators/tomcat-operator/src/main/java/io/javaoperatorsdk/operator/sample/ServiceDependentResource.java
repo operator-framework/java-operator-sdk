@@ -3,14 +3,12 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 
 public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat> {
 
-  public ServiceDependentResource() {
-  }
+  public ServiceDependentResource() {}
 
   @Override
   public Service desired(Tomcat tomcat, Context context) {

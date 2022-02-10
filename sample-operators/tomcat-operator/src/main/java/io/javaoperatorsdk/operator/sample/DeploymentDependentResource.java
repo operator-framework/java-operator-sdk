@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
@@ -12,8 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentR
 public class DeploymentDependentResource
     extends KubernetesDependentResource<Deployment, Tomcat> {
 
-  public DeploymentDependentResource() {
-  }
+  public DeploymentDependentResource() {}
 
   @Override
   public Deployment desired(Tomcat tomcat, Context context) {
