@@ -8,10 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -25,7 +23,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class InformerEventSourceTestCustomReconciler
     implements Reconciler<InformerEventSourceTestCustomResource>,
-    KubernetesClientAware,
     EventSourceInitializer<InformerEventSourceTestCustomResource> {
 
   private static final Logger LOGGER =
@@ -35,7 +32,6 @@ public class InformerEventSourceTestCustomReconciler
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
   public static final String MISSING_CONFIG_MAP = "Missing Config Map";
 
-  private KubernetesClient kubernetesClient;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
@@ -72,15 +68,5 @@ public class InformerEventSourceTestCustomReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return null;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
   }
 }
