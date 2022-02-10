@@ -47,6 +47,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return ReconcilerUtils.specsEqual(actual, target);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected R create(R target, P primary, Context context) {
     log.debug("Creating target resource with type: " +
@@ -57,6 +58,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .create(target);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected R update(R actual, R target, P primary, Context context) {
     log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
@@ -67,6 +69,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .replace(target);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
     if (informerEventSource != null) {
@@ -77,6 +80,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return Optional.of(informerEventSource);
   }
 
+  @SuppressWarnings("unchecked")
   private InformerConfiguration<R, P> initInformerConfiguration(EventSourceContext<P> context) {
     PrimaryResourcesRetriever<R> associatedPrimaries =
         (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
@@ -94,7 +98,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected AssociatedSecondaryResourceIdentifier<P> getDefaultAssociatedSecondaryResourceIdentifier() {
-    return (r) -> ResourceID.fromResource(r);
+    return ResourceID::fromResource;
   }
 
   protected PrimaryResourcesRetriever<R> getDefaultPrimaryResourcesRetriever() {

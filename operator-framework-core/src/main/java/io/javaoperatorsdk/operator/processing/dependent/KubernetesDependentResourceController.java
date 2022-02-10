@@ -7,7 +7,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResou
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -16,14 +15,19 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @Ignore
 public class KubernetesDependentResourceController<R extends HasMetadata, P extends HasMetadata>
-    extends DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>> {
+    extends
+    DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>, KubernetesDependentResource<R, P>> {
 
-  private final KubernetesDependentResourceConfiguration<R, P> configuration;
-
-  @SuppressWarnings("unchecked")
-  public KubernetesDependentResourceController(DependentResource<R, P> delegate,
+  public KubernetesDependentResourceController(KubernetesDependentResource<R, P> delegate,
       KubernetesDependentResourceConfiguration<R, P> configuration) {
     super(delegate, configuration);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  protected KubernetesDependentResourceConfiguration<R, P> initConfiguration(
+      KubernetesDependentResource<R, P> delegate,
+      KubernetesDependentResourceConfiguration<R, P> configuration) {
     // todo: check if we can validate that types actually match properly
     final var associatedPrimaries =
         (delegate instanceof PrimaryResourcesRetriever)
@@ -38,22 +42,15 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
         .withPrimaryResourcesRetriever(associatedPrimaries)
         .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
         .build();
-    this.configuration =
-        KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
-            configuration.getDependentResourceClass());
+    return KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
+        configuration.getDependentResourceClass());
   }
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
-    var informer = new InformerEventSource<>(configuration, context);
+    var informer = new InformerEventSource<>(getConfiguration(), context);
     // todo have this implemented with nicer abstractions
-    ((KubernetesDependentResource) delegate).setInformerEventSource(informer);
+    delegate().setInformerEventSource(informer);
     return super.eventSource(context);
   }
-
-  @Override
-  public Optional<R> getResource(P primaryResource) {
-    return delegate.getResource(primaryResource);
-  }
-
 }
