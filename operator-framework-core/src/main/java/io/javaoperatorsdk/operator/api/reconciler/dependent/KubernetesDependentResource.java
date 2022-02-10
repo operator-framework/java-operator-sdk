@@ -24,7 +24,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
-  private KubernetesClient client;
+  protected KubernetesClient client;
   private boolean explicitDelete = false;
   private boolean owned = true;
   private InformerEventSource<R, P> informerEventSource;
@@ -39,7 +39,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void postProcessDesired(R desired, P primary) {
     if (owned) {
-      ReconcilerUtils.addOwnerReference(desired, primary);
+      desired.addOwnerReference(primary);
     }
   }
 
@@ -84,18 +84,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private InformerConfiguration<R, P> initInformerConfiguration(EventSourceContext<P> context) {
     PrimaryResourcesRetriever<R> associatedPrimaries =
         (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
-            : Mappers.fromOwnerReference();
+            : getDefaultPrimaryResourcesRetriever();
 
-    AssociatedSecondaryResourceIdentifier<R> associatedSecondary =
+    AssociatedSecondaryResourceIdentifier<P> associatedSecondary =
         (this instanceof AssociatedSecondaryResourceIdentifier)
-            ? (AssociatedSecondaryResourceIdentifier<R>) this
-            : (r) -> ResourceID.fromResource(r);
+            ? (AssociatedSecondaryResourceIdentifier<P>) this
+            : getDefaultAssociatedSecondaryResourceIdentifier();
 
     return InformerConfiguration.from(context, resourceType())
         .withPrimaryResourcesRetriever(associatedPrimaries)
-        .withAssociatedSecondaryResourceIdentifier(
-            (AssociatedSecondaryResourceIdentifier<P>) associatedSecondary)
+        .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
         .build();
+  }
+
+  protected AssociatedSecondaryResourceIdentifier<P> getDefaultAssociatedSecondaryResourceIdentifier() {
+    return (r) -> ResourceID.fromResource(r);
+  }
+
+  protected PrimaryResourcesRetriever<R> getDefaultPrimaryResourcesRetriever() {
+    return Mappers.fromOwnerReference();
   }
 
   public KubernetesDependentResource<R, P> setInformerEventSource(

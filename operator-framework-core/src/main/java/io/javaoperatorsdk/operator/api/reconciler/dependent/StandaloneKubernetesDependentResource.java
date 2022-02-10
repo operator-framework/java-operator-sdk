@@ -4,18 +4,28 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
+// todo shorter name
 public class StandaloneKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends KubernetesDependentResource<R, P> {
 
-  private DesiredSupplier<R, P> desiredSupplier = null;
-  private Class<R> resourceType;
+  private final DesiredSupplier<R, P> desiredSupplier;
+  private final Class<R> resourceType;
+  private AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier =
+      (r) -> ResourceID.fromResource(r);
+  private PrimaryResourcesRetriever<R> primaryResourcesRetriever = Mappers.fromOwnerReference();
 
-  public StandaloneKubernetesDependentResource() {}
+  public StandaloneKubernetesDependentResource(
+      Class<R> resourceType, DesiredSupplier<R, P> desiredSupplier) {
+    this(null, resourceType, desiredSupplier);
+  }
 
-  public StandaloneKubernetesDependentResource(KubernetesClient client,
-      DesiredSupplier<R, P> desiredSupplier,
-      Class<R> resourceType) {
+  public StandaloneKubernetesDependentResource(
+      KubernetesClient client, Class<R> resourceType, DesiredSupplier<R, P> desiredSupplier) {
     super(client);
     this.desiredSupplier = desiredSupplier;
     this.resourceType = resourceType;
@@ -31,18 +41,29 @@ public class StandaloneKubernetesDependentResource<R extends HasMetadata, P exte
     }
   }
 
-  public KubernetesDependentResource<R, P> setDesiredSupplier(
-      DesiredSupplier<R, P> desiredSupplier) {
-    this.desiredSupplier = desiredSupplier;
-    return this;
-  }
-
-  public StandaloneKubernetesDependentResource<R, P> setResourceType(Class<R> resourceType) {
-    this.resourceType = resourceType;
-    return this;
-  }
-
   public Class<R> resourceType() {
     return resourceType;
+  }
+
+  public StandaloneKubernetesDependentResource<R, P> setAssociatedSecondaryResourceIdentifier(
+      AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier) {
+    this.associatedSecondaryResourceIdentifier = associatedSecondaryResourceIdentifier;
+    return this;
+  }
+
+  public StandaloneKubernetesDependentResource<R, P> setPrimaryResourcesRetriever(
+      PrimaryResourcesRetriever<R> primaryResourcesRetriever) {
+    this.primaryResourcesRetriever = primaryResourcesRetriever;
+    return this;
+  }
+
+  @Override
+  protected AssociatedSecondaryResourceIdentifier<P> getDefaultAssociatedSecondaryResourceIdentifier() {
+    return this.associatedSecondaryResourceIdentifier;
+  }
+
+  @Override
+  protected PrimaryResourcesRetriever<R> getDefaultPrimaryResourcesRetriever() {
+    return this.primaryResourcesRetriever;
   }
 }

@@ -26,22 +26,21 @@ public class StandaloneDependentTestReconciler
   StandaloneKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> configMapDependent;
 
   public StandaloneDependentTestReconciler() {
-    configMapDependent = new StandaloneKubernetesDependentResource<>() {
-      @Override
-      protected boolean match(Deployment actual, Deployment target, Context context) {
-        return Objects.equals(actual.getSpec().getReplicas(), target.getSpec().getReplicas()) &&
-            actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
-                .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-      }
-    };
-    configMapDependent.setResourceType(Deployment.class);
-    configMapDependent.setDesiredSupplier(
-        (primary, context) -> {
+    configMapDependent =
+        new StandaloneKubernetesDependentResource<>(Deployment.class, (primary, context) -> {
           Deployment deployment = loadYaml(Deployment.class, "nginx-deployment.yaml");
           deployment.getMetadata().setName(primary.getMetadata().getName());
           deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
           return deployment;
-        });
+        }) {
+          @Override
+          protected boolean match(Deployment actual, Deployment target, Context context) {
+            return Objects.equals(actual.getSpec().getReplicas(), target.getSpec().getReplicas()) &&
+                actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+                    .equals(
+                        target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+          }
+        };
   }
 
   @Override

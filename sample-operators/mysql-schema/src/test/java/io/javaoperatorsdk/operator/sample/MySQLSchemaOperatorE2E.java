@@ -29,7 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class MySQLSchemaOperatorE2E {
+class MySQLSchemaOperatorE2E {
 
   final static Logger log = LoggerFactory.getLogger(MySQLSchemaOperatorE2E.class);
 
