@@ -16,7 +16,7 @@ public class StandaloneKubernetesDependentResource<R extends HasMetadata, P exte
   private final DesiredSupplier<R, P> desiredSupplier;
   private final Class<R> resourceType;
   private AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier =
-      (r) -> ResourceID.fromResource(r);
+      ResourceID::fromResource;
   private PrimaryResourcesRetriever<R> primaryResourcesRetriever = Mappers.fromOwnerReference();
 
   public StandaloneKubernetesDependentResource(
