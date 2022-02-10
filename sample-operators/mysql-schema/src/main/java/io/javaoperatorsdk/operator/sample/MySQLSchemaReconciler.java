@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Base64;
 import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -8,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;

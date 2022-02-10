@@ -1,13 +1,13 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.Base64;
+
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
-
-import java.util.Base64;
 
 import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
 
