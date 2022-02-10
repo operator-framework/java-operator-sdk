@@ -25,7 +25,7 @@ public class ReconcilerUtils {
 
   public static boolean isFinalizerValid(String finalizer) {
     // todo: use fabric8 method when 5.12 is released
-    // return HasMetadata.validateFinalizer(finalizer);
+//     return HasMetadata.validateFinalizer(finalizer);
     final var validator = new HasMetadata() {
 
       @Override

@@ -18,7 +18,6 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetri
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-// todo owned: owner reference setting
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
@@ -45,9 +44,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   protected boolean match(R actual, R target, Context context) {
-    // todo handle this more smart: deployment created is updated with defaults, won't be equal
-    // use the created to compare from that point? or just compare the non null values from target
-    // for deployment?
     return ReconcilerUtils.specsEqual(actual, target);
   }
 
