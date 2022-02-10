@@ -12,8 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentR
 public class DeploymentDependentResource
     extends KubernetesDependentResource<Deployment, Tomcat> {
 
-  public DeploymentDependentResource(KubernetesClient client) {
-    super(client);
+  public DeploymentDependentResource() {
   }
 
   @Override

@@ -9,8 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentR
 
 public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat> {
 
-  public ServiceDependentResource(KubernetesClient client) {
-    super(client);
+  public ServiceDependentResource() {
   }
 
   @Override
