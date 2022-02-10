@@ -32,14 +32,14 @@ public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
     ContextInitializer<MySQLSchema>, EventSourceContextInjector {
 
-  public static final String SECRET_FORMAT = "%s-secret";
-  public static final String USERNAME_FORMAT = "%s-user";
+  static final String SECRET_FORMAT = "%s-secret";
+  static final String USERNAME_FORMAT = "%s-user";
 
-  public static final String MYSQL_SECRET_NAME = "mysql.secret.name";
-  public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
-  public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
-  public static final String MYSQL_DB_CONFIG = "mysql.db.config";
-  protected static final String BUILT_SCHEMA = "built schema";
+  static final String MYSQL_SECRET_NAME = "mysql.secret.name";
+  static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
+  static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
+  static final String MYSQL_DB_CONFIG = "mysql.db.config";
+  static final String BUILT_SCHEMA = "built schema";
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
   private final MySQLDbConfig mysqlDbConfig;
