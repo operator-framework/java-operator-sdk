@@ -13,13 +13,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.OBJECT_MAPPER;
-
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
 
   Cloner DEFAULT_CLONER = new Cloner() {
-
+    private final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public HasMetadata clone(HasMetadata object) {

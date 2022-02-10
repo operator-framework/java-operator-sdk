@@ -45,24 +45,6 @@ class ReconcilerUtilsTest {
     assertTrue(isFinalizerValid(Constants.NO_FINALIZER));
   }
 
-
-  @Test
-  void comparesArbitrarySpecsOfObjects() {
-    var d1 = createTestDeployment();
-    var d2 = createTestDeployment();
-
-    assertThat(ReconcilerUtils.specsSame(d1, d2)).isTrue();
-  }
-
-  @Test
-  void comparesArbitraryDifferentSpecsOfObjects() {
-    var d1 = createTestDeployment();
-    var d2 = createTestDeployment();
-    d2.getSpec().getTemplate().getSpec().setHostname("otherhost");
-
-    assertThat(ReconcilerUtils.specsSame(d1, d2)).isFalse();
-  }
-
   @Test
   void equalsSpecObject() {
     var d1 = createTestDeployment();

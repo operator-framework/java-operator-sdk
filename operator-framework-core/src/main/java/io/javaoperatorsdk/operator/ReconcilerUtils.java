@@ -10,10 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.OBJECT_MAPPER;
-
 @SuppressWarnings("rawtypes")
 public class ReconcilerUtils {
 
@@ -25,7 +21,7 @@ public class ReconcilerUtils {
 
   public static boolean isFinalizerValid(String finalizer) {
     // todo: use fabric8 method when 5.12 is released
-//     return HasMetadata.validateFinalizer(finalizer);
+    // return HasMetadata.validateFinalizer(finalizer);
     final var validator = new HasMetadata() {
 
       @Override
@@ -107,16 +103,6 @@ public class ReconcilerUtils {
 
   public static boolean specsEqual(HasMetadata r1, HasMetadata r2) {
     return getSpec(r1).equals(getSpec(r2));
-  }
-
-  public static boolean specsSame(HasMetadata r1, HasMetadata r2) {
-    try {
-      var c1json = OBJECT_MAPPER.writeValueAsString(getSpec(r1));
-      var c2json = OBJECT_MAPPER.writeValueAsString(getSpec(r2));
-      return OBJECT_MAPPER.readTree(c1json).equals(OBJECT_MAPPER.readTree(c2json));
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   // will be replaced with: https://github.com/fabric8io/kubernetes-client/issues/3816
