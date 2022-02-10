@@ -113,8 +113,8 @@ public class MySQLSchemaOperatorE2E {
     log.info("Creating test MySQLSchema object: {}", testSchema);
     client.resource(testSchema).createOrReplace();
 
-    log.info("Waiting 5 minutes for expected resources to be created and updated");
-    await().atMost(1, MINUTES).ignoreExceptions().untilAsserted(() -> {
+    log.info("Waiting 2 minutes for expected resources to be created and updated");
+    await().atMost(2, MINUTES).ignoreExceptions().untilAsserted(() -> {
       MySQLSchema updatedSchema =
           client.resources(MySQLSchema.class).inNamespace(operator.getNamespace())
               .withName(testSchema.getMetadata().getName()).get();

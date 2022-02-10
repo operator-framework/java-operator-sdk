@@ -81,6 +81,7 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
     }
   }
 
+  // todo this should read the resource from event source?
   @Override
   public Optional<Schema> getResource(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
@@ -88,7 +89,7 @@ public class SchemaDependentResource extends AbstractDependentResource<Schema, M
           SchemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);
       return Optional.ofNullable(schema);
     } catch (SQLException e) {
-      throw new RuntimeException("Error while trying to delete Schema", e);
+      throw new RuntimeException("Error while trying read Schema", e);
     }
   }
 
