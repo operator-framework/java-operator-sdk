@@ -34,8 +34,8 @@ public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
     ContextInitializer<MySQLSchema>, EventSourceContextInjector {
 
-  private static final String SECRET_FORMAT = "%s-secret";
-  private static final String USERNAME_FORMAT = "%s-user";
+  public static final String SECRET_FORMAT = "%s-secret";
+  public static final String USERNAME_FORMAT = "%s-user";
 
   public static final String MYSQL_SECRET_NAME = "mysql.secret.name";
   public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
