@@ -10,21 +10,21 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
+// todo delete controllers
 @Ignore
 public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>, D extends DependentResource<R, P>>
     implements DependentResource<R, P> {
 
-  private final D delegate;
-  private final C configuration;
+  protected final D delegate;
+  protected final C configuration;
 
   public DependentResourceController(D delegate, C configuration) {
     this.delegate = delegate;
-    this.configuration = initConfiguration(delegate, configuration);
+    this.configuration = configuration;
+    applyConfigurationToDelegate(delegate,configuration);
   }
 
-  protected C initConfiguration(D delegate, C configuration) {
-    // default implementation just returns the specified one
-    return configuration;
+  protected void applyConfigurationToDelegate(D delegate, C configuration) {
   }
 
   @Override

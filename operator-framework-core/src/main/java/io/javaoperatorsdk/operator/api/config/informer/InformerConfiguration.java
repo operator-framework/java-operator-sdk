@@ -22,13 +22,12 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
     private final PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
     private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
-    private final boolean skipUpdateEventPropagationIfNoChange;
 
     protected DefaultInformerConfiguration(ConfigurationService service, String labelSelector,
         Class<R> resourceClass,
         PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet,
         AssociatedSecondaryResourceIdentifier<P> associatedWith,
-        boolean skipUpdateEventPropagationIfNoChange, Set<String> namespaces) {
+        Set<String> namespaces) {
       super(labelSelector, resourceClass, namespaces);
       setConfigurationService(service);
       this.secondaryToPrimaryResourcesIdSet =
@@ -36,7 +35,6 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
               Mappers.fromOwnerReference());
       this.associatedWith =
           Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
-      this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     }
 
     public PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
@@ -47,22 +45,16 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return associatedWith;
     }
 
-    public boolean isSkipUpdateEventPropagationIfNoChange() {
-      return skipUpdateEventPropagationIfNoChange;
-    }
   }
 
   PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever();
 
   AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier();
 
-  boolean isSkipUpdateEventPropagationIfNoChange();
-
   class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
 
     private PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
     private AssociatedSecondaryResourceIdentifier<P> associatedWith;
-    private boolean skipUpdateEventPropagationIfNoChange = true;
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
@@ -86,16 +78,6 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return this;
     }
 
-    public InformerConfigurationBuilder<R, P> withoutSkippingEventPropagationIfUnchanged() {
-      this.skipUpdateEventPropagationIfNoChange = false;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R, P> skippingEventPropagationIfUnchanged(
-        boolean skipIfUnchanged) {
-      this.skipUpdateEventPropagationIfNoChange = skipIfUnchanged;
-      return this;
-    }
 
     public InformerConfigurationBuilder<R, P> withNamespaces(String... namespaces) {
       this.namespaces = namespaces != null ? Set.of(namespaces) : Collections.emptySet();
@@ -115,7 +97,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
     public InformerConfiguration<R, P> build() {
       return new DefaultInformerConfiguration<>(configurationService, labelSelector, resourceClass,
-          secondaryToPrimaryResourcesIdSet, associatedWith, skipUpdateEventPropagationIfNoChange,
+          secondaryToPrimaryResourcesIdSet, associatedWith,
           namespaces);
     }
   }
@@ -136,8 +118,6 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
         configuration.getConfigurationService())
             .withNamespaces(configuration.getNamespaces())
             .withLabelSelector(configuration.getLabelSelector())
-            .skippingEventPropagationIfUnchanged(
-                configuration.isSkipUpdateEventPropagationIfNoChange())
             .withAssociatedSecondaryResourceIdentifier(
                 configuration.getAssociatedResourceIdentifier())
             .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());

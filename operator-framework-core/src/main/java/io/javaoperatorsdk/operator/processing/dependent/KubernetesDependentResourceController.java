@@ -25,32 +25,34 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
 
   @SuppressWarnings("unchecked")
   @Override
-  protected KubernetesDependentResourceConfiguration<R, P> initConfiguration(
+  protected void applyConfigurationToDelegate(
       KubernetesDependentResource<R, P> delegate,
       KubernetesDependentResourceConfiguration<R, P> configuration) {
-    // todo: check if we can validate that types actually match properly
+    delegate.setOwned(configuration.isOwned());
+
     final var associatedPrimaries =
         (delegate instanceof PrimaryResourcesRetriever)
-            ? (PrimaryResourcesRetriever<R>) delegate
-            : configuration.getPrimaryResourcesRetriever();
+            ? (PrimaryResourcesRetriever<R>) delegate : null;
+
     final var associatedSecondary =
         (delegate instanceof AssociatedSecondaryResourceIdentifier)
             ? (AssociatedSecondaryResourceIdentifier<P>) delegate
-            : configuration.getAssociatedResourceIdentifier();
+            : null;
 
-    final var augmented = InformerConfiguration.from(configuration)
-        .withPrimaryResourcesRetriever(associatedPrimaries)
-        .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
-        .build();
-    return KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
-        configuration.getDependentResourceClass());
+//    final var augmented = InformerConfiguration.from(configuration)
+//        .withPrimaryResourcesRetriever(associatedPrimaries)
+//        .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
+//        .build();
+//    return KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
+//        configuration.getDependentResourceClass());
+
   }
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
-    var informer = new InformerEventSource<>(getConfiguration(), context);
+//    var informer = new InformerEventSource<>(getConfiguration(), context);
     // todo have this implemented with nicer abstractions
-    delegate().setInformerEventSource(informer);
+//    delegate().setInformerEventSource(informer);
     return super.eventSource(context);
   }
 }

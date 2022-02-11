@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private boolean explicitDelete = false;
   private boolean owned = true;
   private InformerEventSource<R, P> informerEventSource;
+  private DesiredSupplier<R, P> desiredSupplier = null;
+  private Class<R> resourceType = null;
+  private AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier =
+          ResourceID::fromResource;
+  private PrimaryResourcesRetriever<R> primaryResourcesRetriever = Mappers.fromOwnerReference();
 
   public KubernetesDependentResource() {
     this(null);
@@ -34,6 +40,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public KubernetesDependentResource(KubernetesClient client) {
     this.client = client;
+  }
+
+  // todo builder
+  public void initWithConfiguration(KubernetesDependentResourceConfiguration<R,P> config) {
+      this.owned = config.isOwned();
+
+    InformerConfiguration.DefaultInformerConfiguration ic = new InformerConfiguration.DefaultInformerConfiguration()
+    InformerConfiguration.from(ic);
+//    InformerEventSource ies = new InformerEventSource()
   }
 
   protected void beforeCreateOrUpdate(R desired, P primary) {
@@ -75,34 +90,29 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (informerEventSource != null) {
       return Optional.of(informerEventSource);
     }
-    var informerConfig = initInformerConfiguration(context);
+    var informerConfig = initDefaultInformerConfiguration(context);
     informerEventSource = new InformerEventSource(informerConfig, context);
     return Optional.of(informerEventSource);
   }
 
   @SuppressWarnings("unchecked")
-  private InformerConfiguration<R, P> initInformerConfiguration(EventSourceContext<P> context) {
-    PrimaryResourcesRetriever<R> associatedPrimaries =
-        (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
-            : getDefaultPrimaryResourcesRetriever();
-
-    AssociatedSecondaryResourceIdentifier<P> associatedSecondary =
-        (this instanceof AssociatedSecondaryResourceIdentifier)
-            ? (AssociatedSecondaryResourceIdentifier<P>) this
-            : getDefaultAssociatedSecondaryResourceIdentifier();
-
+  private InformerConfiguration<R, P> initDefaultInformerConfiguration(EventSourceContext<P> context) {
     return InformerConfiguration.from(context, resourceType())
-        .withPrimaryResourcesRetriever(associatedPrimaries)
-        .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
+        .withPrimaryResourcesRetriever(getPrimaryResourcesRetriever())
+        .withAssociatedSecondaryResourceIdentifier(getAssociatedSecondaryResourceIdentifier())
         .build();
   }
 
-  protected AssociatedSecondaryResourceIdentifier<P> getDefaultAssociatedSecondaryResourceIdentifier() {
-    return ResourceID::fromResource;
+
+  protected PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
+    return (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
+                    : primaryResourcesRetriever;
   }
 
-  protected PrimaryResourcesRetriever<R> getDefaultPrimaryResourcesRetriever() {
-    return Mappers.fromOwnerReference();
+  protected AssociatedSecondaryResourceIdentifier<P> getAssociatedSecondaryResourceIdentifier() {
+    return (this instanceof AssociatedSecondaryResourceIdentifier)
+                    ? (AssociatedSecondaryResourceIdentifier<P>) this
+                    : associatedSecondaryResourceIdentifier;
   }
 
   public KubernetesDependentResource<R, P> setInformerEventSource(
@@ -146,5 +156,19 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public KubernetesDependentResource<R, P> setOwned(boolean owned) {
     this.owned = owned;
     return this;
+  }
+
+  @Override
+  public Class<R> resourceType() {
+    if (resourceType != null) {
+      return resourceType;
+    } else {
+      return super.resourceType();
+    }
+  }
+
+  @Override
+  protected R desired(P primary, Context context) {
+    return desiredSupplier.getDesired(primary, context);
   }
 }

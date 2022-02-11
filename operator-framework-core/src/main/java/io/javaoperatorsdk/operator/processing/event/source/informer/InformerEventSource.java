@@ -50,8 +50,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
       return;
     }
 
-    if (configuration.isSkipUpdateEventPropagationIfNoChange() &&
-        oldObject.getMetadata().getResourceVersion()
+    if (oldObject.getMetadata().getResourceVersion()
             .equals(newObject.getMetadata().getResourceVersion())) {
       return;
     }

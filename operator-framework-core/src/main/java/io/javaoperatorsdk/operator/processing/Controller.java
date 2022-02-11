@@ -56,7 +56,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     this.kubernetesClient = kubernetesClient;
 
     eventSourceManager = new EventSourceManager<>(this);
-    dependents = new DependentResourceManager<>(this);
+    dependents = new DependentResourceManager<>(this,kubernetesClient);
   }
 
   @Override

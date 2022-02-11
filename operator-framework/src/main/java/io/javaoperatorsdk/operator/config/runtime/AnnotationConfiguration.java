@@ -165,12 +165,9 @@ public class AnnotationConfiguration<R extends HasMetadata>
                 valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
             final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,
                 KubernetesDependent.OWNED_DEFAULT);
-            final var skipIfUnchanged =
-                valueOrDefault(kubeDependent, KubernetesDependent::skipUpdateIfUnchanged,
-                    KubernetesDependent.SKIP_UPDATE_DEFAULT);
+
             final var configuration = InformerConfiguration.from(service, resourceType)
                 .withLabelSelector(labelSelector)
-                .skippingEventPropagationIfUnchanged(skipIfUnchanged)
                 .withNamespaces(namespaces)
                 .build();
 

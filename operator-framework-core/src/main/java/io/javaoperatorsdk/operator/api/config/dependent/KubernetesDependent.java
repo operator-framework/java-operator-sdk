@@ -12,15 +12,12 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 public @interface KubernetesDependent {
 
   boolean OWNED_DEFAULT = true;
-  boolean SKIP_UPDATE_DEFAULT = true;
 
   boolean owned() default OWNED_DEFAULT;
 
-  boolean skipUpdateIfUnchanged() default SKIP_UPDATE_DEFAULT;
-
   /**
    * Specified which namespaces this Controller monitors for custom resources events. If no
-   * namespace is specified then the controller will monitor all namespaces by default.
+   * namespace is specified then the controller will monitor the namespaces configured for the controller.
    *
    * @return the list of namespaces this controller monitors
    */
@@ -34,4 +31,5 @@ public @interface KubernetesDependent {
    * @return the label selector
    */
   String labelSelector() default EMPTY_STRING;
+
 }

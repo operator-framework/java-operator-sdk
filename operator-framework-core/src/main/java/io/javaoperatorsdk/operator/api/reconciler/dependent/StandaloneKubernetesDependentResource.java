@@ -50,14 +50,4 @@ public class StandaloneKubernetesDependentResource<R extends HasMetadata, P exte
     this.primaryResourcesRetriever = primaryResourcesRetriever;
     return this;
   }
-
-  @Override
-  protected AssociatedSecondaryResourceIdentifier<P> getDefaultAssociatedSecondaryResourceIdentifier() {
-    return this.associatedSecondaryResourceIdentifier;
-  }
-
-  @Override
-  protected PrimaryResourcesRetriever<R> getDefaultPrimaryResourcesRetriever() {
-    return this.primaryResourcesRetriever;
-  }
 }
