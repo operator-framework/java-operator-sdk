@@ -14,13 +14,8 @@ import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
     implements AssociatedSecondaryResourceIdentifier<MySQLSchema> {
 
-  private static String encode(String value) {
-    return Base64.getEncoder().encodeToString(value.getBytes());
-  }
-
-  @Override
-  public Secret desired(MySQLSchema schema, Context context) {
-    return new SecretBuilder()
+  public SecretDependentResource() {
+    setDesiredSupplier((schema, context) -> new SecretBuilder()
         .withNewMetadata()
         .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
         .withNamespace(schema.getMetadata().getNamespace())
@@ -29,7 +24,11 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
             "MYSQL_USERNAME", encode(context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
         .addToData(
             "MYSQL_PASSWORD", encode(context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
-        .build();
+        .build());
+  }
+
+  private static String encode(String value) {
+    return Base64.getEncoder().encodeToString(value.getBytes());
   }
 
   // An alternative would be to override reconcile() method and exclude the update part.

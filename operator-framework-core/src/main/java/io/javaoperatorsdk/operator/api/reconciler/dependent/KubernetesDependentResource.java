@@ -199,4 +199,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.primaryResourcesRetriever = primaryResourcesRetriever;
     return this;
   }
+
+  public KubernetesDependentResource<R, P> setDesiredSupplier(
+      DesiredSupplier<R, P> desiredSupplier) {
+    this.desiredSupplier = desiredSupplier;
+    return this;
+  }
+
+  public KubernetesDependentResource<R, P> setResourceType(Class<R> resourceType) {
+    this.resourceType = resourceType;
+    return this;
+  }
 }

@@ -90,7 +90,7 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
   private DependentResource from(DependentResourceConfiguration config,
       KubernetesClient client) {
     if (config instanceof KubernetesDependentResourceConfiguration) {
-      if (config.getDependentResourceClass().isAssignableFrom(KubernetesDependentResource.class)) {
+      if (KubernetesDependentResource.class.isAssignableFrom(config.getDependentResourceClass())) {
         KubernetesDependentResourceInitializer dependentResourceInitializer =
             new KubernetesDependentResourceInitializer();
         return dependentResourceInitializer
