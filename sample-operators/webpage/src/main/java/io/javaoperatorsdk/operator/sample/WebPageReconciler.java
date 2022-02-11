@@ -43,9 +43,9 @@ public class WebPageReconciler
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     List<EventSource> eventSources = new ArrayList<>(3);
-    configMapDR.eventSource(context).ifPresent(es -> eventSources.add(es));
-    deploymentDR.eventSource(context).ifPresent(es -> eventSources.add(es));
-    serviceDR.eventSource(context).ifPresent(es -> eventSources.add(es));
+    configMapDR.eventSource(context).ifPresent(eventSources::add);
+    deploymentDR.eventSource(context).ifPresent(eventSources::add);
+    serviceDR.eventSource(context).ifPresent(eventSources::add);
     return eventSources;
   }
 
@@ -87,30 +87,32 @@ public class WebPageReconciler
     this.configMapDR = new ConfigMapDependentResource();
 
     this.deploymentDR =
-        new KubernetesDependentResource<>(
-            (webPage, context) -> {
-              var deploymentName = deploymentName(webPage);
-              Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
-              deployment.getMetadata().setName(deploymentName);
-              deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
-              deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
+        new KubernetesDependentResource<>() {
+          @Override
+          protected Deployment desired(WebPage webPage, Context context) {
+            var deploymentName = deploymentName(webPage);
+            Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
+            deployment.getMetadata().setName(deploymentName);
+            deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
+            deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
 
-              deployment
-                  .getSpec()
-                  .getTemplate()
-                  .getMetadata()
-                  .getLabels()
-                  .put("app", deploymentName);
-              deployment
-                  .getSpec()
-                  .getTemplate()
-                  .getSpec()
-                  .getVolumes()
-                  .get(0)
-                  .setConfigMap(
-                      new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
-              return deployment;
-            }) {
+            deployment
+                .getSpec()
+                .getTemplate()
+                .getMetadata()
+                .getLabels()
+                .put("app", deploymentName);
+            deployment
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getVolumes()
+                .get(0)
+                .setConfigMap(
+                    new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
+            return deployment;
+          }
+
           @Override
           protected boolean match(Deployment actual, Deployment target, Context context) {
             // todo comparator
@@ -119,16 +121,18 @@ public class WebPageReconciler
         };
 
     this.serviceDR =
-        new KubernetesDependentResource<>(
-            (webPage, context) -> {
-              Service service = loadYaml(Service.class, "service.yaml");
-              service.getMetadata().setName(serviceName(webPage));
-              service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
-              Map<String, String> labels = new HashMap<>();
-              labels.put("app", deploymentName(webPage));
-              service.getSpec().setSelector(labels);
-              return service;
-            }) {
+        new KubernetesDependentResource<>() {
+
+          @Override
+          protected Service desired(WebPage webPage, Context context) {
+            Service service = loadYaml(Service.class, "service.yaml");
+            service.getMetadata().setName(serviceName(webPage));
+            service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
+            Map<String, String> labels = new HashMap<>();
+            labels.put("app", deploymentName(webPage));
+            service.getSpec().setSelector(labels);
+            return service;
+          }
 
           protected boolean match(Service actual, Service target, Context context) {
             // todo comparator
@@ -161,19 +165,18 @@ public class WebPageReconciler
       implements
       AssociatedSecondaryResourceIdentifier<WebPage> {
 
-    public ConfigMapDependentResource() {
-      super((WebPage webPage, Context context) -> {
-        Map<String, String> data = new HashMap<>();
-        data.put("index.html", webPage.getSpec().getHtml());
-        return new ConfigMapBuilder()
-            .withMetadata(
-                new ObjectMetaBuilder()
-                    .withName(WebPageReconciler.configMapName(webPage))
-                    .withNamespace(webPage.getMetadata().getNamespace())
-                    .build())
-            .withData(data)
-            .build();
-      });
+    @Override
+    protected ConfigMap desired(WebPage webPage, Context context) {
+      Map<String, String> data = new HashMap<>();
+      data.put("index.html", webPage.getSpec().getHtml());
+      return new ConfigMapBuilder()
+          .withMetadata(
+              new ObjectMetaBuilder()
+                  .withName(WebPageReconciler.configMapName(webPage))
+                  .withNamespace(webPage.getMetadata().getNamespace())
+                  .build())
+          .withData(data)
+          .build();
     }
 
     @Override

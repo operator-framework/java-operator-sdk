@@ -30,16 +30,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
-  private DesiredSupplier<R, P> desiredSupplier;
   private KubernetesDependentResourceConfiguration<R, P> configuration;
-
-  public KubernetesDependentResource() {
-    this(null);
-  }
-
-  public KubernetesDependentResource(DesiredSupplier<R, P> desiredSupplier) {
-    this.desiredSupplier = desiredSupplier;
-  }
 
   public void configureWith(KubernetesDependentResourceConfiguration<R, P> config) {
     configureWith(config.getConfigurationService(), config.getLabelSelector(),
@@ -132,10 +123,5 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void setKubernetesClient(KubernetesClient client) {
     this.client = client;
-  }
-
-  @Override
-  protected R desired(P primary, Context context) {
-    return desiredSupplier.getDesired(primary, context);
   }
 }

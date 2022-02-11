@@ -64,14 +64,13 @@ public class StandaloneDependentTestReconciler
   private class DeploymentDependentResource extends
       KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
-    public DeploymentDependentResource() {
-      super((primary, context) -> {
-        Deployment deployment = StandaloneDependentTestReconciler.this.loadYaml(Deployment.class,
-            "nginx-deployment.yaml");
-        deployment.getMetadata().setName(primary.getMetadata().getName());
-        deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-        return deployment;
-      });
+    @Override
+    protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
+      Deployment deployment = StandaloneDependentTestReconciler.this.loadYaml(Deployment.class,
+          "nginx-deployment.yaml");
+      deployment.getMetadata().setName(primary.getMetadata().getName());
+      deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
+      return deployment;
     }
 
     @Override
