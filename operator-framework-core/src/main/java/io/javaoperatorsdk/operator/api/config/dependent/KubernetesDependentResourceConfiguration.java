@@ -12,11 +12,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 public interface KubernetesDependentResourceConfiguration<R extends HasMetadata, P extends HasMetadata>
     extends DependentResourceConfiguration<R, P>, ResourceConfiguration<R> {
 
-  @Override
-  ConfigurationService getConfigurationService();
+  boolean isOwned();
 
   @Override
-  void setConfigurationService(ConfigurationService service);
+  default Class<R> getResourceClass() {
+    return ResourceConfiguration.super.getResourceClass();
+  }
 
   class DefaultKubernetesDependentResourceConfiguration<R extends HasMetadata, P extends HasMetadata>
       extends DefaultResourceConfiguration<R>
@@ -48,22 +49,13 @@ public interface KubernetesDependentResourceConfiguration<R extends HasMetadata,
     }
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   static <R extends HasMetadata, P extends HasMetadata> KubernetesDependentResourceConfiguration<R, P> from(
       InformerConfiguration<R, P> cfg, boolean owned,
       Class<? extends DependentResource> dependentResourceClass) {
-    return new DefaultKubernetesDependentResourceConfiguration<R, P>(cfg.getConfigurationService(),
+    return new DefaultKubernetesDependentResourceConfiguration<>(cfg.getConfigurationService(),
         cfg.getLabelSelector(), cfg.getResourceClass(),
         cfg.getNamespaces(), owned,
         (Class<DependentResource<R, P>>) dependentResourceClass);
   }
-
-  Class<? extends DependentResource<R, P>> getDependentResourceClass();
-
-  @Override
-  default Class<R> getResourceClass() {
-    return null;
-  }
-
-  boolean isOwned();
-
 }
