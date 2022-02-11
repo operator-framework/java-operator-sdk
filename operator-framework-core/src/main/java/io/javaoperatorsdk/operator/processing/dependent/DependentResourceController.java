@@ -2,9 +2,6 @@ package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -14,17 +11,20 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @Ignore
-public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>>
+public class DependentResourceController<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>, D extends DependentResource<R, P>>
     implements DependentResource<R, P> {
 
-  private static final Logger log = LoggerFactory.getLogger(DependentResourceController.class);
-
-  protected final DependentResource<R, P> delegate;
+  private final D delegate;
   private final C configuration;
 
-  public DependentResourceController(DependentResource<R, P> delegate, C configuration) {
+  public DependentResourceController(D delegate, C configuration) {
     this.delegate = delegate;
-    this.configuration = configuration;
+    this.configuration = initConfiguration(delegate, configuration);
+  }
+
+  protected C initConfiguration(D delegate, C configuration) {
+    // default implementation just returns the specified one
+    return configuration;
   }
 
   @Override
@@ -51,6 +51,10 @@ public class DependentResourceController<R, P extends HasMetadata, C extends Dep
 
   public C getConfiguration() {
     return configuration;
+  }
+
+  protected D delegate() {
+    return delegate;
   }
 
   @Override

@@ -92,10 +92,15 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
               .newInstance();
       if (config instanceof KubernetesDependentResourceConfiguration) {
         if (dependentResource instanceof KubernetesDependentResource) {
-          ((KubernetesDependentResource) dependentResource).setClient(client);
+          final var kubeDependentResource = (KubernetesDependentResource) dependentResource;
+          kubeDependentResource.setClient(client);
+          return new KubernetesDependentResourceController(kubeDependentResource,
+              (KubernetesDependentResourceConfiguration) config);
+        } else {
+          throw new IllegalArgumentException("A "
+              + KubernetesDependentResourceConfiguration.class.getCanonicalName()
+              + " must be associated to a " + KubernetesDependentResource.class.getCanonicalName());
         }
-        return new KubernetesDependentResourceController(dependentResource,
-            (KubernetesDependentResourceConfiguration) config);
       } else {
         return new DependentResourceController(dependentResource, config);
       }

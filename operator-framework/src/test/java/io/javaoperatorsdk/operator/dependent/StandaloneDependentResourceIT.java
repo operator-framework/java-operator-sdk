@@ -38,8 +38,6 @@ class StandaloneDependentResourceIT {
         .atMost(Duration.ofSeconds(50))
         .until(
             () -> {
-              StandaloneDependentTestReconciler reconciler =
-                  (StandaloneDependentTestReconciler) operator.getReconcilers().get(0);
               var deployment =
                   operator
                       .getKubernetesClient()
