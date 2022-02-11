@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,8 +38,8 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
   }
 
   private void initDependentResourceControllers(KubernetesClient kubernetesClient) {
-    final List<DependentResourceConfiguration> dependentResourceConfigurations
-            = controllerConfiguration.getDependentResources();
+    final List<DependentResourceConfiguration> dependentResourceConfigurations =
+        controllerConfiguration.getDependentResources();
     dependents = new ArrayList<>(dependentResourceConfigurations.size());
     dependentResourceConfigurations.forEach(dependent -> {
       final var dependentResourceController = from(dependent, kubernetesClient);
@@ -90,18 +89,21 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
 
   private DependentResource from(DependentResourceConfiguration config,
       KubernetesClient client) {
-      if (config instanceof KubernetesDependentResourceConfiguration) {
-        if (config.getDependentResourceClass().isAssignableFrom(KubernetesDependentResource.class)) {
-          KubernetesDependentResourceInitializer dependentResourceInitializer = new KubernetesDependentResourceInitializer();
-          return dependentResourceInitializer.initDependentResource((KubernetesDependentResourceConfiguration<?, ?>) config,client);
-        } else {
-          throw new IllegalArgumentException("A "
-              + KubernetesDependentResourceConfiguration.class.getCanonicalName()
-              + " must be associated to a " + KubernetesDependentResource.class.getCanonicalName());
-        }
+    if (config instanceof KubernetesDependentResourceConfiguration) {
+      if (config.getDependentResourceClass().isAssignableFrom(KubernetesDependentResource.class)) {
+        KubernetesDependentResourceInitializer dependentResourceInitializer =
+            new KubernetesDependentResourceInitializer();
+        return dependentResourceInitializer
+            .initDependentResource((KubernetesDependentResourceConfiguration<?, ?>) config, client);
       } else {
-        DependentResourceInitializer dependentResourceInitializer = new DependentResourceInitializer();
-        return dependentResourceInitializer.initDependentResource(config,client);
+        throw new IllegalArgumentException("A "
+            + KubernetesDependentResourceConfiguration.class.getCanonicalName()
+            + " must be associated to a " + KubernetesDependentResource.class.getCanonicalName());
       }
+    } else {
+      DependentResourceInitializer dependentResourceInitializer =
+          new DependentResourceInitializer();
+      return dependentResourceInitializer.initDependentResource(config, client);
+    }
   }
 }

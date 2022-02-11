@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.StandaloneKubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -30,9 +30,9 @@ public class WebPageReconciler
 
   private final KubernetesClient kubernetesClient;
 
-  private StandaloneKubernetesDependentResource<ConfigMap, WebPage> configMapDR;
-  private StandaloneKubernetesDependentResource<Deployment, WebPage> deploymentDR;
-  private StandaloneKubernetesDependentResource<Service, WebPage> serviceDR;
+  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
+  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
+  private KubernetesDependentResource<Service, WebPage> serviceDR;
 
   public WebPageReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
@@ -84,7 +84,7 @@ public class WebPageReconciler
 
   private void createDependentResources(KubernetesClient client) {
     this.configMapDR =
-        new StandaloneKubernetesDependentResource<>(
+        new KubernetesDependentResource<>(
             client,
             ConfigMap.class,
             (WebPage webPage, Context context) -> {
@@ -123,7 +123,7 @@ public class WebPageReconciler
         primary -> new ResourceID(configMapName(primary), primary.getMetadata().getNamespace()));
 
     this.deploymentDR =
-        new StandaloneKubernetesDependentResource<>(
+        new KubernetesDependentResource<>(
             client,
             Deployment.class,
             (webPage, context) -> {
@@ -157,7 +157,7 @@ public class WebPageReconciler
         };
 
     this.serviceDR =
-        new StandaloneKubernetesDependentResource<>(
+        new KubernetesDependentResource<>(
             client,
             Service.class,
             (webPage, context) -> {

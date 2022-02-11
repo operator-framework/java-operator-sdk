@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.StandaloneKubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -23,11 +23,11 @@ public class StandaloneDependentTestReconciler
 
   private KubernetesClient kubernetesClient;
 
-  StandaloneKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> configMapDependent;
+  KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> configMapDependent;
 
   public StandaloneDependentTestReconciler() {
     configMapDependent =
-        new StandaloneKubernetesDependentResource<>(Deployment.class, (primary, context) -> {
+        new KubernetesDependentResource<>(Deployment.class, (primary, context) -> {
           Deployment deployment = loadYaml(Deployment.class, "nginx-deployment.yaml");
           deployment.getMetadata().setName(primary.getMetadata().getName());
           deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());

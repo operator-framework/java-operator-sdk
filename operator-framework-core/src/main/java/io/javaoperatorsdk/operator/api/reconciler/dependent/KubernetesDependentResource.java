@@ -2,13 +2,13 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -31,7 +31,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private DesiredSupplier<R, P> desiredSupplier = null;
   private Class<R> resourceType = null;
   private AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier =
-          ResourceID::fromResource;
+      ResourceID::fromResource;
   private PrimaryResourcesRetriever<R> primaryResourcesRetriever = Mappers.fromOwnerReference();
 
   public KubernetesDependentResource() {
@@ -42,13 +42,29 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.client = client;
   }
 
-  // todo builder
-  public void initWithConfiguration(KubernetesDependentResourceConfiguration<R,P> config) {
-      this.owned = config.isOwned();
+  public KubernetesDependentResource(
+      KubernetesClient client, Class<R> resourceType, DesiredSupplier<R, P> desiredSupplier) {
+    this.client = client;
+    this.resourceType = resourceType;
+    this.desiredSupplier = desiredSupplier;
+  }
 
-    InformerConfiguration.DefaultInformerConfiguration ic = new InformerConfiguration.DefaultInformerConfiguration()
-    InformerConfiguration.from(ic);
-//    InformerEventSource ies = new InformerEventSource()
+  public KubernetesDependentResource(
+      Class<R> resourceType, DesiredSupplier<R, P> desiredSupplier) {
+    this(null, resourceType, desiredSupplier);
+  }
+
+  // todo builder and/or factory methods
+  public void initWithConfiguration(KubernetesDependentResourceConfiguration<R, P> config) {
+    this.owned = config.isOwned();
+    InformerConfiguration<R, P> ic =
+        InformerConfiguration.from(config.getConfigurationService(), resourceType())
+            .withLabelSelector(config.getLabelSelector())
+            .withNamespaces(config.getNamespaces())
+            .withPrimaryResourcesRetriever(getPrimaryResourcesRetriever())
+            .withAssociatedSecondaryResourceIdentifier(getAssociatedSecondaryResourceIdentifier())
+            .build();
+    informerEventSource = new InformerEventSource<>(ic, client);
   }
 
   protected void beforeCreateOrUpdate(R desired, P primary) {
@@ -96,7 +112,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  private InformerConfiguration<R, P> initDefaultInformerConfiguration(EventSourceContext<P> context) {
+  private InformerConfiguration<R, P> initDefaultInformerConfiguration(
+      EventSourceContext<P> context) {
     return InformerConfiguration.from(context, resourceType())
         .withPrimaryResourcesRetriever(getPrimaryResourcesRetriever())
         .withAssociatedSecondaryResourceIdentifier(getAssociatedSecondaryResourceIdentifier())
@@ -106,13 +123,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
     return (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
-                    : primaryResourcesRetriever;
+        : primaryResourcesRetriever;
   }
 
   protected AssociatedSecondaryResourceIdentifier<P> getAssociatedSecondaryResourceIdentifier() {
     return (this instanceof AssociatedSecondaryResourceIdentifier)
-                    ? (AssociatedSecondaryResourceIdentifier<P>) this
-                    : associatedSecondaryResourceIdentifier;
+        ? (AssociatedSecondaryResourceIdentifier<P>) this
+        : associatedSecondaryResourceIdentifier;
   }
 
   public KubernetesDependentResource<R, P> setInformerEventSource(
@@ -170,5 +187,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context context) {
     return desiredSupplier.getDesired(primary, context);
+  }
+
+  public KubernetesDependentResource<R, P> setAssociatedSecondaryResourceIdentifier(
+      AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier) {
+    this.associatedSecondaryResourceIdentifier = associatedSecondaryResourceIdentifier;
+    return this;
+  }
+
+  public KubernetesDependentResource<R, P> setPrimaryResourcesRetriever(
+      PrimaryResourcesRetriever<R> primaryResourcesRetriever) {
+    this.primaryResourcesRetriever = primaryResourcesRetriever;
+    return this;
   }
 }

@@ -5,11 +5,18 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public interface KubernetesDependentResourceConfiguration<R extends HasMetadata, P extends HasMetadata>
-    extends DependentResourceConfiguration<R, P> {
+    extends DependentResourceConfiguration<R, P>, ResourceConfiguration<R> {
+
+  @Override
+  ConfigurationService getConfigurationService();
+
+  @Override
+  void setConfigurationService(ConfigurationService service);
 
   class DefaultKubernetesDependentResourceConfiguration<R extends HasMetadata, P extends HasMetadata>
       extends DefaultResourceConfiguration<R>
@@ -51,6 +58,11 @@ public interface KubernetesDependentResourceConfiguration<R extends HasMetadata,
   }
 
   Class<? extends DependentResource<R, P>> getDependentResourceClass();
+
+  @Override
+  default Class<R> getResourceClass() {
+    return null;
+  }
 
   boolean isOwned();
 

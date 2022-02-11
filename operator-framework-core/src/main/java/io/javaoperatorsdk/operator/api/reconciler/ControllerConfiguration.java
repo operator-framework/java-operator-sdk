@@ -7,7 +7,6 @@ import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.DependentResourceController;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -65,11 +64,6 @@ public @interface ControllerConfiguration {
 
 
   /**
-   * Optional list of classes providing {@link DependentResourceController} implementations
-   * encapsulating logic to handle the associated
-   * {@link io.javaoperatorsdk.operator.processing.Controller}'s reconciliation of dependent
-   * resources
-   *
    * @return the list of {@link DependentResourceController} implementations
    */
   Dependent[] dependents() default {};

@@ -5,12 +5,12 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceContextAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
@@ -23,17 +23,12 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
       EventSourceContext<P> context) {
     super(context.getClient().resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+  }
 
-    // init mappers with context if needed
-    final var primaryResourcesRetriever = configuration.getPrimaryResourcesRetriever();
-    if (primaryResourcesRetriever instanceof EventSourceContextAware) {
-      ((EventSourceContextAware) primaryResourcesRetriever).initWith(context);
-    }
-
-    final var associatedResourceIdentifier = configuration.getAssociatedResourceIdentifier();
-    if (associatedResourceIdentifier instanceof EventSourceContextAware) {
-      ((EventSourceContextAware) associatedResourceIdentifier).initWith(context);
-    }
+  public InformerEventSource(InformerConfiguration<T, P> configuration,
+      KubernetesClient client) {
+    super(client.resources(configuration.getResourceClass()), configuration);
+    this.configuration = configuration;
   }
 
   @Override
@@ -51,7 +46,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     }
 
     if (oldObject.getMetadata().getResourceVersion()
-            .equals(newObject.getMetadata().getResourceVersion())) {
+        .equals(newObject.getMetadata().getResourceVersion())) {
       return;
     }
     propagateEvent(newObject);

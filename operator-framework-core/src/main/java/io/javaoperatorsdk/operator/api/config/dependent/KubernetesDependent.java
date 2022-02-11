@@ -17,7 +17,8 @@ public @interface KubernetesDependent {
 
   /**
    * Specified which namespaces this Controller monitors for custom resources events. If no
-   * namespace is specified then the controller will monitor the namespaces configured for the controller.
+   * namespace is specified then the controller will monitor the namespaces configured for the
+   * controller.
    *
    * @return the list of namespaces this controller monitors
    */
