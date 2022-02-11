@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -33,12 +32,7 @@ public class StandaloneKubernetesDependentResource<R extends HasMetadata, P exte
 
   @Override
   protected R desired(P primary, Context context) {
-    if (desiredSupplier != null) {
-      return desiredSupplier.getDesired(primary, context);
-    } else {
-      throw new OperatorException(
-          "No DesiredSupplier provided. Either provide one or override this method");
-    }
+    return desiredSupplier.getDesired(primary, context);
   }
 
   public Class<R> resourceType() {
