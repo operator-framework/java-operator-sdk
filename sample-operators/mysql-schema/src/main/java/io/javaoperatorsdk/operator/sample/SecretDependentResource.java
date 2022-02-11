@@ -15,16 +15,17 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
     implements AssociatedSecondaryResourceIdentifier<MySQLSchema> {
 
   public SecretDependentResource() {
-    setDesiredSupplier((schema, context) -> new SecretBuilder()
-        .withNewMetadata()
-        .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
-        .withNamespace(schema.getMetadata().getNamespace())
-        .endMetadata()
-        .addToData(
-            "MYSQL_USERNAME", encode(context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
-        .addToData(
-            "MYSQL_PASSWORD", encode(context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
-        .build());
+    super(Secret.class,
+        (schema, context) -> new SecretBuilder()
+            .withNewMetadata()
+            .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
+            .withNamespace(schema.getMetadata().getNamespace())
+            .endMetadata()
+            .addToData(
+                "MYSQL_USERNAME", encode(context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
+            .addToData(
+                "MYSQL_PASSWORD", encode(context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
+            .build());
   }
 
   private static String encode(String value) {
