@@ -36,7 +36,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.client = client;
   }
 
-  protected void postProcessDesired(R desired, P primary) {
+  protected void beforeCreateOrUpdate(R desired, P primary) {
     if (owned) {
       desired.addOwnerReference(primary);
     }
@@ -52,7 +52,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R create(R target, P primary, Context context) {
     log.debug("Creating target resource with type: " +
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
-    postProcessDesired(target, primary);
+    beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
     return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
@@ -63,7 +63,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R update(R actual, R target, P primary, Context context) {
     log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
         ResourceID.fromResource(target));
-    postProcessDesired(target, primary);
+    beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
     return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .replace(target);
