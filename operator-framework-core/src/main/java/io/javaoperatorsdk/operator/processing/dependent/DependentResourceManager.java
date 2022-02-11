@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -18,7 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -30,30 +31,25 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
   private final ControllerConfiguration<P> controllerConfiguration;
   private List<DependentResource> dependents;
 
-
-  public DependentResourceManager(Controller<P> controller, KubernetesClient kubernetesClient) {
+  public DependentResourceManager(Controller<P> controller) {
     this.reconciler = controller.getReconciler();
     this.controllerConfiguration = controller.getConfiguration();
-    initDependentResourceControllers(kubernetesClient);
-  }
-
-  private void initDependentResourceControllers(KubernetesClient kubernetesClient) {
-    final List<DependentResourceConfiguration> dependentResourceConfigurations =
-        controllerConfiguration.getDependentResources();
-    dependents = new ArrayList<>(dependentResourceConfigurations.size());
-    dependentResourceConfigurations.forEach(dependent -> {
-      final var dependentResourceController = from(dependent, kubernetesClient);
-      dependents.add(dependentResourceController);
-    });
   }
 
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
-    List<EventSource> sources = new ArrayList<>();
-    dependents.forEach(dependent -> {
-      dependent.eventSource(context)
-          .ifPresent(es -> sources.add((EventSource) es));
-    });
+    final var dependentConfigurations = controllerConfiguration.getDependentResources();
+    final var sources = new ArrayList<EventSource>(dependentConfigurations.size());
+
+    dependents = dependentConfigurations.stream()
+        .map(drc -> {
+          final var dependentResource = from(drc, context.getClient());
+          dependentResource.eventSource(context)
+              .ifPresent(es -> sources.add((EventSource) es));
+          return dependentResource;
+        })
+        .collect(Collectors.toList());
+
     return sources;
   }
 
@@ -87,23 +83,22 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
     }
   }
 
-  private DependentResource from(DependentResourceConfiguration config,
-      KubernetesClient client) {
-    if (config instanceof KubernetesDependentResourceConfiguration) {
-      if (KubernetesDependentResource.class.isAssignableFrom(config.getDependentResourceClass())) {
-        KubernetesDependentResourceInitializer dependentResourceInitializer =
-            new KubernetesDependentResourceInitializer();
-        return dependentResourceInitializer
-            .initDependentResource((KubernetesDependentResourceConfiguration<?, ?>) config, client);
-      } else {
-        throw new IllegalArgumentException("A "
-            + KubernetesDependentResourceConfiguration.class.getCanonicalName()
-            + " must be associated to a " + KubernetesDependentResource.class.getCanonicalName());
+  private DependentResource from(DependentResourceConfiguration config, KubernetesClient client) {
+    try {
+      final var dependentResource =
+          (DependentResource) config.getDependentResourceClass().getConstructor().newInstance();
+      if (dependentResource instanceof KubernetesClientAware) {
+        ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
       }
-    } else {
-      DependentResourceInitializer dependentResourceInitializer =
-          new DependentResourceInitializer();
-      return dependentResourceInitializer.initDependentResource(config, client);
+
+      dependentResource.configureWith(config);
+
+      return dependentResource;
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new IllegalStateException(e);
     }
   }
 }

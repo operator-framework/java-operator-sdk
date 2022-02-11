@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -83,49 +84,10 @@ public class WebPageReconciler
   }
 
   private void createDependentResources(KubernetesClient client) {
-    this.configMapDR =
-        new KubernetesDependentResource<>(
-            client,
-            ConfigMap.class,
-            (WebPage webPage, Context context) -> {
-              Map<String, String> data = new HashMap<>();
-              data.put("index.html", webPage.getSpec().getHtml());
-              return new ConfigMapBuilder()
-                  .withMetadata(
-                      new ObjectMetaBuilder()
-                          .withName(configMapName(webPage))
-                          .withNamespace(webPage.getMetadata().getNamespace())
-                          .build())
-                  .withData(data)
-                  .build();
-            }) {
-          @Override
-          protected boolean match(ConfigMap actual, ConfigMap target, Context context) {
-            return StringUtils.equals(
-                actual.getData().get("index.html"), target.getData().get("index.html"));
-          }
-
-          @Override
-          protected ConfigMap update(
-              ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
-            var cm = super.update(actual, target, primary, context);
-            var ns = actual.getMetadata().getNamespace();
-            log.info("Restarting pods because HTML has changed in {}", ns);
-            kubernetesClient
-                .pods()
-                .inNamespace(ns)
-                .withLabel("app", deploymentName(primary))
-                .delete();
-            return cm;
-          }
-        };
-    configMapDR.setAssociatedSecondaryResourceIdentifier(
-        primary -> new ResourceID(configMapName(primary), primary.getMetadata().getNamespace()));
+    this.configMapDR = new ConfigMapDependentResource();
 
     this.deploymentDR =
         new KubernetesDependentResource<>(
-            client,
-            Deployment.class,
             (webPage, context) -> {
               var deploymentName = deploymentName(webPage);
               Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
@@ -158,8 +120,6 @@ public class WebPageReconciler
 
     this.serviceDR =
         new KubernetesDependentResource<>(
-            client,
-            Service.class,
             (webPage, context) -> {
               Service service = loadYaml(Service.class, "service.yaml");
               service.getMetadata().setName(serviceName(webPage));
@@ -194,6 +154,51 @@ public class WebPageReconciler
       return Serialization.unmarshal(is, clazz);
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
+    }
+  }
+
+  private class ConfigMapDependentResource extends KubernetesDependentResource<ConfigMap, WebPage>
+      implements
+      AssociatedSecondaryResourceIdentifier<WebPage> {
+
+    public ConfigMapDependentResource() {
+      super((WebPage webPage, Context context) -> {
+        Map<String, String> data = new HashMap<>();
+        data.put("index.html", webPage.getSpec().getHtml());
+        return new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(WebPageReconciler.configMapName(webPage))
+                    .withNamespace(webPage.getMetadata().getNamespace())
+                    .build())
+            .withData(data)
+            .build();
+      });
+    }
+
+    @Override
+    protected boolean match(ConfigMap actual, ConfigMap target, Context context) {
+      return StringUtils.equals(
+          actual.getData().get("index.html"), target.getData().get("index.html"));
+    }
+
+    @Override
+    protected ConfigMap update(
+        ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
+      var cm = super.update(actual, target, primary, context);
+      var ns = actual.getMetadata().getNamespace();
+      log.info("Restarting pods because HTML has changed in {}", ns);
+      kubernetesClient
+          .pods()
+          .inNamespace(ns)
+          .withLabel("app", deploymentName(primary))
+          .delete();
+      return cm;
+    }
+
+    @Override
+    public ResourceID associatedSecondaryID(WebPage primary) {
+      return new ResourceID(configMapName(primary), primary.getMetadata().getNamespace());
     }
   }
 }
