@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Persister;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
@@ -16,17 +15,19 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @Ignore
 public class KubernetesDependentResourceController<R extends HasMetadata, P extends HasMetadata>
-    extends DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>> {
+    extends
+    DependentResourceController<R, P, KubernetesDependentResourceConfiguration<R, P>, KubernetesDependentResource<R, P>> {
 
-  private final KubernetesDependentResourceConfiguration<R, P> configuration;
-  private KubernetesClient client;
-  private InformerEventSource<R, P> informer;
-
-
-  @SuppressWarnings("unchecked")
-  public KubernetesDependentResourceController(DependentResource<R, P> delegate,
+  public KubernetesDependentResourceController(KubernetesDependentResource<R, P> delegate,
       KubernetesDependentResourceConfiguration<R, P> configuration) {
     super(delegate, configuration);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  protected KubernetesDependentResourceConfiguration<R, P> initConfiguration(
+      KubernetesDependentResource<R, P> delegate,
+      KubernetesDependentResourceConfiguration<R, P> configuration) {
     // todo: check if we can validate that types actually match properly
     final var associatedPrimaries =
         (delegate instanceof PrimaryResourcesRetriever)
@@ -41,50 +42,15 @@ public class KubernetesDependentResourceController<R extends HasMetadata, P exte
         .withPrimaryResourcesRetriever(associatedPrimaries)
         .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
         .build();
-    this.configuration =
-        KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
-            configuration.getDependentResourceClass());
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  protected Persister<R, P> initPersister(DependentResource<R, P> delegate) {
-    return (delegate instanceof Persister) ? (Persister<R, P>) delegate : this;
+    return KubernetesDependentResourceConfiguration.from(augmented, configuration.isOwned(),
+        configuration.getDependentResourceClass());
   }
 
   @Override
-  public String descriptionFor(R resource) {
-    return String.format("'%s' %s dependent in namespace %s", resource.getMetadata().getName(),
-        resource.getFullResourceName(),
-        resource.getMetadata().getNamespace());
-  }
-
-  @Override
-  public EventSource initEventSource(EventSourceContext<P> context) {
-    this.client = context.getClient();
-    informer = new InformerEventSource<>(configuration, context);
-    return informer;
-  }
-
-  @Override
-  public void createOrReplace(R dependentResource, Context context) {
-    client.resource(dependentResource).createOrReplace();
-  }
-
-  @Override
-  public R getFor(P primary, Context context) {
-    return informer.getAssociated(primary).orElse(null);
-  }
-
-  public boolean owned() {
-    return getConfiguration().isOwned();
-  }
-
-  @Override
-  protected void createOrReplaceDependent(P primary, R dependent, Context context) {
-    if (owned()) {
-      dependent.addOwnerReference(primary);
-    }
-    super.createOrReplaceDependent(primary, dependent, context);
+  public Optional<EventSource> eventSource(EventSourceContext<P> context) {
+    var informer = new InformerEventSource<>(getConfiguration(), context);
+    // todo have this implemented with nicer abstractions
+    delegate().setInformerEventSource(informer);
+    return super.eventSource(context);
   }
 }

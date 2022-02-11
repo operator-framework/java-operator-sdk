@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
@@ -18,6 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -42,9 +44,11 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
 
     List<EventSource> sources = new ArrayList<>(configured.size() + 5);
     configured.forEach(dependent -> {
-      final var dependentResourceController = from(dependent);
+      final var dependentResourceController = from(dependent, context.getClient());
       dependents.add(dependentResourceController);
-      sources.add(dependentResourceController.initEventSource(context));
+      dependentResourceController.eventSource(context)
+          .ifPresent(es -> sources.add((EventSource) es));
+
     });
 
     return sources;
@@ -68,7 +72,7 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
   @Override
   public DeleteControl cleanup(P resource, Context context) {
     initContextIfNeeded(resource, context);
-    dependents.forEach(dependent -> dependent.cleanup(resource, context));
+    dependents.forEach(dependent -> dependent.delete(resource, context));
     return Reconciler.super.cleanup(resource, context);
   }
 
@@ -80,14 +84,23 @@ public class DependentResourceManager<P extends HasMetadata> implements EventSou
     }
   }
 
-  private DependentResourceController from(DependentResourceConfiguration config) {
+  private DependentResourceController from(DependentResourceConfiguration config,
+      KubernetesClient client) {
     try {
       final var dependentResource =
           (DependentResource) config.getDependentResourceClass().getConstructor()
               .newInstance();
       if (config instanceof KubernetesDependentResourceConfiguration) {
-        return new KubernetesDependentResourceController(dependentResource,
-            (KubernetesDependentResourceConfiguration) config);
+        if (dependentResource instanceof KubernetesDependentResource) {
+          final var kubeDependentResource = (KubernetesDependentResource) dependentResource;
+          kubeDependentResource.setClient(client);
+          return new KubernetesDependentResourceController(kubeDependentResource,
+              (KubernetesDependentResourceConfiguration) config);
+        } else {
+          throw new IllegalArgumentException("A "
+              + KubernetesDependentResourceConfiguration.class.getCanonicalName()
+              + " must be associated to a " + KubernetesDependentResource.class.getCanonicalName());
+        }
       } else {
         return new DependentResourceController(dependentResource, config);
       }

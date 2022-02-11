@@ -1,23 +1,18 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.ConfigMapDR;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
@@ -25,10 +20,10 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
  * Copies the config map value from spec into status. The main purpose is to test and demonstrate
  * sample usage of InformerEventSource
  */
-@ControllerConfiguration(finalizerName = NO_FINALIZER,
-    dependents = @Dependent(resourceType = ConfigMap.class, type = ConfigMapDR.class))
+@ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class InformerEventSourceTestCustomReconciler
-    implements Reconciler<InformerEventSourceTestCustomResource> {
+    implements Reconciler<InformerEventSourceTestCustomResource>,
+    EventSourceInitializer<InformerEventSourceTestCustomResource> {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
@@ -39,22 +34,21 @@ public class InformerEventSourceTestCustomReconciler
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  public static class ConfigMapDR
-      implements DependentResource<ConfigMap, InformerEventSourceTestCustomResource>,
-      PrimaryResourcesRetriever<ConfigMap> {
-    private final PrimaryResourcesRetriever<ConfigMap> retriever = Mappers.fromAnnotation(
-        RELATED_RESOURCE_NAME);
+  @Override
+  public List<EventSource> prepareEventSources(
+      EventSourceContext<InformerEventSourceTestCustomResource> context) {
 
-    @Override
-    public Set<ResourceID> associatedPrimaryResources(ConfigMap dependentResource) {
-      return retriever.associatedPrimaryResources(dependentResource);
-    }
+    InformerConfiguration<ConfigMap, InformerEventSourceTestCustomResource> config =
+        InformerConfiguration.from(context, ConfigMap.class)
+            .withPrimaryResourcesRetriever(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
+            .build();
+
+    return List.of(new InformerEventSource<>(config, context));
   }
 
   @Override
   public UpdateControl<InformerEventSourceTestCustomResource> reconcile(
-      InformerEventSourceTestCustomResource resource,
-      Context context) {
+      InformerEventSourceTestCustomResource resource, Context context) {
     numberOfExecutions.incrementAndGet();
 
     resource.setStatus(new InformerEventSourceTestCustomResourceStatus());

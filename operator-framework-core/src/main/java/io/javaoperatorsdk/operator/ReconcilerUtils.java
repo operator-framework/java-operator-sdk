@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Locale;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -98,4 +100,19 @@ public class ReconcilerUtils {
     }
     return reconcilerClassName.toLowerCase(Locale.ROOT);
   }
+
+  public static boolean specsEqual(HasMetadata r1, HasMetadata r2) {
+    return getSpec(r1).equals(getSpec(r2));
+  }
+
+  // will be replaced with: https://github.com/fabric8io/kubernetes-client/issues/3816
+  public static Object getSpec(HasMetadata resource) {
+    try {
+      Method getSpecMethod = resource.getClass().getMethod("getSpec");
+      return getSpecMethod.invoke(resource);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
 }

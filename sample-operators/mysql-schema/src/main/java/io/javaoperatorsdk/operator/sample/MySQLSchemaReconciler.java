@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Base64;
 import java.util.Optional;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -8,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
@@ -19,8 +17,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -36,41 +32,20 @@ public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
     ContextInitializer<MySQLSchema>, EventSourceContextInjector {
 
-  private static final String SECRET_FORMAT = "%s-secret";
-  private static final String USERNAME_FORMAT = "%s-user";
+  static final String SECRET_FORMAT = "%s-secret";
+  static final String USERNAME_FORMAT = "%s-user";
 
-  protected static final String MYSQL_SECRET_NAME = "mysql.secret.name";
-  protected static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
-  protected static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
-  protected static final String MYSQL_DB_CONFIG = "mysql.db.config";
-  protected static final String BUILT_SCHEMA = "built schema";
+  static final String MYSQL_SECRET_NAME = "mysql.secret.name";
+  static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
+  static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
+  static final String MYSQL_DB_CONFIG = "mysql.db.config";
+  static final String BUILT_SCHEMA = "built schema";
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
   private final MySQLDbConfig mysqlDbConfig;
 
   public MySQLSchemaReconciler(MySQLDbConfig mysqlDbConfig) {
     this.mysqlDbConfig = mysqlDbConfig;
-  }
-
-  public static class SecretDependentResource implements DependentResource<Secret, MySQLSchema> {
-
-    private static String encode(String value) {
-      return Base64.getEncoder().encodeToString(value.getBytes());
-    }
-
-    @Override
-    public Optional<Secret> desired(MySQLSchema schema, Context context) {
-      return Optional.of(new SecretBuilder()
-          .withNewMetadata()
-          .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
-          .withNamespace(schema.getMetadata().getNamespace())
-          .endMetadata()
-          .addToData("MYSQL_USERNAME", encode(
-              context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
-          .addToData("MYSQL_PASSWORD", encode(
-              context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
-          .build());
-    }
   }
 
   @SuppressWarnings("rawtypes")

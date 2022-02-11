@@ -40,6 +40,11 @@
             <artifactId>crd-generator-apt</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

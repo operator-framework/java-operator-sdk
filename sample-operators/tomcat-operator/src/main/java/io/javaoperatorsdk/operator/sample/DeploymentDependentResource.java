@@ -1,20 +1,20 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 
 @KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
 public class DeploymentDependentResource
-    implements DependentResource<Deployment, Tomcat> {
+    extends KubernetesDependentResource<Deployment, Tomcat> {
+
+  public DeploymentDependentResource() {}
 
   @Override
-  public Optional<Deployment> desired(Tomcat tomcat, Context context) {
+  public Deployment desired(Tomcat tomcat, Context context) {
     Deployment deployment = TomcatReconciler.loadYaml(Deployment.class, "deployment.yaml");
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
     final String tomcatName = tomcatMetadata.getName();
@@ -39,7 +39,7 @@ public class DeploymentDependentResource
         .endTemplate()
         .endSpec()
         .build();
-    return Optional.of(deployment);
+    return deployment;
   }
 
   private String tomcatImage(Tomcat tomcat) {
@@ -47,8 +47,8 @@ public class DeploymentDependentResource
   }
 
   @Override
-  public boolean match(Deployment fetched, Tomcat tomcat, Context context) {
-    return fetched.getSpec().getTemplate().getSpec().getContainers().stream()
-        .findFirst().map(c -> tomcatImage(tomcat).equals(c.getImage())).orElse(false);
+  public boolean match(Deployment fetched, Deployment target, Context context) {
+    return fetched.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+        .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
   }
 }
