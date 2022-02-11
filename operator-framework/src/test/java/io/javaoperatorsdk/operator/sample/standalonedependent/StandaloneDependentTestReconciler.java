@@ -59,7 +59,7 @@ public class StandaloneDependentTestReconciler
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
-    configMapDependent.setClient(kubernetesClient);
+    configMapDependent.setKubernetesClient(kubernetesClient);
   }
 
   @Override

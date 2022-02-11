@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P> {
+    extends AbstractDependentResource<R, P> implements KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -151,11 +151,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return informerEventSource.getAssociated(primaryResource);
   }
 
-  public KubernetesDependentResource<R, P> setClient(KubernetesClient client) {
+  @Override
+  public void setKubernetesClient(KubernetesClient client) {
     this.client = client;
-    return this;
   }
-
 
   public KubernetesDependentResource<R, P> setExplicitDelete(boolean explicitDelete) {
     this.explicitDelete = explicitDelete;

@@ -12,10 +12,8 @@ public class KubernetesDependentResourceInitializer extends
       KubernetesDependentResourceConfiguration<?, ?> config,
       KubernetesClient client) {
 
-    // todo with constructor, require a specific constructor args ?!
     KubernetesDependentResource kubernetesDependentResource =
         super.initDependentResource(config, client);
-    kubernetesDependentResource.setClient(client);
     kubernetesDependentResource.initWithConfiguration(config);
     return kubernetesDependentResource;
   }
