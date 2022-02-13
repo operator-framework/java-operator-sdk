@@ -148,8 +148,7 @@ public class WebPageReconciler
                   .setConfigMap(
                       new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
               return deployment;
-            }) {
-        };
+            }) {};
 
     this.serviceDR =
         new KubernetesDependentResource<>(
@@ -163,8 +162,7 @@ public class WebPageReconciler
               labels.put("app", deploymentName(webPage));
               service.getSpec().setSelector(labels);
               return service;
-            }) {
-        };
+            }) {};
   }
 
   private static String configMapName(WebPage nginx) {

@@ -35,10 +35,12 @@ public class StandaloneDependentTestReconciler
         }) {
           @Override
           protected boolean match(Deployment actual, Deployment desired, Context context) {
-            return Objects.equals(actual.getSpec().getReplicas(), desired.getSpec().getReplicas()) &&
+            return Objects.equals(actual.getSpec().getReplicas(), desired.getSpec().getReplicas())
+                &&
                 actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
                     .equals(
-                        desired.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+                        desired.getSpec().getTemplate().getSpec().getContainers().get(0)
+                            .getImage());
           }
         };
   }

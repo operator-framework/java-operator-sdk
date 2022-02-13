@@ -6,10 +6,10 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 
 public interface ResourceMatcher<R extends HasMetadata, P extends HasMetadata> {
 
-    default void onEventSourceInit(EventSourceContext<P> context) {}
+  default void onEventSourceInit(EventSourceContext<P> context) {}
 
-    default void onCreated(R desired, R created) {}
+  default void onCreated(R desired, R created) {}
 
-    boolean match(R actual, R desired, Context context);
+  boolean match(R actual, R desired, Context context);
 
 }

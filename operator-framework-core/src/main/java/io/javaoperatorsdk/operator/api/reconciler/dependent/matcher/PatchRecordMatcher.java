@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.matcher;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.concurrent.locks.ReentrantLock;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -11,12 +11,14 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 
-import java.util.concurrent.locks.ReentrantLock;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 // an alternative variant could be per resource patch - problem is there needs to be
 // cleanup implemented
 // problems:
-// - with service the clusterIP can change later (not clear if this is just a legacy stuff on minikube todo test)
+// - with service the clusterIP can change later (not clear if this is just a legacy stuff on
+// minikube todo test)
 
 public class PatchRecordMatcher<R extends HasMetadata, P extends HasMetadata>
     implements ResourceMatcher<R, P> {
@@ -40,7 +42,8 @@ public class PatchRecordMatcher<R extends HasMetadata, P extends HasMetadata>
       // making sure diff is calculated only once
       lock.lock();
       try {
-        if (diffJsonPatch != null) return;
+        if (diffJsonPatch != null)
+          return;
         var desiredSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(desired));
         var createdSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(created));
         diffJsonPatch = JsonDiff.asJson(desiredSpecNode, createdSpecNode);
@@ -53,11 +56,11 @@ public class PatchRecordMatcher<R extends HasMetadata, P extends HasMetadata>
   @Override
   public boolean match(R actual, R desired, Context context) {
     if (desired instanceof ConfigMap || desired instanceof Secret) {
-      throw new IllegalStateException("Not supported yet:"+desired.getClass());
+      throw new IllegalStateException("Not supported yet:" + desired.getClass());
     }
     var desiredSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(desired));
     var createdSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(actual));
-    desiredSpecNode = JsonPatch.apply(diffJsonPatch,desiredSpecNode);
+    desiredSpecNode = JsonPatch.apply(diffJsonPatch, desiredSpecNode);
     return desiredSpecNode.equals(createdSpecNode);
   }
 }

@@ -1,15 +1,14 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.matcher;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
-import io.fabric8.zjsonpatch.JsonPatch;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SpecifiedValuesMatcher<R extends HasMetadata, P extends HasMetadata>
     implements ResourceMatcher<R, P> {

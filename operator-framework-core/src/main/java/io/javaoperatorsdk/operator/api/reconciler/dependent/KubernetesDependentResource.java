@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.api.reconciler.dependent.matcher.SpecifiedValuesMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +11,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResou
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.matcher.SpecifiedValuesMatcher;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -33,7 +33,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier =
       ResourceID::fromResource;
   private PrimaryResourcesRetriever<R> primaryResourcesRetriever = Mappers.fromOwnerReference();
-  private SpecifiedValuesMatcher<R,P> recordMatcher = new SpecifiedValuesMatcher<>();
+  private SpecifiedValuesMatcher<R, P> recordMatcher = new SpecifiedValuesMatcher<>();
 
   public KubernetesDependentResource() {
     this(null);
@@ -76,7 +76,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   protected boolean match(R actual, R desired, Context context) {
-    return recordMatcher.match(actual,desired,context);
+    return recordMatcher.match(actual, desired, context);
   }
 
   @SuppressWarnings("unchecked")
@@ -89,7 +89,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
     var created = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
-    recordMatcher.onCreated(target,created);
+    recordMatcher.onCreated(target, created);
     return created;
   }
 

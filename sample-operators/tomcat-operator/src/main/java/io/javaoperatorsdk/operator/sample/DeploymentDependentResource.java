@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
 
 @KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
