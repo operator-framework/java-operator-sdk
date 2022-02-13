@@ -41,8 +41,8 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  protected boolean match(Secret actual, Secret target, Context context) {
-    return ResourceID.fromResource(actual).equals(ResourceID.fromResource(target));
+  protected boolean match(Secret actual, Secret desired, Context context) {
+    return ResourceID.fromResource(actual).equals(ResourceID.fromResource(desired));
   }
 
   @Override

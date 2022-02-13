@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.matcher.PatchRecordMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private AssociatedSecondaryResourceIdentifier<P> associatedSecondaryResourceIdentifier =
       ResourceID::fromResource;
   private PrimaryResourcesRetriever<R> primaryResourcesRetriever = Mappers.fromOwnerReference();
+  private PatchRecordMatcher<R,P> patchRecordMatcher = new PatchRecordMatcher<>();
 
   public KubernetesDependentResource() {
     this(null);
@@ -74,8 +76,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected boolean match(R actual, R target, Context context) {
-    return ReconcilerUtils.specsEqual(actual, target);
+  protected boolean match(R actual, R desired, Context context) {
+    return patchRecordMatcher.match(actual,desired,context);
   }
 
   @SuppressWarnings("unchecked")
@@ -85,8 +87,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
     beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+
+    var created = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
+    patchRecordMatcher.onCreated(target,created);
+    return created;
   }
 
   @SuppressWarnings("unchecked")

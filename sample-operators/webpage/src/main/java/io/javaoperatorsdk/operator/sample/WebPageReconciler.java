@@ -100,9 +100,9 @@ public class WebPageReconciler
                   .build();
             }) {
           @Override
-          protected boolean match(ConfigMap actual, ConfigMap target, Context context) {
+          protected boolean match(ConfigMap actual, ConfigMap desired, Context context) {
             return StringUtils.equals(
-                actual.getData().get("index.html"), target.getData().get("index.html"));
+                actual.getData().get("index.html"), desired.getData().get("index.html"));
           }
 
           @Override
@@ -149,11 +149,6 @@ public class WebPageReconciler
                       new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
               return deployment;
             }) {
-          @Override
-          protected boolean match(Deployment actual, Deployment target, Context context) {
-            // todo comparator
-            return true;
-          }
         };
 
     this.serviceDR =
@@ -169,11 +164,6 @@ public class WebPageReconciler
               service.getSpec().setSelector(labels);
               return service;
             }) {
-
-          protected boolean match(Service actual, Service target, Context context) {
-            // todo comparator
-            return true;
-          }
         };
   }
 

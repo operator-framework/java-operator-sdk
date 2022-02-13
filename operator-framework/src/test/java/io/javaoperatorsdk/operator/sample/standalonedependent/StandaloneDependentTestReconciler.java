@@ -34,11 +34,11 @@ public class StandaloneDependentTestReconciler
           return deployment;
         }) {
           @Override
-          protected boolean match(Deployment actual, Deployment target, Context context) {
-            return Objects.equals(actual.getSpec().getReplicas(), target.getSpec().getReplicas()) &&
+          protected boolean match(Deployment actual, Deployment desired, Context context) {
+            return Objects.equals(actual.getSpec().getReplicas(), desired.getSpec().getReplicas()) &&
                 actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
                     .equals(
-                        target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+                        desired.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
           }
         };
   }
