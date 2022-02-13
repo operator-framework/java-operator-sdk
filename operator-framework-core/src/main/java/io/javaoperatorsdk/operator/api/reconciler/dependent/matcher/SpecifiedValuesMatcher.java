@@ -31,8 +31,8 @@ public class SpecifiedValuesMatcher<R extends HasMetadata, P extends HasMetadata
       throw new IllegalStateException("Not supported yet:" + desired.getClass());
     }
     var desiredSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(desired));
-    var createdSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(actual));
-    var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, createdSpecNode);
+    var actualSpecNode = mapper.valueToTree(ReconcilerUtils.getSpec(actual));
+    var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
     for (int i = 0; i < diffJsonPatch.size(); i++) {
       String operation = diffJsonPatch.get(i).get("op").asText();
       if (!operation.equals("add")) {
