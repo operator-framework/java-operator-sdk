@@ -4,7 +4,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -12,7 +11,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -27,7 +25,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceIni
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ManagedDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
