@@ -4,7 +4,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResource;
 
 public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat> {
 
@@ -20,5 +20,10 @@ public class ServiceDependentResource extends KubernetesDependentResource<Servic
         .addToSelector("app", tomcatMetadata.getName())
         .endSpec()
         .build();
+  }
+
+  @Override
+  protected Class<Service> resourceType() {
+    return Service.class;
   }
 }

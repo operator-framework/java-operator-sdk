@@ -3,9 +3,9 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResource;
 
 @KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
 public class DeploymentDependentResource extends KubernetesDependentResource<Deployment, Tomcat> {
@@ -48,5 +48,10 @@ public class DeploymentDependentResource extends KubernetesDependentResource<Dep
   public boolean match(Deployment fetched, Deployment target, Context context) {
     return fetched.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
         .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+  }
+
+  @Override
+  protected Class<Deployment> resourceType() {
+    return Deployment.class;
   }
 }

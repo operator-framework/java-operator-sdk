@@ -5,7 +5,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public interface DependentResourceConfiguration<R, P extends HasMetadata> {
 
-  Class<? extends DependentResource<R, P, ? extends DependentResourceConfiguration<R, P>>> getDependentResourceClass();
+  Class<? extends DependentResource<R, P>> getDependentResourceClass();
 
-  Class<R> getResourceClass();
 }

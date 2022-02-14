@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -79,6 +79,11 @@ public class StandaloneDependentTestReconciler
           actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
               .equals(
                   target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+    }
+
+    @Override
+    protected Class<Deployment> resourceType() {
+      return Deployment.class;
     }
   }
 }

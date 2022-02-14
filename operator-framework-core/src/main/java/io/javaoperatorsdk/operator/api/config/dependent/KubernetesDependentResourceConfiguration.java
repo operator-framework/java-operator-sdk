@@ -24,14 +24,14 @@ public interface KubernetesDependentResourceConfiguration<R extends HasMetadata,
       implements KubernetesDependentResourceConfiguration<R, P> {
 
 
-    private final Class<DependentResource<R, P, KubernetesDependentResourceConfiguration<R, P>>> dependentResourceClass;
+    private final Class<DependentResource<R, P>> dependentResourceClass;
     private final boolean owned;
 
     protected DefaultKubernetesDependentResourceConfiguration(
         ConfigurationService configurationService,
         String labelSelector, Class<R> resourceClass,
         Set<String> namespaces, boolean owned,
-        Class<DependentResource<R, P, KubernetesDependentResourceConfiguration<R, P>>> dependentResourceClass) {
+        Class<DependentResource<R, P>> dependentResourceClass) {
       super(labelSelector, resourceClass, namespaces);
       setConfigurationService(configurationService);
       this.owned = owned;
@@ -44,7 +44,7 @@ public interface KubernetesDependentResourceConfiguration<R extends HasMetadata,
     }
 
     @Override
-    public Class<? extends DependentResource<R, P, KubernetesDependentResourceConfiguration<R, P>>> getDependentResourceClass() {
+    public Class<? extends DependentResource<R, P>> getDependentResourceClass() {
       return dependentResourceClass;
     }
   }
@@ -56,6 +56,6 @@ public interface KubernetesDependentResourceConfiguration<R extends HasMetadata,
     return new DefaultKubernetesDependentResourceConfiguration<>(cfg.getConfigurationService(),
         cfg.getLabelSelector(), cfg.getResourceClass(),
         cfg.getNamespaces(), owned,
-        (Class<DependentResource<R, P, KubernetesDependentResourceConfiguration<R, P>>>) dependentResourceClass);
+        (Class<DependentResource<R, P>>) dependentResourceClass);
   }
 }

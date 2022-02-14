@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class DefaultControllerConfiguration<R extends HasMetadata>
@@ -21,7 +21,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final boolean generationAware;
   private final RetryConfiguration retryConfiguration;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final List<DependentResourceConfiguration> dependents;
+  private final List<Class<? extends DependentResource>> dependents;
   private final Duration reconciliationMaxInterval;
 
   // NOSONAR constructor is meant to provide all information
@@ -38,7 +38,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
       ConfigurationService service,
-      List<DependentResourceConfiguration> dependents) {
+      List<Class<? extends DependentResource>> dependents) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -102,7 +102,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public List<DependentResourceConfiguration> getDependentResources() {
+  public List<Class<? extends DependentResource>> getDependentResources() {
     return dependents;
   }
 

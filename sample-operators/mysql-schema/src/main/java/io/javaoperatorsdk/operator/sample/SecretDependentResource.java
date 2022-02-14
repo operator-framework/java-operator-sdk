@@ -5,7 +5,7 @@ import java.util.Base64;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 
@@ -24,6 +24,11 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
     throw new IllegalStateException(
         "Secret should not be updated. Secret: " + target + " for custom resource: "
             + primary);
+  }
+
+  @Override
+  protected Class<Secret> resourceType() {
+    return Secret.class;
   }
 
   @Override

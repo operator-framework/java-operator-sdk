@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api.config.dependent;
+package io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

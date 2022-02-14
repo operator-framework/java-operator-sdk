@@ -6,8 +6,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -17,6 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -25,8 +24,8 @@ import static java.lang.String.format;
 // todo handle this, should work with finalizer
 @ControllerConfiguration(finalizerName = NO_FINALIZER,
     dependents = {
-        @Dependent(resourceType = Secret.class, type = SecretDependentResource.class),
-        @Dependent(resourceType = Schema.class, type = SchemaDependentResource.class)
+        @Dependent(type = SecretDependentResource.class),
+        @Dependent(type = SchemaDependentResource.class)
     })
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,

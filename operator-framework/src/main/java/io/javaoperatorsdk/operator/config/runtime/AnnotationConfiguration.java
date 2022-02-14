@@ -1,23 +1,17 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -146,56 +140,11 @@ public class AnnotationConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public List<DependentResourceConfiguration> getDependentResources() {
-    if (dependentConfigurations == null) {
-      final var dependents = valueOrDefault(annotation, ControllerConfiguration::dependents,
-          new Dependent[] {});
-      if (dependents.length > 0) {
-        dependentConfigurations = new ArrayList<>(dependents.length);
-        for (Dependent dependent : dependents) {
-          final Class<? extends DependentResource> dependentType = dependent.type();
-          final var resourceType = dependent.resourceType();
-
-          if (HasMetadata.class.isAssignableFrom(resourceType)) {
-            final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
-            final var namespaces =
-                valueOrDefault(kubeDependent, KubernetesDependent::namespaces,
-                    this.getNamespaces().toArray(new String[0]));
-            final var labelSelector =
-                valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
-            final var owned = valueOrDefault(kubeDependent, KubernetesDependent::owned,
-                KubernetesDependent.OWNED_DEFAULT);
-
-            final var configuration = InformerConfiguration.from(service, resourceType)
-                .withLabelSelector(labelSelector)
-                .withNamespaces(namespaces)
-                .build();
-
-            dependentConfigurations.add(
-                KubernetesDependentResourceConfiguration.from(configuration, owned, dependentType));
-          } else {
-            dependentConfigurations.add(new DependentResourceConfiguration() {
-              @Override
-              public Class<? extends DependentResource> getDependentResourceClass() {
-                return dependentType;
-              }
-
-              @Override
-              public Class getResourceClass() {
-                return resourceType;
-              }
-            });
-          }
-        }
-      } else {
-        dependentConfigurations = Collections.emptyList();
-      }
-    }
-    return dependentConfigurations;
+  public List<Class<? extends DependentResource>> getDependentResources() {
+    final var dependents =
+        valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
+    return Arrays.stream(dependents).map(Dependent::type).collect(Collectors.toList());
   }
 
-  private static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
-    return annotation == null ? defaultValue : mapper.apply(annotation);
-  }
 }
 
