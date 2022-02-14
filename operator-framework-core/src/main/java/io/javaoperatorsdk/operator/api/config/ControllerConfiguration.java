@@ -54,6 +54,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return Collections.emptyList();
   }
 
+
+
   default Optional<Duration> reconciliationMaxInterval() {
     return Optional.of(Duration.ofHours(10L));
   }

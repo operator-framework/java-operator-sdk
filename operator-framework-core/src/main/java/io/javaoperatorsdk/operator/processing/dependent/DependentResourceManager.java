@@ -52,10 +52,10 @@ public class DependentResourceManager<P extends HasMetadata>
 
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
-    final var dependentConfigurations = controllerConfiguration.getDependentResources();
-    final var sources = new ArrayList<EventSource>(dependentConfigurations.size());
+    final var dependentResources = controllerConfiguration.getDependentResources();
+    final var sources = new ArrayList<EventSource>(dependentResources.size());
     dependents =
-        dependentConfigurations.stream()
+        dependentResources.stream()
             .map(
                 drc -> {
                   final var dependentResource =
@@ -122,9 +122,7 @@ public class DependentResourceManager<P extends HasMetadata>
 
       var initializer = initializers.get(dependentResourceClass);
       if (initializer == null) {
-
         initializer = initializerClass.getConstructor().newInstance();
-
         initializers.put(initializerClass, initializer);
       }
       return initializer;
