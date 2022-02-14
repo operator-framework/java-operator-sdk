@@ -21,8 +21,9 @@ public class KubernetesDependentResourceInitializer<T extends DependentResource<
       KubernetesClient client) {
     try {
       KubernetesDependentResource<?, ?> kubernetesDependentResource =
-          (KubernetesDependentResource<?, ?>) dependentResourceClass.getConstructor().newInstance();
-      kubernetesDependentResource.setKubernetesClient(client);
+          (KubernetesDependentResource<?, ?>) dependentResourceClass
+              .getConstructor(KubernetesClient.class)
+              .newInstance(client);
 
       final var kubeDependent = dependentResourceClass.getAnnotation(KubernetesDependent.class);
       final var namespaces =

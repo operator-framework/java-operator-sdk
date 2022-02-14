@@ -30,6 +30,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
 
+  protected KubernetesDependentResource(KubernetesClient client) {
+    this.client = client;
+  }
+
   @SuppressWarnings("unchecked")
   public void configureWith(ConfigurationService service, String labelSelector,
       Set<String> namespaces, boolean addOwnerReference) {
@@ -116,7 +120,4 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return informerEventSource.getAssociated(primaryResource);
   }
 
-  public void setKubernetesClient(KubernetesClient client) {
-    this.client = client;
-  }
 }

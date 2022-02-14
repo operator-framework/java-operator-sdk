@@ -13,7 +13,7 @@ public class FallbackDependentResourceInitializer<T extends DependentResource>
   @Override
   public T initialize(
       Class<T> resourceClass,
-      ControllerConfiguration<?> configurationService,
+      ControllerConfiguration<?> controllerConfiguration,
       KubernetesClient client) {
     try {
       return resourceClass.getConstructor().newInstance();

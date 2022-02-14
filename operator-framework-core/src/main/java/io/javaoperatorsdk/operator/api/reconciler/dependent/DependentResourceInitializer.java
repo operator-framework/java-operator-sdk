@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 public interface DependentResourceInitializer<T extends DependentResource> {
 
-  T initialize(Class<T> resourceClass, ControllerConfiguration<?> configurationService,
+  T initialize(Class<T> resourceClass, ControllerConfiguration<?> controllerConfiguration,
       KubernetesClient client);
 
 }

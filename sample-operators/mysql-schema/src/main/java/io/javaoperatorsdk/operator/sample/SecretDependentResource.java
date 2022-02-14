@@ -4,6 +4,7 @@ import java.util.Base64;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -13,6 +14,10 @@ import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
     implements AssociatedSecondaryResourceIdentifier<MySQLSchema> {
+
+  public SecretDependentResource(KubernetesClient client) {
+    super(client);
+  }
 
   private static String encode(String value) {
     return Base64.getEncoder().encodeToString(value.getBytes());
