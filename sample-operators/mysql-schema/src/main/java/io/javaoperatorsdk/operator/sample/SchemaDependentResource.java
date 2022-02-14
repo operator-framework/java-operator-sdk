@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
@@ -15,7 +16,8 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
 import static java.lang.String.format;
 
-public class SchemaDependentResource extends AbstractDependentResource<Schema, MySQLSchema> {
+public class SchemaDependentResource extends
+    AbstractDependentResource<Schema, MySQLSchema, DependentResourceConfiguration<Schema, MySQLSchema>> {
 
   private static final int POLL_PERIOD = 500;
   private MySQLDbConfig dbConfig;

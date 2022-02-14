@@ -26,21 +26,7 @@ public class StandaloneDependentTestReconciler
   KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> configMapDependent;
 
   public StandaloneDependentTestReconciler() {
-    configMapDependent =
-        new KubernetesDependentResource<>(Deployment.class, (primary, context) -> {
-          Deployment deployment = loadYaml(Deployment.class, "nginx-deployment.yaml");
-          deployment.getMetadata().setName(primary.getMetadata().getName());
-          deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-          return deployment;
-        }) {
-          @Override
-          protected boolean match(Deployment actual, Deployment target, Context context) {
-            return Objects.equals(actual.getSpec().getReplicas(), target.getSpec().getReplicas()) &&
-                actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
-                    .equals(
-                        target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-          }
-        };
+    configMapDependent = new DeploymentDependentResource();
   }
 
   @Override
@@ -72,6 +58,27 @@ public class StandaloneDependentTestReconciler
       return Serialization.unmarshal(is, clazz);
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
+    }
+  }
+
+  private class DeploymentDependentResource extends
+      KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
+
+    @Override
+    protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
+      Deployment deployment = StandaloneDependentTestReconciler.this.loadYaml(Deployment.class,
+          "nginx-deployment.yaml");
+      deployment.getMetadata().setName(primary.getMetadata().getName());
+      deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
+      return deployment;
+    }
+
+    @Override
+    protected boolean match(Deployment actual, Deployment target, Context context) {
+      return Objects.equals(actual.getSpec().getReplicas(), target.getSpec().getReplicas()) &&
+          actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+              .equals(
+                  target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
     }
   }
 }
