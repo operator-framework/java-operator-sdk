@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes;
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,7 +13,7 @@ public @interface KubernetesDependent {
 
   boolean OWNED_DEFAULT = true;
 
-  boolean owned() default OWNED_DEFAULT;
+  boolean addOwnerReference() default OWNED_DEFAULT;
 
   /**
    * Specified which namespaces this Controller monitors for custom resources events. If no

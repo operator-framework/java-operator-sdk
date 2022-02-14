@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
@@ -23,20 +25,25 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ManagedDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.kubernetes.KubernetesDependentResourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceInitializer;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Ignore
 public class DependentResourceManager<P extends HasMetadata>
     implements EventSourceInitializer<P>, EventSourceContextInjector, Reconciler<P> {
+
+  private static final Logger log = LoggerFactory.getLogger(DependentResourceManager.class);
+
   private final Reconciler<P> reconciler;
   private final ControllerConfiguration<P> controllerConfiguration;
   private List<DependentResource> dependents;
   private Map<Class<? extends DependentResourceInitializer>, DependentResourceInitializer> initializers =
       new HashMap();
+
+
 
   public DependentResourceManager(Controller<P> controller) {
     this.reconciler = controller.getReconciler();
@@ -105,11 +112,9 @@ public class DependentResourceManager<P extends HasMetadata>
           // repeated
           initializerClass = KubernetesDependentResourceInitializer.class;
         } else {
-          throw new OperatorException(
-              "No initializer found for class: "
-                  + dependentResourceClass.getName()
-                  + ". "
-                  + "Use  @ManagedDependentResource annotation to specify it.");
+          log.info("No initializer found for dependent resource: {}. " +
+              "Using fallback initializer", dependentResourceClass.getName());
+          initializerClass = FallbackDependentResourceInitializer.class;
         }
       } else {
         initializerClass = managedDependentResource.initializer();
