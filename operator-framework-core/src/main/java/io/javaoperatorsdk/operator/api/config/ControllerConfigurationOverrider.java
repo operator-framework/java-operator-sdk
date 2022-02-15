@@ -89,20 +89,20 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   /**
-   * If a {@link DependentResourceSpec} already exists with the same dependentResourceClass it
-   * will be replaced. Otherwise, an exception is thrown;
+   * If a {@link DependentResourceSpec} already exists with the same dependentResourceClass it will
+   * be replaced. Otherwise, an exception is thrown;
    *
    * @param dependentResourceSpec to add or replace
    */
   public void replaceDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
     var currentConfig =
         findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
-//            .orElseThrow(
-//                () -> new IllegalStateException(
-//                    "No config found for class: "
-//                        + dependentResourceSpec.getDependentResourceClass()));
-//    dependentResourceSpecs.remove(currentConfig);
-//    dependentResourceSpecs.add(dependentResourceSpec);
+    // .orElseThrow(
+    // () -> new IllegalStateException(
+    // "No config found for class: "
+    // + dependentResourceSpec.getDependentResourceClass()));
+    // dependentResourceSpecs.remove(currentConfig);
+    // dependentResourceSpecs.add(dependentResourceSpec);
   }
 
   public void addNewDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
@@ -137,7 +137,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         original.getResourceClass(),
         reconciliationMaxInterval,
         original.getConfigurationService(),
-            dependentResourceSpecs);
+        dependentResourceSpecs);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

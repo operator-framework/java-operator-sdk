@@ -8,12 +8,15 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -44,16 +47,17 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       if (ReconcilerUtils.isFinalizerValid(finalizer)) {
         return finalizer;
       } else {
-        throw new IllegalArgumentException(finalizer
-            + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
+        throw new IllegalArgumentException(
+            finalizer
+                + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
       }
     }
   }
 
   @Override
   public boolean isGenerationAware() {
-    return valueOrDefault(annotation, ControllerConfiguration::generationAwareEventProcessing,
-        true);
+    return valueOrDefault(
+        annotation, ControllerConfiguration::generationAwareEventProcessing, true);
   }
 
   @Override
@@ -93,8 +97,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
     Class<ResourceEventFilter<R>>[] filterTypes =
         (Class<ResourceEventFilter<R>>[]) valueOrDefault(annotation,
-            ControllerConfiguration::eventFilters,
-            new Object[] {});
+            ControllerConfiguration::eventFilters, new Object[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
         try {
@@ -110,9 +113,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         }
       }
     }
-    return answer != null
-        ? answer
-        : ResourceEventFilters.passthrough();
+    return answer != null ? answer : ResourceEventFilters.passthrough();
   }
 
   @Override
@@ -121,8 +122,10 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       if (annotation.reconciliationMaxInterval().interval() <= 0) {
         return Optional.empty();
       }
-      return Optional.of(Duration.of(annotation.reconciliationMaxInterval().interval(),
-          annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
+      return Optional.of(
+          Duration.of(
+              annotation.reconciliationMaxInterval().interval(),
+              annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
     } else {
       return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
     }
@@ -148,19 +151,33 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     }
 
     List<DependentResourceSpec> resourceSpecs = new ArrayList<>(dependents.length);
-    for (Dependent dependent: dependents) {
+    for (Dependent dependent : dependents) {
 
       final Class<? extends DependentResource> dependentType = dependent.type();
       if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
-
-
+        final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
+        final var namespaces =
+            Utils.valueOrDefault(
+                kubeDependent,
+                KubernetesDependent::namespaces,
+                this.getNamespaces().toArray(new String[0]));
+        final var labelSelector =
+            Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
+        final var addOwnerReference =
+            Utils.valueOrDefault(
+                kubeDependent,
+                KubernetesDependent::addOwnerReference,
+                KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+        KubernetesDependentResourceConfig config =
+            new KubernetesDependentResourceConfig(
+                addOwnerReference, namespaces, labelSelector, getConfigurationService());
+        resourceSpecs.add(new DependentResourceSpec(dependentType, config));
       } else {
         resourceSpecs.add(new DependentResourceSpec(dependentType));
       }
     }
-    return Arrays.stream(dependents).map(d -> new DependentResourceSpec(d.type()))
+    return Arrays.stream(dependents)
+        .map(d -> new DependentResourceSpec(d.type()))
         .collect(Collectors.toList());
   }
-
 }
-

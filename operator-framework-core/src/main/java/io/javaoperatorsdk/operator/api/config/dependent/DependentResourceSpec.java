@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
-public class DependentResourceSpec<T extends DependentResource<?,?,C>,C> {
+public class DependentResourceSpec<T extends DependentResource<?, ?, C>, C> {
 
   private final Class<T> dependentResourceClass;
 
@@ -15,7 +15,7 @@ public class DependentResourceSpec<T extends DependentResource<?,?,C>,C> {
   }
 
   public DependentResourceSpec(Class<T> dependentResourceClass,
-                               C dependentResourceConfig) {
+      C dependentResourceConfig) {
     this.dependentResourceClass = dependentResourceClass;
     this.dependentResourceConfig = dependentResourceConfig;
   }

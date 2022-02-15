@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Optional;
-
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 
 public class ResourcePollerConfig implements DependentResourceConfig {

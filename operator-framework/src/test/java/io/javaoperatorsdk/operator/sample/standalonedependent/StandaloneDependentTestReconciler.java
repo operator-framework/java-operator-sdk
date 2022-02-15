@@ -25,7 +25,9 @@ public class StandaloneDependentTestReconciler
 
   KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> configMapDependent;
 
-  public StandaloneDependentTestReconciler() {}
+  public StandaloneDependentTestReconciler() {
+    configMapDependent = new DeploymentDependentResource();
+  }
 
   @Override
   public List<EventSource> prepareEventSources(
@@ -42,8 +44,8 @@ public class StandaloneDependentTestReconciler
 
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    configMapDependent = new DeploymentDependentResource(kubernetesClient);
     this.kubernetesClient = kubernetesClient;
+    configMapDependent.setKubernetesClient(kubernetesClient);
   }
 
   @Override
@@ -61,6 +63,9 @@ public class StandaloneDependentTestReconciler
 
   private class DeploymentDependentResource extends
       KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
+
+    public DeploymentDependentResource() {
+    }
 
     public DeploymentDependentResource(KubernetesClient client) {
       super(client);

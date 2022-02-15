@@ -14,6 +14,14 @@ public class KubernetesDependentResourceConfig {
 
   public KubernetesDependentResourceConfig() {}
 
+  public KubernetesDependentResourceConfig(boolean addOwnerReference, String[] namespaces,
+      String labelSelector, ConfigurationService configurationService) {
+    this.addOwnerReference = addOwnerReference;
+    this.namespaces = namespaces;
+    this.labelSelector = labelSelector;
+    this.configurationService = configurationService;
+  }
+
   public KubernetesDependentResourceConfig setAddOwnerReference(
       boolean addOwnerReference) {
     this.addOwnerReference = addOwnerReference;
@@ -30,7 +38,8 @@ public class KubernetesDependentResourceConfig {
     return this;
   }
 
-  public KubernetesDependentResourceConfig setConfigurationService(ConfigurationService configurationService) {
+  public KubernetesDependentResourceConfig setConfigurationService(
+      ConfigurationService configurationService) {
     this.configurationService = configurationService;
     return this;
   }

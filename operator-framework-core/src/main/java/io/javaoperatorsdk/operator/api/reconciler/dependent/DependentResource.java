@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-public interface DependentResource<R, P extends HasMetadata,C> {
+public interface DependentResource<R, P extends HasMetadata, C> {
 
   Optional<EventSource> eventSource(EventSourceContext<P> context);
 

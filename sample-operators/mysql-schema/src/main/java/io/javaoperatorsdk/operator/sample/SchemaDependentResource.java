@@ -22,13 +22,12 @@ public class SchemaDependentResource extends
   private MySQLDbConfig dbConfig;
   private int pollPeriod;
 
-  public SchemaDependentResource() {
-  }
+  public SchemaDependentResource() {}
 
   @Override
   public void configWith(ResourcePollerConfig config) {
-      this.dbConfig = config.getMySQLDbConfig();
-      this.pollPeriod = config.getPollPeriod();
+    this.dbConfig = config.getMySQLDbConfig();
+    this.pollPeriod = config.getPollPeriod();
   }
 
   @Override
