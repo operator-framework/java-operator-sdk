@@ -16,14 +16,14 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
 @SuppressWarnings("rawtypes")
-public class AnnotationConfiguration<R extends HasMetadata>
+public class AnnotationControllerConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
 
-  public AnnotationConfiguration(Reconciler<R> reconciler) {
+  public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
   }
