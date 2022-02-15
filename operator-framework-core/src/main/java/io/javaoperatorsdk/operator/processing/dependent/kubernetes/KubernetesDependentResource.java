@@ -66,17 +66,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     informerEventSource = new InformerEventSource<>(ic, client);
   }
 
-  /**
-   * Use to share informers between event more resources.
-   *
-   * @param informerEventSource informer to use
-   * @param addOwnerReference to the created resource
-   */
-  public void configureWith(InformerEventSource<R, P> informerEventSource,
-      boolean addOwnerReference) {
-    this.informerEventSource = informerEventSource;
-    this.addOwnerReference = addOwnerReference;
-  }
 
   protected void beforeCreateOrUpdate(R desired, P primary) {
     if (addOwnerReference) {
@@ -120,12 +109,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
     return Optional.of(informerEventSource);
-  }
-
-  public KubernetesDependentResource<R, P> setInformerEventSource(
-      InformerEventSource<R, P> informerEventSource) {
-    this.informerEventSource = informerEventSource;
-    return this;
   }
 
   @Override
