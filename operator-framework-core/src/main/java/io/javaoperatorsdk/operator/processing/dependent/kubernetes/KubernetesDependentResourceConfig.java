@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
@@ -19,4 +20,5 @@ public interface KubernetesDependentResourceConfig extends DependentResourceConf
     return EMPTY_STRING;
   };
 
+  ConfigurationService getConfigurationService();
 }

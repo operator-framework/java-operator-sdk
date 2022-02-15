@@ -141,6 +141,13 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   public List<DependentResourceSpec> getDependentResources() {
     final var dependents =
         valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
+
+    List<DependentResourceSpec> resourceSpecs = new ArrayList<>(dependents.length);
+    
+    for (Dependent dependent: dependents) {
+
+    }
+
     return Arrays.stream(dependents).map(d -> new DependentResourceSpec(d.type()))
         .collect(Collectors.toList());
   }
