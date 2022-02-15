@@ -15,6 +15,9 @@ import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
     implements AssociatedSecondaryResourceIdentifier<MySQLSchema> {
 
+  public SecretDependentResource() {
+  }
+
   public SecretDependentResource(KubernetesClient client) {
     super(client);
   }

@@ -9,6 +9,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat> {
 
+  public ServiceDependentResource() {
+  }
+
   public ServiceDependentResource(KubernetesClient client) {
     super(client);
   }
