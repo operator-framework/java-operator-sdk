@@ -106,7 +106,8 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
             try {
               return reconciler.reconcile(resource, context);
             } catch (Exception e) {
-              log.error("Errors on reconciliation.", e);
+              log.error("Reconciliation error for resource: " + ResourceID.fromResource(resource)
+                  + " / reconciler: " + controllerName(), e);
               throw e;
             }
           }
