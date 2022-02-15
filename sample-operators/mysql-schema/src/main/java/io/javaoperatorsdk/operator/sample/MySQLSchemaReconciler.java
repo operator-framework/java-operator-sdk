@@ -37,21 +37,14 @@ public class MySQLSchemaReconciler
   static final String MYSQL_SECRET_NAME = "mysql.secret.name";
   static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
   static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
-  static final String MYSQL_DB_CONFIG = "mysql.db.config";
   static final String BUILT_SCHEMA = "built schema";
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
-  private final MySQLDbConfig mysqlDbConfig;
-
-  public MySQLSchemaReconciler(MySQLDbConfig mysqlDbConfig) {
-    this.mysqlDbConfig = mysqlDbConfig;
-  }
+  public MySQLSchemaReconciler() {}
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void injectInto(EventSourceContext context) {
-    context.put(MYSQL_DB_CONFIG, mysqlDbConfig);
-  }
+  public void injectInto(EventSourceContext context) {}
 
   @Override
   public void initContext(MySQLSchema primary, Context context) {

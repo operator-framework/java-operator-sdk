@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -37,7 +39,11 @@ public class OperatorExtension extends AbstractOperatorExtension {
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass) {
-    super(configurationService, infrastructure, infrastructureTimeout, oneNamespacePerClass,
+    super(
+        configurationService,
+        infrastructure,
+        infrastructureTimeout,
+        oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion);
     this.reconcilers = reconcilers;
@@ -86,6 +92,9 @@ public class OperatorExtension extends AbstractOperatorExtension {
       if (ref.retry != null) {
         oconfig.withRetry(ref.retry);
       }
+      if (ref.controllerConfigurationOverrider != null) {
+        ref.controllerConfigurationOverrider.accept(oconfig);
+      }
 
       final var kubernetesClient = getKubernetesClient();
       try (InputStream is = getClass().getResourceAsStream(path)) {
@@ -127,6 +136,19 @@ public class OperatorExtension extends AbstractOperatorExtension {
       this.reconcilers = new ArrayList<>();
     }
 
+    public Builder withReconciler(
+        Reconciler value, Consumer<ControllerConfigurationOverrider> configurationOverrider) {
+      return withReconciler(value, null, configurationOverrider);
+    }
+
+    public Builder withReconciler(
+        Reconciler value,
+        Retry retry,
+        Consumer<ControllerConfigurationOverrider> configurationOverrider) {
+      reconcilers.add(new ReconcilerSpec(value, retry, configurationOverrider));
+      return this;
+    }
+
     @SuppressWarnings("rawtypes")
     public Builder withReconciler(Reconciler value) {
       reconcilers.add(new ReconcilerSpec(value, null));
@@ -165,10 +187,19 @@ public class OperatorExtension extends AbstractOperatorExtension {
   private static class ReconcilerSpec {
     final Reconciler reconciler;
     final Retry retry;
+    final Consumer<ControllerConfigurationOverrider> controllerConfigurationOverrider;
 
     public ReconcilerSpec(Reconciler reconciler, Retry retry) {
+      this(reconciler, retry, null);
+    }
+
+    public ReconcilerSpec(
+        Reconciler reconciler,
+        Retry retry,
+        Consumer<ControllerConfigurationOverrider> controllerConfigurationOverrider) {
       this.reconciler = reconciler;
       this.retry = retry;
+      this.controllerConfigurationOverrider = controllerConfigurationOverrider;
     }
   }
 }

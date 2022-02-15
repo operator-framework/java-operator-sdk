@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ManagedDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
@@ -15,17 +16,23 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
 import static java.lang.String.format;
 
+@ResourcePoller(pollPeriod = 1000)
+@ManagedDependentResource(initializer = SchemDependentResourceInitializer.class)
 public class SchemaDependentResource extends
     AbstractDependentResource<Schema, MySQLSchema> {
 
-  private static final int POLL_PERIOD = 500;
   private MySQLDbConfig dbConfig;
+  private int pollPeriod;
+
+  public SchemaDependentResource(MySQLDbConfig dbConfig, int pollPeriod) {
+    this.pollPeriod = pollPeriod;
+    this.dbConfig = dbConfig;
+  }
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<MySQLSchema> context) {
-    dbConfig = context.getMandatory(MySQLSchemaReconciler.MYSQL_DB_CONFIG, MySQLDbConfig.class);
     return Optional.of(new PerResourcePollingEventSource<>(
-        new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), POLL_PERIOD,
+        new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), pollPeriod,
         Schema.class));
   }
 

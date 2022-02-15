@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
@@ -31,25 +32,20 @@ import static org.hamcrest.Matchers.notNullValue;
 
 class MySQLSchemaOperatorE2E {
 
-  final static Logger log = LoggerFactory.getLogger(MySQLSchemaOperatorE2E.class);
+  static final Logger log = LoggerFactory.getLogger(MySQLSchemaOperatorE2E.class);
 
-  final static KubernetesClient client = new DefaultKubernetesClient();
+  static final KubernetesClient client = new DefaultKubernetesClient();
 
-  final static String MY_SQL_NS = "mysql";
+  static final String MY_SQL_NS = "mysql";
 
   private static List<HasMetadata> infrastructure = new ArrayList<>();
+
   static {
-    infrastructure
-        .add(new NamespaceBuilder()
-            .withNewMetadata()
-            .withName(MY_SQL_NS)
-            .endMetadata()
-            .build());
+    infrastructure.add(
+        new NamespaceBuilder().withNewMetadata().withName(MY_SQL_NS).endMetadata().build());
     try {
-      infrastructure.addAll(
-          client.load(new FileInputStream("k8s/mysql-deployment.yaml")).get());
-      infrastructure.addAll(
-          client.load(new FileInputStream("k8s/mysql-service.yaml")).get());
+      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-deployment.yaml")).get());
+      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-service.yaml")).get());
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
@@ -63,20 +59,26 @@ class MySQLSchemaOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator = isLocal() ? OperatorExtension.builder()
-      .withConfigurationService(DefaultConfigurationService.instance())
-      .withReconciler(
-          new MySQLSchemaReconciler(new MySQLDbConfig("127.0.0.1", "3306", "root", "password")))
-      .withInfrastructure(infrastructure)
-      .build()
-      : E2EOperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withOperatorDeployment(
-              client.load(new FileInputStream("k8s/operator.yaml")).get())
-          .withInfrastructure(infrastructure)
-          .build();
-
-
+  AbstractOperatorExtension operator =
+      isLocal()
+          ? OperatorExtension.builder()
+              .withConfigurationService(DefaultConfigurationService.instance())
+              .withReconciler(
+                  new MySQLSchemaReconciler(),
+                  c -> {
+                    c.replaceDependentResourceConfig(
+                        new DependentResourceConfig(
+                            SchemaDependentResource.class,
+                            new ResourcePollerConfigService(
+                                700, new MySQLDbConfig("127.0.0.1", "3306", "root", "password"))));
+                  })
+              .withInfrastructure(infrastructure)
+              .build()
+          : E2EOperatorExtension.builder()
+              .withConfigurationService(DefaultConfigurationService.instance())
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
+              .withInfrastructure(infrastructure)
+              .build();
 
   public MySQLSchemaOperatorE2E() throws FileNotFoundException {}
 
@@ -85,28 +87,23 @@ class MySQLSchemaOperatorE2E {
     // Opening a port-forward if running locally
     LocalPortForward portForward = null;
     if (isLocal()) {
-      String podName = client
-          .pods()
-          .inNamespace(MY_SQL_NS)
-          .withLabel("app", "mysql")
-          .list()
-          .getItems()
-          .get(0)
-          .getMetadata()
-          .getName();
+      String podName =
+          client
+              .pods()
+              .inNamespace(MY_SQL_NS)
+              .withLabel("app", "mysql")
+              .list()
+              .getItems()
+              .get(0)
+              .getMetadata()
+              .getName();
 
-      portForward = client
-          .pods()
-          .inNamespace(MY_SQL_NS)
-          .withName(podName)
-          .portForward(3306, 3306);
+      portForward = client.pods().inNamespace(MY_SQL_NS).withName(podName).portForward(3306, 3306);
     }
 
     MySQLSchema testSchema = new MySQLSchema();
-    testSchema.setMetadata(new ObjectMetaBuilder()
-        .withName("mydb1")
-        .withNamespace(operator.getNamespace())
-        .build());
+    testSchema.setMetadata(
+        new ObjectMetaBuilder().withName("mydb1").withNamespace(operator.getNamespace()).build());
     testSchema.setSpec(new SchemaSpec());
     testSchema.getSpec().setEncoding("utf8");
 
@@ -114,19 +111,25 @@ class MySQLSchemaOperatorE2E {
     client.resource(testSchema).createOrReplace();
 
     log.info("Waiting 2 minutes for expected resources to be created and updated");
-    await().atMost(2, MINUTES).ignoreExceptions().untilAsserted(() -> {
-      MySQLSchema updatedSchema =
-          client.resources(MySQLSchema.class).inNamespace(operator.getNamespace())
-              .withName(testSchema.getMetadata().getName()).get();
-      assertThat(updatedSchema.getStatus(), is(notNullValue()));
-      assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
-      assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
-      assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
-    });
+    await()
+        .atMost(2, MINUTES)
+        .ignoreExceptions()
+        .untilAsserted(
+            () -> {
+              MySQLSchema updatedSchema =
+                  client
+                      .resources(MySQLSchema.class)
+                      .inNamespace(operator.getNamespace())
+                      .withName(testSchema.getMetadata().getName())
+                      .get();
+              assertThat(updatedSchema.getStatus(), is(notNullValue()));
+              assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
+              assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
+              assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
+            });
 
     if (portForward != null) {
       portForward.close();
     }
   }
-
 }
