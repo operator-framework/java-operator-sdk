@@ -41,7 +41,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void configWith(KubernetesDependentResourceConfig config) {
-    configWith(config.getConfigurationService(),config.labelSelector(),Set.of(config.namespaces())
+    configWith(config.getConfigurationService(),config.labelSelector(),
+            Set.of(config.namespaces())
             ,config.addOwnerReference());
   }
 
@@ -72,8 +73,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    * @param informerEventSource informer to use
    * @param addOwnerReference to the created resource
    */
-  public void configureWithEventSource(InformerEventSource<R, P> informerEventSource,
-      boolean addOwnerReference) {
+  public void configWith(InformerEventSource<R, P> informerEventSource,
+                         boolean addOwnerReference) {
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
   }

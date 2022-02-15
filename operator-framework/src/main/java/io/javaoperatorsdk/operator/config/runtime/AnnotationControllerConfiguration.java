@@ -12,6 +12,8 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -141,13 +143,21 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   public List<DependentResourceSpec> getDependentResources() {
     final var dependents =
         valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
-
-    List<DependentResourceSpec> resourceSpecs = new ArrayList<>(dependents.length);
-    
-    for (Dependent dependent: dependents) {
-
+    if (dependents.length == 0) {
+      return Collections.emptyList();
     }
 
+    List<DependentResourceSpec> resourceSpecs = new ArrayList<>(dependents.length);
+    for (Dependent dependent: dependents) {
+
+      final Class<? extends DependentResource> dependentType = dependent.type();
+      if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
+
+
+      } else {
+        resourceSpecs.add(new DependentResourceSpec(dependentType));
+      }
+    }
     return Arrays.stream(dependents).map(d -> new DependentResourceSpec(d.type()))
         .collect(Collectors.toList());
   }
