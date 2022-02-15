@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
@@ -49,13 +48,6 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   public PostExecutionControl<R> handleExecution(ExecutionScope<R> executionScope) {
     try {
       return handleDispatch(executionScope);
-    } catch (KubernetesClientException e) {
-      log.info(
-          "Kubernetes exception {} {} during event processing, {} failed",
-          e.getCode(),
-          e.getMessage(),
-          executionScope);
-      return PostExecutionControl.exceptionDuringExecution(e);
     } catch (RuntimeException e) {
       log.error("Error during event processing {} failed.", executionScope, e);
       return PostExecutionControl.exceptionDuringExecution(e);
