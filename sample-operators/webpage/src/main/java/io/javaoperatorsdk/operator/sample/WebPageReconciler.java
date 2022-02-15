@@ -84,10 +84,10 @@ public class WebPageReconciler
   }
 
   private void createDependentResources(KubernetesClient client) {
-    this.configMapDR = new ConfigMapDependentResource(client);
+    this.configMapDR = new ConfigMapDependentResource();
 
     this.deploymentDR =
-        new KubernetesDependentResource<>(client) {
+        new KubernetesDependentResource<>() {
 
           @Override
           protected Deployment desired(WebPage webPage, Context context) {
@@ -127,7 +127,7 @@ public class WebPageReconciler
         };
 
     this.serviceDR =
-        new KubernetesDependentResource<>(client) {
+        new KubernetesDependentResource<>() {
 
           @Override
           protected Service desired(WebPage webPage, Context context) {
@@ -175,10 +175,6 @@ public class WebPageReconciler
   private class ConfigMapDependentResource extends KubernetesDependentResource<ConfigMap, WebPage>
       implements
       AssociatedSecondaryResourceIdentifier<WebPage> {
-
-    public ConfigMapDependentResource(KubernetesClient client) {
-      super(client);
-    }
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context context) {

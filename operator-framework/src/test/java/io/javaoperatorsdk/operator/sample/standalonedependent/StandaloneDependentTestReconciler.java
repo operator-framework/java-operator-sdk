@@ -64,12 +64,6 @@ public class StandaloneDependentTestReconciler
   private class DeploymentDependentResource extends
       KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
-    public DeploymentDependentResource() {}
-
-    public DeploymentDependentResource(KubernetesClient client) {
-      super(client);
-    }
-
     @Override
     protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
       Deployment deployment = StandaloneDependentTestReconciler.this.loadYaml(Deployment.class,

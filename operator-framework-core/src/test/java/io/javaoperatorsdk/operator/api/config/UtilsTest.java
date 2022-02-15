@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.api.config;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -22,10 +21,6 @@ class UtilsTest {
 
   public static class TestKubernetesDependentResource
       extends KubernetesDependentResource<Deployment, TestCustomResource> {
-
-    protected TestKubernetesDependentResource(KubernetesClient client) {
-      super(client);
-    }
 
     @Override
     protected Deployment desired(TestCustomResource primary, Context context) {
