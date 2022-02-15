@@ -91,7 +91,7 @@ public class DependentResourceManager<P extends HasMetadata>
         ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
       }
       dependentResourceSpec.getDependentResourceConfigService()
-          .ifPresent(c -> dependentResource.configWith(c));
+          .ifPresent(dependentResource::configureWith);
       return dependentResource;
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
         | InvocationTargetException e) {

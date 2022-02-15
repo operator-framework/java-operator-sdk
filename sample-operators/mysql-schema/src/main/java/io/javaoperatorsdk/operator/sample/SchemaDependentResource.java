@@ -24,7 +24,7 @@ public class SchemaDependentResource extends
   public SchemaDependentResource() {}
 
   @Override
-  public void configWith(ResourcePollerConfig config) {
+  public void configureWith(ResourcePollerConfig config) {
     this.dbConfig = config.getMySQLDbConfig();
     this.pollPeriod = config.getPollPeriod();
   }

@@ -40,13 +40,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public void configWith(KubernetesDependentResourceConfig config) {
-    configWith(config.getConfigurationService(), config.labelSelector(),
+  public void configureWith(KubernetesDependentResourceConfig config) {
+    configureWith(config.getConfigurationService(), config.labelSelector(),
         Set.of(config.namespaces()), config.addOwnerReference());
   }
 
   @SuppressWarnings("unchecked")
-  public void configWith(ConfigurationService service, String labelSelector,
+  public void configureWith(ConfigurationService service, String labelSelector,
       Set<String> namespaces, boolean addOwnerReference) {
     final var primaryResourcesRetriever =
         (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
@@ -72,7 +72,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    * @param informerEventSource informer to use
    * @param addOwnerReference to the created resource
    */
-  public void configWith(InformerEventSource<R, P> informerEventSource,
+  public void configureWith(InformerEventSource<R, P> informerEventSource,
       boolean addOwnerReference) {
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
@@ -114,7 +114,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
-      configWith(context.getConfigurationService(), null, null,
+      configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
@@ -136,6 +136,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
   }
 
+  @SuppressWarnings("unchecked")
   protected Class<R> resourceType() {
     return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }

@@ -17,5 +17,5 @@ public interface DependentResource<R, P extends HasMetadata, C> {
 
   Optional<R> getResource(P primaryResource);
 
-  default void configWith(C config) {};
+  default void configureWith(C config) {}
 }
