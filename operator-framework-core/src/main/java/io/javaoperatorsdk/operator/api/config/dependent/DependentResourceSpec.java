@@ -14,8 +14,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?, C>, C> {
     this(dependentResourceClass, null);
   }
 
-  public DependentResourceSpec(Class<T> dependentResourceClass,
-      C dependentResourceConfig) {
+  public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig) {
     this.dependentResourceClass = dependentResourceClass;
     this.dependentResourceConfig = dependentResourceConfig;
   }
@@ -24,7 +23,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?, C>, C> {
     return dependentResourceClass;
   }
 
-  public Optional<C> getDependentResourceConfigService() {
+  public Optional<C> getDependentResourceConfiguration() {
     return Optional.ofNullable(dependentResourceConfig);
   }
 }
