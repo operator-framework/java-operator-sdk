@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -135,9 +136,13 @@ public class DependentResourceManager<P extends HasMetadata>
   }
 
   private DependentResource from(
-      Class<? extends DependentResource> dependentResourceClass,
+      DependentResourceConfig dependentResourceConfig,
       KubernetesClient client) {
-    var initializer = getOrInitInitializerForClass(dependentResourceClass);
-    return initializer.initialize(dependentResourceClass, controllerConfiguration, client);
+    var initializer =
+        getOrInitInitializerForClass(dependentResourceConfig.getDependentResourceClass());
+    dependentResourceConfig.getDependentResourceConfigService()
+        .ifPresent(c -> initializer.useConfigService(c));
+    return initializer.initialize(dependentResourceConfig.getDependentResourceClass(),
+        controllerConfiguration, client);
   }
 }

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -92,7 +93,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
-          KubernetesDependent.OWNED_DEFAULT);
+          KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
@@ -113,7 +114,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
   }
 
-  protected abstract Class<R> resourceType();
+  protected Class<R> resourceType() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromInterface(getClass());
+  }
 
   @Override
   public Optional<R> getResource(P primaryResource) {

@@ -11,7 +11,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceIni
 import static io.javaoperatorsdk.operator.api.config.Utils.valueOrDefault;
 
 public class KubernetesDependentResourceInitializer<T extends DependentResource<?, ?>>
-    implements DependentResourceInitializer<T> {
+    implements DependentResourceInitializer<T, KubernetesDependentResourceConfigService> {
+
+  private KubernetesDependentResourceConfigService configService;
+
+  @Override
+  public void useConfigService(KubernetesDependentResourceConfigService configService) {
+    this.configService = configService;
+  }
 
   @Override
   @SuppressWarnings("unchecked")
@@ -25,22 +32,33 @@ public class KubernetesDependentResourceInitializer<T extends DependentResource<
               .getConstructor(KubernetesClient.class)
               .newInstance(client);
 
-      final var kubeDependent = dependentResourceClass.getAnnotation(KubernetesDependent.class);
-      final var namespaces =
-          valueOrDefault(
-              kubeDependent,
-              KubernetesDependent::namespaces,
-              controllerConfiguration.getNamespaces().toArray(new String[0]));
-      final var labelSelector =
-          valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
-      final var owned =
-          valueOrDefault(
-              kubeDependent, KubernetesDependent::addOwnerReference,
-              KubernetesDependent.OWNED_DEFAULT);
+      String[] namespaces;
+      String labelSelector;
+      boolean addOwnerReference;
+
+      if (configService != null) {
+        namespaces = configService.namespaces();
+        labelSelector = configService.labelSelector();
+        addOwnerReference = configService.addOwnerReference();
+      } else {
+        final var kubeDependent = dependentResourceClass.getAnnotation(KubernetesDependent.class);
+        namespaces =
+            valueOrDefault(
+                kubeDependent,
+                KubernetesDependent::namespaces,
+                controllerConfiguration.getNamespaces().toArray(new String[0]));
+        labelSelector =
+            valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
+        addOwnerReference =
+            valueOrDefault(
+                kubeDependent,
+                KubernetesDependent::addOwnerReference,
+                KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+      }
 
       kubernetesDependentResource.configureWith(controllerConfiguration.getConfigurationService(),
           labelSelector,
-          Set.of(namespaces), owned);
+          Set.of(namespaces), addOwnerReference);
       return (T) kubernetesDependentResource;
     } catch (InstantiationException
         | IllegalAccessException

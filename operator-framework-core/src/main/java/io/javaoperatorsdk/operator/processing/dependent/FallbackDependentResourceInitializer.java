@@ -4,11 +4,12 @@ import java.lang.reflect.InvocationTargetException;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigService;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceInitializer;
 
-public class FallbackDependentResourceInitializer<T extends DependentResource>
-    implements DependentResourceInitializer<T> {
+public class FallbackDependentResourceInitializer<T extends DependentResource<?, ?>, K extends DependentResourceConfigService>
+    implements DependentResourceInitializer<T, K> {
 
   @Override
   public T initialize(

@@ -7,8 +7,8 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -50,11 +50,9 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return ResourceEventFilters.passthrough();
   }
 
-  default List<Class<? extends DependentResource>> getDependentResources() {
+  default List<DependentResourceConfig> getDependentResources() {
     return Collections.emptyList();
   }
-
-
 
   default Optional<Duration> reconciliationMaxInterval() {
     return Optional.of(Duration.ofHours(10L));

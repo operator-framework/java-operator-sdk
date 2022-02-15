@@ -8,10 +8,10 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -138,10 +138,11 @@ public class AnnotationConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public List<Class<? extends DependentResource>> getDependentResources() {
+  public List<DependentResourceConfig> getDependentResources() {
     final var dependents =
         valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
-    return Arrays.stream(dependents).map(Dependent::type).collect(Collectors.toList());
+    return Arrays.stream(dependents).map(d -> new DependentResourceConfig(d.type()))
+        .collect(Collectors.toList());
   }
 
 }
