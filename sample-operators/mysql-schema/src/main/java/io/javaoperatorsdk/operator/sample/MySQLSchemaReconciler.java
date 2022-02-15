@@ -10,8 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -29,7 +27,7 @@ import static java.lang.String.format;
     })
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
-    ContextInitializer<MySQLSchema>, EventSourceContextInjector {
+    ContextInitializer<MySQLSchema> {
 
   static final String SECRET_FORMAT = "%s-secret";
   static final String USERNAME_FORMAT = "%s-user";
@@ -41,10 +39,6 @@ public class MySQLSchemaReconciler
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
   public MySQLSchemaReconciler() {}
-
-  @SuppressWarnings("rawtypes")
-  @Override
-  public void injectInto(EventSourceContext context) {}
 
   @Override
   public void initContext(MySQLSchema primary, Context context) {

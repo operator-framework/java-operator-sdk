@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -29,7 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Ignore
 public class DependentResourceManager<P extends HasMetadata>
-    implements EventSourceInitializer<P>, EventSourceContextInjector, Reconciler<P> {
+    implements EventSourceInitializer<P>, Reconciler<P> {
 
   private static final Logger log = LoggerFactory.getLogger(DependentResourceManager.class);
 
@@ -59,14 +58,6 @@ public class DependentResourceManager<P extends HasMetadata>
                 })
             .collect(Collectors.toList());
     return sources;
-  }
-
-  @Override
-  public void injectInto(EventSourceContext context) {
-    if (reconciler instanceof EventSourceContextInjector) {
-      EventSourceContextInjector injector = (EventSourceContextInjector) reconciler;
-      injector.injectInto(context);
-    }
   }
 
   @Override

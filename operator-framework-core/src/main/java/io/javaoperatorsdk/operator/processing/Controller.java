@@ -217,7 +217,6 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           eventSourceManager.getControllerResourceEventSource().getResourceCache(),
           configurationService(), kubernetesClient);
 
-      dependents.injectInto(context);
       prepareEventSources(context).forEach(eventSourceManager::registerEventSource);
 
       eventSourceManager.start();

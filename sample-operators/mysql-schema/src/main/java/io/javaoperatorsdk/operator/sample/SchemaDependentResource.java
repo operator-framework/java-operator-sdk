@@ -15,7 +15,6 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
 import static java.lang.String.format;
 
-@ResourcePoller(pollPeriod = 1000)
 public class SchemaDependentResource extends
     AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig> {
 

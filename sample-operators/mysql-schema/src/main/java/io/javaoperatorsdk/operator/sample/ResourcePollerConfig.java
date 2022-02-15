@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
-
-public class ResourcePollerConfig implements DependentResourceConfig {
+public class ResourcePollerConfig {
 
   private final int pollPeriod;
   private final MySQLDbConfig mySQLDbConfig;

@@ -64,8 +64,7 @@ public class StandaloneDependentTestReconciler
   private class DeploymentDependentResource extends
       KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
-    public DeploymentDependentResource() {
-    }
+    public DeploymentDependentResource() {}
 
     public DeploymentDependentResource(KubernetesClient client) {
       super(client);
