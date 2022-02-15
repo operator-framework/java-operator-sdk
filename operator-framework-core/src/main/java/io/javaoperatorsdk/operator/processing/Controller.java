@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
@@ -30,6 +33,8 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 @SuppressWarnings({"unchecked"})
 public class Controller<R extends HasMetadata> implements Reconciler<R>,
     LifecycleAware, EventSourceInitializer<R> {
+  private static final Logger log = LoggerFactory.getLogger(Controller.class);
+
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration<R> configuration;
   private final KubernetesClient kubernetesClient;
@@ -98,7 +103,12 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
           @Override
           public UpdateControl<R> execute() {
-            return reconciler.reconcile(resource, context);
+            try {
+              return reconciler.reconcile(resource, context);
+            } catch (Exception e) {
+              log.error("Errors on reconciliation.", e);
+              throw e;
+            }
           }
         });
   }
