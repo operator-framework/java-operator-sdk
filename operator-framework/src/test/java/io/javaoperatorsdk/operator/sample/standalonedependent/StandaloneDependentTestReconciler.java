@@ -83,9 +83,5 @@ public class StandaloneDependentTestReconciler
                   target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
     }
 
-    @Override
-    protected Class<Deployment> resourceType() {
-      return Deployment.class;
-    }
   }
 }

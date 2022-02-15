@@ -115,7 +115,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected Class<R> resourceType() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromInterface(getClass());
+    return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }
 
   @Override

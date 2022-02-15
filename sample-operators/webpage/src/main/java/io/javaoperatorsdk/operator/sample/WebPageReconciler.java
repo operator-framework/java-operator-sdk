@@ -215,11 +215,6 @@ public class WebPageReconciler
     }
 
     @Override
-    protected Class<ConfigMap> resourceType() {
-      return ConfigMap.class;
-    }
-
-    @Override
     public ResourceID associatedSecondaryID(WebPage primary) {
       return new ResourceID(configMapName(primary), primary.getMetadata().getNamespace());
     }

@@ -32,11 +32,6 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  protected Class<Secret> resourceType() {
-    return Secret.class;
-  }
-
-  @Override
   protected Secret desired(MySQLSchema schema, Context context) {
     return new SecretBuilder()
         .withNewMetadata()

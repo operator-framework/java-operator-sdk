@@ -10,9 +10,10 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigS
  * </p>
  * <p>
  * ConfigService is used to give possibility to override the default values, so it's not mandatory.
- * If config service is not set, the initializer should work just using default values or parsing values from
- * custom annotations.
+ * If config service is not set, the initializer should work just using default values or parsing
+ * values from custom annotations.
  * </p>
+ * 
  * @param <T> The dependent resource to create
  * @param <K> Use the config service if provided.
  */

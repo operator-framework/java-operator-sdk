@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
@@ -68,6 +69,11 @@ public class Utils {
 
   public static boolean debugThreadPool() {
     return Boolean.getBoolean(System.getProperty(DEBUG_THREAD_POOL_ENV_KEY, "false"));
+  }
+
+  public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
+    Type type = clazz.getGenericSuperclass();
+    return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
   }
 
   public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz) {

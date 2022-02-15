@@ -27,8 +27,4 @@ public class ServiceDependentResource extends KubernetesDependentResource<Servic
         .build();
   }
 
-  @Override
-  protected Class<Service> resourceType() {
-    return Service.class;
-  }
 }
