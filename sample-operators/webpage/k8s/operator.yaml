@@ -92,7 +92,7 @@ rules:
 - apiGroups:
   - "sample.javaoperatorsdk"
   resources:
-  - webservers
-  - webservers/status
+  - webpages
+  - webpages/status
   verbs:
   - '*'
