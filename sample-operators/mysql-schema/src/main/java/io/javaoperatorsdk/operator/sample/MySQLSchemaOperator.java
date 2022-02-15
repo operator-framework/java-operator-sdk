@@ -43,7 +43,7 @@ public class MySQLSchemaOperator {
 
     configOverrider.replaceDependentResourceConfig(
         new DependentResourceSpec(SchemaDependentResource.class,
-            new ResourcePollerConfig(700, MySQLDbConfig.loadFromEnvironmentVars())));
+            new ResourcePollerConfig(500, MySQLDbConfig.loadFromEnvironmentVars())));
 
     operator.register(schemaReconciler, configOverrider.build());
     operator.installShutdownHook();

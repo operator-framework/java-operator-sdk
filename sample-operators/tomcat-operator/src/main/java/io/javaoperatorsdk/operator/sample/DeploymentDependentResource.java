@@ -11,8 +11,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 @KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
 public class DeploymentDependentResource extends KubernetesDependentResource<Deployment, Tomcat> {
 
-  public DeploymentDependentResource() {
-  }
+  public DeploymentDependentResource() {}
 
   public DeploymentDependentResource(KubernetesClient client) {
     super(client);

@@ -97,12 +97,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public void replaceDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
     var currentConfig =
         findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
-    // .orElseThrow(
-    // () -> new IllegalStateException(
-    // "No config found for class: "
-    // + dependentResourceSpec.getDependentResourceClass()));
-    // dependentResourceSpecs.remove(currentConfig);
-    // dependentResourceSpecs.add(dependentResourceSpec);
+    if (currentConfig.isEmpty()) {
+      throw new IllegalStateException("Cannot find DependentResource config for class: "
+          + dependentResourceSpec.getDependentResourceClass());
+    }
+    dependentResourceSpecs.remove(currentConfig.get());
+    dependentResourceSpecs.add(dependentResourceSpec);
   }
 
   public void addNewDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
