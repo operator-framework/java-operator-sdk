@@ -8,7 +8,6 @@ import java.util.Optional;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ManagedDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
@@ -17,16 +16,19 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 import static java.lang.String.format;
 
 @ResourcePoller(pollPeriod = 1000)
-@ManagedDependentResource(initializer = SchemDependentResourceInitializer.class)
 public class SchemaDependentResource extends
-    AbstractDependentResource<Schema, MySQLSchema> {
+    AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig> {
 
   private MySQLDbConfig dbConfig;
   private int pollPeriod;
 
-  public SchemaDependentResource(MySQLDbConfig dbConfig, int pollPeriod) {
-    this.pollPeriod = pollPeriod;
-    this.dbConfig = dbConfig;
+  public SchemaDependentResource() {
+  }
+
+  @Override
+  public void configWith(ResourcePollerConfig config) {
+      this.dbConfig = config.getMySQLDbConfig();
+      this.pollPeriod = config.getPollPeriod();
   }
 
   @Override

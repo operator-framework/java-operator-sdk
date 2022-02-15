@@ -2,9 +2,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -13,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -24,11 +22,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ManagedDependentResource;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceInitializer;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -41,10 +35,6 @@ public class DependentResourceManager<P extends HasMetadata>
   private final Reconciler<P> reconciler;
   private final ControllerConfiguration<P> controllerConfiguration;
   private List<DependentResource> dependents;
-  private Map<Class<? extends DependentResourceInitializer>, DependentResourceInitializer> initializers =
-      new HashMap();
-
-
 
   public DependentResourceManager(Controller<P> controller) {
     this.reconciler = controller.getReconciler();
@@ -99,50 +89,17 @@ public class DependentResourceManager<P extends HasMetadata>
     }
   }
 
-  private DependentResourceInitializer getOrInitInitializerForClass(
-      Class<? extends DependentResource> dependentResourceClass) {
+  private DependentResource from(
+      DependentResourceSpec dependentResourceSpec,
+      KubernetesClient client) {
     try {
-      Class<? extends DependentResourceInitializer> initializerClass;
+      DependentResource dependentResource = (DependentResource) dependentResourceSpec.getDependentResourceClass()
+              .getConstructor().newInstance();
+      dependentResourceSpec.getDependentResourceConfigService().ifPresent( c-> dependentResource.configWith(c));
 
-      var managedDependentResource =
-          dependentResourceClass.getAnnotation(ManagedDependentResource.class);
-
-      if (managedDependentResource == null) {
-        if (KubernetesDependentResource.class.isAssignableFrom(dependentResourceClass)) {
-          // KubernetesDependentResourceInitializer is specially covered so annotation is not
-          // repeated
-          initializerClass = KubernetesDependentResourceInitializer.class;
-        } else {
-          log.info("No initializer found for dependent resource: {}. " +
-              "Using fallback initializer", dependentResourceClass.getName());
-          initializerClass = FallbackDependentResourceInitializer.class;
-        }
-      } else {
-        initializerClass = managedDependentResource.initializer();
-      }
-
-      var initializer = initializers.get(dependentResourceClass);
-      if (initializer == null) {
-        initializer = initializerClass.getConstructor().newInstance();
-        initializers.put(initializerClass, initializer);
-      }
-      return initializer;
-    } catch (InstantiationException
-        | IllegalAccessException
-        | InvocationTargetException
-        | NoSuchMethodException e) {
+      return dependentResource;
+    } catch (InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
       throw new IllegalStateException(e);
     }
-  }
-
-  private DependentResource from(
-      DependentResourceConfig dependentResourceConfig,
-      KubernetesClient client) {
-    var initializer =
-        getOrInitInitializerForClass(dependentResourceConfig.getDependentResourceClass());
-    dependentResourceConfig.getDependentResourceConfigService()
-        .ifPresent(c -> initializer.useConfigService(c));
-    return initializer.initialize(dependentResourceConfig.getDependentResourceClass(),
-        controllerConfiguration, client);
   }
 }

@@ -17,7 +17,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
@@ -67,9 +67,9 @@ class MySQLSchemaOperatorE2E {
                   new MySQLSchemaReconciler(),
                   c -> {
                     c.replaceDependentResourceConfig(
-                        new DependentResourceConfig(
+                        new DependentResourceSpec(
                             SchemaDependentResource.class,
-                            new ResourcePollerConfigService(
+                            new ResourcePollerConfig(
                                 700, new MySQLDbConfig("127.0.0.1", "3306", "root", "password"))));
                   })
               .withInfrastructure(infrastructure)

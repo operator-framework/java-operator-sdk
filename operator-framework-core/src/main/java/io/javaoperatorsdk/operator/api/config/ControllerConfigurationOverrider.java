@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
@@ -21,7 +21,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private List<DependentResourceConfig> dependentResourceConfigs;
+  private List<DependentResourceSpec> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
@@ -31,7 +31,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
-    dependentResourceConfigs = original.getDependentResources();
+    dependentResourceSpecs = original.getDependentResources();
     this.original = original;
   }
 
@@ -89,36 +89,36 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   /**
-   * If a {@link DependentResourceConfig} already exists with the same dependentResourceClass it
+   * If a {@link DependentResourceSpec} already exists with the same dependentResourceClass it
    * will be replaced. Otherwise, an exception is thrown;
    *
-   * @param dependentResourceConfig to add or replace
+   * @param dependentResourceSpec to add or replace
    */
-  public void replaceDependentResourceConfig(DependentResourceConfig dependentResourceConfig) {
+  public void replaceDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
     var currentConfig =
-        findConfigForDependentResourceClass(dependentResourceConfig.getDependentResourceClass())
-            .orElseThrow(
-                () -> new IllegalStateException(
-                    "No config found for class: "
-                        + dependentResourceConfig.getDependentResourceClass()));
-    dependentResourceConfigs.remove(currentConfig);
-    dependentResourceConfigs.add(dependentResourceConfig);
+        findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
+//            .orElseThrow(
+//                () -> new IllegalStateException(
+//                    "No config found for class: "
+//                        + dependentResourceSpec.getDependentResourceClass()));
+//    dependentResourceSpecs.remove(currentConfig);
+//    dependentResourceSpecs.add(dependentResourceSpec);
   }
 
-  public void addNewDependentResourceConfig(DependentResourceConfig dependentResourceConfig) {
+  public void addNewDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
     var currentConfig =
-        findConfigForDependentResourceClass(dependentResourceConfig.getDependentResourceClass());
+        findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
     if (currentConfig.isPresent()) {
       throw new IllegalStateException(
           "Config already present for class: "
-              + dependentResourceConfig.getDependentResourceClass());
+              + dependentResourceSpec.getDependentResourceClass());
     }
-    dependentResourceConfigs.add(dependentResourceConfig);
+    dependentResourceSpecs.add(dependentResourceSpec);
   }
 
-  private Optional<DependentResourceConfig> findConfigForDependentResourceClass(
+  private Optional<DependentResourceSpec> findConfigForDependentResourceClass(
       Class<? extends DependentResource> dependentResourceClass) {
-    return dependentResourceConfigs.stream()
+    return dependentResourceSpecs.stream()
         .filter(dc -> dc.getDependentResourceClass().equals(dependentResourceClass))
         .findFirst();
   }
@@ -137,7 +137,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         original.getResourceClass(),
         reconciliationMaxInterval,
         original.getConfigurationService(),
-        dependentResourceConfigs);
+            dependentResourceSpecs);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

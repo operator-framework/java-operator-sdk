@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.config.runtime.AnnotationControllerConfiguration;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
@@ -42,8 +42,8 @@ public class MySQLSchemaOperator {
             .override(new AnnotationControllerConfiguration(schemaReconciler));
 
     configOverrider.replaceDependentResourceConfig(
-        new DependentResourceConfig(SchemaDependentResource.class,
-            new ResourcePollerConfigService(700, MySQLDbConfig.loadFromEnvironmentVars())));
+        new DependentResourceSpec(SchemaDependentResource.class,
+            new ResourcePollerConfig(700, MySQLDbConfig.loadFromEnvironmentVars())));
 
     operator.register(schemaReconciler, configOverrider.build());
     operator.installShutdownHook();

@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P> {
+    extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 

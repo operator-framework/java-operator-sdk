@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public abstract class AbstractDependentResource<R, P extends HasMetadata>
-    implements DependentResource<R, P> {
+public abstract class AbstractDependentResource<R, P extends HasMetadata,C>
+    implements DependentResource<R, P, C> {
 
   @Override
   public void reconcile(P primary, Context context) {

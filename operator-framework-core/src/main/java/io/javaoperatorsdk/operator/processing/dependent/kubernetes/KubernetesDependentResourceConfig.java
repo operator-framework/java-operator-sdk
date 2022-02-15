@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigService;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfig;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT;
 
-public interface KubernetesDependentResourceConfigService extends DependentResourceConfigService {
+public interface KubernetesDependentResourceConfig extends DependentResourceConfig {
 
   default boolean addOwnerReference() {
     return ADD_OWNER_REFERENCE_DEFAULT;
