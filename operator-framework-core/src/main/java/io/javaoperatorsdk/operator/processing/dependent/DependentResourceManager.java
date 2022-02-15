@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,14 +90,14 @@ public class DependentResourceManager<P extends HasMetadata>
     }
   }
 
-  private DependentResource from(
-      DependentResourceSpec dependentResourceSpec,
-      KubernetesClient client) {
+  private DependentResource from(DependentResourceSpec dependentResourceSpec, KubernetesClient client) {
     try {
       DependentResource dependentResource = (DependentResource) dependentResourceSpec.getDependentResourceClass()
               .getConstructor().newInstance();
+      if (dependentResource instanceof KubernetesClientAware) {
+        ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
+      }
       dependentResourceSpec.getDependentResourceConfigService().ifPresent( c-> dependentResource.configWith(c));
-
       return dependentResource;
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
       throw new IllegalStateException(e);

@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import java.util.Optional;
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,13 +24,21 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig> {
+    extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig> implements KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
+
+  public KubernetesDependentResource() {
+  }
+
+  @Override
+  public void configWith(KubernetesDependentResourceConfig config) {
+    super.configWith(config);
+  }
 
   protected KubernetesDependentResource(KubernetesClient client) {
     this.client = client;
@@ -135,4 +144,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return informerEventSource.getAssociated(primaryResource);
   }
 
+  @Override
+  public void setKubernetesClient(KubernetesClient kubernetesClient) {
+    this.client = kubernetesClient;
+  }
 }
