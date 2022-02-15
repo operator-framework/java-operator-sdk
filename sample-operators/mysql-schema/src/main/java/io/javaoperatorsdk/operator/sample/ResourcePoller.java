@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
