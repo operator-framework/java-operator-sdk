@@ -9,8 +9,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Objects;
-
 public class DesiredValueMatcher implements ResourceMatcher {
 
   private final ObjectMapper objectMapper;
@@ -22,10 +20,12 @@ public class DesiredValueMatcher implements ResourceMatcher {
   @Override
   public boolean match(HasMetadata actualResource, HasMetadata desiredResource, Context context) {
     if (actualResource instanceof Secret) {
-      return ResourceComparators.compareSecretData((Secret) desiredResource, (Secret) actualResource);
+      return ResourceComparators.compareSecretData((Secret) desiredResource,
+          (Secret) actualResource);
     }
     if (actualResource instanceof ConfigMap) {
-      return ResourceComparators.compareConfigMapData((ConfigMap) desiredResource, (ConfigMap) actualResource);
+      return ResourceComparators.compareConfigMapData((ConfigMap) desiredResource,
+          (ConfigMap) actualResource);
     }
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816

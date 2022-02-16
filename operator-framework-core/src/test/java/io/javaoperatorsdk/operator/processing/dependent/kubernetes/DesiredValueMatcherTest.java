@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 
