@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -88,6 +88,7 @@ public class WebPageReconciler
 
     this.deploymentDR =
         new KubernetesDependentResource<>() {
+
           @Override
           protected Deployment desired(WebPage webPage, Context context) {
             var deploymentName = deploymentName(webPage);
@@ -118,6 +119,11 @@ public class WebPageReconciler
             // todo comparator
             return true;
           }
+
+          @Override
+          protected Class<Deployment> resourceType() {
+            return Deployment.class;
+          }
         };
 
     this.serviceDR =
@@ -137,6 +143,11 @@ public class WebPageReconciler
           protected boolean match(Service actual, Service target, Context context) {
             // todo comparator
             return true;
+          }
+
+          @Override
+          protected Class<Service> resourceType() {
+            return Service.class;
           }
         };
   }

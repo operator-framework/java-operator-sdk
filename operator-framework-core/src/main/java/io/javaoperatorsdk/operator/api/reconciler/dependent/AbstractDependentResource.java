@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public abstract class AbstractDependentResource<R, P extends HasMetadata, C extends DependentResourceConfiguration<R, P>>
+public abstract class AbstractDependentResource<R, P extends HasMetadata, C>
     implements DependentResource<R, P, C> {
 
   @Override

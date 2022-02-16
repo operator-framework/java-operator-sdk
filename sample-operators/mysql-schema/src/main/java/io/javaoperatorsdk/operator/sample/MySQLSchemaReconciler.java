@@ -6,17 +6,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContextInjector;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -25,12 +22,12 @@ import static java.lang.String.format;
 // todo handle this, should work with finalizer
 @ControllerConfiguration(finalizerName = NO_FINALIZER,
     dependents = {
-        @Dependent(resourceType = Secret.class, type = SecretDependentResource.class),
-        @Dependent(resourceType = Schema.class, type = SchemaDependentResource.class)
+        @Dependent(type = SecretDependentResource.class),
+        @Dependent(type = SchemaDependentResource.class)
     })
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
-    ContextInitializer<MySQLSchema>, EventSourceContextInjector {
+    ContextInitializer<MySQLSchema> {
 
   static final String SECRET_FORMAT = "%s-secret";
   static final String USERNAME_FORMAT = "%s-user";
@@ -38,21 +35,10 @@ public class MySQLSchemaReconciler
   static final String MYSQL_SECRET_NAME = "mysql.secret.name";
   static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
   static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
-  static final String MYSQL_DB_CONFIG = "mysql.db.config";
   static final String BUILT_SCHEMA = "built schema";
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
-  private final MySQLDbConfig mysqlDbConfig;
-
-  public MySQLSchemaReconciler(MySQLDbConfig mysqlDbConfig) {
-    this.mysqlDbConfig = mysqlDbConfig;
-  }
-
-  @SuppressWarnings("rawtypes")
-  @Override
-  public void injectInto(EventSourceContext context) {
-    context.put(MYSQL_DB_CONFIG, mysqlDbConfig);
-  }
+  public MySQLSchemaReconciler() {}
 
   @Override
   public void initContext(MySQLSchema primary, Context context) {

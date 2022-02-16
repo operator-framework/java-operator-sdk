@@ -5,7 +5,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
@@ -17,16 +16,21 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 import static java.lang.String.format;
 
 public class SchemaDependentResource extends
-    AbstractDependentResource<Schema, MySQLSchema, DependentResourceConfiguration<Schema, MySQLSchema>> {
+    AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig> {
 
-  private static final int POLL_PERIOD = 500;
   private MySQLDbConfig dbConfig;
+  private int pollPeriod;
+
+  @Override
+  public void configureWith(ResourcePollerConfig config) {
+    this.dbConfig = config.getMySQLDbConfig();
+    this.pollPeriod = config.getPollPeriod();
+  }
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<MySQLSchema> context) {
-    dbConfig = context.getMandatory(MySQLSchemaReconciler.MYSQL_DB_CONFIG, MySQLDbConfig.class);
     return Optional.of(new PerResourcePollingEventSource<>(
-        new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), POLL_PERIOD,
+        new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), pollPeriod,
         Schema.class));
   }
 
