@@ -26,14 +26,14 @@ examples:
 
 # Implementing a Sample Operator
 
-Add [dependency](https://search.maven.org/search?q=a:operator-framework) to your project with Maven:
+Add [dependency](https://search.maven.org/search?q=a:operator-framework%20AND%20g:io.javaoperatorsdk) to your project with Maven:
 
 ```xml
 
 <dependency>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>operator-framework</artifactId>
-    <version>{see https://search.maven.org/search?q=a:operator-framework for latest version}</version>
+    <version>{see https://search.maven.org/search?q=a:operator-framework%20AND%20g:io.javaoperatorsdk for latest version}</version>
 </dependency>
 ```
 
@@ -188,14 +188,14 @@ public class QuarkusOperator implements QuarkusApplication {
 
 You can also let Spring Boot wire your application together and automatically register the controllers.
 
-Add [this dependency](https://search.maven.org/search?q=a:operator-framework-spring-boot-starter) to your project:
+Add [this dependency](https://search.maven.org/search?q=a:operator-framework-spring-boot-starter%20AND%20g:io.javaoperatorsdk) to your project:
 
 ```xml
 
 <dependency>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>operator-framework-spring-boot-starter</artifactId>
-    <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for
+    <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter%20AND%20g:io.javaoperatorsdk for
         latest version}
     </version>
 </dependency>
@@ -224,7 +224,7 @@ necessary, but it doesn't need real access to a Kubernetes cluster.
 <dependency>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>operator-framework-spring-boot-starter-test</artifactId>
-    <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter for
+    <version>{see https://search.maven.org/search?q=a:operator-framework-spring-boot-starter%20AND%20g:io.javaoperatorsdk for
         latest version}
     </version>
 </dependency>
