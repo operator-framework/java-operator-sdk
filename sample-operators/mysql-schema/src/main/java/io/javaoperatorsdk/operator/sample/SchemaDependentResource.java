@@ -19,7 +19,7 @@ public class SchemaDependentResource extends
     AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig> {
 
   private MySQLDbConfig dbConfig;
-  private int pollPeriod;
+  private int pollPeriod = 500;
 
   @Override
   public void configureWith(ResourcePollerConfig config) {
@@ -29,6 +29,9 @@ public class SchemaDependentResource extends
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<MySQLSchema> context) {
+    if (dbConfig == null) {
+      dbConfig = MySQLDbConfig.loadFromEnvironmentVars();
+    }
     return Optional.of(new PerResourcePollingEventSource<>(
         new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), pollPeriod,
         Schema.class));
