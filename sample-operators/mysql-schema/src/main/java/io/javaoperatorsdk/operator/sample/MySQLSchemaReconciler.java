@@ -6,6 +6,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -27,7 +29,7 @@ import static java.lang.String.format;
     })
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>,
-    ContextInitializer<MySQLSchema> {
+    ContextInitializer<MySQLSchema>, DependentResourceConfigurationProvider {
 
   static final String SECRET_FORMAT = "%s-secret";
   static final String USERNAME_FORMAT = "%s-user";
@@ -39,6 +41,13 @@ public class MySQLSchemaReconciler
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
   public MySQLSchemaReconciler() {}
+
+  @Override
+  public Optional<Object> configurationFor(DependentResourceSpec<?, ?> dependent) {
+    return SchemaDependentResource.class.equals(dependent.getDependentResourceClass())
+        ? Optional.of(new ResourcePollerConfig(500, MySQLDbConfig.loadFromEnvironmentVars()))
+        : Optional.empty();
+  }
 
   @Override
   public void initContext(MySQLSchema primary, Context context) {

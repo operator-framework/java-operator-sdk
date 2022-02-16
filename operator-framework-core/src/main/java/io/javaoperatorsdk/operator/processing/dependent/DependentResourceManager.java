@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
@@ -49,8 +50,7 @@ public class DependentResourceManager<P extends HasMetadata>
         dependentResources.stream()
             .map(
                 drc -> {
-                  final var dependentResource =
-                      from(drc, context.getClient());
+                  final var dependentResource = from(drc, context.getClient());
                   dependentResource
                       .eventSource(context)
                       .ifPresent(es -> sources.add((EventSource) es));
@@ -90,8 +90,14 @@ public class DependentResourceManager<P extends HasMetadata>
       if (dependentResource instanceof KubernetesClientAware) {
         ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
       }
-      dependentResourceSpec.getDependentResourceConfiguration()
-          .ifPresent(dependentResource::configureWith);
+
+      var configuration = dependentResourceSpec.getDependentResourceConfiguration();
+      if (reconciler instanceof DependentResourceConfigurationProvider) {
+        final var provider = (DependentResourceConfigurationProvider) reconciler;
+        configuration = provider.configurationFor(dependentResourceSpec);
+      }
+
+      configuration.ifPresent(dependentResource::configureWith);
       return dependentResource;
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
         | InvocationTargetException e) {
