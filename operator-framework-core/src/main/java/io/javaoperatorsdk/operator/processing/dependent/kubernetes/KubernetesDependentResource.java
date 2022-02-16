@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -25,7 +26,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig>
-    implements KubernetesClientAware, EventSourceProvider<P> {
+    implements KubernetesClientAware, EventSourceProvider<P>,
+    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 

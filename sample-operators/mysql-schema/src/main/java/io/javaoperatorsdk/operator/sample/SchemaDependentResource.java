@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
@@ -18,7 +19,8 @@ import static java.lang.String.format;
 
 public class SchemaDependentResource
     extends AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig>
-    implements EventSourceProvider<MySQLSchema> {
+    implements EventSourceProvider<MySQLSchema>,
+    DependentResourceConfigurator<ResourcePollerConfig> {
 
   private MySQLDbConfig dbConfig;
   private int pollPeriod = 500;

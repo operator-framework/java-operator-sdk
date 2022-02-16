@@ -21,6 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -88,11 +89,16 @@ public class DependentResourceManager<P extends HasMetadata>
       DependentResource dependentResource =
           (DependentResource) dependentResourceSpec.getDependentResourceClass()
               .getConstructor().newInstance();
+
       if (dependentResource instanceof KubernetesClientAware) {
         ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
       }
-      dependentResourceSpec.getDependentResourceConfiguration()
-          .ifPresent(dependentResource::configureWith);
+
+      if (dependentResource instanceof DependentResourceConfigurator) {
+        final var configurator = (DependentResourceConfigurator) dependentResource;
+        dependentResourceSpec.getDependentResourceConfiguration()
+            .ifPresent(configurator::configureWith);
+      }
       return dependentResource;
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
         | InvocationTargetException e) {
