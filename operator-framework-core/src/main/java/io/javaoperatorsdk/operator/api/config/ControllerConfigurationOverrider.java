@@ -88,9 +88,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public void replaceDependentResourceConfig(Class<? extends DependentResource<?,R,?>> dependentResourceClass,
-                                             Object dependentResourceConfig) {
-     replaceDependentResourceConfig(new DependentResourceSpec(dependentResourceClass,dependentResourceConfig));
+  public void replaceDependentResourceConfig(
+      Class<? extends DependentResource<?, R, ?>> dependentResourceClass,
+      Object dependentResourceConfig) {
+    replaceDependentResourceConfig(
+        new DependentResourceSpec(dependentResourceClass, dependentResourceConfig));
   }
 
   /**

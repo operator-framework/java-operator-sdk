@@ -47,7 +47,7 @@ class OperatorTest {
   @Test
   @DisplayName("should throw `OperationException` when Configuration is null")
   public void shouldThrowOperatorExceptionWhenConfigurationIsNull() {
-    Assertions.assertThrows(OperatorException.class, () -> operator.register(fooReconciler, null));
+    Assertions.assertThrows(OperatorException.class, () -> operator.register(fooReconciler));
   }
 
   private static class FooCustomResource extends CustomResource<FooSpec, FooStatus> {

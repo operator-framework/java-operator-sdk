@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -156,7 +156,8 @@ public class Operator implements LifecycleAware {
    * @param configOverrider consumer to use to change config values
    * @param <R> the {@code HasMetadata} type associated with the reconciler
    */
-  public <R extends HasMetadata> void register(Reconciler<R> reconciler, Consumer<ControllerConfigurationOverrider> configOverrider) {
+  public <R extends HasMetadata> void register(Reconciler<R> reconciler,
+      Consumer<ControllerConfigurationOverrider> configOverrider) {
     final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
