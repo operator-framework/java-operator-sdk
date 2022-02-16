@@ -50,7 +50,7 @@ public class DependentResourceManager<P extends HasMetadata>
             .map(
                 drc -> {
                   final var dependentResource =
-                      from(drc, context.getClient());
+                      createAndConfigureFrom(drc, context.getClient());
                   dependentResource
                       .eventSource(context)
                       .ifPresent(es -> sources.add((EventSource) es));
@@ -81,7 +81,7 @@ public class DependentResourceManager<P extends HasMetadata>
     }
   }
 
-  private DependentResource from(DependentResourceSpec dependentResourceSpec,
+  private DependentResource createAndConfigureFrom(DependentResourceSpec dependentResourceSpec,
       KubernetesClient client) {
     try {
       DependentResource dependentResource =
