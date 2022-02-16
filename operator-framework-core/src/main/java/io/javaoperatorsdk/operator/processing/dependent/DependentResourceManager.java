@@ -82,7 +82,7 @@ public class DependentResourceManager<P extends HasMetadata>
   }
 
   private DependentResource createAndConfigureFrom(DependentResourceSpec dependentResourceSpec,
-                                                   KubernetesClient client) {
+      KubernetesClient client) {
     try {
       DependentResource dependentResource =
           (DependentResource) dependentResourceSpec.getDependentResourceClass()

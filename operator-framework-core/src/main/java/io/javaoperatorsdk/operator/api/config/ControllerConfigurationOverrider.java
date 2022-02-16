@@ -91,25 +91,16 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public void replaceDependentResourceConfig(
       Class<? extends DependentResource<?, R, ?>> dependentResourceClass,
       Object dependentResourceConfig) {
-    replaceDependentResourceConfig(
-        new DependentResourceSpec(dependentResourceClass, dependentResourceConfig));
-  }
 
-  /**
-   * If a {@link DependentResourceSpec} already exists with the same dependentResourceClass it will
-   * be replaced. Otherwise, an exception is thrown;
-   *
-   * @param dependentResourceSpec to add or replace
-   */
-  public void replaceDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
     var currentConfig =
-        findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
+        findConfigForDependentResourceClass(dependentResourceClass);
     if (currentConfig.isEmpty()) {
       throw new IllegalStateException("Cannot find DependentResource config for class: "
-          + dependentResourceSpec.getDependentResourceClass());
+          + dependentResourceClass);
     }
     dependentResourceSpecs.remove(currentConfig.get());
-    dependentResourceSpecs.add(dependentResourceSpec);
+    dependentResourceSpecs
+        .add(new DependentResourceSpec(dependentResourceClass, dependentResourceConfig));
   }
 
   public void addNewDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
