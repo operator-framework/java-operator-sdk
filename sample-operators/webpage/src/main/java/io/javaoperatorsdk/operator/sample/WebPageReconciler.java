@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.*;
 
@@ -12,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -20,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
+import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static org.awaitility.Awaitility.await;
 
@@ -151,14 +149,6 @@ public class WebPageReconciler
 
   private static String serviceName(WebPage nginx) {
     return nginx.getMetadata().getName();
-  }
-
-  private <T> T loadYaml(Class<T> clazz, String yaml) {
-    try (InputStream is = getClass().getResourceAsStream(yaml)) {
-      return Serialization.unmarshal(is, clazz);
-    } catch (IOException ex) {
-      throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
-    }
   }
 
   private class ConfigMapDependentResource extends KubernetesDependentResource<ConfigMap, WebPage>

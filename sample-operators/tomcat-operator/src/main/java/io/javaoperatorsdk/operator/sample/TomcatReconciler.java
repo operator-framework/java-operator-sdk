@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Objects;
 
 import org.slf4j.Logger;
@@ -9,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -53,13 +50,5 @@ public class TomcatReconciler implements Reconciler<Tomcat> {
     status.setReadyReplicas(readyReplicas);
     tomcat.setStatus(status);
     return tomcat;
-  }
-
-  static <T> T loadYaml(Class<T> clazz, String yaml) {
-    try (InputStream is = TomcatReconciler.class.getResourceAsStream(yaml)) {
-      return Serialization.unmarshal(is, clazz);
-    } catch (IOException ex) {
-      throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
-    }
   }
 }
