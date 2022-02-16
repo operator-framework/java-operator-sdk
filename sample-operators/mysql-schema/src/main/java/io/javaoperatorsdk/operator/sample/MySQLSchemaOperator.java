@@ -33,12 +33,7 @@ public class MySQLSchemaOperator {
             .withMetrics(new MicrometerMetrics(new LoggingMeterRegistry()))
             .build());
 
-    MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
-
-    operator.register(schemaReconciler,
-        configOverrider -> configOverrider.replaceDependentResourceConfig(
-            SchemaDependentResource.class,
-            new ResourcePollerConfig(500, MySQLDbConfig.loadFromEnvironmentVars())));
+    operator.register(new MySQLSchemaReconciler());
     operator.installShutdownHook();
     operator.start();
 

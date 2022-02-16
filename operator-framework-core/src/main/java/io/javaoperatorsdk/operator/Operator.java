@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,21 +146,6 @@ public class Operator implements LifecycleAware {
         configuration.getName(),
         configuration.getResourceClass(),
         watchedNS);
-  }
-
-  /**
-   * Method to register operator and facilitate configuration override.
-   *
-   * @param reconciler part of the reconciler to register
-   * @param configOverrider consumer to use to change config values
-   * @param <R> the {@code HasMetadata} type associated with the reconciler
-   */
-  public <R extends HasMetadata> void register(Reconciler<R> reconciler,
-      Consumer<ControllerConfigurationOverrider> configOverrider) {
-    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
-    var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
-    configOverrider.accept(configToOverride);
-    register(reconciler, configToOverride.build());
   }
 
   static class ControllerManager implements LifecycleAware {
