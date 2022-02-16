@@ -7,15 +7,14 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
@@ -26,8 +25,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 @ControllerConfiguration(
     finalizerName = NO_FINALIZER,
     dependents = {
-        @Dependent(resourceType = Deployment.class, type = DeploymentDependentResource.class),
-        @Dependent(resourceType = Service.class, type = ServiceDependentResource.class)
+        @Dependent(type = DeploymentDependentResource.class),
+        @Dependent(type = ServiceDependentResource.class)
     })
 public class TomcatReconciler implements Reconciler<Tomcat> {
 

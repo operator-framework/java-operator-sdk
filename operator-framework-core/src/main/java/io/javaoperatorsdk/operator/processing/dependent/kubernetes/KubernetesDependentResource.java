@@ -1,6 +1,7 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,9 +9,13 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -19,25 +24,56 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P> {
+    extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig>
+    implements KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
-  private boolean explicitDelete = false;
-  private boolean owned = true;
   private InformerEventSource<R, P> informerEventSource;
+  private boolean addOwnerReference;
 
-  public KubernetesDependentResource() {
-    this(null);
+  @Override
+  public void configureWith(KubernetesDependentResourceConfig config) {
+    configureWith(config.getConfigurationService(), config.labelSelector(),
+        Set.of(config.namespaces()), config.addOwnerReference());
   }
 
-  public KubernetesDependentResource(KubernetesClient client) {
-    this.client = client;
+  @SuppressWarnings("unchecked")
+  private void configureWith(ConfigurationService service, String labelSelector,
+      Set<String> namespaces, boolean addOwnerReference) {
+    final var primaryResourcesRetriever =
+        (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
+            : Mappers.fromOwnerReference();
+    final AssociatedSecondaryResourceIdentifier<P> secondaryResourceIdentifier =
+        (this instanceof AssociatedSecondaryResourceIdentifier)
+            ? (AssociatedSecondaryResourceIdentifier<P>) this
+            : ResourceID::fromResource;
+    InformerConfiguration<R, P> ic =
+        InformerConfiguration.from(service, resourceType())
+            .withLabelSelector(labelSelector)
+            .withNamespaces(namespaces)
+            .withPrimaryResourcesRetriever(primaryResourcesRetriever)
+            .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
+            .build();
+    this.addOwnerReference = addOwnerReference;
+    informerEventSource = new InformerEventSource<>(ic, client);
+  }
+
+  /**
+   * Use to share informers between event more resources.
+   *
+   * @param informerEventSource informer to use
+   * @param addOwnerReference to the created resource
+   */
+  public void configureWith(InformerEventSource<R, P> informerEventSource,
+      boolean addOwnerReference) {
+    this.informerEventSource = informerEventSource;
+    this.addOwnerReference = addOwnerReference;
   }
 
   protected void beforeCreateOrUpdate(R desired, P primary) {
-    if (owned) {
+    if (addOwnerReference) {
       desired.addOwnerReference(primary);
     }
   }
@@ -69,40 +105,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .replace(target);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
-    if (informerEventSource != null) {
-      return Optional.of(informerEventSource);
+    if (informerEventSource == null) {
+      configureWith(context.getConfigurationService(), null, null,
+          KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+      log.warn("Using default configuration for " + resourceType().getSimpleName()
+          + " KubernetesDependentResource, call configureWith to provide configuration");
     }
-    var informerConfig = initInformerConfiguration(context);
-    informerEventSource = new InformerEventSource(informerConfig, context);
     return Optional.of(informerEventSource);
-  }
-
-  @SuppressWarnings("unchecked")
-  private InformerConfiguration<R, P> initInformerConfiguration(EventSourceContext<P> context) {
-    PrimaryResourcesRetriever<R> associatedPrimaries =
-        (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
-            : getDefaultPrimaryResourcesRetriever();
-
-    AssociatedSecondaryResourceIdentifier<P> associatedSecondary =
-        (this instanceof AssociatedSecondaryResourceIdentifier)
-            ? (AssociatedSecondaryResourceIdentifier<P>) this
-            : getDefaultAssociatedSecondaryResourceIdentifier();
-
-    return InformerConfiguration.from(context, resourceType())
-        .withPrimaryResourcesRetriever(associatedPrimaries)
-        .withAssociatedSecondaryResourceIdentifier(associatedSecondary)
-        .build();
-  }
-
-  protected AssociatedSecondaryResourceIdentifier<P> getDefaultAssociatedSecondaryResourceIdentifier() {
-    return ResourceID::fromResource;
-  }
-
-  protected PrimaryResourcesRetriever<R> getDefaultPrimaryResourcesRetriever() {
-    return Mappers.fromOwnerReference();
   }
 
   public KubernetesDependentResource<R, P> setInformerEventSource(
@@ -113,10 +124,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void delete(P primary, Context context) {
-    if (explicitDelete) {
+    if (addOwnerReference) {
       var resource = getResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  protected Class<R> resourceType() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }
 
   @Override
@@ -124,27 +140,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return informerEventSource.getAssociated(primaryResource);
   }
 
-  public KubernetesDependentResource<R, P> setClient(KubernetesClient client) {
-    this.client = client;
-    return this;
-  }
-
-
-  public KubernetesDependentResource<R, P> setExplicitDelete(boolean explicitDelete) {
-    this.explicitDelete = explicitDelete;
-    return this;
-  }
-
-  public boolean isExplicitDelete() {
-    return explicitDelete;
-  }
-
-  public boolean isOwned() {
-    return owned;
-  }
-
-  public KubernetesDependentResource<R, P> setOwned(boolean owned) {
-    this.owned = owned;
-    return this;
+  @Override
+  public void setKubernetesClient(KubernetesClient kubernetesClient) {
+    this.client = kubernetesClient;
   }
 }

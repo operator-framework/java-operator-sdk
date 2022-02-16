@@ -34,7 +34,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     super.start();
   }
 
-
   @Override
   public void stop() {
     super.stop();

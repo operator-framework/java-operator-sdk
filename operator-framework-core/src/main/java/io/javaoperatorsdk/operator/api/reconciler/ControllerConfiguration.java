@@ -4,10 +4,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.concurrent.TimeUnit;
 
-import io.javaoperatorsdk.operator.api.config.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.DependentResourceController;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -51,26 +49,27 @@ public @interface ControllerConfiguration {
    */
   String labelSelector() default Constants.EMPTY_STRING;
 
-
   /**
    * Optional list of classes providing custom {@link ResourceEventFilter}.
    *
    * @return the list of event filters.
    */
-  @SuppressWarnings("rawtypes")
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
 
+  /**
+   * Optional configuration of the maximal interval the SDK will wait for a reconciliation request
+   * to happen before one will be automatically triggered.
+   * 
+   * @return the maximal interval configuration
+   */
   ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
-      interval = 10, timeUnit = TimeUnit.HOURS);
-
+      interval = 10);
 
   /**
-   * Optional list of classes providing {@link DependentResourceController} implementations
-   * encapsulating logic to handle the associated
-   * {@link io.javaoperatorsdk.operator.processing.Controller}'s reconciliation of dependent
-   * resources
-   *
-   * @return the list of {@link DependentResourceController} implementations
+   * Optional list of {@link Dependent} configurations which associate a resource type to a
+   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
+   * 
+   * @return the list of {@link Dependent} configurations
    */
   Dependent[] dependents() default {};
 }

@@ -2,10 +2,12 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,8 +71,17 @@ public class Utils {
     return Boolean.getBoolean(System.getProperty(DEBUG_THREAD_POOL_ENV_KEY, "false"));
   }
 
+  public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
+    Type type = clazz.getGenericSuperclass();
+    return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+  }
+
   public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz) {
     ParameterizedType type = (ParameterizedType) clazz.getGenericInterfaces()[0];
     return (Class<?>) type.getActualTypeArguments()[0];
+  }
+
+  public static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
+    return annotation == null ? defaultValue : mapper.apply(annotation);
   }
 }
