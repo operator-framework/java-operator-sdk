@@ -62,7 +62,7 @@ public class WebPageReconciler
     WebPageStatus status = new WebPageStatus();
 
     waitUntilConfigMapAvailable(webPage);
-    status.setHtmlConfigMap(configMapDR.getResource(webPage).get().getMetadata().getName());
+    status.setHtmlConfigMap(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName());
     status.setAreWeGood("Yes!");
     status.setErrorMessage(null);
     webPage.setStatus(status);
@@ -115,12 +115,6 @@ public class WebPageReconciler
           }
 
           @Override
-          protected boolean match(Deployment actual, Deployment target, Context context) {
-            // todo comparator
-            return true;
-          }
-
-          @Override
           protected Class<Deployment> resourceType() {
             return Deployment.class;
           }
@@ -138,11 +132,6 @@ public class WebPageReconciler
             labels.put("app", deploymentName(webPage));
             service.getSpec().setSelector(labels);
             return service;
-          }
-
-          protected boolean match(Service actual, Service target, Context context) {
-            // todo comparator
-            return true;
           }
 
           @Override

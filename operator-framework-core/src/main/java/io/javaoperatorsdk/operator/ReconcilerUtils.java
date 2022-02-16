@@ -111,7 +111,7 @@ public class ReconcilerUtils {
       Method getSpecMethod = resource.getClass().getMethod("getSpec");
       return getSpecMethod.invoke(resource);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      throw new IllegalStateException(e);
+      throw new IllegalStateException("No spec found on resource", e);
     }
   }
 

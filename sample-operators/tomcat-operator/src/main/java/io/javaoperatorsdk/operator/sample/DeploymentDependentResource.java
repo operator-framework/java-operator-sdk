@@ -43,11 +43,4 @@ public class DeploymentDependentResource extends KubernetesDependentResource<Dep
         .build();
     return deployment;
   }
-
-  @Override
-  public boolean match(Deployment fetched, Deployment target, Context context) {
-    return fetched.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
-        .equals(target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-  }
-
 }
