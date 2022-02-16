@@ -92,8 +92,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
     beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+    var newResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
+    populateNewResourceToCache(newResource);
+    return newResource;
   }
 
   @SuppressWarnings("unchecked")
@@ -103,8 +105,14 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         ResourceID.fromResource(target));
     beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+    R updatedResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .replace(target);
+    populateNewResourceToCache(updatedResource);
+    return updatedResource;
+  }
+
+  private void populateNewResourceToCache(R updatedResource) {
+//  push the resource into cache
   }
 
   @Override
@@ -117,12 +125,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
     return Optional.of(informerEventSource);
-  }
-
-  public KubernetesDependentResource<R, P> setInformerEventSource(
-      InformerEventSource<R, P> informerEventSource) {
-    this.informerEventSource = informerEventSource;
-    return this;
   }
 
   @Override
