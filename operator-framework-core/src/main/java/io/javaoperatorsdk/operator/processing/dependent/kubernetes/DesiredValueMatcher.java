@@ -23,6 +23,8 @@ public class DesiredValueMatcher implements ResourceMatcher {
       // this comparison should be done ideally without metadata
       return actualResource.equals(desiredResource);
     }
+    // reflection will be replaced by this:
+    // https://github.com/fabric8io/kubernetes-client/issues/3816
     var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desiredResource));
     var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
     var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
