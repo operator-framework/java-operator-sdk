@@ -16,9 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
 
-  Cloner DEFAULT_CLONER = new Cloner() {
-    private final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+  Cloner DEFAULT_CLONER = new Cloner() {
     @Override
     public HasMetadata clone(HasMetadata object) {
       try {
@@ -121,5 +121,9 @@ public interface ConfigurationService {
 
   default boolean closeClientOnStop() {
     return true;
+  }
+
+  default ObjectMapper getObjectMapper() {
+    return OBJECT_MAPPER;
   }
 }

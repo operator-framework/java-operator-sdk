@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -32,6 +31,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
+  protected ResourceMatcher resourceMatcher;
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
@@ -40,7 +40,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  private void configureWith(ConfigurationService service, String labelSelector,
+  private void configureWith(ConfigurationService configService, String labelSelector,
       Set<String> namespaces, boolean addOwnerReference) {
     final var primaryResourcesRetriever =
         (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
@@ -50,26 +50,28 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
             ? (AssociatedSecondaryResourceIdentifier<P>) this
             : ResourceID::fromResource;
     InformerConfiguration<R, P> ic =
-        InformerConfiguration.from(service, resourceType())
+        InformerConfiguration.from(configService, resourceType())
             .withLabelSelector(labelSelector)
             .withNamespaces(namespaces)
             .withPrimaryResourcesRetriever(primaryResourcesRetriever)
             .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
             .build();
-    this.addOwnerReference = addOwnerReference;
-    informerEventSource = new InformerEventSource<>(ic, client);
+    configureWith(configService, new InformerEventSource<>(ic, client), addOwnerReference);
   }
 
   /**
    * Use to share informers between event more resources.
-   *
+   * 
+   * @param configurationService get configs
    * @param informerEventSource informer to use
    * @param addOwnerReference to the created resource
    */
-  public void configureWith(InformerEventSource<R, P> informerEventSource,
+  public void configureWith(ConfigurationService configurationService,
+      InformerEventSource<R, P> informerEventSource,
       boolean addOwnerReference) {
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
+    initResourceMatcherIfNotSet(configurationService);
   }
 
   protected void beforeCreateOrUpdate(R desired, P primary) {
@@ -79,8 +81,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected boolean match(R actual, R target, Context context) {
-    return ReconcilerUtils.specsEqual(actual, target);
+  protected boolean match(R actualResource, R desiredResource, Context context) {
+    return resourceMatcher.match(actualResource, desiredResource, context);
   }
 
   @SuppressWarnings("unchecked")
@@ -107,6 +109,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
+    initResourceMatcherIfNotSet(context.getConfigurationService());
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
@@ -144,4 +147,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
   }
+
+  /**
+   * Override this method to configure resource matcher
+   *
+   * @param configurationService config service to mainly access object mapper
+   */
+  protected void initResourceMatcherIfNotSet(ConfigurationService configurationService) {
+    if (resourceMatcher == null) {
+      resourceMatcher = new DesiredValueMatcher(configurationService.getObjectMapper());
+    }
+  }
+
 }

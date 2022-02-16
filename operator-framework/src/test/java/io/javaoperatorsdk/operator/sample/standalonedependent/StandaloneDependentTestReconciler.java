@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample.standalonedependent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -72,14 +71,5 @@ public class StandaloneDependentTestReconciler
       deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
       return deployment;
     }
-
-    @Override
-    protected boolean match(Deployment actual, Deployment target, Context context) {
-      return Objects.equals(actual.getSpec().getReplicas(), target.getSpec().getReplicas()) &&
-          actual.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
-              .equals(
-                  target.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-    }
-
   }
 }

@@ -1,11 +1,14 @@
 package io.javaoperatorsdk.operator;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -111,7 +114,15 @@ public class ReconcilerUtils {
       Method getSpecMethod = resource.getClass().getMethod("getSpec");
       return getSpecMethod.invoke(resource);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      throw new IllegalStateException(e);
+      throw new IllegalStateException("No spec found on resource", e);
+    }
+  }
+
+  public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
+    try (InputStream is = loader.getResourceAsStream(yaml)) {
+      return Serialization.unmarshal(is, clazz);
+    } catch (IOException ex) {
+      throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
     }
   }
 
