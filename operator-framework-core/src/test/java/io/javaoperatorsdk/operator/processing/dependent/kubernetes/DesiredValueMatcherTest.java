@@ -43,35 +43,6 @@ class DesiredValueMatcherTest {
         .isFalse();
   }
 
-  @Test
-  void secretsComparedByEquals() {
-    var sec1 = createSecret();
-    var sec2 = createSecret();
-    assertThat(desiredValueMatcher.match(sec1, sec2, null)).isTrue();
-
-    sec2.getData().put("additional_key", "value");
-    assertThat(desiredValueMatcher.match(sec1, sec2, null)).isFalse();
-  }
-
-  @Test
-  void configMapsComparedByEquals() {
-    var cm1 = createConfigMap();
-    var cm2 = createConfigMap();
-    assertThat(desiredValueMatcher.match(cm1, cm2, null)).isTrue();
-
-    cm2.getData().put("additional_key", "value");
-    assertThat(desiredValueMatcher.match(cm1, cm2, null)).isFalse();
-  }
-
-  ConfigMap createConfigMap() {
-    return ReconcilerUtils.loadYaml(ConfigMap.class, DesiredValueMatcherTest.class,
-        "configmap.yaml");
-  }
-
-  Secret createSecret() {
-    return ReconcilerUtils.loadYaml(Secret.class, DesiredValueMatcherTest.class, "secret.yaml");
-  }
-
   Deployment createDeployment() {
     Deployment deployment =
         ReconcilerUtils.loadYaml(
