@@ -88,6 +88,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public void replaceDependentResourceConfig(Class<? extends DependentResource<?,R,?>> dependentResourceClass,
+                                             Object dependentResourceConfig) {
+     replaceDependentResourceConfig(new DependentResourceSpec(dependentResourceClass,dependentResourceConfig));
+  }
+
   /**
    * If a {@link DependentResourceSpec} already exists with the same dependentResourceClass it will
    * be replaced. Otherwise, an exception is thrown;

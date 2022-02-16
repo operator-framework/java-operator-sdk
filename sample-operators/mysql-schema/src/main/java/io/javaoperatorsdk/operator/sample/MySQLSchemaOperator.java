@@ -37,15 +37,10 @@ public class MySQLSchemaOperator {
             .build());
 
     MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
-    ControllerConfigurationOverrider<MySQLSchema> configOverrider =
-        ControllerConfigurationOverrider
-            .override(new AnnotationControllerConfiguration(schemaReconciler));
 
-    configOverrider.replaceDependentResourceConfig(
-        new DependentResourceSpec(SchemaDependentResource.class,
-            new ResourcePollerConfig(500, MySQLDbConfig.loadFromEnvironmentVars())));
-
-    operator.register(schemaReconciler, configOverrider.build());
+    operator.register(schemaReconciler, configOverrider ->
+            configOverrider.replaceDependentResourceConfig(SchemaDependentResource.class,
+          new ResourcePollerConfig(500, MySQLDbConfig.loadFromEnvironmentVars())));
     operator.installShutdownHook();
     operator.start();
 
