@@ -105,14 +105,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         ResourceID.fromResource(target));
     beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    R updatedResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
-        .replace(target);
+    R updatedResource =
+        client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+            .replace(target);
     populateNewResourceToCache(updatedResource);
     return updatedResource;
   }
 
   private void populateNewResourceToCache(R updatedResource) {
-//  push the resource into cache
+    informerEventSource.populateCacheWithJustUpdatedResource(updatedResource);
   }
 
   @Override

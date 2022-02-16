@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
@@ -38,5 +39,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   public void stop() {
     super.stop();
     manager().stop();
+  }
+
+  public void populateCacheWithJustUpdatedResource(R resource) {
+    cache.put(ResourceID.fromResource(resource), resource);
   }
 }
