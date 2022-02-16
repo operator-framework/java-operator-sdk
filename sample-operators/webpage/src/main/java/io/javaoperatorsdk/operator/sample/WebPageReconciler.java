@@ -90,7 +90,7 @@ public class WebPageReconciler
           @Override
           protected Deployment desired(WebPage webPage, Context context) {
             var deploymentName = deploymentName(webPage);
-            Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
+            Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
             deployment.getMetadata().setName(deploymentName);
             deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
             deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
@@ -123,7 +123,7 @@ public class WebPageReconciler
 
           @Override
           protected Service desired(WebPage webPage, Context context) {
-            Service service = loadYaml(Service.class, "service.yaml");
+            Service service = loadYaml(Service.class, getClass(), "service.yaml");
             service.getMetadata().setName(serviceName(webPage));
             service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
             Map<String, String> labels = new HashMap<>();

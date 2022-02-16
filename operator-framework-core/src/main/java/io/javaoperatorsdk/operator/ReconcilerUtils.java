@@ -118,10 +118,6 @@ public class ReconcilerUtils {
     }
   }
 
-  public static <T> T loadYaml(Class<T> clazz, String yaml) {
-    return loadYaml(clazz, clazz, yaml);
-  }
-
   public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
     try (InputStream is = loader.getResourceAsStream(yaml)) {
       return Serialization.unmarshal(is, clazz);

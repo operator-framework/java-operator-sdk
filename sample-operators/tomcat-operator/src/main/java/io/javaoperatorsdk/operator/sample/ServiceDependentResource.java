@@ -12,7 +12,7 @@ public class ServiceDependentResource extends KubernetesDependentResource<Servic
   @Override
   protected Service desired(Tomcat tomcat, Context context) {
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
-    return new ServiceBuilder(ReconcilerUtils.loadYaml(Service.class, "service.yaml"))
+    return new ServiceBuilder(ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml"))
         .editMetadata()
         .withName(tomcatMetadata.getName())
         .withNamespace(tomcatMetadata.getNamespace())
