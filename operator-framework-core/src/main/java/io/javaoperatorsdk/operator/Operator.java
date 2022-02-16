@@ -161,7 +161,7 @@ public class Operator implements LifecycleAware {
     final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
-    register(reconciler, controllerConfiguration);
+    register(reconciler, configToOverride.build());
   }
 
   static class ControllerManager implements LifecycleAware {
