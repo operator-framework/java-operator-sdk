@@ -18,7 +18,7 @@ class InformerWrapper<T extends HasMetadata>
   private final SharedIndexInformer<T> informer;
   private final InformerResourceCache<T> cache;
 
-  public InformerWrapper(SharedIndexInformer<T> informer) {
+  InformerWrapper(SharedIndexInformer<T> informer) {
     this.informer = informer;
     this.cache = new InformerResourceCache<>(informer);
   }

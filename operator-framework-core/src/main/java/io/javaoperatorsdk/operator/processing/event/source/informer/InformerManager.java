@@ -141,4 +141,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     getSource(key.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
         .ifPresent(c -> c.put(key, resource));
   }
+
+  int numberOfSources() {
+    return sources.size();
+  }
 }
