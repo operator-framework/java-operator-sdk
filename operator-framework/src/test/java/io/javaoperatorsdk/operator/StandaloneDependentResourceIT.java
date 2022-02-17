@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.dependent;
+package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
 
@@ -10,8 +10,10 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResource;
+import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestReconciler;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class StandaloneDependentResourceIT {
@@ -29,10 +31,38 @@ class StandaloneDependentResourceIT {
   void dependentResourceManagesDeployment() {
     StandaloneDependentTestCustomResource customResource =
         new StandaloneDependentTestCustomResource();
+    customResource.setSpec(new StandaloneDependentTestCustomResourceSpec());
     customResource.setMetadata(new ObjectMeta());
     customResource.getMetadata().setName(DEPENDENT_TEST_NAME);
     var createdCR = operator.create(StandaloneDependentTestCustomResource.class, customResource);
 
+    awaitForDeploymentReadyReplicas(1);
+    assertThat(
+        ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
+            .isFalse();
+  }
+
+  @Test
+  void executeUpdateForTestingCacheUpdateForGetResource() {
+    StandaloneDependentTestCustomResource customResource =
+        new StandaloneDependentTestCustomResource();
+    customResource.setSpec(new StandaloneDependentTestCustomResourceSpec());
+    customResource.setMetadata(new ObjectMeta());
+    customResource.getMetadata().setName(DEPENDENT_TEST_NAME);
+    var createdCR = operator.create(StandaloneDependentTestCustomResource.class, customResource);
+
+    awaitForDeploymentReadyReplicas(1);
+
+    createdCR.getSpec().setReplicaCount(2);
+    operator.replace(StandaloneDependentTestCustomResource.class, createdCR);
+
+    awaitForDeploymentReadyReplicas(2);
+    assertThat(
+        ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
+            .isFalse();
+  }
+
+  void awaitForDeploymentReadyReplicas(int expectedReplicaCount) {
     await()
         .pollInterval(Duration.ofMillis(300))
         .atMost(Duration.ofSeconds(50))
@@ -42,13 +72,13 @@ class StandaloneDependentResourceIT {
                   operator
                       .getKubernetesClient()
                       .resources(Deployment.class)
-                      .inNamespace(createdCR.getMetadata().getNamespace())
+                      .inNamespace(operator.getNamespace())
                       .withName(DEPENDENT_TEST_NAME)
                       .get();
               return deployment != null
                   && deployment.getStatus() != null
                   && deployment.getStatus().getReadyReplicas() != null
-                  && deployment.getStatus().getReadyReplicas() > 0;
+                  && deployment.getStatus().getReadyReplicas() == expectedReplicaCount;
             });
   }
 }
