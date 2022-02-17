@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -23,8 +25,8 @@ class UtilsTest {
       extends KubernetesDependentResource<Deployment, TestCustomResource> {
 
     @Override
-    protected Deployment desired(TestCustomResource primary, Context context) {
-      return null;
+    protected Optional<Deployment> desired(TestCustomResource primary, Context context) {
+      return Optional.empty();
     }
   }
 }

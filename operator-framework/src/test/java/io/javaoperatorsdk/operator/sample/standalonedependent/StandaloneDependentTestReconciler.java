@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.standalonedependent;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -50,16 +51,17 @@ public class StandaloneDependentTestReconciler
     return this.kubernetesClient;
   }
 
-  private class DeploymentDependentResource extends
+  private static class DeploymentDependentResource extends
       KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
     @Override
-    protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
+    protected Optional<Deployment> desired(StandaloneDependentTestCustomResource primary,
+        Context context) {
       Deployment deployment =
           ReconcilerUtils.loadYaml(Deployment.class, getClass(), "nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());
       deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-      return deployment;
+      return Optional.of(deployment);
     }
   }
 }

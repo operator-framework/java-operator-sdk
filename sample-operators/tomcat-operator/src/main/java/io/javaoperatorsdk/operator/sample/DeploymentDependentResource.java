@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -16,7 +18,7 @@ public class DeploymentDependentResource extends KubernetesDependentResource<Dep
   }
 
   @Override
-  protected Deployment desired(Tomcat tomcat, Context context) {
+  protected Optional<Deployment> desired(Tomcat tomcat, Context context) {
     Deployment deployment =
         ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
@@ -43,6 +45,6 @@ public class DeploymentDependentResource extends KubernetesDependentResource<Dep
         .endTemplate()
         .endSpec()
         .build();
-    return deployment;
+    return Optional.of(deployment);
   }
 }

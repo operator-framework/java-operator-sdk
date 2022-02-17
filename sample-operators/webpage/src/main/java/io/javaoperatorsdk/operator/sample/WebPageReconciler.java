@@ -87,7 +87,7 @@ public class WebPageReconciler
         new KubernetesDependentResource<>() {
 
           @Override
-          protected Deployment desired(WebPage webPage, Context context) {
+          protected Optional<Deployment> desired(WebPage webPage, Context context) {
             var deploymentName = deploymentName(webPage);
             Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
             deployment.getMetadata().setName(deploymentName);
@@ -108,7 +108,7 @@ public class WebPageReconciler
                 .get(0)
                 .setConfigMap(
                     new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
-            return deployment;
+            return Optional.of(deployment);
           }
 
           @Override
@@ -121,14 +121,14 @@ public class WebPageReconciler
         new KubernetesDependentResource<>() {
 
           @Override
-          protected Service desired(WebPage webPage, Context context) {
+          protected Optional<Service> desired(WebPage webPage, Context context) {
             Service service = loadYaml(Service.class, getClass(), "service.yaml");
             service.getMetadata().setName(serviceName(webPage));
             service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
             Map<String, String> labels = new HashMap<>();
             labels.put("app", deploymentName(webPage));
             service.getSpec().setSelector(labels);
-            return service;
+            return Optional.of(service);
           }
 
           @Override
@@ -155,17 +155,17 @@ public class WebPageReconciler
       AssociatedSecondaryResourceIdentifier<WebPage> {
 
     @Override
-    protected ConfigMap desired(WebPage webPage, Context context) {
+    protected Optional<ConfigMap> desired(WebPage webPage, Context context) {
       Map<String, String> data = new HashMap<>();
       data.put("index.html", webPage.getSpec().getHtml());
-      return new ConfigMapBuilder()
+      return Optional.of(new ConfigMapBuilder()
           .withMetadata(
               new ObjectMetaBuilder()
                   .withName(WebPageReconciler.configMapName(webPage))
                   .withNamespace(webPage.getMetadata().getNamespace())
                   .build())
           .withData(data)
-          .build();
+          .build());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.Base64;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -27,8 +28,8 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  protected Secret desired(MySQLSchema schema, Context context) {
-    return new SecretBuilder()
+  protected Optional<Secret> desired(MySQLSchema schema, Context context) {
+    return Optional.of(new SecretBuilder()
         .withNewMetadata()
         .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
         .withNamespace(schema.getMetadata().getNamespace())
@@ -37,7 +38,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
             "MYSQL_USERNAME", encode(context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
         .addToData(
             "MYSQL_PASSWORD", encode(context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
-        .build();
+        .build());
   }
 
   @Override
