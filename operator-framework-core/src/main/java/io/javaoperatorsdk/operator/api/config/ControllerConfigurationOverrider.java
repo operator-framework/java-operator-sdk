@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
+@SuppressWarnings({"rawtypes", "unchecked", "unused"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
@@ -21,7 +22,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private List<DependentResourceSpec> dependentResourceSpecs;
+  private final List<DependentResourceSpec> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
@@ -89,7 +90,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public void replaceDependentResourceConfig(
-      Class<? extends DependentResource<?, R, ?>> dependentResourceClass,
+      Class<? extends DependentResource<?, R>> dependentResourceClass,
       Object dependentResourceConfig) {
 
     var currentConfig =

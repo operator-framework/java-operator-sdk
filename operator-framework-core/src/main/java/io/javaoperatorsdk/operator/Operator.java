@@ -157,7 +157,7 @@ public class Operator implements LifecycleAware {
    * @param <R> the {@code HasMetadata} type associated with the reconciler
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler,
-      Consumer<ControllerConfigurationOverrider> configOverrider) {
+      Consumer<ControllerConfigurationOverrider<R>> configOverrider) {
     final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
@@ -195,7 +195,8 @@ public class Operator implements LifecycleAware {
       started = false;
     }
 
-    public synchronized void add(Controller controller) {
+    @SuppressWarnings("unchecked")
+    synchronized void add(Controller controller) {
       final var configuration = controller.getConfiguration();
       final var resourceTypeName = ReconcilerUtils
           .getResourceTypeNameWithVersion(configuration.getResourceClass());

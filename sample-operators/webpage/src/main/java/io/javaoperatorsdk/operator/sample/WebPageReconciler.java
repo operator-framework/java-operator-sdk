@@ -40,11 +40,10 @@ public class WebPageReconciler
 
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    List<EventSource> eventSources = new ArrayList<>(3);
-    configMapDR.eventSource(context).ifPresent(eventSources::add);
-    deploymentDR.eventSource(context).ifPresent(eventSources::add);
-    serviceDR.eventSource(context).ifPresent(eventSources::add);
-    return eventSources;
+    return List.of(
+        configMapDR.eventSource(context),
+        deploymentDR.eventSource(context),
+        serviceDR.eventSource(context));
   }
 
   @Override
