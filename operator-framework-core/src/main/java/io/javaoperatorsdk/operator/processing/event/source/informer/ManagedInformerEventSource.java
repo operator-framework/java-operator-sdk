@@ -51,7 +51,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void start() {
-    if(!isRunning()) {
+    if (!isRunning()) {
       manager().start();
       super.start();
     }
