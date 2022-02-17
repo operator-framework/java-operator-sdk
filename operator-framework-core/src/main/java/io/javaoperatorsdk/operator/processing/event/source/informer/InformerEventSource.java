@@ -104,4 +104,8 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     return manager().list(namespace, predicate);
   }
+
+  public InformerConfiguration<T, P> getConfiguration() {
+    return configuration;
+  }
 }

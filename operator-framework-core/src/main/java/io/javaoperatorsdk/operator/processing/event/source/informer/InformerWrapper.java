@@ -81,4 +81,5 @@ class InformerWrapper<T extends HasMetadata>
   public void put(ResourceID key, T resource) {
     cache.put(key, resource);
   }
+
 }

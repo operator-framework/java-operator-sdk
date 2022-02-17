@@ -32,6 +32,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
   protected ResourceMatcher resourceMatcher;
+  protected TemporalResourceCache<R> temporalResourceCache;
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
@@ -72,6 +73,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
     initResourceMatcherIfNotSet(configurationService);
+    temporalResourceCache = new TemporalResourceCache<>(informerEventSource);
   }
 
   protected void beforeCreateOrUpdate(R desired, P primary) {
@@ -94,7 +96,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     Class<R> targetClass = (Class<R>) target.getClass();
     var newResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
-    populateNewResourceToCache(newResource);
+    temporalResourceCache.putOnAddResource(newResource);
     return newResource;
   }
 
@@ -108,13 +110,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     R updatedResource =
         client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
             .replace(target);
-    populateNewResourceToCache(updatedResource);
+    temporalResourceCache.putOnUpdateResource(updatedResource,
+        actual.getMetadata().getResourceVersion());
     return updatedResource;
   }
 
-  private void populateNewResourceToCache(R updatedResource) {
-    informerEventSource.populateCacheUpdatedResource(updatedResource);
-  }
+
 
   @Override
   public Optional<EventSource> eventSource(EventSourceContext<P> context) {
@@ -143,7 +144,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Optional<R> getResource(P primaryResource) {
-    return informerEventSource.getAssociated(primaryResource);
+    var associatedSecondaryResourceIdentifier =
+        informerEventSource.getConfiguration().getAssociatedResourceIdentifier();
+    var resourceId =
+        associatedSecondaryResourceIdentifier.associatedSecondaryID(primaryResource);
+    var tempCacheResource = temporalResourceCache.getResourceFromCache(resourceId);
+    if (tempCacheResource.isPresent()) {
+      return tempCacheResource;
+    } else {
+      return informerEventSource.get(resourceId);
+    }
   }
 
   @Override

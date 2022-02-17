@@ -144,4 +144,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
                 "Cannot put resource in the cache. No related cache found: {}. Resource: {}",
                 key, resource));
   }
+
+  public void addEventHandler(ResourceEventHandler<T> eventHandler) {
+    sources.values().forEach(i -> i.addEventHandler(eventHandler));
+  }
 }
