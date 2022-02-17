@@ -113,7 +113,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private void populateNewResourceToCache(R updatedResource) {
-    informerEventSource.populateCacheWithJustUpdatedResource(updatedResource);
+    informerEventSource.populateCacheUpdatedResource(updatedResource);
   }
 
   @Override

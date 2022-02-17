@@ -139,9 +139,9 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public void put(ResourceID key, T resource) {
     getSource(key.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
-        .ifPresentOrElse(c -> c.put(key, resource), () -> {
-          log.warn("Cannot put resource in the cache. No related cache found: {}. Resource: {}",
-              key, resource);
-        });
+        .ifPresentOrElse(c -> c.put(key, resource),
+            () -> log.warn(
+                "Cannot put resource in the cache. No related cache found: {}. Resource: {}",
+                key, resource));
   }
 }

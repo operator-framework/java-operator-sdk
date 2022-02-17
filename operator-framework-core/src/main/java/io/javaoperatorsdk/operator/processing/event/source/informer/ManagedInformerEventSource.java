@@ -41,7 +41,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     manager().stop();
   }
 
-  public void populateCacheWithJustUpdatedResource(R resource) {
+  public void populateCacheUpdatedResource(R resource) {
     cache.put(ResourceID.fromResource(resource), resource);
   }
 }
