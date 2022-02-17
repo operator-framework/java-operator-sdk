@@ -40,7 +40,4 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     manager().stop();
   }
 
-  public void addEventHandler(ResourceEventHandler<R> eventHandler) {
-    manager().addEventHandler(eventHandler);
-  }
 }
