@@ -13,11 +13,23 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static javax.swing.UIManager.get;
-
 /**
- * Temporal cache 
- *
+ * <p>
+ * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
+ * a create or update is executed the subsequent getResource opeeration might not return the
+ * up-to-date resource from informer cache, since it is not received yet by webhook.
+ * </p>
+ * <p>
+ * The idea of the solution is, that since an update (for create is simpler) was done successfully,
+ * and optimistic locking is in place, there were no other operations between reading the resource
+ * from the cache and the actual update. So when the new resource is stored in the temporal cache
+ * only if the informer still has the previous resource version, from before the update. If not,
+ * that means there were already updates on the cache (either by the actual update from
+ * DependentResource or other) so the resource does not needs to be cached. Subsequently if event
+ * received from the informer, it means that the cache of the informer was updated, so it already
+ * contains a more fresh version of the resource. (See one caveat below)
+ * </p>
+ * 
  * @param <T> resource to cache.
  */
 public class TemporalResourceCache<T extends HasMetadata> implements ResourceEventHandler<T> {
