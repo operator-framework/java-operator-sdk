@@ -29,7 +29,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
-  private InformerEventSource<R, P> informerEventSource;
+  protected InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
   protected ResourceMatcher resourceMatcher;
   protected TemporalResourceCache<R> temporalResourceCache;
