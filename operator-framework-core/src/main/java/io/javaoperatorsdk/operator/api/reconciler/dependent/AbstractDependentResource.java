@@ -24,7 +24,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata, C>
     });
   }
 
-  protected abstract Optional<R> desired(P primary, Context context);
+  protected Optional<R> desired(P primary, Context context) {
+    return Optional.empty();
+  }
 
   protected abstract boolean match(R actual, R target, Context context);
 
