@@ -20,7 +20,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @SuppressWarnings("rawtypes")
   private static final ConcurrentMap<ResourceConfigurationAsKey, InformerManager> managedInformers =
-      new ConcurrentHashMap<>(17);
+      new ConcurrentHashMap<>();
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
@@ -51,14 +51,18 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void start() {
-    manager().start();
-    super.start();
+    if(!isRunning()) {
+      manager().start();
+      super.start();
+    }
   }
 
   @Override
   public void stop() {
-    super.stop();
-    manager().stop();
+    if (isRunning()) {
+      super.stop();
+      manager().stop();
+    }
   }
 
   @SuppressWarnings("rawtypes")
