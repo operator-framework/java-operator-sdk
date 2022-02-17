@@ -65,7 +65,7 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
 
   @Override
   public void onDelete(T t, boolean b) {
-    cache.remove(ResourceID.fromResource(t));
+    removeResourceFromCache(t);
   }
 
   private void removeResourceFromCache(T resource) {
@@ -77,7 +77,7 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
     }
   }
 
-  public void putOnAddResource(T newResource) {
+  public void putAddedResource(T newResource) {
     lock.lock();
     try {
       if (informerEventSource.get(ResourceID.fromResource(newResource)).isEmpty()) {
@@ -88,7 +88,7 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
     }
   }
 
-  public void putOnUpdateResource(T newResource, String previousResourceVersion) {
+  public void putUpdatedResource(T newResource, String previousResourceVersion) {
     lock.lock();
     try {
       var resourceId = ResourceID.fromResource(newResource);

@@ -96,7 +96,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     Class<R> targetClass = (Class<R>) target.getClass();
     var newResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
-    temporalResourceCache.putOnAddResource(newResource);
+    temporalResourceCache.putAddedResource(newResource);
     return newResource;
   }
 
@@ -110,7 +110,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     R updatedResource =
         client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
             .replace(target);
-    temporalResourceCache.putOnUpdateResource(updatedResource,
+    temporalResourceCache.putUpdatedResource(updatedResource,
         actual.getMetadata().getResourceVersion());
     return updatedResource;
   }
