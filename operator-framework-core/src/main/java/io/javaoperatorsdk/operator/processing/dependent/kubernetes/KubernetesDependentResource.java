@@ -7,13 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GenericDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -23,12 +21,11 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends KubernetesDependentResourceBase<R, P, KubernetesDependentResourceConfig>
-    implements GenericDependentResource<R, P>, KubernetesClientAware {
+    implements GenericDependentResource<R, P> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected ResourceMatcher resourceMatcher;
-  protected KubernetesClient client;
   private boolean addOwnerReference;
   private boolean editOnly = false;
 
@@ -137,11 +134,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public Optional<R> getResource(P primaryResource) {
     return informerEventSource.getAssociated(primaryResource);
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 
   /**

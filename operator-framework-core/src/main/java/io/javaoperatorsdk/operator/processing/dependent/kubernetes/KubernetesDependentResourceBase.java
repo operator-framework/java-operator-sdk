@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -14,12 +16,17 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResourceBase<R extends HasMetadata, P extends HasMetadata, C extends InformerConfig>
-    implements DependentResourceConfigurator<C>, EventSourceProvider<P> {
+    implements DependentResourceConfigurator<C>, EventSourceProvider<P>, KubernetesClientAware {
 
   protected InformerEventSource<R, P> informerEventSource;
+  protected KubernetesClient client;
 
   @Override
   public void configureWith(C config) {
+    configureWithInformerConfig(config);
+  }
+
+  public void configureWithInformerConfig(InformerConfig config) {
     final var primaryResourcesRetriever =
         (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
             : Mappers.fromOwnerReference();
@@ -27,15 +34,15 @@ public abstract class KubernetesDependentResourceBase<R extends HasMetadata, P e
         (this instanceof AssociatedSecondaryResourceIdentifier)
             ? (AssociatedSecondaryResourceIdentifier<P>) this
             : ResourceID::fromResource;
-    this.informerEventSource =
-        (InformerEventSource<R, P>) InformerConfiguration
-            .from(config.getConfigurationService(), resourceType())
-            .withLabelSelector(config.labelSelector())
-            .withNamespaces(config.namespaces())
-            .withPrimaryResourcesRetriever(primaryResourcesRetriever)
-            .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
-            .build();
 
+    var ic = InformerConfiguration
+        .from(config.getConfigurationService(), resourceType())
+        .withLabelSelector(config.labelSelector())
+        .withNamespaces(config.namespaces())
+        .withPrimaryResourcesRetriever(primaryResourcesRetriever)
+        .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
+        .build();
+    this.informerEventSource = new InformerEventSource<>(ic, client);
   }
 
   protected Class<R> resourceType() {
@@ -44,8 +51,14 @@ public abstract class KubernetesDependentResourceBase<R extends HasMetadata, P e
 
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
-    configureWith((C) new InformerConfig(null, null, context.getConfigurationService()));
+    configureWithInformerConfig(new InformerConfig(null, null, context.getConfigurationService()));
     return informerEventSource;
   }
+
+  @Override
+  public void setKubernetesClient(KubernetesClient kubernetesClient) {
+    this.client = kubernetesClient;
+  }
+
 
 }
