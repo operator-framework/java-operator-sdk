@@ -10,9 +10,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata, C>
 
   @Override
   public void reconcile(P primary, Context context) {
-    var maybeActual = getResource(primary);
     var maybeDesired = desired(primary, context);
     maybeDesired.ifPresent(desired -> {
+      var maybeActual = getResource(primary);
       if (maybeActual.isEmpty()) {
         create(desired, primary, context);
       } else {
