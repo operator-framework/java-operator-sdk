@@ -14,6 +14,8 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -24,7 +26,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig>
-    implements KubernetesClientAware {
+    implements KubernetesClientAware, EventSourceProvider<P>,
+    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -62,7 +65,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   /**
    * Use to share informers between event more resources.
-   * 
+   *
    * @param configurationService get configs
    * @param informerEventSource informer to use
    * @param addOwnerReference to the created resource
@@ -118,7 +121,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
 
   @Override
-  public Optional<EventSource> eventSource(EventSourceContext<P> context) {
+  public EventSource eventSource(EventSourceContext<P> context) {
     initResourceMatcherIfNotSet(context.getConfigurationService());
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
@@ -126,7 +129,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
-    return Optional.of(informerEventSource);
+    return informerEventSource;
   }
 
   @Override
