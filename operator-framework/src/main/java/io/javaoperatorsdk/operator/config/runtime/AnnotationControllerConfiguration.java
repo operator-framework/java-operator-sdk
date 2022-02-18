@@ -168,8 +168,12 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                 kubeDependent,
                 KubernetesDependent::addOwnerReference,
                 KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+        final var editOnly = Utils.valueOrDefault(
+            kubeDependent,
+            KubernetesDependent::editOnly,
+            KubernetesDependent.EDIT_ONLY_DEFAULT);
         KubernetesDependentResourceConfig config =
-            new KubernetesDependentResourceConfig(
+            new KubernetesDependentResourceConfig(editOnly,
                 addOwnerReference, namespaces, labelSelector, getConfigurationService());
         resourceSpecs.add(new DependentResourceSpec(dependentType, config));
       } else {

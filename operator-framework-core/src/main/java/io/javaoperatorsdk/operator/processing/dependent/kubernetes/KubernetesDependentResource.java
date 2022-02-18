@@ -9,13 +9,10 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GenericDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -25,26 +22,27 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig>
-    implements KubernetesClientAware, EventSourceProvider<P>,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
+    extends KubernetesDependentResourceBase<R, P, KubernetesDependentResourceConfig>
+    implements GenericDependentResource<R, P>, KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
-  protected KubernetesClient client;
-  private InformerEventSource<R, P> informerEventSource;
-  private boolean addOwnerReference;
   protected ResourceMatcher resourceMatcher;
+  protected KubernetesClient client;
+  private boolean addOwnerReference;
+  private boolean editOnly = false;
+
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
+    super.configureWith(config);
     configureWith(config.getConfigurationService(), config.labelSelector(),
-        Set.of(config.namespaces()), config.addOwnerReference());
+        Set.of(config.namespaces()), config.addOwnerReference(), config.isEditOnly());
   }
 
   @SuppressWarnings("unchecked")
   private void configureWith(ConfigurationService configService, String labelSelector,
-      Set<String> namespaces, boolean addOwnerReference) {
+      Set<String> namespaces, boolean addOwnerReference, boolean editOnly) {
     final var primaryResourcesRetriever =
         (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
             : Mappers.fromOwnerReference();
@@ -59,7 +57,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
             .withPrimaryResourcesRetriever(primaryResourcesRetriever)
             .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
             .build();
-    configureWith(configService, new InformerEventSource<>(ic, client), addOwnerReference);
+    configureWith(configService, new InformerEventSource<>(ic, client), addOwnerReference,
+        editOnly);
   }
 
   /**
@@ -71,9 +70,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    */
   public void configureWith(ConfigurationService configurationService,
       InformerEventSource<R, P> informerEventSource,
-      boolean addOwnerReference) {
+      boolean addOwnerReference, boolean editOnly) {
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
+    this.editOnly = editOnly;
     initResourceMatcherIfNotSet(configurationService);
   }
 
@@ -84,42 +84,39 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected boolean match(R actualResource, R desiredResource, Context context) {
+  public boolean match(R actualResource, R desiredResource, Context context) {
     return resourceMatcher.match(actualResource, desiredResource, context);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  protected R create(R target, P primary, Context context) {
+  public void create(R target, P primary, Context context) {
+    if (editOnly) {
+      return;
+    }
     log.debug("Creating target resource with type: " +
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
     beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+    client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  protected R update(R actual, R target, P primary, Context context) {
+  public void update(R actual, R target, P primary, Context context) {
     log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
         ResourceID.fromResource(target));
     beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    return client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
+    client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .replace(target);
   }
 
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
     initResourceMatcherIfNotSet(context.getConfigurationService());
-    if (informerEventSource == null) {
-      configureWith(context.getConfigurationService(), null, null,
-          KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-      log.warn("Using default configuration for " + resourceType().getSimpleName()
-          + " KubernetesDependentResource, call configureWith to provide configuration");
-    }
-    return informerEventSource;
+    return super.eventSource(context);
   }
 
   public KubernetesDependentResource<R, P> setInformerEventSource(
@@ -137,10 +134,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  protected Class<R> resourceType() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
-  }
-
   @Override
   public Optional<R> getResource(P primaryResource) {
     return informerEventSource.getAssociated(primaryResource);

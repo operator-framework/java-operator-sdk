@@ -23,7 +23,7 @@ class UtilsTest {
       extends KubernetesDependentResource<Deployment, TestCustomResource> {
 
     @Override
-    protected Deployment desired(TestCustomResource primary, Context context) {
+    public Deployment desired(TestCustomResource primary, Context context) {
       return null;
     }
   }

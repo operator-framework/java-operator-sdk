@@ -3,11 +3,11 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public abstract class AbstractDependentResource<R, P extends HasMetadata, C>
-    implements DependentResource<R, P> {
+public interface GenericDependentResource<R, P extends HasMetadata>
+    extends DependentResource<R, P> {
 
-  @Override
-  public void reconcile(P primary, Context context) {
+
+  default void reconcile(P primary, Context context) {
     var actual = getResource(primary);
     var desired = desired(primary, context);
     if (actual.isEmpty()) {
@@ -19,13 +19,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata, C>
     }
   }
 
-  protected abstract R desired(P primary, Context context);
+  R desired(P primary, Context context);
 
-  protected abstract boolean match(R actual, R target, Context context);
+  boolean match(R actual, R target, Context context);
 
-  protected abstract R create(R target, P primary, Context context);
+  void create(R target, P primary, Context context);
 
   // the actual needed to copy/preserve new labels or annotations
-  protected abstract R update(R actual, R target, P primary, Context context);
+  void update(R actual, R target, P primary, Context context);
 
 }

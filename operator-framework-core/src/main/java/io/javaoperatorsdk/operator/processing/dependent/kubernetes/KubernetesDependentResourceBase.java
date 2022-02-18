@@ -1,0 +1,51 @@
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
+
+public abstract class KubernetesDependentResourceBase<R extends HasMetadata, P extends HasMetadata, C extends InformerConfig>
+    implements DependentResourceConfigurator<C>, EventSourceProvider<P> {
+
+  protected InformerEventSource<R, P> informerEventSource;
+
+  @Override
+  public void configureWith(C config) {
+    final var primaryResourcesRetriever =
+        (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
+            : Mappers.fromOwnerReference();
+    final AssociatedSecondaryResourceIdentifier<P> secondaryResourceIdentifier =
+        (this instanceof AssociatedSecondaryResourceIdentifier)
+            ? (AssociatedSecondaryResourceIdentifier<P>) this
+            : ResourceID::fromResource;
+    this.informerEventSource =
+        (InformerEventSource<R, P>) InformerConfiguration
+            .from(config.getConfigurationService(), resourceType())
+            .withLabelSelector(config.labelSelector())
+            .withNamespaces(config.namespaces())
+            .withPrimaryResourcesRetriever(primaryResourcesRetriever)
+            .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
+            .build();
+
+  }
+
+  protected Class<R> resourceType() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
+  }
+
+  @Override
+  public EventSource eventSource(EventSourceContext<P> context) {
+    configureWith((C) new InformerConfig(null, null, context.getConfigurationService()));
+    return informerEventSource;
+  }
+
+}

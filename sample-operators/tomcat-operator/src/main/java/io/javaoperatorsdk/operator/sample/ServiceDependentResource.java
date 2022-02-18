@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat> {
 
   @Override
-  protected Service desired(Tomcat tomcat, Context context) {
+  public Service desired(Tomcat tomcat, Context context) {
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
     return new ServiceBuilder(ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml"))
         .editMetadata()

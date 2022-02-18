@@ -12,8 +12,11 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 public @interface KubernetesDependent {
 
   boolean ADD_OWNER_REFERENCE_DEFAULT = true;
+  boolean EDIT_ONLY_DEFAULT = false;
 
   boolean addOwnerReference() default ADD_OWNER_REFERENCE_DEFAULT;
+
+  boolean editOnly() default EDIT_ONLY_DEFAULT;
 
   /**
    * Specified which namespaces this Controller monitors for custom resources events. If no

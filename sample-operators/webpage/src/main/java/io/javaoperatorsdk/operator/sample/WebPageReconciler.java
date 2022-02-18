@@ -87,7 +87,7 @@ public class WebPageReconciler
         new KubernetesDependentResource<>() {
 
           @Override
-          protected Deployment desired(WebPage webPage, Context context) {
+          public Deployment desired(WebPage webPage, Context context) {
             var deploymentName = deploymentName(webPage);
             Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
             deployment.getMetadata().setName(deploymentName);
@@ -121,7 +121,7 @@ public class WebPageReconciler
         new KubernetesDependentResource<>() {
 
           @Override
-          protected Service desired(WebPage webPage, Context context) {
+          public Service desired(WebPage webPage, Context context) {
             Service service = loadYaml(Service.class, getClass(), "service.yaml");
             service.getMetadata().setName(serviceName(webPage));
             service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
@@ -155,7 +155,7 @@ public class WebPageReconciler
       AssociatedSecondaryResourceIdentifier<WebPage> {
 
     @Override
-    protected ConfigMap desired(WebPage webPage, Context context) {
+    public ConfigMap desired(WebPage webPage, Context context) {
       Map<String, String> data = new HashMap<>();
       data.put("index.html", webPage.getSpec().getHtml());
       return new ConfigMapBuilder()
@@ -169,15 +169,15 @@ public class WebPageReconciler
     }
 
     @Override
-    protected boolean match(ConfigMap actual, ConfigMap target, Context context) {
+    public boolean match(ConfigMap actual, ConfigMap target, Context context) {
       return StringUtils.equals(
           actual.getData().get("index.html"), target.getData().get("index.html"));
     }
 
     @Override
-    protected ConfigMap update(
+    public void update(
         ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
-      var cm = super.update(actual, target, primary, context);
+      super.update(actual, target, primary, context);
       var ns = actual.getMetadata().getNamespace();
       log.info("Restarting pods because HTML has changed in {}", ns);
       kubernetesClient
@@ -185,7 +185,6 @@ public class WebPageReconciler
           .inNamespace(ns)
           .withLabel("app", deploymentName(primary))
           .delete();
-      return cm;
     }
 
     @Override

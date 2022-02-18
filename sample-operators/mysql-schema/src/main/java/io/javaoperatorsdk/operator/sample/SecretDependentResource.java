@@ -20,14 +20,14 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
 
   // An alternative would be to override reconcile() method and exclude the update part.
   @Override
-  protected Secret update(Secret actual, Secret target, MySQLSchema primary, Context context) {
+  public void update(Secret actual, Secret target, MySQLSchema primary, Context context) {
     throw new IllegalStateException(
         "Secret should not be updated. Secret: " + target + " for custom resource: "
             + primary);
   }
 
   @Override
-  protected Secret desired(MySQLSchema schema, Context context) {
+  public Secret desired(MySQLSchema schema, Context context) {
     return new SecretBuilder()
         .withNewMetadata()
         .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
@@ -41,7 +41,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  protected boolean match(Secret actual, Secret target, Context context) {
+  public boolean match(Secret actual, Secret target, Context context) {
     return ResourceID.fromResource(actual).equals(ResourceID.fromResource(target));
   }
 
