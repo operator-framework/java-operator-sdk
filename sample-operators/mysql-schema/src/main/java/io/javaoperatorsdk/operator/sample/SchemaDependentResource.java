@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 import static java.lang.String.format;
 
 public class SchemaDependentResource
-    extends AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig>
+    extends AbstractDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>,

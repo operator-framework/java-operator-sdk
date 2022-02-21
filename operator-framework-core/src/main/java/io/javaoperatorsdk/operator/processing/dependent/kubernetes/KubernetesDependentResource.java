@@ -32,7 +32,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P, KubernetesDependentResourceConfig>
+    extends AbstractDependentResource<R, P>
     implements KubernetesClientAware, EventSourceProvider<P>,
     DependentResourceConfigurator<KubernetesDependentResourceConfig>,
     Creator<R, P>,
