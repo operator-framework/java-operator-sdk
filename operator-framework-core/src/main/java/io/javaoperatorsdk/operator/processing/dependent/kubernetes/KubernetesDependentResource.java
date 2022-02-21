@@ -25,6 +25,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected ResourceMatcher resourceMatcher;
+  protected ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor;
   private boolean addOwnerReference;
   private boolean editOnly = false;
 
@@ -70,10 +71,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
     this.editOnly = editOnly;
-    initResourceMatcherIfNotSet(configurationService);
+    initResourceMatcherAndUpdatePreProcessorIfNotSet(configurationService);
   }
 
-  protected void beforeCreateOrUpdate(R desired, P primary) {
+  protected void beforeCreate(R desired, P primary) {
     if (addOwnerReference) {
       desired.addOwnerReference(primary);
     }
@@ -92,7 +93,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
     log.debug("Creating target resource with type: " +
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
-    beforeCreateOrUpdate(target, primary);
+    beforeCreate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
     client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
@@ -103,15 +104,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public void update(R actual, R target, P primary, Context context) {
     log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
         ResourceID.fromResource(target));
-    beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
+    var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
     client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
-        .replace(target);
+        .replace(updatedActual);
   }
 
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
-    initResourceMatcherIfNotSet(context.getConfigurationService());
+    initResourceMatcherAndUpdatePreProcessorIfNotSet(context.getConfigurationService());
     return super.eventSource(context);
   }
 
@@ -135,10 +136,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    *
    * @param configurationService config service to mainly access object mapper
    */
-  protected void initResourceMatcherIfNotSet(ConfigurationService configurationService) {
+  protected void initResourceMatcherAndUpdatePreProcessorIfNotSet(
+      ConfigurationService configurationService) {
     if (resourceMatcher == null) {
       resourceMatcher = new DesiredValueMatcher(configurationService.getObjectMapper());
     }
+    if (resourceUpdatePreProcessor == null) {
+      resourceUpdatePreProcessor =
+          new ResourceUpdatePreProcessor<>(configurationService.getResourceCloner());
+    }
   }
 
+  public KubernetesDependentResource<R, P> setResourceMatcher(ResourceMatcher resourceMatcher) {
+    this.resourceMatcher = resourceMatcher;
+    return this;
+  }
+
+  public KubernetesDependentResource<R, P> setResourceUpdatePreProcessor(
+      ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor) {
+    this.resourceUpdatePreProcessor = resourceUpdatePreProcessor;
+    return this;
+  }
 }
