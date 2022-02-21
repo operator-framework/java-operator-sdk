@@ -43,7 +43,9 @@ public class MySQLSchemaReconciler
   @Override
   public void initContext(MySQLSchema primary, Context context) {
     final var name = primary.getMetadata().getName();
-    final var password = RandomStringUtils.randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
+    final var password = RandomStringUtils
+        .randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
+
     final var secretName = String.format(SECRET_FORMAT, name);
     final var userName = String.format(USERNAME_FORMAT, name);
 
