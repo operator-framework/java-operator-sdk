@@ -72,6 +72,19 @@ class ReconcilerUtilsTest {
     assertThat(spec.getReplicas()).isEqualTo(5);
   }
 
+  @Test
+  void setsSpecWithReflection() {
+    Deployment deployment = new Deployment();
+    deployment.setSpec(new DeploymentSpec());
+    deployment.getSpec().setReplicas(5);
+    DeploymentSpec newSpec = new DeploymentSpec();
+    newSpec.setReplicas(1);
+
+    ReconcilerUtils.setSpec(deployment, newSpec);
+
+    assertThat(deployment.getSpec().getReplicas()).isEqualTo(1);
+  }
+
   private Deployment createTestDeployment() {
     Deployment deployment = new Deployment();
     deployment.setSpec(new DeploymentSpec());
