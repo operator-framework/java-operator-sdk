@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Optional;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +44,7 @@ public class MySQLSchemaReconciler
   @Override
   public void initContext(MySQLSchema primary, Context context) {
     final var name = primary.getMetadata().getName();
-    // NOSONAR we don't need cryptographically-strong randomness here
-    final var password = RandomStringUtils.randomAlphanumeric(16);
+    final var password = randomPassword(16);
     final var secretName = String.format(SECRET_FORMAT, name);
     final var userName = String.format(USERNAME_FORMAT, name);
 
@@ -52,6 +52,13 @@ public class MySQLSchemaReconciler
     context.put(MYSQL_SECRET_PASSWORD, password);
     context.put(MYSQL_SECRET_NAME, secretName);
     context.put(MYSQL_SECRET_USERNAME, userName);
+  }
+
+  private String randomPassword(int length) {
+    SecureRandom random = new SecureRandom(); // Compliant for security-sensitive use cases
+    byte bytes[] = new byte[length];
+    random.nextBytes(bytes);
+    return Base64.getEncoder().encodeToString(bytes);
   }
 
   @Override
