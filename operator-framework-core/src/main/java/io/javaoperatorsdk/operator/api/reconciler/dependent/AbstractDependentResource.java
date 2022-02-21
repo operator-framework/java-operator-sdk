@@ -6,26 +6,46 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 public abstract class AbstractDependentResource<R, P extends HasMetadata, C>
     implements DependentResource<R, P> {
 
+  private final Creator<R, P> creator;
+  private final Updater<R, P> updater;
+  private final Matcher<R> matcher;
+
+  @SuppressWarnings("unchecked")
+  public AbstractDependentResource() {
+    creator = this instanceof Creator ? (Creator<R, P>) this : Creator.NOOP;
+    updater = this instanceof Updater ? (Updater<R, P>) this : Updater.NOOP;
+    matcher = this instanceof Matcher ? (Matcher<R>) this : Matcher.DEFAULT;
+  }
+
   @Override
   public void reconcile(P primary, Context context) {
-    var actual = getResource(primary);
-    var desired = desired(primary, context);
-    if (actual.isEmpty()) {
-      create(desired, primary, context);
-    } else {
-      if (!match(actual.get(), desired, context)) {
-        update(actual.get(), desired, primary, context);
+    final var creatable = isCreatable(primary);
+    final var updatable = isUpdatable(primary);
+    if (creatable || updatable) {
+      var maybeActual = getResource(primary);
+      var desired = desired(primary, context);
+      if (maybeActual.isEmpty()) {
+        if (creatable) {
+          creator.create(desired, primary, context);
+        }
+      } else {
+        final var actual = maybeActual.get();
+        if (updatable && !matcher.match(actual, desired, context)) {
+          updater.update(actual, desired, primary, context);
+        }
       }
     }
   }
 
   protected abstract R desired(P primary, Context context);
 
-  protected abstract boolean match(R actual, R target, Context context);
+  @SuppressWarnings("unused")
+  protected boolean isCreatable(P primary) {
+    return creator != Creator.NOOP;
+  }
 
-  protected abstract R create(R target, P primary, Context context);
-
-  // the actual needed to copy/preserve new labels or annotations
-  protected abstract R update(R actual, R target, P primary, Context context);
-
+  @SuppressWarnings("unused")
+  protected boolean isUpdatable(P primary) {
+    return updater != Updater.NOOP;
+  }
 }
