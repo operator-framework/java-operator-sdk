@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -58,6 +60,11 @@ public abstract class KubernetesDependentResourceBase<R extends HasMetadata, P e
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
+  }
+
+
+  public Optional<R> getResource(P primaryResource) {
+    return informerEventSource.getAssociated(primaryResource);
   }
 
 

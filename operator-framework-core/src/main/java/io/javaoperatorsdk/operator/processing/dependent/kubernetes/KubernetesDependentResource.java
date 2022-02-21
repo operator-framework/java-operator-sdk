@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -131,11 +130,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  @Override
-  public Optional<R> getResource(P primaryResource) {
-    return informerEventSource.getAssociated(primaryResource);
-  }
-
   /**
    * Override this method to configure resource matcher
    *
