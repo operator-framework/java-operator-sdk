@@ -118,6 +118,15 @@ public class ReconcilerUtils {
     }
   }
 
+  public static Object setSpec(HasMetadata resource, Object spec) {
+    try {
+      Method setSpecMethod = resource.getClass().getMethod("setSpec", spec.getClass());
+      return setSpecMethod.invoke(resource, spec);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      throw new IllegalStateException("No spec found on resource", e);
+    }
+  }
+
   public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
     try (InputStream is = loader.getResourceAsStream(yaml)) {
       return Serialization.unmarshal(is, clazz);

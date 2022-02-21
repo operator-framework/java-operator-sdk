@@ -35,6 +35,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
   protected ResourceMatcher resourceMatcher;
+  protected ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor;
   protected TemporalResourceCache<R> temporalResourceCache;
 
   @Override
@@ -75,11 +76,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       boolean addOwnerReference) {
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
-    initResourceMatcherIfNotSet(configurationService);
+    initResourceMatcherAndUpdatePreProcessorIfNotSet(configurationService);
+
     temporalResourceCache = new TemporalResourceCache<>(informerEventSource);
   }
 
-  protected void beforeCreateOrUpdate(R desired, P primary) {
+  protected void beforeCreate(R desired, P primary) {
     if (addOwnerReference) {
       desired.addOwnerReference(primary);
     }
@@ -95,7 +97,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R create(R target, P primary, Context context) {
     log.debug("Creating target resource with type: " +
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
-    beforeCreateOrUpdate(target, primary);
+    beforeCreate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
     var newResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
         .create(target);
@@ -108,11 +110,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R update(R actual, R target, P primary, Context context) {
     log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
         ResourceID.fromResource(target));
-    beforeCreateOrUpdate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
+    var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
     R updatedResource =
         client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
-            .replace(target);
+            .replace(updatedActual);
     temporalResourceCache.putUpdatedResource(updatedResource,
         actual.getMetadata().getResourceVersion());
     return updatedResource;
@@ -122,7 +124,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
-    initResourceMatcherIfNotSet(context.getConfigurationService());
+    initResourceMatcherAndUpdatePreProcessorIfNotSet(context.getConfigurationService());
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
@@ -169,10 +171,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    *
    * @param configurationService config service to mainly access object mapper
    */
-  protected void initResourceMatcherIfNotSet(ConfigurationService configurationService) {
+  protected void initResourceMatcherAndUpdatePreProcessorIfNotSet(
+      ConfigurationService configurationService) {
     if (resourceMatcher == null) {
       resourceMatcher = new DesiredValueMatcher(configurationService.getObjectMapper());
     }
+    if (resourceUpdatePreProcessor == null) {
+      resourceUpdatePreProcessor =
+          new ResourceUpdatePreProcessor<>(configurationService.getResourceCloner());
+    }
   }
 
+  public KubernetesDependentResource<R, P> setResourceMatcher(ResourceMatcher resourceMatcher) {
+    this.resourceMatcher = resourceMatcher;
+    return this;
+  }
+
+  public KubernetesDependentResource<R, P> setResourceUpdatePreProcessor(
+      ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor) {
+    this.resourceUpdatePreProcessor = resourceUpdatePreProcessor;
+    return this;
+  }
 }
