@@ -33,8 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P>
     implements KubernetesClientAware, EventSourceProvider<P>,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig>,
-    Matcher<R> {
+    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -44,8 +43,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor;
 
   public KubernetesDependentResource() {
-    init(new CreateDependentOperation(), new UpdateDependentOperation(),
-        GenericKubernetesResourceMatcher.matcherFor(resourceType()));
+    init(new CreateDependentOperation(), new UpdateDependentOperation());
   }
 
   @Override
@@ -124,9 +122,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private class UpdateDependentOperation extends DependentOperation implements Updater<R, P> {
+    private final Matcher<R> matcher;
 
     public UpdateDependentOperation() {
       super("Updating");
+      matcher = GenericKubernetesResourceMatcher.matcherFor(resourceType());
     }
 
     @Override
@@ -134,11 +134,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
       prepare(target, primary).replace(updatedActual);
     }
-  }
 
-  @Override
-  public boolean match(R actualResource, R desiredResource, Context context) {
-    return matcher.match(actualResource, desiredResource, context);
+    @Override
+    public boolean match(R actualResource, R desiredResource, Context context) {
+      return matcher.match(actualResource, desiredResource, context);
+    }
   }
 
   @Override

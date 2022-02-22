@@ -5,7 +5,7 @@ import java.util.Base64;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryRe
 import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
-    implements AssociatedSecondaryResourceIdentifier<MySQLSchema>, Matcher<Secret> {
+    implements AssociatedSecondaryResourceIdentifier<MySQLSchema>, Updater<Secret, MySQLSchema> {
 
   private static String encode(String value) {
     return Base64.getEncoder().encodeToString(value.getBytes());

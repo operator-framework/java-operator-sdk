@@ -8,18 +8,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  protected Matcher<R> matcher;
-
 
   public AbstractDependentResource() {
-    init(Creator.NOOP, Updater.NOOP, Matcher.DEFAULT);
+    init(Creator.NOOP, Updater.NOOP);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected void init(Creator defaultCreator, Updater defaultUpdater, Matcher defaultMatcher) {
+  protected void init(Creator defaultCreator, Updater defaultUpdater) {
     creator = this instanceof Creator ? (Creator<R, P>) this : defaultCreator;
     updater = this instanceof Updater ? (Updater<R, P>) this : defaultUpdater;
-    matcher = this instanceof Matcher ? (Matcher<R>) this : defaultMatcher;
   }
 
   @Override
@@ -35,7 +32,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         }
       } else {
         final var actual = maybeActual.get();
-        if (updatable && !matcher.match(actual, desired, context)) {
+        if (updatable && !updater.match(actual, desired, context)) {
           updater.update(actual, desired, primary, context);
         }
       }
