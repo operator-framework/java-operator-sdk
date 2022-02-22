@@ -158,7 +158,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.informerEventSource = informerEventSource;
     return this;
   }
-  
+
+  @Override
   public void delete(P primary, Context context) {
     if (!addOwnerReference) {
       var resource = getResource(primary);

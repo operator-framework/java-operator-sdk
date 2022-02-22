@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
@@ -73,10 +72,7 @@ public class DependentResourceManager<P extends HasMetadata>
   @Override
   public DeleteControl cleanup(P resource, Context context) {
     initContextIfNeeded(resource, context);
-    dependents.stream()
-        .filter(dependent -> dependent instanceof Deleter)
-        .map(Deleter.class::cast)
-        .forEach(dependent -> dependent.delete(resource, context));
+    dependents.forEach(dependent -> dependent.delete(resource, context));
     return Reconciler.super.cleanup(resource, context);
   }
 
