@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceCon
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -41,7 +42,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
-  protected ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor;
 
   public KubernetesDependentResource() {
     init(new CreateDependentOperation(), new UpdateDependentOperation(),
@@ -86,7 +86,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       boolean addOwnerReference) {
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
-    initResourceMatcherAndUpdatePreProcessorIfNotSet(configurationService);
   }
 
   private class DependentOperation {
@@ -125,15 +124,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private class UpdateDependentOperation extends DependentOperation implements Updater<R, P> {
     private final Matcher<R> matcher;
+    private final ResourceUpdatePreProcessor<R> processor;
 
+    @SuppressWarnings("unchecked")
     public UpdateDependentOperation() {
       super("Updating");
       matcher = GenericKubernetesResourceMatcher.matcherFor(resourceType());
+      processor = KubernetesDependentResource.this instanceof ResourceUpdatePreProcessor
+          ? (ResourceUpdatePreProcessor<R>) KubernetesDependentResource.this
+          : GenericResourceUpdatePreProcessor.processorFor(resourceType());
     }
 
     @Override
     public void update(R actual, R target, P primary, Context context) {
-      var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
+      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
       prepare(target, primary).replace(updatedActual);
     }
 
@@ -156,7 +160,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
-    initResourceMatcherAndUpdatePreProcessorIfNotSet(context.getConfigurationService());
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
@@ -185,24 +188,5 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
-  }
-
-  /**
-   * Override this method to configure resource matcher
-   *
-   * @param configurationService config service to mainly access object mapper
-   */
-  protected void initResourceMatcherAndUpdatePreProcessorIfNotSet(
-      ConfigurationService configurationService) {
-    if (resourceUpdatePreProcessor == null) {
-      resourceUpdatePreProcessor =
-          new ResourceUpdatePreProcessor<>(configurationService.getResourceCloner());
-    }
-  }
-
-  public KubernetesDependentResource<R, P> setResourceUpdatePreProcessor(
-      ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor) {
-    this.resourceUpdatePreProcessor = resourceUpdatePreProcessor;
-    return this;
   }
 }
