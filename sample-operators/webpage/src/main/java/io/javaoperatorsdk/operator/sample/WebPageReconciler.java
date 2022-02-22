@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -152,7 +153,7 @@ public class WebPageReconciler
 
   private class ConfigMapDependentResource extends KubernetesDependentResource<ConfigMap, WebPage>
       implements
-      AssociatedSecondaryResourceIdentifier<WebPage> {
+      AssociatedSecondaryResourceIdentifier<WebPage>, Updater<ConfigMap, WebPage> {
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context context) {

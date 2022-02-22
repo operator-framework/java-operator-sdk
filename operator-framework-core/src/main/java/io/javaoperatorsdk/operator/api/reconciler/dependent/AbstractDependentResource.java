@@ -6,15 +6,20 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
 
-  private final Creator<R, P> creator;
-  private final Updater<R, P> updater;
-  private final Matcher<R> matcher;
+  protected Creator<R, P> creator;
+  protected Updater<R, P> updater;
+  protected Matcher<R> matcher;
 
-  @SuppressWarnings("unchecked")
+
   public AbstractDependentResource() {
-    creator = this instanceof Creator ? (Creator<R, P>) this : Creator.NOOP;
-    updater = this instanceof Updater ? (Updater<R, P>) this : Updater.NOOP;
-    matcher = this instanceof Matcher ? (Matcher<R>) this : Matcher.DEFAULT;
+    init(Creator.NOOP, Updater.NOOP, Matcher.DEFAULT);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  protected void init(Creator defaultCreator, Updater defaultUpdater, Matcher defaultMatcher) {
+    creator = this instanceof Creator ? (Creator<R, P>) this : defaultCreator;
+    updater = this instanceof Updater ? (Updater<R, P>) this : defaultUpdater;
+    matcher = this instanceof Matcher ? (Matcher<R>) this : defaultMatcher;
   }
 
   @Override
@@ -35,6 +40,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         }
       }
     }
+  }
+
+  public void update(R actual, R target, P primary, Context context) {
+    updater.update(actual, target, primary, context);
+  }
+
+  public void create(R target, P primary, Context context) {
+    creator.create(target, primary, context);
   }
 
   protected abstract R desired(P primary, Context context);
