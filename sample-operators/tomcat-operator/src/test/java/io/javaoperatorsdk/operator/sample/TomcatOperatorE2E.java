@@ -10,10 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.*;
-import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
+import io.javaoperatorsdk.operator.junit.InClusterCurl;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -107,42 +107,15 @@ public class TomcatOperatorE2E {
 
     String url =
         "http://" + tomcat.getMetadata().getName() + "/" + webapp1.getSpec().getContextPath() + "/";
+    var inClusterCurl = new InClusterCurl(client, operator.getNamespace());
     log.info("Starting curl Pod and waiting 5 minutes for GET of {} to return 200", url);
 
     await("wait-for-webapp").atMost(6, MINUTES).untilAsserted(() -> {
       try {
-
-        log.info("Starting curl Pod to test if webapp was deployed correctly");
-        Pod curlPod = client.run().inNamespace(operator.getNamespace())
-            .withRunConfig(new RunConfigBuilder()
-                .withArgs("-s", "-o", "/dev/null", "-w", "%{http_code}", url)
-                .withName("curl")
-                .withImage("curlimages/curl:7.78.0")
-                .withRestartPolicy("Never")
-                .build())
-            .done();
-        log.info("Waiting for curl Pod to finish running");
-        await("wait-for-curl-pod-run").atMost(2, MINUTES)
-            .until(() -> {
-              String phase =
-                  client.pods().inNamespace(operator.getNamespace()).withName("curl").get()
-                      .getStatus().getPhase();
-              return phase.equals("Succeeded") || phase.equals("Failed");
-            });
-
-        String curlOutput =
-            client.pods().inNamespace(operator.getNamespace())
-                .withName(curlPod.getMetadata().getName()).getLog();
-        log.info("Output from curl: '{}'", curlOutput);
+        var curlOutput = inClusterCurl.checkUrl(url);
         assertThat(curlOutput, equalTo("200"));
       } catch (KubernetesClientException ex) {
         throw new AssertionError(ex);
-      } finally {
-        log.info("Deleting curl Pod");
-        client.pods().inNamespace(operator.getNamespace()).withName("curl").delete();
-        await("wait-for-curl-pod-stop").atMost(1, MINUTES)
-            .until(() -> client.pods().inNamespace(operator.getNamespace()).withName("curl")
-                .get() == null);
       }
     });
   }
