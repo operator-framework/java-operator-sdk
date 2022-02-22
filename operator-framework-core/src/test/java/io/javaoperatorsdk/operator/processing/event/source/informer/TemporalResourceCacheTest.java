@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
+package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 
@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

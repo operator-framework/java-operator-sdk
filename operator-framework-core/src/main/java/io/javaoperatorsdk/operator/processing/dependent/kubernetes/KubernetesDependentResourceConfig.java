@@ -3,23 +3,26 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.DEFAULT_ADD_OWNER_REFERENCE;
 
 public class KubernetesDependentResourceConfig {
 
-  private boolean addOwnerReference = ADD_OWNER_REFERENCE_DEFAULT;
+  private boolean addOwnerReference = DEFAULT_ADD_OWNER_REFERENCE;
   private String[] namespaces = new String[0];
   private String labelSelector = EMPTY_STRING;
   private ConfigurationService configurationService;
+  private boolean filterOwnCreatesAndUpdateEvents;
 
   public KubernetesDependentResourceConfig() {}
 
   public KubernetesDependentResourceConfig(boolean addOwnerReference, String[] namespaces,
-      String labelSelector, ConfigurationService configurationService) {
+      String labelSelector, ConfigurationService configurationService,
+      boolean filterOwnCreatesAndUpdates) {
     this.addOwnerReference = addOwnerReference;
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.configurationService = configurationService;
+    this.filterOwnCreatesAndUpdateEvents = filterOwnCreatesAndUpdates;
   }
 
   public KubernetesDependentResourceConfig setAddOwnerReference(
@@ -42,6 +45,16 @@ public class KubernetesDependentResourceConfig {
       ConfigurationService configurationService) {
     this.configurationService = configurationService;
     return this;
+  }
+
+  public KubernetesDependentResourceConfig setFilterOwnCreatesAndUpdateEvents(
+      boolean filterOwnCreatesAndUpdateEvents) {
+    this.filterOwnCreatesAndUpdateEvents = filterOwnCreatesAndUpdateEvents;
+    return this;
+  }
+
+  public boolean filterOwnCreatesAndUpdateEvents() {
+    return filterOwnCreatesAndUpdateEvents;
   }
 
   public boolean addOwnerReference() {

@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -32,28 +30,37 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onAdd(T t) {
-    propagateEvent(t);
+  public void onAdd(T resource) {
+    if (configuration.filterOwnCreatesAndUpdatesEvents()
+        && temporalCacheHasResourceWithVersionAs(resource)) {
+      // This removes the resource from temporal cache
+      super.onAdd(resource);
+    } else {
+      super.onAdd(resource);
+      propagateEvent(resource);
+    }
   }
 
   @Override
   public void onUpdate(T oldObject, T newObject) {
-    if (newObject == null) {
-      // this is a fix for this potential issue with informer:
-      // https://github.com/java-operator-sdk/java-operator-sdk/issues/830
-      propagateEvent(oldObject);
-      return;
+    if (configuration.filterOwnCreatesAndUpdatesEvents()
+        && temporalCacheHasResourceWithVersionAs(newObject)) {
+      super.onUpdate(oldObject, newObject);
+    } else {
+      super.onUpdate(oldObject, newObject);
+      if (oldObject
+          .getMetadata()
+          .getResourceVersion()
+          .equals(newObject.getMetadata().getResourceVersion())) {
+        return;
+      }
+      propagateEvent(newObject);
     }
-
-    if (oldObject.getMetadata().getResourceVersion()
-        .equals(newObject.getMetadata().getResourceVersion())) {
-      return;
-    }
-    propagateEvent(newObject);
   }
 
   @Override
   public void onDelete(T t, boolean b) {
+    super.onDelete(t, b);
     propagateEvent(t);
   }
 
@@ -98,11 +105,6 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   public Optional<T> getAssociated(P resource) {
     final var id = configuration.getAssociatedResourceIdentifier().associatedSecondaryID(resource);
     return get(id);
-  }
-
-  @Override
-  public Stream<T> list(String namespace, Predicate<T> predicate) {
-    return manager().list(namespace, predicate);
   }
 
   public InformerConfiguration<T, P> getConfiguration() {

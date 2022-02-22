@@ -31,12 +31,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
-  protected KubernetesClient client;
-  protected InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
+  protected KubernetesClient client;
+  protected ClientFacade<R> clientFacade;
+  protected InformerEventSource<R, P> informerEventSource;
   protected ResourceMatcher resourceMatcher;
   protected ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor;
-  protected TemporalResourceCache<R> temporalResourceCache;
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
@@ -77,8 +77,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.informerEventSource = informerEventSource;
     this.addOwnerReference = addOwnerReference;
     initResourceMatcherAndUpdatePreProcessorIfNotSet(configurationService);
-
-    temporalResourceCache = new TemporalResourceCache<>(informerEventSource);
   }
 
   protected void beforeCreate(R desired, P primary) {
@@ -99,9 +97,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
     beforeCreate(target, primary);
     Class<R> targetClass = (Class<R>) target.getClass();
-    var newResource = client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
-        .create(target);
-    temporalResourceCache.putAddedResource(newResource);
+    var newResource =
+        clientFacade.createResource(target, target.getMetadata().getNamespace(), targetClass);
+    informerEventSource.handleJustAddedResource(newResource);
     return newResource;
   }
 
@@ -112,22 +110,19 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         ResourceID.fromResource(target));
     Class<R> targetClass = (Class<R>) target.getClass();
     var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
-    R updatedResource =
-        client.resources(targetClass).inNamespace(target.getMetadata().getNamespace())
-            .replace(updatedActual);
-    temporalResourceCache.putUpdatedResource(updatedResource,
+    R updatedResource = clientFacade.replaceResource(updatedActual,
+        target.getMetadata().getNamespace(), targetClass);
+    informerEventSource.handleJustUpdatedResource(updatedResource,
         actual.getMetadata().getResourceVersion());
     return updatedResource;
   }
-
-
 
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
     initResourceMatcherAndUpdatePreProcessorIfNotSet(context.getConfigurationService());
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
-          KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+          KubernetesDependent.DEFAULT_ADD_OWNER_REFERENCE);
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
@@ -138,7 +133,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public void delete(P primary, Context context) {
     if (!addOwnerReference) {
       var resource = getResource(primary);
-      resource.ifPresent(r -> client.resource(r).delete());
+      resource.ifPresent(r -> clientFacade.deleteResource(r));
     }
   }
 
@@ -149,21 +144,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Optional<R> getResource(P primaryResource) {
-    var associatedSecondaryResourceIdentifier =
-        informerEventSource.getConfiguration().getAssociatedResourceIdentifier();
-    var resourceId =
-        associatedSecondaryResourceIdentifier.associatedSecondaryID(primaryResource);
-    var tempCacheResource = temporalResourceCache.getResourceFromCache(resourceId);
-    if (tempCacheResource.isPresent()) {
-      return tempCacheResource;
-    } else {
-      return informerEventSource.get(resourceId);
-    }
+    return informerEventSource.getAssociated(primaryResource);
   }
 
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
+    this.clientFacade = new ClientFacade<>(kubernetesClient);
   }
 
   /**
@@ -192,4 +179,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.resourceUpdatePreProcessor = resourceUpdatePreProcessor;
     return this;
   }
+
+  public static class ClientFacade<T extends HasMetadata> {
+    private final KubernetesClient client;
+
+    public ClientFacade(KubernetesClient kubernetesClient) {
+      this.client = kubernetesClient;
+    }
+
+    public T createResource(T resource, String namespace, Class<T> rClass) {
+      return client.resources(rClass).inNamespace(namespace).create(resource);
+    }
+
+    public T replaceResource(T resource, String namespace, Class<T> rClass) {
+      return client.resources(rClass).inNamespace(namespace).replace(resource);
+    }
+
+    public void deleteResource(T resource) {
+      client.resource(resource).delete();
+    }
+  }
+
 }

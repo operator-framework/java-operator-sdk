@@ -13,7 +13,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
@@ -25,30 +24,19 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     implements ResourceEventHandler<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
-
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
   private final ResourceEventFilter<T> filter;
-  private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
 
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
-
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
         ResourceEventFilters.markedForDeletion(),
         ResourceEventFilters.generationAware(),
-        null
     };
-
-    if (controller.getConfiguration().isGenerationAware()) {
-      onceWhitelistEventFilterEventFilter = new OnceWhitelistEventFilterEventFilter<>();
-      filters[filters.length - 1] = onceWhitelistEventFilterEventFilter;
-    } else {
-      onceWhitelistEventFilterEventFilter = null;
-    }
     if (controller.getConfiguration().getEventFilter() != null) {
       filter = controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
     } else {
@@ -87,35 +75,21 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public void onAdd(T resource) {
+    super.onAdd(resource);
     eventReceived(ResourceAction.ADDED, resource, null);
   }
 
   @Override
   public void onUpdate(T oldCustomResource, T newCustomResource) {
+    super.onUpdate(oldCustomResource, newCustomResource);
     eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
   }
 
   @Override
   public void onDelete(T resource, boolean b) {
+    super.onDelete(resource, b);
     eventReceived(ResourceAction.DELETED, resource, null);
   }
-
-  public ResourceCache<T> getResourceCache() {
-    return manager();
-  }
-
-  /**
-   * This will ensure that the next event received after this method is called will not be filtered
-   * out.
-   *
-   * @param resourceID - to which the event is related
-   */
-  public void whitelistNextEvent(ResourceID resourceID) {
-    if (onceWhitelistEventFilterEventFilter != null) {
-      onceWhitelistEventFilterEventFilter.whitelistNextEvent(resourceID);
-    }
-  }
-
 
   private void handleKubernetesClientException(Exception e) {
     KubernetesClientException ke = (KubernetesClientException) e;

@@ -167,10 +167,18 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
             Utils.valueOrDefault(
                 kubeDependent,
                 KubernetesDependent::addOwnerReference,
-                KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+                KubernetesDependent.DEFAULT_ADD_OWNER_REFERENCE);
+
+        final var filterOwnCreateAndUpdateEvents =
+            Utils.valueOrDefault(
+                kubeDependent,
+                KubernetesDependent::filterOwnCreateAndUpdateEvents,
+                KubernetesDependent.DEFAULT_FILTER_OWN_CREATE_AND_UPDATE_EVENTS);
+
         KubernetesDependentResourceConfig config =
             new KubernetesDependentResourceConfig(
-                addOwnerReference, namespaces, labelSelector, getConfigurationService());
+                addOwnerReference, namespaces, labelSelector, getConfigurationService(),
+                filterOwnCreateAndUpdateEvents);
         resourceSpecs.add(new DependentResourceSpec(dependentType, config));
       } else {
         resourceSpecs.add(new DependentResourceSpec(dependentType));

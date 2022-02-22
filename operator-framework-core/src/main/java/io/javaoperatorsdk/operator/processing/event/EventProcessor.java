@@ -29,7 +29,6 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAware {
 
@@ -50,7 +49,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
-        eventSourceManager.getControllerResourceEventSource().getResourceCache(),
+        eventSourceManager.getControllerResourceEventSource(),
         ExecutorServiceManager.instance().executorService(),
         eventSourceManager.getController().getConfiguration().getName(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
@@ -73,7 +72,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       Retry retry,
       Metrics metrics) {
     this(
-        eventSourceManager.getControllerResourceEventSource().getResourceCache(),
+        eventSourceManager.getControllerResourceEventSource(),
         null,
         relatedControllerName,
         reconciliationDispatcher,
@@ -208,12 +207,12 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       if (eventMarker.deleteEventPresent(resourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
+        postExecutionControl.getUpdatedCustomResource().ifPresent(r -> {
+          eventSourceManager.getControllerResourceEventSource().handleJustUpdatedResource(r,
+              executionScope.getResource().getMetadata().getResourceVersion());
+        });
         if (eventMarker.eventPresent(resourceID)) {
-          if (isCacheReadyForInstantReconciliation(executionScope, postExecutionControl)) {
-            submitReconciliationExecution(resourceID);
-          } else {
-            postponeReconciliationAndHandleCacheSyncEvent(resourceID);
-          }
+          submitReconciliationExecution(resourceID);
         } else {
           reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
         }
@@ -221,41 +220,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     } finally {
       lock.unlock();
     }
-  }
-
-  private void postponeReconciliationAndHandleCacheSyncEvent(ResourceID resourceID) {
-    eventSourceManager.getControllerResourceEventSource().whitelistNextEvent(resourceID);
-  }
-
-  private boolean isCacheReadyForInstantReconciliation(
-      ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
-    if (!postExecutionControl.customResourceUpdatedDuringExecution()) {
-      return true;
-    }
-    String originalResourceVersion = getVersion(executionScope.getResource());
-    String customResourceVersionAfterExecution =
-        getVersion(
-            postExecutionControl
-                .getUpdatedCustomResource()
-                .orElseThrow(
-                    () -> new IllegalStateException(
-                        "Updated custom resource must be present at this point of time")));
-    String cachedCustomResourceVersion =
-        getVersion(
-            cache
-                .get(executionScope.getCustomResourceID())
-                .orElseThrow(
-                    () -> new IllegalStateException(
-                        "Cached custom resource must be present at this point")));
-
-    if (cachedCustomResourceVersion.equals(customResourceVersionAfterExecution)) {
-      return true;
-    }
-    // If the cached resource version equals neither the version before nor after execution
-    // probably an update happened on the custom resource independent of the framework during
-    // reconciliation. We cannot tell at this point if it happened before our update or before.
-    // (Well we could if we would parse resource version, but that should not be done by definition)
-    return !cachedCustomResourceVersion.equals(originalResourceVersion);
   }
 
   private void reScheduleExecutionIfInstructed(

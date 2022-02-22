@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -97,27 +96,6 @@ class ControllerResourceEventSourceTest extends
     source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
 
     verify(eventHandler, times(1)).handleEvent(any());
-  }
-
-  @Test
-  public void handlesNextEventIfWhitelisted() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
-    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
-    source.whitelistNextEvent(ResourceID.fromResource(customResource));
-
-    source.eventReceived(ResourceAction.UPDATED, customResource, customResource);
-
-    verify(eventHandler, times(1)).handleEvent(any());
-  }
-
-  @Test
-  public void notHandlesNextEventIfNotWhitelisted() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
-    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
-
-    source.eventReceived(ResourceAction.UPDATED, customResource, customResource);
-
-    verify(eventHandler, times(0)).handleEvent(any());
   }
 
   @Test

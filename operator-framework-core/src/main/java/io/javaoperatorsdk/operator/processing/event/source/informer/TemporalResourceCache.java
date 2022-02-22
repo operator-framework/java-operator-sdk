@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
+package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
 import java.util.Optional;
@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 /**
  * <p>
@@ -38,10 +38,10 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final ReentrantLock lock = new ReentrantLock();
-  private final InformerEventSource<T, ?> informerEventSource;
+  private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
-  public TemporalResourceCache(InformerEventSource<T, ?> informerEventSource) {
-    this.informerEventSource = informerEventSource;
+  public TemporalResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
+    this.managedInformerEventSource = managedInformerEventSource;
   }
 
   @Override
@@ -80,7 +80,7 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
   public void putAddedResource(T newResource) {
     lock.lock();
     try {
-      if (informerEventSource.get(ResourceID.fromResource(newResource)).isEmpty()) {
+      if (managedInformerEventSource.get(ResourceID.fromResource(newResource)).isEmpty()) {
         cache.put(ResourceID.fromResource(newResource), newResource);
       }
     } finally {
@@ -92,7 +92,7 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
     lock.lock();
     try {
       var resourceId = ResourceID.fromResource(newResource);
-      var informerCacheResource = informerEventSource.get(resourceId);
+      var informerCacheResource = managedInformerEventSource.get(resourceId);
       if (informerCacheResource.isEmpty()) {
         log.debug("No cached value present for resource: {}", newResource);
         return;

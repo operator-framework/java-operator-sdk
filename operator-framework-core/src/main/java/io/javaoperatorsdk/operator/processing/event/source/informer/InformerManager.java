@@ -145,7 +145,4 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
                 key, resource));
   }
 
-  public void addEventHandler(ResourceEventHandler<T> eventHandler) {
-    sources.values().forEach(i -> i.addEventHandler(eventHandler));
-  }
 }

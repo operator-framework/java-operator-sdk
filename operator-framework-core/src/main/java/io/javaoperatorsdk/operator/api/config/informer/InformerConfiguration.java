@@ -22,12 +22,14 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
     private final PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
     private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
+    private final boolean filterOwnCreatesAndUpdateEvents;
 
     protected DefaultInformerConfiguration(ConfigurationService service, String labelSelector,
         Class<R> resourceClass,
         PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet,
         AssociatedSecondaryResourceIdentifier<P> associatedWith,
-        Set<String> namespaces) {
+        Set<String> namespaces,
+        boolean filterOwnCreatesAndUpdateEvents) {
       super(labelSelector, resourceClass, namespaces);
       setConfigurationService(service);
       this.secondaryToPrimaryResourcesIdSet =
@@ -35,7 +37,9 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
               Mappers.fromOwnerReference());
       this.associatedWith =
           Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
+      this.filterOwnCreatesAndUpdateEvents = filterOwnCreatesAndUpdateEvents;
     }
+
 
     public PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
       return secondaryToPrimaryResourcesIdSet;
@@ -45,11 +49,18 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return associatedWith;
     }
 
+    @Override
+    public boolean filterOwnCreatesAndUpdatesEvents() {
+      return filterOwnCreatesAndUpdateEvents;
+    }
+
   }
 
   PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever();
 
   AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier();
+
+  boolean filterOwnCreatesAndUpdatesEvents();
 
   class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
 
@@ -59,6 +70,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     private String labelSelector;
     private final Class<R> resourceClass;
     private final ConfigurationService configurationService;
+    private boolean filterOwnCreatesAndUpdates = true;
 
     private InformerConfigurationBuilder(Class<R> resourceClass,
         ConfigurationService configurationService) {
@@ -95,10 +107,16 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return this;
     }
 
+    public InformerConfigurationBuilder<R, P> withFilterOwnCreatesAndUpdates(
+        boolean filterOwnCreatesAndUpdates) {
+      this.filterOwnCreatesAndUpdates = filterOwnCreatesAndUpdates;
+      return this;
+    }
+
     public InformerConfiguration<R, P> build() {
       return new DefaultInformerConfiguration<>(configurationService, labelSelector, resourceClass,
           secondaryToPrimaryResourcesIdSet, associatedWith,
-          namespaces);
+          namespaces, filterOwnCreatesAndUpdates);
     }
   }
 

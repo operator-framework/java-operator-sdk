@@ -15,22 +15,25 @@ import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryRe
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class KubernetesDependentResourceTest {
 
-  private TemporalResourceCache temporalResourceCacheMock = mock(TemporalResourceCache.class);
   private InformerEventSource informerEventSourceMock = mock(InformerEventSource.class);
   private AssociatedSecondaryResourceIdentifier associatedResourceIdentifierMock =
       mock(AssociatedSecondaryResourceIdentifier.class);
+  private ResourceMatcher resourceMatcherMock = mock(ResourceMatcher.class);
+  private KubernetesDependentResource.ClientFacade clientFacadeMock =
+      mock(KubernetesDependentResource.ClientFacade.class);
 
   KubernetesDependentResource<ConfigMap, TestCustomResource> kubernetesDependentResource =
       new KubernetesDependentResource() {
         {
-          this.temporalResourceCache = temporalResourceCacheMock;
           this.informerEventSource = informerEventSourceMock;
+          this.resourceMatcher = resourceMatcherMock;
+          this.clientFacade = clientFacadeMock;
+          this.resourceUpdatePreProcessor = mock(ResourceUpdatePreProcessor.class);
         }
 
         @Override
@@ -50,27 +53,24 @@ class KubernetesDependentResourceTest {
   }
 
   @Test
-  void getResourceCheckTheTemporalCacheFirst() {
-    when(temporalResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.of(testResource()));
+  void updateCallsInformerJustUpdatedHandler() {
+    when(resourceMatcherMock.match(any(), any(), any())).thenReturn(false);
+    when(clientFacadeMock.replaceResource(any(), any(), any())).thenReturn(testResource());
+    when(informerEventSourceMock.getAssociated(any())).thenReturn(Optional.of(testResource()));
 
-    kubernetesDependentResource.getResource(primaryResource());
+    kubernetesDependentResource.reconcile(primaryResource(), null);
 
-    verify(temporalResourceCacheMock, times(1)).getResourceFromCache(any());
-    verify(informerEventSourceMock, never()).get(any());
+    verify(informerEventSourceMock, times(1)).handleJustUpdatedResource(any(), any());
   }
 
   @Test
-  void getResourceGetsResourceFromInformerIfNotInTemporalCache() {
-    var resource = testResource();
-    when(temporalResourceCacheMock.getResourceFromCache(any())).thenReturn(Optional.empty());
-    when(informerEventSourceMock.get(any())).thenReturn(Optional.of(resource));
+  void createCallsInformerJustUpdatedHandler() {
+    when(clientFacadeMock.createResource(any(), any(), any())).thenReturn(testResource());
+    when(informerEventSourceMock.getAssociated(any())).thenReturn(Optional.empty());
 
-    var res = kubernetesDependentResource.getResource(primaryResource());
+    kubernetesDependentResource.reconcile(primaryResource(), null);
 
-    verify(temporalResourceCacheMock, times(1)).getResourceFromCache(any());
-    verify(informerEventSourceMock, times(1)).get(any());
-    assertThat(res.orElseThrow()).isEqualTo(resource);
+    verify(informerEventSourceMock, times(1)).handleJustAddedResource(any());
   }
 
   TestCustomResource primaryResource() {
