@@ -8,15 +8,17 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
+  protected Deleter<P> deleter;
 
   public AbstractDependentResource() {
-    init(Creator.NOOP, Updater.NOOP);
+    init(Creator.NOOP, Updater.NOOP, Deleter.NOOP);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected void init(Creator defaultCreator, Updater defaultUpdater) {
+  protected void init(Creator defaultCreator, Updater defaultUpdater, Deleter defaultDeleter) {
     creator = this instanceof Creator ? (Creator<R, P>) this : defaultCreator;
     updater = this instanceof Updater ? (Updater<R, P>) this : defaultUpdater;
+    deleter = this instanceof Deleter ? (Deleter<P>) this : defaultDeleter;
   }
 
   @Override
@@ -45,6 +47,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   public void create(R target, P primary, Context context) {
     creator.create(target, primary, context);
+  }
+
+  @Override
+  public void delete(P primary, Context context) {
+    if (deleter != Deleter.NOOP) {
+      deleter.delete(primary, context);
+    }
   }
 
   protected abstract R desired(P primary, Context context);

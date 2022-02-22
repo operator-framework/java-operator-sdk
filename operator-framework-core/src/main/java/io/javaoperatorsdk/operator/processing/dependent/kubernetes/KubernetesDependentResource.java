@@ -18,6 +18,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
@@ -43,7 +44,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected ResourceUpdatePreProcessor<R> resourceUpdatePreProcessor;
 
   public KubernetesDependentResource() {
-    init(new CreateDependentOperation(), new UpdateDependentOperation());
+    init(new CreateDependentOperation(), new UpdateDependentOperation(),
+        new DeleteDependentOperation());
   }
 
   @Override
@@ -141,6 +143,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
   }
 
+  private class DeleteDependentOperation implements Deleter<P> {
+
+    @Override
+    public void delete(P primary, Context context) {
+      if (!addOwnerReference) {
+        var resource = getResource(primary);
+        resource.ifPresent(r -> client.resource(r).delete());
+      }
+    }
+  }
+
   @Override
   public EventSource eventSource(EventSourceContext<P> context) {
     initResourceMatcherAndUpdatePreProcessorIfNotSet(context.getConfigurationService());
@@ -157,14 +170,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       InformerEventSource<R, P> informerEventSource) {
     this.informerEventSource = informerEventSource;
     return this;
-  }
-
-  @Override
-  public void delete(P primary, Context context) {
-    if (!addOwnerReference) {
-      var resource = getResource(primary);
-      resource.ifPresent(r -> client.resource(r).delete());
-    }
   }
 
   @SuppressWarnings("unchecked")
