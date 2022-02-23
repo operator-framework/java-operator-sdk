@@ -23,14 +23,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private final InformerConfiguration<R, P> configuration;
 
-  public InformerEventSource(InformerConfiguration<R, P> configuration,
-      EventSourceContext<P> context) {
+  public InformerEventSource(
+      InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
     super(context.getClient().resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
   }
 
-  public InformerEventSource(InformerConfiguration<R, P> configuration,
-      KubernetesClient client) {
+  public InformerEventSource(InformerConfiguration<R, P> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
   }
@@ -39,8 +38,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void onAdd(R resource) {
     if (temporalCacheHasResourceWithVersionAs(resource)) {
       super.onAdd(resource);
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Skipping event propagation for Add, resource with same version found in temporal cache: {}",
+            ResourceID.fromResource(resource));
+      }
     } else {
       super.onAdd(resource);
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Propagating event for add, resource with same version not found in temporal cache: {}",
+            ResourceID.fromResource(resource));
+      }
       propagateEvent(resource);
     }
   }
@@ -49,7 +58,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void onUpdate(R oldObject, R newObject) {
     if (temporalCacheHasResourceWithVersionAs(newObject)) {
       log.debug(
-          "Skipping event propagation, resource with same version found in temporal cache: {}",
+          "Skipping event propagation for Update, resource with same version found in temporal cache: {}",
           ResourceID.fromResource(newObject));
       super.onUpdate(oldObject, newObject);
     } else {
@@ -60,7 +69,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           .equals(newObject.getMetadata().getResourceVersion())) {
         return;
       }
-      log.debug("Propagating event, resource with same version not found in temporal cache: {}",
+      log.debug(
+          "Propagating event for update, resource with same version not found in temporal cache: {}",
           ResourceID.fromResource(newObject));
       propagateEvent(newObject);
     }
@@ -78,18 +88,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
-    primaryResourceIdSet.forEach(resourceId -> {
-      Event event = new Event(resourceId);
-      /*
-       * In fabric8 client for certain cases informers can be created on in a way that they are
-       * automatically started, what would cause a NullPointerException here, since an event might
-       * be received between creation and registration.
-       */
-      final EventHandler eventHandler = getEventHandler();
-      if (eventHandler != null) {
-        eventHandler.handleEvent(event);
-      }
-    });
+    primaryResourceIdSet.forEach(
+        resourceId -> {
+          Event event = new Event(resourceId);
+          /*
+           * In fabric8 client for certain cases informers can be created on in a way that they are
+           * automatically started, what would cause a NullPointerException here, since an event
+           * might be received between creation and registration.
+           */
+          final EventHandler eventHandler = getEventHandler();
+          if (eventHandler != null) {
+            eventHandler.handleEvent(event);
+          }
+        });
   }
 
   @Override
@@ -105,7 +116,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   /**
    * Retrieves the informed resource associated with the specified primary resource as defined by
    * the function provided when this InformerEventSource was created
-   * 
+   *
    * @param resource the primary resource we want to retrieve the associated resource for
    * @return the informed resource associated with the specified primary resource
    */

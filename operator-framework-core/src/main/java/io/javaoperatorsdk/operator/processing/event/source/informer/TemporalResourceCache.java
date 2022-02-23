@@ -55,8 +55,12 @@ public class TemporalResourceCache<T extends HasMetadata> {
   public void putAddedResource(T newResource) {
     lock.lock();
     try {
-      if (managedInformerEventSource.get(ResourceID.fromResource(newResource)).isEmpty()) {
+      ResourceID resourceID = ResourceID.fromResource(newResource);
+      if (managedInformerEventSource.get(resourceID).isEmpty()) {
+        log.debug("Putting resource to cache with ID: {}", resourceID);
         cache.put(ResourceID.fromResource(newResource), newResource);
+      } else {
+        log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
       }
     } finally {
       lock.unlock();
