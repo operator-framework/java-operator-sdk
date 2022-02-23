@@ -6,6 +6,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
 
+  private final boolean creatable = this instanceof Creator;
+  private final boolean updatable = this instanceof Updater;
+  private final boolean deletable = this instanceof Deleter;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected Deleter<P> deleter;
@@ -16,15 +19,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected void init(Creator defaultCreator, Updater defaultUpdater, Deleter defaultDeleter) {
-    creator = this instanceof Creator ? (Creator<R, P>) this : defaultCreator;
-    updater = this instanceof Updater ? (Updater<R, P>) this : defaultUpdater;
-    deleter = this instanceof Deleter ? (Deleter<P>) this : defaultDeleter;
+    creator = creatable ? (Creator<R, P>) this : defaultCreator;
+    updater = updatable ? (Updater<R, P>) this : defaultUpdater;
+    deleter = deletable ? (Deleter<P>) this : defaultDeleter;
   }
 
   @Override
   public void reconcile(P primary, Context context) {
-    final var creatable = isCreatable(primary);
-    final var updatable = isUpdatable(primary);
+    final var creatable = isCreatable(primary, context);
+    final var updatable = isUpdatable(primary, context);
     if (creatable || updatable) {
       var maybeActual = getResource(primary);
       var desired = desired(primary, context);
@@ -51,7 +54,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public void delete(P primary, Context context) {
-    if (deleter != Deleter.NOOP) {
+    if (isDeletable(primary, context)) {
       deleter.delete(primary, context);
     }
   }
@@ -62,12 +65,17 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @SuppressWarnings("unused")
-  protected boolean isCreatable(P primary) {
-    return creator != Creator.NOOP;
+  protected boolean isCreatable(P primary, Context context) {
+    return creatable;
   }
 
   @SuppressWarnings("unused")
-  protected boolean isUpdatable(P primary) {
-    return updater != Updater.NOOP;
+  protected boolean isUpdatable(P primary, Context context) {
+    return updatable;
+  }
+
+  @SuppressWarnings("unused")
+  protected boolean isDeletable(P primary, Context context) {
+    return deletable;
   }
 }
