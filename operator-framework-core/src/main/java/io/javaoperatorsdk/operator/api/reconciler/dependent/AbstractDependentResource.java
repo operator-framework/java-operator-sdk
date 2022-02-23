@@ -56,7 +56,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected abstract R desired(P primary, Context context);
+  protected R desired(P primary, Context context) {
+    throw new IllegalStateException(
+        "desired method must be implemented if this DependentResource can be created and/or updated");
+  }
 
   @SuppressWarnings("unused")
   protected boolean isCreatable(P primary) {
