@@ -88,6 +88,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.addOwnerReference = addOwnerReference;
   }
 
+  public boolean match(R actualResource, R desiredResource, Context context) {
+    return updater.match(actualResource, desiredResource, context);
+  }
+
   private class DependentOperation {
     private final String actionName;
 
@@ -129,7 +133,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     @SuppressWarnings("unchecked")
     public UpdateDependentOperation() {
       super("Updating");
-      matcher = GenericKubernetesResourceMatcher.matcherFor(resourceType());
+      matcher = KubernetesDependentResource.this instanceof Matcher
+          ? (Matcher<R>) KubernetesDependentResource.this
+          : GenericKubernetesResourceMatcher.matcherFor(resourceType());
       processor = KubernetesDependentResource.this instanceof ResourceUpdatePreProcessor
           ? (ResourceUpdatePreProcessor<R>) KubernetesDependentResource.this
           : GenericResourceUpdatePreProcessor.processorFor(resourceType());
