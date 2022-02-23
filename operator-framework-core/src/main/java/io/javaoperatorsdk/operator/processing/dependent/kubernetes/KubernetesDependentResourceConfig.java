@@ -11,18 +11,15 @@ public class KubernetesDependentResourceConfig {
   private String[] namespaces = new String[0];
   private String labelSelector = EMPTY_STRING;
   private ConfigurationService configurationService;
-  private boolean filterOwnCreatesAndUpdateEvents;
 
   public KubernetesDependentResourceConfig() {}
 
   public KubernetesDependentResourceConfig(boolean addOwnerReference, String[] namespaces,
-      String labelSelector, ConfigurationService configurationService,
-      boolean filterOwnCreatesAndUpdates) {
+      String labelSelector, ConfigurationService configurationService) {
     this.addOwnerReference = addOwnerReference;
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.configurationService = configurationService;
-    this.filterOwnCreatesAndUpdateEvents = filterOwnCreatesAndUpdates;
   }
 
   public KubernetesDependentResourceConfig setAddOwnerReference(
@@ -45,16 +42,6 @@ public class KubernetesDependentResourceConfig {
       ConfigurationService configurationService) {
     this.configurationService = configurationService;
     return this;
-  }
-
-  public KubernetesDependentResourceConfig setFilterOwnCreatesAndUpdateEvents(
-      boolean filterOwnCreatesAndUpdateEvents) {
-    this.filterOwnCreatesAndUpdateEvents = filterOwnCreatesAndUpdateEvents;
-    return this;
-  }
-
-  public boolean filterOwnCreatesAndUpdateEvents() {
-    return filterOwnCreatesAndUpdateEvents;
   }
 
   public boolean addOwnerReference() {

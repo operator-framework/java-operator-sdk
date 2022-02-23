@@ -31,8 +31,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onAdd(T resource) {
-    if (configuration.filterOwnCreatesAndUpdatesEvents()
-        && temporalCacheHasResourceWithVersionAs(resource)) {
+    if (temporalCacheHasResourceWithVersionAs(resource)) {
       // This removes the resource from temporal cache
       super.onAdd(resource);
     } else {
@@ -43,8 +42,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onUpdate(T oldObject, T newObject) {
-    if (configuration.filterOwnCreatesAndUpdatesEvents()
-        && temporalCacheHasResourceWithVersionAs(newObject)) {
+    if (temporalCacheHasResourceWithVersionAs(newObject)) {
       super.onUpdate(oldObject, newObject);
     } else {
       super.onUpdate(oldObject, newObject);
