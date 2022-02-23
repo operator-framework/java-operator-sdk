@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -27,12 +26,12 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * that means there were already updates on the cache (either by the actual update from
  * DependentResource or other) so the resource does not needs to be cached. Subsequently if event
  * received from the informer, it means that the cache of the informer was updated, so it already
- * contains a more fresh version of the resource. (See one caveat below)
+ * contains a more fresh version of the resource.
  * </p>
  * 
  * @param <T> resource to cache.
  */
-public class TemporalResourceCache<T extends HasMetadata> implements ResourceEventHandler<T> {
+public class TemporalResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporalResourceCache.class);
 
@@ -44,31 +43,7 @@ public class TemporalResourceCache<T extends HasMetadata> implements ResourceEve
     this.managedInformerEventSource = managedInformerEventSource;
   }
 
-  @Override
-  public void onAdd(T t) {
-    removeResourceFromCache(t);
-  }
-
-  /**
-   * In theory, it can happen that an older event is received, that is received before we updated
-   * the resource. So that is a situation still not covered, but it happens with extremely low
-   * probability and since it should trigger a new reconciliation, eventually the system is
-   * consistent.
-   * 
-   * @param t old object
-   * @param t1 new object
-   */
-  @Override
-  public void onUpdate(T t, T t1) {
-    removeResourceFromCache(t1);
-  }
-
-  @Override
-  public void onDelete(T t, boolean b) {
-    removeResourceFromCache(t);
-  }
-
-  private void removeResourceFromCache(T resource) {
+  public void removeResourceFromCache(T resource) {
     lock.lock();
     try {
       cache.remove(ResourceID.fromResource(resource));

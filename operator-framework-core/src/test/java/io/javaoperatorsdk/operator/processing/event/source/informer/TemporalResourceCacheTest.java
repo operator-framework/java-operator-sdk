@@ -70,30 +70,10 @@ class TemporalResourceCacheTest {
   }
 
   @Test
-  void onAddRemovesResourceFromCache() {
+  void removesResourceFromCache() {
     ConfigMap testResource = propagateTestResourceToCache();
 
-    temporalResourceCache.onAdd(testResource());
-
-    assertThat(temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isNotPresent();
-  }
-
-  @Test
-  void onUpdateRemovesResourceFromCache() {
-    ConfigMap testResource = propagateTestResourceToCache();
-
-    temporalResourceCache.onUpdate(testResource(), testResource());
-
-    assertThat(temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isNotPresent();
-  }
-
-  @Test
-  void onDeleteRemovesResourceFromCache() {
-    ConfigMap testResource = propagateTestResourceToCache();
-
-    temporalResourceCache.onDelete(testResource(), true);
+    temporalResourceCache.removeResourceFromCache(testResource());
 
     assertThat(temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isNotPresent();

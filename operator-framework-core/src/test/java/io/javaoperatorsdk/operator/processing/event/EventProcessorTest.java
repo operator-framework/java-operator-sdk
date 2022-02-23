@@ -51,7 +51,7 @@ class EventProcessorTest {
   private EventProcessor eventProcessorWithRetry;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(controllerResourceEventSourceMock);
     eventProcessor =
@@ -67,14 +67,14 @@ class EventProcessorTest {
   }
 
   @Test
-  public void dispatchesEventsIfNoExecutionInProgress() {
+  void dispatchesEventsIfNoExecutionInProgress() {
     eventProcessor.handleEvent(prepareCREvent());
 
     verify(reconciliationDispatcherMock, timeout(50).times(1)).handleExecution(any());
   }
 
   @Test
-  public void skipProcessingIfLatestCustomResourceNotInCache() {
+  void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
     when(controllerResourceEventSourceMock.get(event.getRelatedCustomResourceID()))
         .thenReturn(Optional.empty());
@@ -85,7 +85,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
+  void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
     ResourceID resourceUid = eventAlreadyUnderProcessing();
 
     eventProcessor.handleEvent(nonCREvent(resourceUid));
@@ -95,7 +95,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void schedulesAnEventRetryOnException() {
+  void schedulesAnEventRetryOnException() {
     TestCustomResource customResource = testCustomResource();
 
     ExecutionScope executionScope = new ExecutionScope(customResource, null);
@@ -109,7 +109,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void executesTheControllerInstantlyAfterErrorIfNewEventsReceived() {
+  void executesTheControllerInstantlyAfterErrorIfNewEventsReceived() {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     overrideData(event.getRelatedCustomResourceID(), customResource);
@@ -136,7 +136,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void successfulExecutionResetsTheRetry() {
+  void successfulExecutionResetsTheRetry() {
     log.info("Starting successfulExecutionResetsTheRetry");
 
     Event event = prepareCREvent();
@@ -176,7 +176,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void scheduleTimedEventIfInstructedByPostExecutionControl() {
+  void scheduleTimedEventIfInstructedByPostExecutionControl() {
     var testDelay = 10000L;
     when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
@@ -188,7 +188,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() {
+  void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() {
     var testDelay = 10000L;
     when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
@@ -201,7 +201,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void doNotFireEventsIfClosing() {
+  void doNotFireEventsIfClosing() {
     eventProcessor.stop();
     eventProcessor.handleEvent(prepareCREvent());
 
@@ -209,7 +209,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void cancelScheduleOnceEventsOnSuccessfulExecution() {
+  void cancelScheduleOnceEventsOnSuccessfulExecution() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
@@ -220,7 +220,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void startProcessedMarkedEventReceivedBefore() {
+  void startProcessedMarkedEventReceivedBefore() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
@@ -235,6 +235,19 @@ class EventProcessorTest {
 
     verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
     verify(metricsMock, times(1)).reconcileCustomResource(any(), isNull());
+  }
+
+  @Test
+  void updatesEventSourceHandlerIfResourceUpdated() {
+    TestCustomResource customResource = testCustomResource();
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceUpdated(customResource);
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+
+    verify(controllerResourceEventSourceMock, times(1)).handleJustUpdatedResource(any(), any());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {

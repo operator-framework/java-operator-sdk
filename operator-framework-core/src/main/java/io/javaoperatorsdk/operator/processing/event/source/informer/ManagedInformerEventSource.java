@@ -29,17 +29,18 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void onAdd(R resource) {
-    temporalResourceCache.onAdd(resource);
+    temporalResourceCache.removeResourceFromCache(resource);
+
   }
 
   @Override
   public void onUpdate(R oldObj, R newObj) {
-    temporalResourceCache.onUpdate(oldObj, newObj);
+    temporalResourceCache.removeResourceFromCache(newObj);
   }
 
   @Override
   public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    temporalResourceCache.onDelete(obj, deletedFinalStateUnknown);
+    temporalResourceCache.removeResourceFromCache(obj);
   }
 
   @Override
@@ -104,5 +105,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public Stream<R> list(String namespace, Predicate<R> predicate) {
     return manager().list(namespace, predicate);
+  }
+
+  ManagedInformerEventSource<R, P, C> setTemporalResourceCache(
+      TemporalResourceCache<R> temporalResourceCache) {
+    this.temporalResourceCache = temporalResourceCache;
+    return this;
   }
 }

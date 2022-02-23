@@ -11,28 +11,27 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
-public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
-    extends ManagedInformerEventSource<T, P, InformerConfiguration<T, P>>
-    implements ResourceCache<T>, ResourceEventHandler<T> {
+public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
+    extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
+    implements ResourceCache<R>, ResourceEventHandler<R> {
 
-  private final InformerConfiguration<T, P> configuration;
+  private final InformerConfiguration<R, P> configuration;
 
-  public InformerEventSource(InformerConfiguration<T, P> configuration,
+  public InformerEventSource(InformerConfiguration<R, P> configuration,
       EventSourceContext<P> context) {
     super(context.getClient().resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
   }
 
-  public InformerEventSource(InformerConfiguration<T, P> configuration,
+  public InformerEventSource(InformerConfiguration<R, P> configuration,
       KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
   }
 
   @Override
-  public void onAdd(T resource) {
+  public void onAdd(R resource) {
     if (temporalCacheHasResourceWithVersionAs(resource)) {
-      // This removes the resource from temporal cache
       super.onAdd(resource);
     } else {
       super.onAdd(resource);
@@ -41,7 +40,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onUpdate(T oldObject, T newObject) {
+  public void onUpdate(R oldObject, R newObject) {
     if (temporalCacheHasResourceWithVersionAs(newObject)) {
       super.onUpdate(oldObject, newObject);
     } else {
@@ -57,12 +56,12 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onDelete(T t, boolean b) {
-    super.onDelete(t, b);
-    propagateEvent(t);
+  public void onDelete(R r, boolean b) {
+    super.onDelete(r, b);
+    propagateEvent(r);
   }
 
-  private void propagateEvent(T object) {
+  private void propagateEvent(R object) {
     var primaryResourceIdSet =
         configuration.getPrimaryResourcesRetriever().associatedPrimaryResources(object);
     if (primaryResourceIdSet.isEmpty()) {
@@ -100,12 +99,12 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
    * @return the informed resource associated with the specified primary resource
    */
   @Override
-  public Optional<T> getAssociated(P resource) {
+  public Optional<R> getAssociated(P resource) {
     final var id = configuration.getAssociatedResourceIdentifier().associatedSecondaryID(resource);
     return get(id);
   }
 
-  public InformerConfiguration<T, P> getConfiguration() {
+  public InformerConfiguration<R, P> getConfiguration() {
     return configuration;
   }
 }
