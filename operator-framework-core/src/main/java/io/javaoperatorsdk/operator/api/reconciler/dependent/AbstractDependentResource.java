@@ -1,10 +1,14 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
+  private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);
 
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
@@ -33,14 +37,22 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       var desired = desired(primary, context);
       if (maybeActual.isEmpty()) {
         if (creatable) {
+          log.debug("Creating dependent {} for primary {}", desired, primary);
           creator.create(desired, primary, context);
         }
       } else {
         final var actual = maybeActual.get();
         if (updatable && !updater.match(actual, desired, context)) {
+          log.debug("Updating dependent {} for primary {}", desired, primary);
           updater.update(actual, desired, primary, context);
+        } else {
+          log.debug("Update skipped for dependent {} as it matched the existing one", desired);
         }
       }
+    } else {
+      log.debug(
+          "Dependent {} is read-only, implement Creator and/or Updater interfaces to modify it",
+          getClass().getSimpleName());
     }
   }
 
