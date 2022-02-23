@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R, P> configuration;
+  private final EventBuffer<R> eventBuffer = new EventBuffer<>();
+  private final ReentrantLock lock = new ReentrantLock();
 
   public InformerEventSource(
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
@@ -36,43 +39,63 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onAdd(R resource) {
-    if (temporalCacheHasResourceWithVersionAs(resource)) {
-      super.onAdd(resource);
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "Skipping event propagation for Add, resource with same version found in temporal cache: {}",
-            ResourceID.fromResource(resource));
+    lock.lock();
+    try {
+      if (temporalCacheHasResourceWithVersionAs(resource)) {
+        super.onAdd(resource);
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Skipping event propagation for Add, resource with same version found in temporal cache: {}",
+              ResourceID.fromResource(resource));
+        }
+      } else {
+        var resourceID = ResourceID.fromResource(resource);
+        if (eventBuffer.isEventsRecordedFor(resourceID)) {
+          eventBuffer.eventReceived(resource);
+        } else {
+          super.onAdd(resource);
+          if (log.isDebugEnabled()) {
+            log.debug(
+                "Propagating event for add, resource with same version not found in temporal cache: {}",
+                resourceID);
+          }
+          propagateEvent(resource);
+        }
       }
-    } else {
-      super.onAdd(resource);
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "Propagating event for add, resource with same version not found in temporal cache: {}",
-            ResourceID.fromResource(resource));
-      }
-      propagateEvent(resource);
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
   public void onUpdate(R oldObject, R newObject) {
-    if (temporalCacheHasResourceWithVersionAs(newObject)) {
-      log.debug(
-          "Skipping event propagation for Update, resource with same version found in temporal cache: {}",
-          ResourceID.fromResource(newObject));
-      super.onUpdate(oldObject, newObject);
-    } else {
-      super.onUpdate(oldObject, newObject);
-      if (oldObject
-          .getMetadata()
-          .getResourceVersion()
-          .equals(newObject.getMetadata().getResourceVersion())) {
-        return;
+    lock.lock();
+    try {
+      if (temporalCacheHasResourceWithVersionAs(newObject)) {
+        log.debug(
+            "Skipping event propagation for Update, resource with same version found in temporal cache: {}",
+            ResourceID.fromResource(newObject));
+        super.onUpdate(oldObject, newObject);
+      } else {
+        var resourceID = ResourceID.fromResource(newObject);
+        if (eventBuffer.isEventsRecordedFor(resourceID)) {
+          eventBuffer.eventReceived(newObject);
+        } else {
+          super.onUpdate(oldObject, newObject);
+          if (oldObject
+              .getMetadata()
+              .getResourceVersion()
+              .equals(newObject.getMetadata().getResourceVersion())) {
+            return;
+          }
+          log.debug(
+              "Propagating event for update, resource with same version not found in temporal cache: {}",
+              ResourceID.fromResource(newObject));
+          propagateEvent(newObject);
+        }
       }
-      log.debug(
-          "Propagating event for update, resource with same version not found in temporal cache: {}",
-          ResourceID.fromResource(newObject));
-      propagateEvent(newObject);
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -128,5 +151,54 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerConfiguration<R, P> getConfiguration() {
     return configuration;
+  }
+
+  public void willCreateOrUpdateForResource(ResourceID resourceID) {
+    eventBuffer.startEventRecording(resourceID);
+  }
+
+  public void handleJustUpdatedResource(R resource, String previousResourceVersion) {
+    lock.lock();
+    ResourceID resourceID = ResourceID.fromResource(resource);
+    try {
+      if (!eventBuffer.containsEventWithResourceVersion(
+          resourceID, resource.getMetadata().getResourceVersion())) {
+        temporalResourceCache.putUpdatedResource(resource, previousResourceVersion);
+      } else if (!eventBuffer.containsEventWithVersionButItsNotLastOne(
+          resourceID, resource.getMetadata().getResourceVersion())) {
+        R lastEvent = eventBuffer.getLastEvent(resourceID);
+        propagateEvent(lastEvent);
+      }
+    } finally {
+      eventBuffer.stopEventRecording(resourceID);
+      lock.unlock();
+    }
+  }
+
+  public void handleJustAddedResource(R resource) {
+    lock.lock();
+    ResourceID resourceID = ResourceID.fromResource(resource);
+    try {
+      if (!eventBuffer.containsEventWithResourceVersion(
+          resourceID, resource.getMetadata().getResourceVersion())) {
+        temporalResourceCache.putAddedResource(resource);
+      } else if (!eventBuffer.containsEventWithVersionButItsNotLastOne(
+          resourceID, resource.getMetadata().getResourceVersion())) {
+        R lastEvent = eventBuffer.getLastEvent(resourceID);
+        propagateEvent(lastEvent);
+      }
+    } finally {
+      eventBuffer.stopEventRecording(resourceID);
+      lock.unlock();
+    }
+  }
+
+  public void cleanupOnUpdateAndCreate(R resource) {
+    lock.lock();
+    try {
+      eventBuffer.stopEventRecording(ResourceID.fromResource(resource));
+    } finally {
+      lock.unlock();
+    }
   }
 }

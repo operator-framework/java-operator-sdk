@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
@@ -19,7 +20,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class CreateUpdateEventFilterTestReconciler
     implements Reconciler<CreateUpdateEventFilterTestCustomResource>,
-    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource>, KubernetesClientAware {
+    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource>,
+    KubernetesClientAware {
 
   public static final String CONFIG_MAP_TEST_DATA_KEY = "key";
   private KubernetesClient client;
@@ -31,20 +33,42 @@ public class CreateUpdateEventFilterTestReconciler
       CreateUpdateEventFilterTestCustomResource resource, Context context) {
     numberOfExecutions.incrementAndGet();
 
-    ConfigMap configMap = client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-        .withName(resource.getMetadata().getName()).get();
+    ConfigMap configMap =
+        client
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getMetadata().getName())
+            .get();
     if (configMap == null) {
-      configMap = client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-          .create(createConfigMap(resource));
-      informerEventSource.handleJustAddedResource(configMap);
+      var configMapToCreate = createConfigMap(resource);
+      try {
+        informerEventSource.willCreateOrUpdateForResource(
+            ResourceID.fromResource(configMapToCreate));
+        configMap =
+            client
+                .configMaps()
+                .inNamespace(resource.getMetadata().getNamespace())
+                .create(configMapToCreate);
+        informerEventSource.handleJustAddedResource(configMap);
+      } finally {
+        informerEventSource.cleanupOnUpdateAndCreate(configMapToCreate);
+      }
     } else {
-      if (!Objects.equals(configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY),
-          resource.getSpec().getValue())) {
+      if (!Objects.equals(
+          configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
-        var newConfigMap = client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-            .replace(configMap);
-        informerEventSource.handleJustUpdatedResource(newConfigMap,
-            configMap.getMetadata().getResourceVersion());
+        try {
+          informerEventSource.willCreateOrUpdateForResource(ResourceID.fromResource(configMap));
+          var newConfigMap =
+              client
+                  .configMaps()
+                  .inNamespace(resource.getMetadata().getNamespace())
+                  .replace(configMap);
+          informerEventSource.handleJustUpdatedResource(
+              newConfigMap, configMap.getMetadata().getResourceVersion());
+        } finally {
+          informerEventSource.cleanupOnUpdateAndCreate(configMap);
+        }
       }
     }
     return UpdateControl.noUpdate();
@@ -68,8 +92,7 @@ public class CreateUpdateEventFilterTestReconciler
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerConfiguration =
         InformerConfiguration.from(context, ConfigMap.class)
-            .withLabelSelector("integrationtest = " +
-                this.getClass().getSimpleName())
+            .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
     informerEventSource = new InformerEventSource<>(informerConfiguration, client);
     return List.of(informerEventSource);

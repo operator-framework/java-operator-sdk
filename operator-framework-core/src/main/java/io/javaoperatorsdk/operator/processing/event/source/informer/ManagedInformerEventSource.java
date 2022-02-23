@@ -35,7 +35,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public void onAdd(R resource) {
     temporalResourceCache.removeResourceFromCache(resource);
-
   }
 
   @Override

@@ -47,7 +47,7 @@ public class CreateUpdateDependentEventFilterIT {
     assertThat(
         ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
             .getNumberOfExecutions())
-                .isLessThanOrEqualTo(2); // this should be 1 usually but sometimes event is received
+                .isEqualTo(1); // this should be 1 usually but sometimes event is received
     // faster than added resource added to the cache
 
 
@@ -73,7 +73,7 @@ public class CreateUpdateDependentEventFilterIT {
         ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
             .getNumberOfExecutions())
                 // same as for previous assert (usually this should be 2)
-                .isLessThanOrEqualTo(4);
+                .isEqualTo(2);
   }
 
   private CreateUpdateEventFilterTestCustomResource prepareTestResource() {
