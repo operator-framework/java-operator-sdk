@@ -73,7 +73,7 @@ public class CreateUpdateDependentEventFilterIT {
         ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
             .getNumberOfExecutions())
                 // same as for previous assert (usually this should be 2)
-                .isLessThanOrEqualTo(3);
+                .isLessThanOrEqualTo(4);
   }
 
   private CreateUpdateEventFilterTestCustomResource prepareTestResource() {
