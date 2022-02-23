@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
@@ -9,11 +12,14 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
     implements ResourceCache<R>, ResourceEventHandler<R> {
+
+  private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R, P> configuration;
 
@@ -42,6 +48,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void onUpdate(R oldObject, R newObject) {
     if (temporalCacheHasResourceWithVersionAs(newObject)) {
+      log.debug(
+          "Skipping event propagation, resource with same version found in temporal cache: {}",
+          ResourceID.fromResource(newObject));
       super.onUpdate(oldObject, newObject);
     } else {
       super.onUpdate(oldObject, newObject);
@@ -51,6 +60,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           .equals(newObject.getMetadata().getResourceVersion())) {
         return;
       }
+      log.debug("Propagating event, resource with same version not found in temporal cache: {}",
+          ResourceID.fromResource(newObject));
       propagateEvent(newObject);
     }
   }

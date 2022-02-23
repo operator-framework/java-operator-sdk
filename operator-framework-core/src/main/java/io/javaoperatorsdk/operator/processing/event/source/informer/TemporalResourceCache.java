@@ -75,6 +75,7 @@ public class TemporalResourceCache<T extends HasMetadata> {
       // if this is not true that means the cache was already updated
       if (informerCacheResource.get().getMetadata().getResourceVersion()
           .equals(previousResourceVersion)) {
+        log.debug("Putting resource to temporal cache with id: {}", resourceId);
         cache.put(resourceId, newResource);
       } else {
         // if something is in cache it's surely obsolete now
