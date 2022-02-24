@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -20,29 +21,29 @@ public class StandaloneDependentTestReconciler
 
   private KubernetesClient kubernetesClient;
 
-  KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> configMapDependent;
+  KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> deploymentDependent;
 
   public StandaloneDependentTestReconciler() {
-    configMapDependent = new DeploymentDependentResource();
+    deploymentDependent = new DeploymentDependentResource();
   }
 
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return List.of(configMapDependent.eventSource(context));
+    return List.of(deploymentDependent.eventSource(context));
   }
 
   @Override
   public UpdateControl<StandaloneDependentTestCustomResource> reconcile(
       StandaloneDependentTestCustomResource resource, Context context) {
-    configMapDependent.reconcile(resource, context);
+    deploymentDependent.reconcile(resource, context);
     return UpdateControl.noUpdate();
   }
 
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
-    configMapDependent.setKubernetesClient(kubernetesClient);
+    deploymentDependent.setKubernetesClient(kubernetesClient);
   }
 
   @Override
@@ -50,8 +51,9 @@ public class StandaloneDependentTestReconciler
     return this.kubernetesClient;
   }
 
-  private class DeploymentDependentResource extends
-      KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
+  private static class DeploymentDependentResource extends
+      KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource>
+      implements Creator<Deployment, StandaloneDependentTestCustomResource> {
 
     @Override
     protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
