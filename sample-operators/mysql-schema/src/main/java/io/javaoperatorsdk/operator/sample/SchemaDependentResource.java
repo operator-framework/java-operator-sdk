@@ -8,6 +8,8 @@ import java.util.Optional;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -18,9 +20,11 @@ import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 import static java.lang.String.format;
 
 public class SchemaDependentResource
-    extends AbstractDependentResource<Schema, MySQLSchema, ResourcePollerConfig>
+    extends AbstractDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
-    DependentResourceConfigurator<ResourcePollerConfig> {
+    DependentResourceConfigurator<ResourcePollerConfig>,
+    Creator<Schema, MySQLSchema>,
+    Deleter<MySQLSchema> {
 
   private MySQLDbConfig dbConfig;
   private int pollPeriod = 500;
@@ -47,12 +51,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  protected boolean match(Schema actual, Schema target, Context context) {
-    return actual.equals(target);
-  }
-
-  @Override
-  protected Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
+  public void create(Schema target, MySQLSchema mySQLSchema, Context context) {
     try (Connection connection = getConnection()) {
       final var schema = SchemaService.createSchemaAndRelatedUser(
           connection,
@@ -63,16 +62,10 @@ public class SchemaDependentResource
 
       // put the newly built schema in the context to let the reconciler know we just built it
       context.put(MySQLSchemaReconciler.BUILT_SCHEMA, schema);
-      return schema;
     } catch (SQLException e) {
       MySQLSchemaReconciler.log.error("Error while creating Schema", e);
       throw new IllegalStateException(e);
     }
-  }
-
-  @Override
-  protected Schema update(Schema actual, Schema target, MySQLSchema mySQLSchema, Context context) {
-    throw new IllegalStateException("Target schema should not be changed: " + mySQLSchema);
   }
 
   private Connection getConnection() throws SQLException {

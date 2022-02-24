@@ -2,6 +2,8 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+
 public interface Context extends AttributeHolder {
 
   Optional<RetryInfo> getRetryInfo();
@@ -18,4 +20,6 @@ public interface Context extends AttributeHolder {
         "Mandatory attribute (key: " + key + ", type: " + expectedType.getName()
             + ") is missing or not of the expected type"));
   }
+
+  ConfigurationService getConfigurationService();
 }

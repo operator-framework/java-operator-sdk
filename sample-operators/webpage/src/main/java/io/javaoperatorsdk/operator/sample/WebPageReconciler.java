@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -143,7 +144,7 @@ public class WebPageReconciler
 
   private class ConfigMapDependentResource extends KubernetesDependentResource<ConfigMap, WebPage>
       implements
-      AssociatedSecondaryResourceIdentifier<WebPage> {
+      AssociatedSecondaryResourceIdentifier<WebPage>, Updater<ConfigMap, WebPage> {
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context context) {
@@ -160,15 +161,14 @@ public class WebPageReconciler
     }
 
     @Override
-    protected boolean match(ConfigMap actual, ConfigMap target, Context context) {
+    public boolean match(ConfigMap actual, ConfigMap target, Context context) {
       return StringUtils.equals(
           actual.getData().get("index.html"), target.getData().get("index.html"));
     }
 
     @Override
-    protected ConfigMap update(
-        ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
-      var cm = super.update(actual, target, primary, context);
+    public void update(ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
+      super.update(actual, target, primary, context);
       var ns = actual.getMetadata().getNamespace();
       log.info("Restarting pods because HTML has changed in {}", ns);
       kubernetesClient
@@ -176,7 +176,6 @@ public class WebPageReconciler
           .inNamespace(ns)
           .withLabel("app", deploymentName(primary))
           .delete();
-      return cm;
     }
 
     @Override
