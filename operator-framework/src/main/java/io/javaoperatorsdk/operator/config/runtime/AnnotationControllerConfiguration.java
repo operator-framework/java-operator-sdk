@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.config.runtime;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -27,6 +26,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
+  private List<DependentResourceSpec> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -142,42 +142,42 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     }
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public List<DependentResourceSpec> getDependentResources() {
-    final var dependents =
-        valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
-    if (dependents.length == 0) {
-      return Collections.emptyList();
-    }
+    if (specs == null) {
+      final var dependents =
+          valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
+      if (dependents.length == 0) {
+        return Collections.emptyList();
+      }
 
-    List<DependentResourceSpec> resourceSpecs = new ArrayList<>(dependents.length);
-    for (Dependent dependent : dependents) {
-
-      final Class<? extends DependentResource> dependentType = dependent.type();
-      if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
-        final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
-        final var namespaces =
-            Utils.valueOrDefault(
-                kubeDependent,
-                KubernetesDependent::namespaces,
-                this.getNamespaces().toArray(new String[0]));
-        final var labelSelector =
-            Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
-        final var addOwnerReference =
-            Utils.valueOrDefault(
-                kubeDependent,
-                KubernetesDependent::addOwnerReference,
-                KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-        KubernetesDependentResourceConfig config =
-            new KubernetesDependentResourceConfig(
-                addOwnerReference, namespaces, labelSelector, getConfigurationService());
-        resourceSpecs.add(new DependentResourceSpec(dependentType, config));
-      } else {
-        resourceSpecs.add(new DependentResourceSpec(dependentType));
+      specs = new ArrayList<>(dependents.length);
+      for (Dependent dependent : dependents) {
+        final Class<? extends DependentResource> dependentType = dependent.type();
+        if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
+          final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
+          final var namespaces =
+              Utils.valueOrDefault(
+                  kubeDependent,
+                  KubernetesDependent::namespaces,
+                  this.getNamespaces().toArray(new String[0]));
+          final var labelSelector =
+              Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
+          final var addOwnerReference =
+              Utils.valueOrDefault(
+                  kubeDependent,
+                  KubernetesDependent::addOwnerReference,
+                  KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+          KubernetesDependentResourceConfig config =
+              new KubernetesDependentResourceConfig(
+                  addOwnerReference, namespaces, labelSelector, getConfigurationService());
+          specs.add(new DependentResourceSpec(dependentType, config));
+        } else {
+          specs.add(new DependentResourceSpec(dependentType));
+        }
       }
     }
-    return Arrays.stream(dependents)
-        .map(d -> new DependentResourceSpec(d.type()))
-        .collect(Collectors.toList());
+    return specs;
   }
 }
