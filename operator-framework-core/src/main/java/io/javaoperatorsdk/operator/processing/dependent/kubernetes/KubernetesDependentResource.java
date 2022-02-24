@@ -94,11 +94,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public void create(R target, P primary, Context context) {
     var resourceID = ResourceID.fromResource(target);
     try {
-      informerEventSource.prepareForImminentCreateOrUpdateForResource(resourceID);
+      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
       var created = prepare(target, primary, "Creating").create(target);
       informerEventSource.handleRecentResourceCreate(created);
     } catch (RuntimeException e) {
-      informerEventSource.cleanupOnUpdateAndCreate(resourceID);
+      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
       throw e;
     }
   }
@@ -107,12 +107,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     var resourceID = ResourceID.fromResource(target);
     try {
       var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-      informerEventSource.prepareForImminentCreateOrUpdateForResource(resourceID);
+      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
       var updated = prepare(target, primary, "Updating").replace(updatedActual);
       informerEventSource.handleRecentResourceUpdate(updated,
           actual.getMetadata().getResourceVersion());
     } catch (RuntimeException e) {
-      informerEventSource.cleanupOnUpdateAndCreate(resourceID);
+      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
       throw e;
     }
   }

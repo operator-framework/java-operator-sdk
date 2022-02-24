@@ -84,6 +84,7 @@ public class StandaloneDependentTestReconciler
       Deployment deployment =
           ReconcilerUtils.loadYaml(Deployment.class, getClass(), "nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());
+      deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());
       deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
       return deployment;
     }

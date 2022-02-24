@@ -140,16 +140,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return configuration;
   }
 
-  public void prepareForImminentCreateOrUpdateForResource(ResourceID resourceID) {
-    lock.lock();
-    try {
-      log.info("Starting event recording for: {}", resourceID);
-      eventBuffer.startEventRecording(resourceID);
-    } finally {
-      lock.unlock();
-    }
-  }
-
   @Override
   public void handleRecentResourceUpdate(R resource, String previousResourceVersion) {
     lock.lock();
@@ -218,7 +208,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  public void cleanupOnUpdateAndCreate(ResourceID resourceID) {
+  public void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID) {
+    lock.lock();
+    try {
+      log.info("Starting event recording for: {}", resourceID);
+      eventBuffer.startEventRecording(resourceID);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
     lock.lock();
     try {
       log.info("Stopping event recording for: {}", resourceID);
