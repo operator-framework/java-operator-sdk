@@ -192,7 +192,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   /**
    * There can be the following cases:
    * <ul>
-   * <li>1. Did not receive the event yet, then we need to put it to temp cache.</li>
+   * <li>1. Did not receive the event yet for the target resource, then we need to put it to temp cache. Because event
+   *   will arrive. Note that this not necessary mean that the even is not sent yet (we are in sync context). Also
+   *   does not mean that there are no more events received after that. But during the event processing (onAdd, onUpdate)
+   *   we make sure that the propagation just skipped for the right event.
+   * </li>
    * <li>2. Received the event about the operation already, it was the last. This means already is
    * on cache of informer. So we have to do nothing. Since it was just recorded and not propagated.
    * </li>
