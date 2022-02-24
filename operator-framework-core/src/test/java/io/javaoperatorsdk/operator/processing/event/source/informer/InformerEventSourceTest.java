@@ -27,8 +27,8 @@ class InformerEventSourceTest {
   private static final String DEFAULT_RESOURCE_VERSION = "1";
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private KubernetesClient clientMock = mock(KubernetesClient.class);
-  private TemporalResourceCache<Deployment> temporalResourceCacheMock =
-      mock(TemporalResourceCache.class);
+  private TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
+      mock(TemporaryResourceCache.class);
   private EventHandler eventHandlerMock = mock(EventHandler.class);
   private MixedOperation crClientMock = mock(MixedOperation.class);
   private FilterWatchListMultiDeletable specificResourceClientMock =
@@ -50,13 +50,13 @@ class InformerEventSourceTest {
         .thenReturn(mock(PrimaryResourcesRetriever.class));
 
     informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
-    informerEventSource.setTemporalResourceCache(temporalResourceCacheMock);
+    informerEventSource.setTemporalResourceCache(temporaryResourceCacheMock);
     informerEventSource.setEventHandler(eventHandlerMock);
   }
 
   @Test
   void skipsEventPropagationIfResourceWithSameVersionInResourceCache() {
-    when(temporalResourceCacheMock.getResourceFromCache(any()))
+    when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(testDeployment()));
 
     informerEventSource.onAdd(testDeployment());
@@ -70,7 +70,7 @@ class InformerEventSourceTest {
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
     Deployment cachedDeployment = testDeployment();
     cachedDeployment.getMetadata().setResourceVersion("0");
-    when(temporalResourceCacheMock.getResourceFromCache(any()))
+    when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(cachedDeployment));
     PrimaryResourcesRetriever primaryResourcesRetriever = mock(PrimaryResourcesRetriever.class);
     when(informerConfiguration.getPrimaryResourcesRetriever())
@@ -81,7 +81,7 @@ class InformerEventSourceTest {
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
-    verify(temporalResourceCacheMock, times(1)).removeResourceFromCache(any());
+    verify(temporaryResourceCacheMock, times(1)).removeResourceFromCache(any());
   }
 
 

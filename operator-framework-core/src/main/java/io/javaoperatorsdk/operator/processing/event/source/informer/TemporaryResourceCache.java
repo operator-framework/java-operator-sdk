@@ -31,15 +31,15 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * 
  * @param <T> resource to cache.
  */
-public class TemporalResourceCache<T extends HasMetadata> {
+public class TemporaryResourceCache<T extends HasMetadata> {
 
-  private static final Logger log = LoggerFactory.getLogger(TemporalResourceCache.class);
+  private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final ReentrantLock lock = new ReentrantLock();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
-  public TemporalResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
+  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.managedInformerEventSource = managedInformerEventSource;
   }
 

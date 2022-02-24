@@ -13,12 +13,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TemporalResourceCacheTest {
+class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "1";
   private InformerEventSource<ConfigMap, ?> informerEventSource = mock(InformerEventSource.class);
-  private TemporalResourceCache<ConfigMap> temporalResourceCache =
-      new TemporalResourceCache<>(informerEventSource);
+  private TemporaryResourceCache<ConfigMap> temporaryResourceCache =
+      new TemporaryResourceCache<>(informerEventSource);
 
 
   @Test
@@ -28,9 +28,9 @@ class TemporalResourceCacheTest {
     prevTestResource.getMetadata().setResourceVersion("0");
     when(informerEventSource.get(any())).thenReturn(Optional.of(prevTestResource));
 
-    temporalResourceCache.putUpdatedResource(testResource, "0");
+    temporaryResourceCache.putUpdatedResource(testResource, "0");
 
-    var cached = temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isPresent();
   }
 
@@ -41,9 +41,9 @@ class TemporalResourceCacheTest {
     informerCachedResource.getMetadata().setResourceVersion("x");
     when(informerEventSource.get(any())).thenReturn(Optional.of(informerCachedResource));
 
-    temporalResourceCache.putUpdatedResource(testResource, "0");
+    temporaryResourceCache.putUpdatedResource(testResource, "0");
 
-    var cached = temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isNotPresent();
   }
 
@@ -52,9 +52,9 @@ class TemporalResourceCacheTest {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.empty());
 
-    temporalResourceCache.putAddedResource(testResource);
+    temporaryResourceCache.putAddedResource(testResource);
 
-    var cached = temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isPresent();
   }
 
@@ -63,9 +63,9 @@ class TemporalResourceCacheTest {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.of(testResource()));
 
-    temporalResourceCache.putAddedResource(testResource);
+    temporaryResourceCache.putAddedResource(testResource);
 
-    var cached = temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isNotPresent();
   }
 
@@ -73,17 +73,17 @@ class TemporalResourceCacheTest {
   void removesResourceFromCache() {
     ConfigMap testResource = propagateTestResourceToCache();
 
-    temporalResourceCache.removeResourceFromCache(testResource());
+    temporaryResourceCache.removeResourceFromCache(testResource());
 
-    assertThat(temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isNotPresent();
   }
 
   private ConfigMap propagateTestResourceToCache() {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.empty());
-    temporalResourceCache.putAddedResource(testResource);
-    assertThat(temporalResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+    temporaryResourceCache.putAddedResource(testResource);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isPresent();
     return testResource;
   }

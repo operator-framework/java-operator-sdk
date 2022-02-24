@@ -24,7 +24,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
-  protected TemporalResourceCache<R> temporalResourceCache = new TemporalResourceCache<>(this);
+  protected TemporaryResourceCache<R> temporaryResourceCache = new TemporaryResourceCache<>(this);
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
@@ -34,17 +34,17 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void onAdd(R resource) {
-    temporalResourceCache.removeResourceFromCache(resource);
+    temporaryResourceCache.removeResourceFromCache(resource);
   }
 
   @Override
   public void onUpdate(R oldObj, R newObj) {
-    temporalResourceCache.removeResourceFromCache(newObj);
+    temporaryResourceCache.removeResourceFromCache(newObj);
   }
 
   @Override
   public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    temporalResourceCache.removeResourceFromCache(obj);
+    temporaryResourceCache.removeResourceFromCache(obj);
   }
 
   @Override
@@ -69,16 +69,16 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   public void handleRecentResourceUpdate(R resource, String previousResourceVersion) {
-    temporalResourceCache.putUpdatedResource(resource, previousResourceVersion);
+    temporaryResourceCache.putUpdatedResource(resource, previousResourceVersion);
   }
 
   public void handleRecentResourceCreate(R resource) {
-    temporalResourceCache.putAddedResource(resource);
+    temporaryResourceCache.putAddedResource(resource);
   }
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
-    Optional<R> resource = temporalResourceCache.getResourceFromCache(resourceID);
+    Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (resource.isPresent()) {
       log.debug("Resource found in temporal cache for Resource ID: {}", resourceID);
       return resource;
@@ -99,8 +99,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   protected boolean temporalCacheHasResourceWithVersionAs(R resource) {
     var resourceID = ResourceID.fromResource(resource);
-    var res = temporalResourceCache.getResourceFromCache(resourceID);
-return res.map(r -> {
+    var res = temporaryResourceCache.getResourceFromCache(resourceID);
+    return res.map(r -> {
       boolean resVersionsEqual = r.getMetadata().getResourceVersion()
           .equals(resource.getMetadata().getResourceVersion());
       log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
@@ -115,8 +115,8 @@ return res.map(r -> {
   }
 
   ManagedInformerEventSource<R, P, C> setTemporalResourceCache(
-      TemporalResourceCache<R> temporalResourceCache) {
-    this.temporalResourceCache = temporalResourceCache;
+      TemporaryResourceCache<R> temporaryResourceCache) {
+    this.temporaryResourceCache = temporaryResourceCache;
     return this;
   }
 }

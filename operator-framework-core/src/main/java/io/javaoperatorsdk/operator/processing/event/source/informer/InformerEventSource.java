@@ -199,7 +199,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceID, resource.getMetadata().getResourceVersion())) {
         log.debug(
             "Did not found event in buffer with target version and resource id: {}", resourceID);
-        temporalResourceCache.unconditionallyCacheResource(resource);
+        temporaryResourceCache.unconditionallyCacheResource(resource);
       } else if (eventBuffer.containsEventWithVersionButItsNotLastOne(
           resourceID, resource.getMetadata().getResourceVersion())) {
         R lastEvent = eventBuffer.getLastEvent(resourceID);

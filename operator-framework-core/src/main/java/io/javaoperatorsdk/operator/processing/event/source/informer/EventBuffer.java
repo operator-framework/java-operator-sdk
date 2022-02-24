@@ -28,10 +28,6 @@ public class EventBuffer<R extends HasMetadata> {
     resourceEvents.get(ResourceID.fromResource(resource)).add(resource);
   }
 
-  public boolean containsEventsFor(ResourceID resourceID) {
-    return !resourceEvents.get(resourceID).isEmpty();
-  }
-
   public boolean containsEventWithResourceVersion(ResourceID resourceID, String resourceVersion) {
     List<R> events = resourceEvents.get(resourceID);
     if (events == null) {
@@ -48,6 +44,11 @@ public class EventBuffer<R extends HasMetadata> {
   public boolean containsEventWithVersionButItsNotLastOne(
       ResourceID resourceID, String resourceVersion) {
     List<R> resources = resourceEvents.get(resourceID);
+    if (resources == null) {
+      throw new IllegalStateException(
+          "Null events list, this is probably a result of invalid usage of the " +
+              "InformerEventSource. Resource ID: " + resourceID);
+    }
     if (resources.isEmpty()) {
       throw new IllegalStateException("No events for resource id: " + resourceID);
     }
@@ -60,6 +61,11 @@ public class EventBuffer<R extends HasMetadata> {
 
   public R getLastEvent(ResourceID resourceID) {
     List<R> resources = resourceEvents.get(resourceID);
+    if (resources == null) {
+      throw new IllegalStateException(
+          "Null events list, this is probably a result of invalid usage of the " +
+              "InformerEventSource. Resource ID: " + resourceID);
+    }
     return resources.get(resources.size() - 1);
   }
 }
