@@ -17,12 +17,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Updater<R, P> updater;
   protected Deleter<P> deleter;
 
+  @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
     init(Creator.NOOP, Updater.NOOP, Deleter.NOOP);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  protected void init(Creator defaultCreator, Updater defaultUpdater, Deleter defaultDeleter) {
+  @SuppressWarnings({"unchecked"})
+  protected void init(Creator<R, P> defaultCreator, Updater<R, P> defaultUpdater,
+      Deleter<P> defaultDeleter) {
     creator = creatable ? (Creator<R, P>) this : defaultCreator;
     updater = updatable ? (Updater<R, P>) this : defaultUpdater;
     deleter = deletable ? (Deleter<P>) this : defaultDeleter;

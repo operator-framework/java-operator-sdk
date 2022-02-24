@@ -17,14 +17,11 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -42,12 +39,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
-  private final Creator<R, P> defaultCreator = new CreateDependentOperation();
-  private final Updater<R, P> defaultUpdater = new UpdateDependentOperation();
-  private final Deleter<P> defaultDeleter = new DeleteDependentOperation();
+  private final Matcher<R> matcher;
+  private final ResourceUpdatePreProcessor<R> processor;
 
+  @SuppressWarnings("unchecked")
   public KubernetesDependentResource() {
-    init(defaultCreator, defaultUpdater, defaultDeleter);
+    init(this::create, this::update, this::delete);
+    matcher = this instanceof Matcher ? (Matcher<R>) this
+        : GenericKubernetesResourceMatcher.matcherFor(resourceType());
+    processor = this instanceof ResourceUpdatePreProcessor
+        ? (ResourceUpdatePreProcessor<R>) this
+        : GenericResourceUpdatePreProcessor.processorFor(resourceType());
   }
 
   @Override
@@ -91,91 +93,37 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void create(R target, P primary, Context context) {
-    defaultCreator.create(target, primary, context);
+    prepare(target, primary, "Creating").create(target);
   }
 
   public void update(R actual, R target, P primary, Context context) {
-    defaultUpdater.update(actual, target, primary, context);
+    var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+    prepare(target, primary, "Updating").replace(updatedActual);
   }
 
   public boolean match(R actualResource, R desiredResource, Context context) {
-    return defaultUpdater.match(actualResource, desiredResource, context);
+    return matcher.match(actualResource, desiredResource, context);
   }
 
   public void delete(P primary, Context context) {
-    defaultDeleter.delete(primary, context);
-  }
-
-  private class DependentOperation {
-    private final String actionName;
-
-    public DependentOperation(String actionName) {
-      this.actionName = actionName;
-    }
-
-    @SuppressWarnings("unchecked")
-    protected NonNamespaceOperation<R, KubernetesResourceList<R>, Resource<R>> prepare(R desired,
-        P primary) {
-      log.debug("{} target resource with type: {}, with id: {}",
-          actionName,
-          desired.getClass(),
-          ResourceID.fromResource(desired));
-      if (addOwnerReference) {
-        desired.addOwnerReference(primary);
-      }
-      Class<R> targetClass = (Class<R>) desired.getClass();
-      return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace());
+    if (!addOwnerReference) {
+      var resource = getResource(primary);
+      resource.ifPresent(r -> client.resource(r).delete());
     }
   }
 
-  private class CreateDependentOperation extends DependentOperation implements Creator<R, P> {
-
-    public CreateDependentOperation() {
-      super("Creating");
+  @SuppressWarnings("unchecked")
+  protected NonNamespaceOperation<R, KubernetesResourceList<R>, Resource<R>> prepare(R desired,
+      P primary, String actionName) {
+    log.debug("{} target resource with type: {}, with id: {}",
+        actionName,
+        desired.getClass(),
+        ResourceID.fromResource(desired));
+    if (addOwnerReference) {
+      desired.addOwnerReference(primary);
     }
-
-    @Override
-    public void create(R target, P primary, Context context) {
-      prepare(target, primary).create(target);
-    }
-  }
-
-  private class UpdateDependentOperation extends DependentOperation implements Updater<R, P> {
-    private final Matcher<R> matcher;
-    private final ResourceUpdatePreProcessor<R> processor;
-
-    @SuppressWarnings("unchecked")
-    public UpdateDependentOperation() {
-      super("Updating");
-      matcher = KubernetesDependentResource.this instanceof Matcher
-          ? (Matcher<R>) KubernetesDependentResource.this
-          : GenericKubernetesResourceMatcher.matcherFor(resourceType());
-      processor = KubernetesDependentResource.this instanceof ResourceUpdatePreProcessor
-          ? (ResourceUpdatePreProcessor<R>) KubernetesDependentResource.this
-          : GenericResourceUpdatePreProcessor.processorFor(resourceType());
-    }
-
-    @Override
-    public void update(R actual, R target, P primary, Context context) {
-      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-      prepare(target, primary).replace(updatedActual);
-    }
-
-    @Override
-    public boolean match(R actualResource, R desiredResource, Context context) {
-      return matcher.match(actualResource, desiredResource, context);
-    }
-  }
-
-  private class DeleteDependentOperation implements Deleter<P> {
-
-    @Override
-    public void delete(P primary, Context context) {
-      if (!addOwnerReference) {
-        var resource = getResource(primary);
-        resource.ifPresent(r -> client.resource(r).delete());
-      }
-    }
+    Class<R> targetClass = (Class<R>) desired.getClass();
+    return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace());
   }
 
   @Override
