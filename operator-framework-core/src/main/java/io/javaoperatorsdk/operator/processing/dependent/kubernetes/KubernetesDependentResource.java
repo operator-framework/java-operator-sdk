@@ -93,28 +93,41 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unchecked")
   @Override
   protected R create(R target, P primary, Context context) {
-    log.debug("Creating target resource with type: " +
-        "{}, with id: {}", target.getClass(), ResourceID.fromResource(target));
-    beforeCreate(target, primary);
-    Class<R> targetClass = (Class<R>) target.getClass();
-    var newResource =
-        clientFacade.createResource(target, target.getMetadata().getNamespace(), targetClass);
-    informerEventSource.handleRecentResourceAdd(newResource);
-    return newResource;
+    ResourceID resourceID = ResourceID.fromResource(target);
+    try {
+      log.debug("Creating target resource with type: " +
+          "{}, with id: {}", target.getClass(), resourceID);
+      beforeCreate(target, primary);
+      Class<R> targetClass = (Class<R>) target.getClass();
+      var newResource =
+          clientFacade.createResource(target, target.getMetadata().getNamespace(), targetClass);
+      informerEventSource.handleRecentResourceAdd(newResource);
+      return newResource;
+    } catch (RuntimeException e) {
+      informerEventSource.cleanupOnUpdateAndCreate(resourceID);
+      throw e;
+    }
   }
 
   @SuppressWarnings("unchecked")
   @Override
   protected R update(R actual, R target, P primary, Context context) {
-    log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
-        ResourceID.fromResource(target));
-    Class<R> targetClass = (Class<R>) target.getClass();
-    var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
-    R updatedResource = clientFacade.replaceResource(updatedActual,
-        target.getMetadata().getNamespace(), targetClass);
-    informerEventSource.handleRecentResourceUpdate(updatedResource,
-        actual.getMetadata().getResourceVersion());
-    return updatedResource;
+    ResourceID resourceID = ResourceID.fromResource(target);
+    try {
+      log.debug("Updating target resource with type: {}, with id: {}", target.getClass(),
+          resourceID);
+      Class<R> targetClass = (Class<R>) target.getClass();
+      var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
+      informerEventSource.prepareForImminentCreateOrUpdateForResource(resourceID);
+      R updatedResource = clientFacade.replaceResource(updatedActual,
+          target.getMetadata().getNamespace(), targetClass);
+      informerEventSource.handleRecentResourceUpdate(updatedResource,
+          actual.getMetadata().getResourceVersion());
+      return updatedResource;
+    } catch (RuntimeException e) {
+      informerEventSource.cleanupOnUpdateAndCreate(resourceID);
+      throw e;
+    }
   }
 
   @Override

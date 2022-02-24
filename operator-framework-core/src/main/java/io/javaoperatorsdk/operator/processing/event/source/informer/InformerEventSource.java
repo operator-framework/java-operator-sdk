@@ -53,7 +53,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
             resourceID);
       } else {
         super.onAdd(resource);
-
         log.debug(
             "Propagating event for add, resource with same version not found in temporal cache: {}",
             resourceID);
@@ -151,7 +150,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return configuration;
   }
 
-  public void willCreateOrUpdateForResource(ResourceID resourceID) {
+  public void prepareForImminentCreateOrUpdateForResource(ResourceID resourceID) {
     lock.lock();
     try {
       log.info("Starting event recording for: {}", resourceID);
@@ -229,10 +228,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  public void cleanupOnUpdateAndCreate(R resource) {
+  public void cleanupOnUpdateAndCreate(ResourceID resourceID) {
     lock.lock();
     try {
-      var resourceID = ResourceID.fromResource(resource);
       log.info("Stopping event recording for: {}", resourceID);
       eventBuffer.stopEventRecording(resourceID);
     } finally {

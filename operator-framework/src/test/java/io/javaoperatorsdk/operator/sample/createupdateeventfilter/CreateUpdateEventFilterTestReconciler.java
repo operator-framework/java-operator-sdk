@@ -42,7 +42,7 @@ public class CreateUpdateEventFilterTestReconciler
     if (configMap == null) {
       var configMapToCreate = createConfigMap(resource);
       try {
-        informerEventSource.willCreateOrUpdateForResource(
+        informerEventSource.prepareForImminentCreateOrUpdateForResource(
             ResourceID.fromResource(configMapToCreate));
         configMap =
             client
@@ -50,15 +50,17 @@ public class CreateUpdateEventFilterTestReconciler
                 .inNamespace(resource.getMetadata().getNamespace())
                 .create(configMapToCreate);
         informerEventSource.handleRecentResourceAdd(configMap);
-      } finally {
-        informerEventSource.cleanupOnUpdateAndCreate(configMapToCreate);
+      } catch (RuntimeException e) {
+        informerEventSource.cleanupOnUpdateAndCreate(ResourceID.fromResource(configMapToCreate));
+        throw e;
       }
     } else {
       if (!Objects.equals(
           configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
         try {
-          informerEventSource.willCreateOrUpdateForResource(ResourceID.fromResource(configMap));
+          informerEventSource
+              .prepareForImminentCreateOrUpdateForResource(ResourceID.fromResource(configMap));
           var newConfigMap =
               client
                   .configMaps()
@@ -66,8 +68,9 @@ public class CreateUpdateEventFilterTestReconciler
                   .replace(configMap);
           informerEventSource.handleRecentResourceUpdate(
               newConfigMap, configMap.getMetadata().getResourceVersion());
-        } finally {
-          informerEventSource.cleanupOnUpdateAndCreate(configMap);
+        } catch (RuntimeException e) {
+          informerEventSource.cleanupOnUpdateAndCreate(ResourceID.fromResource(configMap));
+          throw e;
         }
       }
     }
