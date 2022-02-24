@@ -60,7 +60,7 @@ class KubernetesDependentResourceTest {
 
     kubernetesDependentResource.reconcile(primaryResource(), null);
 
-    verify(informerEventSourceMock, times(1)).handleJustUpdatedResource(any(), any());
+    verify(informerEventSourceMock, times(1)).handleRecentResourceUpdate(any(), any());
   }
 
   @Test
@@ -70,7 +70,7 @@ class KubernetesDependentResourceTest {
 
     kubernetesDependentResource.reconcile(primaryResource(), null);
 
-    verify(informerEventSourceMock, times(1)).handleJustAddedResource(any());
+    verify(informerEventSourceMock, times(1)).handleRecentResourceAdd(any());
   }
 
   TestCustomResource primaryResource() {

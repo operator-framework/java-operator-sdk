@@ -52,6 +52,15 @@ public class TemporalResourceCache<T extends HasMetadata> {
     }
   }
 
+  public void unconditionallyCacheResource(T newResource) {
+    lock.lock();
+    try {
+      cache.put(ResourceID.fromResource(newResource), newResource);
+    } finally {
+      lock.unlock();
+    }
+  }
+
   public void putAddedResource(T newResource) {
     lock.lock();
     try {

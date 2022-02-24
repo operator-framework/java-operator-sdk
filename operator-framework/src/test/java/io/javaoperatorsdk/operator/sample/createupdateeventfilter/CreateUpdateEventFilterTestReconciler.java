@@ -49,7 +49,7 @@ public class CreateUpdateEventFilterTestReconciler
                 .configMaps()
                 .inNamespace(resource.getMetadata().getNamespace())
                 .create(configMapToCreate);
-        informerEventSource.handleJustAddedResource(configMap);
+        informerEventSource.handleRecentResourceAdd(configMap);
       } finally {
         informerEventSource.cleanupOnUpdateAndCreate(configMapToCreate);
       }
@@ -64,7 +64,7 @@ public class CreateUpdateEventFilterTestReconciler
                   .configMaps()
                   .inNamespace(resource.getMetadata().getNamespace())
                   .replace(configMap);
-          informerEventSource.handleJustUpdatedResource(
+          informerEventSource.handleRecentResourceUpdate(
               newConfigMap, configMap.getMetadata().getResourceVersion());
         } finally {
           informerEventSource.cleanupOnUpdateAndCreate(configMap);
@@ -80,6 +80,7 @@ public class CreateUpdateEventFilterTestReconciler
     configMap.getMetadata().setName(resource.getMetadata().getName());
     configMap.getMetadata().setLabels(new HashMap<>());
     configMap.getMetadata().getLabels().put("integrationtest", this.getClass().getSimpleName());
+    configMap.getMetadata().setNamespace(resource.getMetadata().getNamespace());
     configMap.setData(new HashMap<>());
     configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
     configMap.addOwnerReference(resource);

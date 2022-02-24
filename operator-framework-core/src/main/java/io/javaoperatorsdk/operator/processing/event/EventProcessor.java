@@ -208,7 +208,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
         postExecutionControl.getUpdatedCustomResource().ifPresent(r -> {
-          eventSourceManager.getControllerResourceEventSource().handleJustUpdatedResource(r,
+          eventSourceManager.getControllerResourceEventSource().handleRecentResourceUpdate(r,
               executionScope.getResource().getMetadata().getResourceVersion());
         });
         if (eventMarker.eventPresent(resourceID)) {

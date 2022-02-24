@@ -51,7 +51,7 @@ public class EventBuffer<R extends HasMetadata> {
     if (resources.isEmpty()) {
       throw new IllegalStateException("No events for resource id: " + resourceID);
     }
-    return resources
+    return !resources
         .get(resources.size() - 1)
         .getMetadata()
         .getResourceVersion()

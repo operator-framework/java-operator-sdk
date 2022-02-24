@@ -70,6 +70,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     try {
       var resourceID = ResourceID.fromResource(newObject);
       if (eventBuffer.isEventsRecordedFor(resourceID)) {
+        log.info("Recording event for: " + resourceID);
         eventBuffer.eventReceived(newObject);
         return;
       }
@@ -151,37 +152,71 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   public void willCreateOrUpdateForResource(ResourceID resourceID) {
-    eventBuffer.startEventRecording(resourceID);
-  }
-
-  public void handleJustUpdatedResource(R resource, String previousResourceVersion) {
     lock.lock();
-    ResourceID resourceID = ResourceID.fromResource(resource);
     try {
-      if (!eventBuffer.containsEventWithResourceVersion(
-          resourceID, resource.getMetadata().getResourceVersion())) {
-        temporalResourceCache.putUpdatedResource(resource, previousResourceVersion);
-      } else if (!eventBuffer.containsEventWithVersionButItsNotLastOne(
-          resourceID, resource.getMetadata().getResourceVersion())) {
-        R lastEvent = eventBuffer.getLastEvent(resourceID);
-        propagateEvent(lastEvent);
-      }
+      log.info("Starting event recording for: {}", resourceID);
+      eventBuffer.startEventRecording(resourceID);
     } finally {
-      eventBuffer.stopEventRecording(resourceID);
       lock.unlock();
     }
   }
 
-  public void handleJustAddedResource(R resource) {
+  @Override
+  public void handleRecentResourceUpdate(R resource, String previousResourceVersion) {
+    lock.lock();
+    try {
+      if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
+        handleRecentResourceOperation(resource);
+      } else {
+        super.handleRecentResourceUpdate(resource, previousResourceVersion);
+      }
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public void handleRecentResourceAdd(R resource) {
+    lock.lock();
+    try {
+      if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
+        handleRecentResourceOperation(resource);
+      } else {
+        super.handleRecentResourceAdd(resource);
+      }
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /**
+   * There can be the following cases:
+   * <ul>
+   * <li>1. Did not receive the event yet, then we need to put it to temp cache.</li>
+   * <li>2. Received the event about the operation already, it was the last. This means already is
+   * on cache of informer. So we have to do nothing. Since it was just recorded and not propagated.
+   * </li>
+   * <li>3. Received the event but more events received since, so those were not propagated yet. So
+   * an event needs to be propagated to compensate.</li>
+   * </ul>
+   * 
+   * @param resource just created or updated resource
+   */
+  private void handleRecentResourceOperation(R resource) {
     lock.lock();
     ResourceID resourceID = ResourceID.fromResource(resource);
     try {
       if (!eventBuffer.containsEventWithResourceVersion(
           resourceID, resource.getMetadata().getResourceVersion())) {
-        temporalResourceCache.putAddedResource(resource);
-      } else if (!eventBuffer.containsEventWithVersionButItsNotLastOne(
+        log.debug(
+            "Did not found event in buffer with target version and resource id: {}", resourceID);
+        temporalResourceCache.unconditionallyCacheResource(resource);
+      } else if (eventBuffer.containsEventWithVersionButItsNotLastOne(
           resourceID, resource.getMetadata().getResourceVersion())) {
         R lastEvent = eventBuffer.getLastEvent(resourceID);
+        log.debug(
+            "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
+            resourceID);
         propagateEvent(lastEvent);
       }
     } finally {
@@ -193,7 +228,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void cleanupOnUpdateAndCreate(R resource) {
     lock.lock();
     try {
-      eventBuffer.stopEventRecording(ResourceID.fromResource(resource));
+      var resourceID = ResourceID.fromResource(resource);
+      log.info("Stopping event recording for: {}", resourceID);
+      eventBuffer.stopEventRecording(resourceID);
     } finally {
       lock.unlock();
     }

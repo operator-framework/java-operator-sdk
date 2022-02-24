@@ -99,7 +99,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     Class<R> targetClass = (Class<R>) target.getClass();
     var newResource =
         clientFacade.createResource(target, target.getMetadata().getNamespace(), targetClass);
-    informerEventSource.handleJustAddedResource(newResource);
+    informerEventSource.handleRecentResourceAdd(newResource);
     return newResource;
   }
 
@@ -112,7 +112,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     var updatedActual = resourceUpdatePreProcessor.replaceSpecOnActual(actual, target);
     R updatedResource = clientFacade.replaceResource(updatedActual,
         target.getMetadata().getNamespace(), targetClass);
-    informerEventSource.handleJustUpdatedResource(updatedResource,
+    informerEventSource.handleRecentResourceUpdate(updatedResource,
         actual.getMetadata().getResourceVersion());
     return updatedResource;
   }

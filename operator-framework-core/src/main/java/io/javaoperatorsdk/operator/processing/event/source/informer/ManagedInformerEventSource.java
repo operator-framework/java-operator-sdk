@@ -68,11 +68,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     manager().stop();
   }
 
-  public void handleJustUpdatedResource(R resource, String previousResourceVersion) {
+  public void handleRecentResourceUpdate(R resource, String previousResourceVersion) {
     temporalResourceCache.putUpdatedResource(resource, previousResourceVersion);
   }
 
-  public void handleJustAddedResource(R resource) {
+  public void handleRecentResourceAdd(R resource) {
     temporalResourceCache.putAddedResource(resource);
   }
 
