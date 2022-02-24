@@ -13,7 +13,7 @@ public class EventBuffer<R extends HasMetadata> {
   private final Map<ResourceID, ArrayList<R>> resourceEvents = new ConcurrentHashMap<>();
 
   void startEventRecording(ResourceID resourceID) {
-    resourceEvents.putIfAbsent(resourceID, new ArrayList<>());
+    resourceEvents.putIfAbsent(resourceID, new ArrayList<>(5));
   }
 
   public boolean isEventsRecordedFor(ResourceID resourceID) {

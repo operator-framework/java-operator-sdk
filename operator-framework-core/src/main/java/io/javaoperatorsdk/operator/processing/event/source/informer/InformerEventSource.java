@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +53,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private final InformerConfiguration<R, P> configuration;
   private final EventBuffer<R> eventBuffer = new EventBuffer<>();
-  private final ReentrantLock lock = new ReentrantLock();
 
   public InformerEventSource(
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
@@ -78,31 +76,26 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
 
-  private void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
-    lock.lock();
-    try {
-      var resourceID = ResourceID.fromResource(newObject);
-      if (eventBuffer.isEventsRecordedFor(resourceID)) {
-        log.info("Recording event for: " + resourceID);
-        eventBuffer.eventReceived(newObject);
-        return;
-      }
-      if (temporalCacheHasResourceWithVersionAs(newObject)) {
-        log.debug(
-            "Skipping event propagation for {}, resource with same version found in temporal cache: {}",
-            operation,
-            ResourceID.fromResource(newObject));
-        superOnOp.run();
-      } else {
-        superOnOp.run();
-        log.debug(
-            "Propagating event for {}, resource with same version not found in temporal cache: {}",
-            operation,
-            resourceID);
-        propagateEvent(newObject);
-      }
-    } finally {
-      lock.unlock();
+  private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
+    var resourceID = ResourceID.fromResource(newObject);
+    if (eventBuffer.isEventsRecordedFor(resourceID)) {
+      log.info("Recording event for: " + resourceID);
+      eventBuffer.eventReceived(newObject);
+      return;
+    }
+    if (temporalCacheHasResourceWithVersionAs(newObject)) {
+      log.debug(
+          "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
+          operation,
+          ResourceID.fromResource(newObject));
+      superOnOp.run();
+    } else {
+      superOnOp.run();
+      log.debug(
+          "Propagating event for {}, resource with same version not result of a reconciliation. Resource ID: {}",
+          operation,
+          resourceID);
+      propagateEvent(newObject);
     }
   }
 
@@ -161,16 +154,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     handleRecentCreateOrUpdate(resource, () -> super.handleRecentResourceCreate(resource));
   }
 
-  private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
-    lock.lock();
-    try {
-      if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
-        handleRecentResourceOperationAndStopEventRecording(resource);
-      } else {
-        runnable.run();
-      }
-    } finally {
-      lock.unlock();
+  private synchronized void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
+    if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
+      handleRecentResourceOperationAndStopEventRecording(resource);
+    } else {
+      runnable.run();
     }
   }
 
@@ -191,8 +179,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    *
    * @param resource just created or updated resource
    */
-  private void handleRecentResourceOperationAndStopEventRecording(R resource) {
-    lock.lock();
+  private synchronized void handleRecentResourceOperationAndStopEventRecording(R resource) {
     ResourceID resourceID = ResourceID.fromResource(resource);
     try {
       if (!eventBuffer.containsEventWithResourceVersion(
@@ -210,27 +197,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       }
     } finally {
       eventBuffer.stopEventRecording(resourceID);
-      lock.unlock();
     }
   }
 
-  public void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID) {
-    lock.lock();
-    try {
-      log.info("Starting event recording for: {}", resourceID);
-      eventBuffer.startEventRecording(resourceID);
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID) {
+    log.info("Starting event recording for: {}", resourceID);
+    eventBuffer.startEventRecording(resourceID);
   }
 
-  public void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
-    lock.lock();
-    try {
-      log.info("Stopping event recording for: {}", resourceID);
-      eventBuffer.stopEventRecording(resourceID);
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
+    log.info("Stopping event recording for: {}", resourceID);
+    eventBuffer.stopEventRecording(resourceID);
   }
 }
