@@ -100,15 +100,13 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   protected boolean temporalCacheHasResourceWithVersionAs(R resource) {
     var resourceID = ResourceID.fromResource(resource);
     var res = temporalResourceCache.getResourceFromCache(resourceID);
-    if (res.isEmpty()) {
-      return false;
-    } else {
-      boolean resVersionsEqual = res.get().getMetadata().getResourceVersion()
+return res.map(r -> {
+      boolean resVersionsEqual = r.getMetadata().getResourceVersion()
           .equals(resource.getMetadata().getResourceVersion());
       log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
           resourceID, resVersionsEqual);
       return resVersionsEqual;
-    }
+    }).orElse(false);
   }
 
   @Override
