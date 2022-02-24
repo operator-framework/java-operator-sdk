@@ -165,13 +165,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceAdd(R resource) {
+  public void handleRecentResourceCreate(R resource) {
     lock.lock();
     try {
       if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
         handleRecentResourceOperation(resource);
       } else {
-        super.handleRecentResourceAdd(resource);
+        super.handleRecentResourceCreate(resource);
       }
     } finally {
       lock.unlock();

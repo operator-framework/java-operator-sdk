@@ -72,7 +72,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     temporalResourceCache.putUpdatedResource(resource, previousResourceVersion);
   }
 
-  public void handleRecentResourceAdd(R resource) {
+  public void handleRecentResourceCreate(R resource) {
     temporalResourceCache.putAddedResource(resource);
   }
 

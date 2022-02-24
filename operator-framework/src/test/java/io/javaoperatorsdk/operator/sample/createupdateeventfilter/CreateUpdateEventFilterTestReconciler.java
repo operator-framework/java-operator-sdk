@@ -49,7 +49,7 @@ public class CreateUpdateEventFilterTestReconciler
                 .configMaps()
                 .inNamespace(resource.getMetadata().getNamespace())
                 .create(configMapToCreate);
-        informerEventSource.handleRecentResourceAdd(configMap);
+        informerEventSource.handleRecentResourceCreate(configMap);
       } catch (RuntimeException e) {
         informerEventSource.cleanupOnUpdateAndCreate(ResourceID.fromResource(configMapToCreate));
         throw e;
