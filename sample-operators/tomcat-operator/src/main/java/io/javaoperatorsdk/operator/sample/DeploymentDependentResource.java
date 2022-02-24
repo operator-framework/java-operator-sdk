@@ -5,11 +5,14 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 @KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
-public class DeploymentDependentResource extends KubernetesDependentResource<Deployment, Tomcat> {
+public class DeploymentDependentResource extends KubernetesDependentResource<Deployment, Tomcat>
+    implements Creator<Deployment, Tomcat>, Updater<Deployment, Tomcat> {
 
   private static String tomcatImage(Tomcat tomcat) {
     return "tomcat:" + tomcat.getSpec().getVersion();

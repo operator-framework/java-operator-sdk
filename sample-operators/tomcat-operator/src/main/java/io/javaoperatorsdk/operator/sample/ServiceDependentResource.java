@@ -5,9 +5,12 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat> {
+public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat>
+    implements Creator<Service, Tomcat>, Updater<Service, Tomcat> {
 
   @Override
   protected Service desired(Tomcat tomcat, Context context) {

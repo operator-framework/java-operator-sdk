@@ -6,27 +6,28 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+public class GenericKubernetesResourceMatcher<R extends HasMetadata> implements Matcher<R> {
 
-public class DesiredValueMatcher implements ResourceMatcher {
+  private GenericKubernetesResourceMatcher() {}
 
-  private final ObjectMapper objectMapper;
-
-  public DesiredValueMatcher(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static <R extends HasMetadata> Matcher<R> matcherFor(Class<R> resourceType) {
+    if (Secret.class.isAssignableFrom(resourceType)) {
+      return (actual, desired, context) -> ResourceComparators.compareSecretData((Secret) desired,
+          (Secret) actual);
+    } else if (ConfigMap.class.isAssignableFrom(resourceType)) {
+      return (actual, desired, context) -> ResourceComparators
+          .compareConfigMapData((ConfigMap) desired, (ConfigMap) actual);
+    } else {
+      return new GenericKubernetesResourceMatcher();
+    }
   }
 
   @Override
-  public boolean match(HasMetadata actualResource, HasMetadata desiredResource, Context context) {
-    if (actualResource instanceof Secret) {
-      return ResourceComparators.compareSecretData((Secret) desiredResource,
-          (Secret) actualResource);
-    }
-    if (actualResource instanceof ConfigMap) {
-      return ResourceComparators.compareConfigMapData((ConfigMap) desiredResource,
-          (ConfigMap) actualResource);
-    }
+  public boolean match(R actualResource, R desiredResource, Context context) {
+    final var objectMapper = context.getConfigurationService().getObjectMapper();
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816
     var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desiredResource));

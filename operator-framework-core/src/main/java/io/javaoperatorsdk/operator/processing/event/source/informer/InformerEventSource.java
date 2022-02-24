@@ -77,16 +77,6 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     });
   }
 
-  @Override
-  public void start() {
-    manager().start();
-  }
-
-  @Override
-  public void stop() {
-    manager().stop();
-  }
-
   /**
    * Retrieves the informed resource associated with the specified primary resource as defined by
    * the function provided when this InformerEventSource was created
