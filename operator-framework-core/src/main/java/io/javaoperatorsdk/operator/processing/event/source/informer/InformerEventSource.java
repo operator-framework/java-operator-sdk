@@ -41,26 +41,23 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void onAdd(R resource) {
     lock.lock();
     try {
+      var resourceID = ResourceID.fromResource(resource);
+      if (eventBuffer.isEventsRecordedFor(resourceID)) {
+        eventBuffer.eventReceived(resource);
+        return;
+      }
       if (temporalCacheHasResourceWithVersionAs(resource)) {
         super.onAdd(resource);
-        if (log.isDebugEnabled()) {
-          log.debug(
-              "Skipping event propagation for Add, resource with same version found in temporal cache: {}",
-              ResourceID.fromResource(resource));
-        }
+        log.debug(
+            "Skipping event propagation for Add, resource with same version found in temporal cache: {}",
+            resourceID);
       } else {
-        var resourceID = ResourceID.fromResource(resource);
-        if (eventBuffer.isEventsRecordedFor(resourceID)) {
-          eventBuffer.eventReceived(resource);
-        } else {
-          super.onAdd(resource);
-          if (log.isDebugEnabled()) {
-            log.debug(
-                "Propagating event for add, resource with same version not found in temporal cache: {}",
-                resourceID);
-          }
-          propagateEvent(resource);
-        }
+        super.onAdd(resource);
+
+        log.debug(
+            "Propagating event for add, resource with same version not found in temporal cache: {}",
+            resourceID);
+        propagateEvent(resource);
       }
     } finally {
       lock.unlock();
@@ -71,28 +68,28 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void onUpdate(R oldObject, R newObject) {
     lock.lock();
     try {
+      var resourceID = ResourceID.fromResource(newObject);
+      if (eventBuffer.isEventsRecordedFor(resourceID)) {
+        eventBuffer.eventReceived(newObject);
+        return;
+      }
       if (temporalCacheHasResourceWithVersionAs(newObject)) {
         log.debug(
             "Skipping event propagation for Update, resource with same version found in temporal cache: {}",
             ResourceID.fromResource(newObject));
         super.onUpdate(oldObject, newObject);
       } else {
-        var resourceID = ResourceID.fromResource(newObject);
-        if (eventBuffer.isEventsRecordedFor(resourceID)) {
-          eventBuffer.eventReceived(newObject);
-        } else {
-          super.onUpdate(oldObject, newObject);
-          if (oldObject
-              .getMetadata()
-              .getResourceVersion()
-              .equals(newObject.getMetadata().getResourceVersion())) {
-            return;
-          }
-          log.debug(
-              "Propagating event for update, resource with same version not found in temporal cache: {}",
-              ResourceID.fromResource(newObject));
-          propagateEvent(newObject);
+        super.onUpdate(oldObject, newObject);
+        if (oldObject
+            .getMetadata()
+            .getResourceVersion()
+            .equals(newObject.getMetadata().getResourceVersion())) {
+          return;
         }
+        log.debug(
+            "Propagating event for update, resource with same version not found in temporal cache: {}",
+            resourceID);
+        propagateEvent(newObject);
       }
     } finally {
       lock.unlock();
