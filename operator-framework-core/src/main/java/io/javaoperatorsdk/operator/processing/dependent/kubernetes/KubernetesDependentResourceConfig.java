@@ -3,11 +3,11 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.DEFAULT_ADD_OWNER_REFERENCE;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT;
 
 public class KubernetesDependentResourceConfig {
 
-  private boolean addOwnerReference = DEFAULT_ADD_OWNER_REFERENCE;
+  private boolean addOwnerReference = ADD_OWNER_REFERENCE_DEFAULT;
   private String[] namespaces = new String[0];
   private String labelSelector = EMPTY_STRING;
   private ConfigurationService configurationService;
