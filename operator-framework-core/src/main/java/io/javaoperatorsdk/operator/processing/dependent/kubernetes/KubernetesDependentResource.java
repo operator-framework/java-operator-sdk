@@ -42,10 +42,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
+  private final Creator<R, P> defaultCreator = new CreateDependentOperation();
+  private final Updater<R, P> defaultUpdater = new UpdateDependentOperation();
+  private final Deleter<P> defaultDeleter = new DeleteDependentOperation();
 
   public KubernetesDependentResource() {
-    init(new CreateDependentOperation(), new UpdateDependentOperation(),
-        new DeleteDependentOperation());
+    init(defaultCreator, defaultUpdater, defaultDeleter);
   }
 
   @Override
@@ -88,8 +90,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.addOwnerReference = addOwnerReference;
   }
 
+  public void create(R target, P primary, Context context) {
+    defaultCreator.create(target, primary, context);
+  }
+
+  public void update(R actual, R target, P primary, Context context) {
+    defaultUpdater.update(actual, target, primary, context);
+  }
+
   public boolean match(R actualResource, R desiredResource, Context context) {
-    return updater.match(actualResource, desiredResource, context);
+    return defaultUpdater.match(actualResource, desiredResource, context);
+  }
+
+  public void delete(P primary, Context context) {
+    defaultDeleter.delete(primary, context);
   }
 
   private class DependentOperation {

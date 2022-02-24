@@ -56,14 +56,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  public void update(R actual, R target, P primary, Context context) {
-    updater.update(actual, target, primary, context);
-  }
-
-  public void create(R target, P primary, Context context) {
-    creator.create(target, primary, context);
-  }
-
   @Override
   public void delete(P primary, Context context) {
     if (isDeletable(primary, context)) {
