@@ -16,6 +16,36 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
+/**
+ * <p>
+ * Wraps informer(s) so it is connected to the eventing system of the framework. Note that since
+ * it's it is built on top of Informers, it also support caching resources using caching from
+ * fabric8 client Informer caches and additional caches described below.
+ * </p>
+ * <p>
+ * InformerEventSource also supports two features to better handle events and caching of resources
+ * on top of Informers from fabric8 Kubernetes client. These two features implementation wise are
+ * related to each other:
+ * </p>
+ * <br>
+ * <p>
+ * 1. API that allows to make sure the cache contains the fresh resource after an update. This is
+ * important for {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and
+ * mainly for
+ * {@link io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource}
+ * so after reconcile if getResource() called always return the fresh resource. For that
+ * handleRecentResourceUpdate() and handleRecentResourceCreate() needs to be called explicitly after
+ * resource created/updated using the kubernetes client. (These calls are done automatically by
+ * KubernetesDependentResource implementation.) todo how it works
+ * </p>
+ * <br>
+ * <p>
+ * 2. todo
+ * </p>
+ *
+ * @param <R> resource type watching
+ * @param <P> type of the primary resource
+ */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
     implements ResourceCache<R>, ResourceEventHandler<R> {
@@ -39,32 +69,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onAdd(R resource) {
-    lock.lock();
-    try {
-      var resourceID = ResourceID.fromResource(resource);
-      if (eventBuffer.isEventsRecordedFor(resourceID)) {
-        eventBuffer.eventReceived(resource);
-        return;
-      }
-      if (temporalCacheHasResourceWithVersionAs(resource)) {
-        super.onAdd(resource);
-        log.debug(
-            "Skipping event propagation for Add, resource with same version found in temporal cache: {}",
-            resourceID);
-      } else {
-        super.onAdd(resource);
-        log.debug(
-            "Propagating event for add, resource with same version not found in temporal cache: {}",
-            resourceID);
-        propagateEvent(resource);
-      }
-    } finally {
-      lock.unlock();
-    }
+    onAddOrUpdate("add", resource, () -> InformerEventSource.super.onAdd(resource));
   }
 
   @Override
   public void onUpdate(R oldObject, R newObject) {
+    onAddOrUpdate("update", newObject,
+        () -> InformerEventSource.super.onUpdate(oldObject, newObject));
+  }
+
+  private void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
     lock.lock();
     try {
       var resourceID = ResourceID.fromResource(newObject);
@@ -75,19 +89,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       }
       if (temporalCacheHasResourceWithVersionAs(newObject)) {
         log.debug(
-            "Skipping event propagation for Update, resource with same version found in temporal cache: {}",
+            "Skipping event propagation for {}, resource with same version found in temporal cache: {}",
+            operation,
             ResourceID.fromResource(newObject));
-        super.onUpdate(oldObject, newObject);
+        superOnOp.run();
       } else {
-        super.onUpdate(oldObject, newObject);
-        if (oldObject
-            .getMetadata()
-            .getResourceVersion()
-            .equals(newObject.getMetadata().getResourceVersion())) {
-          return;
-        }
+        superOnOp.run();
         log.debug(
-            "Propagating event for update, resource with same version not found in temporal cache: {}",
+            "Propagating event for {}, resource with same version not found in temporal cache: {}",
+            operation,
             resourceID);
         propagateEvent(newObject);
       }
@@ -142,26 +152,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void handleRecentResourceUpdate(R resource, String previousResourceVersion) {
-    lock.lock();
-    try {
-      if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
-        handleRecentResourceOperation(resource);
-      } else {
-        super.handleRecentResourceUpdate(resource, previousResourceVersion);
-      }
-    } finally {
-      lock.unlock();
-    }
+    handleRecentCreateOrUpdate(resource,
+        () -> super.handleRecentResourceUpdate(resource, previousResourceVersion));
   }
 
   @Override
   public void handleRecentResourceCreate(R resource) {
+    handleRecentCreateOrUpdate(resource, () -> super.handleRecentResourceCreate(resource));
+  }
+
+  private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
     lock.lock();
     try {
       if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
-        handleRecentResourceOperation(resource);
+        handleRecentResourceOperationAndStopEventRecording(resource);
       } else {
-        super.handleRecentResourceCreate(resource);
+        runnable.run();
       }
     } finally {
       lock.unlock();
@@ -182,10 +188,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * <li>3. Received the event but more events received since, so those were not propagated yet. So
    * an event needs to be propagated to compensate.</li>
    * </ul>
-   * 
+   *
    * @param resource just created or updated resource
    */
-  private void handleRecentResourceOperation(R resource) {
+  private void handleRecentResourceOperationAndStopEventRecording(R resource) {
     lock.lock();
     ResourceID resourceID = ResourceID.fromResource(resource);
     try {
