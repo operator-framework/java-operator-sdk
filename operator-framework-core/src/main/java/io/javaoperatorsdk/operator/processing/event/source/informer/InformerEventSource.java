@@ -32,14 +32,30 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
  * important for {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and
  * mainly for
  * {@link io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource}
- * so after reconcile if getResource() called always return the fresh resource. For that
+ * so after reconcile if getResource() called always return the fresh resource. To achieve this
  * handleRecentResourceUpdate() and handleRecentResourceCreate() needs to be called explicitly after
  * resource created/updated using the kubernetes client. (These calls are done automatically by
- * KubernetesDependentResource implementation.) todo how it works
+ * KubernetesDependentResource implementation.). In the background this will store the new resource
+ * in a temporary cache {@link TemporaryResourceCache} which do additional checks. After a new event
+ * is received the cachec object is removed from this cache, since in general then it is already in
+ * the cache of informer.
  * </p>
  * <br>
  * <p>
- * 2. todo
+ * 2. Additional API is provided that is ment to be used with the combination of the previous one,
+ * and the goal is to filter out events that are the results of updates and creates made by the
+ * controller itself. For example if in reconciler a ConfigMaps is created, there should be an
+ * Informer in place to handle change events of that ConfigMap, but since it has bean created (or
+ * updated) by the reconciler this should not trigger an additional reconciliation by default. In
+ * order to achieve this prepareForCreateOrUpdateEventFiltering(..) method needs to be called before
+ * the operation of the k8s client. And the operation from point 1. after the k8s client call. See
+ * it's usage in CreateUpdateEventFilterTestReconciler integration test for the usage. (Again this
+ * is managed for the developer if using dependent resources.) <br>
+ * Roughly it works in a way that before the K8S API call is made, we set mark the resource ID, and
+ * from that point informer won't propagate events further just will start record them. After the
+ * client operation is done, it's checked and analysed what events were received and based on that
+ * it will propagate event or not and/or put the new resource into the temporal cache - so if the
+ * event not arrived yet about the update will be able to filter it in the future.
  * </p>
  *
  * @param <R> resource type watching
@@ -52,7 +68,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R, P> configuration;
-  private final EventBuffer<R> eventBuffer = new EventBuffer<>();
+  private final EventRecorder<R> eventRecorder = new EventRecorder<>();
 
   public InformerEventSource(
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
@@ -78,9 +94,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-    if (eventBuffer.isEventsRecordedFor(resourceID)) {
+    if (eventRecorder.isRecordingFor(resourceID)) {
       log.info("Recording event for: " + resourceID);
-      eventBuffer.eventReceived(newObject);
+      eventRecorder.recordEvent(newObject);
       return;
     }
     if (temporalCacheHasResourceWithVersionAs(newObject)) {
@@ -155,7 +171,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private synchronized void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
-    if (eventBuffer.isEventsRecordedFor(ResourceID.fromResource(resource))) {
+    if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
       handleRecentResourceOperationAndStopEventRecording(resource);
     } else {
       runnable.run();
@@ -182,31 +198,38 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private synchronized void handleRecentResourceOperationAndStopEventRecording(R resource) {
     ResourceID resourceID = ResourceID.fromResource(resource);
     try {
-      if (!eventBuffer.containsEventWithResourceVersion(
+      if (!eventRecorder.containsEventWithResourceVersion(
           resourceID, resource.getMetadata().getResourceVersion())) {
         log.debug(
             "Did not found event in buffer with target version and resource id: {}", resourceID);
         temporaryResourceCache.unconditionallyCacheResource(resource);
-      } else if (eventBuffer.containsEventWithVersionButItsNotLastOne(
+      } else if (eventRecorder.containsEventWithVersionButItsNotLastOne(
           resourceID, resource.getMetadata().getResourceVersion())) {
-        R lastEvent = eventBuffer.getLastEvent(resourceID);
+        R lastEvent = eventRecorder.getLastEvent(resourceID);
         log.debug(
             "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
             resourceID);
         propagateEvent(lastEvent);
       }
     } finally {
-      eventBuffer.stopEventRecording(resourceID);
+      eventRecorder.stopEventRecording(resourceID);
     }
   }
 
   public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID) {
     log.info("Starting event recording for: {}", resourceID);
-    eventBuffer.startEventRecording(resourceID);
+    eventRecorder.startEventRecording(resourceID);
   }
 
+  /**
+   * Mean to be called to clean up in case of an exception from the client. Usually in a catch
+   * block.
+   * 
+   * @param resourceID of the resource
+   */
   public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
     log.info("Stopping event recording for: {}", resourceID);
-    eventBuffer.stopEventRecording(resourceID);
+    eventRecorder.stopEventRecording(resourceID);
   }
+
 }

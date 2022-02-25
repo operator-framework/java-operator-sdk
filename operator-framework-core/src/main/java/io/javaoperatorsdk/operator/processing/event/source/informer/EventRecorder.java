@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class EventBuffer<R extends HasMetadata> {
+public class EventRecorder<R extends HasMetadata> {
 
   private final Map<ResourceID, ArrayList<R>> resourceEvents = new ConcurrentHashMap<>();
 
@@ -16,7 +16,7 @@ public class EventBuffer<R extends HasMetadata> {
     resourceEvents.putIfAbsent(resourceID, new ArrayList<>(5));
   }
 
-  public boolean isEventsRecordedFor(ResourceID resourceID) {
+  public boolean isRecordingFor(ResourceID resourceID) {
     return resourceEvents.get(resourceID) != null;
   }
 
@@ -24,7 +24,7 @@ public class EventBuffer<R extends HasMetadata> {
     resourceEvents.remove(resourceID);
   }
 
-  public void eventReceived(R resource) {
+  public void recordEvent(R resource) {
     resourceEvents.get(ResourceID.fromResource(resource)).add(resource);
   }
 
