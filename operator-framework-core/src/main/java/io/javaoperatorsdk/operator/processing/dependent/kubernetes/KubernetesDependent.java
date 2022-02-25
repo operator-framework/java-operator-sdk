@@ -32,5 +32,4 @@ public @interface KubernetesDependent {
    * @return the label selector
    */
   String labelSelector() default EMPTY_STRING;
-
 }

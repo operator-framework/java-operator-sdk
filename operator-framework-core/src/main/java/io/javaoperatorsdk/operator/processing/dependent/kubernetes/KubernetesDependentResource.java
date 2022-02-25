@@ -75,17 +75,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
             .withPrimaryResourcesRetriever(primaryResourcesRetriever)
             .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
             .build();
-    configureWith(configService, new InformerEventSource<>(ic, client), addOwnerReference);
+    configureWith(new InformerEventSource<>(ic, client), addOwnerReference);
   }
 
   /**
    * Use to share informers between event more resources.
-   *
-   * @param configurationService get configs
+   * 
    * @param informerEventSource informer to use
    * @param addOwnerReference to the created resource
    */
-  public void configureWith(ConfigurationService configurationService,
+  public void configureWith(
       InformerEventSource<R, P> informerEventSource,
       boolean addOwnerReference) {
     this.informerEventSource = informerEventSource;
@@ -93,12 +92,29 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void create(R target, P primary, Context context) {
-    prepare(target, primary, "Creating").create(target);
+    var resourceID = ResourceID.fromResource(target);
+    try {
+      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
+      var created = prepare(target, primary, "Creating").create(target);
+      informerEventSource.handleRecentResourceCreate(created);
+    } catch (RuntimeException e) {
+      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
+      throw e;
+    }
   }
 
   public void update(R actual, R target, P primary, Context context) {
-    var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-    prepare(target, primary, "Updating").replace(updatedActual);
+    var resourceID = ResourceID.fromResource(target);
+    try {
+      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
+      var updated = prepare(target, primary, "Updating").replace(updatedActual);
+      informerEventSource.handleRecentResourceUpdate(updated,
+          actual.getMetadata().getResourceVersion());
+    } catch (RuntimeException e) {
+      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
+      throw e;
+    }
   }
 
   public boolean match(R actualResource, R desiredResource, Context context) {

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("sdt")
 public class StandaloneDependentTestCustomResource
-    extends CustomResource<Void, StandaloneDependentTestCustomResourceStatus>
+    extends
+    CustomResource<StandaloneDependentTestCustomResourceSpec, StandaloneDependentTestCustomResourceStatus>
     implements Namespaced {
 }

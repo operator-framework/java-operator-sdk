@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.time.Duration;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,7 +19,6 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-import static org.awaitility.Awaitility.await;
 
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class WebPageReconciler
@@ -59,19 +57,12 @@ public class WebPageReconciler
 
     WebPageStatus status = new WebPageStatus();
 
-    waitUntilConfigMapAvailable(webPage);
     status.setHtmlConfigMap(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName());
     status.setAreWeGood("Yes!");
     status.setErrorMessage(null);
     webPage.setStatus(status);
 
     return UpdateControl.updateStatus(webPage);
-  }
-
-  // todo after implemented we can remove this method:
-  // https://github.com/java-operator-sdk/java-operator-sdk/issues/924
-  private void waitUntilConfigMapAvailable(WebPage webPage) {
-    await().atMost(Duration.ofSeconds(5)).until(() -> configMapDR.getResource(webPage).isPresent());
   }
 
   @Override

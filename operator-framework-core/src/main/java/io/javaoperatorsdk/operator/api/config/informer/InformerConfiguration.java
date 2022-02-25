@@ -37,6 +37,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
           Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
     }
 
+
     public PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
       return secondaryToPrimaryResourcesIdSet;
     }
