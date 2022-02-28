@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -11,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -145,7 +143,7 @@ public class WebPageReconciler
   }
 
   private Service makeDesiredService(WebPage webPage, String ns, Deployment desiredDeployment) {
-    Service desiredService = loadYaml(Service.class, "service.yaml");
+    Service desiredService = ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml");
     desiredService.getMetadata().setName(serviceName(webPage));
     desiredService.getMetadata().setNamespace(ns);
     desiredService.getMetadata().setLabels(lowLevelLabel());
@@ -158,7 +156,8 @@ public class WebPageReconciler
 
   private Deployment makeDesiredDeployment(WebPage webPage, String deploymentName, String ns,
       String configMapName) {
-    Deployment desiredDeployment = loadYaml(Deployment.class, "deployment.yaml");
+    Deployment desiredDeployment =
+        ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     desiredDeployment.getMetadata().setName(deploymentName);
     desiredDeployment.getMetadata().setNamespace(ns);
     desiredDeployment.getMetadata().setLabels(lowLevelLabel());
@@ -208,14 +207,6 @@ public class WebPageReconciler
 
   private static String serviceName(WebPage nginx) {
     return nginx.getMetadata().getName();
-  }
-
-  private <T> T loadYaml(Class<T> clazz, String yaml) {
-    try (InputStream is = getClass().getResourceAsStream(yaml)) {
-      return Serialization.unmarshal(is, clazz);
-    } catch (IOException ex) {
-      throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
-    }
   }
 
   @Override
