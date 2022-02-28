@@ -20,12 +20,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
-@ControllerConfiguration(finalizerName = NO_FINALIZER)
+@ControllerConfiguration(finalizerName = NO_FINALIZER, labelSelector = "!low-level")
 public class WebPageReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
-
   private final KubernetesClient kubernetesClient;
 
   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
@@ -48,6 +47,7 @@ public class WebPageReconciler
   @Override
   public UpdateControl<WebPage> reconcile(WebPage webPage, Context context) {
     if (webPage.getSpec().getHtml().contains("error")) {
+      // special case just to showcase error if doing a demo
       throw new ErrorSimulationException("Simulating error");
     }
 
@@ -55,14 +55,16 @@ public class WebPageReconciler
     deploymentDR.reconcile(webPage, context);
     serviceDR.reconcile(webPage, context);
 
-    WebPageStatus status = new WebPageStatus();
+    webPage.setStatus(createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
+    return UpdateControl.updateStatus(webPage);
+  }
 
-    status.setHtmlConfigMap(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName());
+  private WebPageStatus createStatus(String configMapName) {
+    WebPageStatus status = new WebPageStatus();
+    status.setHtmlConfigMap(configMapName);
     status.setAreWeGood("Yes!");
     status.setErrorMessage(null);
-    webPage.setStatus(status);
-
-    return UpdateControl.updateStatus(webPage);
+    return status;
   }
 
   @Override
