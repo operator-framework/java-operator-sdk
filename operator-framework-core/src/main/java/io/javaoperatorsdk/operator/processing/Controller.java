@@ -281,4 +281,8 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       eventSourceManager.stop();
     }
   }
+
+  public DependentResourceManager<R> getDependents() {
+    return dependents;
+  }
 }

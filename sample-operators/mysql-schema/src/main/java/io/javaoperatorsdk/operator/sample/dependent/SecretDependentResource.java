@@ -1,19 +1,29 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.dependent;
 
 import java.util.Base64;
+
+import org.apache.commons.lang3.RandomStringUtils;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
+import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
 import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
-    implements AssociatedSecondaryResourceIdentifier<MySQLSchema>, Updater<Secret, MySQLSchema> {
+    implements AssociatedSecondaryResourceIdentifier<MySQLSchema>, Creator<Secret, MySQLSchema> {
+
+  public static final String SECRET_FORMAT = "%s-secret";
+  public static final String USERNAME_FORMAT = "%s-user";
+  public static final String MYSQL_SECRET_NAME = "mysql.secret.name";
+  public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
+  public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
+
 
   private static String encode(String value) {
     return Base64.getEncoder().encodeToString(value.getBytes());
@@ -21,15 +31,21 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
 
   @Override
   protected Secret desired(MySQLSchema schema, Context context) {
+    final var password = RandomStringUtils
+        .randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
+    final var name = schema.getMetadata().getName();
+    final var secretName = String.format(SECRET_FORMAT, name);
+    final var userName = String.format(USERNAME_FORMAT, name);
+
     return new SecretBuilder()
         .withNewMetadata()
-        .withName(context.getMandatory(MYSQL_SECRET_NAME, String.class))
+        .withName(secretName)
         .withNamespace(schema.getMetadata().getNamespace())
         .endMetadata()
         .addToData(
-            "MYSQL_USERNAME", encode(context.getMandatory(MYSQL_SECRET_USERNAME, String.class)))
+            MYSQL_SECRET_USERNAME, encode(userName))
         .addToData(
-            "MYSQL_PASSWORD", encode(context.getMandatory(MYSQL_SECRET_PASSWORD, String.class)))
+            MYSQL_SECRET_PASSWORD, encode(password))
         .build();
   }
 

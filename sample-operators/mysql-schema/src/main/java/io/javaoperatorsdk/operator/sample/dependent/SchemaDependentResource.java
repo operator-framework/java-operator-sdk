@@ -1,10 +1,15 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.dependent;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
@@ -14,9 +19,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceCon
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import io.javaoperatorsdk.operator.sample.*;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
+import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_PASSWORD;
+import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
 public class SchemaDependentResource
@@ -25,6 +33,8 @@ public class SchemaDependentResource
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>,
     Deleter<MySQLSchema> {
+
+  private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
   private int pollPeriod = 500;
@@ -53,25 +63,22 @@ public class SchemaDependentResource
   @Override
   public void create(Schema target, MySQLSchema mySQLSchema, Context context) {
     try (Connection connection = getConnection()) {
+      Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
+      var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
+      var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
       final var schema = SchemaService.createSchemaAndRelatedUser(
           connection,
           target.getName(),
-          target.getCharacterSet(),
-          context.getMandatory(MySQLSchemaReconciler.MYSQL_SECRET_USERNAME, String.class),
-          context.getMandatory(MySQLSchemaReconciler.MYSQL_SECRET_PASSWORD, String.class));
-
-      // put the newly built schema in the context to let the reconciler know we just built it
-      context.put(MySQLSchemaReconciler.BUILT_SCHEMA, schema);
+          target.getCharacterSet(), username, password);
     } catch (SQLException e) {
-      MySQLSchemaReconciler.log.error("Error while creating Schema", e);
+      log.error("Error while creating Schema", e);
       throw new IllegalStateException(e);
     }
   }
 
   private Connection getConnection() throws SQLException {
     String connectURL = format("jdbc:mysql://%1$s:%2$s", dbConfig.getHost(), dbConfig.getPort());
-
-    MySQLSchemaReconciler.log.debug("Connecting to '{}' with user '{}'", connectURL,
+    log.debug("Connecting to '{}' with user '{}'", connectURL,
         dbConfig.getUser());
     return DriverManager.getConnection(connectURL, dbConfig.getUser(), dbConfig.getPassword());
   }
@@ -97,6 +104,10 @@ public class SchemaDependentResource
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying read Schema", e);
     }
+  }
+
+  private static String decode(String value) {
+    return new String(Base64.getDecoder().decode(value.getBytes()));
   }
 
 }
