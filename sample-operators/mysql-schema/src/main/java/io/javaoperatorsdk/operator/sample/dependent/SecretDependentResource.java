@@ -20,10 +20,8 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
 
   public static final String SECRET_FORMAT = "%s-secret";
   public static final String USERNAME_FORMAT = "%s-user";
-  public static final String MYSQL_SECRET_NAME = "mysql.secret.name";
   public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
   public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
-
 
   private static String encode(String value) {
     return Base64.getEncoder().encodeToString(value.getBytes());

@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 

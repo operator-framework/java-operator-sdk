@@ -1,8 +1,10 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.dependent;
 
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
+import io.javaoperatorsdk.operator.sample.MySQLSchema;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
