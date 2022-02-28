@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +12,11 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
@@ -30,7 +30,7 @@ public class WebPageReconciler
   public static final String LOW_LEVEL_LABEL_KEY = "low-level";
   public static final String INDEX_HTML = "index.html";
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private static final Logger log = LoggerFactory.getLogger(WebPageReconciler.class);
 
   private final KubernetesClient kubernetesClient;
 
@@ -39,19 +39,22 @@ public class WebPageReconciler
   }
 
   InformerEventSource configMapEventSource;
+
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-
-    configMapEventSource = new InformerEventSource<>(InformerConfiguration.from(context,ConfigMap.class)
+    configMapEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, ConfigMap.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
-    var deploymentEventSource = new InformerEventSource<>(InformerConfiguration.from(context,Deployment.class)
+    var deploymentEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, Deployment.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
-            .build(),context);
-    var serviceEventSource = new InformerEventSource<>(InformerConfiguration.from(context,Service.class)
+            .build(), context);
+    var serviceEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, Service.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
-            .build(),context);
-    return List.of(configMapEventSource,deploymentEventSource,serviceEventSource);
+            .build(), context);
+    return List.of(configMapEventSource, deploymentEventSource, serviceEventSource);
   }
 
   @Override
@@ -66,7 +69,8 @@ public class WebPageReconciler
 
 
     ConfigMap desiredHtmlConfigMap = makeDesiredHtmlConfigMap(ns, configMapName, webPage);
-    Deployment desiredDeployment = makeDesiredDeployment(webPage,deploymentName, ns, configMapName);
+    Deployment desiredDeployment =
+        makeDesiredDeployment(webPage, deploymentName, ns, configMapName);
     Service desiredService = makeDesiredService(webPage, ns, desiredDeployment);
 
     var previousConfigMap = context.getSecondaryResource(ConfigMap.class).orElse(null);
@@ -90,17 +94,17 @@ public class WebPageReconciler
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
     if (!match(desiredService, existingService)) {
       log.info(
-              "Creating or updating Deployment {} in {}",
-              desiredDeployment.getMetadata().getName(),
-              ns);
+          "Creating or updating Deployment {} in {}",
+          desiredDeployment.getMetadata().getName(),
+          ns);
       kubernetesClient.services().inNamespace(ns).createOrReplace(desiredService);
     }
 
     if (previousConfigMap != null && !StringUtils.equals(
-          previousConfigMap.getData().get(INDEX_HTML),
-          desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
-        log.info("Restarting pods because HTML has changed in {}", ns);
-        kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
+        previousConfigMap.getData().get(INDEX_HTML),
+        desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
+      log.info("Restarting pods because HTML has changed in {}", ns);
+      kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
     return UpdateControl.updateStatus(webPage);
@@ -119,8 +123,9 @@ public class WebPageReconciler
       return false;
     } else {
       return desiredDeployment.getSpec().getReplicas().equals(deployment.getSpec().getReplicas()) &&
-              desiredDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
-                      .equals(deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+          desiredDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+              .equals(
+                  deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
     }
   }
 
@@ -143,6 +148,7 @@ public class WebPageReconciler
     Service desiredService = loadYaml(Service.class, "service.yaml");
     desiredService.getMetadata().setName(serviceName(webPage));
     desiredService.getMetadata().setNamespace(ns);
+    desiredService.getMetadata().setLabels(lowLevelLabel());
     desiredService
         .getSpec()
         .setSelector(desiredDeployment.getSpec().getTemplate().getMetadata().getLabels());
@@ -150,10 +156,12 @@ public class WebPageReconciler
     return desiredService;
   }
 
-  private Deployment makeDesiredDeployment(WebPage webPage, String deploymentName, String ns, String configMapName) {
+  private Deployment makeDesiredDeployment(WebPage webPage, String deploymentName, String ns,
+      String configMapName) {
     Deployment desiredDeployment = loadYaml(Deployment.class, "deployment.yaml");
     desiredDeployment.getMetadata().setName(deploymentName);
     desiredDeployment.getMetadata().setNamespace(ns);
+    desiredDeployment.getMetadata().setLabels(lowLevelLabel());
     desiredDeployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
     desiredDeployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
     desiredDeployment

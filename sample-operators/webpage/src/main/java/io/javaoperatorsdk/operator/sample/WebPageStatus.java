@@ -38,9 +38,9 @@ public class WebPageStatus extends ObservedGenerationAwareStatus {
   @Override
   public String toString() {
     return "WebPageStatus{" +
-            "htmlConfigMap='" + htmlConfigMap + '\'' +
-            ", areWeGood='" + areWeGood + '\'' +
-            ", errorMessage='" + errorMessage + '\'' +
-            '}';
+        "htmlConfigMap='" + htmlConfigMap + '\'' +
+        ", areWeGood='" + areWeGood + '\'' +
+        ", errorMessage='" + errorMessage + '\'' +
+        '}';
   }
 }

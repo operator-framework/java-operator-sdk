@@ -15,7 +15,7 @@ public class WebPageSpec {
   @Override
   public String toString() {
     return "WebPageSpec{" +
-            "html='" + html + '\'' +
-            '}';
+        "html='" + html + '\'' +
+        '}';
   }
 }

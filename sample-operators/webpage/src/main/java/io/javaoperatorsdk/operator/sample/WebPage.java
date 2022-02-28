@@ -18,8 +18,8 @@ public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
   @Override
   public String toString() {
     return "WebPage{" +
-            "spec=" + spec +
-            ", status=" + status +
-            '}';
+        "spec=" + spec +
+        ", status=" + status +
+        '}';
   }
 }

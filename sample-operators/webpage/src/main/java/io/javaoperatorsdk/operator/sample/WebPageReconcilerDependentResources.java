@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.util.*;
 
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,8 +10,9 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -23,12 +23,14 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 /**
  * Shows how to implement reconciler using standalone dependent resources.
  */
-@ControllerConfiguration(finalizerName = NO_FINALIZER, labelSelector = WebPageReconcilerDependentResources.DEPENDENT_RESOURCE_LABEL_SELECTOR)
+@ControllerConfiguration(finalizerName = NO_FINALIZER,
+    labelSelector = WebPageReconcilerDependentResources.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 public class WebPageReconcilerDependentResources
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private static final Logger log =
+      LoggerFactory.getLogger(WebPageReconcilerDependentResources.class);
   private final KubernetesClient kubernetesClient;
 
   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
@@ -59,7 +61,8 @@ public class WebPageReconcilerDependentResources
     deploymentDR.reconcile(webPage, context);
     serviceDR.reconcile(webPage, context);
 
-    webPage.setStatus(createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
+    webPage.setStatus(
+        createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
     return UpdateControl.updateStatus(webPage);
   }
 
@@ -80,11 +83,12 @@ public class WebPageReconcilerDependentResources
 
   private void createDependentResources(KubernetesClient client) {
     this.configMapDR = new ConfigMapDependentResource();
+    this.configMapDR.setKubernetesClient(client);
     configMapDR.configureWith(new KubernetesDependentResourceConfig()
-            .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.deploymentDR =
-        new KubernetesDependentResource<>() {
+        new CrudKubernetesDependentResource<>() {
 
           @Override
           protected Deployment desired(WebPage webPage, Context context) {
@@ -116,10 +120,12 @@ public class WebPageReconcilerDependentResources
             return Deployment.class;
           }
         };
-    deploymentDR.configureWith(new KubernetesDependentResourceConfig().setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+    deploymentDR.setKubernetesClient(client);
+    deploymentDR.configureWith(new KubernetesDependentResourceConfig()
+        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.serviceDR =
-        new KubernetesDependentResource<>() {
+        new CrudKubernetesDependentResource<>() {
 
           @Override
           protected Service desired(WebPage webPage, Context context) {
@@ -137,7 +143,9 @@ public class WebPageReconcilerDependentResources
             return Service.class;
           }
         };
-    serviceDR.configureWith(new KubernetesDependentResourceConfig().setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+    serviceDR.setKubernetesClient(client);
+    serviceDR.configureWith(new KubernetesDependentResourceConfig()
+        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
   }
 
   private static String configMapName(WebPage nginx) {
@@ -152,9 +160,10 @@ public class WebPageReconcilerDependentResources
     return nginx.getMetadata().getName();
   }
 
-  private class ConfigMapDependentResource extends KubernetesDependentResource<ConfigMap, WebPage>
+  private class ConfigMapDependentResource
+      extends CrudKubernetesDependentResource<ConfigMap, WebPage>
       implements
-      AssociatedSecondaryResourceIdentifier<WebPage>, Updater<ConfigMap, WebPage> {
+      AssociatedSecondaryResourceIdentifier<WebPage> {
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context context) {
