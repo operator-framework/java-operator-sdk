@@ -20,6 +20,9 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
+/**
+ * Shows how to implement reconciler using standalone dependent resources.
+ */
 @ControllerConfiguration(finalizerName = NO_FINALIZER, labelSelector = "!low-level")
 public class WebPageReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
