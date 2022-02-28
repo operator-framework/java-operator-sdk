@@ -27,6 +27,7 @@ public class WebPageOperator {
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
     operator.register(new WebPageReconciler(client));
+    operator.register(new WebPageReconcilerLowLevel(client));
     operator.installShutdownHook();
     operator.start();
 
