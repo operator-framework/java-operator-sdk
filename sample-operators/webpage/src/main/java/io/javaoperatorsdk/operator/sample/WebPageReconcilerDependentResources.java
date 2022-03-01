@@ -148,16 +148,16 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
   }
 
-  private static String configMapName(WebPage nginx) {
+  public static String configMapName(WebPage nginx) {
     return nginx.getMetadata().getName() + "-html";
   }
 
-  private static String deploymentName(WebPage nginx) {
+  public static String deploymentName(WebPage nginx) {
     return nginx.getMetadata().getName();
   }
 
-  private static String serviceName(WebPage nginx) {
-    return nginx.getMetadata().getName();
+  public static String serviceName(WebPage webPage) {
+    return webPage.getMetadata().getName();
   }
 
   private class ConfigMapDependentResource
