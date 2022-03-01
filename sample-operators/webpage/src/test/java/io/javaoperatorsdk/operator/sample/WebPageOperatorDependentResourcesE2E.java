@@ -27,7 +27,7 @@ class WebPageOperatorDependentResourcesE2E extends WebPageOperatorAbstractTest {
               .withConfigurationService(DefaultConfigurationService.instance())
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .build();
-  
+
   @Override
   AbstractOperatorExtension operator() {
     return operator;
