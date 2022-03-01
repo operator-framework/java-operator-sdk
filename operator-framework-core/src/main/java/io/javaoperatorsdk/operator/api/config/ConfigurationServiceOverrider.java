@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
@@ -16,6 +17,7 @@ public class ConfigurationServiceOverrider {
   private Cloner cloner;
   private int timeoutSeconds;
   private boolean closeClientOnStop;
+  private ExecutorService executorService = null;
 
   public ConfigurationServiceOverrider(
       ConfigurationService original) {
@@ -62,6 +64,11 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withCloseClientOnStop(boolean close) {
     this.closeClientOnStop = close;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withExecutorService(ExecutorService executorService) {
+    this.executorService = executorService;
     return this;
   }
 
@@ -119,6 +126,15 @@ public class ConfigurationServiceOverrider {
       @Override
       public boolean closeClientOnStop() {
         return closeClientOnStop;
+      }
+
+      @Override
+      public ExecutorService getExecutorService() {
+        if (executorService != null) {
+          return executorService;
+        } else {
+          return ConfigurationService.super.getExecutorService();
+        }
       }
     };
   }
