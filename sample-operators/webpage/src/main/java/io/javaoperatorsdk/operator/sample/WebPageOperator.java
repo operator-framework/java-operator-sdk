@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,7 @@ public class WebPageOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client, DefaultConfigurationService.instance());
-    if (Arrays.stream(args).anyMatch(arg -> arg.equals("--classic"))) {
+    if ("classic".equals(System.getenv("WEBPAGE_RECONCILER"))) {
       operator.register(new WebPageReconciler(client));
     } else {
       operator.register(new WebPageReconcilerDependentResources(client));

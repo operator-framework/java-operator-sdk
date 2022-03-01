@@ -191,7 +191,7 @@ public class WebPageReconciler
     return configMap;
   }
 
-  private Map<String, String> lowLevelLabel() {
+  public static Map<String, String> lowLevelLabel() {
     Map<String, String> labels = new HashMap<>();
     labels.put(LOW_LEVEL_LABEL_KEY, "true");
     return labels;

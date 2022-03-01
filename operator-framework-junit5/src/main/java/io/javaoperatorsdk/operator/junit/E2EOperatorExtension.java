@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
@@ -107,6 +108,13 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
 
     public Builder withDeploymentTimeout(Duration value) {
       deploymentTimeout = value;
+      return this;
+    }
+
+    public Builder withOperatorDeployment(List<HasMetadata> hm,
+        Consumer<List<HasMetadata>> modifications) {
+      modifications.accept(hm);
+      operatorDeployment.addAll(hm);
       return this;
     }
 
