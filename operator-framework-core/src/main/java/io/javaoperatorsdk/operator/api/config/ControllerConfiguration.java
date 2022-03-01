@@ -68,8 +68,7 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     return namespaces != null
         && namespaces.size() == 1
-        && namespaces.contains(
-            Constants.WATCH_CURRENT_NAMESPACE);
+        && namespaces.contains(Constants.WATCH_CURRENT_NAMESPACE);
   }
 
   /**
@@ -101,15 +100,17 @@ public interface ControllerConfiguration<R extends HasMetadata> {
   default void setConfigurationService(ConfigurationService service) {}
 
   default boolean useFinalizer() {
-    return !Constants.NO_FINALIZER
-        .equals(getFinalizer());
+    return !Constants.NO_FINALIZER.equals(getFinalizer());
   }
 
   /**
-   * Allow controllers to filter events before they are provided to the
-   * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}. Note that the provided
-   * filter is combined with {@link #isGenerationAware()} to compute the final set of filters that
-   * should be applied;
+   * Allow controllers to filter events before they are passed to the
+   * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}.
+   *
+   * <p>
+   * Resource event filters only applies on events of the main custom resource. Not on events from
+   * other event sources nor the periodic events.
+   * </p>
    *
    * @return filter
    */
