@@ -1,4 +1,6 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.dependent;
+
+import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
 
 public class ResourcePollerConfig {
 

@@ -105,4 +105,8 @@ public class DependentResourceManager<P extends HasMetadata>
       throw new IllegalStateException(e);
     }
   }
+
+  public List<DependentResource> getDependents() {
+    return dependents;
+  }
 }
