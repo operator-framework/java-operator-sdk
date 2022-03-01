@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.concurrent.Executors;
+
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class PureJavaApplicationRunner {
 
