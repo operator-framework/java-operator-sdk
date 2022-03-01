@@ -111,7 +111,7 @@ public class WebPageReconciler
   private WebPageStatus createStatus(String configMapName) {
     WebPageStatus status = new WebPageStatus();
     status.setHtmlConfigMap(configMapName);
-    status.setAreWeGood("Yes!");
+    status.setAreWeGood(true);
     status.setErrorMessage(null);
     return status;
   }
