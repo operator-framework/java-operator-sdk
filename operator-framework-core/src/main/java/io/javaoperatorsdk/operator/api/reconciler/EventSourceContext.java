@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
  *
  * @param <P> the type associated with the primary resource that is handled by your reconciler
  */
-public class EventSourceContext<P extends HasMetadata> extends MapAttributeHolder {
+public class EventSourceContext<P extends HasMetadata> {
 
   private final ResourceCache<P> primaryCache;
   private final ConfigurationService configurationService;

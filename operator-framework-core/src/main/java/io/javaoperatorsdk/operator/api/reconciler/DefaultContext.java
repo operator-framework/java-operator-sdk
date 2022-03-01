@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 
-public class DefaultContext<P extends HasMetadata> extends MapAttributeHolder implements Context {
+public class DefaultContext<P extends HasMetadata> implements Context {
 
   private final RetryInfo retryInfo;
   private final Controller<P> controller;
