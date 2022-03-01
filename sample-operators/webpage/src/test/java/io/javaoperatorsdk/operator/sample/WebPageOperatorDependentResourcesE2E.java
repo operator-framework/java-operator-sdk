@@ -1,3 +1,5 @@
+package io.javaoperatorsdk.operator.sample;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.time.Duration;
@@ -14,9 +16,6 @@ import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
-import io.javaoperatorsdk.operator.sample.WebPage;
-import io.javaoperatorsdk.operator.sample.WebPageReconcilerDependentResources;
-import io.javaoperatorsdk.operator.sample.WebPageSpec;
 
 import static org.awaitility.Awaitility.await;
 

@@ -16,6 +16,7 @@ jobs:
         sample_dir:
           - "sample-operators/mysql-schema"
           - "sample-operators/tomcat-operator"
+          - "sample-operators/webpage"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
