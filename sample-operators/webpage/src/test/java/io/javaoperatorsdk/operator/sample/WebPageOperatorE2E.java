@@ -14,7 +14,8 @@ import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 
-import static io.javaoperatorsdk.operator.sample.WebPageReconciler.LOW_LEVEL_LABEL_KEY;
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV_VALUE;
 import static io.javaoperatorsdk.operator.sample.WebPageReconciler.lowLevelLabel;
 
 class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
@@ -41,7 +42,8 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
                     if (container.getEnv() == null) {
                       container.setEnv(new ArrayList<>());
                     }
-                    container.getEnv().add(new EnvVar(LOW_LEVEL_LABEL_KEY, "classic", null));
+                    container.getEnv().add(
+                        new EnvVar(WEBPAGE_RECONCILER_ENV, WEBPAGE_RECONCILER_ENV_VALUE, null));
                   })
               .build();
 
