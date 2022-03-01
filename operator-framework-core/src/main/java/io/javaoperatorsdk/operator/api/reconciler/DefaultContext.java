@@ -21,7 +21,7 @@ public class DefaultContext<P extends HasMetadata> extends MapAttributeHolder im
     this.primaryResource = primaryResource;
     this.configurationService = controller.getConfiguration().getConfigurationService();
     this.managedDependentResourceContext = new ManagedDependentResourceContext(
-        controller.getDependents().getDependents());
+        controller.getDependents());
   }
 
   @Override

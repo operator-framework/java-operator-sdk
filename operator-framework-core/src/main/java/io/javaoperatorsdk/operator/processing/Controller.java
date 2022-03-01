@@ -29,6 +29,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.DependentResourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -282,7 +283,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     }
   }
 
-  public DependentResourceManager<R> getDependents() {
-    return dependents;
+  public List<DependentResource> getDependents() {
+    return dependents.getDependents();
   }
 }
