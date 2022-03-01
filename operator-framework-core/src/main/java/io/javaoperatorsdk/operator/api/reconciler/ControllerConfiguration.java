@@ -50,7 +50,10 @@ public @interface ControllerConfiguration {
   String labelSelector() default Constants.EMPTY_STRING;
 
   /**
-   * Optional list of classes providing custom {@link ResourceEventFilter}.
+   * <p>
+   * Resource event filters only applies on events of the main custom resource. Not on events from
+   * other event sources nor the periodic events.
+   * </p>
    *
    * @return the list of event filters.
    */
