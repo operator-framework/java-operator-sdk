@@ -71,7 +71,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
       }
     }
 
-    LOGGER.debug("Deploying the operator into Kubernetes");
+    LOGGER.debug("Deploying the operator into Kubernetes. Target namespace: {}", namespace);
     operatorDeployment.forEach(hm -> {
       hm.getMetadata().setNamespace(namespace);
       if (hm.getKind().toLowerCase(Locale.ROOT).equals("clusterrolebinding")) {
@@ -89,6 +89,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
     kubernetesClient
         .resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    LOGGER.debug("Operator resources deployed.");
   }
 
   @Override
