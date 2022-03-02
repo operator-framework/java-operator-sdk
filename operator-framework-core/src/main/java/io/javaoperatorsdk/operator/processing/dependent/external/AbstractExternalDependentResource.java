@@ -22,4 +22,18 @@ public class AbstractExternalDependentResource<R, P extends HasMetadata>
     super.delete(primary, context);
     cache.remove(ResourceID.fromResource(primary));
   }
+
+  @Override
+  protected R handleCreate(R desired, P primary, Context context) {
+    var res = this.creator.create(desired, primary, context);
+    cache.put(ResourceID.fromResource(primary), res);
+    return res;
+  }
+
+  @Override
+  protected R handleUpdate(R actual, R desired, P primary, Context context) {
+    var res = updater.update(actual, desired, primary, context);
+    cache.put(ResourceID.fromResource(primary), res);
+    return res;
+  }
 }

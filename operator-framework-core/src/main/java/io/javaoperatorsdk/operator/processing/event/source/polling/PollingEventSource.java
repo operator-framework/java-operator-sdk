@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
 /**
  * <p>
@@ -40,7 +40,8 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
  * @param <R> type of the polled resource
  * @param <P> primary resource type
  */
-public class PollingEventSource<R, P extends HasMetadata> extends CachingEventSource<R, P> {
+public class PollingEventSource<R, P extends HasMetadata>
+    extends ExternalResourceCachingEventSource<R, P> {
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 

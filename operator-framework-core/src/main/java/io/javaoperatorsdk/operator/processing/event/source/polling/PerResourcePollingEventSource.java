@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
@@ -29,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * @param <R> related custom resource
  */
 public class PerResourcePollingEventSource<T, R extends HasMetadata>
-    extends CachingEventSource<T, R>
+    extends ExternalResourceCachingEventSource<T, R>
     implements ResourceEventAware<R> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);

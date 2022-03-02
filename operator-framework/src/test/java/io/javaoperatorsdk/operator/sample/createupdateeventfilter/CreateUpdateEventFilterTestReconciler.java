@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
@@ -41,35 +42,39 @@ public class CreateUpdateEventFilterTestReconciler
     if (configMap == null) {
       var configMapToCreate = createConfigMap(resource);
       try {
-        informerEventSource.prepareForCreateOrUpdateEventFiltering(configMapToCreate);
+        informerEventSource.prepareForCreateOrUpdateEventFiltering(
+            ResourceID.fromResource(configMapToCreate), configMapToCreate);
         configMap =
             client
                 .configMaps()
                 .inNamespace(resource.getMetadata().getNamespace())
                 .create(configMapToCreate);
-        informerEventSource.handleRecentResourceCreate(configMap);
+        informerEventSource.handleRecentResourceCreate(ResourceID.fromResource(configMapToCreate),
+            configMap);
       } catch (RuntimeException e) {
         informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(configMapToCreate);
+            .cleanupOnCreateOrUpdateEventFiltering(ResourceID.fromResource(configMapToCreate),
+                configMapToCreate);
         throw e;
       }
     } else {
+      ResourceID resourceID = ResourceID.fromResource(configMap);
       if (!Objects.equals(
           configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
         try {
           informerEventSource
-              .prepareForCreateOrUpdateEventFiltering(configMap);
+              .prepareForCreateOrUpdateEventFiltering(resourceID, configMap);
           var newConfigMap =
               client
                   .configMaps()
                   .inNamespace(resource.getMetadata().getNamespace())
                   .replace(configMap);
-          informerEventSource.handleRecentResourceUpdate(
-              newConfigMap, configMap.getMetadata().getResourceVersion());
+          informerEventSource.handleRecentResourceUpdate(resourceID,
+              newConfigMap, configMap);
         } catch (RuntimeException e) {
           informerEventSource
-              .cleanupOnCreateOrUpdateEventFiltering(configMap);
+              .cleanupOnCreateOrUpdateEventFiltering(resourceID, configMap);
           throw e;
         }
       }

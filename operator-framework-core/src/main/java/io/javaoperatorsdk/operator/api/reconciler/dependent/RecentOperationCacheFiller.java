@@ -1,8 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
 public interface RecentOperationCacheFiller<R> {
 
-  void handleRecentResourceCreate(R resource);
+  void handleRecentResourceCreate(ResourceID resourceID, R resource);
 
-  void handleRecentResourceUpdate(R resource, String previousResourceVersion);
+  void handleRecentResourceUpdate(ResourceID resourceID, R resource, R previousResourceVersion);
 }

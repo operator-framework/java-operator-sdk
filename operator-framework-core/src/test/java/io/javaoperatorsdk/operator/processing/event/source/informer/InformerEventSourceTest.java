@@ -96,9 +96,11 @@ class InformerEventSourceTest {
 
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(testDeployment);
+        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+            testDeployment);
     informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.handleRecentResourceUpdate(testDeployment, PREV_RESOURCE_VERSION);
+    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+        testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
@@ -110,9 +112,11 @@ class InformerEventSourceTest {
     var testDeployment = testDeployment();
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(testDeployment);
+        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+            testDeployment);
     informerEventSource.onAdd(testDeployment);
-    informerEventSource.handleRecentResourceCreate(testDeployment);
+    informerEventSource.handleRecentResourceCreate(ResourceID.fromResource(testDeployment),
+        testDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
@@ -127,10 +131,12 @@ class InformerEventSourceTest {
     nextTestDeployment.getMetadata().setResourceVersion(NEXT_RESOURCE_VERSION);
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(testDeployment);
+        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+            testDeployment);
     informerEventSource.onUpdate(prevTestDeployment, testDeployment);
     informerEventSource.onUpdate(testDeployment, nextTestDeployment);
-    informerEventSource.handleRecentResourceUpdate(testDeployment, PREV_RESOURCE_VERSION);
+    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+        testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
@@ -145,10 +151,12 @@ class InformerEventSourceTest {
     prevPrevTestDeployment.getMetadata().setResourceVersion("-1");
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(testDeployment);
+        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+            testDeployment);
     informerEventSource.onUpdate(prevPrevTestDeployment, prevTestDeployment);
     informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.handleRecentResourceUpdate(testDeployment, PREV_RESOURCE_VERSION);
+    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+        testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
@@ -157,10 +165,14 @@ class InformerEventSourceTest {
   @Test
   void putsResourceOnTempCacheIfNoEventRecorded() {
     var testDeployment = testDeployment();
+    var prevTestDeployment = testDeployment();
+    prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(testDeployment);
-    informerEventSource.handleRecentResourceUpdate(testDeployment, PREV_RESOURCE_VERSION);
+        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+            testDeployment);
+    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+        testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(1)).unconditionallyCacheResource(any());
@@ -175,9 +187,11 @@ class InformerEventSourceTest {
     prevPrevTestDeployment.getMetadata().setResourceVersion("-1");
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(testDeployment);
+        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+            testDeployment);
     informerEventSource.onUpdate(prevPrevTestDeployment, prevTestDeployment);
-    informerEventSource.handleRecentResourceUpdate(testDeployment, PREV_RESOURCE_VERSION);
+    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+        testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(1)).unconditionallyCacheResource(any());

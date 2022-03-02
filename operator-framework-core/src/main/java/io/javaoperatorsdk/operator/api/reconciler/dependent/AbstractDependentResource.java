@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
@@ -58,41 +59,43 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  public R handleCreate(R desired, P primary, Context context) {
+  protected R handleCreate(R desired, P primary, Context context) {
+    ResourceID resourceID = ResourceID.fromResource(primary);
     R created = null;
     try {
       if (isRecentOperationEventFilter()) {
-        getRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(desired);
+        getRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
       }
       created = creator.create(desired, primary, context);
       if (isRecentOperationCacheFiller()) {
-        getRecentOperationCacheFiller().handleRecentResourceCreate(created);
+        getRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
       }
       return created;
     } catch (RuntimeException e) {
       if (isRecentOperationEventFilter()) {
         getRecentOperationEventFilter()
-            .cleanupOnCreateOrUpdateEventFiltering(created == null ? desired : created);
+            .cleanupOnCreateOrUpdateEventFiltering(resourceID, created == null ? desired : created);
       }
       throw e;
     }
   }
 
-  public R handleUpdate(R actual, R desired, P primary, Context context) {
+  protected R handleUpdate(R actual, R desired, P primary, Context context) {
+    ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = null;
     try {
       if (isRecentOperationEventFilter()) {
-        getRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(desired);
+        getRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
       }
       updated = updater.update(actual, desired, primary, context);
       if (isRecentOperationCacheFiller()) {
-        getRecentOperationCacheFiller().handleRecentResourceCreate(updated);
+        getRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated, actual);
       }
       return updated;
     } catch (RuntimeException e) {
       if (isRecentOperationEventFilter()) {
         getRecentOperationEventFilter()
-            .cleanupOnCreateOrUpdateEventFiltering(updated == null ? desired : updated);
+            .cleanupOnCreateOrUpdateEventFiltering(resourceID, updated == null ? desired : updated);
       }
       throw e;
     }

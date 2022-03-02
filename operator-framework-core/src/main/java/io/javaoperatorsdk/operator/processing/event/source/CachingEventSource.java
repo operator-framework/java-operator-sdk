@@ -5,7 +5,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
@@ -50,28 +49,7 @@ public abstract class CachingEventSource<R, P extends HasMetadata>
     return cache.list(predicate);
   }
 
-  protected void handleDelete(ResourceID relatedResourceID) {
-    if (!isRunning()) {
-      return;
-    }
-    var cachedValue = cache.get(relatedResourceID);
-    cache.remove(relatedResourceID);
-    // we only propagate event if the resource was previously in cache
-    if (cachedValue.isPresent()) {
-      getEventHandler().handleEvent(new Event(relatedResourceID));
-    }
-  }
 
-  protected void handleEvent(R value, ResourceID relatedResourceID) {
-    if (!isRunning()) {
-      return;
-    }
-    var cachedValue = cache.get(relatedResourceID);
-    if (cachedValue.map(v -> !v.equals(value)).orElse(true)) {
-      cache.put(relatedResourceID, value);
-      getEventHandler().handleEvent(new Event(relatedResourceID));
-    }
-  }
 
   protected UpdatableCache<R> initCache() {
     return new ConcurrentHashMapCache<>();
