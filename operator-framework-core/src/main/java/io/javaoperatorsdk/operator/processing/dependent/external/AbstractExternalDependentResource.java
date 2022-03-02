@@ -7,12 +7,15 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
+import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
+/** A base class for external dependent resources which don't have an event source. */
 public class AbstractExternalDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
-  private final ConcurrentHashMapCache<R> cache = new ConcurrentHashMapCache<>();
+  private final UpdatableCache<R> cache = new ConcurrentHashMapCache<>();
 
+  // todo do we always want this? this should be just in case it's not a reconciliation
   @Override
   public Optional<R> getResource(HasMetadata primaryResource) {
     return cache.get(ResourceID.fromResource(primaryResource));
