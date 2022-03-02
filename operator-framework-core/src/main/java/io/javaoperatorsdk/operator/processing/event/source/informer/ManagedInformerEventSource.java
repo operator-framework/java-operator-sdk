@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
@@ -20,7 +21,7 @@ import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends CachingEventSource<R, P>
-    implements ResourceEventHandler<R>, ResourceCache<R> {
+    implements ResourceEventHandler<R>, ResourceCache<R>, RecentOperationCacheFiller<R> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 

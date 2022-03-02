@@ -37,19 +37,19 @@ import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
  * cache.</li>
  * </ul>
  *
- * @param <T> type of the polled resource
+ * @param <R> type of the polled resource
  * @param <P> primary resource type
  */
-public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSource<T, P> {
+public class PollingEventSource<R, P extends HasMetadata> extends CachingEventSource<R, P> {
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
   private final Timer timer = new Timer();
-  private final Supplier<Map<ResourceID, T>> supplierToPoll;
+  private final Supplier<Map<ResourceID, R>> supplierToPoll;
   private final long period;
 
-  public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, Class<T> resourceClass) {
+  public PollingEventSource(Supplier<Map<ResourceID, R>> supplier,
+      long period, Class<R> resourceClass) {
     super(resourceClass);
     this.supplierToPoll = supplier;
     this.period = period;
@@ -77,7 +77,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
     cache.keys().filter(e -> !values.containsKey(e)).forEach(super::handleDelete);
   }
 
-  public void put(ResourceID key, T resource) {
+  public void put(ResourceID key, R resource) {
     cache.put(key, resource);
   }
 
@@ -94,7 +94,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
    * @return related resource
    */
   @Override
-  public Optional<T> getAssociated(P primary) {
+  public Optional<R> getAssociated(P primary) {
     return getCachedValue(ResourceID.fromResource(primary));
   }
 

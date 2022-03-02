@@ -4,9 +4,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 @SuppressWarnings("rawtypes")
+@FunctionalInterface
 public interface Creator<R, P extends HasMetadata> {
-  Creator NOOP = (desired, primary, context) -> {
-  };
+  Creator NOOP = (desired, primary, context) -> null;
 
-  void create(R desired, P primary, Context context);
+  R create(R desired, P primary, Context context);
 }

@@ -91,30 +91,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.addOwnerReference = addOwnerReference;
   }
 
-  public void create(R target, P primary, Context context) {
-    var resourceID = ResourceID.fromResource(target);
-    try {
-      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
-      var created = prepare(target, primary, "Creating").create(target);
-      informerEventSource.handleRecentResourceCreate(created);
-    } catch (RuntimeException e) {
-      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
-      throw e;
-    }
+  public R create(R target, P primary, Context context) {
+    return prepare(target, primary, "Creating").create(target);
   }
 
-  public void update(R actual, R target, P primary, Context context) {
-    var resourceID = ResourceID.fromResource(target);
-    try {
-      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
-      var updated = prepare(target, primary, "Updating").replace(updatedActual);
-      informerEventSource.handleRecentResourceUpdate(updated,
-          actual.getMetadata().getResourceVersion());
-    } catch (RuntimeException e) {
-      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
-      throw e;
-    }
+  public R update(R actual, R target, P primary, Context context) {
+    var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+    return prepare(target, primary, "Updating").replace(updatedActual);
   }
 
   public boolean match(R actualResource, R desiredResource, Context context) {
@@ -143,7 +126,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public EventSource eventSource(EventSourceContext<P> context) {
+  public EventSource initEventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
@@ -172,5 +155,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
+  }
+
+  @Override
+  public EventSource getEventSource() {
+    return informerEventSource;
   }
 }

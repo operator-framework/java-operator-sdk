@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -63,7 +64,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
-    implements ResourceCache<R>, ResourceEventHandler<R> {
+    implements ResourceCache<R>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -216,7 +217,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID) {
+  @Override
+  public synchronized void prepareForCreateOrUpdateEventFiltering(R resource) {
+    var resourceID = ResourceID.fromResource(resource);
     log.info("Starting event recording for: {}", resourceID);
     eventRecorder.startEventRecording(resourceID);
   }
@@ -225,9 +228,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * Mean to be called to clean up in case of an exception from the client. Usually in a catch
    * block.
    * 
-   * @param resourceID of the resource
+   * @param resource handled by the informer
    */
-  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
+  public synchronized void cleanupOnCreateOrUpdateEventFiltering(R resource) {
+    var resourceID = ResourceID.fromResource(resource);
     log.info("Stopping event recording for: {}", resourceID);
     eventRecorder.stopEventRecording(resourceID);
   }

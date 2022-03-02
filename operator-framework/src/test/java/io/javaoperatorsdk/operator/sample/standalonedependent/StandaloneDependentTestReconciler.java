@@ -33,7 +33,7 @@ public class StandaloneDependentTestReconciler
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return List.of(deploymentDependent.eventSource(context));
+    return List.of(deploymentDependent.initEventSource(context));
   }
 
   @Override

@@ -38,6 +38,7 @@ public class SchemaDependentResource
 
   private MySQLDbConfig dbConfig;
   private int pollPeriod = 500;
+  private PerResourcePollingEventSource<Schema, MySQLSchema> perResourcePollingEventSource;
 
   @Override
   public void configureWith(ResourcePollerConfig config) {
@@ -46,13 +47,20 @@ public class SchemaDependentResource
   }
 
   @Override
-  public EventSource eventSource(EventSourceContext<MySQLSchema> context) {
+  public EventSource initEventSource(EventSourceContext<MySQLSchema> context) {
     if (dbConfig == null) {
       dbConfig = MySQLDbConfig.loadFromEnvironmentVars();
     }
-    return new PerResourcePollingEventSource<>(
+    perResourcePollingEventSource = new PerResourcePollingEventSource<>(
         new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), pollPeriod,
         Schema.class);
+
+    return perResourcePollingEventSource;
+  }
+
+  @Override
+  public EventSource getEventSource() {
+    return perResourcePollingEventSource;
   }
 
   @Override
@@ -61,12 +69,12 @@ public class SchemaDependentResource
   }
 
   @Override
-  public void create(Schema target, MySQLSchema mySQLSchema, Context context) {
+  public Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
     try (Connection connection = getConnection()) {
       Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
       var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
       var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
-      final var schema = SchemaService.createSchemaAndRelatedUser(
+      return SchemaService.createSchemaAndRelatedUser(
           connection,
           target.getName(),
           target.getCharacterSet(), username, password);

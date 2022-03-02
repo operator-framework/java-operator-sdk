@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
@@ -42,8 +41,7 @@ public class CreateUpdateEventFilterTestReconciler
     if (configMap == null) {
       var configMapToCreate = createConfigMap(resource);
       try {
-        informerEventSource.prepareForCreateOrUpdateEventFiltering(
-            ResourceID.fromResource(configMapToCreate));
+        informerEventSource.prepareForCreateOrUpdateEventFiltering(configMapToCreate);
         configMap =
             client
                 .configMaps()
@@ -52,7 +50,7 @@ public class CreateUpdateEventFilterTestReconciler
         informerEventSource.handleRecentResourceCreate(configMap);
       } catch (RuntimeException e) {
         informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(ResourceID.fromResource(configMapToCreate));
+            .cleanupOnCreateOrUpdateEventFiltering(configMapToCreate);
         throw e;
       }
     } else {
@@ -61,7 +59,7 @@ public class CreateUpdateEventFilterTestReconciler
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
         try {
           informerEventSource
-              .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(configMap));
+              .prepareForCreateOrUpdateEventFiltering(configMap);
           var newConfigMap =
               client
                   .configMaps()
@@ -71,7 +69,7 @@ public class CreateUpdateEventFilterTestReconciler
               newConfigMap, configMap.getMetadata().getResourceVersion());
         } catch (RuntimeException e) {
           informerEventSource
-              .cleanupOnCreateOrUpdateEventFiltering(ResourceID.fromResource(configMap));
+              .cleanupOnCreateOrUpdateEventFiltering(configMap);
           throw e;
         }
       }

@@ -45,9 +45,9 @@ public class WebPageReconcilerDependentResources
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     return List.of(
-        configMapDR.eventSource(context),
-        deploymentDR.eventSource(context),
-        serviceDR.eventSource(context));
+        configMapDR.initEventSource(context),
+        deploymentDR.initEventSource(context),
+        serviceDR.initEventSource(context));
   }
 
   @Override
@@ -180,8 +180,8 @@ public class WebPageReconcilerDependentResources
     }
 
     @Override
-    public void update(ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
-      super.update(actual, target, primary, context);
+    public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
+      var res = super.update(actual, target, primary, context);
       var ns = actual.getMetadata().getNamespace();
       log.info("Restarting pods because HTML has changed in {}", ns);
       kubernetesClient
@@ -189,6 +189,7 @@ public class WebPageReconcilerDependentResources
           .inNamespace(ns)
           .withLabel("app", deploymentName(primary))
           .delete();
+      return res;
     }
 
     @Override

@@ -54,7 +54,7 @@ public class DependentResourceManager<P extends HasMetadata>
                   final var dependentResource = createAndConfigureFrom(drc, context.getClient());
                   if (dependentResource instanceof EventSourceProvider) {
                     EventSourceProvider provider = (EventSourceProvider) dependentResource;
-                    sources.add(provider.eventSource(context));
+                    sources.add(provider.initEventSource(context));
                   }
                   return dependentResource;
                 })
