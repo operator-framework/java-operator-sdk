@@ -20,13 +20,13 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class AbstractSimpleExternalDependentResourceTest {
+class AbstractSimpleDependentResourceTest {
 
   UpdatableCache<SampleExternalResource> updatableCacheMock = mock(UpdatableCache.class);
   Supplier<SampleExternalResource> supplierMock = mock(Supplier.class);
 
-  SimpleExternalDependentResource simpleDependentResource =
-      new SimpleExternalDependentResource(updatableCacheMock, supplierMock);
+  SimpleDependentResource simpleDependentResource =
+      new SimpleDependentResource(updatableCacheMock, supplierMock);
 
   @BeforeEach
   void setup() {
@@ -35,7 +35,7 @@ class AbstractSimpleExternalDependentResourceTest {
 
   @Test
   void getsTheResourceFromSupplyIfReconciling() {
-    simpleDependentResource = new SimpleExternalDependentResource(supplierMock);
+    simpleDependentResource = new SimpleDependentResource(supplierMock);
 
     simpleDependentResource.reconcile(TestUtils.testCustomResource1(), null);
 
@@ -87,19 +87,19 @@ class AbstractSimpleExternalDependentResourceTest {
     verify(updatableCacheMock, times(1)).remove(any());
   }
 
-  private class SimpleExternalDependentResource
-      extends AbstractSimpleExternalDependentResource<SampleExternalResource, TestCustomResource>
+  private class SimpleDependentResource
+      extends AbstractSimpleDependentResource<SampleExternalResource, TestCustomResource>
       implements Creator<SampleExternalResource, TestCustomResource>,
       Updater<SampleExternalResource, TestCustomResource>,
       Deleter<TestCustomResource> {
 
     private Supplier<SampleExternalResource> supplier;
 
-    public SimpleExternalDependentResource(Supplier<SampleExternalResource> supplier) {
+    public SimpleDependentResource(Supplier<SampleExternalResource> supplier) {
       this.supplier = supplier;
     }
 
-    public SimpleExternalDependentResource(
+    public SimpleDependentResource(
         UpdatableCache<SampleExternalResource> cache, Supplier<SampleExternalResource> supplier) {
       super(cache);
       this.supplier = supplier;

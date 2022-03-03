@@ -5,19 +5,19 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
-import static io.javaoperatorsdk.operator.processing.dependent.external.PollingExternalDependentResource.DEFAULT_POLLING_PERIOD;
+import static io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource.DEFAULT_POLLING_PERIOD;
 
-public abstract class PerResourcePollingExternalDependentResource<R, P extends HasMetadata>
-    extends AbstractExternalCachingDependentResource<R, P>
+public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>
+    extends AbstractCachingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceSupplier<R, P> {
 
   protected long pollingPeriod;
 
-  public PerResourcePollingExternalDependentResource() {
+  public PerResourcePollingDependentResource() {
     this(DEFAULT_POLLING_PERIOD);
   }
 
-  public PerResourcePollingExternalDependentResource(long pollingPeriod) {
+  public PerResourcePollingDependentResource(long pollingPeriod) {
     this.pollingPeriod = pollingPeriod;
   }
 
@@ -28,7 +28,7 @@ public abstract class PerResourcePollingExternalDependentResource<R, P extends H
     return eventSource;
   }
 
-  public PerResourcePollingExternalDependentResource<R, P> setPollingPeriod(long pollingPeriod) {
+  public PerResourcePollingDependentResource<R, P> setPollingPeriod(long pollingPeriod) {
     this.pollingPeriod = pollingPeriod;
     return this;
   }

@@ -10,18 +10,18 @@ import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCach
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 /** A base class for external dependent resources that don't have an event source. */
-public abstract class AbstractSimpleExternalDependentResource<R, P extends HasMetadata>
+public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
   // cache serves only to keep the resource readable again until next reconciliation when the
   // new resource is read again.
   protected final UpdatableCache<R> cache;
 
-  public AbstractSimpleExternalDependentResource() {
+  public AbstractSimpleDependentResource() {
     this(new ConcurrentHashMapCache<>());
   }
 
-  public AbstractSimpleExternalDependentResource(UpdatableCache<R> cache) {
+  public AbstractSimpleDependentResource(UpdatableCache<R> cache) {
     this.cache = cache;
   }
 

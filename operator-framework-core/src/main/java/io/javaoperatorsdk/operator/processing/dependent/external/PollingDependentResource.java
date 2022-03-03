@@ -9,17 +9,17 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
-public abstract class PollingExternalDependentResource<R, P extends HasMetadata>
-    extends AbstractExternalCachingDependentResource<R, P> implements Supplier<Map<ResourceID, R>> {
+public abstract class PollingDependentResource<R, P extends HasMetadata>
+    extends AbstractCachingDependentResource<R, P> implements Supplier<Map<ResourceID, R>> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;
   protected long pollingPeriod;
 
-  public PollingExternalDependentResource() {
+  public PollingDependentResource() {
     this(DEFAULT_POLLING_PERIOD);
   }
 
-  public PollingExternalDependentResource(long pollingPeriod) {
+  public PollingDependentResource(long pollingPeriod) {
     this.pollingPeriod = pollingPeriod;
   }
 
@@ -29,7 +29,7 @@ public abstract class PollingExternalDependentResource<R, P extends HasMetadata>
     return eventSource;
   }
 
-  public PollingExternalDependentResource<R, P> setPollingPeriod(long pollingPeriod) {
+  public PollingDependentResource<R, P> setPollingPeriod(long pollingPeriod) {
     this.pollingPeriod = pollingPeriod;
     return this;
   }

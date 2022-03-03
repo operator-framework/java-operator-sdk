@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-public abstract class AbstractExternalCachingDependentResource<R, P extends HasMetadata>
+public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> implements EventSourceProvider<P> {
 
   protected ExternalResourceCachingEventSource<R, P> eventSource;

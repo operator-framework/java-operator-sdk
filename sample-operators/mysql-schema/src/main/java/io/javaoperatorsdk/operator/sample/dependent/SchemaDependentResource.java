@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingExternalDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.sample.*;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
@@ -25,7 +25,7 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static java.lang.String.format;
 
 public class SchemaDependentResource
-    extends PerResourcePollingExternalDependentResource<Schema, MySQLSchema>
+    extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>,
