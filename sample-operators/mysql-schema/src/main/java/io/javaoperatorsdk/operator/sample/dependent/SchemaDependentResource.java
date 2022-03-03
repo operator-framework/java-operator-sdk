@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingExternalDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.*;
@@ -28,7 +28,7 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static java.lang.String.format;
 
 public class SchemaDependentResource
-    extends AbstractDependentResource<Schema, MySQLSchema>
+    extends PerResourcePollingExternalDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>,
@@ -102,9 +102,8 @@ public class SchemaDependentResource
     }
   }
 
-  // todo this should read the resource from event source?
   @Override
-  public Optional<Schema> getResource(MySQLSchema primaryResource) {
+  public Optional<Schema> getSupplierResource(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
       var schema =
           SchemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);

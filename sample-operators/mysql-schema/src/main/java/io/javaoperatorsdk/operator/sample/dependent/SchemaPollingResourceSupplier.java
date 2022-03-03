@@ -18,7 +18,7 @@ public class SchemaPollingResourceSupplier
   }
 
   @Override
-  public Optional<Schema> getResource(MySQLSchema resource) {
+  public Optional<Schema> getSupplierResource(MySQLSchema resource) {
     return schemaService.getSchema(resource.getMetadata().getName());
   }
 }

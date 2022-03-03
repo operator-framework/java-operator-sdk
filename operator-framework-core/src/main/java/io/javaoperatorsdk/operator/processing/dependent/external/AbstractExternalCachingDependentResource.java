@@ -20,8 +20,7 @@ public abstract class AbstractExternalCachingDependentResource<R, P extends HasM
     return null;
   }
 
-  @Override
-  public Optional<R> getResource(P primaryResource) {
+  public Optional<R> getSupplierResource(P primaryResource) {
     return eventSource.getAssociated(primaryResource);
   }
 
@@ -32,5 +31,10 @@ public abstract class AbstractExternalCachingDependentResource<R, P extends HasM
 
   protected Class<R> resourceType() {
     return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
+  }
+
+  @Override
+  public Optional<R> getResource(P primaryResource) {
+    return eventSource.getAssociated(primaryResource);
   }
 }

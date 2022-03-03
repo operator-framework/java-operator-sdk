@@ -58,7 +58,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   private void pollForResource(P resource) {
-    var value = resourceSupplier.getResource(resource);
+    var value = resourceSupplier.getSupplierResource(resource);
     var resourceID = ResourceID.fromResource(resource);
     if (value.isEmpty()) {
       super.handleDelete(resourceID);
@@ -70,7 +70,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private Optional<R> getAndCacheResource(ResourceID resourceID) {
     var resource = resourceCache.get(resourceID);
     if (resource.isPresent()) {
-      var value = resourceSupplier.getResource(resource.get());
+      var value = resourceSupplier.getSupplierResource(resource.get());
       value.ifPresent(v -> cache.put(resourceID, v));
       return value;
     }
@@ -153,7 +153,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   public interface ResourceSupplier<R, P> {
-    Optional<R> getResource(P resource);
+    Optional<R> getSupplierResource(P resource);
   }
 
   @Override
