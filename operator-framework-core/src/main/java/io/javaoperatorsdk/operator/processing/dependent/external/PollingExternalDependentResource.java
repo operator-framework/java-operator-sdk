@@ -9,12 +9,11 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
-// todo configure with for polling
 public abstract class PollingExternalDependentResource<R, P extends HasMetadata>
     extends AbstractExternalCachingDependentResource<R, P> implements Supplier<Map<ResourceID, R>> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;
-  private long pollingPeriod;
+  protected long pollingPeriod;
 
   public PollingExternalDependentResource() {
     this(DEFAULT_POLLING_PERIOD);

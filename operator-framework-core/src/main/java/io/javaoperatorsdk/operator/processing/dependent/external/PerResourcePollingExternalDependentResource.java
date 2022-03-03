@@ -5,12 +5,13 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
+import static io.javaoperatorsdk.operator.processing.dependent.external.PollingExternalDependentResource.DEFAULT_POLLING_PERIOD;
+
 // todo configure with for polling
 public abstract class PerResourcePollingExternalDependentResource<R, P extends HasMetadata>
     extends AbstractExternalCachingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceSupplier<R, P> {
 
-  public static final int DEFAULT_POLLING_PERIOD = 5000;
   protected long pollingPeriod;
 
   public PerResourcePollingExternalDependentResource() {
@@ -36,4 +37,5 @@ public abstract class PerResourcePollingExternalDependentResource<R, P extends H
   public long getPollingPeriod() {
     return pollingPeriod;
   }
+
 }

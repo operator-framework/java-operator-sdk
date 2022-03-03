@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -9,16 +11,37 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
-/** A base class for external dependent resources which don't have an event source. */
-public class AbstractExternalDependentResource<R, P extends HasMetadata>
+/** A base class for external dependent resources that don't have an event source. */
+public abstract class AbstractSimpleExternalDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
   private final UpdatableCache<R> cache = new ConcurrentHashMapCache<>();
+  private final Set<ResourceID> reconciling = ConcurrentHashMap.newKeySet();
 
-  // todo do we always want this? this should be just in case it's not a reconciliation
   @Override
   public Optional<R> getResource(HasMetadata primaryResource) {
-    return cache.get(ResourceID.fromResource(primaryResource));
+    var resourceId = ResourceID.fromResource(primaryResource);
+    if (reconciling.contains(ResourceID.fromResource(primaryResource))) {
+      var resource = supplyResource(primaryResource);
+      resource.ifPresent(r -> cache.put(resourceId, r));
+      return resource;
+    } else {
+      return cache.get(ResourceID.fromResource(primaryResource));
+    }
+  }
+
+  /** Actually read the resource from the target API */
+  public abstract Optional<R> supplyResource(HasMetadata primaryResource);
+
+  @Override
+  public void reconcile(P primary, Context context) {
+    var resourceId = ResourceID.fromResource(primary);
+    try {
+      reconciling.add(resourceId);
+      super.reconcile(primary, context);
+    } finally {
+      reconciling.remove(resourceId);
+    }
   }
 
   public void delete(P primary, Context context) {
