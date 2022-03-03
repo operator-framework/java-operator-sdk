@@ -11,14 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingExternalDependentResource;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.*;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
@@ -37,30 +34,11 @@ public class SchemaDependentResource
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
-  private int pollPeriod = 500;
-  private PerResourcePollingEventSource<Schema, MySQLSchema> perResourcePollingEventSource;
 
   @Override
   public void configureWith(ResourcePollerConfig config) {
     this.dbConfig = config.getMySQLDbConfig();
-    this.pollPeriod = config.getPollPeriod();
-  }
-
-  @Override
-  public EventSource initEventSource(EventSourceContext<MySQLSchema> context) {
-    if (dbConfig == null) {
-      dbConfig = MySQLDbConfig.loadFromEnvironmentVars();
-    }
-    perResourcePollingEventSource = new PerResourcePollingEventSource<>(
-        new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), pollPeriod,
-        Schema.class);
-
-    return perResourcePollingEventSource;
-  }
-
-  @Override
-  public EventSource getEventSource() {
-    return perResourcePollingEventSource;
+    setPollingPeriod(config.getPollPeriod());
   }
 
   @Override

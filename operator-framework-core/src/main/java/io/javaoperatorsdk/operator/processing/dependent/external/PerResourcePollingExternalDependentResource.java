@@ -11,7 +11,7 @@ public abstract class PerResourcePollingExternalDependentResource<R, P extends H
     implements PerResourcePollingEventSource.ResourceSupplier<R, P> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;
-  private long pollingPeriod;
+  protected long pollingPeriod;
 
   public PerResourcePollingExternalDependentResource() {
     this(DEFAULT_POLLING_PERIOD);
@@ -31,5 +31,9 @@ public abstract class PerResourcePollingExternalDependentResource<R, P extends H
   public PerResourcePollingExternalDependentResource<R, P> setPollingPeriod(long pollingPeriod) {
     this.pollingPeriod = pollingPeriod;
     return this;
+  }
+
+  public long getPollingPeriod() {
+    return pollingPeriod;
   }
 }
