@@ -22,7 +22,7 @@ public class ManagedDependentResourceContext {
    * Retrieve a contextual object, if it exists and is of the specified expected type, associated
    * with the specified key. Contextual objects can be used to pass data between the reconciler and
    * dependent resources and are scoped to the current reconciliation.
-   * 
+   *
    * @param key the key identifying which contextual object to retrieve
    * @param expectedType the class representing the expected type of the contextual object
    * @param <T> the type of the expected contextual object
@@ -39,7 +39,7 @@ public class ManagedDependentResourceContext {
    * Associates the specified contextual value to the specified key. If the value is {@code null},
    * the semantics of this operation is defined as removing the mapping associated with the
    * specified key.
-   * 
+   *
    * @param key the key identifying which contextual object to add or remove from the context
    * @param value the value to add to the context or {@code null} to remove an existing entry
    *        associated with the specified key
@@ -75,7 +75,7 @@ public class ManagedDependentResourceContext {
 
   /**
    * Retrieve all the known {@link DependentResource} implementations
-   * 
+   *
    * @return a list of known {@link DependentResource} implementations
    */
   public List<DependentResource> getDependentResources() {
@@ -84,7 +84,7 @@ public class ManagedDependentResourceContext {
 
   /**
    * Retrieve the dependent resource implementation associated with the specified resource type.
-   * 
+   *
    * @param resourceClass the dependent resource class for which we want to retrieve the associated
    *        dependent resource implementation
    * @param <T> the type of the resources for which we want to retrieve the associated dependent
