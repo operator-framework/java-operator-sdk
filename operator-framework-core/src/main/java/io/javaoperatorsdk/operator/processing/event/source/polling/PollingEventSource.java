@@ -12,29 +12,26 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
 /**
- * <p>
  * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
  * instead to calls supplier periodically and independently of the number of state of custom
  * resources managed by the operator. It is called on start (synced). This means that when the
  * reconciler first time executed on startup a poll already happened before. So if the cache does
  * not contain the target resource it means it is not created yet or was deleted while an operator
  * was not running.
- * </p>
+ *
  * <p>
  * Another caveat with this is if the cached object is checked in the reconciler and created since
  * not in the cache it should be manually added to the cache, since it can happen that the
  * reconciler is triggered before the cache is propagated with the new resource from a scheduled
- * execution. See {@link #put(ResourceID, Object)} method.
- * </p>
- * So the generic workflow in reconciler should be:
+ * execution. See {@link #put(ResourceID, Object)} method. So the generic workflow in reconciler
+ * should be:
  *
  * <ul>
- * <li>Check if the cache contains the resource.</li>
+ * <li>Check if the cache contains the resource.
  * <li>If cache contains the resource reconcile it - compare with target state, update if necessary
- * </li>
- * <li>if cache not contains the resource create it.</li>
+ * <li>if cache not contains the resource create it.
  * <li>If the resource was created or updated, put the new version of the resource manually to the
- * cache.</li>
+ * cache.
  * </ul>
  *
  * @param <T> type of the polled resource
@@ -48,8 +45,8 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   private final Supplier<Map<ResourceID, T>> supplierToPoll;
   private final long period;
 
-  public PollingEventSource(Supplier<Map<ResourceID, T>> supplier,
-      long period, Class<T> resourceClass) {
+  public PollingEventSource(
+      Supplier<Map<ResourceID, T>> supplier, long period, Class<T> resourceClass) {
     super(resourceClass);
     this.supplierToPoll = supplier;
     this.period = period;
@@ -59,16 +56,19 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   public void start() throws OperatorException {
     super.start();
     getStateAndFillCache();
-    timer.schedule(new TimerTask() {
-      @Override
-      public void run() {
-        if (!isRunning()) {
-          log.debug("Event source not yet started. Will not run.");
-          return;
-        }
-        getStateAndFillCache();
-      }
-    }, period, period);
+    timer.schedule(
+        new TimerTask() {
+          @Override
+          public void run() {
+            if (!isRunning()) {
+              log.debug("Event source not yet started. Will not run.");
+              return;
+            }
+            getStateAndFillCache();
+          }
+        },
+        period,
+        period);
   }
 
   protected void getStateAndFillCache() {
@@ -89,7 +89,7 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
 
   /**
    * See {@link PerResourcePollingEventSource} for more info.
-   * 
+   *
    * @param primary custom resource
    * @return related resource
    */
@@ -97,5 +97,4 @@ public class PollingEventSource<T, P extends HasMetadata> extends CachingEventSo
   public Optional<T> getAssociated(P primary) {
     return getCachedValue(ResourceID.fromResource(primary));
   }
-
 }

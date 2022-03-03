@@ -14,7 +14,7 @@ jobs:
   check_format_and_unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Java and Maven
         uses: actions/setup-java@v2
         with:
@@ -46,7 +46,7 @@ jobs:
           - java: 11
             kubernetes: 'v1.22.1'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Java and Maven
         uses: actions/setup-java@v2
         with:
