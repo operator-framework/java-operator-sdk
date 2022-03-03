@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -11,24 +9,25 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
-// todo IT
 /** A base class for external dependent resources that don't have an event source. */
 public abstract class AbstractSimpleExternalDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
-  private final UpdatableCache<R> cache = new ConcurrentHashMapCache<>();
-  private final Set<ResourceID> reconciling = ConcurrentHashMap.newKeySet();
+  // cache serves only to keep the resource readable again until next reconciliation when the
+  // new resource is read again.
+  protected final UpdatableCache<R> cache;
+
+  public AbstractSimpleExternalDependentResource() {
+    this(new ConcurrentHashMapCache<>());
+  }
+
+  public AbstractSimpleExternalDependentResource(UpdatableCache<R> cache) {
+    this.cache = cache;
+  }
 
   @Override
   public Optional<R> getResource(HasMetadata primaryResource) {
-    var resourceId = ResourceID.fromResource(primaryResource);
-    if (reconciling.contains(ResourceID.fromResource(primaryResource))) {
-      var resource = supplyResource(primaryResource);
-      resource.ifPresent(r -> cache.put(resourceId, r));
-      return resource;
-    } else {
-      return cache.get(ResourceID.fromResource(primaryResource));
-    }
+    return cache.get(ResourceID.fromResource(primaryResource));
   }
 
   /** Actually read the resource from the target API */
@@ -37,12 +36,9 @@ public abstract class AbstractSimpleExternalDependentResource<R, P extends HasMe
   @Override
   public void reconcile(P primary, Context context) {
     var resourceId = ResourceID.fromResource(primary);
-    try {
-      reconciling.add(resourceId);
-      super.reconcile(primary, context);
-    } finally {
-      reconciling.remove(resourceId);
-    }
+    Optional<R> resource = supplyResource(primary);
+    resource.ifPresentOrElse(r -> cache.put(resourceId, r), () -> cache.remove(resourceId));
+    super.reconcile(primary, context);
   }
 
   public void delete(P primary, Context context) {

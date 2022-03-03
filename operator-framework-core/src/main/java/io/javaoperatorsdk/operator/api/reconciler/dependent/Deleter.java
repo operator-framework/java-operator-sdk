@@ -9,5 +9,5 @@ public interface Deleter<P extends HasMetadata> {
   Deleter NOOP = (primary, context) -> {
   };
 
-  void delete(P primary, Context context);
+  void del(P primary, Context context);
 }

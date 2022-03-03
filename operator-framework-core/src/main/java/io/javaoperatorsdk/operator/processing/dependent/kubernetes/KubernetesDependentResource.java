@@ -44,7 +44,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource() {
-    init(this::create, this::update, this::delete);
+    init(this::create, this::update, this::del);
     matcher = this instanceof Matcher ? (Matcher<R>) this
         : GenericKubernetesResourceMatcher.matcherFor(resourceType());
     processor = this instanceof ResourceUpdatePreProcessor
@@ -104,7 +104,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, desiredResource, context);
   }
 
-  public void delete(P primary, Context context) {
+  public void del(P primary, Context context) {
     if (!addOwnerReference) {
       var resource = getResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());

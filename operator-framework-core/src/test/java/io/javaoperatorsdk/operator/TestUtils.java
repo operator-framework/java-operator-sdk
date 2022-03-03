@@ -27,6 +27,10 @@ public class TestUtils {
         .build();
   }
 
+  public static TestCustomResource testCustomResource1() {
+    return testCustomResource(new ResourceID("test1", "default"));
+  }
+
   public static TestCustomResource testCustomResource(ResourceID id) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(
