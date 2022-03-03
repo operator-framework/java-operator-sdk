@@ -7,7 +7,6 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePo
 
 import static io.javaoperatorsdk.operator.processing.dependent.external.PollingExternalDependentResource.DEFAULT_POLLING_PERIOD;
 
-// todo configure with for polling
 public abstract class PerResourcePollingExternalDependentResource<R, P extends HasMetadata>
     extends AbstractExternalCachingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceSupplier<R, P> {
