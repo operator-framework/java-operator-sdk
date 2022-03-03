@@ -111,7 +111,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private boolean isRecentOperationCacheFiller() {
-    return this instanceof RecentOperationCacheFiller &&
+    return this instanceof EventSourceProvider &&
         ((EventSourceProvider<P>) this).getEventSource() instanceof RecentOperationCacheFiller;
   }
 

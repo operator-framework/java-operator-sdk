@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
+// todo IT
 /** A base class for external dependent resources that don't have an event source. */
 public abstract class AbstractSimpleExternalDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {

@@ -23,7 +23,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class TomcatOperatorE2E {
+class TomcatOperatorE2E {
 
   final static Logger log = LoggerFactory.getLogger(TomcatOperatorE2E.class);
 
@@ -80,7 +80,7 @@ public class TomcatOperatorE2E {
   }
 
   @Test
-  public void test() {
+  void test() {
     var tomcat = getTomcat();
     var webapp1 = getWebapp();
     var tomcatClient = client.resources(Tomcat.class);
