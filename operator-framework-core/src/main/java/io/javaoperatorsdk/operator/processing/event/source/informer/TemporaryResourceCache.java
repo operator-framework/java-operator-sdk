@@ -28,7 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * received from the informer, it means that the cache of the informer was updated, so it already
  * contains a more fresh version of the resource.
  * </p>
- * 
+ *
  * @param <T> resource to cache.
  */
 public class TemporaryResourceCache<T extends HasMetadata> {

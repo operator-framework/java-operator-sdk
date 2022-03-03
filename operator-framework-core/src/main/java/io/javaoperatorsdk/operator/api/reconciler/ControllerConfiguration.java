@@ -62,7 +62,7 @@ public @interface ControllerConfiguration {
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request
    * to happen before one will be automatically triggered.
-   * 
+   *
    * @return the maximal interval configuration
    */
   ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
@@ -71,7 +71,7 @@ public @interface ControllerConfiguration {
   /**
    * Optional list of {@link Dependent} configurations which associate a resource type to a
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
-   * 
+   *
    * @return the list of {@link Dependent} configurations
    */
   Dependent[] dependents() default {};

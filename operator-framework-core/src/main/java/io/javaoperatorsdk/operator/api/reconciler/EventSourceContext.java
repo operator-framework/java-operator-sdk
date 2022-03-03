@@ -39,7 +39,7 @@ public class EventSourceContext<P extends HasMetadata> {
    * {@link io.javaoperatorsdk.operator.api.monitoring.Metrics} or
    * {@link io.javaoperatorsdk.operator.api.config.Cloner} implementations, which could be useful to
    * event sources.
-   * 
+   *
    * @return the {@link ConfigurationService} associated with the operator
    */
   public ConfigurationService getConfigurationService() {

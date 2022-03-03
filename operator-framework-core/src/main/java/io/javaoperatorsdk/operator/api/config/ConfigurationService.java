@@ -92,7 +92,7 @@ public interface ConfigurationService {
 
   /**
    * Used to clone custom resources.
-   * 
+   *
    * @return the ObjectMapper to use
    */
   default Cloner getResourceCloner() {
