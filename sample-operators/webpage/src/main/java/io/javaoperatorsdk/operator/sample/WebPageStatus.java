@@ -6,7 +6,7 @@ public class WebPageStatus extends ObservedGenerationAwareStatus {
 
   private String htmlConfigMap;
 
-  private String areWeGood;
+  private Boolean areWeGood;
 
   private String errorMessage;
 
@@ -18,11 +18,11 @@ public class WebPageStatus extends ObservedGenerationAwareStatus {
     this.htmlConfigMap = htmlConfigMap;
   }
 
-  public String getAreWeGood() {
+  public Boolean getAreWeGood() {
     return areWeGood;
   }
 
-  public void setAreWeGood(String areWeGood) {
+  public void setAreWeGood(Boolean areWeGood) {
     this.areWeGood = areWeGood;
   }
 

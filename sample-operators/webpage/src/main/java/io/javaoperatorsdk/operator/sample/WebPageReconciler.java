@@ -111,7 +111,7 @@ public class WebPageReconciler
   private WebPageStatus createStatus(String configMapName) {
     WebPageStatus status = new WebPageStatus();
     status.setHtmlConfigMap(configMapName);
-    status.setAreWeGood("Yes!");
+    status.setAreWeGood(true);
     status.setErrorMessage(null);
     return status;
   }
@@ -191,7 +191,7 @@ public class WebPageReconciler
     return configMap;
   }
 
-  private Map<String, String> lowLevelLabel() {
+  public static Map<String, String> lowLevelLabel() {
     Map<String, String> labels = new HashMap<>();
     labels.put(LOW_LEVEL_LABEL_KEY, "true");
     return labels;

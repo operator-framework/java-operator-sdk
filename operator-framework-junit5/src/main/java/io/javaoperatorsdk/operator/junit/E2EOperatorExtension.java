@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
       }
     }
 
-    LOGGER.debug("Deploying the operator into Kubernetes");
+    LOGGER.debug("Deploying the operator into Kubernetes. Target namespace: {}", namespace);
     operatorDeployment.forEach(hm -> {
       hm.getMetadata().setNamespace(namespace);
       if (hm.getKind().toLowerCase(Locale.ROOT).equals("clusterrolebinding")) {
@@ -88,6 +89,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
     kubernetesClient
         .resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    LOGGER.debug("Operator resources deployed.");
   }
 
   @Override
@@ -107,6 +109,13 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
 
     public Builder withDeploymentTimeout(Duration value) {
       deploymentTimeout = value;
+      return this;
+    }
+
+    public Builder withOperatorDeployment(List<HasMetadata> hm,
+        Consumer<List<HasMetadata>> modifications) {
+      modifications.accept(hm);
+      operatorDeployment.addAll(hm);
       return this;
     }
 

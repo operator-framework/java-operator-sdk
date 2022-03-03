@@ -45,6 +45,12 @@
             <artifactId>awaitility</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>operator-framework-junit-5</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -57,7 +63,7 @@
                         <image>gcr.io/distroless/java:11</image>
                     </from>
                     <to>
-                        <image>webserver-operator</image>
+                        <image>webpage-operator</image>
                     </to>
                 </configuration>
             </plugin>
