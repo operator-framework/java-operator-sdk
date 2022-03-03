@@ -39,7 +39,7 @@ public class EventSourceContext<P extends HasMetadata> {
    * {@link io.javaoperatorsdk.operator.api.monitoring.Metrics} or
    * {@link io.javaoperatorsdk.operator.api.config.Cloner} implementations, which could be useful to
    * event sources.
-   * 
+   *
    * @return the {@link ConfigurationService} associated with the operator
    */
   public ConfigurationService getConfigurationService() {
@@ -49,7 +49,7 @@ public class EventSourceContext<P extends HasMetadata> {
   /**
    * Provides access to the {@link KubernetesClient} used by the current
    * {@link io.javaoperatorsdk.operator.Operator} instance.
-   * 
+   *
    * @return the {@link KubernetesClient} used by the current
    *         {@link io.javaoperatorsdk.operator.Operator} instance.
    */

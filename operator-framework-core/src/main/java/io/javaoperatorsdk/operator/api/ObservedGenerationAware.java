@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
  * {@link UpdateControl#updateResource(HasMetadata)} is called. Although those results call normally
  * does not result in a status update, there will be a subsequent status update Kubernetes API call
  * in this case.
- * 
+ *
  * @see ObservedGenerationAwareStatus
  */
 public interface ObservedGenerationAware {

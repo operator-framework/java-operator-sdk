@@ -22,8 +22,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetri
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
-    extends AbstractResourceEventSource<P, T>
-    implements ResourceCache<T> {
+    extends AbstractResourceEventSource<P, T> implements ResourceCache<T> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -32,33 +31,46 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
   private final boolean skipUpdateEventPropagationIfNoChange;
 
-  public InformerEventSource(SharedInformer<T> sharedInformer,
+  public InformerEventSource(
+      SharedInformer<T> sharedInformer,
       PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet) {
     this(sharedInformer, resourceToTargetResourceIDSet, null, true);
   }
 
-  public InformerEventSource(KubernetesClient client, Class<T> type,
+  public InformerEventSource(
+      KubernetesClient client,
+      Class<T> type,
       PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet) {
     this(client, type, resourceToTargetResourceIDSet, false);
   }
 
-  public InformerEventSource(KubernetesClient client, Class<T> type,
+  public InformerEventSource(
+      KubernetesClient client,
+      Class<T> type,
       PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet,
       AssociatedSecondaryResourceIdentifier<P> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet,
+    this(
+        client.informers().sharedIndexInformerFor(type, 0),
+        resourceToTargetResourceIDSet,
         associatedWith,
         skipUpdateEventPropagationIfNoChange);
   }
 
-  InformerEventSource(KubernetesClient client, Class<T> type,
+  InformerEventSource(
+      KubernetesClient client,
+      Class<T> type,
       PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet,
       boolean skipUpdateEventPropagationIfNoChange) {
-    this(client.informers().sharedIndexInformerFor(type, 0), resourceToTargetResourceIDSet, null,
+    this(
+        client.informers().sharedIndexInformerFor(type, 0),
+        resourceToTargetResourceIDSet,
+        null,
         skipUpdateEventPropagationIfNoChange);
   }
 
-  public InformerEventSource(SharedInformer<T> sharedInformer,
+  public InformerEventSource(
+      SharedInformer<T> sharedInformer,
       PrimaryResourcesRetriever<T> resourceToTargetResourceIDSet,
       AssociatedSecondaryResourceIdentifier<P> associatedWith,
       boolean skipUpdateEventPropagationIfNoChange) {
@@ -68,41 +80,44 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
     if (sharedInformer.isRunning()) {
       log.warn(
-          "Informer is already running on event source creation, this is not desirable and may " +
-              "lead to non deterministic behavior.");
+          "Informer is already running on event source creation, this is not desirable and may "
+              + "lead to non deterministic behavior.");
     }
 
     this.associatedWith =
         Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
 
-    sharedInformer.addEventHandler(new ResourceEventHandler<>() {
-      @Override
-      public void onAdd(T t) {
-        propagateEvent(t);
-      }
+    sharedInformer.addEventHandler(
+        new ResourceEventHandler<>() {
+          @Override
+          public void onAdd(T t) {
+            propagateEvent(t);
+          }
 
-      @Override
-      public void onUpdate(T oldObject, T newObject) {
-        if (newObject == null) {
-          // this is a fix for this potential issue with informer:
-          // https://github.com/java-operator-sdk/java-operator-sdk/issues/830
-          propagateEvent(oldObject);
-          return;
-        }
+          @Override
+          public void onUpdate(T oldObject, T newObject) {
+            if (newObject == null) {
+              // this is a fix for this potential issue with informer:
+              // https://github.com/java-operator-sdk/java-operator-sdk/issues/830
+              propagateEvent(oldObject);
+              return;
+            }
 
-        if (InformerEventSource.this.skipUpdateEventPropagationIfNoChange &&
-            oldObject.getMetadata().getResourceVersion()
-                .equals(newObject.getMetadata().getResourceVersion())) {
-          return;
-        }
-        propagateEvent(newObject);
-      }
+            if (InformerEventSource.this.skipUpdateEventPropagationIfNoChange
+                && oldObject
+                    .getMetadata()
+                    .getResourceVersion()
+                    .equals(newObject.getMetadata().getResourceVersion())) {
+              return;
+            }
+            propagateEvent(newObject);
+          }
 
-      @Override
-      public void onDelete(T t, boolean b) {
-        propagateEvent(t);
-      }
-    });
+          @Override
+          public void onDelete(T t, boolean b) {
+            propagateEvent(t);
+          }
+        });
   }
 
   private void propagateEvent(T object) {
@@ -110,18 +125,19 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
-    primaryResourceIdSet.forEach(resourceId -> {
-      Event event = new Event(resourceId);
-      /*
-       * In fabric8 client for certain cases informers can be created on in a way that they are
-       * automatically started, what would cause a NullPointerException here, since an event might
-       * be received between creation and registration.
-       */
-      final EventHandler eventHandler = getEventHandler();
-      if (eventHandler != null) {
-        eventHandler.handleEvent(event);
-      }
-    });
+    primaryResourceIdSet.forEach(
+        resourceId -> {
+          Event event = new Event(resourceId);
+          /*
+           * In fabric8 client for certain cases informers can be created on in a way that they are
+           * automatically started, what would cause a NullPointerException here, since an event
+           * might be received between creation and registration.
+           */
+          final EventHandler eventHandler = getEventHandler();
+          if (eventHandler != null) {
+            eventHandler.handleEvent(event);
+          }
+        });
   }
 
   @Override
@@ -141,7 +157,7 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
   /**
    * Retrieves the informed resource associated with the specified primary resource as defined by
    * the function provided when this InformerEventSource was created
-   * 
+   *
    * @param resource the primary resource we want to retrieve the associated resource for
    * @return the informed resource associated with the specified primary resource
    */
@@ -150,17 +166,18 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
     return get(id);
   }
 
-
   public SharedInformer<T> getSharedInformer() {
     return sharedInformer;
   }
 
   @Override
   public Optional<T> get(ResourceID resourceID) {
-    return Optional.ofNullable(sharedInformer.getStore()
-        .getByKey(io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
-            resourceID.getNamespace().orElse(null),
-            resourceID.getName())));
+    return Optional.ofNullable(
+        sharedInformer
+            .getStore()
+            .getByKey(
+                io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
+                    resourceID.getNamespace().orElse(null), resourceID.getName())));
   }
 
   @Override
