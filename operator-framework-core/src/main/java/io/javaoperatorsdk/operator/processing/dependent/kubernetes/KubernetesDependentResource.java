@@ -80,7 +80,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   /**
    * Use to share informers between event more resources.
-   * 
+   *
    * @param informerEventSource informer to use
    * @param addOwnerReference to the created resource
    */

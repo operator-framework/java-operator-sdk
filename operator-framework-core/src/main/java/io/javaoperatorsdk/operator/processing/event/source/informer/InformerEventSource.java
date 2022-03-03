@@ -224,7 +224,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   /**
    * Mean to be called to clean up in case of an exception from the client. Usually in a catch
    * block.
-   * 
+   *
    * @param resourceID of the resource
    */
   public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
