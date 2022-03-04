@@ -21,7 +21,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceCon
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -39,14 +41,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
   private boolean addOwnerReference;
-  private final Matcher<R> matcher;
+  private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource() {
-    init(this::create, this::update, this::del);
-    matcher = this instanceof Matcher ? (Matcher<R>) this
-        : GenericKubernetesResourceMatcher.matcherFor(resourceType());
+    init(this::create, new Updater<>() {
+      @Override
+      public R update(R actual, R desired, P primary, Context context) {
+        return KubernetesDependentResource.this.update(actual, desired, primary, context);
+      }
+
+      @Override
+      public Result<R> match(R actualResource, P primary, Context context) {
+        return KubernetesDependentResource.this.match(actualResource, primary, context);
+      }
+    }, this::del);
+    matcher = this instanceof Matcher ? (Matcher<R, P>) this
+        : GenericKubernetesResourceMatcher.matcherFor(resourceType(), this);
+
     processor = this instanceof ResourceUpdatePreProcessor
         ? (ResourceUpdatePreProcessor<R>) this
         : GenericResourceUpdatePreProcessor.processorFor(resourceType());
@@ -100,8 +113,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return prepare(target, primary, "Updating").replace(updatedActual);
   }
 
-  public boolean match(R actualResource, R desiredResource, Context context) {
-    return matcher.match(actualResource, desiredResource, context);
+  public Result<R> match(R actualResource, P primary, Context context) {
+    return matcher.match(actualResource, primary, context);
   }
 
   public void del(P primary, Context context) {
@@ -155,6 +168,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
+  }
+
+  @Override
+  protected R desired(P primary, Context context) {
+    return super.desired(primary, context);
   }
 
   @Override

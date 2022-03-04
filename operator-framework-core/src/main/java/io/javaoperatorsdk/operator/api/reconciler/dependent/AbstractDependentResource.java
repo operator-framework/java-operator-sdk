@@ -37,19 +37,23 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     final var updatable = isUpdatable(primary, context);
     if (creatable || updatable) {
       var maybeActual = getResource(primary);
-      var desired = desired(primary, context);
       if (maybeActual.isEmpty()) {
         if (creatable) {
+          var desired = desired(primary, context);
           log.debug("Creating dependent {} for primary {}", desired, primary);
           handleCreate(desired, primary, context);
         }
       } else {
         final var actual = maybeActual.get();
-        if (updatable && !updater.match(actual, desired, context)) {
-          log.debug("Updating dependent {} for primary {}", desired, primary);
-          handleUpdate(actual, desired, primary, context);
+        if (updatable) {
+          final var match = updater.match(actual, primary, context);
+          if (!match.matched()) {
+            final var desired = match.computedDesired().orElse(desired(primary, context));
+            log.debug("Updating dependent {} for primary {}", desired, primary);
+            handleUpdate(actual, desired, primary, context);
+          }
         } else {
-          log.debug("Update skipped for dependent {} as it matched the existing one", desired);
+          log.debug("Update skipped for dependent {} as it matched the existing one", actual);
         }
       }
     } else {
