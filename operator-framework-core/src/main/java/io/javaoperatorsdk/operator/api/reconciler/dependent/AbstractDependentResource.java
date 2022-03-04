@@ -73,14 +73,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected R handleCreate(R desired, P primary, Context context) {
+  protected void handleCreate(R desired, P primary, Context context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = null;
     try {
       prepareEventFiltering(desired, resourceID);
       created = creator.create(desired, primary, context);
       cacheAfterCreate(resourceID, created);
-      return created;
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(desired, resourceID, created);
       throw e;
@@ -114,14 +113,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected R handleUpdate(R actual, R desired, P primary, Context context) {
+  protected void handleUpdate(R actual, R desired, P primary, Context context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = null;
     try {
       prepareEventFiltering(desired, resourceID);
       updated = updater.update(actual, desired, primary, context);
       cacheAfterUpdate(actual, resourceID, updated);
-      return updated;
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(desired, resourceID, updated);
       throw e;

@@ -51,17 +51,15 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  protected R handleCreate(R desired, P primary, Context context) {
+  protected void handleCreate(R desired, P primary, Context context) {
     var res = this.creator.create(desired, primary, context);
     cache.put(ResourceID.fromResource(primary), res);
-    return res;
   }
 
   @Override
-  protected R handleUpdate(R actual, R desired, P primary, Context context) {
+  protected void handleUpdate(R actual, R desired, P primary, Context context) {
     var res = updater.update(actual, desired, primary, context);
     cache.put(ResourceID.fromResource(primary), res);
-    return res;
   }
 
   public Matcher.Result<R> match(R actualResource, P primary, Context context) {
