@@ -81,7 +81,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public Optional<Schema> getSupplierResource(MySQLSchema primaryResource) {
+  public Optional<Schema> fetchResource(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
       var schema =
           SchemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);

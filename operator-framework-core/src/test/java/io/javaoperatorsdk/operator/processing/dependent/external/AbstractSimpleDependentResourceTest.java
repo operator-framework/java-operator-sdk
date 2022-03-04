@@ -106,7 +106,7 @@ class AbstractSimpleDependentResourceTest {
     }
 
     @Override
-    public Optional<SampleExternalResource> supplyResource(HasMetadata primaryResource) {
+    public Optional<SampleExternalResource> fetchResource(HasMetadata primaryResource) {
       return Optional.ofNullable(supplier.get());
     }
 

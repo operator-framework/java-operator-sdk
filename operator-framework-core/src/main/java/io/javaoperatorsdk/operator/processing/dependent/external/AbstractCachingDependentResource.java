@@ -14,7 +14,7 @@ public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
 
   protected ExternalResourceCachingEventSource<R, P> eventSource;
 
-  public Optional<R> getSupplierResource(P primaryResource) {
+  public Optional<R> fetchResource(P primaryResource) {
     return eventSource.getAssociated(primaryResource);
   }
 

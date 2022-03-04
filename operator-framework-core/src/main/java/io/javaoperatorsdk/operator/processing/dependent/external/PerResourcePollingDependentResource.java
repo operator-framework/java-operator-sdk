@@ -9,7 +9,7 @@ import static io.javaoperatorsdk.operator.processing.dependent.external.PollingD
 
 public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>
     extends AbstractCachingDependentResource<R, P>
-    implements PerResourcePollingEventSource.ResourceSupplier<R, P> {
+    implements PerResourcePollingEventSource.ResourceFetcher<R, P> {
 
   protected long pollingPeriod;
 

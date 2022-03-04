@@ -37,28 +37,28 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   private final Timer timer = new Timer();
   private final Map<ResourceID, TimerTask> timerTasks = new ConcurrentHashMap<>();
-  private final ResourceSupplier<R, P> resourceSupplier;
+  private final ResourceFetcher<R, P> resourceFetcher;
   private final Cache<P> resourceCache;
   private final Predicate<P> registerPredicate;
   private final long period;
 
-  public PerResourcePollingEventSource(ResourceSupplier<R, P> resourceSupplier,
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
-    this(resourceSupplier, resourceCache, period, null, resourceClass);
+    this(resourceFetcher, resourceCache, period, null, resourceClass);
   }
 
-  public PerResourcePollingEventSource(ResourceSupplier<R, P> resourceSupplier,
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
       Predicate<P> registerPredicate, Class<R> resourceClass) {
     super(resourceClass);
-    this.resourceSupplier = resourceSupplier;
+    this.resourceFetcher = resourceFetcher;
     this.resourceCache = resourceCache;
     this.period = period;
     this.registerPredicate = registerPredicate;
   }
 
   private void pollForResource(P resource) {
-    var value = resourceSupplier.getSupplierResource(resource);
+    var value = resourceFetcher.fetchResource(resource);
     var resourceID = ResourceID.fromResource(resource);
     if (value.isEmpty()) {
       super.handleDelete(resourceID);
@@ -70,7 +70,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private Optional<R> getAndCacheResource(ResourceID resourceID) {
     var resource = resourceCache.get(resourceID);
     if (resource.isPresent()) {
-      var value = resourceSupplier.getSupplierResource(resource.get());
+      var value = resourceFetcher.fetchResource(resource.get());
       value.ifPresent(v -> cache.put(resourceID, v));
       return value;
     }
@@ -152,8 +152,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     }
   }
 
-  public interface ResourceSupplier<R, P> {
-    Optional<R> getSupplierResource(P resource);
+  public interface ResourceFetcher<R, P> {
+    Optional<R> fetchResource(P primaryResource);
   }
 
   @Override

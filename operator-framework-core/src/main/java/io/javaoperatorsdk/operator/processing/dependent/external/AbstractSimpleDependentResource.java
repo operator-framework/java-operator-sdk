@@ -35,12 +35,12 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   }
 
   /** Actually read the resource from the target API */
-  public abstract Optional<R> supplyResource(HasMetadata primaryResource);
+  public abstract Optional<R> fetchResource(HasMetadata primaryResource);
 
   @Override
   public void reconcile(P primary, Context context) {
     var resourceId = ResourceID.fromResource(primary);
-    Optional<R> resource = supplyResource(primary);
+    Optional<R> resource = fetchResource(primary);
     resource.ifPresentOrElse(r -> cache.put(resourceId, r), () -> cache.remove(resourceId));
     super.reconcile(primary, context);
   }
