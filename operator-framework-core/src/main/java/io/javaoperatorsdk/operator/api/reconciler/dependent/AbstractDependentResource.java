@@ -22,7 +22,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
-    init(Creator.NOOP, Updater.NOOP, Deleter.NOOP);
     if (this instanceof EventSourceProvider) {
       final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
       filteringEventSource = eventSource instanceof RecentOperationEventFilter;
@@ -31,14 +30,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       filteringEventSource = false;
       cachingEventSource = false;
     }
-  }
-
-  @SuppressWarnings({"unchecked"})
-  protected void init(Creator<R, P> defaultCreator, Updater<R, P> defaultUpdater,
-      Deleter<P> defaultDeleter) {
-    creator = creatable ? (Creator<R, P>) this : defaultCreator;
-    updater = updatable ? (Updater<R, P>) this : defaultUpdater;
-    deleter = deletable ? (Deleter<P>) this : defaultDeleter;
+    creator = creatable ? (Creator<R, P>) this : null;
+    updater = updatable ? (Updater<R, P>) this : null;
+    deleter = deletable ? (Deleter<P>) this : null;
   }
 
   @Override
@@ -89,7 +83,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
     if (filteringEventSource) {
       eventSourceAsRecentOperationEventFilter()
-          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created == null ? desired : created);
+          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created);
     }
   }
 

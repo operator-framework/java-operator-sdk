@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("unchecked")
 class AbstractSimpleDependentResourceTest {
 
   UpdatableCache<SampleExternalResource> updatableCacheMock = mock(UpdatableCache.class);
@@ -87,13 +88,13 @@ class AbstractSimpleDependentResourceTest {
     verify(updatableCacheMock, times(1)).remove(any());
   }
 
-  private class SimpleDependentResource
+  private static class SimpleDependentResource
       extends AbstractSimpleDependentResource<SampleExternalResource, TestCustomResource>
       implements Creator<SampleExternalResource, TestCustomResource>,
       Updater<SampleExternalResource, TestCustomResource>,
       Deleter<TestCustomResource> {
 
-    private Supplier<SampleExternalResource> supplier;
+    private final Supplier<SampleExternalResource> supplier;
 
     public SimpleDependentResource(Supplier<SampleExternalResource> supplier) {
       this.supplier = supplier;

@@ -23,7 +23,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAwar
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -46,17 +45,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource() {
-    init(this::create, new Updater<>() {
-      @Override
-      public R update(R actual, R desired, P primary, Context context) {
-        return KubernetesDependentResource.this.update(actual, desired, primary, context);
-      }
-
-      @Override
-      public Result<R> match(R actualResource, P primary, Context context) {
-        return KubernetesDependentResource.this.match(actualResource, primary, context);
-      }
-    }, this::del);
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
         : GenericKubernetesResourceMatcher.matcherFor(resourceType(), this);
 
