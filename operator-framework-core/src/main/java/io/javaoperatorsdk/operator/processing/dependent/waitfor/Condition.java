@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.dependson;
+package io.javaoperatorsdk.operator.processing.dependent.waitfor;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
