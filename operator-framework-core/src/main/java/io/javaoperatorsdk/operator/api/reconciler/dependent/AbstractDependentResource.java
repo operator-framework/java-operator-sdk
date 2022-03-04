@@ -131,9 +131,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public void delete(P primary, Context context) {
+  public void cleanup(P primary, Context context) {
     if (isDeletable(primary, context)) {
-      deleter.del(primary, context);
+      deleter.delete(primary, context);
     }
   }
 

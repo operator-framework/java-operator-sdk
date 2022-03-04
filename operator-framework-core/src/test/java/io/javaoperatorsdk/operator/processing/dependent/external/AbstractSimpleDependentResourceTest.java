@@ -84,7 +84,7 @@ class AbstractSimpleDependentResourceTest {
 
   @Test
   void deleteRemovesResourceFromCache() {
-    simpleDependentResource.delete(TestUtils.testCustomResource1(), null);
+    simpleDependentResource.cleanup(TestUtils.testCustomResource1(), null);
     verify(updatableCacheMock, times(1)).remove(any());
   }
 
@@ -127,7 +127,7 @@ class AbstractSimpleDependentResourceTest {
     }
 
     @Override
-    public void del(TestCustomResource primary, Context context) {}
+    public void delete(TestCustomResource primary, Context context) {}
 
     @Override
     protected SampleExternalResource desired(TestCustomResource primary, Context context) {

@@ -5,5 +5,5 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 @FunctionalInterface
 public interface Deleter<P extends HasMetadata> {
-  void del(P primary, Context context);
+  void delete(P primary, Context context);
 }

@@ -45,8 +45,8 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
     super.reconcile(primary, context);
   }
 
-  public void delete(P primary, Context context) {
-    super.delete(primary, context);
+  public void cleanup(P primary, Context context) {
+    super.cleanup(primary, context);
     cache.remove(ResourceID.fromResource(primary));
   }
 

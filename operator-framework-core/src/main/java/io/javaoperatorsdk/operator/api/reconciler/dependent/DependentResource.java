@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 public interface DependentResource<R, P extends HasMetadata> {
   void reconcile(P primary, Context context);
 
-  default void delete(P primary, Context context) {}
+  default void cleanup(P primary, Context context) {}
 
   Optional<R> getResource(P primaryResource);
 }

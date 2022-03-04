@@ -72,7 +72,7 @@ public class DependentResourceManager<P extends HasMetadata>
   @Override
   public DeleteControl cleanup(P resource, Context context) {
     initContextIfNeeded(resource, context);
-    dependents.forEach(dependent -> dependent.delete(resource, context));
+    dependents.forEach(dependent -> dependent.cleanup(resource, context));
     return Reconciler.super.cleanup(resource, context);
   }
 
