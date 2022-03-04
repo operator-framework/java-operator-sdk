@@ -54,7 +54,7 @@ public class DependentResourceManager<P extends HasMetadata>
                   final var dependentResource = createAndConfigureFrom(drc, context.getClient());
                   if (dependentResource instanceof EventSourceProvider) {
                     EventSourceProvider provider = (EventSourceProvider) dependentResource;
-                    sources.add(provider.eventSource(context));
+                    sources.add(provider.initEventSource(context));
                   }
                   return dependentResource;
                 })
@@ -72,7 +72,7 @@ public class DependentResourceManager<P extends HasMetadata>
   @Override
   public DeleteControl cleanup(P resource, Context context) {
     initContextIfNeeded(resource, context);
-    dependents.forEach(dependent -> dependent.delete(resource, context));
+    dependents.forEach(dependent -> dependent.cleanup(resource, context));
     return Reconciler.super.cleanup(resource, context);
   }
 

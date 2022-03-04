@@ -23,7 +23,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesClientAwar
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -46,19 +45,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource() {
-    init(this::create, new Updater<>() {
-      @Override
-      public void update(R actual, R desired, P primary, Context context) {
-        KubernetesDependentResource.this.update(actual, desired, primary, context);
-      }
-
-      @Override
-      public Result<R> match(R actualResource, P primary, Context context) {
-        return KubernetesDependentResource.this.match(actualResource, primary, context);
-      }
-    }, this::delete);
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
         : GenericKubernetesResourceMatcher.matcherFor(resourceType(), this);
+
     processor = this instanceof ResourceUpdatePreProcessor
         ? (ResourceUpdatePreProcessor<R>) this
         : GenericResourceUpdatePreProcessor.processorFor(resourceType());
@@ -103,30 +92,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.addOwnerReference = addOwnerReference;
   }
 
-  public void create(R target, P primary, Context context) {
-    var resourceID = ResourceID.fromResource(target);
-    try {
-      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
-      var created = prepare(target, primary, "Creating").create(target);
-      informerEventSource.handleRecentResourceCreate(created);
-    } catch (RuntimeException e) {
-      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
-      throw e;
-    }
+  public R create(R target, P primary, Context context) {
+    return prepare(target, primary, "Creating").create(target);
   }
 
-  public void update(R actual, R target, P primary, Context context) {
-    var resourceID = ResourceID.fromResource(target);
-    try {
-      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-      informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID);
-      var updated = prepare(target, primary, "Updating").replace(updatedActual);
-      informerEventSource.handleRecentResourceUpdate(updated,
-          actual.getMetadata().getResourceVersion());
-    } catch (RuntimeException e) {
-      informerEventSource.cleanupOnCreateOrUpdateEventFiltering(resourceID);
-      throw e;
-    }
+  public R update(R actual, R target, P primary, Context context) {
+    var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+    return prepare(target, primary, "Updating").replace(updatedActual);
   }
 
   public Result<R> match(R actualResource, P primary, Context context) {
@@ -155,7 +127,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public EventSource eventSource(EventSourceContext<P> context) {
+  public EventSource initEventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
@@ -189,5 +161,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context context) {
     return super.desired(primary, context);
+  }
+
+  @Override
+  public EventSource getEventSource() {
+    return informerEventSource;
   }
 }

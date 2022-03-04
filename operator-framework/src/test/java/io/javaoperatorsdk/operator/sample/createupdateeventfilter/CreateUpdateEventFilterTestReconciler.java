@@ -41,37 +41,38 @@ public class CreateUpdateEventFilterTestReconciler
             .get();
     if (configMap == null) {
       var configMapToCreate = createConfigMap(resource);
+      final var resourceID = ResourceID.fromResource(configMapToCreate);
       try {
-        informerEventSource.prepareForCreateOrUpdateEventFiltering(
-            ResourceID.fromResource(configMapToCreate));
+        informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
         configMap =
             client
                 .configMaps()
                 .inNamespace(resource.getMetadata().getNamespace())
                 .create(configMapToCreate);
-        informerEventSource.handleRecentResourceCreate(configMap);
+        informerEventSource.handleRecentResourceCreate(resourceID, configMap);
       } catch (RuntimeException e) {
         informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(ResourceID.fromResource(configMapToCreate));
+            .cleanupOnCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
         throw e;
       }
     } else {
+      ResourceID resourceID = ResourceID.fromResource(configMap);
       if (!Objects.equals(
           configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
         try {
           informerEventSource
-              .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(configMap));
+              .prepareForCreateOrUpdateEventFiltering(resourceID, configMap);
           var newConfigMap =
               client
                   .configMaps()
                   .inNamespace(resource.getMetadata().getNamespace())
                   .replace(configMap);
-          informerEventSource.handleRecentResourceUpdate(
-              newConfigMap, configMap.getMetadata().getResourceVersion());
+          informerEventSource.handleRecentResourceUpdate(resourceID,
+              newConfigMap, configMap);
         } catch (RuntimeException e) {
           informerEventSource
-              .cleanupOnCreateOrUpdateEventFiltering(ResourceID.fromResource(configMap));
+              .cleanupOnCreateOrUpdateEventFiltering(resourceID, configMap);
           throw e;
         }
       }

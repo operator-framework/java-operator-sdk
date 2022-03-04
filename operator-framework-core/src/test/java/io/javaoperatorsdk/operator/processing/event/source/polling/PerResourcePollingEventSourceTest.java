@@ -27,15 +27,15 @@ class PerResourcePollingEventSourceTest extends
     AbstractEventSourceTestBase<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
   public static final int PERIOD = 80;
-  private PerResourcePollingEventSource.ResourceSupplier<SampleExternalResource, TestCustomResource> supplier =
-      mock(PerResourcePollingEventSource.ResourceSupplier.class);
+  private PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
+      mock(PerResourcePollingEventSource.ResourceFetcher.class);
   private Cache<TestCustomResource> resourceCache = mock(Cache.class);
   private TestCustomResource testCustomResource = TestUtils.testCustomResource();
 
   @BeforeEach
   public void setup() {
     when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
-    when(supplier.getResource(any()))
+    when(supplier.fetchResource(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
@@ -47,7 +47,7 @@ class PerResourcePollingEventSourceTest extends
     source.onResourceCreated(testCustomResource);
 
     Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).getResource(eq(testCustomResource));
+    verify(supplier, atLeast(2)).fetchResource(eq(testCustomResource));
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -59,31 +59,31 @@ class PerResourcePollingEventSourceTest extends
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
-    verify(supplier, times(0)).getResource(eq(testCustomResource));
+    verify(supplier, times(0)).fetchResource(eq(testCustomResource));
     testCustomResource.getMetadata().setGeneration(2L);
     source.onResourceUpdated(testCustomResource, testCustomResource);
 
     Thread.sleep(2 * PERIOD);
 
-    verify(supplier, atLeast(1)).getResource(eq(testCustomResource));
+    verify(supplier, atLeast(1)).fetchResource(eq(testCustomResource));
   }
 
   @Test
   public void propagateEventOnDeletedResource() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
-    when(supplier.getResource(any()))
+    when(supplier.fetchResource(any()))
         .thenReturn(Optional.of(SampleExternalResource.testResource1()))
         .thenReturn(Optional.empty());
 
     Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).getResource(eq(testCustomResource));
+    verify(supplier, atLeast(2)).fetchResource(eq(testCustomResource));
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
   @Test
   public void getsValueFromCacheOrSupplier() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
-    when(supplier.getResource(any()))
+    when(supplier.fetchResource(any()))
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(SampleExternalResource.testResource1()));
 

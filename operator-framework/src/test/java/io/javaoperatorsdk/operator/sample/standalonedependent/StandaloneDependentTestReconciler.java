@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
@@ -33,7 +34,7 @@ public class StandaloneDependentTestReconciler
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return List.of(deploymentDependent.eventSource(context));
+    return List.of(deploymentDependent.initEventSource(context));
   }
 
   @Override
@@ -66,6 +67,10 @@ public class StandaloneDependentTestReconciler
   @Override
   public Optional<StandaloneDependentTestCustomResource> updateErrorStatus(
       StandaloneDependentTestCustomResource resource, RetryInfo retryInfo, RuntimeException e) {
+    // this can happen when a namespace is terminated in test
+    if (e instanceof KubernetesClientException) {
+      return Optional.empty();
+    }
     errorOccurred = true;
     return Optional.empty();
   }

@@ -83,7 +83,7 @@ class MySQLSchemaOperatorE2E {
   public MySQLSchemaOperatorE2E() throws FileNotFoundException {}
 
   @Test
-  public void test() throws IOException {
+  void test() throws IOException {
     // Opening a port-forward if running locally
     LocalPortForward portForward = null;
     if (isLocal()) {
