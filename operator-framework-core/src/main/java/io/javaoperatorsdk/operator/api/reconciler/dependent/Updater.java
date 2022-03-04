@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 public interface Updater<R, P extends HasMetadata> {
   Updater NOOP = new Updater() {
     @Override
-    public R update(Object actual, Object desired, HasMetadata primary, Context context) {
+    public Object update(Object actual, Object desired, HasMetadata primary, Context context) {
       return null;
     }
 

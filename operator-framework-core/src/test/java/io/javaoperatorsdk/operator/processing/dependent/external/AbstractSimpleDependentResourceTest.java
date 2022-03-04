@@ -126,14 +126,6 @@ class AbstractSimpleDependentResourceTest {
     }
 
     @Override
-    public boolean match(
-        SampleExternalResource actualResource,
-        SampleExternalResource desiredResource,
-        Context context) {
-      return Updater.super.match(actualResource, desiredResource, context);
-    }
-
-    @Override
     public void del(TestCustomResource primary, Context context) {}
 
     @Override
