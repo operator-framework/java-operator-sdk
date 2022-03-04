@@ -41,20 +41,18 @@ public class CreateUpdateEventFilterTestReconciler
             .get();
     if (configMap == null) {
       var configMapToCreate = createConfigMap(resource);
+      final var resourceID = ResourceID.fromResource(configMapToCreate);
       try {
-        informerEventSource.prepareForCreateOrUpdateEventFiltering(
-            ResourceID.fromResource(configMapToCreate), configMapToCreate);
+        informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
         configMap =
             client
                 .configMaps()
                 .inNamespace(resource.getMetadata().getNamespace())
                 .create(configMapToCreate);
-        informerEventSource.handleRecentResourceCreate(ResourceID.fromResource(configMapToCreate),
-            configMap);
+        informerEventSource.handleRecentResourceCreate(resourceID, configMap);
       } catch (RuntimeException e) {
         informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(ResourceID.fromResource(configMapToCreate),
-                configMapToCreate);
+            .cleanupOnCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
         throw e;
       }
     } else {

@@ -14,6 +14,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
   private final boolean deletable = this instanceof Deleter;
+  private final boolean filteringEventSource;
+  private final boolean cachingEventSource;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected Deleter<P> deleter;
@@ -21,6 +23,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
     init(Creator.NOOP, Updater.NOOP, Deleter.NOOP);
+    if (this instanceof EventSourceProvider) {
+      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
+      filteringEventSource = eventSource instanceof RecentOperationEventFilter;
+      cachingEventSource = eventSource instanceof RecentOperationCacheFiller;
+    } else {
+      filteringEventSource = false;
+      cachingEventSource = false;
+    }
   }
 
   @SuppressWarnings({"unchecked"})
@@ -67,21 +77,40 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = null;
     try {
-      if (isEventSourceARecentOperationEventFilter()) {
-        eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
-            desired);
-      }
+      prepareEventFiltering(desired, resourceID);
       created = creator.create(desired, primary, context);
-      if (isEventSourceARecentOperationCacheFiller()) {
-        eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
-      }
+      cacheAfterCreate(resourceID, created);
       return created;
     } catch (RuntimeException e) {
-      if (isEventSourceARecentOperationEventFilter()) {
-        eventSourceAsRecentOperationEventFilter()
-            .cleanupOnCreateOrUpdateEventFiltering(resourceID, created == null ? desired : created);
-      }
+      cleanupAfterEventFiltering(desired, resourceID, created);
       throw e;
+    }
+  }
+
+  private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
+    if (filteringEventSource) {
+      eventSourceAsRecentOperationEventFilter()
+          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created == null ? desired : created);
+    }
+  }
+
+  private void cacheAfterCreate(ResourceID resourceID, R created) {
+    if (cachingEventSource) {
+      eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
+    }
+  }
+
+  private void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
+    if (cachingEventSource) {
+      eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
+          actual);
+    }
+  }
+
+  private void prepareEventFiltering(R desired, ResourceID resourceID) {
+    if (filteringEventSource) {
+      eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
+          desired);
     }
   }
 
@@ -89,39 +118,22 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = null;
     try {
-      if (isEventSourceARecentOperationEventFilter()) {
-        eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
-            desired);
-      }
+      prepareEventFiltering(desired, resourceID);
       updated = updater.update(actual, desired, primary, context);
-      if (isEventSourceARecentOperationCacheFiller()) {
-        eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
-            actual);
-      }
+      cacheAfterUpdate(actual, resourceID, updated);
       return updated;
     } catch (RuntimeException e) {
-      if (isEventSourceARecentOperationEventFilter()) {
-        eventSourceAsRecentOperationEventFilter()
-            .cleanupOnCreateOrUpdateEventFiltering(resourceID, updated == null ? desired : updated);
-      }
+      cleanupAfterEventFiltering(desired, resourceID, updated);
       throw e;
     }
   }
 
-  private boolean isEventSourceARecentOperationEventFilter() {
-    return this instanceof EventSourceProvider &&
-        ((EventSourceProvider<P>) this).getEventSource() instanceof RecentOperationEventFilter;
-  }
-
+  @SuppressWarnings("unchecked")
   private RecentOperationEventFilter<R> eventSourceAsRecentOperationEventFilter() {
     return (RecentOperationEventFilter<R>) ((EventSourceProvider<P>) this).getEventSource();
   }
 
-  private boolean isEventSourceARecentOperationCacheFiller() {
-    return this instanceof EventSourceProvider &&
-        ((EventSourceProvider<P>) this).getEventSource() instanceof RecentOperationCacheFiller;
-  }
-
+  @SuppressWarnings("unchecked")
   private RecentOperationCacheFiller<R> eventSourceAsRecentOperationCacheFiller() {
     return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
   }
