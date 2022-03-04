@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
@@ -32,7 +33,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
     final var password = RandomStringUtils
         .randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
     final var name = schema.getMetadata().getName();
-    final var secretName = String.format(SECRET_FORMAT, name);
+    final var secretName = getSecretName(name);
     final var userName = String.format(USERNAME_FORMAT, name);
 
     return new SecretBuilder()
@@ -40,16 +41,19 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
         .withName(secretName)
         .withNamespace(schema.getMetadata().getNamespace())
         .endMetadata()
-        .addToData(
-            MYSQL_SECRET_USERNAME, encode(userName))
-        .addToData(
-            MYSQL_SECRET_PASSWORD, encode(password))
+        .addToData(MYSQL_SECRET_USERNAME, encode(userName))
+        .addToData(MYSQL_SECRET_PASSWORD, encode(password))
         .build();
   }
 
+  private String getSecretName(String name) {
+    return String.format(SECRET_FORMAT, name);
+  }
+
   @Override
-  public boolean match(Secret actual, Secret target, Context context) {
-    return ResourceID.fromResource(actual).equals(ResourceID.fromResource(target));
+  public Result<Secret> match(Secret actual, MySQLSchema primary, Context context) {
+    final var desiredSecretName = getSecretName(primary.getMetadata().getName());
+    return Result.nonComputed(actual.getMetadata().getName().equals(desiredSecretName));
   }
 
   @Override

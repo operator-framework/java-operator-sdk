@@ -8,37 +8,52 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 
-public class GenericKubernetesResourceMatcher<R extends HasMetadata> implements Matcher<R> {
+public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
+    implements Matcher<R, P> {
 
-  private GenericKubernetesResourceMatcher() {}
+  private final KubernetesDependentResource<R, P> dependentResource;
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <R extends HasMetadata> Matcher<R> matcherFor(Class<R> resourceType) {
+  private GenericKubernetesResourceMatcher(KubernetesDependentResource<R, P> dependentResource) {
+    this.dependentResource = dependentResource;
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <R extends HasMetadata, P extends HasMetadata> Matcher<R, P> matcherFor(
+      Class<R> resourceType, KubernetesDependentResource<R, P> dependentResource) {
     if (Secret.class.isAssignableFrom(resourceType)) {
-      return (actual, desired, context) -> ResourceComparators.compareSecretData((Secret) desired,
-          (Secret) actual);
+      return (actual, primary, context) -> {
+        final var desired = dependentResource.desired(primary, context);
+        return Result.computed(
+            ResourceComparators.compareSecretData((Secret) desired, (Secret) actual), desired);
+      };
     } else if (ConfigMap.class.isAssignableFrom(resourceType)) {
-      return (actual, desired, context) -> ResourceComparators
-          .compareConfigMapData((ConfigMap) desired, (ConfigMap) actual);
+      return (actual, primary, context) -> {
+        final var desired = dependentResource.desired(primary, context);
+        return Result.computed(
+            ResourceComparators.compareConfigMapData((ConfigMap) desired, (ConfigMap) actual),
+            desired);
+      };
     } else {
-      return new GenericKubernetesResourceMatcher();
+      return new GenericKubernetesResourceMatcher(dependentResource);
     }
   }
 
   @Override
-  public boolean match(R actualResource, R desiredResource, Context context) {
+  public Result<R> match(R actualResource, P primary, Context context) {
     final var objectMapper = context.getConfigurationService().getObjectMapper();
+    final var desired = dependentResource.desired(primary, context);
+
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816
-    var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desiredResource));
+    var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desired));
     var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
     var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
     for (int i = 0; i < diffJsonPatch.size(); i++) {
       String operation = diffJsonPatch.get(i).get("op").asText();
       if (!operation.equals("add")) {
-        return false;
+        return Result.computed(false, desired);
       }
     }
-    return true;
+    return Result.computed(true, desired);
   }
 }
