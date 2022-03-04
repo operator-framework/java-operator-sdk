@@ -22,8 +22,7 @@ public class KubernetesDependentResourceConfig {
     this.configurationService = configurationService;
   }
 
-  public KubernetesDependentResourceConfig setAddOwnerReference(
-      boolean addOwnerReference) {
+  public KubernetesDependentResourceConfig setAddOwnerReference(boolean addOwnerReference) {
     this.addOwnerReference = addOwnerReference;
     return this;
   }

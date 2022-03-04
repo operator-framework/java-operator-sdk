@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
+@SuppressWarnings("rawtypes")
 public class DefaultControllerConfiguration<R extends HasMetadata>
     extends DefaultResourceConfiguration<R>
     implements ControllerConfiguration<R> {

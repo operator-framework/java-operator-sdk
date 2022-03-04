@@ -153,6 +153,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       }
 
       specs = new ArrayList<>(dependents.length);
+      Object config = null;
       for (Dependent dependent : dependents) {
         final Class<? extends DependentResource> dependentType = dependent.type();
         if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
@@ -169,13 +170,10 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                   kubeDependent,
                   KubernetesDependent::addOwnerReference,
                   KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-          KubernetesDependentResourceConfig config =
-              new KubernetesDependentResourceConfig(
+          config = new KubernetesDependentResourceConfig(
                   addOwnerReference, namespaces, labelSelector, getConfigurationService());
-          specs.add(new DependentResourceSpec(dependentType, config));
-        } else {
-          specs.add(new DependentResourceSpec(dependentType));
         }
+        specs.add(new DependentResourceSpec(dependentType, config));
       }
     }
     return specs;
