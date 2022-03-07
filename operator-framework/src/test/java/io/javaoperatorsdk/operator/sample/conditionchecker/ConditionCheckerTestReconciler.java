@@ -22,11 +22,9 @@ public class ConditionCheckerTestReconciler
     KubernetesClientAware {
 
   private KubernetesClient kubernetesClient;
-  private DeploymentDependentResource deploymentDependent;
+  private final CheckerDeploymentDependentResource deploymentDependent = new CheckerDeploymentDependentResource();
 
-  public ConditionCheckerTestReconciler() {
-    deploymentDependent = new DeploymentDependentResource();
-  }
+  public ConditionCheckerTestReconciler() {}
 
   @Override
   public List<EventSource> prepareEventSources(
@@ -68,7 +66,7 @@ public class ConditionCheckerTestReconciler
     return this.kubernetesClient;
   }
 
-  public static class DeploymentDependentResource extends
+  public static class CheckerDeploymentDependentResource extends
       KubernetesDependentResource<Deployment, ConditionCheckerTestCustomResource>
       implements Creator<Deployment, ConditionCheckerTestCustomResource>,
       Updater<Deployment, ConditionCheckerTestCustomResource> {
