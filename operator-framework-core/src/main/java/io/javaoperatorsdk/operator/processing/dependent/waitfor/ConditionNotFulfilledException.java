@@ -10,6 +10,12 @@ public class ConditionNotFulfilledException extends OperatorException {
     this.conditionNotFulfilledHandler = conditionNotFulfilledHandler;
   }
 
+  public ConditionNotFulfilledException(String message,
+      ConditionNotFulfilledHandler conditionNotFulfilledHandler) {
+    super(message);
+    this.conditionNotFulfilledHandler = conditionNotFulfilledHandler;
+  }
+
   public ConditionNotFulfilledHandler getNotMetConditionHandler() {
     return conditionNotFulfilledHandler;
   }

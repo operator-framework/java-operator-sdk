@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.dependent.waitfor.ConditionNotFulfilledException;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -139,8 +140,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         getName(resourceForExecution),
         getVersion(resourceForExecution),
         executionScope);
-
-    UpdateControl<R> updateControl = controller.reconcile(resourceForExecution, context);
+    UpdateControl<R> updateControl;
+    try {
+      updateControl = controller.reconcile(resourceForExecution, context);
+    } catch (ConditionNotFulfilledException ex) {
+      updateControl = (UpdateControl<R>) ex.getNotMetConditionHandler().control();
+    }
     R updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource = updateCustomResource(updateControl.getResource());
@@ -248,8 +253,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         "Executing delete for resource: {} with version: {}",
         getName(resource),
         getVersion(resource));
-
-    DeleteControl deleteControl = controller.cleanup(resource, context);
+    DeleteControl deleteControl;
+    try {
+      deleteControl = controller.cleanup(resource, context);
+    } catch (ConditionNotFulfilledException ex) {
+      deleteControl = (DeleteControl) ex.getNotMetConditionHandler().control();
+    }
     final var useFinalizer = configuration().useFinalizer();
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that

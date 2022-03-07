@@ -3,53 +3,51 @@ package io.javaoperatorsdk.operator.processing.dependent.waitfor;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 import static java.lang.Thread.sleep;
 
-public class DefaultWaiter<R, P extends HasMetadata> implements Waiter<R, P> {
+public class ConditionChecker<R> {
 
-  public static final Duration DEFAULT_POLLING_INTERVAL = Duration.ofSeconds(3);
+  public static final Duration DEFAULT_POLLING_INTERVAL = Duration.ofSeconds(1);
   public static final Duration DEFAULT_TIMEOUT = Duration.ZERO;
-  public static final int MIN_THREAD_SLEEP = 25;
+  private static final int MIN_THREAD_SLEEP = 25;
 
   private Duration pollingInterval;
   private Duration timeout;
-  private ConditionNotFulfilledHandler conditionNotFulfilledHandler;
+  private ConditionNotFulfilledHandler<?> conditionNotFulfilledHandler;
+  private Condition<R> condition;
 
-  public DefaultWaiter() {
-    this(DEFAULT_POLLING_INTERVAL, DEFAULT_TIMEOUT, null);
+  public static <T> ConditionChecker<T> checker() {
+    return new ConditionChecker<>();
   }
 
-  public DefaultWaiter(Duration timeout) {
-    this(DEFAULT_POLLING_INTERVAL, timeout);
+  public ConditionChecker() {
+    this(DEFAULT_POLLING_INTERVAL, DEFAULT_TIMEOUT, UpdateControl::noUpdate);
   }
 
-  public DefaultWaiter(Duration pollingInterval, Duration timeout) {
-    this(pollingInterval, timeout, null);
-  }
-
-  public DefaultWaiter(Duration pollingInterval, Duration timeout,
+  public ConditionChecker(Duration pollingInterval, Duration timeout,
       ConditionNotFulfilledHandler conditionNotFulfilledHandler) {
     this.pollingInterval = pollingInterval;
     this.timeout = timeout;
     this.conditionNotFulfilledHandler = conditionNotFulfilledHandler;
   }
 
-  @Override
-  public void waitFor(DependentResource<R, P> resource, P primary, Condition<R, P> condition) {
-    waitFor(() -> resource.getResource(primary), condition);
+  public <P extends HasMetadata> void check(DependentResource<R, P> resource, P primary) {
+    check(() -> resource.getResource(primary));
   }
 
-  @Override
-  public void waitFor(Supplier<Optional<R>> supplier, Condition<R, P> condition) {
+  public void check(Supplier<Optional<R>> supplier) {
+    checkSetup();
     Optional<R> resource = supplier.get();
     if (timeout.isNegative() || timeout.isZero()) {
-      if (meetsCondition(resource, condition)) {
+      if (resource.isPresent() && condition.isFulfilled(resource.get())) {
         return;
       } else {
         handleConditionNotMet();
@@ -58,7 +56,7 @@ public class DefaultWaiter<R, P extends HasMetadata> implements Waiter<R, P> {
     var deadline = Instant.now().plus(timeout.toMillis(), ChronoUnit.MILLIS);
     while (Instant.now().isBefore(deadline)) {
       resource = supplier.get();
-      if (meetsCondition(resource, condition)) {
+      if (resource.isPresent() && condition.isFulfilled(resource.get())) {
         return;
       } else {
         var timeLeft = Duration.between(Instant.now(), deadline);
@@ -72,8 +70,9 @@ public class DefaultWaiter<R, P extends HasMetadata> implements Waiter<R, P> {
     handleConditionNotMet();
   }
 
-  private boolean meetsCondition(Optional<R> resource, Condition<R, P> condition) {
-    return resource.isPresent() && condition.isFulfilled(resource.get());
+  private void checkSetup() {
+    Objects.requireNonNull(conditionNotFulfilledHandler, "ConditionNotFulfilledHandler is not set");
+    Objects.requireNonNull(condition, "Condition is not set");
   }
 
   private void sleepUntilNextPoll(Duration timeLeft) {
@@ -89,20 +88,24 @@ public class DefaultWaiter<R, P extends HasMetadata> implements Waiter<R, P> {
     throw new ConditionNotFulfilledException(conditionNotFulfilledHandler);
   }
 
-  public DefaultWaiter<R, P> setPollingInterval(Duration pollingInterval) {
+  public ConditionChecker<R> withPollingInterval(Duration pollingInterval) {
     this.pollingInterval = pollingInterval;
     return this;
   }
 
-  public DefaultWaiter<R, P> setTimeout(Duration timeout) {
+  public ConditionChecker<R> withTimeout(Duration timeout) {
     this.timeout = timeout;
     return this;
   }
 
-  public DefaultWaiter<R, P> setConditionNotMetHandler(
+  public ConditionChecker<R> withConditionNotFulfilledHandler(
       ConditionNotFulfilledHandler conditionNotFulfilledHandler) {
     this.conditionNotFulfilledHandler = conditionNotFulfilledHandler;
     return this;
   }
 
+  public ConditionChecker<R> withCondition(Condition<R> condition) {
+    this.condition = condition;
+    return this;
+  }
 }
