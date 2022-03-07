@@ -22,7 +22,8 @@ public class ConditionCheckerTestReconciler
     KubernetesClientAware {
 
   private KubernetesClient kubernetesClient;
-  private final CheckerDeploymentDependentResource deploymentDependent = new CheckerDeploymentDependentResource();
+  private final CheckerDeploymentDependentResource deploymentDependent =
+      new CheckerDeploymentDependentResource();
 
   public ConditionCheckerTestReconciler() {}
 
