@@ -35,8 +35,9 @@ public class ConditionCheckerIT {
     operator.create(ConditionCheckerTestCustomResource.class, customResource);
 
     await().atMost(Duration.ofSeconds(5))
-        .until(() -> operator.get(ConditionCheckerTestCustomResource.class, DEPENDENT_TEST_NAME)
-            .getStatus().getReady());
+        .until(() -> Boolean.TRUE
+            .equals(operator.get(ConditionCheckerTestCustomResource.class, DEPENDENT_TEST_NAME)
+                .getStatus().getReady()));
 
     assertThat(operator.get(ConditionCheckerTestCustomResource.class, DEPENDENT_TEST_NAME)
         .getStatus().getWasNotReadyYet()).isTrue();
