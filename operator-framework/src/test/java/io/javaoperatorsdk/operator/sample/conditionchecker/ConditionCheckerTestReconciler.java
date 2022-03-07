@@ -4,12 +4,8 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.waitfor.ConditionChecker;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -22,8 +18,8 @@ public class ConditionCheckerTestReconciler
     KubernetesClientAware {
 
   private KubernetesClient kubernetesClient;
-  private final CheckerDeploymentDependentResource deploymentDependent =
-      new CheckerDeploymentDependentResource();
+  private final ConditionCheckerDeployment deploymentDependent =
+      new ConditionCheckerDeployment();
 
   public ConditionCheckerTestReconciler() {}
 
@@ -65,22 +61,5 @@ public class ConditionCheckerTestReconciler
   @Override
   public KubernetesClient getKubernetesClient() {
     return this.kubernetesClient;
-  }
-
-  public static class CheckerDeploymentDependentResource extends
-      KubernetesDependentResource<Deployment, ConditionCheckerTestCustomResource>
-      implements Creator<Deployment, ConditionCheckerTestCustomResource>,
-      Updater<Deployment, ConditionCheckerTestCustomResource> {
-
-    @Override
-    protected Deployment desired(ConditionCheckerTestCustomResource primary, Context context) {
-      Deployment deployment =
-          ReconcilerUtils.loadYaml(Deployment.class, getClass(),
-              "nginx-deployment.yaml");
-      deployment.getMetadata().setName(primary.getMetadata().getName());
-      deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());
-      deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-      return deployment;
-    }
   }
 }
