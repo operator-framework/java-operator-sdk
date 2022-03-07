@@ -21,7 +21,7 @@ public class ConditionChecker<R> {
 
   private Duration pollingInterval;
   private Duration timeout;
-  private UnfulfillmentHandler<?> unFulfillmentHandler;
+  private UnfulfillmentHandler<?> unfulfillmentHandler;
   private Condition<R> condition;
 
   public static <T> ConditionChecker<T> checker() {
@@ -33,10 +33,10 @@ public class ConditionChecker<R> {
   }
 
   public ConditionChecker(Duration pollingInterval, Duration timeout,
-      UnfulfillmentHandler unFulfillmentHandler) {
+      UnfulfillmentHandler unfulfillmentHandler) {
     this.pollingInterval = pollingInterval;
     this.timeout = timeout;
-    this.unFulfillmentHandler = unFulfillmentHandler;
+    this.unfulfillmentHandler = unfulfillmentHandler;
   }
 
   public <P extends HasMetadata> void check(DependentResource<R, P> resource, P primary) {
@@ -71,7 +71,7 @@ public class ConditionChecker<R> {
   }
 
   private void checkSetup() {
-    Objects.requireNonNull(unFulfillmentHandler, "ConditionNotFulfilledHandler is not set");
+    Objects.requireNonNull(unfulfillmentHandler, "ConditionNotFulfilledHandler is not set");
     Objects.requireNonNull(condition, "Condition is not set");
   }
 
@@ -85,7 +85,7 @@ public class ConditionChecker<R> {
   }
 
   private void handleConditionNotMet() {
-    throw new ConditionNotFulfilledException(unFulfillmentHandler);
+    throw new ConditionNotFulfilledException(unfulfillmentHandler);
   }
 
   public ConditionChecker<R> withPollingInterval(Duration pollingInterval) {
@@ -98,9 +98,9 @@ public class ConditionChecker<R> {
     return this;
   }
 
-  public ConditionChecker<R> withConditionNotFulfilledHandler(
+  public ConditionChecker<R> withUnfulfilledHandler(
       UnfulfillmentHandler unFulfillmentHandler) {
-    this.unFulfillmentHandler = unFulfillmentHandler;
+    this.unfulfillmentHandler = unFulfillmentHandler;
     return this;
   }
 

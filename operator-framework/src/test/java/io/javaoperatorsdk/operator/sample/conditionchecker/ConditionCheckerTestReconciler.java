@@ -36,7 +36,7 @@ public class ConditionCheckerTestReconciler
     nginxNginxDeploymentDependentResource.reconcile(primary, context);
 
     ConditionChecker.<Deployment>checker()
-        .withConditionNotFulfilledHandler(() -> {
+        .withUnfulfilledHandler(() -> {
           primary.getStatus().setWasNotReadyYet(true);
           return UpdateControl.updateStatus(primary);
         })
