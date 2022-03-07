@@ -70,7 +70,7 @@ public class ConditionCheckerTestReconciler
     return this.kubernetesClient;
   }
 
-  private static class DeploymentDependentResource extends
+  public static class DeploymentDependentResource extends
       KubernetesDependentResource<Deployment, ConditionCheckerTestCustomResource>
       implements Creator<Deployment, ConditionCheckerTestCustomResource>,
       Updater<Deployment, ConditionCheckerTestCustomResource> {
