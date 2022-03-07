@@ -5,8 +5,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCache
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 
 public class ExternalResourceCachingEventSource<R, P extends HasMetadata>
-    extends CachingEventSource<R, P>
-    implements RecentOperationCacheFiller<R> {
+    extends CachingEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
   public ExternalResourceCachingEventSource(Class<R> resourceClass) {
     super(resourceClass);

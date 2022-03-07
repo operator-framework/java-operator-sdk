@@ -34,7 +34,12 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
     return cache.get(ResourceID.fromResource(primaryResource));
   }
 
-  /** Actually read the resource from the target API */
+  /**
+   * Actually read the resource from the target API
+   *
+   * @param primaryResource the primary associated resource
+   * @return fetched resource if present
+   **/
   public abstract Optional<R> fetchResource(HasMetadata primaryResource);
 
   @Override
