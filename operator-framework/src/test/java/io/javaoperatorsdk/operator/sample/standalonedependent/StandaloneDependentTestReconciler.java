@@ -5,12 +5,8 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -72,21 +68,5 @@ public class StandaloneDependentTestReconciler
 
   public boolean isErrorOccurred() {
     return errorOccurred;
-  }
-
-  private static class DeploymentDependentResource extends
-      KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource>
-      implements Creator<Deployment, StandaloneDependentTestCustomResource>,
-      Updater<Deployment, StandaloneDependentTestCustomResource> {
-
-    @Override
-    protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
-      Deployment deployment =
-          ReconcilerUtils.loadYaml(Deployment.class, getClass(), "nginx-deployment.yaml");
-      deployment.getMetadata().setName(primary.getMetadata().getName());
-      deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());
-      deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-      return deployment;
-    }
   }
 }
