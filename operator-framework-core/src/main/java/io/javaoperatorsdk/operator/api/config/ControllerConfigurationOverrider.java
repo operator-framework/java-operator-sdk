@@ -22,7 +22,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final List<DependentResourceSpec> dependentResourceSpecs;
+  private final List<DependentResourceSpec<?, ?>> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
@@ -115,7 +115,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     dependentResourceSpecs.add(dependentResourceSpec);
   }
 
-  private Optional<DependentResourceSpec> findConfigForDependentResourceClass(
+  private Optional<DependentResourceSpec<?, ?>> findConfigForDependentResourceClass(
       Class<? extends DependentResource> dependentResourceClass) {
     return dependentResourceSpecs.stream()
         .filter(dc -> dc.getDependentResourceClass().equals(dependentResourceClass))

@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
-@SuppressWarnings("rawtypes")
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
   default String getName() {
@@ -52,7 +51,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return ResourceEventFilters.passthrough();
   }
 
-  default List<DependentResourceSpec> getDependentResources() {
+  default List<DependentResourceSpec<?, ?>> getDependentResources() {
     return Collections.emptyList();
   }
 
