@@ -3,14 +3,10 @@ package io.javaoperatorsdk.operator.sample.conditionchecker;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
 
-class DeploymentDependentResource extends
-    KubernetesDependentResource<Deployment, ConditionCheckerTestCustomResource>
-    implements Creator<Deployment, ConditionCheckerTestCustomResource>,
-    Updater<Deployment, ConditionCheckerTestCustomResource> {
+class NginxDeploymentDependentResource extends
+    CrudKubernetesDependentResource<Deployment, ConditionCheckerTestCustomResource> {
 
   @Override
   protected Deployment desired(ConditionCheckerTestCustomResource primary, Context context) {
