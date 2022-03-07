@@ -4,19 +4,19 @@ import io.javaoperatorsdk.operator.OperatorException;
 
 public class ConditionNotFulfilledException extends OperatorException {
 
-  private final ConditionNotFulfilledHandler conditionNotFulfilledHandler;
+  private final UnfulfillmentHandler unFulfillmentHandler;
 
-  public ConditionNotFulfilledException(ConditionNotFulfilledHandler conditionNotFulfilledHandler) {
-    this.conditionNotFulfilledHandler = conditionNotFulfilledHandler;
+  public ConditionNotFulfilledException(UnfulfillmentHandler unFulfillmentHandler) {
+    this.unFulfillmentHandler = unFulfillmentHandler;
   }
 
   public ConditionNotFulfilledException(String message,
-      ConditionNotFulfilledHandler conditionNotFulfilledHandler) {
+      UnfulfillmentHandler unFulfillmentHandler) {
     super(message);
-    this.conditionNotFulfilledHandler = conditionNotFulfilledHandler;
+    this.unFulfillmentHandler = unFulfillmentHandler;
   }
 
-  public ConditionNotFulfilledHandler getNotMetConditionHandler() {
-    return conditionNotFulfilledHandler;
+  public UnfulfillmentHandler getNotMetConditionHandler() {
+    return unFulfillmentHandler;
   }
 }
