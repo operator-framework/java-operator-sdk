@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.conditionchecker;
 
+import java.util.Collections;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -26,7 +27,8 @@ public class ConditionCheckerTestReconciler
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<ConditionCheckerTestCustomResource> context) {
-    return List.of(deploymentDependent.eventSource(context));
+//    return List.of(deploymentDependent.eventSource(context));
+    return Collections.emptyList();
   }
 
   @Override
