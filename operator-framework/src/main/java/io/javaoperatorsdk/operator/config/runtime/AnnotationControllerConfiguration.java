@@ -26,7 +26,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   private final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
-  private List<DependentResourceSpec> specs;
+  private List<DependentResourceSpec<?, ?>> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -144,7 +144,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public List<DependentResourceSpec> getDependentResources() {
+  public List<DependentResourceSpec<?, ?>> getDependentResources() {
     if (specs == null) {
       final var dependents =
           valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
@@ -171,7 +171,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                   KubernetesDependent::addOwnerReference,
                   KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
           config = new KubernetesDependentResourceConfig(
-                  addOwnerReference, namespaces, labelSelector, getConfigurationService());
+              addOwnerReference, namespaces, labelSelector, getConfigurationService());
         }
         specs.add(new DependentResourceSpec(dependentType, config));
       }
