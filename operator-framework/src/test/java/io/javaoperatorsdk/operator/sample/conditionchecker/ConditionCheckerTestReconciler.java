@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.waitfor.ConditionChecker;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
@@ -23,8 +22,7 @@ public class ConditionCheckerTestReconciler
     KubernetesClientAware {
 
   private KubernetesClient kubernetesClient;
-
-  DeploymentDependentResource deploymentDependent;
+  private DeploymentDependentResource deploymentDependent;
 
   public ConditionCheckerTestReconciler() {
     deploymentDependent = new DeploymentDependentResource();
@@ -78,7 +76,7 @@ public class ConditionCheckerTestReconciler
     @Override
     protected Deployment desired(ConditionCheckerTestCustomResource primary, Context context) {
       Deployment deployment =
-          ReconcilerUtils.loadYaml(Deployment.class, StandaloneDependentTestCustomResource.class,
+          ReconcilerUtils.loadYaml(Deployment.class, getClass(),
               "nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());
       deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());
