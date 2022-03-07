@@ -159,8 +159,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (informerEventSource == null) {
       configureWith(context.getConfigurationService(), null, null,
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-      log.warn("Using default configuration for " + resourceType().getSimpleName()
-          + " KubernetesDependentResource, call configureWith to provide configuration");
+      log.warn(
+          "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
+          resourceType().getSimpleName());
     }
     return informerEventSource;
   }
