@@ -3,14 +3,14 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 @SuppressWarnings("rawtypes")
-public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
+public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateControl<P>> {
 
-  private final T resource;
+  private final P resource;
   private final boolean updateStatus;
   private final boolean updateResource;
 
   private UpdateControl(
-      T resource, boolean updateStatus, boolean updateResource) {
+      P resource, boolean updateStatus, boolean updateResource) {
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -54,7 +54,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(null, false, false);
   }
 
-  public T getResource() {
+  public P getResource() {
     return resource;
   }
 
