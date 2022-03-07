@@ -247,7 +247,8 @@ class EventProcessorTest {
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
 
-    verify(controllerResourceEventSourceMock, times(1)).handleRecentResourceUpdate(any(), any());
+    verify(controllerResourceEventSourceMock, times(1)).handleRecentResourceUpdate(any(), any(),
+        any());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {

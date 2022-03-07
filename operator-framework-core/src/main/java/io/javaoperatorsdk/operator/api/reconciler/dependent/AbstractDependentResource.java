@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
@@ -13,21 +14,25 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
   private final boolean deletable = this instanceof Deleter;
+  private final boolean filteringEventSource;
+  private final boolean cachingEventSource;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected Deleter<P> deleter;
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
-    init(Creator.NOOP, Updater.NOOP, Deleter.NOOP);
-  }
-
-  @SuppressWarnings({"unchecked"})
-  protected void init(Creator<R, P> defaultCreator, Updater<R, P> defaultUpdater,
-      Deleter<P> defaultDeleter) {
-    creator = creatable ? (Creator<R, P>) this : defaultCreator;
-    updater = updatable ? (Updater<R, P>) this : defaultUpdater;
-    deleter = deletable ? (Deleter<P>) this : defaultDeleter;
+    if (this instanceof EventSourceProvider) {
+      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
+      filteringEventSource = eventSource instanceof RecentOperationEventFilter;
+      cachingEventSource = eventSource instanceof RecentOperationCacheFiller;
+    } else {
+      filteringEventSource = false;
+      cachingEventSource = false;
+    }
+    creator = creatable ? (Creator<R, P>) this : null;
+    updater = updatable ? (Updater<R, P>) this : null;
+    deleter = deletable ? (Deleter<P>) this : null;
   }
 
   @Override
@@ -40,7 +45,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (creatable) {
           var desired = desired(primary, context);
           log.debug("Creating dependent {} for primary {}", desired, primary);
-          creator.create(desired, primary, context);
+          handleCreate(desired, primary, context);
         }
       } else {
         final var actual = maybeActual.get();
@@ -49,7 +54,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
             log.debug("Updating dependent {} for primary {}", desired, primary);
-            updater.update(actual, desired, primary, context);
+            handleUpdate(actual, desired, primary, context);
           }
         } else {
           log.debug("Update skipped for dependent {} as it matched the existing one", actual);
@@ -62,8 +67,71 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
+  protected void handleCreate(R desired, P primary, Context context) {
+    ResourceID resourceID = ResourceID.fromResource(primary);
+    R created = null;
+    try {
+      prepareEventFiltering(desired, resourceID);
+      created = creator.create(desired, primary, context);
+      cacheAfterCreate(resourceID, created);
+    } catch (RuntimeException e) {
+      cleanupAfterEventFiltering(desired, resourceID, created);
+      throw e;
+    }
+  }
+
+  private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
+    if (filteringEventSource) {
+      eventSourceAsRecentOperationEventFilter()
+          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created);
+    }
+  }
+
+  private void cacheAfterCreate(ResourceID resourceID, R created) {
+    if (cachingEventSource) {
+      eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
+    }
+  }
+
+  private void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
+    if (cachingEventSource) {
+      eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
+          actual);
+    }
+  }
+
+  private void prepareEventFiltering(R desired, ResourceID resourceID) {
+    if (filteringEventSource) {
+      eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
+          desired);
+    }
+  }
+
+  protected void handleUpdate(R actual, R desired, P primary, Context context) {
+    ResourceID resourceID = ResourceID.fromResource(primary);
+    R updated = null;
+    try {
+      prepareEventFiltering(desired, resourceID);
+      updated = updater.update(actual, desired, primary, context);
+      cacheAfterUpdate(actual, resourceID, updated);
+    } catch (RuntimeException e) {
+      cleanupAfterEventFiltering(desired, resourceID, updated);
+      throw e;
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private RecentOperationEventFilter<R> eventSourceAsRecentOperationEventFilter() {
+    return (RecentOperationEventFilter<R>) ((EventSourceProvider<P>) this).getEventSource();
+  }
+
+  @SuppressWarnings("unchecked")
+  private RecentOperationCacheFiller<R> eventSourceAsRecentOperationCacheFiller() {
+    return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
+  }
+
   @Override
-  public void delete(P primary, Context context) {
+  public void cleanup(P primary, Context context) {
     if (isDeletable(primary, context)) {
       deleter.delete(primary, context);
     }

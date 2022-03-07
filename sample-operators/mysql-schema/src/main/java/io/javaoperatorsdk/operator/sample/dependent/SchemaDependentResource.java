@@ -11,14 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.sample.*;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
@@ -28,7 +25,7 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static java.lang.String.format;
 
 public class SchemaDependentResource
-    extends AbstractDependentResource<Schema, MySQLSchema>
+    extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>,
@@ -37,22 +34,11 @@ public class SchemaDependentResource
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
-  private int pollPeriod = 500;
 
   @Override
   public void configureWith(ResourcePollerConfig config) {
     this.dbConfig = config.getMySQLDbConfig();
-    this.pollPeriod = config.getPollPeriod();
-  }
-
-  @Override
-  public EventSource eventSource(EventSourceContext<MySQLSchema> context) {
-    if (dbConfig == null) {
-      dbConfig = MySQLDbConfig.loadFromEnvironmentVars();
-    }
-    return new PerResourcePollingEventSource<>(
-        new SchemaPollingResourceSupplier(dbConfig), context.getPrimaryCache(), pollPeriod,
-        Schema.class);
+    setPollingPeriod(config.getPollPeriod());
   }
 
   @Override
@@ -61,12 +47,12 @@ public class SchemaDependentResource
   }
 
   @Override
-  public void create(Schema target, MySQLSchema mySQLSchema, Context context) {
+  public Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
     try (Connection connection = getConnection()) {
       Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
       var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
       var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
-      final var schema = SchemaService.createSchemaAndRelatedUser(
+      return SchemaService.createSchemaAndRelatedUser(
           connection,
           target.getName(),
           target.getCharacterSet(), username, password);
@@ -94,9 +80,8 @@ public class SchemaDependentResource
     }
   }
 
-  // todo this should read the resource from event source?
   @Override
-  public Optional<Schema> getResource(MySQLSchema primaryResource) {
+  public Optional<Schema> fetchResource(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
       var schema =
           SchemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);

@@ -6,17 +6,18 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class CachingEventSourceTest extends
-    AbstractEventSourceTestBase<CachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+class ExternalResourceCachingEventSourceTest extends
+    AbstractEventSourceTestBase<ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   @BeforeEach
   public void setup() {
-    setUpSource(new SimpleCachingEventSource());
+    setUpSource(new SimpleExternalCachingEventSource());
   }
 
   @Test
@@ -65,9 +66,9 @@ class CachingEventSourceTest extends
   }
 
 
-  public static class SimpleCachingEventSource
-      extends CachingEventSource<SampleExternalResource, HasMetadata> {
-    public SimpleCachingEventSource() {
+  public static class SimpleExternalCachingEventSource
+      extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata> {
+    public SimpleExternalCachingEventSource() {
       super(SampleExternalResource.class);
     }
   }

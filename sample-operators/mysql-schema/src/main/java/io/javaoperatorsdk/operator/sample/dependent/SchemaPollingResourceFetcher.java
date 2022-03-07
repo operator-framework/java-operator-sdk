@@ -8,17 +8,17 @@ import io.javaoperatorsdk.operator.sample.MySQLSchema;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
-public class SchemaPollingResourceSupplier
-    implements PerResourcePollingEventSource.ResourceSupplier<Schema, MySQLSchema> {
+public class SchemaPollingResourceFetcher
+    implements PerResourcePollingEventSource.ResourceFetcher<Schema, MySQLSchema> {
 
   private final SchemaService schemaService;
 
-  public SchemaPollingResourceSupplier(MySQLDbConfig mySQLDbConfig) {
+  public SchemaPollingResourceFetcher(MySQLDbConfig mySQLDbConfig) {
     this.schemaService = new SchemaService(mySQLDbConfig);
   }
 
   @Override
-  public Optional<Schema> getResource(MySQLSchema resource) {
+  public Optional<Schema> fetchResource(MySQLSchema resource) {
     return schemaService.getSchema(resource.getMetadata().getName());
   }
 }
