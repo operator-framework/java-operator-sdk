@@ -27,6 +27,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.dependent.waitfor.ConditionUnfulfilledException;
+import io.javaoperatorsdk.operator.processing.dependent.waitfor.UnfulfillmentHandler;
 import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.CustomResourceFacade;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -468,6 +470,41 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(control.getReScheduleDelay()).isNotPresent();
+  }
+
+  @Test
+  void handlesConditionUnfulfilledExceptionOnReconcile() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    var uc = UpdateControl.<TestCustomResource>noUpdate()
+        .rescheduleAfter(1000, TimeUnit.MILLISECONDS);
+    UnfulfillmentHandler<UpdateControl<TestCustomResource>> unfulfillmentHandler = () -> uc;
+
+    when(reconciler.reconcile(eq(testCustomResource), any()))
+        .thenThrow(new ConditionUnfulfilledException(unfulfillmentHandler));
+
+    PostExecutionControl control =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    assertThat(control.getReScheduleDelay()).isPresent();
+    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
+    assertThat(control.getUpdatedCustomResource()).isEmpty();
+  }
+
+  @Test
+  void handlesConditionUnfulfilledExceptionOnCleanup() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+    var uc = DeleteControl.noFinalizerRemoval().rescheduleAfter(1000);
+    UnfulfillmentHandler<DeleteControl> unfulfillmentHandler = () -> uc;
+    when(reconciler.cleanup(eq(testCustomResource), any()))
+        .thenThrow(new ConditionUnfulfilledException(unfulfillmentHandler));
+
+    PostExecutionControl control =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(reconciler, times(1)).cleanup(eq(testCustomResource), any());
+    assertThat(control.getReScheduleDelay()).isPresent();
+    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {

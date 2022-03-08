@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.dependent.waitfor.ConditionNotFulfilledException;
+import io.javaoperatorsdk.operator.processing.dependent.waitfor.ConditionUnfulfilledException;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -143,8 +143,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     UpdateControl<R> updateControl;
     try {
       updateControl = controller.reconcile(resourceForExecution, context);
-    } catch (ConditionNotFulfilledException ex) {
-      updateControl = (UpdateControl<R>) ex.getNotMetConditionHandler().control();
+    } catch (ConditionUnfulfilledException ex) {
+      updateControl = (UpdateControl<R>) ex.getUnfulfillmentHandler().control();
     }
     R updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
@@ -256,8 +256,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     DeleteControl deleteControl;
     try {
       deleteControl = controller.cleanup(resource, context);
-    } catch (ConditionNotFulfilledException ex) {
-      deleteControl = (DeleteControl) ex.getNotMetConditionHandler().control();
+    } catch (ConditionUnfulfilledException ex) {
+      deleteControl = (DeleteControl) ex.getUnfulfillmentHandler().control();
     }
     final var useFinalizer = configuration().useFinalizer();
     if (useFinalizer) {

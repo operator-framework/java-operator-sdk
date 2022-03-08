@@ -25,7 +25,7 @@ class ConditionCheckerTest {
   @Test
   void throwsExceptionIfDurationZeroConditionNotFulfilled() {
     Assertions.assertThrows(
-        ConditionNotFulfilledException.class,
+        ConditionUnfulfilledException.class,
         () -> new ConditionChecker<TestCustomResource>()
             .withTimeout(Duration.ZERO)
             .withCondition(r -> false)
@@ -35,7 +35,7 @@ class ConditionCheckerTest {
   @Test
   void throwsExceptionNoDurationIfResourceNotPresentWithinTimeout() {
     Assertions.assertThrows(
-        ConditionNotFulfilledException.class,
+        ConditionUnfulfilledException.class,
         () -> new ConditionChecker<TestCustomResource>()
             .withTimeout(Duration.ZERO)
             .withCondition(r -> true)
@@ -56,7 +56,7 @@ class ConditionCheckerTest {
   @Timeout(value = 230, unit = TimeUnit.MILLISECONDS)
   void throwsExceptionIfConditionNotFulfilledWithinTimeout() {
     Assertions.assertThrows(
-        ConditionNotFulfilledException.class, () -> new ConditionChecker<TestCustomResource>()
+        ConditionUnfulfilledException.class, () -> new ConditionChecker<TestCustomResource>()
             .withTimeout(Duration.ofMillis(200))
             .withPollingInterval(Duration.ofMillis(50))
             .withCondition(r -> false)
@@ -68,7 +68,7 @@ class ConditionCheckerTest {
   @Timeout(value = 230, unit = TimeUnit.MILLISECONDS)
   void throwsExceptionIfResourceNotPresentWithinTimeout() {
     Assertions.assertThrows(
-        ConditionNotFulfilledException.class, () -> new ConditionChecker<TestCustomResource>()
+        ConditionUnfulfilledException.class, () -> new ConditionChecker<TestCustomResource>()
             .withTimeout(Duration.ofMillis(200))
             .withPollingInterval(Duration.ofMillis(50))
             .withCondition(r -> true)

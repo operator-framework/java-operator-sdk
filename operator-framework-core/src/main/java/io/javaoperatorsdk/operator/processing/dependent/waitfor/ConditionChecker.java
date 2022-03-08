@@ -85,7 +85,7 @@ public class ConditionChecker<R> {
   }
 
   private void handleConditionNotMet() {
-    throw new ConditionNotFulfilledException(unfulfillmentHandler);
+    throw new ConditionUnfulfilledException(unfulfillmentHandler);
   }
 
   public ConditionChecker<R> withPollingInterval(Duration pollingInterval) {
