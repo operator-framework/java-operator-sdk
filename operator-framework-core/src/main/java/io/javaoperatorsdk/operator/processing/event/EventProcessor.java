@@ -224,6 +224,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void postponeReconciliationAndHandleCacheSyncEvent(ResourceID resourceID) {
+    log.debug("Postponing reconciliation for resource id: {}",resourceID);
     eventSourceManager.getControllerResourceEventSource().whitelistNextEvent(resourceID);
   }
 
