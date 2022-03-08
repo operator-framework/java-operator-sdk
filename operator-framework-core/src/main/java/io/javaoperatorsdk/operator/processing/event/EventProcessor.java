@@ -168,8 +168,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void handleEventMarking(Event event) {
     if (event instanceof ResourceEvent
         && ((ResourceEvent) event).getAction() == ResourceAction.DELETED) {
+      log.debug("Marking delete event received for: {}", event.getRelatedCustomResourceID());
       eventMarker.markDeleteEventReceived(event);
     } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
+      log.debug("Marking event received for: {}", event.getRelatedCustomResourceID());
       eventMarker.markEventReceived(event);
     }
   }
@@ -227,7 +229,13 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       PostExecutionControl<R> postExecutionControl, R customResource) {
     postExecutionControl
         .getReScheduleDelay()
-        .ifPresent(delay -> retryEventSource().scheduleOnce(customResource, delay));
+        .ifPresent(delay -> {
+          if (log.isDebugEnabled()) {
+            log.debug("ReScheduling event for resource: {} with delay: {}",
+                ResourceID.fromResource(customResource), delay);
+          }
+          retryEventSource().scheduleOnce(customResource, delay);
+        });
   }
 
   TimerEventSource<R> retryEventSource() {
@@ -284,6 +292,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void cleanupForDeletedEvent(ResourceID customResourceUid) {
+    log.debug("Cleaning up for delete event for: {}", customResourceUid);
     eventMarker.cleanup(customResourceUid);
     metrics.cleanupDoneFor(customResourceUid);
   }
