@@ -7,6 +7,7 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceAware;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -83,6 +84,10 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   @Override
   public void setConfigurationService(ConfigurationService service) {
     this.service = service;
+    getDependentResources().forEach(spec -> spec.getDependentResourceConfiguration()
+        .filter(c -> c instanceof ConfigurationServiceAware)
+        .map(ConfigurationServiceAware.class::cast)
+        .ifPresent(csa -> csa.setConfigurationService(service)));
   }
 
   @Override
@@ -170,8 +175,8 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                   kubeDependent,
                   KubernetesDependent::addOwnerReference,
                   KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-          config = new KubernetesDependentResourceConfig(
-              addOwnerReference, namespaces, labelSelector, getConfigurationService());
+          config =
+              new KubernetesDependentResourceConfig(addOwnerReference, namespaces, labelSelector);
         }
         specs.add(new DependentResourceSpec(dependentType, config));
       }

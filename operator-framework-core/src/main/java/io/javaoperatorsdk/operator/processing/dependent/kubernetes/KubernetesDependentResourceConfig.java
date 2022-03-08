@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceAware;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT;
 
-public class KubernetesDependentResourceConfig {
+public class KubernetesDependentResourceConfig implements ConfigurationServiceAware {
 
   private boolean addOwnerReference = ADD_OWNER_REFERENCE_DEFAULT;
   private String[] namespaces = new String[0];
@@ -15,11 +16,10 @@ public class KubernetesDependentResourceConfig {
   public KubernetesDependentResourceConfig() {}
 
   public KubernetesDependentResourceConfig(boolean addOwnerReference, String[] namespaces,
-      String labelSelector, ConfigurationService configurationService) {
+      String labelSelector) {
     this.addOwnerReference = addOwnerReference;
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
-    this.configurationService = configurationService;
   }
 
   public KubernetesDependentResourceConfig setAddOwnerReference(boolean addOwnerReference) {
@@ -37,10 +37,12 @@ public class KubernetesDependentResourceConfig {
     return this;
   }
 
-  public KubernetesDependentResourceConfig setConfigurationService(
-      ConfigurationService configurationService) {
+  public ConfigurationService getConfigurationService() {
+    return configurationService;
+  }
+
+  public void setConfigurationService(ConfigurationService configurationService) {
     this.configurationService = configurationService;
-    return this;
   }
 
   public boolean addOwnerReference() {
@@ -53,9 +55,5 @@ public class KubernetesDependentResourceConfig {
 
   public String labelSelector() {
     return labelSelector;
-  }
-
-  public ConfigurationService getConfigurationService() {
-    return configurationService;
   }
 }

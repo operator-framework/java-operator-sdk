@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
-public interface ResourceConfiguration<R extends HasMetadata> {
+public interface ResourceConfiguration<R extends HasMetadata> extends ConfigurationServiceAware {
 
   default String getResourceTypeName() {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
@@ -77,8 +77,4 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     }
     return targetNamespaces;
   }
-
-  ConfigurationService getConfigurationService();
-
-  void setConfigurationService(ConfigurationService service);
 }
