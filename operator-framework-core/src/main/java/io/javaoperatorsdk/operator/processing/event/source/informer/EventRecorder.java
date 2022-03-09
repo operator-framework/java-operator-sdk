@@ -69,12 +69,4 @@ public class EventRecorder<R extends HasMetadata> {
     }
     return resources.get(resources.size() - 1);
   }
-
-  public boolean recordEventIfStartedRecording(R resource) {
-    if (isRecordingFor(ResourceID.fromResource(resource))) {
-      recordEvent(resource);
-      return true;
-    }
-    return false;
-  }
 }

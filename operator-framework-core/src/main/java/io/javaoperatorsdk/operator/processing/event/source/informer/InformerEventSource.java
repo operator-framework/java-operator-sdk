@@ -96,7 +96,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-    if (eventRecorder.recordEventIfStartedRecording(newObject)) {
+    if (eventRecorder.isRecordingFor(resourceID)) {
+      log.info("Recording event for: " + resourceID);
+      eventRecorder.recordEvent(newObject);
       return;
     }
     if (temporalCacheHasResourceWithVersionAs(newObject)) {
