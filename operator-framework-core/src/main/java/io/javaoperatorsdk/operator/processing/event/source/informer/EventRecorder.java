@@ -12,23 +12,23 @@ public class EventRecorder<R extends HasMetadata> {
 
   private final Map<ResourceID, ArrayList<R>> resourceEvents = new HashMap<>();
 
-  synchronized void startEventRecording(ResourceID resourceID) {
+  public void startEventRecording(ResourceID resourceID) {
     resourceEvents.putIfAbsent(resourceID, new ArrayList<>(5));
   }
 
-  public synchronized boolean isRecordingFor(ResourceID resourceID) {
+  public boolean isRecordingFor(ResourceID resourceID) {
     return resourceEvents.get(resourceID) != null;
   }
 
-  public synchronized void stopEventRecording(ResourceID resourceID) {
+  public void stopEventRecording(ResourceID resourceID) {
     resourceEvents.remove(resourceID);
   }
 
-  public synchronized void recordEvent(R resource) {
+  public void recordEvent(R resource) {
     resourceEvents.get(ResourceID.fromResource(resource)).add(resource);
   }
 
-  public synchronized boolean containsEventWithResourceVersion(ResourceID resourceID,
+  public boolean containsEventWithResourceVersion(ResourceID resourceID,
       String resourceVersion) {
     List<R> events = resourceEvents.get(resourceID);
     if (events == null) {
@@ -42,7 +42,7 @@ public class EventRecorder<R extends HasMetadata> {
     }
   }
 
-  public synchronized boolean containsEventWithVersionButItsNotLastOne(
+  public boolean containsEventWithVersionButItsNotLastOne(
       ResourceID resourceID, String resourceVersion) {
     List<R> resources = resourceEvents.get(resourceID);
     if (resources == null) {
@@ -60,7 +60,7 @@ public class EventRecorder<R extends HasMetadata> {
         .equals(resourceVersion);
   }
 
-  public synchronized R getLastEvent(ResourceID resourceID) {
+  public R getLastEvent(ResourceID resourceID) {
     List<R> resources = resourceEvents.get(resourceID);
     if (resources == null) {
       throw new IllegalStateException(
@@ -70,7 +70,7 @@ public class EventRecorder<R extends HasMetadata> {
     return resources.get(resources.size() - 1);
   }
 
-  public synchronized boolean recordEventIfStartedRecording(R resource) {
+  public boolean recordEventIfStartedRecording(R resource) {
     if (isRecordingFor(ResourceID.fromResource(resource))) {
       recordEvent(resource);
       return true;

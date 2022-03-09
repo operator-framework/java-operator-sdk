@@ -69,6 +69,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R, P> configuration;
+  // always called from a synchronized method
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
 
   public InformerEventSource(
@@ -93,7 +94,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
 
-  private void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
+  private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
     if (eventRecorder.recordEventIfStartedRecording(newObject)) {
       return;
@@ -159,7 +160,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceUpdate(resourceID, resource,
@@ -167,7 +168,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceCreate(resourceID, resource));
   }
@@ -219,7 +220,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
+  public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
       R resource) {
     log.info("Starting event recording for: {}", resourceID);
     eventRecorder.startEventRecording(resourceID);
@@ -232,7 +233,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * @param resource handled by the informer
    */
   @Override
-  public void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID,
+  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID,
       R resource) {
     log.info("Stopping event recording for: {}", resourceID);
     eventRecorder.stopEventRecording(resourceID);
