@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,75 +35,49 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final ReentrantLock lock = new ReentrantLock();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.managedInformerEventSource = managedInformerEventSource;
   }
 
-  public void removeResourceFromCache(T resource) {
-    lock.lock();
-    try {
-      cache.remove(ResourceID.fromResource(resource));
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void removeResourceFromCache(T resource) {
+    cache.remove(ResourceID.fromResource(resource));
   }
 
-  public void unconditionallyCacheResource(T newResource) {
-    lock.lock();
-    try {
+  public synchronized void unconditionallyCacheResource(T newResource) {
+    cache.put(ResourceID.fromResource(newResource), newResource);
+  }
+
+  public synchronized void putAddedResource(T newResource) {
+    ResourceID resourceID = ResourceID.fromResource(newResource);
+    if (managedInformerEventSource.get(resourceID).isEmpty()) {
+      log.debug("Putting resource to cache with ID: {}", resourceID);
       cache.put(ResourceID.fromResource(newResource), newResource);
-    } finally {
-      lock.unlock();
+    } else {
+      log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
     }
   }
 
-  public void putAddedResource(T newResource) {
-    lock.lock();
-    try {
-      ResourceID resourceID = ResourceID.fromResource(newResource);
-      if (managedInformerEventSource.get(resourceID).isEmpty()) {
-        log.debug("Putting resource to cache with ID: {}", resourceID);
-        cache.put(ResourceID.fromResource(newResource), newResource);
-      } else {
-        log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
-      }
-    } finally {
-      lock.unlock();
+  public synchronized void putUpdatedResource(T newResource, String previousResourceVersion) {
+    var resourceId = ResourceID.fromResource(newResource);
+    var informerCacheResource = managedInformerEventSource.get(resourceId);
+    if (informerCacheResource.isEmpty()) {
+      log.debug("No cached value present for resource: {}", newResource);
+      return;
+    }
+    // if this is not true that means the cache was already updated
+    if (informerCacheResource.get().getMetadata().getResourceVersion()
+        .equals(previousResourceVersion)) {
+      log.debug("Putting resource to temporal cache with id: {}", resourceId);
+      cache.put(resourceId, newResource);
+    } else {
+      // if something is in cache it's surely obsolete now
+      cache.remove(resourceId);
     }
   }
 
-  public void putUpdatedResource(T newResource, String previousResourceVersion) {
-    lock.lock();
-    try {
-      var resourceId = ResourceID.fromResource(newResource);
-      var informerCacheResource = managedInformerEventSource.get(resourceId);
-      if (informerCacheResource.isEmpty()) {
-        log.debug("No cached value present for resource: {}", newResource);
-        return;
-      }
-      // if this is not true that means the cache was already updated
-      if (informerCacheResource.get().getMetadata().getResourceVersion()
-          .equals(previousResourceVersion)) {
-        log.debug("Putting resource to temporal cache with id: {}", resourceId);
-        cache.put(resourceId, newResource);
-      } else {
-        // if something is in cache it's surely obsolete now
-        cache.remove(resourceId);
-      }
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  public Optional<T> getResourceFromCache(ResourceID resourceID) {
-    try {
-      lock.lock();
-      return Optional.ofNullable(cache.get(resourceID));
-    } finally {
-      lock.unlock();
-    }
+  public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
+    return Optional.ofNullable(cache.get(resourceID));
   }
 }

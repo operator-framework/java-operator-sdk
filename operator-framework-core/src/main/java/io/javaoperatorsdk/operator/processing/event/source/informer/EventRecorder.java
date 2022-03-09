@@ -1,18 +1,18 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class EventRecorder<R extends HasMetadata> {
 
-  private final Map<ResourceID, ArrayList<R>> resourceEvents = new ConcurrentHashMap<>();
+  private final Map<ResourceID, ArrayList<R>> resourceEvents = new HashMap<>();
 
-  void startEventRecording(ResourceID resourceID) {
+  public void startEventRecording(ResourceID resourceID) {
     resourceEvents.putIfAbsent(resourceID, new ArrayList<>(5));
   }
 
@@ -28,7 +28,8 @@ public class EventRecorder<R extends HasMetadata> {
     resourceEvents.get(ResourceID.fromResource(resource)).add(resource);
   }
 
-  public boolean containsEventWithResourceVersion(ResourceID resourceID, String resourceVersion) {
+  public boolean containsEventWithResourceVersion(ResourceID resourceID,
+      String resourceVersion) {
     List<R> events = resourceEvents.get(resourceID);
     if (events == null) {
       return false;

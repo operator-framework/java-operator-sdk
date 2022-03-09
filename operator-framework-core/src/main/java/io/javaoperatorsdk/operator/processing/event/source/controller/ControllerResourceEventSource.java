@@ -48,10 +48,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void start() {
     try {
       super.start();
-    } catch (Exception e) {
-      if (e instanceof KubernetesClientException) {
-        handleKubernetesClientException(e);
-      }
+    } catch (KubernetesClientException e) {
+      handleKubernetesClientException(e);
       throw e;
     }
   }

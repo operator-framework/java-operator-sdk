@@ -69,6 +69,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R, P> configuration;
+  // always called from a synchronized method
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
 
   public InformerEventSource(
@@ -161,7 +162,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceUpdate(resourceID, resource,
@@ -169,12 +170,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceCreate(resourceID, resource));
   }
 
-  private synchronized void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
+  private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
     if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
       handleRecentResourceOperationAndStopEventRecording(resource);
     } else {
@@ -199,7 +200,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    *
    * @param resource just created or updated resource
    */
-  private synchronized void handleRecentResourceOperationAndStopEventRecording(R resource) {
+  private void handleRecentResourceOperationAndStopEventRecording(R resource) {
     ResourceID resourceID = ResourceID.fromResource(resource);
     try {
       if (!eventRecorder.containsEventWithResourceVersion(
