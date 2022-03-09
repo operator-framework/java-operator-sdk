@@ -1,16 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
 public class ConfigurationServiceProvider {
-  static ConfigurationService instance;
-  private static ConfigurationService defaultConfigurationService;
+  private static ConfigurationService instance;
+  private static ConfigurationService defaultConfigurationService =
+      new BaseConfigurationService(Utils.loadFromProperties());
   private static boolean alreadyConfigured = false;
 
   public static ConfigurationService instance() {
     if (instance == null) {
-      if (defaultConfigurationService == null) {
-        throw new IllegalStateException(
-            "A ConfigurationService needs to be configured using the `set` method first");
-      }
       set(defaultConfigurationService);
     }
     return instance;
