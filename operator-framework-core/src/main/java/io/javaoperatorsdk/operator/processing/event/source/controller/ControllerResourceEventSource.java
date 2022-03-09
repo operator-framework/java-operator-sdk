@@ -48,15 +48,13 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void start() {
     try {
       super.start();
-    } catch (Exception e) {
-      if (e instanceof KubernetesClientException) {
-        handleKubernetesClientException(e);
-      }
+    } catch (KubernetesClientException e) {
+      handleKubernetesClientException(e);
       throw e;
     }
   }
 
-  public void eventReceived(ResourceAction action, T resource, T oldResource) {
+  public synchronized void eventReceived(ResourceAction action, T resource, T oldResource) {
     try {
       log.debug("Event received for resource: {}", getName(resource));
       MDCUtils.addResourceInfo(resource);
@@ -74,19 +72,19 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void onAdd(T resource) {
+  public synchronized void onAdd(T resource) {
     super.onAdd(resource);
     eventReceived(ResourceAction.ADDED, resource, null);
   }
 
   @Override
-  public void onUpdate(T oldCustomResource, T newCustomResource) {
+  public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
     super.onUpdate(oldCustomResource, newCustomResource);
     eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
   }
 
   @Override
-  public void onDelete(T resource, boolean b) {
+  public synchronized void onDelete(T resource, boolean b) {
     super.onDelete(resource, b);
     eventReceived(ResourceAction.DELETED, resource, null);
   }

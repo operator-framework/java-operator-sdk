@@ -34,17 +34,17 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public void onAdd(R resource) {
+  public synchronized void onAdd(R resource) {
     temporaryResourceCache.removeResourceFromCache(resource);
   }
 
   @Override
-  public void onUpdate(R oldObj, R newObj) {
+  public synchronized void onUpdate(R oldObj, R newObj) {
     temporaryResourceCache.removeResourceFromCache(newObj);
   }
 
   @Override
-  public void onDelete(R obj, boolean deletedFinalStateUnknown) {
+  public synchronized void onDelete(R obj, boolean deletedFinalStateUnknown) {
     temporaryResourceCache.removeResourceFromCache(obj);
   }
 
@@ -70,14 +70,14 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
     temporaryResourceCache.putUpdatedResource(resource,
         previousResourceVersion.getMetadata().getResourceVersion());
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     temporaryResourceCache.putAddedResource(resource);
   }
 

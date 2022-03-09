@@ -83,12 +83,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onAdd(R resource) {
+  public synchronized void onAdd(R resource) {
     onAddOrUpdate("add", resource, () -> InformerEventSource.super.onAdd(resource));
   }
 
   @Override
-  public void onUpdate(R oldObject, R newObject) {
+  public synchronized void onUpdate(R oldObject, R newObject) {
     onAddOrUpdate("update", newObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
@@ -117,7 +117,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onDelete(R r, boolean b) {
+  public synchronized void onDelete(R r, boolean b) {
     super.onDelete(r, b);
     propagateEvent(r);
   }
@@ -161,7 +161,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceUpdate(resourceID, resource,
@@ -169,7 +169,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceCreate(resourceID, resource));
   }
