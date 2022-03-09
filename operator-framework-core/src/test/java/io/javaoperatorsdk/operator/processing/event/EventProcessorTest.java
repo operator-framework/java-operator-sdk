@@ -212,57 +212,6 @@ class EventProcessorTest {
   }
 
   @Test
-  public void whitelistNextEventIfTheCacheIsNotPropagatedAfterAnUpdate() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
-    var cr = testCustomResource(crID);
-    var updatedCr = testCustomResource(crID);
-    updatedCr.getMetadata().setResourceVersion("2");
-    var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventProcessor.getEventMarker().markEventReceived(crID);
-    when(controllerResourceEventSourceMock.get(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
-
-    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
-        PostExecutionControl.customResourceUpdated(updatedCr));
-
-    verify(mockCREventSource, times(1)).whitelistNextEvent(eq(crID));
-  }
-
-  @Test
-  public void dontWhitelistsEventWhenOtherChangeDuringExecution() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
-    var cr = testCustomResource(crID);
-    var updatedCr = testCustomResource(crID);
-    updatedCr.getMetadata().setResourceVersion("2");
-    var otherChangeCR = testCustomResource(crID);
-    otherChangeCR.getMetadata().setResourceVersion("3");
-    var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventProcessor.getEventMarker().markEventReceived(crID);
-    when(controllerResourceEventSourceMock.get(eq(crID))).thenReturn(Optional.of(otherChangeCR));
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
-
-    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
-        PostExecutionControl.customResourceUpdated(updatedCr));
-
-    verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
-  }
-
-  @Test
-  public void dontWhitelistsEventIfUpdatedEventInCache() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
-    var cr = testCustomResource(crID);
-    var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventProcessor.getEventMarker().markEventReceived(crID);
-    when(controllerResourceEventSourceMock.get(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
-
-    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
-        PostExecutionControl.customResourceUpdated(cr));
-
-    verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
-  }
-
-  @Test
   public void cancelScheduleOnceEventsOnSuccessfulExecution() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
