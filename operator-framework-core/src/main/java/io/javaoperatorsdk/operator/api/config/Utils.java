@@ -64,11 +64,28 @@ public class Utils {
   }
 
   public static boolean shouldCheckCRDAndValidateLocalModel() {
-    return Boolean.getBoolean(System.getProperty(CHECK_CRD_ENV_KEY, "true"));
+    return getBooleanFromSystemPropsOrDefault(CHECK_CRD_ENV_KEY, true);
   }
 
   public static boolean debugThreadPool() {
-    return Boolean.getBoolean(System.getProperty(DEBUG_THREAD_POOL_ENV_KEY, "false"));
+    return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
+  }
+
+  static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
+    var property = System.getProperty(propertyName);
+    if (property == null) {
+      return defaultValue;
+    } else {
+      property = property.trim().toLowerCase();
+      switch (property) {
+        case "true":
+          return true;
+        case "false":
+          return false;
+        default:
+          return defaultValue;
+      }
+    }
   }
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
