@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private final InformerConfiguration<R, P> configuration;
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
+  private final ReentrantLock eventRecorderLock = new ReentrantLock();
 
   public InformerEventSource(
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
@@ -83,21 +85,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void onAdd(R resource) {
+  public void onAdd(R resource) {
     onAddOrUpdate("add", resource, () -> InformerEventSource.super.onAdd(resource));
   }
 
   @Override
-  public synchronized void onUpdate(R oldObject, R newObject) {
+  public void onUpdate(R oldObject, R newObject) {
     onAddOrUpdate("update", newObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
 
-  private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
+  private void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-    if (eventRecorder.isRecordingFor(resourceID)) {
-      log.info("Recording event for: " + resourceID);
-      eventRecorder.recordEvent(newObject);
+    if (eventRecorder.recordEventIfStartedRecording(newObject)) {
       return;
     }
     if (temporalCacheHasResourceWithVersionAs(newObject)) {
@@ -117,7 +117,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void onDelete(R r, boolean b) {
+  public void onDelete(R r, boolean b) {
     super.onDelete(r, b);
     propagateEvent(r);
   }
@@ -161,7 +161,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceUpdate(resourceID, resource,
@@ -169,12 +169,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     handleRecentCreateOrUpdate(resource,
         () -> super.handleRecentResourceCreate(resourceID, resource));
   }
 
-  private synchronized void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
+  private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
     if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
       handleRecentResourceOperationAndStopEventRecording(resource);
     } else {
@@ -199,7 +199,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    *
    * @param resource just created or updated resource
    */
-  private synchronized void handleRecentResourceOperationAndStopEventRecording(R resource) {
+  private void handleRecentResourceOperationAndStopEventRecording(R resource) {
     ResourceID resourceID = ResourceID.fromResource(resource);
     try {
       if (!eventRecorder.containsEventWithResourceVersion(
@@ -221,7 +221,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
+  public void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
       R resource) {
     log.info("Starting event recording for: {}", resourceID);
     eventRecorder.startEventRecording(resourceID);
@@ -234,7 +234,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * @param resource handled by the informer
    */
   @Override
-  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID,
+  public void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID,
       R resource) {
     log.info("Stopping event recording for: {}", resourceID);
     eventRecorder.stopEventRecording(resourceID);
