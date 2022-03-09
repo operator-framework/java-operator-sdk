@@ -68,6 +68,12 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public Class<R> getResourceClass() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromInterface(reconciler.getClass());
+  }
+
+  @Override
   public String getLabelSelector() {
     return valueOrDefault(annotation, ControllerConfiguration::labelSelector, "");
   }
