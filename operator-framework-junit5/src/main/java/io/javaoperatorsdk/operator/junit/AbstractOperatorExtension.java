@@ -199,6 +199,18 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean oneNamespacePerClass;
 
     protected AbstractBuilder() {
+      // try to load the default configuration service if present on the class path
+      // loading the class will register it as the default configuration service if not set manually
+      try {
+        getClass().getClassLoader()
+            .loadClass("io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService");
+      } catch (ClassNotFoundException e) {
+        if (configurationService == null) {
+          throw new IllegalStateException(
+              "Couldn't load DefaultConfigurationService class. You need to either add the appropriate dependency to your build or manually set the ConfigurationService by calling withConfigurationService");
+        }
+      }
+
       this.configurationService = ConfigurationServiceProvider.instance();
 
       this.infrastructure = new ArrayList<>();
@@ -232,10 +244,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       return (T) this;
     }
 
-    /**
-     * @deprecated There is no need to set the ConfigurationService manually anymore
-     */
-    @Deprecated
     public T withConfigurationService(ConfigurationService value) {
       configurationService = value;
       return (T) this;
