@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -27,7 +26,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
   protected TemporaryResourceCache<R> temporaryResourceCache = new TemporaryResourceCache<>(this);
-  protected ReentrantLock tempCacheUpdateLock = new ReentrantLock();
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
@@ -37,26 +35,17 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void onAdd(R resource) {
-    syncedRemoveResourceFromCache(resource);
+    temporaryResourceCache.removeResourceFromCache(resource);
   }
 
   @Override
   public void onUpdate(R oldObj, R newObj) {
-    syncedRemoveResourceFromCache(newObj);
+    temporaryResourceCache.removeResourceFromCache(newObj);
   }
 
   @Override
   public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    syncedRemoveResourceFromCache(obj);
-  }
-
-  protected void syncedRemoveResourceFromCache(R obj) {
-    tempCacheUpdateLock.lock();
-    try {
-      temporaryResourceCache.removeResourceFromCache(obj);
-    } finally {
-      tempCacheUpdateLock.unlock();
-    }
+    temporaryResourceCache.removeResourceFromCache(obj);
   }
 
   @Override
@@ -83,23 +72,13 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
-    tempCacheUpdateLock.lock();
-    try {
-      temporaryResourceCache.putUpdatedResource(resource,
-          previousResourceVersion.getMetadata().getResourceVersion());
-    } finally {
-      tempCacheUpdateLock.unlock();
-    }
+    temporaryResourceCache.putUpdatedResource(resource,
+        previousResourceVersion.getMetadata().getResourceVersion());
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    tempCacheUpdateLock.lock();
-    try {
-      temporaryResourceCache.putAddedResource(resource);
-    } finally {
-      tempCacheUpdateLock.unlock();
-    }
+    temporaryResourceCache.putAddedResource(resource);
   }
 
   @Override
@@ -124,20 +103,15 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   protected boolean temporalCacheHasResourceWithVersionAs(R resource) {
-    tempCacheUpdateLock.lock();
-    try {
-      var resourceID = ResourceID.fromResource(resource);
-      var res = temporaryResourceCache.getResourceFromCache(resourceID);
-      return res.map(r -> {
-        boolean resVersionsEqual = r.getMetadata().getResourceVersion()
-            .equals(resource.getMetadata().getResourceVersion());
-        log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
-            resourceID, resVersionsEqual);
-        return resVersionsEqual;
-      }).orElse(false);
-    } finally {
-      tempCacheUpdateLock.unlock();
-    }
+    var resourceID = ResourceID.fromResource(resource);
+    var res = temporaryResourceCache.getResourceFromCache(resourceID);
+    return res.map(r -> {
+      boolean resVersionsEqual = r.getMetadata().getResourceVersion()
+          .equals(resource.getMetadata().getResourceVersion());
+      log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
+          resourceID, resVersionsEqual);
+      return resVersionsEqual;
+    }).orElse(false);
   }
 
   @Override

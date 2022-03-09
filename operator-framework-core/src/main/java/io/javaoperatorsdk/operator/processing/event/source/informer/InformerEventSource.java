@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +70,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private final InformerConfiguration<R, P> configuration;
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
-  private final ReentrantLock eventRecorderLock = new ReentrantLock();
 
   public InformerEventSource(
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
