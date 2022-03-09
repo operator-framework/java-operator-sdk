@@ -38,4 +38,8 @@ public class ConfigurationServiceProvider {
   public static void setDefault(ConfigurationService defaultConfigurationService) {
     ConfigurationServiceProvider.defaultConfigurationService = defaultConfigurationService;
   }
+
+  public static void reset() {
+    instance = null;
+  }
 }
