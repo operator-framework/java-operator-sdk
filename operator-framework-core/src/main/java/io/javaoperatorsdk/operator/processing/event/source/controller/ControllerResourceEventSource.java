@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -29,7 +32,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends AbstractResourceEventSource<T, T>
-    implements ResourceEventHandler<T> {
+    implements ResourceEventHandler<T>, ResourceCache<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
@@ -40,8 +43,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       new ConcurrentHashMap<>();
 
   private final ResourceEventFilter<T> filter;
-  private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final ControllerResourceCache<T> cache;
+  private final TemporaryResourceCache<T> temporaryResourceCache;
 
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getConfiguration().getResourceClass());
@@ -50,20 +53,12 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     var cloner = configurationService != null ? configurationService.getResourceCloner()
         : ConfigurationService.DEFAULT_CLONER;
     this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
-
+    temporaryResourceCache = new TemporaryResourceCache<>(cache);
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
         ResourceEventFilters.markedForDeletion(),
-        ResourceEventFilters.generationAware(),
-        null
+        ResourceEventFilters.generationAware()
     };
-
-    if (controller.getConfiguration().isGenerationAware()) {
-      onceWhitelistEventFilterEventFilter = new OnceWhitelistEventFilterEventFilter<>();
-      filters[filters.length - 1] = onceWhitelistEventFilterEventFilter;
-    } else {
-      onceWhitelistEventFilterEventFilter = null;
-    }
     if (controller.getConfiguration().getEventFilter() != null) {
       filter = controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
     } else {
@@ -126,6 +121,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     try {
       log.debug(
           "Event received for resource: {}", getName(customResource));
+      temporaryResourceCache.removeResourceFromCache(customResource);
       MDCUtils.addResourceInfo(customResource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, customResource,
           oldResource);
@@ -158,12 +154,31 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     eventReceived(ResourceAction.DELETED, resource, null);
   }
 
+
+  @Override
   public Optional<T> get(ResourceID resourceID) {
-    return cache.get(resourceID);
+    Optional<T> resource = temporaryResourceCache.getResourceFromCache(resourceID);
+    if (resource.isPresent()) {
+      log.debug("Resource found in temporal cache for Resource ID: {}", resourceID);
+      return resource;
+    } else {
+      return cache.get(resourceID);
+    }
   }
 
-  public ControllerResourceCache<T> getResourceCache() {
-    return cache;
+  @Override
+  public Stream<ResourceID> keys() {
+    return cache.keys();
+  }
+
+  @Override
+  public Stream<T> list(Predicate<T> predicate) {
+    return cache.list(predicate);
+  }
+
+  @Override
+  public Stream<T> list(String namespace, Predicate<T> predicate) {
+    return cache.list(namespace, predicate);
   }
 
   /**
@@ -178,19 +193,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
   }
 
-  /**
-   * This will ensure that the next event received after this method is called will not be filtered
-   * out.
-   *
-   * @param resourceID - to which the event is related
-   */
-  public void whitelistNextEvent(ResourceID resourceID) {
-    if (onceWhitelistEventFilterEventFilter != null) {
-      onceWhitelistEventFilterEventFilter.whitelistNextEvent(resourceID);
-    }
-  }
-
-
   private void handleKubernetesClientException(Exception e) {
     KubernetesClientException ke = (KubernetesClientException) e;
     if (404 == ke.getCode()) {
@@ -204,6 +206,13 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public Optional<T> getAssociated(T primary) {
-    return cache.get(ResourceID.fromResource(primary));
+    return get(ResourceID.fromResource(primary));
   }
+
+  public void handleRecentResourceUpdate(T resource,
+      T previousResourceVersion) {
+    temporaryResourceCache.putUpdatedResource(resource,
+        previousResourceVersion.getMetadata().getResourceVersion());
+  }
+
 }
