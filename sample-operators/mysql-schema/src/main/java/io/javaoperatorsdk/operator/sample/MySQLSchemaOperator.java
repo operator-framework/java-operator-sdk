@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
@@ -31,7 +30,7 @@ public class MySQLSchemaOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client,
-        new ConfigurationServiceOverrider(DefaultConfigurationService.instance())
+        ConfigurationServiceOverrider.overrideCurrent()
             .withMetrics(new MicrometerMetrics(new LoggingMeterRegistry()))
             .build());
 

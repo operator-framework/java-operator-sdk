@@ -19,8 +19,7 @@ public class ConfigurationServiceOverrider {
   private boolean closeClientOnStop;
   private ExecutorService executorService = null;
 
-  public ConfigurationServiceOverrider(
-      ConfigurationService original) {
+  ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
     this.clientConfig = original.getClientConfiguration();
     this.checkCR = original.checkCRDAndValidateLocalModel();
@@ -73,12 +72,11 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationService build() {
-    return new ConfigurationService() {
+    final var overridden = new BaseConfigurationService(original.getVersion()) {
       @Override
       public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
           Reconciler<R> reconciler) {
-        ControllerConfiguration<R> controllerConfiguration =
-            original.getConfigurationFor(reconciler);
+        final var controllerConfiguration = original.getConfigurationFor(reconciler);
         controllerConfiguration.setConfigurationService(this);
         return controllerConfiguration;
       }
@@ -86,11 +84,6 @@ public class ConfigurationServiceOverrider {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
-      }
-
-      @Override
-      public Version getVersion() {
-        return original.getVersion();
       }
 
       @Override
@@ -133,12 +126,23 @@ public class ConfigurationServiceOverrider {
         if (executorService != null) {
           return executorService;
         } else {
-          return ConfigurationService.super.getExecutorService();
+          return super.getExecutorService();
         }
       }
     };
+    // make sure we set the overridden version on the provider so that it is made available
+    ConfigurationServiceProvider.set(overridden, true);
+    return overridden;
   }
 
+  public static ConfigurationServiceOverrider overrideCurrent() {
+    return new ConfigurationServiceOverrider(ConfigurationServiceProvider.instance());
+  }
+
+  /**
+   * @deprecated Use {@link #overrideCurrent()} instead
+   */
+  @Deprecated(since = "2.2.0")
   public static ConfigurationServiceOverrider override(ConfigurationService original) {
     return new ConfigurationServiceOverrider(original);
   }

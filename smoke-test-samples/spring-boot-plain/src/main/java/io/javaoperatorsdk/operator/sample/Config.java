@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 
 @Configuration
 public class Config {
@@ -19,8 +19,9 @@ public class Config {
 
   // Register all controller beans
   @Bean(initMethod = "start", destroyMethod = "stop")
+  @SuppressWarnings("rawtypes")
   public Operator operator(List<Reconciler> controllers) {
-    Operator operator = new Operator(DefaultConfigurationService.instance());
+    Operator operator = new Operator(ConfigurationServiceProvider.instance());
     controllers.forEach(operator::register);
     return operator;
   }

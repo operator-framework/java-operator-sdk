@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.*;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.InClusterCurl;
@@ -43,13 +42,11 @@ class TomcatOperatorE2E {
   @RegisterExtension
   AbstractOperatorExtension operator = isLocal() ? OperatorExtension.builder()
       .waitForNamespaceDeletion(false)
-      .withConfigurationService(DefaultConfigurationService.instance())
       .withReconciler(new TomcatReconciler())
       .withReconciler(new WebappReconciler(client))
       .build()
       : E2EOperatorExtension.builder()
           .waitForNamespaceDeletion(false)
-          .withConfigurationService(DefaultConfigurationService.instance())
           .withOperatorDeployment(
               client.load(new FileInputStream("k8s/operator.yaml")).get())
           .build();

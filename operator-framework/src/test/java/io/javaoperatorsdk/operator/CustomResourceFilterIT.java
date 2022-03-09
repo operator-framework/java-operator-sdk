@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestReconciler;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestResource;
@@ -16,10 +15,7 @@ class CustomResourceFilterIT {
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new CustomFilteringTestReconciler())
-          .build();
+      OperatorExtension.builder().withReconciler(new CustomFilteringTestReconciler()).build();
 
   @Test
   void doesCustomFiltering() throws InterruptedException {

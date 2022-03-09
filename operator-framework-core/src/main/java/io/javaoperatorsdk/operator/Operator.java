@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
@@ -28,6 +29,13 @@ public class Operator implements LifecycleAware {
   private final ConfigurationService configurationService;
   private final ControllerManager controllers = new ControllerManager();
 
+  public Operator() {
+    this(new DefaultKubernetesClient(), ConfigurationServiceProvider.instance());
+  }
+
+  public Operator(KubernetesClient kubernetesClient) {
+    this(kubernetesClient, ConfigurationServiceProvider.instance());
+  }
 
   public Operator(ConfigurationService configurationService) {
     this(new DefaultKubernetesClient(), configurationService);

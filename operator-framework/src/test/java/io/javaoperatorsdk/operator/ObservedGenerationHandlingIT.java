@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationTestCustomResource;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationTestReconciler;
@@ -17,10 +16,7 @@ import static org.awaitility.Awaitility.await;
 class ObservedGenerationHandlingIT {
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new ObservedGenerationTestReconciler())
-          .build();
+      OperatorExtension.builder().withReconciler(new ObservedGenerationTestReconciler()).build();
 
   @Test
   void testReconciliationOfNonCustomResourceAndStatusUpdate() {
