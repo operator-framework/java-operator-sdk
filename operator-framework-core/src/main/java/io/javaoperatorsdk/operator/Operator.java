@@ -51,6 +51,7 @@ public class Operator implements LifecycleAware {
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
     this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
+    ConfigurationServiceProvider.set(configurationService);
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} ()} when the app shuts down. */
@@ -60,10 +61,6 @@ public class Operator implements LifecycleAware {
 
   public KubernetesClient getKubernetesClient() {
     return kubernetesClient;
-  }
-
-  public ConfigurationService getConfigurationService() {
-    return configurationService;
   }
 
   public List<Controller> getControllers() {
@@ -88,7 +85,7 @@ public class Operator implements LifecycleAware {
     final var clientVersion = Version.clientVersion();
     log.info("Client version: {}", clientVersion);
 
-    ExecutorServiceManager.init(configurationService);
+    ExecutorServiceManager.init();
     controllers.start();
   }
 
