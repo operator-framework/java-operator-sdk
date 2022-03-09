@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -29,7 +32,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends AbstractResourceEventSource<T, T>
-    implements ResourceEventHandler<T> {
+    implements ResourceEventHandler<T>, ResourceCache<T> {
 
   public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
 
@@ -42,6 +45,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private final ResourceEventFilter<T> filter;
   private final OnceWhitelistEventFilterEventFilter<T> onceWhitelistEventFilterEventFilter;
   private final ControllerResourceCache<T> cache;
+  private final TemporaryResourceCache<T> temporaryResourceCache;
 
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getConfiguration().getResourceClass());
@@ -50,7 +54,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     var cloner = configurationService != null ? configurationService.getResourceCloner()
         : ConfigurationService.DEFAULT_CLONER;
     this.cache = new ControllerResourceCache<>(sharedIndexInformers, cloner);
-
+    temporaryResourceCache = new TemporaryResourceCache<>(cache);
     var filters = new ResourceEventFilter[] {
         ResourceEventFilters.finalizerNeededAndApplied(),
         ResourceEventFilters.markedForDeletion(),
@@ -162,8 +166,19 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     return cache.get(resourceID);
   }
 
-  public ControllerResourceCache<T> getResourceCache() {
-    return cache;
+  @Override
+  public Stream<ResourceID> keys() {
+    return cache.keys();
+  }
+
+  @Override
+  public Stream<T> list(Predicate<T> predicate) {
+    return cache.list(predicate);
+  }
+
+  @Override
+  public Stream<T> list(String namespace, Predicate<T> predicate) {
+    return cache.list(namespace, predicate);
   }
 
   /**
@@ -204,6 +219,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public Optional<T> getAssociated(T primary) {
-    return cache.get(ResourceID.fromResource(primary));
+    return get(ResourceID.fromResource(primary));
   }
 }

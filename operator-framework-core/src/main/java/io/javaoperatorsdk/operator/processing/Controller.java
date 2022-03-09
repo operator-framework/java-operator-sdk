@@ -188,7 +188,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       if (reconciler instanceof EventSourceInitializer) {
         ((EventSourceInitializer<R>) reconciler)
             .prepareEventSources(new EventSourceContext<>(
-                eventSourceManager.getControllerResourceEventSource().getResourceCache(),
+                eventSourceManager.getControllerResourceEventSource(),
                 configurationService(), kubernetesClient))
             .forEach(eventSourceManager::registerEventSource);
       }
