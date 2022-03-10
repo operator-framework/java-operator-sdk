@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,16 +36,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 class ReconciliationDispatcherTest {
 
   private static final String DEFAULT_FINALIZER = "javaoperatorsdk.io/finalizer";
@@ -52,26 +55,24 @@ class ReconciliationDispatcherTest {
   public static final long RECONCILIATION_MAX_INTERVAL = 10L;
   private TestCustomResource testCustomResource;
   private ReconciliationDispatcher<TestCustomResource> reconciliationDispatcher;
-  private final Reconciler<TestCustomResource> reconciler = mock(Reconciler.class,
-      withSettings().extraInterfaces(ErrorStatusHandler.class));
+  private TestReconciler reconciler;
   private final ConfigurationService configService = mock(ConfigurationService.class);
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
-  private ControllerConfiguration configuration = mock(ControllerConfiguration.class);
 
   @BeforeEach
   void setup() {
     testCustomResource = TestUtils.testCustomResource();
+    reconciler = spy(new TestReconciler());
     reconciliationDispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, true);
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
-      Reconciler<R> reconciler, ControllerConfiguration configuration,
+      Reconciler<R> reconciler, ControllerConfiguration<R> configuration,
       CustomResourceFacade<R> customResourceFacade, boolean useFinalizer) {
 
     configuration = configuration == null ? mock(ControllerConfiguration.class) : configuration;
-    ReconciliationDispatcherTest.this.configuration = configuration;
     final var finalizer = useFinalizer ? DEFAULT_FINALIZER : Constants.NO_FINALIZER;
     when(configuration.getFinalizer()).thenReturn(finalizer);
     when(configuration.useFinalizer()).thenCallRealMethod();
@@ -98,8 +99,6 @@ class ReconciliationDispatcherTest {
         return object;
       }
     });
-    when(reconciler.cleanup(eq(customResource), any()))
-        .thenReturn(DeleteControl.defaultDelete());
     Controller<R> controller = new Controller<>(reconciler, configuration,
         MockKubernetesClient.client(customResource.getClass()));
     controller.start();
@@ -131,8 +130,7 @@ class ReconciliationDispatcherTest {
   void updatesOnlyStatusSubResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.updateStatus(testCustomResource));
+    reconciler.reconcile = (r, c) -> UpdateControl.updateStatus(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
@@ -144,8 +142,7 @@ class ReconciliationDispatcherTest {
   void updatesBothResourceAndStatusIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.updateResourceAndStatus(testCustomResource));
+    reconciler.reconcile = (r, c) -> UpdateControl.updateResourceAndStatus(testCustomResource);
     when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -219,8 +216,7 @@ class ReconciliationDispatcherTest {
   void doesNotRemovesTheSetFinalizerIfTheDeleteNotMethodInstructsIt() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.cleanup(eq(testCustomResource), any()))
-        .thenReturn(DeleteControl.noFinalizerRemoval());
+    reconciler.cleanup = (r, c) -> DeleteControl.noFinalizerRemoval();
     markForDeletion(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -233,8 +229,7 @@ class ReconciliationDispatcherTest {
   void doesNotUpdateTheResourceIfNoUpdateUpdateControlIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.noUpdate());
+    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(customResourceFacade, never()).replaceWithLock(any());
@@ -244,8 +239,8 @@ class ReconciliationDispatcherTest {
   @Test
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.noUpdate());
+
+    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
@@ -297,7 +292,7 @@ class ReconciliationDispatcherTest {
     verify(reconciler, times(1))
         .reconcile(any(), contextArgumentCaptor.capture());
     Context<?> context = contextArgumentCaptor.getValue();
-    final var retryInfo = context.getRetryInfo().get();
+    final var retryInfo = context.getRetryInfo().orElseGet(fail("Missing optional"));
     assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
     assertThat(retryInfo.isLastAttempt()).isEqualTo(true);
   }
@@ -306,14 +301,13 @@ class ReconciliationDispatcherTest {
   void setReScheduleToPostExecutionControlFromUpdateControl() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(
-            UpdateControl.updateStatus(testCustomResource).rescheduleAfter(1000L));
+    reconciler.reconcile =
+        (r, c) -> UpdateControl.updateStatus(testCustomResource).rescheduleAfter(1000L);
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
+    assertThat(control.getReScheduleDelay().orElseGet(fail("Missing optional"))).isEqualTo(1000L);
   }
 
   @Test
@@ -321,13 +315,13 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
 
-    when(reconciler.cleanup(eq(testCustomResource), any()))
-        .thenReturn(DeleteControl.noFinalizerRemoval().rescheduleAfter(1, TimeUnit.SECONDS));
+    reconciler.cleanup =
+        (r, c) -> DeleteControl.noFinalizerRemoval().rescheduleAfter(1, TimeUnit.SECONDS);
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertThat(control.getReScheduleDelay().get()).isEqualTo(1000L);
+    assertThat(control.getReScheduleDelay().orElseGet(fail("Missing optional"))).isEqualTo(1000L);
   }
 
   @Test
@@ -347,8 +341,9 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
-        .isEqualTo(1L);
+    assertThat(control.getUpdatedCustomResource().orElseGet(fail("Missing optional"))
+        .getStatus().getObservedGeneration())
+            .isEqualTo(1L);
   }
 
   @Test
@@ -367,8 +362,9 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
-        .isEqualTo(1L);
+    assertThat(control.getUpdatedCustomResource().orElseGet(fail("Missing optional"))
+        .getStatus().getObservedGeneration())
+            .isEqualTo(1L);
   }
 
   @Test
@@ -388,20 +384,22 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().get().getStatus().getObservedGeneration())
-        .isEqualTo(1L);
+    assertThat(control.getUpdatedCustomResource().orElseGet(fail("Missing optional"))
+        .getStatus().getObservedGeneration())
+            .isEqualTo(1L);
   }
 
   @Test
   void callErrorStatusHandlerIfImplemented() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(any(), any()))
-        .thenThrow(new IllegalStateException("Error Status Test"));
-    when(((ErrorStatusHandler) reconciler).updateErrorStatus(any(), any(), any())).then(a -> {
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
       return Optional.of(testCustomResource);
-    });
+    };
 
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(
@@ -427,12 +425,14 @@ class ReconciliationDispatcherTest {
   void callErrorStatusHandlerEvenOnFirstError() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(any(), any()))
-        .thenThrow(new IllegalStateException("Error Status Test"));
-    when(((ErrorStatusHandler) reconciler).updateErrorStatus(any(), any(), any())).then(a -> {
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
       return Optional.of(testCustomResource);
-    });
+    };
+
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(
             testCustomResource, null));
@@ -445,8 +445,7 @@ class ReconciliationDispatcherTest {
   void schedulesReconciliationIfMaxDelayIsSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.noUpdate());
+    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -459,9 +458,8 @@ class ReconciliationDispatcherTest {
   void canSkipSchedulingMaxDelayIf() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    when(reconciler.reconcile(eq(testCustomResource), any()))
-        .thenReturn(UpdateControl.noUpdate());
-    when(configuration.reconciliationMaxInterval())
+    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    when(reconciliationDispatcher.configuration().reconciliationMaxInterval())
         .thenReturn(Optional.empty());
 
     PostExecutionControl control =
@@ -489,5 +487,36 @@ class ReconciliationDispatcherTest {
 
   public <T extends HasMetadata> ExecutionScope<T> executionScopeWithCREvent(T resource) {
     return new ExecutionScope<>(resource, null);
+  }
+
+  private class TestReconciler
+      implements Reconciler<TestCustomResource>, ErrorStatusHandler<TestCustomResource> {
+    private BiFunction<TestCustomResource, Context, UpdateControl<TestCustomResource>> reconcile;
+    private BiFunction<TestCustomResource, Context, DeleteControl> cleanup;
+    private ErrorStatusHandler<TestCustomResource> errorHandler;
+
+    @Override
+    public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource,
+        Context context) {
+      if (reconcile != null && resource.equals(testCustomResource)) {
+        return reconcile.apply(resource, context);
+      }
+      return UpdateControl.noUpdate();
+    }
+
+    @Override
+    public DeleteControl cleanup(TestCustomResource resource, Context context) {
+      if (cleanup != null && resource.equals(testCustomResource)) {
+        return cleanup.apply(resource, context);
+      }
+      return DeleteControl.defaultDelete();
+    }
+
+    @Override
+    public Optional<TestCustomResource> updateErrorStatus(TestCustomResource resource,
+        RetryInfo retryInfo, RuntimeException e) {
+      return errorHandler != null ? errorHandler.updateErrorStatus(resource, retryInfo, e)
+          : Optional.empty();
+    }
   }
 }
