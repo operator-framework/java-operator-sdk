@@ -36,21 +36,21 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"unchecked"})
 @Ignore
-public class Controller<R extends HasMetadata> implements Reconciler<R>,
-    LifecycleAware, EventSourceInitializer<R> {
+public class Controller<P extends HasMetadata> implements Reconciler<P>,
+    LifecycleAware, EventSourceInitializer<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
-  private final Reconciler<R> reconciler;
-  private final ControllerConfiguration<R> configuration;
+  private final Reconciler<P> reconciler;
+  private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
-  private final EventSourceManager<R> eventSourceManager;
-  private final DependentResourceManager<R> dependents;
+  private final EventSourceManager<P> eventSourceManager;
+  private final DependentResourceManager<P> dependents;
 
   private ConfigurationService configurationService;
 
-  public Controller(Reconciler<R> reconciler,
-      ControllerConfiguration<R> configuration,
+  public Controller(Reconciler<P> reconciler,
+      ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
     this.reconciler = reconciler;
     this.configuration = configuration;
@@ -61,7 +61,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public DeleteControl cleanup(R resource, Context context) {
+  public DeleteControl cleanup(P resource, Context context) {
     dependents.cleanup(resource, context);
 
     return metrics().timeControllerExecution(
@@ -89,7 +89,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public UpdateControl<R> reconcile(R resource, Context context) {
+  public UpdateControl<P> reconcile(P resource, Context context) {
     dependents.reconcile(resource, context);
 
     return metrics().timeControllerExecution(
@@ -105,7 +105,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           }
 
           @Override
-          public String successTypeName(UpdateControl<R> result) {
+          public String successTypeName(UpdateControl<P> result) {
             String successType = "resource";
             if (result.isUpdateStatus()) {
               successType = "status";
@@ -117,7 +117,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           }
 
           @Override
-          public UpdateControl<R> execute() {
+          public UpdateControl<P> execute() {
             return reconciler.reconcile(resource, context);
           }
         });
@@ -130,13 +130,13 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<R> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
     final var dependentSources = dependents.prepareEventSources(context);
     List<EventSource> sources = new LinkedList<>(dependentSources);
 
     // add manually defined event sources
     if (reconciler instanceof EventSourceInitializer) {
-      sources.addAll(((EventSourceInitializer<R>) reconciler).prepareEventSources(context));
+      sources.addAll(((EventSourceInitializer<P>) reconciler).prepareEventSources(context));
     }
     return sources;
   }
@@ -164,11 +164,11 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     return "'" + configuration.getName() + "' Controller";
   }
 
-  public Reconciler<R> getReconciler() {
+  public Reconciler<P> getReconciler() {
     return reconciler;
   }
 
-  public ControllerConfiguration<R> getConfiguration() {
+  public ControllerConfiguration<P> getConfiguration() {
     return configuration;
   }
 
@@ -176,7 +176,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     return kubernetesClient;
   }
 
-  public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
+  public MixedOperation<P, KubernetesResourceList<P>, Resource<P>> getCRClient() {
     return kubernetesClient.resources(configuration.getResourceClass());
   }
 
@@ -189,7 +189,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
    * @throws OperatorException if a problem occurred during the registration process
    */
   public void start() throws OperatorException {
-    final Class<R> resClass = configuration.getResourceClass();
+    final Class<P> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
     final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
@@ -215,8 +215,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
       }
 
       final var context = new EventSourceContext<>(
-          eventSourceManager.getControllerResourceEventSource(),
-          configurationService(), kubernetesClient);
+          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
 
       prepareEventSources(context).forEach(eventSourceManager::registerEventSource);
 
@@ -273,7 +272,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     }
   }
 
-  public EventSourceManager<R> getEventSourceManager() {
+  public EventSourceManager<P> getEventSourceManager() {
     return eventSourceManager;
   }
 

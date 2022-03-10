@@ -105,7 +105,8 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
   static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
       EventSourceContext<P> context, Class<R> resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass, context.getConfigurationService());
+    return new InformerConfigurationBuilder<>(resourceClass, context.getControllerConfiguration()
+        .getConfigurationService());
   }
 
   static InformerConfigurationBuilder from(ConfigurationService configurationService,
