@@ -30,7 +30,7 @@ public class TomcatReconciler implements Reconciler<Tomcat> {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   @Override
-  public UpdateControl<Tomcat> reconcile(Tomcat tomcat, Context context) {
+  public UpdateControl<Tomcat> reconcile(Tomcat tomcat, Context<Tomcat> context) {
     return context.getSecondaryResource(Deployment.class).map(deployment -> {
       Tomcat updatedTomcat = updateTomcatStatus(tomcat, deployment);
       log.info(

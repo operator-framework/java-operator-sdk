@@ -79,7 +79,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
    * change.
    */
   @Override
-  public UpdateControl<Webapp> reconcile(Webapp webapp, Context context) {
+  public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();
@@ -120,7 +120,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   }
 
   @Override
-  public DeleteControl cleanup(Webapp webapp, Context context) {
+  public DeleteControl cleanup(Webapp webapp, Context<Webapp> context) {
 
     String[] command = new String[] {"rm", "/data/" + webapp.getSpec().getContextPath() + ".war"};
     String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);

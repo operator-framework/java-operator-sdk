@@ -36,7 +36,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public void reconcile(P primary, Context context) {
+  public void reconcile(P primary, Context<P> context) {
     final var creatable = isCreatable(primary, context);
     final var updatable = isUpdatable(primary, context);
     if (creatable || updatable) {
@@ -67,7 +67,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected void handleCreate(R desired, P primary, Context context) {
+  protected void handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = null;
     try {
@@ -107,7 +107,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected void handleUpdate(R actual, R desired, P primary, Context context) {
+  protected void handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = null;
     try {
@@ -131,29 +131,29 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public void cleanup(P primary, Context context) {
+  public void cleanup(P primary, Context<P> context) {
     if (isDeletable(primary, context)) {
       deleter.delete(primary, context);
     }
   }
 
-  protected R desired(P primary, Context context) {
+  protected R desired(P primary, Context<P> context) {
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or updated");
   }
 
   @SuppressWarnings("unused")
-  protected boolean isCreatable(P primary, Context context) {
+  protected boolean isCreatable(P primary, Context<P> context) {
     return creatable;
   }
 
   @SuppressWarnings("unused")
-  protected boolean isUpdatable(P primary, Context context) {
+  protected boolean isUpdatable(P primary, Context<P> context) {
     return updatable;
   }
 
   @SuppressWarnings("unused")
-  protected boolean isDeletable(P primary, Context context) {
+  protected boolean isDeletable(P primary, Context<P> context) {
     return deletable;
   }
 }

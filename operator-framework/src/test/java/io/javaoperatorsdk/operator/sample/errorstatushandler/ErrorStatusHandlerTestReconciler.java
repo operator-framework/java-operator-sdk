@@ -22,7 +22,8 @@ public class ErrorStatusHandlerTestReconciler
 
   @Override
   public UpdateControl<ErrorStatusHandlerTestCustomResource> reconcile(
-      ErrorStatusHandlerTestCustomResource resource, Context context) {
+      ErrorStatusHandlerTestCustomResource resource,
+      Context<ErrorStatusHandlerTestCustomResource> context) {
     var number = numberOfExecutions.addAndGet(1);
     var retryAttempt = -1;
     if (context.getRetryInfo().isPresent()) {

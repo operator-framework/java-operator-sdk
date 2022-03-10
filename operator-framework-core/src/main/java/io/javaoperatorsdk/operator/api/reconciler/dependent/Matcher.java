@@ -32,5 +32,5 @@ public interface Matcher<R, P extends HasMetadata> {
     }
   }
 
-  Result<R> match(R actualResource, P primary, Context context);
+  Result<R> match(R actualResource, P primary, Context<P> context);
 }

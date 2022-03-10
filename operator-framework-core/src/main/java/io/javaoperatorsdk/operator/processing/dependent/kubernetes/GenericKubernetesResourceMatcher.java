@@ -39,8 +39,9 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   }
 
   @Override
-  public Result<R> match(R actualResource, P primary, Context context) {
-    final var objectMapper = context.getConfigurationService().getObjectMapper();
+  public Result<R> match(R actualResource, P primary, Context<P> context) {
+    final var objectMapper =
+        context.getControllerConfiguration().getConfigurationService().getObjectMapper();
     final var desired = dependentResource.desired(primary, context);
 
     // reflection will be replaced by this:

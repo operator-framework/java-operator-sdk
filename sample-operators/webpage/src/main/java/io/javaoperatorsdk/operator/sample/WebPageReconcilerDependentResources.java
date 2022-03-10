@@ -128,7 +128,7 @@ public class WebPageReconcilerDependentResources
         new CrudKubernetesDependentResource<>() {
 
           @Override
-          protected Service desired(WebPage webPage, Context context) {
+          protected Service desired(WebPage webPage, Context<WebPage> context) {
             Service service = loadYaml(Service.class, getClass(), "service.yaml");
             service.getMetadata().setName(serviceName(webPage));
             service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());

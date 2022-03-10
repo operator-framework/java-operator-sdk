@@ -296,7 +296,7 @@ class ReconciliationDispatcherTest {
         ArgumentCaptor.forClass(Context.class);
     verify(reconciler, times(1))
         .reconcile(any(), contextArgumentCaptor.capture());
-    Context context = contextArgumentCaptor.getValue();
+    Context<?> context = contextArgumentCaptor.getValue();
     final var retryInfo = context.getRetryInfo().get();
     assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
     assertThat(retryInfo.isLastAttempt()).isEqualTo(true);

@@ -61,7 +61,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
   }
 
   @Override
-  public DeleteControl cleanup(P resource, Context context) {
+  public DeleteControl cleanup(P resource, Context<P> context) {
     dependents.cleanup(resource, context);
 
     return metrics().timeControllerExecution(
@@ -89,7 +89,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
   }
 
   @Override
-  public UpdateControl<P> reconcile(P resource, Context context) {
+  public UpdateControl<P> reconcile(P resource, Context<P> context) {
     dependents.reconcile(resource, context);
 
     return metrics().timeControllerExecution(
