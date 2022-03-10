@@ -301,7 +301,7 @@ class ReconciliationDispatcherTest {
     verify(reconciler, times(1))
         .reconcile(any(), contextArgumentCaptor.capture());
     Context<?> context = contextArgumentCaptor.getValue();
-    final var retryInfo = context.getRetryInfo().orElseGet(fail("Missing optional"));
+    final var retryInfo = context.getRetryInfo().orElseGet(() -> fail("Missing optional"));
     assertThat(retryInfo.getAttemptCount()).isEqualTo(2);
     assertThat(retryInfo.isLastAttempt()).isEqualTo(true);
   }
@@ -316,7 +316,8 @@ class ReconciliationDispatcherTest {
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertThat(control.getReScheduleDelay().orElseGet(fail("Missing optional"))).isEqualTo(1000L);
+    assertThat(control.getReScheduleDelay().orElseGet(() -> fail("Missing optional")))
+        .isEqualTo(1000L);
   }
 
   @Test
@@ -330,7 +331,8 @@ class ReconciliationDispatcherTest {
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertThat(control.getReScheduleDelay().orElseGet(fail("Missing optional"))).isEqualTo(1000L);
+    assertThat(control.getReScheduleDelay().orElseGet(() -> fail("Missing optional")))
+        .isEqualTo(1000L);
   }
 
   @Test
@@ -350,7 +352,7 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(fail("Missing optional"))
+    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
             .isEqualTo(1L);
   }
@@ -371,7 +373,7 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(fail("Missing optional"))
+    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
             .isEqualTo(1L);
   }
@@ -393,7 +395,7 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(fail("Missing optional"))
+    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
             .isEqualTo(1L);
   }
