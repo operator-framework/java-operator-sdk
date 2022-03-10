@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -17,7 +19,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -56,9 +58,33 @@ class ReconciliationDispatcherTest {
   private TestCustomResource testCustomResource;
   private ReconciliationDispatcher<TestCustomResource> reconciliationDispatcher;
   private TestReconciler reconciler;
-  private final ConfigurationService configService = mock(ConfigurationService.class);
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
+
+  @BeforeAll
+  static void classSetup() {
+    /*
+     * We need this for mock reconcilers to properly generate the expected UpdateControl: without
+     * this, calls such as `when(reconciler.reconcile(eq(testCustomResource),
+     * any())).thenReturn(UpdateControl.updateStatus(testCustomResource))` will return null because
+     * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
+     * implemented on TestCustomResourceSpec or TestCustomResourceStatus
+     */
+    ConfigurationServiceProvider.overrideCurrent(overrider -> {
+      overrider.checkingCRDAndValidateLocalModel(false)
+          .withResourceCloner(new Cloner() {
+            @Override
+            public <R extends HasMetadata> R clone(R object) {
+              return object;
+            }
+          });
+    });
+  }
+
+  @AfterAll
+  static void tearDown() {
+    ConfigurationServiceProvider.reset();
+  }
 
   @BeforeEach
   void setup() {
@@ -82,23 +108,6 @@ class ReconciliationDispatcherTest {
     when(configuration.reconciliationMaxInterval())
         .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
 
-    when(configuration.getConfigurationService()).thenReturn(configService);
-
-
-    /*
-     * We need this for mock reconcilers to properly generate the expected UpdateControl: without
-     * this, calls such as `when(reconciler.reconcile(eq(testCustomResource),
-     * any())).thenReturn(UpdateControl.updateStatus(testCustomResource))` will return null because
-     * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
-     * implemented on TestCustomResourceSpec or TestCustomResourceStatus
-     */
-    when(configService.getResourceCloner()).thenReturn(new Cloner() {
-      @Override
-
-      public <T extends HasMetadata> T clone(T object) {
-        return object;
-      }
-    });
     Controller<R> controller = new Controller<>(reconciler, configuration,
         MockKubernetesClient.client(customResource.getClass()));
     controller.start();
