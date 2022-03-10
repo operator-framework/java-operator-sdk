@@ -136,7 +136,7 @@ public class CustomResourceSelectorTest {
     public MyConfiguration() {
       super(MyController.class.getCanonicalName(), "mycontroller", null, Constants.NO_FINALIZER,
           false, null,
-          null, null, null, TestCustomResource.class, null, null, null);
+          null, null, null, TestCustomResource.class, null, null);
     }
   }
 

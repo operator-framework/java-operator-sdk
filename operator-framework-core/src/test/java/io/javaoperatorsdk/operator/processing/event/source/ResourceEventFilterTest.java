@@ -140,7 +140,7 @@ class ResourceEventFilterTest {
           eventFilter,
           customResourceClass,
           null,
-          null, null);
+          null);
     }
   }
 
@@ -150,6 +150,7 @@ class ResourceEventFilterTest {
       super(null, configuration, MockKubernetesClient.client(TestCustomResource.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
       return mock(EventSourceManager.class);

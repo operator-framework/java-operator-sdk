@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
+@SuppressWarnings("rawtypes")
 public class DefaultControllerConfiguration<R extends HasMetadata>
     extends DefaultResourceConfiguration<R>
     implements ControllerConfiguration<R> {
@@ -37,7 +38,6 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
-      ConfigurationService service,
       List<DependentResourceSpec<?, ?>> dependents) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
@@ -52,7 +52,6 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             : retryConfiguration;
     this.resourceEventFilter = resourceEventFilter;
 
-    setConfigurationService(service);
     this.dependents = dependents != null ? dependents : Collections.emptyList();
   }
 
@@ -84,16 +83,6 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public RetryConfiguration getRetryConfiguration() {
     return retryConfiguration;
-  }
-
-
-  @Override
-  public void setConfigurationService(ConfigurationService service) {
-    if (getConfigurationService() != null) {
-      throw new IllegalStateException("A ConfigurationService is already associated with '" + name
-          + "' ControllerConfiguration. Cannot change it once set!");
-    }
-    super.setConfigurationService(service);
   }
 
   @Override

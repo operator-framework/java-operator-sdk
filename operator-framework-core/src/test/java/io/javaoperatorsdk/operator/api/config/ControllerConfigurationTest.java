@@ -10,20 +10,7 @@ class ControllerConfigurationTest {
 
   @Test
   void getCustomResourceClass() {
-    final ControllerConfiguration<TestCustomResource> conf = new ControllerConfiguration<>() {
-      @Override
-      public String getAssociatedReconcilerClassName() {
-        return null;
-      }
-
-      @Override
-      public ConfigurationService getConfigurationService() {
-        return null;
-      }
-
-      @Override
-      public void setConfigurationService(ConfigurationService service) {}
-    };
+    final ControllerConfiguration<TestCustomResource> conf = () -> null;
     assertEquals(TestCustomResource.class, conf.getResourceClass());
   }
 }

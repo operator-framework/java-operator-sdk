@@ -26,7 +26,6 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
-  private ConfigurationService service;
   private List<DependentResourceSpec<?, ?>> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
@@ -75,16 +74,6 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   @Override
   public String getLabelSelector() {
     return valueOrDefault(annotation, ControllerConfiguration::labelSelector, "");
-  }
-
-  @Override
-  public ConfigurationService getConfigurationService() {
-    return service;
-  }
-
-  @Override
-  public void setConfigurationService(ConfigurationService service) {
-    this.service = service;
   }
 
   @Override

@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -14,6 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
+@SuppressWarnings("rawtypes")
 public interface InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
     extends ResourceConfiguration<R> {
 
@@ -23,13 +23,12 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet;
     private final PrimaryToSecondaryMapper<P> associatedWith;
 
-    protected DefaultInformerConfiguration(ConfigurationService service, String labelSelector,
+    protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet,
         PrimaryToSecondaryMapper<P> associatedWith,
         Set<String> namespaces) {
       super(labelSelector, resourceClass, namespaces);
-      setConfigurationService(service);
       this.secondaryToPrimaryResourcesIdSet =
           Objects.requireNonNullElse(secondaryToPrimaryResourcesIdSet,
               Mappers.fromOwnerReference());
@@ -52,6 +51,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
   PrimaryToSecondaryMapper<P> getAssociatedResourceIdentifier();
 
+  @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
 
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet;
@@ -59,12 +59,9 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
-    private final ConfigurationService configurationService;
 
-    private InformerConfigurationBuilder(Class<R> resourceClass,
-        ConfigurationService configurationService) {
+    private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
-      this.configurationService = configurationService;
     }
 
     public InformerConfigurationBuilder<R, P> withPrimaryResourcesRetriever(
@@ -97,7 +94,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     }
 
     public InformerConfiguration<R, P> build() {
-      return new DefaultInformerConfiguration<>(configurationService, labelSelector, resourceClass,
+      return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           secondaryToPrimaryResourcesIdSet, associatedWith,
           namespaces);
     }
@@ -105,23 +102,21 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
   static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
       EventSourceContext<P> context, Class<R> resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass, context.getControllerConfiguration()
-        .getConfigurationService());
+    return new InformerConfigurationBuilder<>(resourceClass);
   }
 
-  static InformerConfigurationBuilder from(ConfigurationService configurationService,
-      Class resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass, configurationService);
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  static InformerConfigurationBuilder from(Class resourceClass) {
+    return new InformerConfigurationBuilder<>(resourceClass);
   }
 
   static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
       InformerConfiguration<R, P> configuration) {
-    return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass(),
-        configuration.getConfigurationService())
-            .withNamespaces(configuration.getNamespaces())
-            .withLabelSelector(configuration.getLabelSelector())
-            .withAssociatedSecondaryResourceIdentifier(
-                configuration.getAssociatedResourceIdentifier())
-            .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
+    return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass())
+        .withNamespaces(configuration.getNamespaces())
+        .withLabelSelector(configuration.getLabelSelector())
+        .withAssociatedSecondaryResourceIdentifier(
+            configuration.getAssociatedResourceIdentifier())
+        .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
   }
 }

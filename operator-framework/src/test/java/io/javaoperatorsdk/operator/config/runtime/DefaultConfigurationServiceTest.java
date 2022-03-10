@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -27,11 +26,6 @@ class DefaultConfigurationServiceTest {
 
   public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
   final DefaultConfigurationService configurationService = DefaultConfigurationService.instance();
-
-  @Test
-  void defaultConfigurationServiceIsSetByDefault() {
-    assertEquals(DefaultConfigurationService.instance(), ConfigurationServiceProvider.instance());
-  }
 
   @Test
   void attemptingToRetrieveAnUnknownControllerShouldLogWarning() {

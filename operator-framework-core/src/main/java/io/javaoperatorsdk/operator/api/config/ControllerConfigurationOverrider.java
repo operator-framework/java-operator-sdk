@@ -135,7 +135,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        original.getConfigurationService(),
         dependentResourceSpecs);
   }
 

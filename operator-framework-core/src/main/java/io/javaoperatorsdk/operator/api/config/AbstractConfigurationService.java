@@ -26,6 +26,7 @@ public class AbstractConfigurationService implements ConfigurationService {
     put(config, false);
   }
 
+  @SuppressWarnings("unchecked")
   private <R extends HasMetadata> void put(
       ControllerConfiguration<R> config, boolean failIfExisting) {
     final var name = config.getName();
@@ -36,7 +37,6 @@ public class AbstractConfigurationService implements ConfigurationService {
       }
     }
     configurations.put(name, config);
-    config.setConfigurationService(this);
   }
 
   protected <R extends HasMetadata> void throwExceptionOnNameCollision(
@@ -50,6 +50,7 @@ public class AbstractConfigurationService implements ConfigurationService {
             + newReconcilerClassName);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> reconciler) {

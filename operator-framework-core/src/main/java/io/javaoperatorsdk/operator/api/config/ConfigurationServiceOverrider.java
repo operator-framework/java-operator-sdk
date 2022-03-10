@@ -3,10 +3,8 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
@@ -73,14 +71,6 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationService build() {
     final var overridden = new BaseConfigurationService(original.getVersion()) {
-      @Override
-      public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
-          Reconciler<R> reconciler) {
-        final var controllerConfiguration = original.getConfigurationFor(reconciler);
-        controllerConfiguration.setConfigurationService(this);
-        return controllerConfiguration;
-      }
-
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
