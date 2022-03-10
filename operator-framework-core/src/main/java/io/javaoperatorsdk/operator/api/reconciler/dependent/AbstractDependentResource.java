@@ -14,22 +14,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
   private final boolean deletable = this instanceof Deleter;
-  private final boolean filteringEventSource;
-  private final boolean cachingEventSource;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected Deleter<P> deleter;
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
-    if (this instanceof EventSourceProvider) {
-      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
-      filteringEventSource = eventSource instanceof RecentOperationEventFilter;
-      cachingEventSource = eventSource instanceof RecentOperationCacheFiller;
-    } else {
-      filteringEventSource = false;
-      cachingEventSource = false;
-    }
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
     deleter = deletable ? (Deleter<P>) this : null;
@@ -81,27 +71,27 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
-    if (filteringEventSource) {
+    if (isFilteringEventSource()) {
       eventSourceAsRecentOperationEventFilter()
           .cleanupOnCreateOrUpdateEventFiltering(resourceID, created);
     }
   }
 
   private void cacheAfterCreate(ResourceID resourceID, R created) {
-    if (cachingEventSource) {
+    if (isRecentOperationCacheFiller()) {
       eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
     }
   }
 
   private void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
-    if (cachingEventSource) {
+    if (isRecentOperationCacheFiller()) {
       eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
           actual);
     }
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    if (filteringEventSource) {
+    if (isFilteringEventSource()) {
       eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
           desired);
     }
@@ -128,6 +118,26 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @SuppressWarnings("unchecked")
   private RecentOperationCacheFiller<R> eventSourceAsRecentOperationCacheFiller() {
     return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
+  }
+
+  // this cannot be done in constructor since event source might be initialized later
+  protected boolean isFilteringEventSource() {
+    if (this instanceof EventSourceProvider) {
+      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
+      return eventSource instanceof RecentOperationEventFilter;
+    } else {
+      return false;
+    }
+  }
+
+  // this cannot be done in constructor since event source might be initialized later
+  protected boolean isRecentOperationCacheFiller() {
+    if (this instanceof EventSourceProvider) {
+      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
+      return eventSource instanceof RecentOperationCacheFiller;
+    } else {
+      return false;
+    }
   }
 
   @Override
