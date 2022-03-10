@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT;
 
@@ -10,16 +8,14 @@ public class KubernetesDependentResourceConfig {
   private boolean addOwnerReference = ADD_OWNER_REFERENCE_DEFAULT;
   private String[] namespaces = new String[0];
   private String labelSelector = EMPTY_STRING;
-  private ConfigurationService configurationService;
 
   public KubernetesDependentResourceConfig() {}
 
   public KubernetesDependentResourceConfig(boolean addOwnerReference, String[] namespaces,
-      String labelSelector, ConfigurationService configurationService) {
+      String labelSelector) {
     this.addOwnerReference = addOwnerReference;
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
-    this.configurationService = configurationService;
   }
 
   public KubernetesDependentResourceConfig setAddOwnerReference(
@@ -38,12 +34,6 @@ public class KubernetesDependentResourceConfig {
     return this;
   }
 
-  public KubernetesDependentResourceConfig setConfigurationService(
-      ConfigurationService configurationService) {
-    this.configurationService = configurationService;
-    return this;
-  }
-
   public boolean addOwnerReference() {
     return addOwnerReference;
   }
@@ -54,9 +44,5 @@ public class KubernetesDependentResourceConfig {
 
   public String labelSelector() {
     return labelSelector;
-  }
-
-  public ConfigurationService getConfigurationService() {
-    return configurationService;
   }
 }

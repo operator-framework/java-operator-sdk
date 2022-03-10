@@ -47,10 +47,6 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     return watchAllNamespaces;
   }
 
-  public ConfigurationService getConfigurationService() {
-    return ConfigurationServiceProvider.instance();
-  }
-
   @Override
   public Class<R> getResourceClass() {
     return resourceClass;
