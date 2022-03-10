@@ -24,9 +24,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -63,11 +63,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void configureWith(ConfigurationService configService, String labelSelector,
       Set<String> namespaces, boolean addOwnerReference) {
     final var primaryResourcesRetriever =
-        (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
+        (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
-    final AssociatedSecondaryResourceIdentifier<P> secondaryResourceIdentifier =
-        (this instanceof AssociatedSecondaryResourceIdentifier)
-            ? (AssociatedSecondaryResourceIdentifier<P>) this
+    final PrimaryToSecondaryMapper<P> secondaryResourceIdentifier =
+        (this instanceof PrimaryToSecondaryMapper)
+            ? (PrimaryToSecondaryMapper<P>) this
             : ResourceID::fromResource;
     InformerConfiguration<R, P> ic =
         InformerConfiguration.from(configService, resourceType())
