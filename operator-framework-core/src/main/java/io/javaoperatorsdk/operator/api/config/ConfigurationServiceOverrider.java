@@ -2,10 +2,12 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.client.Config;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
+@SuppressWarnings("unused")
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
   private Metrics metrics;
@@ -70,7 +72,7 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationService build() {
-    final var overridden = new BaseConfigurationService(original.getVersion()) {
+    return new BaseConfigurationService(original.getVersion()) {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
@@ -120,17 +122,10 @@ public class ConfigurationServiceOverrider {
         }
       }
     };
-    // make sure we set the overridden version on the provider so that it is made available
-    ConfigurationServiceProvider.set(overridden, true);
-    return overridden;
-  }
-
-  public static ConfigurationServiceOverrider overrideCurrent() {
-    return new ConfigurationServiceOverrider(ConfigurationServiceProvider.instance());
   }
 
   /**
-   * @deprecated Use {@link #overrideCurrent()} instead
+   * @deprecated Use {@link ConfigurationServiceProvider#overrideCurrent(Consumer)} instead
    */
   @Deprecated(since = "2.2.0")
   public static ConfigurationServiceOverrider override(ConfigurationService original) {

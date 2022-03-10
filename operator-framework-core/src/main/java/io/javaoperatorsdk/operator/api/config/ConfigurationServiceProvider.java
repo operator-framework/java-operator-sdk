@@ -1,42 +1,67 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.function.Consumer;
+
 public class ConfigurationServiceProvider {
-  private static ConfigurationService instance;
-  private static ConfigurationService defaultConfigurationService =
+  static final ConfigurationService DEFAULT =
       new BaseConfigurationService(Utils.loadFromProperties());
+  private static ConfigurationService instance;
+  private static ConfigurationService defaultConfigurationService = DEFAULT;
   private static boolean alreadyConfigured = false;
 
-  public static ConfigurationService instance() {
+  private ConfigurationServiceProvider() {}
+
+  public synchronized static ConfigurationService instance() {
     if (instance == null) {
       set(defaultConfigurationService);
     }
     return instance;
   }
 
-  public static void set(ConfigurationService instance) {
+  public synchronized static void set(ConfigurationService instance) {
     set(instance, false);
   }
 
-  static void set(ConfigurationService instance, boolean overriding) {
-    if ((overriding && alreadyConfigured) ||
-        (ConfigurationServiceProvider.instance != null
-            && !ConfigurationServiceProvider.instance.equals(instance))) {
-      throw new IllegalStateException(
-          "A ConfigurationService has already been set and cannot be set again. Current: "
-              + ConfigurationServiceProvider.instance.getClass().getCanonicalName());
+  private static void set(ConfigurationService instance, boolean overriding) {
+    final var current = ConfigurationServiceProvider.instance;
+    if (!overriding) {
+      if (current != null && !current.equals(instance)) {
+        throw new IllegalStateException(
+            "A ConfigurationService has already been set and cannot be set again. Current: "
+                + current.getClass().getCanonicalName());
+      }
+    } else {
+      if (alreadyConfigured) {
+        throw new IllegalStateException(
+            "The ConfigurationService has already been overridden once and cannot be changed again. Current: "
+                + current.getClass().getCanonicalName());
+      } else {
+        alreadyConfigured = true;
+      }
     }
 
-    if (overriding) {
-      alreadyConfigured = true;
-    }
     ConfigurationServiceProvider.instance = instance;
   }
 
-  public static void setDefault(ConfigurationService defaultConfigurationService) {
+  public synchronized static void overrideCurrent(
+      Consumer<ConfigurationServiceOverrider> overrider) {
+    final var toOverride =
+        new ConfigurationServiceOverrider(ConfigurationServiceProvider.instance());
+    overrider.accept(toOverride);
+    ConfigurationServiceProvider.set(toOverride.build(), true);
+  }
+
+  public synchronized static void setDefault(ConfigurationService defaultConfigurationService) {
     ConfigurationServiceProvider.defaultConfigurationService = defaultConfigurationService;
   }
 
-  public static void reset() {
+  synchronized static ConfigurationService getDefault() {
+    return defaultConfigurationService;
+  }
+
+  public synchronized static void reset() {
+    defaultConfigurationService = DEFAULT;
     instance = null;
+    alreadyConfigured = false;
   }
 }
