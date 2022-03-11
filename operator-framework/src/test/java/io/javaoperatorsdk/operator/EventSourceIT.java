@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
@@ -19,10 +18,7 @@ import static org.awaitility.Awaitility.await;
 class EventSourceIT {
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(EventSourceTestCustomReconciler.class)
-          .build();
+      OperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class).build();
 
   @Test
   void receivingPeriodicEvents() {

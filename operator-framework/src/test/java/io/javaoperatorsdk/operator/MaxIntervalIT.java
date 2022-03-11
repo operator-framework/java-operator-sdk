@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestCustomResource;
 import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestReconciler;
@@ -17,10 +16,7 @@ class MaxIntervalIT {
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new MaxIntervalTestReconciler())
-          .build();
+      OperatorExtension.builder().withReconciler(new MaxIntervalTestReconciler()).build();
 
   @Test
   void reconciliationTriggeredBasedOnMaxInterval() {

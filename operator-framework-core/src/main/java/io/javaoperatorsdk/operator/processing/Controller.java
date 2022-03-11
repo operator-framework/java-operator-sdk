@@ -16,10 +16,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -46,8 +44,6 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
   private final DependentResourceManager<P> dependents;
-
-  private ConfigurationService configurationService;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -125,7 +121,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
 
 
   private Metrics metrics() {
-    final var metrics = configurationService().getMetrics();
+    final var metrics = ConfigurationServiceProvider.instance().getMetrics();
     return metrics != null ? metrics : Metrics.NOOP;
   }
 
@@ -202,7 +198,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
     try {
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (configurationService().checkCRDAndValidateLocalModel()
+      if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
           && CustomResource.class.isAssignableFrom(resClass)) {
         crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
             .get();
@@ -225,23 +221,6 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
-  }
-
-  private ConfigurationService configurationService() {
-    if (configurationService == null) {
-      configurationService = configuration.getConfigurationService();
-      // make sure we always have a default configuration service
-      if (configurationService == null) {
-        // we shouldn't need to register the configuration with the default service
-        configurationService = new BaseConfigurationService(Version.UNKNOWN) {
-          @Override
-          public boolean checkCRDAndValidateLocalModel() {
-            return false;
-          }
-        };
-      }
-    }
-    return configurationService;
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
@@ -282,6 +261,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
     }
   }
 
+  @SuppressWarnings("rawtypes")
   public List<DependentResource> getDependents() {
     return dependents.getDependents();
   }

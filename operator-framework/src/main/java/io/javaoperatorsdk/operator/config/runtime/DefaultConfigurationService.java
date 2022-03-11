@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.config.runtime;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -10,11 +11,16 @@ public class DefaultConfigurationService extends BaseConfigurationService {
   private static final DefaultConfigurationService instance = new DefaultConfigurationService();
   private boolean createIfNeeded = super.createIfNeeded();
 
+  static {
+    // register this as the default configuration service
+    ConfigurationServiceProvider.setDefault(instance);
+  }
+
   private DefaultConfigurationService() {
     super();
   }
 
-  public static DefaultConfigurationService instance() {
+  static DefaultConfigurationService instance() {
     return instance;
   }
 

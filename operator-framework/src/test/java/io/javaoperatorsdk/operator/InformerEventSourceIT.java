@@ -8,7 +8,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResource;
@@ -27,7 +26,6 @@ class InformerEventSourceIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
           .withReconciler(new InformerEventSourceTestCustomReconciler())
           .build();
 

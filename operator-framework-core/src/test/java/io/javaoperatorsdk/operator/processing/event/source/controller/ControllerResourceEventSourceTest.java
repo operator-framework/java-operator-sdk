@@ -26,7 +26,7 @@ class ControllerResourceEventSourceTest extends
 
   public static final String FINALIZER = "finalizer";
 
-  private TestController testController = new TestController(true);
+  private final TestController testController = new TestController(true);
 
   @BeforeEach
   public void setup() {
@@ -109,9 +109,10 @@ class ControllerResourceEventSourceTest extends
             eq(customResource1));
   }
 
+  @SuppressWarnings("unchecked")
   private static class TestController extends Controller<TestCustomResource> {
 
-    private EventSourceManager<TestCustomResource> eventSourceManager =
+    private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);
 
     public TestController(boolean generationAware) {
@@ -141,7 +142,7 @@ class ControllerResourceEventSourceTest extends
           null,
           TestCustomResource.class,
           null,
-          null, null);
+          null);
     }
   }
 }

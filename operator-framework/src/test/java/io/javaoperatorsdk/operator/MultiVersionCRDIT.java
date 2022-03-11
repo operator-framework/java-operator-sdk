@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
 
@@ -22,7 +21,6 @@ class MultiVersionCRDIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
           .withReconciler(MultiVersionCRDTestReconciler1.class)
           .withReconciler(MultiVersionCRDTestReconciler2.class)
           .build();

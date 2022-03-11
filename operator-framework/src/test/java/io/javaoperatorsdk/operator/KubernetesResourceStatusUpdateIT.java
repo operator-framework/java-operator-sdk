@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.deployment.DeploymentReconciler;
 
@@ -23,10 +22,7 @@ class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new DeploymentReconciler())
-          .build();
+      OperatorExtension.builder().withReconciler(new DeploymentReconciler()).build();
 
   @Test
   void testReconciliationOfNonCustomResourceAndStatusUpdate() {

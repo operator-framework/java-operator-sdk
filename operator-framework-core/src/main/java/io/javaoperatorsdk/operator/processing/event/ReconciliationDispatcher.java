@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -124,9 +124,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
     if (isErrorStatusHandlerPresent() ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
-      final var configurationService = configuration().getConfigurationService();
-      return configurationService != null ? configurationService.getResourceCloner().clone(resource)
-          : ConfigurationService.DEFAULT_CLONER.clone(resource);
+      final var cloner = ConfigurationServiceProvider.instance().getResourceCloner();
+      return cloner.clone(resource);
     } else {
       return resource;
     }
@@ -163,6 +162,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
 
+  @SuppressWarnings("unchecked")
   private void handleErrorStatusHandler(R resource, Context<R> context,
       RuntimeException e) {
     if (isErrorStatusHandlerPresent()) {
@@ -301,7 +301,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return customResourceFacade.replaceWithLock(resource);
   }
 
-  private ControllerConfiguration<R> configuration() {
+  ControllerConfiguration<R> configuration() {
     return controller.getConfiguration();
   }
 

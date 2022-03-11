@@ -58,4 +58,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   default Optional<Duration> reconciliationMaxInterval() {
     return Optional.of(Duration.ofHours(10L));
   }
+
+  default ConfigurationService getConfigurationService() {
+    return ConfigurationServiceProvider.instance();
+  }
 }

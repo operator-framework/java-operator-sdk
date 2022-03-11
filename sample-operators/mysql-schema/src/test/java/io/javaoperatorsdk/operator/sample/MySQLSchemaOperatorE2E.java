@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
@@ -39,7 +38,7 @@ class MySQLSchemaOperatorE2E {
 
   static final String MY_SQL_NS = "mysql";
 
-  private static List<HasMetadata> infrastructure = new ArrayList<>();
+  private final static List<HasMetadata> infrastructure = new ArrayList<>();
 
   static {
     infrastructure.add(
@@ -60,10 +59,10 @@ class MySQLSchemaOperatorE2E {
   }
 
   @RegisterExtension
+  @SuppressWarnings("unchecked")
   AbstractOperatorExtension operator =
       isLocal()
           ? OperatorExtension.builder()
-              .withConfigurationService(DefaultConfigurationService.instance())
               .withReconciler(
                   new MySQLSchemaReconciler(),
                   c -> {
@@ -75,7 +74,6 @@ class MySQLSchemaOperatorE2E {
               .withInfrastructure(infrastructure)
               .build()
           : E2EOperatorExtension.builder()
-              .withConfigurationService(DefaultConfigurationService.instance())
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .withInfrastructure(infrastructure)
               .build();

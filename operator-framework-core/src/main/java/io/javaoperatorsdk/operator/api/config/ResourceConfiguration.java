@@ -63,12 +63,8 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   default Set<String> getEffectiveNamespaces() {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
-      final var parent = getConfigurationService();
-      if (parent == null) {
-        throw new IllegalStateException(
-            "Parent ConfigurationService must be set before calling this method");
-      }
-      String namespace = parent.getClientConfiguration().getNamespace();
+      final String namespace =
+          ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace();
       if (namespace == null) {
         throw new OperatorException(
             "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");
@@ -77,8 +73,4 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     }
     return targetNamespaces;
   }
-
-  ConfigurationService getConfigurationService();
-
-  void setConfigurationService(ConfigurationService service);
 }

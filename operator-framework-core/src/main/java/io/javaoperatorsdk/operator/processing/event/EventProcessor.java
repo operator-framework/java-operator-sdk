@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
@@ -55,13 +56,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
         GenericRetry.fromConfiguration(
             eventSourceManager.getController().getConfiguration().getRetryConfiguration()),
-        eventSourceManager.getController().getConfiguration().getConfigurationService() == null
-            ? Metrics.NOOP
-            : eventSourceManager
-                .getController()
-                .getConfiguration()
-                .getConfigurationService()
-                .getMetrics(),
+        ConfigurationServiceProvider.instance().getMetrics(),
         eventSourceManager);
   }
 
@@ -209,11 +204,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       if (eventMarker.deleteEventPresent(resourceID)) {
         cleanupForDeletedEvent(executionScope.getCustomResourceID());
       } else {
-        postExecutionControl.getUpdatedCustomResource().ifPresent(r -> {
-          eventSourceManager.getControllerResourceEventSource().handleRecentResourceUpdate(
-              ResourceID.fromResource(r), r,
-              executionScope.getResource());
-        });
+        postExecutionControl.getUpdatedCustomResource().ifPresent(
+            r -> eventSourceManager.getControllerResourceEventSource().handleRecentResourceUpdate(
+                ResourceID.fromResource(r), r,
+                executionScope.getResource()));
         if (eventMarker.eventPresent(resourceID)) {
           submitReconciliationExecution(resourceID);
         } else {

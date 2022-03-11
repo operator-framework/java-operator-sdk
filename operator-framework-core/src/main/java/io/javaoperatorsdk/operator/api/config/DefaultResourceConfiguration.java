@@ -12,7 +12,6 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final Set<String> namespaces;
   private final boolean watchAllNamespaces;
   private final Class<R> resourceClass;
-  private ConfigurationService service;
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       String... namespaces) {
@@ -49,17 +48,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public ConfigurationService getConfigurationService() {
-    return service;
-  }
-
-  @Override
   public Class<R> getResourceClass() {
     return resourceClass;
-  }
-
-  @Override
-  public void setConfigurationService(ConfigurationService service) {
-    this.service = service;
   }
 }

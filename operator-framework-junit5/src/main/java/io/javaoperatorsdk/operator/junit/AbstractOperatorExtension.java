@@ -22,9 +22,8 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Utils;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 
 public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     BeforeAllCallback,
@@ -200,7 +199,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean oneNamespacePerClass;
 
     protected AbstractBuilder() {
-      this.configurationService = new BaseConfigurationService(Version.UNKNOWN);
+      this.configurationService = ConfigurationServiceProvider.instance();
 
       this.infrastructure = new ArrayList<>();
       this.infrastructureTimeout = Duration.ofMinutes(1);

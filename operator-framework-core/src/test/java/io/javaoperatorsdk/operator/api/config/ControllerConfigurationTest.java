@@ -15,14 +15,6 @@ class ControllerConfigurationTest {
       public String getAssociatedReconcilerClassName() {
         return null;
       }
-
-      @Override
-      public ConfigurationService getConfigurationService() {
-        return null;
-      }
-
-      @Override
-      public void setConfigurationService(ConfigurationService service) {}
     };
     assertEquals(TestCustomResource.class, conf.getResourceClass());
   }

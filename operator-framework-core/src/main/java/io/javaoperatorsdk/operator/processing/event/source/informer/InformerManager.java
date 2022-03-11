@@ -17,7 +17,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.Cloner;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -41,8 +41,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
       C configuration, ResourceEventHandler<T> eventHandler) {
-    final var service = configuration.getConfigurationService();
-    cloner = service == null ? ConfigurationService.DEFAULT_CLONER : service.getResourceCloner();
+    cloner = ConfigurationServiceProvider.instance().getResourceCloner();
 
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var labelSelector = configuration.getLabelSelector();

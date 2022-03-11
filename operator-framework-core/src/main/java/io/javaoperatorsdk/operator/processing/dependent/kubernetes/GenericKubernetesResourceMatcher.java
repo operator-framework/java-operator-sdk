@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 
@@ -40,8 +41,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    final var objectMapper =
-        context.getControllerConfiguration().getConfigurationService().getObjectMapper();
+    final var objectMapper = ConfigurationServiceProvider.instance().getObjectMapper();
     final var desired = dependentResource.desired(primary, context);
 
     // reflection will be replaced by this:

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
@@ -22,10 +21,7 @@ class SubResourceUpdateIT {
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(SubResourceTestCustomReconciler.class)
-          .build();
+      OperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class).build();
 
   @Test
   void updatesSubResourceStatus() {

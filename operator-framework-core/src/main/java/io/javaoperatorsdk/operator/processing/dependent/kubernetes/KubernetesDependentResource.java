@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -55,13 +54,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
-    configureWith(config.getConfigurationService(), config.labelSelector(),
-        Set.of(config.namespaces()), config.addOwnerReference());
+    configureWith(config.labelSelector(), Set.of(config.namespaces()), config.addOwnerReference());
   }
 
   @SuppressWarnings("unchecked")
-  private void configureWith(ConfigurationService configService, String labelSelector,
-      Set<String> namespaces, boolean addOwnerReference) {
+  private void configureWith(String labelSelector, Set<String> namespaces,
+      boolean addOwnerReference) {
     final var primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
@@ -70,7 +68,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
             ? (PrimaryToSecondaryMapper<P>) this
             : ResourceID::fromResource;
     InformerConfiguration<R, P> ic =
-        InformerConfiguration.from(configService, resourceType())
+        InformerConfiguration.from(resourceType())
             .withLabelSelector(labelSelector)
             .withNamespaces(namespaces)
             .withPrimaryResourcesRetriever(primaryResourcesRetriever)
@@ -129,9 +127,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public EventSource initEventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
-      configureWith(context.getControllerConfiguration().getConfigurationService(), null,
-          context.getControllerConfiguration().getNamespaces(),
-          KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+      configureWith(null, null, KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }

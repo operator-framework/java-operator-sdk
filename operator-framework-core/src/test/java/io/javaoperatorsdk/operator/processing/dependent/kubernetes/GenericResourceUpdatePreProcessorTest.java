@@ -2,11 +2,11 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.HashMap;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
@@ -15,15 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("rawtypes")
 class GenericResourceUpdatePreProcessorTest {
 
   private static final Context context = mock(Context.class);
 
-  static {
-    final var configurationService = mock(ConfigurationService.class);
+  @BeforeAll
+  static void setUp() {
     final var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
-    when(configurationService.getResourceCloner()).thenReturn(ConfigurationService.DEFAULT_CLONER);
     when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
