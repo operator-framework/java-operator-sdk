@@ -44,7 +44,8 @@ public abstract class GenericResourceUpdatePreProcessor<R extends HasMetadata> i
   }
 
   public R replaceSpecOnActual(R actual, R desired, Context context) {
-    var clonedActual = context.getConfigurationService().getResourceCloner().clone(actual);
+    var clonedActual = context.getControllerConfiguration().getConfigurationService()
+        .getResourceCloner().clone(actual);
     updateClonedActual(clonedActual, desired);
     return clonedActual;
   }

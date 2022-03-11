@@ -35,7 +35,7 @@ public class MySQLSchemaReconciler
 
 
   @Override
-  public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
+  public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context<MySQLSchema> context) {
     // we only need to update the status if we just built the schema, i.e. when it's present in the
     // context
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();

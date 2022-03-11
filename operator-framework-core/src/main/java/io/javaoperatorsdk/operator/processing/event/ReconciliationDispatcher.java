@@ -163,11 +163,11 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
 
-  private void handleErrorStatusHandler(R resource, Context context,
+  private void handleErrorStatusHandler(R resource, Context<R> context,
       RuntimeException e) {
     if (isErrorStatusHandlerPresent()) {
       try {
-        var retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
+        RetryInfo retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
           @Override
           public int getAttemptCount() {
             return 0;

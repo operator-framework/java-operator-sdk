@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,8 +23,10 @@ class GenericKubernetesResourceMatcherTest {
   private static final Context context = mock(Context.class);
   static {
     final var configurationService = mock(ConfigurationService.class);
+    final var controllerConfiguration = mock(ControllerConfiguration.class);
     when(configurationService.getObjectMapper()).thenReturn(new ObjectMapper());
-    when(context.getConfigurationService()).thenReturn(configurationService);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
   @Test

@@ -14,8 +14,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -128,7 +128,7 @@ public class WebPageReconcilerDependentResources
         new CrudKubernetesDependentResource<>() {
 
           @Override
-          protected Service desired(WebPage webPage, Context context) {
+          protected Service desired(WebPage webPage, Context<WebPage> context) {
             Service service = loadYaml(Service.class, getClass(), "service.yaml");
             service.getMetadata().setName(serviceName(webPage));
             service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
@@ -163,7 +163,7 @@ public class WebPageReconcilerDependentResources
   private class ConfigMapDependentResource
       extends CrudKubernetesDependentResource<ConfigMap, WebPage>
       implements
-      AssociatedSecondaryResourceIdentifier<WebPage> {
+      PrimaryToSecondaryMapper<WebPage> {
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context context) {

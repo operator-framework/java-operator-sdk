@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public interface InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
@@ -20,13 +20,13 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
   class DefaultInformerConfiguration<R extends HasMetadata, P extends HasMetadata> extends
       DefaultResourceConfiguration<R> implements InformerConfiguration<R, P> {
 
-    private final PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
-    private final AssociatedSecondaryResourceIdentifier<P> associatedWith;
+    private final SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet;
+    private final PrimaryToSecondaryMapper<P> associatedWith;
 
     protected DefaultInformerConfiguration(ConfigurationService service, String labelSelector,
         Class<R> resourceClass,
-        PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet,
-        AssociatedSecondaryResourceIdentifier<P> associatedWith,
+        SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet,
+        PrimaryToSecondaryMapper<P> associatedWith,
         Set<String> namespaces) {
       super(labelSelector, resourceClass, namespaces);
       setConfigurationService(service);
@@ -38,24 +38,24 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     }
 
 
-    public PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever() {
+    public SecondaryToPrimaryMapper<R> getPrimaryResourcesRetriever() {
       return secondaryToPrimaryResourcesIdSet;
     }
 
-    public AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier() {
+    public PrimaryToSecondaryMapper<P> getAssociatedResourceIdentifier() {
       return associatedWith;
     }
 
   }
 
-  PrimaryResourcesRetriever<R> getPrimaryResourcesRetriever();
+  SecondaryToPrimaryMapper<R> getPrimaryResourcesRetriever();
 
-  AssociatedSecondaryResourceIdentifier<P> getAssociatedResourceIdentifier();
+  PrimaryToSecondaryMapper<P> getAssociatedResourceIdentifier();
 
   class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
 
-    private PrimaryResourcesRetriever<R> secondaryToPrimaryResourcesIdSet;
-    private AssociatedSecondaryResourceIdentifier<P> associatedWith;
+    private SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet;
+    private PrimaryToSecondaryMapper<P> associatedWith;
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
@@ -68,13 +68,13 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     }
 
     public InformerConfigurationBuilder<R, P> withPrimaryResourcesRetriever(
-        PrimaryResourcesRetriever<R> primaryResourcesRetriever) {
-      this.secondaryToPrimaryResourcesIdSet = primaryResourcesRetriever;
+        SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
+      this.secondaryToPrimaryResourcesIdSet = secondaryToPrimaryMapper;
       return this;
     }
 
     public InformerConfigurationBuilder<R, P> withAssociatedSecondaryResourceIdentifier(
-        AssociatedSecondaryResourceIdentifier<P> associatedWith) {
+        PrimaryToSecondaryMapper<P> associatedWith) {
       this.associatedWith = associatedWith;
       return this;
     }
@@ -105,7 +105,8 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
   static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
       EventSourceContext<P> context, Class<R> resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass, context.getConfigurationService());
+    return new InformerConfigurationBuilder<>(resourceClass, context.getControllerConfiguration()
+        .getConfigurationService());
   }
 
   static InformerConfigurationBuilder from(ConfigurationService configurationService,

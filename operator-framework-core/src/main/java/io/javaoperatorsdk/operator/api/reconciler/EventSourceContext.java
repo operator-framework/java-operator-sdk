@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
@@ -14,13 +14,14 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 public class EventSourceContext<P extends HasMetadata> {
 
   private final ResourceCache<P> primaryCache;
-  private final ConfigurationService configurationService;
+  private final ControllerConfiguration<P> controllerConfiguration;
   private final KubernetesClient client;
 
   public EventSourceContext(ResourceCache<P> primaryCache,
-      ConfigurationService configurationService, KubernetesClient client) {
+      ControllerConfiguration<P> controllerConfiguration,
+      KubernetesClient client) {
     this.primaryCache = primaryCache;
-    this.configurationService = configurationService;
+    this.controllerConfiguration = controllerConfiguration;
     this.client = client;
   }
 
@@ -34,16 +35,13 @@ public class EventSourceContext<P extends HasMetadata> {
   }
 
   /**
-   * Retrieves the {@link ConfigurationService} associated with the operator. This allows, in
-   * particular, to lookup global configuration information such as the configured
-   * {@link io.javaoperatorsdk.operator.api.monitoring.Metrics} or
-   * {@link io.javaoperatorsdk.operator.api.config.Cloner} implementations, which could be useful to
-   * event sources.
+   * Retrieves the {@link ControllerConfiguration} associated with the operator. This allows, in
+   * particular, to lookup controller and global configuration information such as the configured*
    *
-   * @return the {@link ConfigurationService} associated with the operator
+   * @return the {@link ControllerConfiguration} associated with the operator
    */
-  public ConfigurationService getConfigurationService() {
-    return configurationService;
+  public ControllerConfiguration<P> getControllerConfiguration() {
+    return controllerConfiguration;
   }
 
   /**

@@ -5,7 +5,6 @@ import java.util.Set;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @FunctionalInterface
-public interface PrimaryResourcesRetriever<T> {
-
+public interface SecondaryToPrimaryMapper<T> {
   Set<ResourceID> associatedPrimaryResources(T dependentResource);
 }

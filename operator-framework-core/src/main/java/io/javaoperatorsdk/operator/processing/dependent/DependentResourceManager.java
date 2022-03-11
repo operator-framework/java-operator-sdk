@@ -63,14 +63,14 @@ public class DependentResourceManager<P extends HasMetadata>
   }
 
   @Override
-  public UpdateControl<P> reconcile(P resource, Context context) {
+  public UpdateControl<P> reconcile(P resource, Context<P> context) {
     initContextIfNeeded(resource, context);
     dependents.forEach(dependent -> dependent.reconcile(resource, context));
     return UpdateControl.noUpdate();
   }
 
   @Override
-  public DeleteControl cleanup(P resource, Context context) {
+  public DeleteControl cleanup(P resource, Context<P> context) {
     initContextIfNeeded(resource, context);
     dependents.forEach(dependent -> dependent.cleanup(resource, context));
     return Reconciler.super.cleanup(resource, context);

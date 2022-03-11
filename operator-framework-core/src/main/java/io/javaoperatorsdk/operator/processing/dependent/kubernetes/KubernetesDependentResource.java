@@ -24,9 +24,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -63,11 +63,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void configureWith(ConfigurationService configService, String labelSelector,
       Set<String> namespaces, boolean addOwnerReference) {
     final var primaryResourcesRetriever =
-        (this instanceof PrimaryResourcesRetriever) ? (PrimaryResourcesRetriever<R>) this
+        (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
-    final AssociatedSecondaryResourceIdentifier<P> secondaryResourceIdentifier =
-        (this instanceof AssociatedSecondaryResourceIdentifier)
-            ? (AssociatedSecondaryResourceIdentifier<P>) this
+    final PrimaryToSecondaryMapper<P> secondaryResourceIdentifier =
+        (this instanceof PrimaryToSecondaryMapper)
+            ? (PrimaryToSecondaryMapper<P>) this
             : ResourceID::fromResource;
     InformerConfiguration<R, P> ic =
         InformerConfiguration.from(configService, resourceType())
@@ -92,11 +92,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.addOwnerReference = addOwnerReference;
   }
 
-  public R create(R target, P primary, Context context) {
+  public R create(R target, P primary, Context<P> context) {
     return prepare(target, primary, "Creating").create(target);
   }
 
-  public R update(R actual, R target, P primary, Context context) {
+  public R update(R actual, R target, P primary, Context<P> context) {
     var updatedActual = processor.replaceSpecOnActual(actual, target, context);
     return prepare(target, primary, "Updating").replace(updatedActual);
   }
@@ -105,7 +105,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
-  public void delete(P primary, Context context) {
+  public void delete(P primary, Context<P> context) {
     if (!addOwnerReference) {
       var resource = getResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());
@@ -129,7 +129,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public EventSource initEventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
-      configureWith(context.getConfigurationService(), null, null,
+      configureWith(context.getControllerConfiguration().getConfigurationService(), null,
+          context.getControllerConfiguration().getNamespaces(),
           KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
@@ -159,7 +160,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected R desired(P primary, Context context) {
+  protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
   }
 

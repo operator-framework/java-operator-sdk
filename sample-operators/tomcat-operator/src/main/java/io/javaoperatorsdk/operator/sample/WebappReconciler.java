@@ -26,9 +26,9 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
@@ -52,7 +52,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
      * customResourceId of the WebApp resource we traverse the cache and identify it based on naming
      * convention.
      */
-    final PrimaryResourcesRetriever<Tomcat> webappsMatchingTomcatName =
+    final SecondaryToPrimaryMapper<Tomcat> webappsMatchingTomcatName =
         (Tomcat t) -> context.getPrimaryCache()
             .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
             .map(ResourceID::fromResource)
@@ -61,7 +61,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
     /*
      * We retrieve the Tomcat instance associated with out Webapp from its spec
      */
-    final AssociatedSecondaryResourceIdentifier<Webapp> tomcatFromWebAppSpec =
+    final PrimaryToSecondaryMapper<Webapp> tomcatFromWebAppSpec =
         (Webapp webapp) -> new ResourceID(
             webapp.getSpec().getTomcat(),
             webapp.getMetadata().getNamespace());
@@ -79,7 +79,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
    * change.
    */
   @Override
-  public UpdateControl<Webapp> reconcile(Webapp webapp, Context context) {
+  public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();
@@ -120,7 +120,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   }
 
   @Override
-  public DeleteControl cleanup(Webapp webapp, Context context) {
+  public DeleteControl cleanup(Webapp webapp, Context<Webapp> context) {
 
     String[] command = new String[] {"rm", "/data/" + webapp.getSpec().getContextPath() + ".war"};
     String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);

@@ -11,13 +11,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
-import static io.javaoperatorsdk.operator.sample.MySQLSchemaReconciler.*;
-
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
-    implements AssociatedSecondaryResourceIdentifier<MySQLSchema>, Creator<Secret, MySQLSchema> {
+    implements PrimaryToSecondaryMapper<MySQLSchema>, Creator<Secret, MySQLSchema> {
 
   public static final String SECRET_FORMAT = "%s-secret";
   public static final String USERNAME_FORMAT = "%s-user";
