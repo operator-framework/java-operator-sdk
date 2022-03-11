@@ -161,7 +161,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                   kubeDependent,
                   KubernetesDependent::addOwnerReference,
                   KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-           config =
+          config =
               new KubernetesDependentResourceConfig(addOwnerReference, namespaces, labelSelector);
         }
         specs.add(new DependentResourceSpec(dependentType, config));

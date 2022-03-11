@@ -50,6 +50,7 @@ class ControllerTest {
 
   @Test
   void crdShouldBeCheckedForCustomResourcesByDefault() {
+    ConfigurationServiceProvider.reset();
     final var client = MockKubernetesClient.client(TestCustomResource.class);
     final var reconciler = mock(Reconciler.class);
     final var configuration = mock(ControllerConfiguration.class);
