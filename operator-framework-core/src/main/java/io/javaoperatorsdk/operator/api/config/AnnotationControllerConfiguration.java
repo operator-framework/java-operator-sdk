@@ -21,14 +21,13 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
-@SuppressWarnings("rawtypes")
 public class AnnotationControllerConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private ConfigurationService service;
-  private List<DependentResourceSpec> specs;
+  private List<DependentResourceSpec<?, ?>> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -147,7 +146,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public List<DependentResourceSpec> getDependentResources() {
+  public List<DependentResourceSpec<?, ?>> getDependentResources() {
     if (specs == null) {
       final var dependents =
           valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
@@ -155,6 +154,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         return Collections.emptyList();
       }
 
+      Object config = null;
       specs = new ArrayList<>(dependents.length);
       for (Dependent dependent : dependents) {
         final Class<? extends DependentResource> dependentType = dependent.type();
@@ -172,13 +172,10 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                   kubeDependent,
                   KubernetesDependent::addOwnerReference,
                   KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-          KubernetesDependentResourceConfig config =
-              new KubernetesDependentResourceConfig(
-                  addOwnerReference, namespaces, labelSelector, getConfigurationService());
-          specs.add(new DependentResourceSpec(dependentType, config));
-        } else {
-          specs.add(new DependentResourceSpec(dependentType));
+          config = new KubernetesDependentResourceConfig(
+              addOwnerReference, namespaces, labelSelector, getConfigurationService());
         }
+        specs.add(new DependentResourceSpec(dependentType, config));
       }
     }
     return specs;

@@ -10,10 +10,6 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
 
   private final C dependentResourceConfig;
 
-  public DependentResourceSpec(Class<T> dependentResourceClass) {
-    this(dependentResourceClass, null);
-  }
-
   public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig) {
     this.dependentResourceClass = dependentResourceClass;
     this.dependentResourceConfig = dependentResourceConfig;
