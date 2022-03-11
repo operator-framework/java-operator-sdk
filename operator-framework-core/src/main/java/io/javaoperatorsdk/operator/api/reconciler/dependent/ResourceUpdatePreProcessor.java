@@ -5,5 +5,5 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public interface ResourceUpdatePreProcessor<R extends HasMetadata> {
 
-  R replaceSpecOnActual(R actual, R desired, Context context);
+  R replaceSpecOnActual(R actual, R desired, Context<?> context);
 }

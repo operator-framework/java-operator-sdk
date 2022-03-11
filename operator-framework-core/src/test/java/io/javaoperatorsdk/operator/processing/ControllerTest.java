@@ -55,7 +55,6 @@ class ControllerTest {
     final var reconciler = mock(Reconciler.class);
     final var configuration = mock(ControllerConfiguration.class);
     when(configuration.getResourceClass()).thenReturn(TestCustomResource.class);
-    when(configuration.getConfigurationService()).thenCallRealMethod();
 
     final var controller = new Controller<TestCustomResource>(reconciler, configuration, client);
     // since we're not really connected to a cluster and the CRD wouldn't be deployed anyway, we
