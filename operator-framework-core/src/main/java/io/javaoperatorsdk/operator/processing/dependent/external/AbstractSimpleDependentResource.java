@@ -43,26 +43,26 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   public abstract Optional<R> fetchResource(HasMetadata primaryResource);
 
   @Override
-  public void reconcile(P primary, Context context) {
+  public void reconcile(P primary, Context<P> context) {
     var resourceId = ResourceID.fromResource(primary);
     Optional<R> resource = fetchResource(primary);
     resource.ifPresentOrElse(r -> cache.put(resourceId, r), () -> cache.remove(resourceId));
     super.reconcile(primary, context);
   }
 
-  public void cleanup(P primary, Context context) {
+  public void cleanup(P primary, Context<P> context) {
     super.cleanup(primary, context);
     cache.remove(ResourceID.fromResource(primary));
   }
 
   @Override
-  protected void handleCreate(R desired, P primary, Context context) {
+  protected void handleCreate(R desired, P primary, Context<P> context) {
     var res = this.creator.create(desired, primary, context);
     cache.put(ResourceID.fromResource(primary), res);
   }
 
   @Override
-  protected void handleUpdate(R actual, R desired, P primary, Context context) {
+  protected void handleUpdate(R actual, R desired, P primary, Context<P> context) {
     var res = updater.update(actual, desired, primary, context);
     cache.put(ResourceID.fromResource(primary), res);
   }

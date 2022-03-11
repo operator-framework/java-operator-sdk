@@ -85,7 +85,8 @@ public class StandaloneDependentTestReconciler
       Updater<Deployment, StandaloneDependentTestCustomResource> {
 
     @Override
-    protected Deployment desired(StandaloneDependentTestCustomResource primary, Context context) {
+    protected Deployment desired(StandaloneDependentTestCustomResource primary,
+        Context<StandaloneDependentTestCustomResource> context) {
       Deployment deployment =
           ReconcilerUtils.loadYaml(Deployment.class, getClass(), "nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());

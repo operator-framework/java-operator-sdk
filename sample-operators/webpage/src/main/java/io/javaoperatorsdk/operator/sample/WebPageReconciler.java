@@ -56,7 +56,7 @@ public class WebPageReconciler
   }
 
   @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context context) {
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
     log.info("Reconciling web page: {}", webPage);
     if (webPage.getSpec().getHtml().contains("error")) {
       throw new ErrorSimulationException("Simulating error");

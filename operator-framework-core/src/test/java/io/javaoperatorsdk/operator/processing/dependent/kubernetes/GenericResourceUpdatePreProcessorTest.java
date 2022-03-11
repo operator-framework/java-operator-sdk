@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
 
@@ -20,8 +21,10 @@ class GenericResourceUpdatePreProcessorTest {
 
   static {
     final var configurationService = mock(ConfigurationService.class);
+    final var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
     when(configurationService.getResourceCloner()).thenReturn(ConfigurationService.DEFAULT_CLONER);
-    when(context.getConfigurationService()).thenReturn(configurationService);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
   ResourceUpdatePreProcessor<Deployment> processor =

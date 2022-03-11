@@ -42,12 +42,12 @@ public class SchemaDependentResource
   }
 
   @Override
-  public Schema desired(MySQLSchema primary, Context context) {
+  public Schema desired(MySQLSchema primary, Context<MySQLSchema> context) {
     return new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding());
   }
 
   @Override
-  public Schema create(Schema target, MySQLSchema mySQLSchema, Context context) {
+  public Schema create(Schema target, MySQLSchema mySQLSchema, Context<MySQLSchema> context) {
     try (Connection connection = getConnection()) {
       Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
       var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
@@ -70,7 +70,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public void delete(MySQLSchema primary, Context context) {
+  public void delete(MySQLSchema primary, Context<MySQLSchema> context) {
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
       SchemaService.deleteSchemaAndRelatedUser(connection, primary.getMetadata().getName(),
