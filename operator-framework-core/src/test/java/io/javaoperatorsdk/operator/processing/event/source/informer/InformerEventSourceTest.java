@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -50,16 +50,16 @@ class InformerEventSourceTest {
     when(labeledResourceClientMock.runnableInformer(0)).thenReturn(informer);
 
     when(informerConfiguration.getPrimaryResourcesRetriever())
-        .thenReturn(mock(PrimaryResourcesRetriever.class));
+        .thenReturn(mock(SecondaryToPrimaryMapper.class));
 
     informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
     informerEventSource.setTemporalResourceCache(temporaryResourceCacheMock);
     informerEventSource.setEventHandler(eventHandlerMock);
 
-    PrimaryResourcesRetriever primaryResourcesRetriever = mock(PrimaryResourcesRetriever.class);
+    SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerConfiguration.getPrimaryResourcesRetriever())
-        .thenReturn(primaryResourcesRetriever);
-    when(primaryResourcesRetriever.associatedPrimaryResources(any()))
+        .thenReturn(secondaryToPrimaryMapper);
+    when(secondaryToPrimaryMapper.associatedPrimaryResources(any()))
         .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
   }
 
