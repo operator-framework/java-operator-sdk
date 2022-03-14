@@ -19,7 +19,7 @@ public interface ErrorStatusHandler<P extends HasMetadata> {
    * should not be updates on custom resource after it is marked for deletion.
    *
    * @param resource to update the status on
-   * @param context the current contex
+   * @param context the current context
    * @param e exception thrown from the reconciler
    * @return the updated resource
    */
