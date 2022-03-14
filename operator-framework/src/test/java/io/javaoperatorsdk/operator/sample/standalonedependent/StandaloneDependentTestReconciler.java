@@ -66,7 +66,8 @@ public class StandaloneDependentTestReconciler
 
   @Override
   public Optional<StandaloneDependentTestCustomResource> updateErrorStatus(
-      StandaloneDependentTestCustomResource resource, RetryInfo retryInfo, RuntimeException e) {
+      StandaloneDependentTestCustomResource resource,
+      Context<StandaloneDependentTestCustomResource> context, Exception e) {
     // this can happen when a namespace is terminated in test
     if (e instanceof KubernetesClientException) {
       return Optional.empty();

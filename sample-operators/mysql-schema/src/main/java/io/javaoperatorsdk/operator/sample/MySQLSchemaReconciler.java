@@ -10,7 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
@@ -50,8 +49,8 @@ public class MySQLSchemaReconciler
   }
 
   @Override
-  public Optional<MySQLSchema> updateErrorStatus(MySQLSchema schema, RetryInfo retryInfo,
-      RuntimeException e) {
+  public Optional<MySQLSchema> updateErrorStatus(MySQLSchema schema, Context<MySQLSchema> context,
+      Exception e) {
     SchemaStatus status = new SchemaStatus();
     status.setUrl(null);
     status.setUserName(null);

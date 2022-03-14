@@ -48,13 +48,14 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   public PostExecutionControl<R> handleExecution(ExecutionScope<R> executionScope) {
     try {
       return handleDispatch(executionScope);
-    } catch (RuntimeException e) {
+    } catch (Exception e) {
       log.error("Error during event processing {} failed.", executionScope, e);
       return PostExecutionControl.exceptionDuringExecution(e);
     }
   }
 
-  private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope) {
+  private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope)
+      throws Exception {
     R resource = executionScope.getResource();
     log.debug("Handling dispatch for resource {}", getName(resource));
 
@@ -67,7 +68,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return PostExecutionControl.defaultDispatch();
     }
 
-    Context context = new DefaultContext<>(executionScope.getRetryInfo(), controller, resource);
+    Context<R> context = new DefaultContext<>(executionScope.getRetryInfo(), controller, resource);
     if (markedForDeletion) {
       return handleCleanup(resource, context);
     } else {
@@ -91,7 +92,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> handleReconcile(
-      ExecutionScope<R> executionScope, R originalResource, Context context) {
+      ExecutionScope<R> executionScope, R originalResource, Context<R> context) throws Exception {
     if (configuration().useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizer())) {
       /*
@@ -105,9 +106,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     } else {
       try {
         var resourceForExecution =
-            cloneResourceForErrorStatusHandlerIfNeeded(originalResource, context);
+            cloneResourceForErrorStatusHandlerIfNeeded(originalResource);
         return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
-      } catch (RuntimeException e) {
+      } catch (Exception e) {
         handleErrorStatusHandler(originalResource, context, e);
         throw e;
       }
@@ -121,7 +122,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
    * resource is changed during an execution, and it's much cleaner to have to original resource in
    * place for status update.
    */
-  private R cloneResourceForErrorStatusHandlerIfNeeded(R resource, Context context) {
+  private R cloneResourceForErrorStatusHandlerIfNeeded(R resource) {
     if (isErrorStatusHandlerPresent() ||
         shouldUpdateObservedGenerationAutomatically(resource)) {
       final var cloner = ConfigurationServiceProvider.instance().getResourceCloner();
@@ -132,7 +133,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
-      R resourceForExecution, R originalResource, Context context) {
+      R resourceForExecution, R originalResource, Context<R> context) throws Exception {
     log.debug(
         "Reconciling resource {} with version: {} with execution scope: {}",
         getName(resourceForExecution),
@@ -164,7 +165,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   private void handleErrorStatusHandler(R resource, Context<R> context,
-      RuntimeException e) {
+      Exception e) {
     if (isErrorStatusHandlerPresent()) {
       try {
         RetryInfo retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
@@ -178,8 +179,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
             return controller.getConfiguration().getRetryConfiguration() == null;
           }
         });
+        ((DefaultContext<R>) context).setRetryInfo(retryInfo);
         var updatedResource = ((ErrorStatusHandler<R>) controller.getReconciler())
-            .updateErrorStatus(resource, retryInfo, e);
+            .updateErrorStatus(resource, context, e);
         updatedResource.ifPresent(customResourceFacade::updateStatus);
       } catch (RuntimeException ex) {
         log.error("Error during error status handling.", ex);

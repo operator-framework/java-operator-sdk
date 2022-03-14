@@ -76,7 +76,7 @@ public class WebPageReconcilerDependentResources
 
   @Override
   public Optional<WebPage> updateErrorStatus(
-      WebPage resource, RetryInfo retryInfo, RuntimeException e) {
+      WebPage resource, Context<WebPage> retryInfo, Exception e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
     return Optional.of(resource);
   }
@@ -91,7 +91,7 @@ public class WebPageReconcilerDependentResources
         new CrudKubernetesDependentResource<>() {
 
           @Override
-          protected Deployment desired(WebPage webPage, Context context) {
+          protected Deployment desired(WebPage webPage, Context<WebPage> context) {
             var deploymentName = deploymentName(webPage);
             Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
             deployment.getMetadata().setName(deploymentName);

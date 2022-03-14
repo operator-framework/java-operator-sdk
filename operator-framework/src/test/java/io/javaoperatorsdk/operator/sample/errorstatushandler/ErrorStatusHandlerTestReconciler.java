@@ -48,10 +48,12 @@ public class ErrorStatusHandlerTestReconciler
 
   @Override
   public Optional<ErrorStatusHandlerTestCustomResource> updateErrorStatus(
-      ErrorStatusHandlerTestCustomResource resource, RetryInfo retryInfo, RuntimeException e) {
+      ErrorStatusHandlerTestCustomResource resource,
+      Context<ErrorStatusHandlerTestCustomResource> context, Exception e) {
     log.info("Setting status.");
     ensureStatusExists(resource);
-    resource.getStatus().getMessages().add(ERROR_STATUS_MESSAGE + retryInfo.getAttemptCount());
+    resource.getStatus().getMessages()
+        .add(ERROR_STATUS_MESSAGE + context.getRetryInfo().orElseThrow().getAttemptCount());
     return Optional.of(resource);
   }
 }

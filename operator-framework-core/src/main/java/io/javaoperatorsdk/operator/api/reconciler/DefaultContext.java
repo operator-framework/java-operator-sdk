@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
-  private final RetryInfo retryInfo;
+  private RetryInfo retryInfo;
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
@@ -43,5 +43,10 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   public ManagedDependentResourceContext managedDependentResourceContext() {
     return managedDependentResourceContext;
+  }
+
+  public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
+    this.retryInfo = retryInfo;
+    return this;
   }
 }

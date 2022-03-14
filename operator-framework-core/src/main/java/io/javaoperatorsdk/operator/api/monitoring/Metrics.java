@@ -13,7 +13,7 @@ public interface Metrics {
 
   default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo) {}
 
-  default void failedReconciliation(ResourceID resourceID, RuntimeException exception) {}
+  default void failedReconciliation(ResourceID resourceID, Exception exception) {}
 
   default void cleanupDoneFor(ResourceID customResourceUid) {}
 
@@ -27,10 +27,10 @@ public interface Metrics {
 
     String successTypeName(T result);
 
-    T execute();
+    T execute() throws Exception;
   }
 
-  default <T> T timeControllerExecution(ControllerExecution<T> execution) {
+  default <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return execution.execute();
   }
 

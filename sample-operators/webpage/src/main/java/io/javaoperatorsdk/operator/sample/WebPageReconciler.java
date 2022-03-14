@@ -211,7 +211,7 @@ public class WebPageReconciler
 
   @Override
   public Optional<WebPage> updateErrorStatus(
-      WebPage resource, RetryInfo retryInfo, RuntimeException e) {
+      WebPage resource, Context<WebPage> context, Exception e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
     return Optional.of(resource);
   }

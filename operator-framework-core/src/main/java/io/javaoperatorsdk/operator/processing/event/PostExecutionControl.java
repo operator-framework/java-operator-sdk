@@ -8,14 +8,14 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   private final boolean onlyFinalizerHandled;
   private final R updatedCustomResource;
-  private final RuntimeException runtimeException;
+  private final Exception runtimeException;
 
   private Long reScheduleDelay = null;
 
   private PostExecutionControl(
       boolean onlyFinalizerHandled,
       R updatedCustomResource,
-      RuntimeException runtimeException) {
+      Exception runtimeException) {
     this.onlyFinalizerHandled = onlyFinalizerHandled;
     this.updatedCustomResource = updatedCustomResource;
     this.runtimeException = runtimeException;
@@ -35,7 +35,7 @@ final class PostExecutionControl<R extends HasMetadata> {
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
-      RuntimeException exception) {
+      Exception exception) {
     return new PostExecutionControl<>(false, null, exception);
   }
 
@@ -60,7 +60,7 @@ final class PostExecutionControl<R extends HasMetadata> {
     return this;
   }
 
-  public Optional<RuntimeException> getRuntimeException() {
+  public Optional<Exception> getRuntimeException() {
     return Optional.ofNullable(runtimeException);
   }
 

@@ -33,7 +33,13 @@ public class MicrometerMetrics implements Metrics {
             .publishPercentileHistogram()
             .register(registry);
     try {
-      final var result = timer.record(execution::execute);
+      final var result = timer.record(() -> {
+        try {
+          return execution.execute();
+        } catch (Exception e) {
+          throw new IllegalStateException(e);
+        }
+      });
       final var successType = execution.successTypeName(result);
       registry
           .counter(execName + ".success", "controller", name, "type", successType)
@@ -72,7 +78,7 @@ public class MicrometerMetrics implements Metrics {
     incrementCounter(resourceID, RECONCILIATIONS + "success");
   }
 
-  public void failedReconciliation(ResourceID resourceID, RuntimeException exception) {
+  public void failedReconciliation(ResourceID resourceID, Exception exception) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;

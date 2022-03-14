@@ -13,7 +13,7 @@ public interface Reconciler<R extends HasMetadata> {
    * @return UpdateControl to manage updates on the custom resource (usually the status) after
    *         reconciliation.
    */
-  UpdateControl<R> reconcile(R resource, Context<R> context);
+  UpdateControl<R> reconcile(R resource, Context<R> context) throws Exception;
 
   /**
    * Note that this method is used in combination with finalizers. If automatic finalizer handling
