@@ -19,6 +19,9 @@ import static org.awaitility.Awaitility.await;
 
 class SubResourceUpdateIT {
 
+  public static final int WAIT_AFTER_EXECUTION = 500;
+  public static final int EVENT_RECEIVE_WAIT = 200;
+
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class).build();
@@ -30,7 +33,7 @@ class SubResourceUpdateIT {
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(2);
@@ -45,7 +48,7 @@ class SubResourceUpdateIT {
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(2);
@@ -60,7 +63,7 @@ class SubResourceUpdateIT {
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(2);
@@ -77,13 +80,15 @@ class SubResourceUpdateIT {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     operator.create(SubResourceTestCustomResource.class, resource);
 
+    // waits for the resource to start processing
+    waitXms(EVENT_RECEIVE_WAIT);
     resource.getSpec().setValue("new value");
     operator.resources(SubResourceTestCustomResource.class).createOrReplace(resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
 
     // wait for sure, there are no more events
-    waitXms(500);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(3);
@@ -117,7 +122,7 @@ class SubResourceUpdateIT {
     return resource;
   }
 
-  private void waitXms(int x) {
+  public static void waitXms(int x) {
     try {
       Thread.sleep(x);
     } catch (InterruptedException e) {
