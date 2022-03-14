@@ -526,8 +526,8 @@ class ReconciliationDispatcherTest {
 
     @Override
     public Optional<TestCustomResource> updateErrorStatus(TestCustomResource resource,
-        RetryInfo retryInfo, RuntimeException e) {
-      return errorHandler != null ? errorHandler.updateErrorStatus(resource, retryInfo, e)
+        Context<TestCustomResource> context, Exception e) {
+      return errorHandler != null ? errorHandler.updateErrorStatus(resource, context, e)
           : Optional.empty();
     }
   }
