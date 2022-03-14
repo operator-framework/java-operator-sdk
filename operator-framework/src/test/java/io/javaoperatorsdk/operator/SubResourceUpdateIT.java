@@ -21,7 +21,6 @@ import static org.awaitility.Awaitility.await;
 class SubResourceUpdateIT {
 
   public static final int WAIT_AFTER_EXECUTION = 500;
-  public static final int RECONCILER_MIN_EXEC_TIME = 300;
   public static final int EVENT_RECEIVE_WAIT = 200;
 
   @RegisterExtension

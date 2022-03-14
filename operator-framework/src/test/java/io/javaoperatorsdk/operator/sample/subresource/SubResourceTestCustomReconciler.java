@@ -12,12 +12,13 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-import static io.javaoperatorsdk.operator.SubResourceUpdateIT.RECONCILER_MIN_EXEC_TIME;
 import static io.javaoperatorsdk.operator.support.TestUtils.waitXms;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class SubResourceTestCustomReconciler
     implements Reconciler<SubResourceTestCustomResource>, TestExecutionInfoProvider {
+
+  public static final int RECONCILER_MIN_EXEC_TIME = 300;
 
   public static final String FINALIZER_NAME =
       ReconcilerUtils.getDefaultFinalizerName(SubResourceTestCustomResource.class);
