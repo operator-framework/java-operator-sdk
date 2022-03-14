@@ -28,7 +28,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public Optional<R>  reconcile(P primary, Context<P> context) {
+  public Optional<R> reconcile(P primary, Context<P> context) {
     final var creatable = isCreatable(primary, context);
     final var updatable = isUpdatable(primary, context);
     if (creatable || updatable) {
