@@ -8,6 +8,10 @@ public class OperatorException extends RuntimeException {
     super(message);
   }
 
+  public OperatorException(Throwable cause) {
+    super(cause);
+  }
+
   public OperatorException(String message, Throwable cause) {
     super(message, cause);
   }

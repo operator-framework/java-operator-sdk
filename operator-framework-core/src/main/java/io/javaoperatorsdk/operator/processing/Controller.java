@@ -84,7 +84,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
             }
           });
     } catch (Exception e) {
-      throw new IllegalStateException(e);
+      throw new OperatorException(e);
     }
   }
 

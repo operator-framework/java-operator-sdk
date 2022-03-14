@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -37,7 +38,7 @@ public class MicrometerMetrics implements Metrics {
         try {
           return execution.execute();
         } catch (Exception e) {
-          throw new IllegalStateException(e);
+          throw new OperatorException(e);
         }
       });
       final var successType = execution.successTypeName(result);
