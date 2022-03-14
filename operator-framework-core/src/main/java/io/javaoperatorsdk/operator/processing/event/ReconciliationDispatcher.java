@@ -165,7 +165,6 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private PostExecutionControl<R> handleErrorStatusHandler(R resource, Context<R> context,
       Exception e) throws Exception {
-    // todo unit + integration test
     if (isErrorStatusHandlerPresent()) {
       try {
         RetryInfo retryInfo = context.getRetryInfo().orElse(new RetryInfo() {

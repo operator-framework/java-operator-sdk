@@ -439,12 +439,55 @@ class ReconciliationDispatcherTest {
       return ErrorStatusUpdateControl.updateStatus(testCustomResource);
     };
 
-    reconciliationDispatcher.handleExecution(
+    var postExecControl = reconciliationDispatcher.handleExecution(
         new ExecutionScope(
             testCustomResource, null));
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
+    assertThat(postExecControl.exceptionDuringExecution()).isTrue();
+  }
+
+  @Test
+  void errorHandlerCanInstructNoRetryWithUpdate() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    reconciler.errorHandler = (r, ri, e) -> {
+      testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
+      return ErrorStatusUpdateControl.updateStatus(testCustomResource).withNoRetry();
+    };
+
+    var postExecControl = reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+
+    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+        any(), any());
+    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    assertThat(postExecControl.exceptionDuringExecution()).isFalse();
+  }
+
+  @Test
+  void errorHandlerCanInstructNoRetryNoUpdate() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    reconciler.errorHandler = (r, ri, e) -> {
+      testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
+      return ErrorStatusUpdateControl.<TestCustomResource>noStatusUpdate().withNoRetry();
+    };
+
+    var postExecControl = reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+
+    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+        any(), any());
+    verify(customResourceFacade, times(0)).updateStatus(testCustomResource);
+    assertThat(postExecControl.exceptionDuringExecution()).isFalse();
   }
 
   @Test
