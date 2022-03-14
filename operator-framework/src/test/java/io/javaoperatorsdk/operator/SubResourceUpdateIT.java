@@ -20,7 +20,10 @@ import static org.awaitility.Awaitility.await;
 
 class SubResourceUpdateIT {
 
-  public static final int WAIT_AFTER_EXECUTION = 1000;
+  public static final int WAIT_AFTER_EXECUTION = 500;
+  public static final int RECONCILER_MIN_EXEC_TIME = 300;
+  public static final int EVENT_RECEIVE_WAIT = 200;
+
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
@@ -82,8 +85,8 @@ class SubResourceUpdateIT {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     operator.create(SubResourceTestCustomResource.class, resource);
 
-    // waits that the resorce
-    waitXms(200);
+    // waits for the resource to start processing
+    waitXms(EVENT_RECEIVE_WAIT);
     resource.getSpec().setValue("new value");
     operator.resources(SubResourceTestCustomResource.class).createOrReplace(resource);
 
