@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.internal.stubbing.answers.Returns;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +26,7 @@ import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class EventProcessorTest {
 
@@ -40,6 +35,7 @@ class EventProcessorTest {
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
+
   private ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
   private EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
@@ -188,16 +184,19 @@ class EventProcessorTest {
   }
 
   @Test
-  void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() {
+  void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() throws InterruptedException {
     var testDelay = 10000L;
-    when(reconciliationDispatcherMock.handleExecution(any()))
-        .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
+    doAnswer(new AnswersWithDelay(FAKE_CONTROLLER_EXECUTION_DURATION,
+        new Returns(PostExecutionControl.defaultDispatch().withReSchedule(testDelay))))
+            .when(reconciliationDispatcherMock).handleExecution(any());
+    var resourceId = new ResourceID("test1", "default");
+    eventProcessor.handleEvent(prepareCREvent(resourceId));
+    Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION / 3);
+    eventProcessor.handleEvent(prepareCREvent(resourceId));
 
-    eventProcessor.handleEvent(prepareCREvent());
-    eventProcessor.handleEvent(prepareCREvent());
-
-    verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(0))
-        .scheduleOnce(any(), eq(testDelay));
+    verify(retryTimerEventSourceMock,
+        after((long) (FAKE_CONTROLLER_EXECUTION_DURATION * 1.5)).times(0))
+            .scheduleOnce(any(), eq(testDelay));
   }
 
   @Test
@@ -205,7 +204,7 @@ class EventProcessorTest {
     eventProcessor.stop();
     eventProcessor.handleEvent(prepareCREvent());
 
-    verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
+    verify(reconciliationDispatcherMock, after(50).times(0)).handleExecution(any());
   }
 
   @Test
