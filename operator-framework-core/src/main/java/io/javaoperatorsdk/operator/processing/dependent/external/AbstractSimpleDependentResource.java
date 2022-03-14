@@ -7,6 +7,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredEqualsMatcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
@@ -43,11 +44,11 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   public abstract Optional<R> fetchResource(HasMetadata primaryResource);
 
   @Override
-  public void reconcile(P primary, Context<P> context) {
+  public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     var resourceId = ResourceID.fromResource(primary);
     Optional<R> resource = fetchResource(primary);
     resource.ifPresentOrElse(r -> cache.put(resourceId, r), () -> cache.remove(resourceId));
-    super.reconcile(primary, context);
+    return super.reconcile(primary, context);
   }
 
   public void cleanup(P primary, Context<P> context) {
@@ -56,15 +57,17 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  protected void handleCreate(R desired, P primary, Context<P> context) {
+  protected R handleCreate(R desired, P primary, Context<P> context) {
     var res = this.creator.create(desired, primary, context);
     cache.put(ResourceID.fromResource(primary), res);
+    return res;
   }
 
   @Override
-  protected void handleUpdate(R actual, R desired, P primary, Context<P> context) {
+  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     var res = updater.update(actual, desired, primary, context);
     cache.put(ResourceID.fromResource(primary), res);
+    return res;
   }
 
   public Matcher.Result<R> match(R actualResource, P primary, Context context) {

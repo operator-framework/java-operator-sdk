@@ -26,25 +26,27 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public void reconcile(P primary, Context<P> context) {
-    final var creatable = isCreatable(primary, context);
-    final var updatable = isUpdatable(primary, context);
-    if (creatable || updatable) {
-      var maybeActual = getResource(primary);
+  public ReconcileResult<R> reconcile(P primary, Context<P> context) {
+    final var isCreatable = isCreatable(primary, context);
+    final var isUpdatable = isUpdatable(primary, context);
+    var maybeActual = getResource(primary);
+    if (isCreatable || isUpdatable) {
       if (maybeActual.isEmpty()) {
-        if (creatable) {
+        if (isCreatable) {
           var desired = desired(primary, context);
           log.debug("Creating dependent {} for primary {}", desired, primary);
-          handleCreate(desired, primary, context);
+          var createdResource = handleCreate(desired, primary, context);
+          return ReconcileResult.resourceCreated(createdResource);
         }
       } else {
         final var actual = maybeActual.get();
-        if (updatable) {
+        if (isUpdatable) {
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
             log.debug("Updating dependent {} for primary {}", desired, primary);
-            handleUpdate(actual, desired, primary, context);
+            var updatedResource = handleUpdate(actual, desired, primary, context);
+            return ReconcileResult.resourceUpdated(updatedResource);
           }
         } else {
           log.debug("Update skipped for dependent {} as it matched the existing one", actual);
@@ -55,15 +57,17 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           "Dependent {} is read-only, implement Creator and/or Updater interfaces to modify it",
           getClass().getSimpleName());
     }
+    return ReconcileResult.noOperation(maybeActual.orElse(null));
   }
 
-  protected void handleCreate(R desired, P primary, Context<P> context) {
+  protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = null;
     try {
       prepareEventFiltering(desired, resourceID);
       created = creator.create(desired, primary, context);
       cacheAfterCreate(resourceID, created);
+      return created;
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(desired, resourceID, created);
       throw e;
@@ -97,13 +101,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected void handleUpdate(R actual, R desired, P primary, Context<P> context) {
+  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = null;
     try {
       prepareEventFiltering(desired, resourceID);
       updated = updater.update(actual, desired, primary, context);
       cacheAfterUpdate(actual, resourceID, updated);
+      return updated;
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(desired, resourceID, updated);
       throw e;

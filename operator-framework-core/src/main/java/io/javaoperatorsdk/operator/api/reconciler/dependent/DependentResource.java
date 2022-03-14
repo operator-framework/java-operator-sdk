@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public interface DependentResource<R, P extends HasMetadata> {
-  void reconcile(P primary, Context<P> context);
+  ReconcileResult<R> reconcile(P primary, Context<P> context);
 
   default void cleanup(P primary, Context<P> context) {}
 
