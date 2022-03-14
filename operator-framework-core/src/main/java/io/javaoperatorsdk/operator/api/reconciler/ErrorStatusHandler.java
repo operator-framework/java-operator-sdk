@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public interface ErrorStatusHandler<P extends HasMetadata> {
@@ -25,6 +23,6 @@ public interface ErrorStatusHandler<P extends HasMetadata> {
    * @param e exception thrown from the reconciler
    * @return the updated resource
    */
-  Optional<P> updateErrorStatus(P resource, Context<P> context, Exception e);
+  ErrorStatusUpdateControl<P> updateErrorStatus(P resource, Context<P> context, Exception e);
 
 }

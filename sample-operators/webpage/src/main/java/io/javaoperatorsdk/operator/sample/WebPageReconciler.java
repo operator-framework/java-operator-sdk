@@ -210,9 +210,9 @@ public class WebPageReconciler
   }
 
   @Override
-  public Optional<WebPage> updateErrorStatus(
+  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
       WebPage resource, Context<WebPage> context, Exception e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-    return Optional.of(resource);
+    return ErrorStatusUpdateControl.updateStatus(resource);
   }
 }

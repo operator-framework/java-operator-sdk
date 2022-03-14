@@ -109,8 +109,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
             cloneResourceForErrorStatusHandlerIfNeeded(originalResource);
         return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
       } catch (Exception e) {
-        handleErrorStatusHandler(originalResource, context, e);
-        throw e;
+        return handleErrorStatusHandler(originalResource, context, e);
       }
     }
   }
@@ -164,8 +163,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  private void handleErrorStatusHandler(R resource, Context<R> context,
-      Exception e) {
+  private PostExecutionControl<R> handleErrorStatusHandler(R resource, Context<R> context,
+      Exception e) throws Exception {
+    // todo unit + integration test
     if (isErrorStatusHandlerPresent()) {
       try {
         RetryInfo retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
@@ -180,13 +180,17 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           }
         });
         ((DefaultContext<R>) context).setRetryInfo(retryInfo);
-        var updatedResource = ((ErrorStatusHandler<R>) controller.getReconciler())
+        var errorStatusUpdateControl = ((ErrorStatusHandler<R>) controller.getReconciler())
             .updateErrorStatus(resource, context, e);
-        updatedResource.ifPresent(customResourceFacade::updateStatus);
+        errorStatusUpdateControl.getResource().ifPresent(customResourceFacade::updateStatus);
+        if (errorStatusUpdateControl.isNoRetry()) {
+          return PostExecutionControl.defaultDispatch();
+        }
       } catch (RuntimeException ex) {
         log.error("Error during error status handling.", ex);
       }
     }
+    throw e;
   }
 
   private boolean isErrorStatusHandlerPresent() {

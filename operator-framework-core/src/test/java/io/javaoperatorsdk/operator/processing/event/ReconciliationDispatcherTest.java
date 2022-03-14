@@ -22,13 +22,7 @@ import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.CustomResourceFacade;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
@@ -410,7 +404,7 @@ class ReconciliationDispatcherTest {
     };
     reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
-      return Optional.of(testCustomResource);
+      return ErrorStatusUpdateControl.updateStatus(testCustomResource);
     };
 
     reconciliationDispatcher.handleExecution(
@@ -442,7 +436,7 @@ class ReconciliationDispatcherTest {
     };
     reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
-      return Optional.of(testCustomResource);
+      return ErrorStatusUpdateControl.updateStatus(testCustomResource);
     };
 
     reconciliationDispatcher.handleExecution(
@@ -525,10 +519,11 @@ class ReconciliationDispatcherTest {
     }
 
     @Override
-    public Optional<TestCustomResource> updateErrorStatus(TestCustomResource resource,
+    public ErrorStatusUpdateControl<TestCustomResource> updateErrorStatus(
+        TestCustomResource resource,
         Context<TestCustomResource> context, Exception e) {
       return errorHandler != null ? errorHandler.updateErrorStatus(resource, context, e)
-          : Optional.empty();
+          : ErrorStatusUpdateControl.noStatusUpdate();
     }
   }
 }

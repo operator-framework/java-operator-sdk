@@ -65,15 +65,15 @@ public class StandaloneDependentTestReconciler
   }
 
   @Override
-  public Optional<StandaloneDependentTestCustomResource> updateErrorStatus(
+  public ErrorStatusUpdateControl<StandaloneDependentTestCustomResource> updateErrorStatus(
       StandaloneDependentTestCustomResource resource,
       Context<StandaloneDependentTestCustomResource> context, Exception e) {
     // this can happen when a namespace is terminated in test
     if (e instanceof KubernetesClientException) {
-      return Optional.empty();
+      return ErrorStatusUpdateControl.noStatusUpdate();
     }
     errorOccurred = true;
-    return Optional.empty();
+    return ErrorStatusUpdateControl.noStatusUpdate();
   }
 
   public boolean isErrorOccurred() {

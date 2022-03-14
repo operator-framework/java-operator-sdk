@@ -1,16 +1,10 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
@@ -49,7 +43,8 @@ public class MySQLSchemaReconciler
   }
 
   @Override
-  public Optional<MySQLSchema> updateErrorStatus(MySQLSchema schema, Context<MySQLSchema> context,
+  public ErrorStatusUpdateControl<MySQLSchema> updateErrorStatus(MySQLSchema schema,
+      Context<MySQLSchema> context,
       Exception e) {
     SchemaStatus status = new SchemaStatus();
     status.setUrl(null);
@@ -57,7 +52,7 @@ public class MySQLSchemaReconciler
     status.setSecretName(null);
     status.setStatus("ERROR: " + e.getMessage());
     schema.setStatus(status);
-    return Optional.empty();
+    return ErrorStatusUpdateControl.updateStatus(schema);
   }
 
 
