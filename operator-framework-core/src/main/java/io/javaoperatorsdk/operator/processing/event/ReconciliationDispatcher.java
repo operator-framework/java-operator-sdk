@@ -182,9 +182,18 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         ((DefaultContext<R>) context).setRetryInfo(retryInfo);
         var errorStatusUpdateControl = ((ErrorStatusHandler<R>) controller.getReconciler())
             .updateErrorStatus(resource, context, e);
-        errorStatusUpdateControl.getResource().ifPresent(customResourceFacade::updateStatus);
+
+        R updatedResource = null;
+        if (errorStatusUpdateControl.getResource().isPresent()) {
+          updatedResource =
+              customResourceFacade.updateStatus(errorStatusUpdateControl.getResource().get());
+        }
         if (errorStatusUpdateControl.isNoRetry()) {
-          return PostExecutionControl.defaultDispatch();
+          if (updatedResource != null) {
+            return PostExecutionControl.customResourceUpdated(updatedResource);
+          } else {
+            return PostExecutionControl.defaultDispatch();
+          }
         }
       } catch (RuntimeException ex) {
         log.error("Error during error status handling.", ex);
