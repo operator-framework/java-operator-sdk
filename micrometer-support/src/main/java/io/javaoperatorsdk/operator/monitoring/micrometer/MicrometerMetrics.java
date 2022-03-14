@@ -65,6 +65,7 @@ public class MicrometerMetrics implements Metrics {
     incrementCounter(customResourceUid, "events.delete");
   }
 
+  @Override
   public void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfoNullable) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(resourceID, RECONCILIATIONS + "started",
