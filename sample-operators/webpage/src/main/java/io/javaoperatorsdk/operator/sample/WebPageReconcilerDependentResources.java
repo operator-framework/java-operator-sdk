@@ -180,7 +180,8 @@ public class WebPageReconcilerDependentResources
     }
 
     @Override
-    public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary, Context<WebPage> context) {
+    public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary,
+        Context<WebPage> context) {
       var res = super.update(actual, target, primary, context);
       var ns = actual.getMetadata().getNamespace();
       log.info("Restarting pods because HTML has changed in {}", ns);

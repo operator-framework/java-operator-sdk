@@ -18,7 +18,8 @@ public class MultiVersionCRDTestReconciler1
 
   @Override
   public UpdateControl<MultiVersionCRDTestCustomResource1> reconcile(
-      MultiVersionCRDTestCustomResource1 resource, Context<MultiVersionCRDTestCustomResource1> context) {
+      MultiVersionCRDTestCustomResource1 resource,
+      Context<MultiVersionCRDTestCustomResource1> context) {
     log.info("Reconcile MultiVersionCRDTestCustomResource1: {}",
         resource.getMetadata().getName());
     resource.getStatus().setValue1(resource.getStatus().getValue1() + 1);

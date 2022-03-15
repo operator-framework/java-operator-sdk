@@ -30,7 +30,8 @@ public class CreateUpdateEventFilterTestReconciler
 
   @Override
   public UpdateControl<CreateUpdateEventFilterTestCustomResource> reconcile(
-      CreateUpdateEventFilterTestCustomResource resource, Context<CreateUpdateEventFilterTestCustomResource> context) {
+      CreateUpdateEventFilterTestCustomResource resource,
+      Context<CreateUpdateEventFilterTestCustomResource> context) {
     numberOfExecutions.incrementAndGet();
 
     ConfigMap configMap =

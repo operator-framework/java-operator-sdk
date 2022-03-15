@@ -15,7 +15,8 @@ public class ObservedGenerationTestReconciler
 
   @Override
   public UpdateControl<ObservedGenerationTestCustomResource> reconcile(
-      ObservedGenerationTestCustomResource resource, Context<ObservedGenerationTestCustomResource> context) {
+      ObservedGenerationTestCustomResource resource,
+      Context<ObservedGenerationTestCustomResource> context) {
     log.info("Reconcile ObservedGenerationTestCustomResource: {}",
         resource.getMetadata().getName());
     return UpdateControl.updateStatus(resource);

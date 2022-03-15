@@ -48,7 +48,8 @@ public class InformerEventSourceTestCustomReconciler
 
   @Override
   public UpdateControl<InformerEventSourceTestCustomResource> reconcile(
-      InformerEventSourceTestCustomResource resource, Context<InformerEventSourceTestCustomResource> context) {
+      InformerEventSourceTestCustomResource resource,
+      Context<InformerEventSourceTestCustomResource> context) {
     numberOfExecutions.incrementAndGet();
 
     resource.setStatus(new InformerEventSourceTestCustomResourceStatus());
