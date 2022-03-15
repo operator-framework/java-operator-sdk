@@ -185,7 +185,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         R updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
           updatedResource =
-              customResourceFacade.updateStatus(errorStatusUpdateControl.getResource().get());
+              customResourceFacade
+                  .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
         }
         if (errorStatusUpdateControl.isNoRetry()) {
           if (updatedResource != null) {
