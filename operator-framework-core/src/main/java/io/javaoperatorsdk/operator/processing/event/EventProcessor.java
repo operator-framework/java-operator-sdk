@@ -242,7 +242,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
    * according to the retry timing if there was an exception.
    */
   private void handleRetryOnException(
-      ExecutionScope<R> executionScope, RuntimeException exception) {
+      ExecutionScope<R> executionScope, Exception exception) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
     var customResourceID = executionScope.getCustomResourceID();
     boolean eventPresent = eventMarker.eventPresent(customResourceID);

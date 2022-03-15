@@ -60,32 +60,36 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
   public DeleteControl cleanup(P resource, Context<P> context) {
     dependents.cleanup(resource, context);
 
-    return metrics().timeControllerExecution(
-        new ControllerExecution<>() {
-          @Override
-          public String name() {
-            return "cleanup";
-          }
+    try {
+      return metrics().timeControllerExecution(
+          new ControllerExecution<>() {
+            @Override
+            public String name() {
+              return "cleanup";
+            }
 
-          @Override
-          public String controllerName() {
-            return configuration.getName();
-          }
+            @Override
+            public String controllerName() {
+              return configuration.getName();
+            }
 
-          @Override
-          public String successTypeName(DeleteControl deleteControl) {
-            return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
-          }
+            @Override
+            public String successTypeName(DeleteControl deleteControl) {
+              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+            }
 
-          @Override
-          public DeleteControl execute() {
-            return reconciler.cleanup(resource, context);
-          }
-        });
+            @Override
+            public DeleteControl execute() {
+              return reconciler.cleanup(resource, context);
+            }
+          });
+    } catch (Exception e) {
+      throw new OperatorException(e);
+    }
   }
 
   @Override
-  public UpdateControl<P> reconcile(P resource, Context<P> context) {
+  public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
     dependents.reconcile(resource, context);
 
     return metrics().timeControllerExecution(
@@ -113,7 +117,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
           }
 
           @Override
-          public UpdateControl<P> execute() {
+          public UpdateControl<P> execute() throws Exception {
             return reconciler.reconcile(resource, context);
           }
         });

@@ -275,9 +275,9 @@ In order to facilitate error reporting Reconciler can implement the following
 [interface](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java):
 
 ```java
-public interface ErrorStatusHandler<T extends HasMetadata> {
+public interface ErrorStatusHandler<P extends HasMetadata> {
 
-    Optional<T> updateErrorStatus(T resource, RetryInfo retryInfo, RuntimeException e);
+    ErrorStatusUpdateControl<P> updateErrorStatus(P resource, Context<P> context, Exception e);
 
 }
 ```
@@ -293,6 +293,12 @@ will also produce an event, and will result in a reconciliation if the controlle
 
 The scope of this feature is only the `reconcile` method of the reconciler, since there should not be updates on custom
 resource after it is marked for deletion.
+
+Retry can be skipped for the cases of unrecoverable errors:
+
+```java
+ ErrorStatusUpdateControl.updateStatus(customResource).withNoRetry();
+```
 
 ### Correctness and Automatic Retries
 
