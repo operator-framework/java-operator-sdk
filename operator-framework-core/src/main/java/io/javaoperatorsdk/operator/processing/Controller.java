@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,21 +21,15 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.DependentResourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"unchecked"})
 @Ignore
-public class Controller<P extends HasMetadata> implements Reconciler<P>,
+public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner<P>,
     LifecycleAware, EventSourceInitializer<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
@@ -80,7 +75,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
 
             @Override
             public DeleteControl execute() {
-              return reconciler.cleanup(resource, context);
+              return ((Cleaner<P>) reconciler).cleanup(resource, context);
             }
           });
     } catch (Exception e) {
@@ -263,6 +258,10 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
     if (eventSourceManager != null) {
       eventSourceManager.stop();
     }
+  }
+
+  public boolean useFinalizer() {
+    return reconciler instanceof Cleaner;
   }
 
   @SuppressWarnings("rawtypes")

@@ -12,14 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
@@ -30,7 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Ignore
 public class DependentResourceManager<P extends HasMetadata>
-    implements EventSourceInitializer<P>, Reconciler<P> {
+    implements EventSourceInitializer<P>, Reconciler<P>, Cleaner<P> {
 
   private static final Logger log = LoggerFactory.getLogger(DependentResourceManager.class);
 
@@ -73,7 +66,7 @@ public class DependentResourceManager<P extends HasMetadata>
   public DeleteControl cleanup(P resource, Context<P> context) {
     initContextIfNeeded(resource, context);
     dependents.forEach(dependent -> dependent.cleanup(resource, context));
-    return Reconciler.super.cleanup(resource, context);
+    return DeleteControl.defaultDelete();
   }
 
   private void initContextIfNeeded(P resource, Context context) {

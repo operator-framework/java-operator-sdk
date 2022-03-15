@@ -25,7 +25,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final List<DependentResourceSpec<?, ?>> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
-    finalizer = original.getFinalizer();
+    finalizer = original.getFinalizerName();
     generationAware = original.isGenerationAware();
     namespaces = new HashSet<>(original.getNamespaces());
     retry = original.getRetryConfiguration();

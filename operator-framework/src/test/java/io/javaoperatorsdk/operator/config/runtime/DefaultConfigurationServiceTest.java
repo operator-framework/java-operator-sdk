@@ -79,7 +79,7 @@ class DefaultConfigurationServiceTest {
         configuration.getResourceTypeName());
     assertEquals(
         ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class),
-        configuration.getFinalizer());
+        configuration.getFinalizerName());
     assertEquals(TestCustomResource.class, configuration.getResourceClass());
     assertFalse(configuration.isGenerationAware());
   }
@@ -88,7 +88,7 @@ class DefaultConfigurationServiceTest {
   void returnCustomerFinalizerNameIfSet() {
     final var reconciler = new TestCustomFinalizerReconciler();
     final var configuration = configurationService.getConfigurationFor(reconciler);
-    assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizer());
+    assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizerName());
   }
 
   @Test

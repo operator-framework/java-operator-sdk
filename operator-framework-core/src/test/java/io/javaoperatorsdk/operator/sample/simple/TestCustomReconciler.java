@@ -15,7 +15,8 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
-public class TestCustomReconciler implements Reconciler<TestCustomResource> {
+public class TestCustomReconciler
+    implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(TestCustomReconciler.class);
 

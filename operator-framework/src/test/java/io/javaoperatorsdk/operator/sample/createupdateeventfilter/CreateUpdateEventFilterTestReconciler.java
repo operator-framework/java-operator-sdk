@@ -15,9 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
-@ControllerConfiguration(finalizerName = NO_FINALIZER)
+@ControllerConfiguration
 public class CreateUpdateEventFilterTestReconciler
     implements Reconciler<CreateUpdateEventFilterTestCustomResource>,
     EventSourceInitializer<CreateUpdateEventFilterTestCustomResource>,

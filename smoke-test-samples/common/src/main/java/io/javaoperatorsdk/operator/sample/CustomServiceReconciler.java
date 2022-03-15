@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 /** A very simple sample controller that creates a service with a label. */
 @ControllerConfiguration
-public class CustomServiceReconciler implements Reconciler<CustomService> {
+public class CustomServiceReconciler implements Reconciler<CustomService>, Cleaner<CustomService> {
 
   private static final Logger log = LoggerFactory.getLogger(CustomServiceReconciler.class);
 
@@ -32,7 +32,7 @@ public class CustomServiceReconciler implements Reconciler<CustomService> {
   @Override
   public DeleteControl cleanup(CustomService resource, Context<CustomService> context) {
     log.info("Cleaning up for: {}", resource.getMetadata().getName());
-    return Reconciler.super.cleanup(resource, context);
+    return DeleteControl.defaultDelete();
   }
 
   @Override

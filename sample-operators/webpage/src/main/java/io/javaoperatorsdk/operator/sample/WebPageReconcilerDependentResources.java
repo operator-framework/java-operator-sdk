@@ -18,12 +18,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.
  */
-@ControllerConfiguration(finalizerName = NO_FINALIZER,
+@ControllerConfiguration(
     labelSelector = WebPageReconcilerDependentResources.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 public class WebPageReconcilerDependentResources
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {

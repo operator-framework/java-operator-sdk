@@ -1,15 +1,13 @@
 package io;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
+
 import java.io.Serializable;
 
 @ControllerConfiguration
-public class ReconcilerImplemented2Interfaces implements Serializable, Reconciler<ReconcilerImplemented2Interfaces.MyCustomResource> {
+public class ReconcilerImplemented2Interfaces implements Serializable,
+        Reconciler<ReconcilerImplemented2Interfaces.MyCustomResource>, Cleaner<ReconcilerImplemented2Interfaces.MyCustomResource> {
 
     public static class MyCustomResource extends CustomResource<Void,Void> {
     }

@@ -1,12 +1,12 @@
 package io.javaoperatorsdk.operator.sample.customfilter;
 
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 public class CustomFlagFilter implements ResourceEventFilter<CustomFilteringTestResource> {
 
   @Override
-  public boolean acceptChange(ControllerConfiguration<CustomFilteringTestResource> configuration,
+  public boolean acceptChange(Controller<CustomFilteringTestResource> configuration,
       CustomFilteringTestResource oldResource, CustomFilteringTestResource newResource) {
     return newResource.getSpec().isFilter1();
   }

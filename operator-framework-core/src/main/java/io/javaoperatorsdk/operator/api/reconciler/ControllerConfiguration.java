@@ -15,9 +15,7 @@ public @interface ControllerConfiguration {
   String name() default Constants.EMPTY_STRING;
 
   /**
-   * Optional finalizer name, if it is not provided, one will be automatically generated. If the
-   * provided value is the value specified by {@link Constants#NO_FINALIZER}, then no finalizer will
-   * be added to custom resources.
+   * Optional finalizer name, if it is not provided, one will be automatically generated.
    *
    * @return the finalizer name
    */

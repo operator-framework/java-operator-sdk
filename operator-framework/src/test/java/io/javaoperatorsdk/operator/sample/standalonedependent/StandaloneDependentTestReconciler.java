@@ -14,9 +14,7 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
-@ControllerConfiguration(finalizerName = NO_FINALIZER)
+@ControllerConfiguration
 public class StandaloneDependentTestReconciler
     implements Reconciler<StandaloneDependentTestCustomResource>,
     EventSourceInitializer<StandaloneDependentTestCustomResource>,

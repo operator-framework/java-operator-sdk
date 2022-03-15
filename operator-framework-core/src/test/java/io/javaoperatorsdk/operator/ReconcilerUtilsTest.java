@@ -7,7 +7,6 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -38,11 +37,6 @@ class ReconcilerUtilsTest {
   void defaultFinalizerShouldWork() {
     assertTrue(isFinalizerValid(getDefaultFinalizerName(Pod.class)));
     assertTrue(isFinalizerValid(getDefaultFinalizerName(TestCustomResource.class)));
-  }
-
-  @Test
-  void noFinalizerMarkerShouldWork() {
-    assertTrue(isFinalizerValid(Constants.NO_FINALIZER));
   }
 
   @Test

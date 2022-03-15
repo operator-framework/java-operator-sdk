@@ -19,7 +19,8 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestReconciler
-    implements Reconciler<TestCustomResource>, TestExecutionInfoProvider,
+    implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
+    TestExecutionInfoProvider,
     KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);

@@ -42,7 +42,7 @@ public class ReconcilerUtils {
         throw new UnsupportedOperationException();
       }
     };
-    return Constants.NO_FINALIZER.equals(finalizer) || validator.isFinalizerValid(finalizer);
+    return validator.isFinalizerValid(finalizer);
   }
 
   public static String getResourceTypeNameWithVersion(Class<? extends HasMetadata> resourceClass) {
