@@ -114,7 +114,6 @@ class SubResourceUpdateIT {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("subresource-" + id)
-            .withFinalizers(SubResourceTestCustomReconciler.FINALIZER_NAME)
             .build());
     resource.setKind("SubresourceSample");
     resource.setSpec(new SubResourceTestCustomResourceSpec());

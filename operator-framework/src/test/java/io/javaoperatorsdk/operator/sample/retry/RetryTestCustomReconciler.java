@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -16,8 +15,6 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class RetryTestCustomReconciler
     implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
 
-  public static final String FINALIZER_NAME =
-      ReconcilerUtils.getDefaultFinalizerName(RetryTestCustomResource.class);
   private static final Logger log =
       LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -34,9 +31,6 @@ public class RetryTestCustomReconciler
       Context<RetryTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
-    if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
-      throw new IllegalStateException("Finalizer is not present.");
-    }
     log.info("Value: " + resource.getSpec().getValue());
 
     if (numberOfExecutions.get() < numberOfExecutionFails.get() + 1) {

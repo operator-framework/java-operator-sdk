@@ -65,7 +65,6 @@ class RetryIT {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName("retrysource-" + id)
-            .withFinalizers(RetryTestCustomReconciler.FINALIZER_NAME)
             .build());
     resource.setKind("retrysample");
     resource.setSpec(new RetryTestCustomResourceSpec());
