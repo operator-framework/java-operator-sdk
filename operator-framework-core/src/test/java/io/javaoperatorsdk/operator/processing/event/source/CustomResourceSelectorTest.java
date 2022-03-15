@@ -151,7 +151,7 @@ public class CustomResourceSelectorTest {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context context) {
+        TestCustomResource resource, Context<TestCustomResource> context) {
 
       LOGGER.info("Received event on: {}", resource);
 

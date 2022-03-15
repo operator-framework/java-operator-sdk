@@ -43,7 +43,7 @@ class AnnotationControllerConfigurationTest {
     public static final String CONFIGURED_NS = "foo";
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context context) {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }
@@ -51,7 +51,7 @@ class AnnotationControllerConfigurationTest {
   private static class NoDepReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context context) {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }

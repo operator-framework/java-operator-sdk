@@ -39,7 +39,7 @@ public class StandaloneDependentTestReconciler
 
   @Override
   public UpdateControl<StandaloneDependentTestCustomResource> reconcile(
-      StandaloneDependentTestCustomResource primary, Context context) {
+      StandaloneDependentTestCustomResource primary, Context<StandaloneDependentTestCustomResource> context) {
     deploymentDependent.reconcile(primary, context);
     Optional<Deployment> deployment = deploymentDependent.getResource(primary);
     if (deployment.isEmpty()) {

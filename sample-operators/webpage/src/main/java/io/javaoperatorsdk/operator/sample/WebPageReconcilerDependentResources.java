@@ -51,7 +51,7 @@ public class WebPageReconcilerDependentResources
   }
 
   @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context context) {
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
     if (webPage.getSpec().getHtml().contains("error")) {
       // special case just to showcase error if doing a demo
       throw new ErrorSimulationException("Simulating error");
@@ -166,7 +166,7 @@ public class WebPageReconcilerDependentResources
       PrimaryToSecondaryMapper<WebPage> {
 
     @Override
-    protected ConfigMap desired(WebPage webPage, Context context) {
+    protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
       Map<String, String> data = new HashMap<>();
       data.put("index.html", webPage.getSpec().getHtml());
       return new ConfigMapBuilder()
@@ -180,7 +180,7 @@ public class WebPageReconcilerDependentResources
     }
 
     @Override
-    public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary, Context context) {
+    public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary, Context<WebPage> context) {
       var res = super.update(actual, target, primary, context);
       var ns = actual.getMetadata().getNamespace();
       log.info("Restarting pods because HTML has changed in {}", ns);

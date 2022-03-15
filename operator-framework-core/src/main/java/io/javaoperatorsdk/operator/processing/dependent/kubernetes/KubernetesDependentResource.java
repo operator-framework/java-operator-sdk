@@ -99,7 +99,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return prepare(target, primary, "Updating").replace(updatedActual);
   }
 
-  public Result<R> match(R actualResource, P primary, Context context) {
+  public Result<R> match(R actualResource, P primary, Context<P> context) {
     return matcher.match(actualResource, primary, context);
   }
 

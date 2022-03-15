@@ -19,7 +19,7 @@ public class EventSourceTestCustomReconciler
 
   @Override
   public UpdateControl<EventSourceTestCustomResource> reconcile(
-      EventSourceTestCustomResource resource, Context context) {
+      EventSourceTestCustomResource resource, Context<EventSourceTestCustomResource> context) {
 
     numberOfExecutions.addAndGet(1);
     ensureStatusExists(resource);

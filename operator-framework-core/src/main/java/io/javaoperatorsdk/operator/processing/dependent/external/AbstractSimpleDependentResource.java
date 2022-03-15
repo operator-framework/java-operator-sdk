@@ -70,7 +70,7 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
     return res;
   }
 
-  public Matcher.Result<R> match(R actualResource, P primary, Context context) {
+  public Matcher.Result<R> match(R actualResource, P primary, Context<P> context) {
     return matcher.match(actualResource, primary, context);
   }
 

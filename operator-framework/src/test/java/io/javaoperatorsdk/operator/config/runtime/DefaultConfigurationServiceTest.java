@@ -106,7 +106,7 @@ class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomFinalizerReconciler.InnerCustomResource> reconcile(
-        InnerCustomResource resource, Context context) {
+        InnerCustomResource resource, Context<InnerCustomResource> context) {
       return null;
     }
 
@@ -123,7 +123,7 @@ class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context context) {
+        TestCustomResource resource, Context<TestCustomResource> context) {
       return null;
     }
   }
@@ -133,7 +133,7 @@ class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context context) {
+        TestCustomResource resource, Context<TestCustomResource> context) {
       return null;
     }
   }
