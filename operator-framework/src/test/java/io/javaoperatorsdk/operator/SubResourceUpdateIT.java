@@ -101,7 +101,6 @@ class SubResourceUpdateIT {
             () -> {
               SubResourceTestCustomResource cr =
                   operator.get(SubResourceTestCustomResource.class, name);
-              assertThat(cr.getMetadata().getFinalizers()).hasSize(1);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getState())
