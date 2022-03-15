@@ -1,5 +1,8 @@
 ---
-title: Glossary description: Glossary layout: docs permalink: /docs/glossary
+title: Glossary 
+description: Glossary 
+layout: docs 
+permalink: /docs/glossary
 ---
 
 # Glossary
