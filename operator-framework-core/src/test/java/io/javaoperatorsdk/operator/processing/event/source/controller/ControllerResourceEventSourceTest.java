@@ -124,6 +124,11 @@ class ControllerResourceEventSourceTest extends
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
       return eventSourceManager;
     }
+
+    @Override
+    public boolean useFinalizer() {
+      return true;
+    }
   }
 
   private static class TestConfiguration extends
