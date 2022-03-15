@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,22 @@ class ControllerExecutionIT {
 
     awaitResourcesCreatedOrUpdated();
     assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
+  }
+
+  @Test
+  void cleanupExecuted() {
+    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
+
+    TestCustomResource resource = TestUtils.testCustomResource();
+    resource = operator.create(TestCustomResource.class, resource);
+
+    awaitResourcesCreatedOrUpdated();
+    awaitStatusUpdated();
+    operator.delete(TestCustomResource.class, resource);
+
+    await().atMost(Duration.ofSeconds(1))
+        .until(() -> ((TestReconciler) operator.getFirstReconciler())
+            .getNumberOfCleanupExecutions() == 1);
   }
 
   void awaitResourcesCreatedOrUpdated() {
