@@ -26,7 +26,7 @@ public class DeploymentReconciler
 
   @Override
   public UpdateControl<Deployment> reconcile(
-      Deployment resource, Context context) {
+      Deployment resource, Context<Deployment> context) {
 
     log.info("Reconcile deployment: {}", resource);
     numberOfExecutions.incrementAndGet();

@@ -258,7 +258,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
 
-  private PostExecutionControl<R> handleCleanup(R resource, Context context) {
+  private PostExecutionControl<R> handleCleanup(R resource, Context<R> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),

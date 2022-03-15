@@ -10,7 +10,7 @@ public class TestCustomReconcilerOtherV1 implements Reconciler<TestCustomResourc
 
   @Override
   public UpdateControl<TestCustomResourceOtherV1> reconcile(TestCustomResourceOtherV1 resource,
-      Context context) {
+      Context<TestCustomResourceOtherV1> context) {
     return UpdateControl.noUpdate();
   }
 }

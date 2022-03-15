@@ -19,7 +19,7 @@ public class DeploymentDependentResource extends KubernetesDependentResource<Dep
   }
 
   @Override
-  protected Deployment desired(Tomcat tomcat, Context context) {
+  protected Deployment desired(Tomcat tomcat, Context<Tomcat> context) {
     Deployment deployment =
         ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();

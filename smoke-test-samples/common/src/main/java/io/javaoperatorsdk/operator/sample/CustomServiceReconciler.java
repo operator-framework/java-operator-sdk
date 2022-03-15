@@ -30,14 +30,14 @@ public class CustomServiceReconciler implements Reconciler<CustomService> {
   }
 
   @Override
-  public DeleteControl cleanup(CustomService resource, Context context) {
+  public DeleteControl cleanup(CustomService resource, Context<CustomService> context) {
     log.info("Cleaning up for: {}", resource.getMetadata().getName());
     return Reconciler.super.cleanup(resource, context);
   }
 
   @Override
   public UpdateControl<CustomService> reconcile(
-      CustomService resource, Context context) {
+      CustomService resource, Context<CustomService> context) {
     log.info("Reconciling: {}", resource.getMetadata().getName());
 
     ServicePort servicePort = new ServicePort();

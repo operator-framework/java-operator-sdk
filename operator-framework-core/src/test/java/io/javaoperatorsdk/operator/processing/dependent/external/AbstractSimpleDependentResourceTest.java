@@ -113,7 +113,8 @@ class AbstractSimpleDependentResourceTest {
 
     @Override
     public SampleExternalResource create(
-        SampleExternalResource desired, TestCustomResource primary, Context context) {
+        SampleExternalResource desired, TestCustomResource primary,
+        Context<TestCustomResource> context) {
       return SampleExternalResource.testResource1();
     }
 
@@ -122,15 +123,16 @@ class AbstractSimpleDependentResourceTest {
         SampleExternalResource actual,
         SampleExternalResource desired,
         TestCustomResource primary,
-        Context context) {
+        Context<TestCustomResource> context) {
       return SampleExternalResource.testResource1();
     }
 
     @Override
-    public void delete(TestCustomResource primary, Context context) {}
+    public void delete(TestCustomResource primary, Context<TestCustomResource> context) {}
 
     @Override
-    protected SampleExternalResource desired(TestCustomResource primary, Context context) {
+    protected SampleExternalResource desired(TestCustomResource primary,
+        Context<TestCustomResource> context) {
       return SampleExternalResource.testResource1();
     }
   }

@@ -24,7 +24,7 @@ public class DoubleUpdateTestCustomReconciler
 
   @Override
   public UpdateControl<DoubleUpdateTestCustomResource> reconcile(
-      DoubleUpdateTestCustomResource resource, Context context) {
+      DoubleUpdateTestCustomResource resource, Context<DoubleUpdateTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     log.info("Value: " + resource.getSpec().getValue());

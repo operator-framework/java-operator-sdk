@@ -29,7 +29,7 @@ public class SubResourceTestCustomReconciler
 
   @Override
   public UpdateControl<SubResourceTestCustomResource> reconcile(
-      SubResourceTestCustomResource resource, Context context) {
+      SubResourceTestCustomResource resource, Context<SubResourceTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");

@@ -27,7 +27,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  protected Secret desired(MySQLSchema schema, Context context) {
+  protected Secret desired(MySQLSchema schema, Context<MySQLSchema> context) {
     final var password = RandomStringUtils
         .randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
     final var name = schema.getMetadata().getName();
@@ -49,7 +49,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  public Result<Secret> match(Secret actual, MySQLSchema primary, Context context) {
+  public Result<Secret> match(Secret actual, MySQLSchema primary, Context<MySQLSchema> context) {
     final var desiredSecretName = getSecretName(primary.getMetadata().getName());
     return Result.nonComputed(actual.getMetadata().getName().equals(desiredSecretName));
   }

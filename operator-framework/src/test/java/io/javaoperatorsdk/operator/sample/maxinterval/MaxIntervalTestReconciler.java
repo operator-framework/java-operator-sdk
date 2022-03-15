@@ -18,7 +18,7 @@ public class MaxIntervalTestReconciler
 
   @Override
   public UpdateControl<MaxIntervalTestCustomResource> reconcile(
-      MaxIntervalTestCustomResource resource, Context context) {
+      MaxIntervalTestCustomResource resource, Context<MaxIntervalTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }
