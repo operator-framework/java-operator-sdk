@@ -37,8 +37,12 @@ execution.
 [Kubernetes finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)
 make sure that a reconciliation happens when a custom resource is instructed to be deleted. Typical case when it's
 useful, when an operator is down (pod not running). Without a finalizer the reconciliation - thus the cleanup -
-i.e. [`Reconciler.cleanup(...)`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b91221bb54af19761a617bf18eef381e8ceb3b4c/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L31)
+i.e. [`Cleaner.cleanup(...)`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b82c1f106968cb3eb18835c5e9cd1e4d5c40362e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java#L28-L28)
 would not happen if a custom resource is deleted.
+
+To use finalizers the reconciler have to implement [`Cleaner<P>`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b82c1f106968cb3eb18835c5e9cd1e4d5c40362e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface.
+In other words, finalizer is added if the `Reconciler` implements `Cleaner` interface. If not, no
+finalizer is added and/or removed.
 
 Finalizers are automatically added by the framework as the first step, thus after a custom resource is created, but
 before the first reconciliation. The finalizer is added via a separate Kubernetes API call. As a result of this update,
@@ -50,7 +54,6 @@ in some specific corner cases, when there would be a long waiting period for som
 
 The name of the finalizers can be specified, in case it is not, a name will be generated.
 
-Automatic finalizer handling can be turned off, so when configured no finalizer will be added or removed.  
 See [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation for more details.
 
@@ -66,7 +69,7 @@ When automatic finalizer handling is turned off, the `Reconciler.cleanup(...)` m
 case when a delete event received. So it does not make sense to implement this method and turn off finalizer at the same
 time.
 
-## The `reconcile` and `cleanup` Methods of [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
+## The `reconcile` and [`cleanup`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b82c1f106968cb3eb18835c5e9cd1e4d5c40362e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) Methods on a [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
 
 The lifecycle of a custom resource can be clearly separated into two phases from the perspective of an operator. When a
 custom resource is created or update, or on the other hand when the custom resource is deleted - or rather marked for
@@ -75,9 +78,8 @@ deletion in case a finalizer is used.
 This separation-related logic is automatically handled by the framework. The framework will always call `reconcile`
 method, unless the custom resource is
 [marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work)
-. From the point when the custom resource is marked from deletion, only the `cleanup` method is called.
-
-If there is **no finalizer** in place (see Finalizer Support section), the `cleanup` method is **not called**.
+. From the point when the custom resource is marked from deletion, only the `cleanup` method is called, of course 
+only if the reconciler implements the `Cleaner` interface.
 
 ### Using [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java) and [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
 
