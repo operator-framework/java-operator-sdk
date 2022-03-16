@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -85,25 +85,19 @@ public class DependentResourceManager<P extends HasMetadata>
 
   private DependentResource createAndConfigureFrom(DependentResourceSpec dependentResourceSpec,
       KubernetesClient client) {
-    try {
-      DependentResource dependentResource =
-          (DependentResource) dependentResourceSpec.getDependentResourceClass()
-              .getConstructor().newInstance();
+    DependentResource dependentResource =
+        ConfigurationServiceProvider.instance().createFrom(dependentResourceSpec);
 
-      if (dependentResource instanceof KubernetesClientAware) {
-        ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
-      }
-
-      if (dependentResource instanceof DependentResourceConfigurator) {
-        final var configurator = (DependentResourceConfigurator) dependentResource;
-        dependentResourceSpec.getDependentResourceConfiguration()
-            .ifPresent(configurator::configureWith);
-      }
-      return dependentResource;
-    } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
-        | InvocationTargetException e) {
-      throw new IllegalStateException(e);
+    if (dependentResource instanceof KubernetesClientAware) {
+      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
     }
+
+    if (dependentResource instanceof DependentResourceConfigurator) {
+      final var configurator = (DependentResourceConfigurator) dependentResource;
+      dependentResourceSpec.getDependentResourceConfiguration()
+          .ifPresent(configurator::configureWith);
+    }
+    return dependentResource;
   }
 
   public List<DependentResource> getDependents() {

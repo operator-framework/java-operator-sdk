@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -7,8 +8,10 @@ import java.util.concurrent.Executors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +22,7 @@ public interface ConfigurationService {
   ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   Cloner DEFAULT_CLONER = new Cloner() {
+    @SuppressWarnings("unchecked")
     @Override
     public HasMetadata clone(HasMetadata object) {
       try {
@@ -125,5 +129,14 @@ public interface ConfigurationService {
 
   default ObjectMapper getObjectMapper() {
     return OBJECT_MAPPER;
+  }
+
+  default <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
+    try {
+      return spec.getDependentResourceClass().getConstructor().newInstance();
+    } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
+        | InvocationTargetException e) {
+      throw new IllegalStateException(e);
+    }
   }
 }
