@@ -52,31 +52,35 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
-    dependents.cleanup(resource, context);
-
     try {
-      return metrics().timeControllerExecution(
-          new ControllerExecution<>() {
-            @Override
-            public String name() {
-              return "cleanup";
-            }
+      return metrics()
+          .timeControllerExecution(
+              new ControllerExecution<>() {
+                @Override
+                public String name() {
+                  return "cleanup";
+                }
 
-            @Override
-            public String controllerName() {
-              return configuration.getName();
-            }
+                @Override
+                public String controllerName() {
+                  return configuration.getName();
+                }
 
-            @Override
-            public String successTypeName(DeleteControl deleteControl) {
-              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
-            }
+                @Override
+                public String successTypeName(DeleteControl deleteControl) {
+                  return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+                }
 
-            @Override
-            public DeleteControl execute() {
-              return ((Cleaner<P>) reconciler).cleanup(resource, context);
-            }
-          });
+                @Override
+                public DeleteControl execute() {
+                  dependents.cleanup(resource, context);
+                  if (reconciler instanceof Cleaner) {
+                    return ((Cleaner<P>) reconciler).cleanup(resource, context);
+                  } else {
+                    return DeleteControl.defaultDelete();
+                  }
+                }
+              });
     } catch (Exception e) {
       throw new OperatorException(e);
     }
@@ -260,7 +264,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   }
 
   public boolean useFinalizer() {
-    return reconciler instanceof Cleaner;
+    return reconciler instanceof Cleaner || dependents.requiresCleanup();
   }
 
   @SuppressWarnings("rawtypes")

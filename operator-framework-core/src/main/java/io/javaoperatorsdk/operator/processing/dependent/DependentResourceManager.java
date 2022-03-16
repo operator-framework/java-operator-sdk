@@ -30,6 +30,7 @@ public class DependentResourceManager<P extends HasMetadata>
   private final Reconciler<P> reconciler;
   private final ControllerConfiguration<P> controllerConfiguration;
   private List<DependentResource> dependents;
+  private boolean requiresCleanup;
 
   public DependentResourceManager(Controller<P> controller) {
     this.reconciler = controller.getReconciler();
@@ -52,6 +53,8 @@ public class DependentResourceManager<P extends HasMetadata>
                   return dependentResource;
                 })
             .collect(Collectors.toList());
+    // required cleanup inited here, so it has to be done only once
+    initRequiresCleanup();
     return sources;
   }
 
@@ -65,12 +68,14 @@ public class DependentResourceManager<P extends HasMetadata>
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
     initContextIfNeeded(resource, context);
-    dependents.forEach(dependent -> {
+    // cleanup in reverse order
+    for (int i = dependents.size() - 1; i >= 0; i--) {
+      var dependent = dependents.get(i);
       if (dependent instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner) {
         ((io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner<P>) dependent)
             .cleanup(resource, context);
       }
-    });
+    }
     return DeleteControl.defaultDelete();
   }
 
@@ -107,4 +112,15 @@ public class DependentResourceManager<P extends HasMetadata>
   public List<DependentResource> getDependents() {
     return dependents;
   }
+
+  private void initRequiresCleanup() {
+    requiresCleanup = getDependents().stream()
+        .filter(dr -> dr instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner)
+        .findAny().isPresent();
+  }
+
+  public boolean requiresCleanup() {
+    return requiresCleanup;
+  }
+
 }
