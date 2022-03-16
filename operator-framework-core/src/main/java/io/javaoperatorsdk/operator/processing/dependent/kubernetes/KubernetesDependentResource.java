@@ -140,8 +140,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return this;
   }
 
+  @Override
   @SuppressWarnings("unchecked")
-  protected Class<R> resourceType() {
+  public Class<R> resourceType() {
     return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }
 

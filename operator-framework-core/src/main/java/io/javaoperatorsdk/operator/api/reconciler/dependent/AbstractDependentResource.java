@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -125,6 +126,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
   }
 
+  @SuppressWarnings("unchecked")
   // this cannot be done in constructor since event source might be initialized later
   protected boolean isFilteringEventSource() {
     if (this instanceof EventSourceProvider) {
@@ -135,6 +137,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
+  @SuppressWarnings("unchecked")
   // this cannot be done in constructor since event source might be initialized later
   protected boolean isRecentOperationCacheFiller() {
     if (this instanceof EventSourceProvider) {
@@ -170,5 +173,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @SuppressWarnings("unused")
   protected boolean isDeletable(P primary, Context<P> context) {
     return deletable;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Class<R> resourceType() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }
 }

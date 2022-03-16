@@ -23,7 +23,9 @@ public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
     return eventSource;
   }
 
-  protected Class<R> resourceType() {
+  @SuppressWarnings("unchecked")
+  @Override
+  public Class<R> resourceType() {
     return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }
 
