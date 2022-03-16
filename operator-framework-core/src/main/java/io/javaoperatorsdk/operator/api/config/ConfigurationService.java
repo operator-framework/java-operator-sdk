@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceTypeAware;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -132,10 +133,19 @@ public interface ConfigurationService {
   }
 
   default <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?, ?> spec) {
+    final var dependentResourceClass = spec.getDependentResourceClass();
+    final var resourceTypeAware = ResourceTypeAware.class.isAssignableFrom(dependentResourceClass);
     try {
-      return spec.getDependentResourceClass().getConstructor().newInstance();
+      return resourceTypeAware
+          ? dependentResourceClass.getConstructor(Class.class).newInstance(spec.getResourceType())
+          : dependentResourceClass.getConstructor().newInstance();
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
         | InvocationTargetException e) {
+      if (resourceTypeAware) {
+        throw new IllegalStateException(dependentResourceClass.getCanonicalName()
+            + " must provide a public constructor taking the resource type class as single parameter when implementing "
+            + ResourceTypeAware.class.getCanonicalName(), e);
+      }
       throw new IllegalStateException(e);
     }
   }

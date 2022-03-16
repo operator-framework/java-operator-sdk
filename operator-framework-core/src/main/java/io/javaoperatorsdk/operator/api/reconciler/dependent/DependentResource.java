@@ -11,6 +11,4 @@ public interface DependentResource<R, P extends HasMetadata> {
   default void cleanup(P primary, Context<P> context) {}
 
   Optional<R> getResource(P primaryResource);
-
-  Class<R> resourceType();
 }

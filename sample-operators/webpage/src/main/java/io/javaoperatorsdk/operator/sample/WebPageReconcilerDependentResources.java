@@ -100,7 +100,7 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.deploymentDR =
-        new CrudKubernetesDependentResource<>() {
+        new CrudKubernetesDependentResource<>(Deployment.class) {
 
           @Override
           protected Deployment desired(WebPage webPage, Context<WebPage> context) {
@@ -126,18 +126,13 @@ public class WebPageReconcilerDependentResources
                     new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
             return deployment;
           }
-
-          @Override
-          public Class<Deployment> resourceType() {
-            return Deployment.class;
-          }
         };
     deploymentDR.setKubernetesClient(client);
     deploymentDR.configureWith(new KubernetesDependentResourceConfig()
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.serviceDR =
-        new CrudKubernetesDependentResource<>() {
+        new CrudKubernetesDependentResource<>(Service.class) {
 
           @Override
           protected Service desired(WebPage webPage, Context<WebPage> context) {
@@ -148,11 +143,6 @@ public class WebPageReconcilerDependentResources
             labels.put("app", deploymentName(webPage));
             service.getSpec().setSelector(labels);
             return service;
-          }
-
-          @Override
-          public Class<Service> resourceType() {
-            return Service.class;
           }
         };
     serviceDR.setKubernetesClient(client);
@@ -174,8 +164,11 @@ public class WebPageReconcilerDependentResources
 
   private class ConfigMapDependentResource
       extends CrudKubernetesDependentResource<ConfigMap, WebPage>
-      implements
-      PrimaryToSecondaryMapper<WebPage> {
+      implements PrimaryToSecondaryMapper<WebPage> {
+
+    public ConfigMapDependentResource() {
+      super(ConfigMap.class);
+    }
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {

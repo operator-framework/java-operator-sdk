@@ -7,7 +7,14 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
@@ -85,6 +92,10 @@ public class StandaloneDependentTestReconciler
       KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource>
       implements Creator<Deployment, StandaloneDependentTestCustomResource>,
       Updater<Deployment, StandaloneDependentTestCustomResource> {
+
+    public DeploymentDependentResource() {
+      super(Deployment.class);
+    }
 
     @Override
     protected Deployment desired(StandaloneDependentTestCustomResource primary,
