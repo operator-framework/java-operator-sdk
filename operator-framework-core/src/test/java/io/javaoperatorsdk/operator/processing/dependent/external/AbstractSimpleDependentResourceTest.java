@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
@@ -92,7 +92,7 @@ class AbstractSimpleDependentResourceTest {
       extends AbstractSimpleDependentResource<SampleExternalResource, TestCustomResource>
       implements Creator<SampleExternalResource, TestCustomResource>,
       Updater<SampleExternalResource, TestCustomResource>,
-      Deleter<TestCustomResource> {
+      Cleaner<TestCustomResource> {
 
     private final Supplier<SampleExternalResource> supplier;
 
@@ -112,6 +112,10 @@ class AbstractSimpleDependentResourceTest {
     }
 
     @Override
+    protected void deleteResource(TestCustomResource primary,
+        Context<TestCustomResource> context) {}
+
+    @Override
     public SampleExternalResource create(
         SampleExternalResource desired, TestCustomResource primary,
         Context<TestCustomResource> context) {
@@ -126,9 +130,6 @@ class AbstractSimpleDependentResourceTest {
         Context<TestCustomResource> context) {
       return SampleExternalResource.testResource1();
     }
-
-    @Override
-    public void delete(TestCustomResource primary, Context<TestCustomResource> context) {}
 
     @Override
     protected SampleExternalResource desired(TestCustomResource primary,

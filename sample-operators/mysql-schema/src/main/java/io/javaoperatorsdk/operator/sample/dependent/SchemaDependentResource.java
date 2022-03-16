@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
@@ -29,7 +29,7 @@ public class SchemaDependentResource
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>,
-    Deleter<MySQLSchema> {
+    Cleaner<MySQLSchema> {
 
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
@@ -70,7 +70,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public void delete(MySQLSchema primary, Context<MySQLSchema> context) {
+  public void cleanup(MySQLSchema primary, Context<MySQLSchema> context) {
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
       SchemaService.deleteSchemaAndRelatedUser(connection, primary.getMetadata().getName(),

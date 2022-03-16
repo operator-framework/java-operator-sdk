@@ -65,7 +65,12 @@ public class DependentResourceManager<P extends HasMetadata>
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
     initContextIfNeeded(resource, context);
-    dependents.forEach(dependent -> dependent.cleanup(resource, context));
+    dependents.forEach(dependent -> {
+      if (dependent instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner) {
+        ((io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner<P>) dependent)
+            .cleanup(resource, context);
+      }
+    });
     return DeleteControl.defaultDelete();
   }
 

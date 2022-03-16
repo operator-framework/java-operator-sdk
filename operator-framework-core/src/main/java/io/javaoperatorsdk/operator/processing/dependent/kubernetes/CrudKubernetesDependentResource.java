@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
 
 /**
@@ -13,5 +13,5 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
  */
 public abstract class CrudKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends
-    KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P>, Deleter<P> {
+    KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P>, Cleaner<P> {
 }
