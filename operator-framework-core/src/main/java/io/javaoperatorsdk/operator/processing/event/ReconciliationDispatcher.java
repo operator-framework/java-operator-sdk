@@ -59,7 +59,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug("Handling dispatch for resource {}", getName(resource));
 
     final var markedForDeletion = resource.isMarkedForDeletion();
-    if (markedForDeletion && shouldNotDispatchToDelete(resource)) {
+    if (markedForDeletion && shouldNotDispatchToCleanup(resource)) {
       log.debug(
           "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
           getName(resource),
@@ -75,7 +75,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private boolean shouldNotDispatchToDelete(R resource) {
+  private boolean shouldNotDispatchToCleanup(R resource) {
     // we don't dispatch to delete if the controller is configured to use a finalizer but that
     // finalizer is not present (which means it's already been removed)
     return !controller.useFinalizer() || (controller.useFinalizer()
