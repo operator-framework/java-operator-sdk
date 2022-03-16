@@ -1,10 +1,11 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.processing.dependent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>

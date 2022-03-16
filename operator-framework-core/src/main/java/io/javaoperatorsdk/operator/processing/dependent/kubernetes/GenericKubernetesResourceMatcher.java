@@ -7,7 +7,7 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {

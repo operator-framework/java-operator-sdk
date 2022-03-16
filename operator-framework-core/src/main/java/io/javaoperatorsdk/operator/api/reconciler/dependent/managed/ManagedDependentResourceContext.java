@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
 import java.util.Collections;
 import java.util.List;
@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 /**
  * Contextual information related to {@link DependentResource} either to retrieve the actual

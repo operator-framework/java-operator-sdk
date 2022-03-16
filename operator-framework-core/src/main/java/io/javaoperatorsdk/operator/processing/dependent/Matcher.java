@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
 
