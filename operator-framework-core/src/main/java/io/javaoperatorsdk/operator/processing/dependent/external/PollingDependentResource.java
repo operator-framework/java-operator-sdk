@@ -10,27 +10,19 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 public abstract class PollingDependentResource<R, P extends HasMetadata>
-    extends AbstractCachingDependentResource<R, P> implements Supplier<Map<ResourceID, R>> {
+    extends AbstractPollingDependentResource<R, P> implements Supplier<Map<ResourceID, R>> {
 
-  public static final int DEFAULT_POLLING_PERIOD = 5000;
-  protected long pollingPeriod;
-
-  public PollingDependentResource() {
-    this(DEFAULT_POLLING_PERIOD);
+  public PollingDependentResource(Class<R> resourceType) {
+    super(resourceType);
   }
 
-  public PollingDependentResource(long pollingPeriod) {
-    this.pollingPeriod = pollingPeriod;
+  public PollingDependentResource(Class<R> resourceType, long pollingPeriod) {
+    super(resourceType, pollingPeriod);
   }
 
   @Override
   public EventSource initEventSource(EventSourceContext<P> context) {
-    eventSource = new PollingEventSource<>(this, pollingPeriod, resourceType());
+    eventSource = new PollingEventSource<>(this, getPollingPeriod(), resourceType());
     return eventSource;
-  }
-
-  public PollingDependentResource<R, P> setPollingPeriod(long pollingPeriod) {
-    this.pollingPeriod = pollingPeriod;
-    return this;
   }
 }
