@@ -21,11 +21,15 @@ public class InClusterCurl {
   }
 
   public String checkUrl(String url) {
+    return checkUrl("-s", "-o", "/dev/null", "-w", "%{http_code}", url);
+  }
+
+  public String checkUrl(String... args) {
     String podName = KubernetesResourceUtil.sanitizeName("curl-" + UUID.randomUUID());
     try {
       Pod curlPod = client.run().inNamespace(namespace)
           .withRunConfig(new RunConfigBuilder()
-              .withArgs("-s", "-o", "/dev/null", "-w", "%{http_code}", url)
+              .withArgs(args)
               .withName(podName)
               .withImage("curlimages/curl:7.78.0")
               .withRestartPolicy("Never")

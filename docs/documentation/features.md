@@ -196,7 +196,7 @@ custom resource, the reconciliation could be skipped. This is supported out of t
 default is not triggered if the change to the main custom resource does not increase the `.metadata.generation` field.
 Note that the increase of `.metada.generation`  is handled automatically by Kubernetes.
 
-To turn on this feature set `generationAwareEventProcessing` to `false` for the `Reconciler`.
+To turn off this feature set `generationAwareEventProcessing` to `false` for the `Reconciler`.
 
 ## Support for Well Known (non-custom) Kubernetes Resources
 
