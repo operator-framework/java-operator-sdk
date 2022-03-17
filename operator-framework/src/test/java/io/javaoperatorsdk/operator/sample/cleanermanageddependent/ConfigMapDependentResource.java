@@ -6,10 +6,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapDependentResource extends
-    CrudKubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource> {
+        CRUDKubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource> {
 
   private static final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
 

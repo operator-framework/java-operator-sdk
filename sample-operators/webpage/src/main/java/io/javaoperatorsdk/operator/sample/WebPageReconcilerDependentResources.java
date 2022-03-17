@@ -10,8 +10,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CruKubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -88,7 +88,7 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.deploymentDR =
-        new CrudKubernetesDependentResource<>() {
+        new CRUDKubernetesDependentResource<>() {
 
           @Override
           protected Deployment desired(WebPage webPage, Context<WebPage> context) {
@@ -125,7 +125,7 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.serviceDR =
-        new CrudKubernetesDependentResource<>() {
+        new CRUDKubernetesDependentResource<>() {
 
           @Override
           protected Service desired(WebPage webPage, Context<WebPage> context) {
@@ -161,7 +161,7 @@ public class WebPageReconcilerDependentResources
   }
 
   private class ConfigMapDependentResource
-      extends CruKubernetesDependentResource<ConfigMap, WebPage>
+      extends CRUKubernetesDependentResource<ConfigMap, WebPage>
       implements
       PrimaryToSecondaryMapper<WebPage> {
 

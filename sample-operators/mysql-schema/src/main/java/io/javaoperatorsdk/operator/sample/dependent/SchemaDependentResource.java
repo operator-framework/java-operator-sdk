@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +28,7 @@ public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
-    Creator<Schema, MySQLSchema>
-// todo fix cleaner
-// Cleaner<MySQLSchema>
+    Creator<Schema, MySQLSchema>, Cleaner<MySQLSchema>
 {
 
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
@@ -70,7 +69,7 @@ public class SchemaDependentResource
     return DriverManager.getConnection(connectURL, dbConfig.getUser(), dbConfig.getPassword());
   }
 
-  // @Override
+   @Override
   public void cleanup(MySQLSchema primary, Context<MySQLSchema> context) {
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
