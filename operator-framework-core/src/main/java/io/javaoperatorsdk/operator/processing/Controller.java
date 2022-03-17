@@ -45,9 +45,18 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
-
     eventSourceManager = new EventSourceManager<>(this);
     dependents = new DependentResourceManager<>(this);
+  }
+
+  Controller(Reconciler<P> reconciler, ControllerConfiguration<P> configuration,
+      KubernetesClient kubernetesClient,
+      DependentResourceManager<P> dependents) {
+    this.reconciler = reconciler;
+    this.configuration = configuration;
+    this.kubernetesClient = kubernetesClient;
+    this.dependents = dependents;
+    eventSourceManager = new EventSourceManager<>(this);
   }
 
   @Override
