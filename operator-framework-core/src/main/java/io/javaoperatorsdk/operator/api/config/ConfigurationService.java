@@ -131,7 +131,7 @@ public interface ConfigurationService {
     return OBJECT_MAPPER;
   }
 
-  default <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?, ?> spec) {
+  default <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
     try {
       return spec.getDependentResourceClass().getConstructor().newInstance();
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException

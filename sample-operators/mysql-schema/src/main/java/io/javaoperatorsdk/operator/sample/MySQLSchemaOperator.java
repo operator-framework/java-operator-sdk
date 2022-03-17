@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
-import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 
 public class MySQLSchemaOperator {
@@ -38,7 +37,6 @@ public class MySQLSchemaOperator {
     operator.register(schemaReconciler,
         configOverrider -> configOverrider.replaceDependentResourceConfig(
             SchemaDependentResource.class,
-            Schema.class,
             new ResourcePollerConfig(300, MySQLDbConfig.loadFromEnvironmentVars())));
     operator.installShutdownHook();
     operator.start();

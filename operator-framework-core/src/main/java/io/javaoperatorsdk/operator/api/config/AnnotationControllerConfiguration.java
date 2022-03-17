@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +26,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
-  private List<DependentResourceSpec<?, ?, ?>> specs;
+  private List<DependentResourceSpec<?, ?>> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -136,7 +135,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public List<DependentResourceSpec<?, ?, ?>> getDependentResources() {
+  public List<DependentResourceSpec<?, ?>> getDependentResources() {
     if (specs == null) {
       final var dependents =
           valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
@@ -148,11 +147,6 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       specs = new ArrayList<>(dependents.length);
       for (Dependent dependent : dependents) {
         final Class<? extends DependentResource> dependentType = dependent.type();
-        final Class<?> resourceType =
-            Arrays.asList(dependentType.getInterfaces()).contains(DependentResource.class)
-                ? Utils.getFirstTypeArgumentFromInterface(dependentType)
-                : Utils.getFirstTypeArgumentFromExtendedClass(dependentType);
-
         if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
           final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
           final var namespaces =
@@ -170,7 +164,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
           config =
               new KubernetesDependentResourceConfig(addOwnerReference, namespaces, labelSelector);
         }
-        specs.add(new DependentResourceSpec(dependentType, resourceType, config));
+        specs.add(new DependentResourceSpec(dependentType, config));
       }
     }
     return specs;

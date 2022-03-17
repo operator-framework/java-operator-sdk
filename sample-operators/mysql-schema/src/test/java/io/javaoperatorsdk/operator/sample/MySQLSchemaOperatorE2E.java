@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
-import io.javaoperatorsdk.operator.sample.schema.Schema;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
@@ -69,7 +68,6 @@ class MySQLSchemaOperatorE2E {
                   c -> {
                     c.replaceDependentResourceConfig(
                         SchemaDependentResource.class,
-                        Schema.class,
                         new ResourcePollerConfig(
                             700, new MySQLDbConfig("127.0.0.1", "3306", "root", "password")));
                   })

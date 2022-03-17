@@ -51,7 +51,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return ResourceEventFilters.passthrough();
   }
 
-  default List<DependentResourceSpec<?, ?, ?>> getDependentResources() {
+  default List<DependentResourceSpec<?, ?>> getDependentResources() {
     return Collections.emptyList();
   }
 
