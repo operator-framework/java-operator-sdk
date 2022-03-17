@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
-// todo handle this, should work with finalizer
 @ControllerConfiguration(
     dependents = {
         @Dependent(type = SecretDependentResource.class),

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CruKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -160,7 +161,7 @@ public class WebPageReconcilerDependentResources
   }
 
   private class ConfigMapDependentResource
-      extends CrudKubernetesDependentResource<ConfigMap, WebPage>
+      extends CruKubernetesDependentResource<ConfigMap, WebPage>
       implements
       PrimaryToSecondaryMapper<WebPage> {
 
