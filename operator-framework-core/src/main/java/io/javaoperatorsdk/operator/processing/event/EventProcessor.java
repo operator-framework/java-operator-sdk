@@ -364,4 +364,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       return controllerName + " -> " + executionScope;
     }
   }
+
+  public synchronized boolean isUnderProcessing(ResourceID resourceID) {
+    return underProcessing.contains(resourceID);
+  }
 }
