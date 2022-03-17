@@ -49,6 +49,7 @@ public class DependentResourceManager<P extends HasMetadata>
   public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
     final var dependentResources = controllerConfiguration.getDependentResources();
     final var sources = new ArrayList<EventSource>(dependentResources.size());
+    final boolean[] requiresCleanupHolder = new boolean[] {false};
     dependents =
         dependentResources.stream()
             .map(
@@ -58,11 +59,13 @@ public class DependentResourceManager<P extends HasMetadata>
                     EventSourceProvider provider = (EventSourceProvider) dependentResource;
                     sources.add(provider.initEventSource(context));
                   }
+                  if (dependentResource instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner) {
+                    requiresCleanupHolder[0] = true;
+                  }
                   return dependentResource;
                 })
             .collect(Collectors.toList());
-    // required cleanup inited here, so it has to be done only once
-    initRequiresCleanup();
+    requiresCleanup = requiresCleanupHolder[0];
     return sources;
   }
 
@@ -119,11 +122,6 @@ public class DependentResourceManager<P extends HasMetadata>
 
   public List<DependentResource> getDependents() {
     return dependents;
-  }
-
-  private void initRequiresCleanup() {
-    requiresCleanup = getDependents().stream()
-        .anyMatch(dr -> dr instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner);
   }
 
   public boolean requiresCleanup() {
