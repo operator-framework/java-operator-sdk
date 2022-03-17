@@ -88,8 +88,6 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
   @Override
   public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
-    dependents.reconcile(resource, context);
-
     return metrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -116,6 +114,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
           @Override
           public UpdateControl<P> execute() throws Exception {
+            dependents.reconcile(resource, context);
             return reconciler.reconcile(resource, context);
           }
         });

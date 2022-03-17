@@ -83,21 +83,7 @@ class MySQLSchemaOperatorE2E {
   @Test
   void test() throws IOException {
     // Opening a port-forward if running locally
-    LocalPortForward portForward = null;
-    if (isLocal()) {
-      String podName =
-          client
-              .pods()
-              .inNamespace(MY_SQL_NS)
-              .withLabel("app", "mysql")
-              .list()
-              .getItems()
-              .get(0)
-              .getMetadata()
-              .getName();
-
-      portForward = client.pods().inNamespace(MY_SQL_NS).withName(podName).portForward(3306, 3306);
-    }
+    LocalPortForward portForward = createLocalPortForward();
 
     MySQLSchema testSchema = new MySQLSchema();
     testSchema.setMetadata(
@@ -129,5 +115,23 @@ class MySQLSchemaOperatorE2E {
     if (portForward != null) {
       portForward.close();
     }
+  }
+
+  private LocalPortForward createLocalPortForward() {
+    if (isLocal()) {
+      String podName =
+          client
+              .pods()
+              .inNamespace(MY_SQL_NS)
+              .withLabel("app", "mysql")
+              .list()
+              .getItems()
+              .get(0)
+              .getMetadata()
+              .getName();
+
+      return client.pods().inNamespace(MY_SQL_NS).withName(podName).portForward(3306, 3306);
+    }
+    return null;
   }
 }
