@@ -4,10 +4,10 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.AbstractDependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DesiredEqualsMatcher;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.DesiredEqualsMatcher;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
@@ -51,10 +51,12 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
     return super.reconcile(primary, context);
   }
 
-  public void cleanup(P primary, Context<P> context) {
-    super.cleanup(primary, context);
+  public final void delete(P primary, Context<P> context) {
+    deleteResource(primary, context);
     cache.remove(ResourceID.fromResource(primary));
   }
+
+  protected abstract void deleteResource(P primary, Context<P> context);
 
   @Override
   protected R handleCreate(R desired, P primary, Context<P> context) {

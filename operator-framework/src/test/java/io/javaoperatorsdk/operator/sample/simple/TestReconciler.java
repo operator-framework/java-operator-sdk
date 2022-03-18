@@ -19,7 +19,8 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestReconciler
-    implements Reconciler<TestCustomResource>, TestExecutionInfoProvider,
+    implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
+    TestExecutionInfoProvider,
     KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
@@ -28,19 +29,12 @@ public class TestReconciler
       ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+  private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
   private KubernetesClient kubernetesClient;
   private boolean updateStatus;
 
-  public TestReconciler() {
-    this(true);
-  }
-
   public TestReconciler(boolean updateStatus) {
     this.updateStatus = updateStatus;
-  }
-
-  public boolean isUpdateStatus() {
-    return updateStatus;
   }
 
   public void setUpdateStatus(boolean updateStatus) {
@@ -60,6 +54,7 @@ public class TestReconciler
   @Override
   public DeleteControl cleanup(
       TestCustomResource resource, Context<TestCustomResource> context) {
+    numberOfCleanupExecutions.incrementAndGet();
     Boolean delete =
         kubernetesClient
             .configMaps()
@@ -138,5 +133,9 @@ public class TestReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
+  }
+
+  public int getNumberOfCleanupExecutions() {
+    return numberOfCleanupExecutions.get();
   }
 }

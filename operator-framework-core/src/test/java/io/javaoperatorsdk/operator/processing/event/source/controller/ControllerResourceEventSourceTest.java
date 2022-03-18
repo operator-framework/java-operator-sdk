@@ -34,7 +34,7 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void skipsEventHandlingIfGenerationNotIncreased() {
+  void skipsEventHandlingIfGenerationNotIncreased() {
     TestCustomResource customResource = TestUtils.testCustomResource();
     customResource.getMetadata().setFinalizers(List.of(FINALIZER));
     customResource.getMetadata().setGeneration(2L);
@@ -50,7 +50,7 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void dontSkipEventHandlingIfMarkedForDeletion() {
+  void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
     source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
@@ -63,7 +63,7 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void normalExecutionIfGenerationChanges() {
+  void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
     source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
@@ -75,7 +75,7 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void handlesAllEventIfNotGenerationAware() {
+  void handlesAllEventIfNotGenerationAware() {
     source =
         new ControllerResourceEventSource<>(new TestController(false));
     setup();
@@ -123,6 +123,11 @@ class ControllerResourceEventSourceTest extends
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
       return eventSourceManager;
+    }
+
+    @Override
+    public boolean useFinalizer() {
+      return true;
     }
   }
 

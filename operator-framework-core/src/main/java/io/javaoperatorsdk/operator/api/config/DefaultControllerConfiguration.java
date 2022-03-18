@@ -66,7 +66,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public String getFinalizer() {
+  public String getFinalizerName() {
     return finalizer;
   }
 

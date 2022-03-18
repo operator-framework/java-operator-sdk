@@ -41,7 +41,6 @@ class EventSourceIT {
         new ObjectMetaBuilder()
             .withName("eventsource-" + id)
             .withNamespace(operator.getNamespace())
-            .withFinalizers(EventSourceTestCustomReconciler.FINALIZER_NAME)
             .build());
     resource.setSpec(new EventSourceTestCustomResourceSpec());
     resource.getSpec().setValue(id);

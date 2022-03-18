@@ -54,11 +54,8 @@ class UpdatingResAndSubResIT {
             () -> {
               DoubleUpdateTestCustomResource cr =
                   operator.get(DoubleUpdateTestCustomResource.class, name);
-
               assertThat(cr)
                   .isNotNull();
-              assertThat(cr.getMetadata().getFinalizers())
-                  .hasSize(1);
               assertThat(cr.getStatus())
                   .isNotNull();
               assertThat(cr.getStatus().getState())

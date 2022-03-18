@@ -134,7 +134,7 @@ public class CustomResourceSelectorTest {
   public static class MyConfiguration extends DefaultControllerConfiguration<TestCustomResource> {
 
     public MyConfiguration() {
-      super(MyController.class.getCanonicalName(), "mycontroller", null, Constants.NO_FINALIZER,
+      super(MyController.class.getCanonicalName(), "mycontroller", null, Constants.EMPTY_STRING,
           false, null,
           null, null, null, TestCustomResource.class, null, null);
     }

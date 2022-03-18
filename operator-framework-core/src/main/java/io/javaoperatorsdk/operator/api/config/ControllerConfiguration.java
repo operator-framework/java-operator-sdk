@@ -8,7 +8,6 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -18,7 +17,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
 
-  default String getFinalizer() {
+  default String getFinalizerName() {
     return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
   }
 
@@ -30,10 +29,6 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   default RetryConfiguration getRetryConfiguration() {
     return RetryConfiguration.DEFAULT;
-  }
-
-  default boolean useFinalizer() {
-    return !Constants.NO_FINALIZER.equals(getFinalizer());
   }
 
   /**

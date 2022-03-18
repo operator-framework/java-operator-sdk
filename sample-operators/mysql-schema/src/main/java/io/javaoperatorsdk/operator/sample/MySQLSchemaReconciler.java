@@ -9,12 +9,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
-// todo handle this, should work with finalizer
-@ControllerConfiguration(finalizerName = NO_FINALIZER,
+@ControllerConfiguration(
     dependents = {
         @Dependent(type = SecretDependentResource.class),
         @Dependent(type = SchemaDependentResource.class)

@@ -59,7 +59,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       log.debug("Event received for resource: {}", getName(resource));
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (filter.acceptChange(controller.getConfiguration(), oldResource, resource)) {
+      if (filter.acceptChange(controller, oldResource, resource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource)));
       } else {

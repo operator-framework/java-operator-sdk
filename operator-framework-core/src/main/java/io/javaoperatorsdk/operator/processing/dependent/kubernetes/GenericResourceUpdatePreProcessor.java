@@ -6,7 +6,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceUpdatePreProcessor;
 
 public abstract class GenericResourceUpdatePreProcessor<R extends HasMetadata> implements
     ResourceUpdatePreProcessor<R> {

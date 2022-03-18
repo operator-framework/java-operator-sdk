@@ -1,10 +1,11 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.processing.dependent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
@@ -13,16 +14,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
-  private final boolean deletable = this instanceof Deleter;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  protected Deleter<P> deleter;
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
-    deleter = deletable ? (Deleter<P>) this : null;
   }
 
   @Override
@@ -147,13 +145,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  @Override
-  public void cleanup(P primary, Context<P> context) {
-    if (isDeletable(primary, context)) {
-      deleter.delete(primary, context);
-    }
-  }
-
   protected R desired(P primary, Context<P> context) {
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or updated");
@@ -169,8 +160,4 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return updatable;
   }
 
-  @SuppressWarnings("unused")
-  protected boolean isDeletable(P primary, Context<P> context) {
-    return deletable;
-  }
 }

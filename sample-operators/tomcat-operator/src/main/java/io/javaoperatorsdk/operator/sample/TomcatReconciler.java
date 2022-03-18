@@ -13,14 +13,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
  * creates a Service over which the Pods can be accessed.
  */
 @ControllerConfiguration(
-    finalizerName = NO_FINALIZER,
     dependents = {
         @Dependent(type = DeploymentDependentResource.class),
         @Dependent(type = ServiceDependentResource.class)

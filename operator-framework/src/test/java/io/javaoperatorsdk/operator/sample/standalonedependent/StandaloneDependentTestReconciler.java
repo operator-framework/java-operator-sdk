@@ -7,23 +7,14 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
-@ControllerConfiguration(finalizerName = NO_FINALIZER)
+@ControllerConfiguration
 public class StandaloneDependentTestReconciler
     implements Reconciler<StandaloneDependentTestCustomResource>,
     EventSourceInitializer<StandaloneDependentTestCustomResource>,

@@ -8,9 +8,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 public final class ResourceEventFilters {
 
   private static final ResourceEventFilter<HasMetadata> USE_FINALIZER =
-      (configuration, oldResource, newResource) -> {
-        if (configuration.useFinalizer()) {
-          final var finalizer = configuration.getFinalizer();
+      (controller, oldResource, newResource) -> {
+        if (controller.useFinalizer()) {
+          final var finalizer = controller.getConfiguration().getFinalizerName();
           boolean oldFinalizer = oldResource == null || oldResource.hasFinalizer(finalizer);
           boolean newFinalizer = newResource.hasFinalizer(finalizer);
 
@@ -21,8 +21,8 @@ public final class ResourceEventFilters {
       };
 
   private static final ResourceEventFilter<HasMetadata> GENERATION_AWARE =
-      (configuration, oldResource, newResource) -> {
-        final var generationAware = configuration.isGenerationAware();
+      (controller, oldResource, newResource) -> {
+        final var generationAware = controller.getConfiguration().isGenerationAware();
         return oldResource == null || !generationAware ||
             oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
       };

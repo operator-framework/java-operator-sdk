@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -60,9 +59,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug("Handling dispatch for resource {}", getName(resource));
 
     final var markedForDeletion = resource.isMarkedForDeletion();
-    if (markedForDeletion && shouldNotDispatchToDelete(resource)) {
+    if (markedForDeletion && shouldNotDispatchToCleanup(resource)) {
       log.debug(
-          "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
+          "Skipping cleanup of resource {} because finalizer(s) {} don't allow processing yet",
           getName(resource),
           resource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
@@ -76,25 +75,17 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  /**
-   * Determines whether the given resource should be dispatched to the controller's
-   * {@link Reconciler#cleanup(HasMetadata, Context)} method
-   *
-   * @param resource the resource to be potentially deleted
-   * @return {@code true} if the resource should be handed to the controller's
-   *         {@link Reconciler#cleanup(HasMetadata, Context)} method, {@code false} otherwise
-   */
-  private boolean shouldNotDispatchToDelete(R resource) {
-    // we don't dispatch to delete if the controller is configured to use a finalizer but that
+  private boolean shouldNotDispatchToCleanup(R resource) {
+    // we don't dispatch to cleanup if the controller is configured to use a finalizer but that
     // finalizer is not present (which means it's already been removed)
-    return !configuration().useFinalizer() || (configuration().useFinalizer()
-        && !resource.hasFinalizer(configuration().getFinalizer()));
+    return !controller.useFinalizer() || (controller.useFinalizer()
+        && !resource.hasFinalizer(configuration().getFinalizerName()));
   }
 
   private PostExecutionControl<R> handleReconcile(
       ExecutionScope<R> executionScope, R originalResource, Context<R> context) throws Exception {
-    if (configuration().useFinalizer()
-        && !originalResource.hasFinalizer(configuration().getFinalizer())) {
+    if (controller.useFinalizer()
+        && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
        * We execute the controller processing only for processing the event sent as a results of the
@@ -265,12 +256,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         getVersion(resource));
 
     DeleteControl deleteControl = controller.cleanup(resource, context);
-    final var useFinalizer = configuration().useFinalizer();
+    final var useFinalizer = controller.useFinalizer();
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to done
       if (deleteControl.isRemoveFinalizer()
-          && resource.hasFinalizer(configuration().getFinalizer())) {
+          && resource.hasFinalizer(configuration().getFinalizerName())) {
         R customResource = removeFinalizer(resource);
         return PostExecutionControl.customResourceUpdated(customResource);
       }
@@ -289,7 +280,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private void updateCustomResourceWithFinalizer(R resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
-    resource.addFinalizer(configuration().getFinalizer());
+    resource.addFinalizer(configuration().getFinalizerName());
     replace(resource);
   }
 
@@ -304,7 +295,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         "Removing finalizer on resource: {} with version: {}",
         getUID(resource),
         getVersion(resource));
-    resource.removeFinalizer(configuration().getFinalizer());
+    resource.removeFinalizer(configuration().getFinalizerName());
     return customResourceFacade.replaceWithLock(resource);
   }
 

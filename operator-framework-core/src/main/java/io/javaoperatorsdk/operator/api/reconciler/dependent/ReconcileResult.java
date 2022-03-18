@@ -4,8 +4,8 @@ import java.util.Optional;
 
 public class ReconcileResult<R> {
 
-  private R resource;
-  private Operation operation;
+  private final R resource;
+  private final Operation operation;
 
   public static <T> ReconcileResult<T> resourceCreated(T resource) {
     return new ReconcileResult<>(resource, Operation.CREATED);

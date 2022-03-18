@@ -93,9 +93,8 @@ class ReconciliationDispatcherTest {
       CustomResourceFacade<R> customResourceFacade, boolean useFinalizer) {
 
     configuration = configuration == null ? mock(ControllerConfiguration.class) : configuration;
-    final var finalizer = useFinalizer ? DEFAULT_FINALIZER : Constants.NO_FINALIZER;
-    when(configuration.getFinalizer()).thenReturn(finalizer);
-    when(configuration.useFinalizer()).thenCallRealMethod();
+
+    when(configuration.getFinalizerName()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn((Class<R>) customResource.getClass());
     when(configuration.getRetryConfiguration()).thenReturn(RetryConfiguration.DEFAULT);
@@ -103,7 +102,12 @@ class ReconciliationDispatcherTest {
         .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
 
     Controller<R> controller = new Controller<>(reconciler, configuration,
-        MockKubernetesClient.client(customResource.getClass()));
+        MockKubernetesClient.client(customResource.getClass())) {
+      @Override
+      public boolean useFinalizer() {
+        return useFinalizer;
+      }
+    };
     controller.start();
 
     return new ReconciliationDispatcher<>(controller, customResourceFacade);
@@ -539,7 +543,8 @@ class ReconciliationDispatcherTest {
   }
 
   private class TestReconciler
-      implements Reconciler<TestCustomResource>, ErrorStatusHandler<TestCustomResource> {
+      implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
+      ErrorStatusHandler<TestCustomResource> {
     private BiFunction<TestCustomResource, Context, UpdateControl<TestCustomResource>> reconcile;
     private BiFunction<TestCustomResource, Context, DeleteControl> cleanup;
     private ErrorStatusHandler<TestCustomResource> errorHandler;

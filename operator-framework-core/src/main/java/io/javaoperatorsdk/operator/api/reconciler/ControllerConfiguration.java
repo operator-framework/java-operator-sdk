@@ -15,9 +15,10 @@ public @interface ControllerConfiguration {
   String name() default Constants.EMPTY_STRING;
 
   /**
-   * Optional finalizer name, if it is not provided, one will be automatically generated. If the
-   * provided value is the value specified by {@link Constants#NO_FINALIZER}, then no finalizer will
-   * be added to custom resources.
+   * Optional finalizer name, if it is not provided, one will be automatically generated. Note that
+   * finalizers are only added when Reconciler implement {@link Cleaner} interface, or at least one
+   * managed dependent resource implement
+   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter} interface.
    *
    * @return the finalizer name
    */

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.api.reconciler.dependent;
+package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 

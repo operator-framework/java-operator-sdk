@@ -8,9 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
-@ControllerConfiguration(finalizerName = NO_FINALIZER, labelSelector = "!version")
+@ControllerConfiguration(labelSelector = "!version")
 public class MultiVersionCRDTestReconciler1
     implements Reconciler<MultiVersionCRDTestCustomResource1> {
 

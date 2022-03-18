@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -16,11 +18,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
 /** Shows how to implement reconciler using the low level api directly. */
 @ControllerConfiguration(
-    finalizerName = NO_FINALIZER,
     labelSelector = WebPageReconciler.LOW_LEVEL_LABEL_KEY)
 public class WebPageReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {

@@ -22,7 +22,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -30,12 +31,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.
  */
-@ControllerConfiguration(finalizerName = NO_FINALIZER,
+@ControllerConfiguration(
     labelSelector = WebPageReconcilerDependentResources.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 public class WebPageReconcilerDependentResources
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
@@ -100,7 +100,7 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.deploymentDR =
-        new CrudKubernetesDependentResource<>(Deployment.class) {
+        new CRUDKubernetesDependentResource<>(Deployment.class) {
 
           @Override
           protected Deployment desired(WebPage webPage, Context<WebPage> context) {
@@ -132,7 +132,7 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.serviceDR =
-        new CrudKubernetesDependentResource<>(Service.class) {
+        new CRUDKubernetesDependentResource<>(Service.class) {
 
           @Override
           protected Service desired(WebPage webPage, Context<WebPage> context) {
@@ -163,7 +163,7 @@ public class WebPageReconcilerDependentResources
   }
 
   private class ConfigMapDependentResource
-      extends CrudKubernetesDependentResource<ConfigMap, WebPage>
+      extends CRUKubernetesDependentResource<ConfigMap, WebPage>
       implements PrimaryToSecondaryMapper<WebPage> {
 
     public ConfigMapDependentResource() {

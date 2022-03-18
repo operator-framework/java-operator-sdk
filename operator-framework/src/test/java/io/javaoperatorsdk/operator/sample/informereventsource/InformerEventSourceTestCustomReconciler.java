@@ -14,13 +14,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
-
 /**
  * Copies the config map value from spec into status. The main purpose is to test and demonstrate
  * sample usage of InformerEventSource
  */
-@ControllerConfiguration(finalizerName = NO_FINALIZER)
+@ControllerConfiguration
 public class InformerEventSourceTestCustomReconciler
     implements Reconciler<InformerEventSourceTestCustomResource>,
     EventSourceInitializer<InformerEventSourceTestCustomResource> {
