@@ -70,15 +70,13 @@ class SubResourceUpdateIT {
   }
 
   /**
-   * Not that here status sub-resource update will fail on optimistic locking. This solves a tricky
-   * situation: If this would not happen (no optimistic locking on status sub-resource) we could
-   * receive and store an event while processing the controller method. But this event would always
-   * fail since its resource version is outdated already.
+   * The update status actually does optimistic locking in the background but fabric8 client retries
+   * it with an up-to-date resource version.
    */
   @Test
   void updateCustomResourceAfterSubResourceChange() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
-    operator.create(SubResourceTestCustomResource.class, resource);
+    resource = operator.create(SubResourceTestCustomResource.class, resource);
 
     // waits for the resource to start processing
     waitXms(EVENT_RECEIVE_WAIT);
@@ -89,9 +87,9 @@ class SubResourceUpdateIT {
 
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
-    // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(3);
+    // note that both is valid, since after the update of the status the event receive lags,
+    // that will result in a third execution
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isBetween(2, 3);
   }
 
   void awaitStatusUpdated(String name) {
