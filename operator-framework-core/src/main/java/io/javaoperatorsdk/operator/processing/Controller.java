@@ -22,7 +22,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -52,6 +52,8 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   private final EventSourceManager<P> eventSourceManager;
   private final List<DependentResource> dependents;
   private final boolean contextInitializer;
+  private final boolean hasDeleterDependents;
+  private final boolean isCleaner;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -63,9 +65,19 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
     eventSourceManager = new EventSourceManager<>(this);
 
+    final var hasDeleterHolder = new boolean[] {false};
     dependents = configuration.getDependentResources().stream()
         .map(drs -> createAndConfigureFrom(drs, kubernetesClient))
+        .peek(d -> {
+          // check if any dependent implements Deleter to record that fact
+          if (!hasDeleterHolder[0] && d instanceof Deleter) {
+            hasDeleterHolder[0] = true;
+          }
+        })
         .collect(Collectors.toList());
+
+    hasDeleterDependents = hasDeleterHolder[0];
+    isCleaner = reconciler instanceof Cleaner;
   }
 
   @SuppressWarnings("rawtypes")
@@ -115,12 +127,13 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
                 @Override
                 public DeleteControl execute() {
-                  dependents.forEach(d -> {
-                    if (d instanceof Deleter) {
-                      ((Deleter<P>) d).delete(resource, context);
-                    }
-                  });
-                  if (reconciler instanceof Cleaner) {
+                  if (hasDeleterDependents) {
+                    dependents.stream()
+                        .filter(d -> d instanceof Deleter)
+                        .map(Deleter.class::cast)
+                        .forEach(deleter -> deleter.delete(resource, context));
+                  }
+                  if (isCleaner) {
                     return ((Cleaner<P>) reconciler).cleanup(resource, context);
                   } else {
                     return DeleteControl.defaultDelete();
@@ -314,11 +327,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   }
 
   public boolean useFinalizer() {
-    return reconciler instanceof Cleaner || dependentsRequireCleanup();
-  }
-
-  private boolean dependentsRequireCleanup() {
-    return dependents.stream().anyMatch(d -> d instanceof Deleter);
+    return isCleaner || hasDeleterDependents;
   }
 
   @SuppressWarnings("rawtypes")
