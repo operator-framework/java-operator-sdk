@@ -17,7 +17,7 @@ public interface ResourceEventFilter<P extends HasMetadata> {
    * Determines whether the change between the old version of the resource and the new one needs to
    * be propagated to the controller or not.
    *
-   * @param controller the target controller's configuration
+   * @param controller the target controller
    * @param oldResource the old version of the resource, null if no old resource available
    * @param newResource the new version of the resource
    * @return {@code true} if the change needs to be propagated to the controller, {@code false}

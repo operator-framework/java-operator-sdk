@@ -76,7 +76,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private boolean shouldNotDispatchToCleanup(R resource) {
-    // we don't dispatch to delete if the controller is configured to use a finalizer but that
+    // we don't dispatch to cleanup if the controller is configured to use a finalizer but that
     // finalizer is not present (which means it's already been removed)
     return !controller.useFinalizer() || (controller.useFinalizer()
         && !resource.hasFinalizer(configuration().getFinalizerName()));
