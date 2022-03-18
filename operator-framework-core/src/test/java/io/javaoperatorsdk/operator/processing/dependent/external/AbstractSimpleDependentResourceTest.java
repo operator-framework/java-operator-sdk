@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -84,7 +84,7 @@ class AbstractSimpleDependentResourceTest {
 
   @Test
   void deleteRemovesResourceFromCache() {
-    simpleDependentResource.cleanup(TestUtils.testCustomResource1(), null);
+    simpleDependentResource.delete(TestUtils.testCustomResource1(), null);
     verify(updatableCacheMock, times(1)).remove(any());
   }
 
@@ -92,7 +92,7 @@ class AbstractSimpleDependentResourceTest {
       extends AbstractSimpleDependentResource<SampleExternalResource, TestCustomResource>
       implements Creator<SampleExternalResource, TestCustomResource>,
       Updater<SampleExternalResource, TestCustomResource>,
-      Cleaner<TestCustomResource> {
+      Deleter<TestCustomResource> {
 
     private final Supplier<SampleExternalResource> supplier;
 

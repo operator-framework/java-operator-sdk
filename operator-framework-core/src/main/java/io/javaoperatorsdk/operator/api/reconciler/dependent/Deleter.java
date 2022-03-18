@@ -10,6 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  * @param <P> primary resource type
  */
 @FunctionalInterface
-public interface Cleaner<P extends HasMetadata> {
-  void cleanup(P primary, Context<P> context);
+public interface Deleter<P extends HasMetadata> {
+  void delete(P primary, Context<P> context);
 }

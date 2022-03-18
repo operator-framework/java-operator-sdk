@@ -102,7 +102,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
-  public void cleanup(P primary, Context<P> context) {
+  public void delete(P primary, Context<P> context) {
     if (!addOwnerReference) {
       var resource = getResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());

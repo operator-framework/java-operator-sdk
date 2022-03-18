@@ -61,7 +61,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     final var markedForDeletion = resource.isMarkedForDeletion();
     if (markedForDeletion && shouldNotDispatchToCleanup(resource)) {
       log.debug(
-          "Skipping delete of resource {} because finalizer(s) {} don't allow processing yet",
+          "Skipping cleanup of resource {} because finalizer(s) {} don't allow processing yet",
           getName(resource),
           resource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();

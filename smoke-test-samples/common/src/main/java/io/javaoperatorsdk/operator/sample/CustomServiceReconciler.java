@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 /** A very simple sample controller that creates a service with a label. */
 @ControllerConfiguration
-public class CustomServiceReconciler implements Reconciler<CustomService>, Cleaner<CustomService> {
+public class CustomServiceReconciler implements Reconciler<CustomService> {
 
   private static final Logger log = LoggerFactory.getLogger(CustomServiceReconciler.class);
 
@@ -30,12 +30,6 @@ public class CustomServiceReconciler implements Reconciler<CustomService>, Clean
   }
 
   @Override
-  public DeleteControl cleanup(CustomService resource, Context<CustomService> context) {
-    log.info("Cleaning up for: {}", resource.getMetadata().getName());
-    return DeleteControl.defaultDelete();
-  }
-
-  @Override
   public UpdateControl<CustomService> reconcile(
       CustomService resource, Context<CustomService> context) {
     log.info("Reconciling: {}", resource.getMetadata().getName());
@@ -45,17 +39,20 @@ public class CustomServiceReconciler implements Reconciler<CustomService>, Clean
     ServiceSpec serviceSpec = new ServiceSpec();
     serviceSpec.setPorts(Collections.singletonList(servicePort));
 
+    var service = new ServiceBuilder()
+        .withNewMetadata()
+        .withName(resource.getSpec().getName())
+        .addToLabels("testLabel", resource.getSpec().getLabel())
+        .endMetadata()
+        .withSpec(serviceSpec)
+        .build();
+    service.addOwnerReference(resource);
+
     kubernetesClient
         .services()
         .inNamespace(resource.getMetadata().getNamespace())
-        .createOrReplace(
-            new ServiceBuilder()
-                .withNewMetadata()
-                .withName(resource.getSpec().getName())
-                .addToLabels("testLabel", resource.getSpec().getLabel())
-                .endMetadata()
-                .withSpec(serviceSpec)
-                .build());
+        .createOrReplace(service);
+
     return UpdateControl.updateResource(resource);
   }
 }

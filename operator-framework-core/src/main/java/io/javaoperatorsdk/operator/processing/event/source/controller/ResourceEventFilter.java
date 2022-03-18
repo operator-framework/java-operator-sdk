@@ -34,9 +34,9 @@ public interface ResourceEventFilter<P extends HasMetadata> {
    */
   default ResourceEventFilter<P> and(ResourceEventFilter<P> other) {
     return other == null ? this
-        : (Controller<P> configuration, P oldResource, P newResource) -> {
-          boolean result = acceptChange(configuration, oldResource, newResource);
-          return result && other.acceptChange(configuration, oldResource, newResource);
+        : (Controller<P> controller, P oldResource, P newResource) -> {
+          boolean result = acceptChange(controller, oldResource, newResource);
+          return result && other.acceptChange(controller, oldResource, newResource);
         };
   }
 
@@ -50,9 +50,9 @@ public interface ResourceEventFilter<P extends HasMetadata> {
    */
   default ResourceEventFilter<P> or(ResourceEventFilter<P> other) {
     return other == null ? this
-        : (Controller<P> configuration, P oldResource, P newResource) -> {
-          boolean result = acceptChange(configuration, oldResource, newResource);
-          return result || other.acceptChange(configuration, oldResource, newResource);
+        : (Controller<P> controller, P oldResource, P newResource) -> {
+          boolean result = acceptChange(controller, oldResource, newResource);
+          return result || other.acceptChange(controller, oldResource, newResource);
         };
   }
 }

@@ -21,6 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
@@ -59,7 +60,7 @@ public class DependentResourceManager<P extends HasMetadata>
                     EventSourceProvider provider = (EventSourceProvider) dependentResource;
                     sources.add(provider.initEventSource(context));
                   }
-                  if (dependentResource instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner) {
+                  if (dependentResource instanceof Deleter) {
                     requiresCleanupHolder[0] = true;
                   }
                   return dependentResource;
@@ -82,9 +83,9 @@ public class DependentResourceManager<P extends HasMetadata>
     // cleanup in reverse order
     for (int i = dependents.size() - 1; i >= 0; i--) {
       var dependent = dependents.get(i);
-      if (dependent instanceof io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner) {
-        ((io.javaoperatorsdk.operator.api.reconciler.dependent.Cleaner<P>) dependent)
-            .cleanup(resource, context);
+      if (dependent instanceof Deleter) {
+        ((Deleter<P>) dependent)
+            .delete(resource, context);
       }
     }
     return DeleteControl.defaultDelete();

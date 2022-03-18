@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapDependentResource extends
-        CRUDKubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource> {
+    CRUDKubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource> {
 
   private static final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
 
@@ -28,9 +28,9 @@ public class ConfigMapDependentResource extends
   }
 
   @Override
-  public void cleanup(CleanerForManagedDependentCustomResource primary,
+  public void delete(CleanerForManagedDependentCustomResource primary,
       Context<CleanerForManagedDependentCustomResource> context) {
-    super.cleanup(primary, context);
+    super.delete(primary, context);
     numberOfCleanupExecutions.incrementAndGet();
   }
 

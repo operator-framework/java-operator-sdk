@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,7 +88,8 @@ class MySQLSchemaOperatorE2E {
 
     MySQLSchema testSchema = new MySQLSchema();
     testSchema.setMetadata(
-        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(operator.getNamespace()).build());
+        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(operator.getNamespace())
+            .build());
     testSchema.setSpec(new SchemaSpec());
     testSchema.getSpec().setEncoding("utf8");
 
@@ -113,11 +113,6 @@ class MySQLSchemaOperatorE2E {
               assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
               assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
             });
-
-    operator.delete(MySQLSchema.class, testSchema);
-
-    await().atMost(Duration.ofSeconds(45)).until(() ->
-            operator.get(MySQLSchema.class, TEST_RESOURCE_NAME) == null);
 
     if (portForward != null) {
       portForward.close();
