@@ -87,8 +87,9 @@ class SubResourceUpdateIT {
 
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    // note that both is valid, since after the update of the status the event receive lags,
+    // that will result in a third execution
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isBetween(2, 3);
   }
 
   void awaitStatusUpdated(String name) {
