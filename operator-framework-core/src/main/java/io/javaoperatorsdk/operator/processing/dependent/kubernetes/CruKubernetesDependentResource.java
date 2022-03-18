@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 
 /**
- * Adaptor Class for standalone mode for resources that manages Create, Update and Delete
+ * Adaptor Class for standalone mode for resources that manages Create, Read and Update
  *
  * @param <R> Managed resource
  * @param <P> Primary Resource
