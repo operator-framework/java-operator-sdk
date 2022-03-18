@@ -157,6 +157,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
+  public KubernetesClient getKubernetesClient() {
+    return client;
+  }
+
+  @Override
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
   }
