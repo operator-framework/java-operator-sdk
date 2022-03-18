@@ -8,15 +8,32 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+
+import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
+import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
+import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.Utils.handleError;
+import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
+import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 
 /** Shows how to implement reconciler using the low level api directly. */
 @ControllerConfiguration(
@@ -35,11 +52,9 @@ public class WebPageReconciler
     this.kubernetesClient = kubernetesClient;
   }
 
-  InformerEventSource configMapEventSource;
-
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    configMapEventSource =
+    var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(context, ConfigMap.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
@@ -57,9 +72,8 @@ public class WebPageReconciler
   @Override
   public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
     log.info("Reconciling web page: {}", webPage);
-    if (webPage.getSpec().getHtml().contains("error")) {
-      throw new ErrorSimulationException("Simulating error");
-    }
+    simulateErrorIfRequested(webPage);
+
     String ns = webPage.getMetadata().getNamespace();
     String configMapName = configMapName(webPage);
     String deploymentName = deploymentName(webPage);
@@ -105,14 +119,6 @@ public class WebPageReconciler
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
     return UpdateControl.updateStatus(webPage);
-  }
-
-  private WebPageStatus createStatus(String configMapName) {
-    WebPageStatus status = new WebPageStatus();
-    status.setHtmlConfigMap(configMapName);
-    status.setAreWeGood(true);
-    status.setErrorMessage(null);
-    return status;
   }
 
   private boolean match(Deployment desiredDeployment, Deployment deployment) {
@@ -196,22 +202,9 @@ public class WebPageReconciler
     return labels;
   }
 
-  private static String configMapName(WebPage nginx) {
-    return nginx.getMetadata().getName() + "-html";
-  }
-
-  private static String deploymentName(WebPage nginx) {
-    return nginx.getMetadata().getName();
-  }
-
-  private static String serviceName(WebPage nginx) {
-    return nginx.getMetadata().getName();
-  }
-
   @Override
   public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
       WebPage resource, Context<WebPage> context, Exception e) {
-    resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-    return ErrorStatusUpdateControl.updateStatus(resource);
+    return handleError(resource, e);
   }
 }
