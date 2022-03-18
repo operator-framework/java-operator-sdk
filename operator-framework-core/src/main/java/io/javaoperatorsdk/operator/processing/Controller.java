@@ -67,10 +67,10 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
   }
 
   @SuppressWarnings("rawtypes")
-  private DependentResource createAndConfigureFrom(DependentResourceSpec dependentResourceSpec,
+  private DependentResource createAndConfigureFrom(DependentResourceSpec spec,
       KubernetesClient client) {
-    DependentResource dependentResource =
-        ConfigurationServiceProvider.instance().createFrom(dependentResourceSpec);
+    final var dependentResource =
+        ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
 
     if (dependentResource instanceof KubernetesClientAware) {
       ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
@@ -78,8 +78,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>,
 
     if (dependentResource instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) dependentResource;
-      dependentResourceSpec.getDependentResourceConfiguration()
-          .ifPresent(configurator::configureWith);
+      spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
     }
     return dependentResource;
   }
