@@ -94,12 +94,9 @@ what's going on.
 
 We also provide implementations that makes it very easy to cache
 (`AbstractCachingDependentResource`) or make it easy to poll for changes in external
-resources (`PollingDependentResource`, `PerResourcePollingDependentResource`).
-
-FIX-ME: the following currently isn't true but we should put all in the same package hierarchy, see
-https://github.com/java-operator-sdk/java-operator-sdk/issues/1049
-All the provided implementations can be found in
-the `io/javaoperatorsdk/operator/processing/dependent` package.
+resources (`PollingDependentResource`, `PerResourcePollingDependentResource`). All the provided
+implementations can be found in the `io/javaoperatorsdk/operator/processing/dependent` package of
+the `operator-framework-core` module.
 
 ## Managed Dependent Resources
 
