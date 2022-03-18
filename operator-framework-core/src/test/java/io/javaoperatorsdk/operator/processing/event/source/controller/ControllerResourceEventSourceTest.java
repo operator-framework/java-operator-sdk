@@ -6,15 +6,12 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -28,10 +25,8 @@ class ControllerResourceEventSourceTest extends
     AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
 
   public static final String FINALIZER = "finalizer";
-  private static final MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> client =
-      mock(MixedOperation.class);
 
-  private TestController testController = new TestController(true);
+  private final TestController testController = new TestController(true);
 
   @BeforeEach
   public void setup() {
@@ -104,27 +99,6 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void handlesNextEventIfWhitelisted() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
-    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
-    source.whitelistNextEvent(ResourceID.fromResource(customResource));
-
-    source.eventReceived(ResourceAction.UPDATED, customResource, customResource);
-
-    verify(eventHandler, times(1)).handleEvent(any());
-  }
-
-  @Test
-  public void notHandlesNextEventIfNotWhitelisted() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
-    customResource.getMetadata().setFinalizers(List.of(FINALIZER));
-
-    source.eventReceived(ResourceAction.UPDATED, customResource, customResource);
-
-    verify(eventHandler, times(0)).handleEvent(any());
-  }
-
-  @Test
   public void callsBroadcastsOnResourceEvents() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
@@ -135,23 +109,20 @@ class ControllerResourceEventSourceTest extends
             eq(customResource1));
   }
 
+  @SuppressWarnings("unchecked")
   private static class TestController extends Controller<TestCustomResource> {
 
-    private EventSourceManager<TestCustomResource> eventSourceManager =
+    private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);
 
     public TestController(boolean generationAware) {
-      super(null, new TestConfiguration(generationAware), null);
+      super(null, new TestConfiguration(generationAware),
+          MockKubernetesClient.client(TestCustomResource.class));
     }
 
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
       return eventSourceManager;
-    }
-
-    @Override
-    public MixedOperation<TestCustomResource, KubernetesResourceList<TestCustomResource>, Resource<TestCustomResource>> getCRClient() {
-      return client;
     }
   }
 
@@ -170,6 +141,7 @@ class ControllerResourceEventSourceTest extends
           null,
           null,
           TestCustomResource.class,
+          null,
           null);
     }
   }

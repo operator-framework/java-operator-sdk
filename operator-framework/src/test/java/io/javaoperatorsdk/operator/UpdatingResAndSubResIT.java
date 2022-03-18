@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResource;
@@ -17,16 +16,13 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class UpdatingResAndSubResIT {
+class UpdatingResAndSubResIT {
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(DoubleUpdateTestCustomReconciler.class)
-          .build();
+      OperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class).build();
 
   @Test
-  public void updatesSubResourceStatus() {
+  void updatesSubResourceStatus() {
     DoubleUpdateTestCustomResource resource = createTestCustomResource("1");
     operator.create(DoubleUpdateTestCustomResource.class, resource);
 

@@ -11,4 +11,11 @@ public class WebPageSpec {
   public void setHtml(String html) {
     this.html = html;
   }
+
+  @Override
+  public String toString() {
+    return "WebPageSpec{" +
+        "html='" + html + '\'' +
+        '}';
+  }
 }

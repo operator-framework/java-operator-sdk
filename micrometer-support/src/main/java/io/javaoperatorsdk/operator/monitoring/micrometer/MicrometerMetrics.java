@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.Event;
@@ -33,7 +34,13 @@ public class MicrometerMetrics implements Metrics {
             .publishPercentileHistogram()
             .register(registry);
     try {
-      final var result = timer.record(execution::execute);
+      final var result = timer.record(() -> {
+        try {
+          return execution.execute();
+        } catch (Exception e) {
+          throw new OperatorException(e);
+        }
+      });
       final var successType = execution.successTypeName(result);
       registry
           .counter(execName + ".success", "controller", name, "type", successType)
@@ -58,6 +65,7 @@ public class MicrometerMetrics implements Metrics {
     incrementCounter(customResourceUid, "events.delete");
   }
 
+  @Override
   public void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfoNullable) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(resourceID, RECONCILIATIONS + "started",
@@ -72,7 +80,7 @@ public class MicrometerMetrics implements Metrics {
     incrementCounter(resourceID, RECONCILIATIONS + "success");
   }
 
-  public void failedReconciliation(ResourceID resourceID, RuntimeException exception) {
+  public void failedReconciliation(ResourceID resourceID, Exception exception) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;

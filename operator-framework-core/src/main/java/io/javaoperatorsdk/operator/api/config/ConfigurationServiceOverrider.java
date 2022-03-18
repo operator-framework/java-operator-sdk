@@ -1,12 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
+@SuppressWarnings("unused")
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
   private Metrics metrics;
@@ -16,9 +17,9 @@ public class ConfigurationServiceOverrider {
   private Cloner cloner;
   private int timeoutSeconds;
   private boolean closeClientOnStop;
+  private ExecutorService executorService = null;
 
-  public ConfigurationServiceOverrider(
-      ConfigurationService original) {
+  ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
     this.clientConfig = original.getClientConfiguration();
     this.checkCR = original.checkCRDAndValidateLocalModel();
@@ -65,22 +66,16 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationService build() {
-    return new ConfigurationService() {
-      @Override
-      public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
-          Reconciler<R> reconciler) {
-        return original.getConfigurationFor(reconciler);
-      }
+  public ConfigurationServiceOverrider withExecutorService(ExecutorService executorService) {
+    this.executorService = executorService;
+    return this;
+  }
 
+  public ConfigurationService build() {
+    return new BaseConfigurationService(original.getVersion()) {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
-      }
-
-      @Override
-      public Version getVersion() {
-        return original.getVersion();
       }
 
       @Override
@@ -117,9 +112,22 @@ public class ConfigurationServiceOverrider {
       public boolean closeClientOnStop() {
         return closeClientOnStop;
       }
+
+      @Override
+      public ExecutorService getExecutorService() {
+        if (executorService != null) {
+          return executorService;
+        } else {
+          return super.getExecutorService();
+        }
+      }
     };
   }
 
+  /**
+   * @deprecated Use {@link ConfigurationServiceProvider#overrideCurrent(Consumer)} instead
+   */
+  @Deprecated(since = "2.2.0")
   public static ConfigurationServiceOverrider override(ConfigurationService original) {
     return new ConfigurationServiceOverrider(original);
   }

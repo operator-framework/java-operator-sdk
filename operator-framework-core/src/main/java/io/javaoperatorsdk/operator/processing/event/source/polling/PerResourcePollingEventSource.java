@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
@@ -25,39 +26,39 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * <p>
  * For other behavior see {@link CachingEventSource}
  *
- * @param <T> the resource polled by the event source
- * @param <R> related custom resource
+ * @param <R> the resource polled by the event source
+ * @param <P> related custom resource
  */
-public class PerResourcePollingEventSource<T, R extends HasMetadata>
-    extends CachingEventSource<T, R>
-    implements ResourceEventAware<R> {
+public class PerResourcePollingEventSource<R, P extends HasMetadata>
+    extends ExternalResourceCachingEventSource<R, P>
+    implements ResourceEventAware<P> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
   private final Timer timer = new Timer();
   private final Map<ResourceID, TimerTask> timerTasks = new ConcurrentHashMap<>();
-  private final ResourceSupplier<T, R> resourceSupplier;
-  private final Cache<R> resourceCache;
-  private final Predicate<R> registerPredicate;
+  private final ResourceFetcher<R, P> resourceFetcher;
+  private final Cache<P> resourceCache;
+  private final Predicate<P> registerPredicate;
   private final long period;
 
-  public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      Cache<R> resourceCache, long period, Class<T> resourceClass) {
-    this(resourceSupplier, resourceCache, period, null, resourceClass);
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+      Cache<P> resourceCache, long period, Class<R> resourceClass) {
+    this(resourceFetcher, resourceCache, period, null, resourceClass);
   }
 
-  public PerResourcePollingEventSource(ResourceSupplier<T, R> resourceSupplier,
-      Cache<R> resourceCache, long period,
-      Predicate<R> registerPredicate, Class<T> resourceClass) {
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+      Cache<P> resourceCache, long period,
+      Predicate<P> registerPredicate, Class<R> resourceClass) {
     super(resourceClass);
-    this.resourceSupplier = resourceSupplier;
+    this.resourceFetcher = resourceFetcher;
     this.resourceCache = resourceCache;
     this.period = period;
     this.registerPredicate = registerPredicate;
   }
 
-  private void pollForResource(R resource) {
-    var value = resourceSupplier.getResource(resource);
+  private void pollForResource(P resource) {
+    var value = resourceFetcher.fetchResource(resource);
     var resourceID = ResourceID.fromResource(resource);
     if (value.isEmpty()) {
       super.handleDelete(resourceID);
@@ -66,10 +67,10 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     }
   }
 
-  private Optional<T> getAndCacheResource(ResourceID resourceID) {
+  private Optional<R> getAndCacheResource(ResourceID resourceID) {
     var resource = resourceCache.get(resourceID);
     if (resource.isPresent()) {
-      var value = resourceSupplier.getResource(resource.get());
+      var value = resourceFetcher.fetchResource(resource.get());
       value.ifPresent(v -> cache.put(resourceID, v));
       return value;
     }
@@ -77,17 +78,17 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   }
 
   @Override
-  public void onResourceCreated(R resource) {
+  public void onResourceCreated(P resource) {
     checkAndRegisterTask(resource);
   }
 
   @Override
-  public void onResourceUpdated(R newResource, R oldResource) {
+  public void onResourceUpdated(P newResource, P oldResource) {
     checkAndRegisterTask(newResource);
   }
 
   @Override
-  public void onResourceDeleted(R resource) {
+  public void onResourceDeleted(P resource) {
     var resourceID = ResourceID.fromResource(resource);
     TimerTask task = timerTasks.remove(resourceID);
     if (task != null) {
@@ -101,7 +102,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
   // since events from ResourceEventAware are propagated from the thread of the informer. This is
   // important
   // because otherwise there will be a race condition related to the timerTasks.
-  private void checkAndRegisterTask(R resource) {
+  private void checkAndRegisterTask(P resource) {
     var resourceID = ResourceID.fromResource(resource);
     if (timerTasks.get(resourceID) == null && (registerPredicate == null
         || registerPredicate.test(resource))) {
@@ -131,7 +132,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
    * @return the related resource for this event source
    */
   @Override
-  public Optional<T> getAssociated(R primary) {
+  public Optional<R> getAssociated(P primary) {
     return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
   }
 
@@ -142,7 +143,7 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
    *         supplier. The value provided from the supplier is cached, but no new event is
    *         propagated.
    */
-  public Optional<T> getValueFromCacheOrSupplier(ResourceID resourceID) {
+  public Optional<R> getValueFromCacheOrSupplier(ResourceID resourceID) {
     var cachedValue = getCachedValue(resourceID);
     if (cachedValue.isPresent()) {
       return cachedValue;
@@ -151,8 +152,8 @@ public class PerResourcePollingEventSource<T, R extends HasMetadata>
     }
   }
 
-  public interface ResourceSupplier<T, R> {
-    Optional<T> getResource(R resource);
+  public interface ResourceFetcher<R, P> {
+    Optional<R> fetchResource(P primaryResource);
   }
 
   @Override

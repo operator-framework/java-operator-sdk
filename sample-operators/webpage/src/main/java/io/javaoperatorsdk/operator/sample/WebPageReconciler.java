@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -13,17 +9,26 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration
-public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
+/** Shows how to implement reconciler using the low level api directly. */
+@ControllerConfiguration(
+    finalizerName = NO_FINALIZER,
+    labelSelector = WebPageReconciler.LOW_LEVEL_LABEL_KEY)
+public class WebPageReconciler
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+
+  public static final String LOW_LEVEL_LABEL_KEY = "low-level";
+  public static final String INDEX_HTML = "index.html";
+
+  private static final Logger log = LoggerFactory.getLogger(WebPageReconciler.class);
 
   private final KubernetesClient kubernetesClient;
 
@@ -31,126 +36,165 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
     this.kubernetesClient = kubernetesClient;
   }
 
+  InformerEventSource configMapEventSource;
+
   @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    configMapEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, ConfigMap.class)
+            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .build(), context);
+    var deploymentEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, Deployment.class)
+            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .build(), context);
+    var serviceEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, Service.class)
+            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .build(), context);
+    return List.of(configMapEventSource, deploymentEventSource, serviceEventSource);
+  }
+
+  @Override
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+    log.info("Reconciling web page: {}", webPage);
     if (webPage.getSpec().getHtml().contains("error")) {
       throw new ErrorSimulationException("Simulating error");
     }
-
     String ns = webPage.getMetadata().getNamespace();
+    String configMapName = configMapName(webPage);
+    String deploymentName = deploymentName(webPage);
 
-    Map<String, String> data = new HashMap<>();
-    data.put("index.html", webPage.getSpec().getHtml());
 
-    ConfigMap htmlConfigMap =
-        new ConfigMapBuilder()
-            .withMetadata(
-                new ObjectMetaBuilder()
-                    .withName(configMapName(webPage))
-                    .withNamespace(ns)
-                    .build())
-            .withData(data)
-            .build();
+    ConfigMap desiredHtmlConfigMap = makeDesiredHtmlConfigMap(ns, configMapName, webPage);
+    Deployment desiredDeployment =
+        makeDesiredDeployment(webPage, deploymentName, ns, configMapName);
+    Service desiredService = makeDesiredService(webPage, ns, desiredDeployment);
 
-    Deployment deployment = loadYaml(Deployment.class, "deployment.yaml");
-    deployment.getMetadata().setName(deploymentName(webPage));
-    deployment.getMetadata().setNamespace(ns);
-    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName(webPage));
-    deployment
+    var previousConfigMap = context.getSecondaryResource(ConfigMap.class).orElse(null);
+    if (!match(desiredHtmlConfigMap, previousConfigMap)) {
+      log.info(
+          "Creating or updating ConfigMap {} in {}",
+          desiredHtmlConfigMap.getMetadata().getName(),
+          ns);
+      kubernetesClient.configMaps().inNamespace(ns).createOrReplace(desiredHtmlConfigMap);
+    }
+
+    var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
+    if (!match(desiredDeployment, existingDeployment)) {
+      log.info(
+          "Creating or updating Deployment {} in {}",
+          desiredDeployment.getMetadata().getName(),
+          ns);
+      kubernetesClient.apps().deployments().inNamespace(ns).createOrReplace(desiredDeployment);
+    }
+
+    var existingService = context.getSecondaryResource(Service.class).orElse(null);
+    if (!match(desiredService, existingService)) {
+      log.info(
+          "Creating or updating Deployment {} in {}",
+          desiredDeployment.getMetadata().getName(),
+          ns);
+      kubernetesClient.services().inNamespace(ns).createOrReplace(desiredService);
+    }
+
+    if (previousConfigMap != null && !StringUtils.equals(
+        previousConfigMap.getData().get(INDEX_HTML),
+        desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
+      log.info("Restarting pods because HTML has changed in {}", ns);
+      kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
+    }
+    webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
+    return UpdateControl.updateStatus(webPage);
+  }
+
+  private WebPageStatus createStatus(String configMapName) {
+    WebPageStatus status = new WebPageStatus();
+    status.setHtmlConfigMap(configMapName);
+    status.setAreWeGood(true);
+    status.setErrorMessage(null);
+    return status;
+  }
+
+  private boolean match(Deployment desiredDeployment, Deployment deployment) {
+    if (deployment == null) {
+      return false;
+    } else {
+      return desiredDeployment.getSpec().getReplicas().equals(deployment.getSpec().getReplicas()) &&
+          desiredDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+              .equals(
+                  deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+    }
+  }
+
+  private boolean match(Service desiredService, Service service) {
+    if (service == null) {
+      return false;
+    }
+    return desiredService.getSpec().getSelector().equals(service.getSpec().getSelector());
+  }
+
+  private boolean match(ConfigMap desiredHtmlConfigMap, ConfigMap existingConfigMap) {
+    if (existingConfigMap == null) {
+      return false;
+    } else {
+      return desiredHtmlConfigMap.getData().equals(existingConfigMap.getData());
+    }
+  }
+
+  private Service makeDesiredService(WebPage webPage, String ns, Deployment desiredDeployment) {
+    Service desiredService = ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml");
+    desiredService.getMetadata().setName(serviceName(webPage));
+    desiredService.getMetadata().setNamespace(ns);
+    desiredService.getMetadata().setLabels(lowLevelLabel());
+    desiredService
         .getSpec()
-        .getTemplate()
-        .getMetadata()
-        .getLabels()
-        .put("app", deploymentName(webPage));
-    deployment
+        .setSelector(desiredDeployment.getSpec().getTemplate().getMetadata().getLabels());
+    desiredService.addOwnerReference(webPage);
+    return desiredService;
+  }
+
+  private Deployment makeDesiredDeployment(WebPage webPage, String deploymentName, String ns,
+      String configMapName) {
+    Deployment desiredDeployment =
+        ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
+    desiredDeployment.getMetadata().setName(deploymentName);
+    desiredDeployment.getMetadata().setNamespace(ns);
+    desiredDeployment.getMetadata().setLabels(lowLevelLabel());
+    desiredDeployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
+    desiredDeployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
+    desiredDeployment
         .getSpec()
         .getTemplate()
         .getSpec()
         .getVolumes()
         .get(0)
-        .setConfigMap(
-            new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
-
-    Service service = loadYaml(Service.class, "service.yaml");
-    service.getMetadata().setName(serviceName(webPage));
-    service.getMetadata().setNamespace(ns);
-    service.getSpec().setSelector(deployment.getSpec().getTemplate().getMetadata().getLabels());
-
-    ConfigMap existingConfigMap =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(htmlConfigMap.getMetadata().getNamespace())
-            .withName(htmlConfigMap.getMetadata().getName())
-            .get();
-
-    log.info("Creating or updating ConfigMap {} in {}", htmlConfigMap.getMetadata().getName(), ns);
-    kubernetesClient.configMaps().inNamespace(ns).createOrReplace(htmlConfigMap);
-    log.info("Creating or updating Deployment {} in {}", deployment.getMetadata().getName(), ns);
-    kubernetesClient.apps().deployments().inNamespace(ns).createOrReplace(deployment);
-
-    if (kubernetesClient.services().inNamespace(ns).withName(service.getMetadata().getName())
-        .get() == null) {
-      log.info("Creating Service {} in {}", service.getMetadata().getName(), ns);
-      kubernetesClient.services().inNamespace(ns).createOrReplace(service);
-    }
-
-    if (existingConfigMap != null) {
-      if (!StringUtils.equals(
-          existingConfigMap.getData().get("index.html"),
-          htmlConfigMap.getData().get("index.html"))) {
-        log.info("Restarting pods because HTML has changed in {}", ns);
-        kubernetesClient
-            .pods()
-            .inNamespace(ns)
-            .withLabel("app", deploymentName(webPage))
-            .delete();
-      }
-    }
-
-    WebPageStatus status = new WebPageStatus();
-    status.setHtmlConfigMap(htmlConfigMap.getMetadata().getName());
-    status.setAreWeGood("Yes!");
-    status.setErrorMessage(null);
-    webPage.setStatus(status);
-
-    return UpdateControl.updateStatus(webPage);
+        .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build());
+    desiredDeployment.addOwnerReference(webPage);
+    return desiredDeployment;
   }
 
-  @Override
-  public DeleteControl cleanup(WebPage nginx, Context context) {
-    log.info("Cleaning up for: {}", nginx.getMetadata().getName());
+  private ConfigMap makeDesiredHtmlConfigMap(String ns, String configMapName, WebPage webPage) {
+    Map<String, String> data = new HashMap<>();
+    data.put("index.html", webPage.getSpec().getHtml());
+    ConfigMap configMap =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(configMapName)
+                    .withNamespace(ns)
+                    .withLabels(lowLevelLabel())
+                    .build())
+            .withData(data)
+            .build();
+    configMap.addOwnerReference(webPage);
+    return configMap;
+  }
 
-    log.info("Deleting ConfigMap {}", configMapName(nginx));
-    Resource<ConfigMap> configMap =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(nginx.getMetadata().getNamespace())
-            .withName(configMapName(nginx));
-    if (configMap.get() != null) {
-      configMap.delete();
-    }
-
-    log.info("Deleting Deployment {}", deploymentName(nginx));
-    RollableScalableResource<Deployment> deployment =
-        kubernetesClient
-            .apps()
-            .deployments()
-            .inNamespace(nginx.getMetadata().getNamespace())
-            .withName(deploymentName(nginx));
-    if (deployment.get() != null) {
-      deployment.cascading(true).delete();
-    }
-
-    log.info("Deleting Service {}", serviceName(nginx));
-    ServiceResource<Service> service =
-        kubernetesClient
-            .services()
-            .inNamespace(nginx.getMetadata().getNamespace())
-            .withName(serviceName(nginx));
-    if (service.get() != null) {
-      service.delete();
-    }
-    return DeleteControl.defaultDelete();
+  public static Map<String, String> lowLevelLabel() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LOW_LEVEL_LABEL_KEY, "true");
+    return labels;
   }
 
   private static String configMapName(WebPage nginx) {
@@ -165,18 +209,10 @@ public class WebPageReconciler implements Reconciler<WebPage>, ErrorStatusHandle
     return nginx.getMetadata().getName();
   }
 
-  private <T> T loadYaml(Class<T> clazz, String yaml) {
-    try (InputStream is = getClass().getResourceAsStream(yaml)) {
-      return Serialization.unmarshal(is, clazz);
-    } catch (IOException ex) {
-      throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
-    }
-  }
-
   @Override
-  public Optional<WebPage> updateErrorStatus(WebPage resource, RetryInfo retryInfo,
-      RuntimeException e) {
+  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
+      WebPage resource, Context<WebPage> context, Exception e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-    return Optional.of(resource);
+    return ErrorStatusUpdateControl.updateStatus(resource);
   }
 }

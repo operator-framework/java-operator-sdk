@@ -1,6 +1,8 @@
 apiVersion: "sample.javaoperatorsdk/v1"
 kind: WebPage
 metadata:
+  labels:
+    low-level: "true"
   name: hellows
 spec:
   html: |
@@ -9,6 +11,6 @@ spec:
         <title>Hello Operator World</title>
       </head>
       <body>
-        Hello World!
+        Hello World! 
       </body>
     </html>

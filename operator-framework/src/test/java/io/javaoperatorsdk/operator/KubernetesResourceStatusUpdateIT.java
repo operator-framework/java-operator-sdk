@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.deployment.DeploymentReconciler;
 
@@ -19,17 +18,14 @@ import static io.javaoperatorsdk.operator.sample.deployment.DeploymentReconciler
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class KubernetesResourceStatusUpdateIT {
+class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new DeploymentReconciler())
-          .build();
+      OperatorExtension.builder().withReconciler(new DeploymentReconciler()).build();
 
   @Test
-  public void testReconciliationOfNonCustomResourceAndStatusUpdate() {
+  void testReconciliationOfNonCustomResourceAndStatusUpdate() {
     var deployment = operator.create(Deployment.class, testDeployment());
     await().atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());

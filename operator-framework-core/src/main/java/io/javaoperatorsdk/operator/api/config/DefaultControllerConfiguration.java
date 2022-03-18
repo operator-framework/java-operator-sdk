@@ -1,12 +1,18 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
+@SuppressWarnings("rawtypes")
 public class DefaultControllerConfiguration<R extends HasMetadata>
+    extends DefaultResourceConfiguration<R>
     implements ControllerConfiguration<R> {
 
   private final String associatedControllerClassName;
@@ -14,14 +20,12 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final Set<String> namespaces;
-  private final boolean watchAllNamespaces;
   private final RetryConfiguration retryConfiguration;
-  private final String labelSelector;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final Class<R> resourceClass;
-  private ConfigurationService service;
+  private final List<DependentResourceSpec<?, ?>> dependents;
+  private final Duration reconciliationMaxInterval;
 
+  // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
       String associatedControllerClassName,
       String name,
@@ -33,25 +37,22 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
-      ConfigurationService service) {
+      Duration reconciliationMaxInterval,
+      List<DependentResourceSpec<?, ?>> dependents) {
+    super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
     this.finalizer = finalizer;
     this.generationAware = generationAware;
-    this.namespaces =
-        namespaces != null ? Collections.unmodifiableSet(namespaces) : Collections.emptySet();
-    this.watchAllNamespaces = this.namespaces.isEmpty();
+    this.reconciliationMaxInterval = reconciliationMaxInterval;
     this.retryConfiguration =
         retryConfiguration == null
             ? ControllerConfiguration.super.getRetryConfiguration()
             : retryConfiguration;
-    this.labelSelector = labelSelector;
     this.resourceEventFilter = resourceEventFilter;
-    this.resourceClass =
-        resourceClass == null ? ControllerConfiguration.super.getResourceClass()
-            : resourceClass;
-    setConfigurationService(service);
+
+    this.dependents = dependents != null ? dependents : Collections.emptyList();
   }
 
   @Override
@@ -80,46 +81,22 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Set<String> getNamespaces() {
-    return namespaces;
-  }
-
-  @Override
-  public boolean watchAllNamespaces() {
-    return watchAllNamespaces;
-  }
-
-  @Override
   public RetryConfiguration getRetryConfiguration() {
     return retryConfiguration;
   }
 
   @Override
-  public ConfigurationService getConfigurationService() {
-    return service;
-  }
-
-  @Override
-  public void setConfigurationService(ConfigurationService service) {
-    if (this.service != null) {
-      throw new RuntimeException("A ConfigurationService is already associated with '" + name
-          + "' ControllerConfiguration. Cannot change it once set!");
-    }
-    this.service = service;
-  }
-
-  @Override
-  public String getLabelSelector() {
-    return labelSelector;
-  }
-
-  @Override
-  public Class<R> getResourceClass() {
-    return resourceClass;
-  }
-
-  @Override
   public ResourceEventFilter<R> getEventFilter() {
     return resourceEventFilter;
+  }
+
+  @Override
+  public List<DependentResourceSpec<?, ?>> getDependentResources() {
+    return dependents;
+  }
+
+  @Override
+  public Optional<Duration> reconciliationMaxInterval() {
+    return Optional.ofNullable(reconciliationMaxInterval);
   }
 }

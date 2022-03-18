@@ -25,13 +25,14 @@ public class ExecutorServiceManager {
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
 
-  public static void init(ConfigurationService configuration) {
+  public static void init() {
     if (instance == null) {
-      if (configuration == null) {
-        configuration = new BaseConfigurationService(Version.UNKNOWN);
-      }
+      final var configuration = ConfigurationServiceProvider.instance();
       instance = new ExecutorServiceManager(
           new InstrumentedExecutorService(configuration.getExecutorService()),
+          configuration.getTerminationTimeoutSeconds());
+      log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
+          configuration.getExecutorService().getClass(),
           configuration.getTerminationTimeoutSeconds());
       log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
           configuration.getExecutorService().getClass(),
@@ -53,7 +54,7 @@ public class ExecutorServiceManager {
   public static ExecutorServiceManager instance() {
     if (instance == null) {
       // provide a default configuration if none has been provided by init
-      init(null);
+      init();
     }
     return instance;
   }

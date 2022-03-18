@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
@@ -18,7 +17,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class RetryIT {
+class RetryIT {
   public static final int RETRY_INTERVAL = 150;
   public static final int MAX_RETRY_ATTEMPTS = 5;
 
@@ -27,7 +26,6 @@ public class RetryIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
           .withReconciler(
               new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
@@ -36,7 +34,7 @@ public class RetryIT {
 
 
   @Test
-  public void retryFailedExecution() {
+  void retryFailedExecution() {
     RetryTestCustomResource resource = createTestCustomResource("1");
 
     operator.create(RetryTestCustomResource.class, resource);

@@ -1,10 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,10 +64,41 @@ public class Utils {
   }
 
   public static boolean shouldCheckCRDAndValidateLocalModel() {
-    return Boolean.getBoolean(System.getProperty(CHECK_CRD_ENV_KEY, "true"));
+    return getBooleanFromSystemPropsOrDefault(CHECK_CRD_ENV_KEY, true);
   }
 
   public static boolean debugThreadPool() {
-    return Boolean.getBoolean(System.getProperty(DEBUG_THREAD_POOL_ENV_KEY, "false"));
+    return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
+  }
+
+  static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
+    var property = System.getProperty(propertyName);
+    if (property == null) {
+      return defaultValue;
+    } else {
+      property = property.trim().toLowerCase();
+      switch (property) {
+        case "true":
+          return true;
+        case "false":
+          return false;
+        default:
+          return defaultValue;
+      }
+    }
+  }
+
+  public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
+    Type type = clazz.getGenericSuperclass();
+    return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+  }
+
+  public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz) {
+    ParameterizedType type = (ParameterizedType) clazz.getGenericInterfaces()[0];
+    return (Class<?>) type.getActualTypeArguments()[0];
+  }
+
+  public static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
+    return annotation == null ? defaultValue : mapper.apply(annotation);
   }
 }

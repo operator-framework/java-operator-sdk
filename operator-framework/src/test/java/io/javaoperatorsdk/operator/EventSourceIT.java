@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
@@ -16,16 +15,13 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class EventSourceIT {
+class EventSourceIT {
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(EventSourceTestCustomReconciler.class)
-          .build();
+      OperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class).build();
 
   @Test
-  public void receivingPeriodicEvents() {
+  void receivingPeriodicEvents() {
     EventSourceTestCustomResource resource = createTestCustomResource("1");
 
     operator.create(EventSourceTestCustomResource.class, resource);

@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -26,14 +27,18 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(eventFilters = {CustomFilter.class})
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
+
+@ControllerConfiguration(finalizerName = NO_FINALIZER)
 public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitializer<Webapp> {
 
-  private KubernetesClient kubernetesClient;
+  private static final Logger log = LoggerFactory.getLogger(WebappReconciler.class);
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final KubernetesClient kubernetesClient;
 
   public WebappReconciler(KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient;
@@ -41,20 +46,32 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
 
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
-    return List.of(new InformerEventSource<>(
-        kubernetesClient, Tomcat.class, t -> {
-          // To create an event to a related WebApp resource and trigger the reconciliation
-          // we need to find which WebApp this Tomcat custom resource is related to.
-          // To find the related customResourceId of the WebApp resource we traverse the cache to
-          // and identify it based on naming convention.
-          return context.getPrimaryCache()
-              .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-              .map(ResourceID::fromResource)
-              .collect(Collectors.toSet());
-        },
-        (Webapp webapp) -> new ResourceID(webapp.getSpec().getTomcat(),
-            webapp.getMetadata().getNamespace()),
-        true));
+    /*
+     * To create an event to a related WebApp resource and trigger the reconciliation we need to
+     * find which WebApp this Tomcat custom resource is related to. To find the related
+     * customResourceId of the WebApp resource we traverse the cache and identify it based on naming
+     * convention.
+     */
+    final SecondaryToPrimaryMapper<Tomcat> webappsMatchingTomcatName =
+        (Tomcat t) -> context.getPrimaryCache()
+            .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
+            .map(ResourceID::fromResource)
+            .collect(Collectors.toSet());
+
+    /*
+     * We retrieve the Tomcat instance associated with out Webapp from its spec
+     */
+    final PrimaryToSecondaryMapper<Webapp> tomcatFromWebAppSpec =
+        (Webapp webapp) -> new ResourceID(
+            webapp.getSpec().getTomcat(),
+            webapp.getMetadata().getNamespace());
+
+    InformerConfiguration<Tomcat, Webapp> configuration =
+        InformerConfiguration.from(context, Tomcat.class)
+            .withPrimaryResourcesRetriever(webappsMatchingTomcatName)
+            .withAssociatedSecondaryResourceIdentifier(tomcatFromWebAppSpec)
+            .build();
+    return List.of(new InformerEventSource<>(configuration, context));
   }
 
   /**
@@ -62,7 +79,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
    * change.
    */
   @Override
-  public UpdateControl<Webapp> reconcile(Webapp webapp, Context context) {
+  public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
       return UpdateControl.noUpdate();
@@ -103,7 +120,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
   }
 
   @Override
-  public DeleteControl cleanup(Webapp webapp, Context context) {
+  public DeleteControl cleanup(Webapp webapp, Context<Webapp> context) {
 
     String[] command = new String[] {"rm", "/data/" + webapp.getSpec().getContextPath() + ".war"};
     String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);
@@ -144,7 +161,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
 
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = execCmd(pod, data, command)) {
-          status[i] = "" + pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);;
+          status[i] = "" + pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
           status[i] = "" + pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
         } catch (InterruptedException e) {
@@ -194,7 +211,7 @@ public class WebappReconciler implements Reconciler<Webapp>, EventSourceInitiali
 
     @Override
     public void onClose(int code, String reason) {
-      log.debug("Exit with: " + code + " and with reason: " + reason);
+      log.debug("Exit with: {} and with reason: {}", code, reason);
       data.complete(baos.toString());
     }
   }

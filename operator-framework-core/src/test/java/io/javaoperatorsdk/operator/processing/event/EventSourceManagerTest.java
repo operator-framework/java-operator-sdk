@@ -8,8 +8,10 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -169,10 +171,10 @@ class EventSourceManagerTest {
   }
 
   private EventSourceManager initManager() {
-    final Controller controller = mock(Controller.class);
     final ControllerConfiguration configuration = mock(ControllerConfiguration.class);
     when(configuration.getResourceClass()).thenReturn(HasMetadata.class);
-    when(controller.getConfiguration()).thenReturn(configuration);
+    final Controller controller = new Controller(mock(Reconciler.class), configuration,
+        MockKubernetesClient.client(HasMetadata.class));
     return new EventSourceManager(controller);
   }
 }

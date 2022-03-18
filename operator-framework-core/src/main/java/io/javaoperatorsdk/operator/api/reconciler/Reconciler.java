@@ -13,7 +13,7 @@ public interface Reconciler<R extends HasMetadata> {
    * @return UpdateControl to manage updates on the custom resource (usually the status) after
    *         reconciliation.
    */
-  UpdateControl<R> reconcile(R resource, Context context);
+  UpdateControl<R> reconcile(R resource, Context<R> context) throws Exception;
 
   /**
    * Note that this method is used in combination with finalizers. If automatic finalizer handling
@@ -37,7 +37,7 @@ public interface Reconciler<R extends HasMetadata> {
    *         finalizer to indicate that the resource should not be deleted after all, in which case
    *         the controller should restore the resource's state appropriately.
    */
-  default DeleteControl cleanup(R resource, Context context) {
+  default DeleteControl cleanup(R resource, Context<R> context) {
     return DeleteControl.defaultDelete();
   }
 }

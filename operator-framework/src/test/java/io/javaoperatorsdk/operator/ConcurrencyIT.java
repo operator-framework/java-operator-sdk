@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestReconciler;
@@ -19,7 +18,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class ConcurrencyIT {
+class ConcurrencyIT {
   public static final int NUMBER_OF_RESOURCES_CREATED = 50;
   public static final int NUMBER_OF_RESOURCES_DELETED = 30;
   public static final int NUMBER_OF_RESOURCES_UPDATED = 20;
@@ -28,13 +27,10 @@ public class ConcurrencyIT {
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new TestReconciler(true))
-          .build();
+      OperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
 
   @Test
-  public void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {
+  void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {
     log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
     for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
       TestCustomResource tcr = TestUtils.testCustomResourceWithPrefix(String.valueOf(i));

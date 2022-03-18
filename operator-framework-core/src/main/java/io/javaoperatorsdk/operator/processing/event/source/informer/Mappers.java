@@ -5,31 +5,38 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
 public class Mappers {
 
-  public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromAnnotation(
+  private Mappers() {}
+
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
       String nameKey) {
     return fromMetadata(nameKey, null, false);
   }
 
-  public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromAnnotation(
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
       String nameKey, String namespaceKey) {
     return fromMetadata(nameKey, namespaceKey, false);
   }
 
-  public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromLabel(
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
       String nameKey) {
     return fromMetadata(nameKey, null, true);
   }
 
-  public static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromLabel(
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
       String nameKey, String namespaceKey) {
     return fromMetadata(nameKey, namespaceKey, true);
   }
 
-  private static <T extends HasMetadata> PrimaryResourcesRetriever<T> fromMetadata(
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference() {
+    return resource -> ResourceID.fromFirstOwnerReference(resource).map(Set::of)
+        .orElse(Collections.emptySet());
+  }
+
+  private static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromMetadata(
       String nameKey, String namespaceKey, boolean isLabel) {
     return resource -> {
       final var metadata = resource.getMetadata();

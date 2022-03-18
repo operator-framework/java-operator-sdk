@@ -14,7 +14,7 @@ public class CustomFilteringTestReconciler implements Reconciler<CustomFiltering
 
   @Override
   public UpdateControl<CustomFilteringTestResource> reconcile(CustomFilteringTestResource resource,
-      Context context) {
+      Context<CustomFilteringTestResource> context) {
     numberOfExecutions.incrementAndGet();
     return UpdateControl.noUpdate();
   }

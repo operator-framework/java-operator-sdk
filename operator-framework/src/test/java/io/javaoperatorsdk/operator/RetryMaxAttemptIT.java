@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
@@ -12,7 +11,7 @@ import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
 import static io.javaoperatorsdk.operator.RetryIT.createTestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RetryMaxAttemptIT {
+class RetryMaxAttemptIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;
   public static final int RETRY_INTERVAL = 100;
@@ -23,7 +22,6 @@ public class RetryMaxAttemptIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
           .withReconciler(reconciler,
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
                   .setMaxAttempts(MAX_RETRY_ATTEMPTS))
@@ -31,7 +29,7 @@ public class RetryMaxAttemptIT {
 
 
   @Test
-  public void retryFailedExecution() throws InterruptedException {
+  void retryFailedExecution() throws InterruptedException {
     RetryTestCustomResource resource = createTestCustomResource("max-retry");
 
     operator.create(RetryTestCustomResource.class, resource);

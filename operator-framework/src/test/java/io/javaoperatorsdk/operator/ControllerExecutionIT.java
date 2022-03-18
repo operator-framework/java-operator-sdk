@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestReconciler;
@@ -15,16 +14,13 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class ControllerExecutionIT {
+class ControllerExecutionIT {
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(new TestReconciler(true))
-          .build();
+      OperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
 
   @Test
-  public void configMapGetsCreatedForTestCustomResource() {
+  void configMapGetsCreatedForTestCustomResource() {
     operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
@@ -36,7 +32,7 @@ public class ControllerExecutionIT {
   }
 
   @Test
-  public void eventIsSkippedChangedOnMetadataOnlyUpdate() {
+  void eventIsSkippedChangedOnMetadataOnlyUpdate() {
     operator.getControllerOfType(TestReconciler.class).setUpdateStatus(false);
 
     TestCustomResource resource = TestUtils.testCustomResource();

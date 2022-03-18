@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,10 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -23,12 +27,31 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
-  private final ConfigurationService configurationService;
   private final ControllerManager controllers = new ControllerManager();
 
+  public Operator() {
+    this(new DefaultKubernetesClient(), ConfigurationServiceProvider.instance());
+  }
 
+  public Operator(KubernetesClient kubernetesClient) {
+    this(kubernetesClient, ConfigurationServiceProvider.instance());
+  }
+
+  /**
+   * @deprecated Use {@link #Operator(Consumer)} instead
+   */
+  @Deprecated
   public Operator(ConfigurationService configurationService) {
     this(new DefaultKubernetesClient(), configurationService);
+  }
+
+  public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
+    this(new DefaultKubernetesClient(), overrider);
+  }
+
+  public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
+    this(client);
+    ConfigurationServiceProvider.overrideCurrent(overrider);
   }
 
   /**
@@ -40,7 +63,7 @@ public class Operator implements LifecycleAware {
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
     this.kubernetesClient = kubernetesClient;
-    this.configurationService = configurationService;
+    ConfigurationServiceProvider.set(configurationService);
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} ()} when the app shuts down. */
@@ -50,10 +73,6 @@ public class Operator implements LifecycleAware {
 
   public KubernetesClient getKubernetesClient() {
     return kubernetesClient;
-  }
-
-  public ConfigurationService getConfigurationService() {
-    return configurationService;
   }
 
   public List<Controller> getControllers() {
@@ -68,7 +87,7 @@ public class Operator implements LifecycleAware {
   public void start() {
     controllers.shouldStart();
 
-    final var version = configurationService.getVersion();
+    final var version = ConfigurationServiceProvider.instance().getVersion();
     log.info(
         "Operator SDK {} (commit: {}) built on {} starting...",
         version.getSdkVersion(),
@@ -78,12 +97,13 @@ public class Operator implements LifecycleAware {
     final var clientVersion = Version.clientVersion();
     log.info("Client version: {}", clientVersion);
 
-    ExecutorServiceManager.init(configurationService);
+    ExecutorServiceManager.init();
     controllers.start();
   }
 
   @Override
   public void stop() throws OperatorException {
+    final var configurationService = ConfigurationServiceProvider.instance();
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
@@ -105,8 +125,9 @@ public class Operator implements LifecycleAware {
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler)
       throws OperatorException {
-    final var defaultConfiguration = configurationService.getConfigurationFor(reconciler);
-    register(reconciler, defaultConfiguration);
+    final var controllerConfiguration =
+        ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
+    register(reconciler, controllerConfiguration);
   }
 
   /**
@@ -118,7 +139,7 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler part of the reconciler to register
    * @param configuration the configuration with which we want to register the reconciler
-   * @param <R> the {@code CustomResource} type associated with the reconciler
+   * @param <R> the {@code HasMetadata} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <R extends HasMetadata> void register(Reconciler<R> reconciler,
@@ -130,7 +151,8 @@ public class Operator implements LifecycleAware {
           "Cannot register reconciler with name " + reconciler.getClass().getCanonicalName() +
               " reconciler named " + ReconcilerUtils.getNameFor(reconciler)
               + " because its configuration cannot be found.\n" +
-              " Known reconcilers are: " + configurationService.getKnownReconcilerNames());
+              " Known reconcilers are: "
+              + ConfigurationServiceProvider.instance().getKnownReconcilerNames());
     }
 
     final var controller = new Controller<>(reconciler, configuration, kubernetesClient);
@@ -145,6 +167,22 @@ public class Operator implements LifecycleAware {
         configuration.getName(),
         configuration.getResourceClass(),
         watchedNS);
+  }
+
+  /**
+   * Method to register operator and facilitate configuration override.
+   *
+   * @param reconciler part of the reconciler to register
+   * @param configOverrider consumer to use to change config values
+   * @param <R> the {@code HasMetadata} type associated with the reconciler
+   */
+  public <R extends HasMetadata> void register(Reconciler<R> reconciler,
+      Consumer<ControllerConfigurationOverrider<R>> configOverrider) {
+    final var controllerConfiguration =
+        ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
+    var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
+    configOverrider.accept(configToOverride);
+    register(reconciler, configToOverride.build());
   }
 
   static class ControllerManager implements LifecycleAware {
@@ -178,9 +216,11 @@ public class Operator implements LifecycleAware {
       started = false;
     }
 
-    public synchronized void add(Controller controller) {
+    @SuppressWarnings("unchecked")
+    synchronized void add(Controller controller) {
       final var configuration = controller.getConfiguration();
-      final var resourceTypeName = configuration.getResourceTypeName();
+      final var resourceTypeName = ReconcilerUtils
+          .getResourceTypeNameWithVersion(configuration.getResourceClass());
       final var existing = controllers.get(resourceTypeName);
       if (existing != null) {
         throw new OperatorException("Cannot register controller '" + configuration.getName()

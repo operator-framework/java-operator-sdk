@@ -8,14 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -27,8 +21,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
  * sample usage of InformerEventSource
  */
 @ControllerConfiguration(finalizerName = NO_FINALIZER)
-public class InformerEventSourceTestCustomReconciler implements
-    Reconciler<InformerEventSourceTestCustomResource>, KubernetesClientAware,
+public class InformerEventSourceTestCustomReconciler
+    implements Reconciler<InformerEventSourceTestCustomResource>,
     EventSourceInitializer<InformerEventSourceTestCustomResource> {
 
   private static final Logger LOGGER =
@@ -38,20 +32,24 @@ public class InformerEventSourceTestCustomReconciler implements
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
   public static final String MISSING_CONFIG_MAP = "Missing Config Map";
 
-  private KubernetesClient kubernetesClient;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<InformerEventSourceTestCustomResource> context) {
-    return List.of(new InformerEventSource<>(kubernetesClient, ConfigMap.class,
-        Mappers.fromAnnotation(RELATED_RESOURCE_NAME)));
+
+    InformerConfiguration<ConfigMap, InformerEventSourceTestCustomResource> config =
+        InformerConfiguration.from(context, ConfigMap.class)
+            .withPrimaryResourcesRetriever(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
+            .build();
+
+    return List.of(new InformerEventSource<>(config, context));
   }
 
   @Override
   public UpdateControl<InformerEventSourceTestCustomResource> reconcile(
       InformerEventSourceTestCustomResource resource,
-      Context context) {
+      Context<InformerEventSourceTestCustomResource> context) {
     numberOfExecutions.incrementAndGet();
 
     resource.setStatus(new InformerEventSourceTestCustomResourceStatus());
@@ -67,16 +65,6 @@ public class InformerEventSourceTestCustomReconciler implements
     }
 
     return UpdateControl.updateStatus(resource);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return kubernetesClient;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
   }
 
   public int getNumberOfExecutions() {

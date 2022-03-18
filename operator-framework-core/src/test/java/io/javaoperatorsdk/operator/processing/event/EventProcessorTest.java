@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -7,13 +8,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.internal.stubbing.answers.Returns;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
@@ -23,16 +25,10 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class EventProcessorTest {
 
@@ -41,11 +37,10 @@ class EventProcessorTest {
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
+
   private ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
   private EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
-  private ControllerResourceCache resourceCacheMock =
-      mock(ControllerResourceCache.class);
   private TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
   private ControllerResourceEventSource controllerResourceEventSourceMock =
       mock(ControllerResourceEventSource.class);
@@ -54,35 +49,33 @@ class EventProcessorTest {
   private EventProcessor eventProcessorWithRetry;
 
   @BeforeEach
-  public void setup() {
-
+  void setup() {
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(controllerResourceEventSourceMock);
-    when(controllerResourceEventSourceMock.getResourceCache()).thenReturn(resourceCacheMock);
-
     eventProcessor =
-        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null));
+        spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
+            null));
     eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
-            GenericRetry.defaultLimitedExponentialRetry()));
+            GenericRetry.defaultLimitedExponentialRetry(), null));
     eventProcessorWithRetry.start();
-
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
   }
 
   @Test
-  public void dispatchesEventsIfNoExecutionInProgress() {
+  void dispatchesEventsIfNoExecutionInProgress() {
     eventProcessor.handleEvent(prepareCREvent());
 
     verify(reconciliationDispatcherMock, timeout(50).times(1)).handleExecution(any());
   }
 
   @Test
-  public void skipProcessingIfLatestCustomResourceNotInCache() {
+  void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
-    when(resourceCacheMock.get(event.getRelatedCustomResourceID())).thenReturn(Optional.empty());
+    when(controllerResourceEventSourceMock.get(event.getRelatedCustomResourceID()))
+        .thenReturn(Optional.empty());
 
     eventProcessor.handleEvent(event);
 
@@ -90,7 +83,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
+  void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
     ResourceID resourceUid = eventAlreadyUnderProcessing();
 
     eventProcessor.handleEvent(nonCREvent(resourceUid));
@@ -100,7 +93,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void schedulesAnEventRetryOnException() {
+  void schedulesAnEventRetryOnException() {
     TestCustomResource customResource = testCustomResource();
 
     ExecutionScope executionScope = new ExecutionScope(customResource, null);
@@ -114,7 +107,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void executesTheControllerInstantlyAfterErrorIfNewEventsReceived() {
+  void executesTheControllerInstantlyAfterErrorIfNewEventsReceived() {
     Event event = prepareCREvent();
     TestCustomResource customResource = testCustomResource();
     overrideData(event.getRelatedCustomResourceID(), customResource);
@@ -141,7 +134,7 @@ class EventProcessorTest {
   }
 
   @Test
-  public void successfulExecutionResetsTheRetry() {
+  void successfulExecutionResetsTheRetry() {
     log.info("Starting successfulExecutionResetsTheRetry");
 
     Event event = prepareCREvent();
@@ -161,15 +154,19 @@ class EventProcessorTest {
     eventProcessorWithRetry.handleEvent(event);
     verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
+    waitUntilProcessingFinished(eventProcessorWithRetry, event.getRelatedCustomResourceID());
 
     eventProcessorWithRetry.handleEvent(event);
     verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(any());
+    waitUntilProcessingFinished(eventProcessorWithRetry, event.getRelatedCustomResourceID());
 
     eventProcessorWithRetry.handleEvent(event);
     verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
         .handleExecution(executionScopeArgumentCaptor.capture());
+    waitUntilProcessingFinished(eventProcessorWithRetry, event.getRelatedCustomResourceID());
     log.info("Finished successfulExecutionResetsTheRetry");
+
 
     List<ExecutionScope> executionScopes = executionScopeArgumentCaptor.getAllValues();
 
@@ -180,8 +177,14 @@ class EventProcessorTest {
     assertThat(executionScopes.get(1).getRetryInfo().isLastAttempt()).isEqualTo(false);
   }
 
+  private void waitUntilProcessingFinished(EventProcessor eventProcessor,
+      ResourceID relatedCustomResourceID) {
+    await().atMost(Duration.ofSeconds(3))
+        .until(() -> !eventProcessor.isUnderProcessing(relatedCustomResourceID));
+  }
+
   @Test
-  public void scheduleTimedEventIfInstructedByPostExecutionControl() {
+  void scheduleTimedEventIfInstructedByPostExecutionControl() {
     var testDelay = 10000L;
     when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
@@ -193,79 +196,31 @@ class EventProcessorTest {
   }
 
   @Test
-  public void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() {
+  void reScheduleOnlyIfNotExecutedEventsReceivedMeanwhile() throws InterruptedException {
     var testDelay = 10000L;
-    when(reconciliationDispatcherMock.handleExecution(any()))
-        .thenReturn(PostExecutionControl.defaultDispatch().withReSchedule(testDelay));
+    doAnswer(new AnswersWithDelay(FAKE_CONTROLLER_EXECUTION_DURATION,
+        new Returns(PostExecutionControl.defaultDispatch().withReSchedule(testDelay))))
+            .when(reconciliationDispatcherMock).handleExecution(any());
+    var resourceId = new ResourceID("test1", "default");
+    eventProcessor.handleEvent(prepareCREvent(resourceId));
+    Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION / 3);
+    eventProcessor.handleEvent(prepareCREvent(resourceId));
 
-    eventProcessor.handleEvent(prepareCREvent());
-    eventProcessor.handleEvent(prepareCREvent());
-
-    verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(0))
-        .scheduleOnce(any(), eq(testDelay));
+    verify(retryTimerEventSourceMock,
+        after((long) (FAKE_CONTROLLER_EXECUTION_DURATION * 1.5)).times(0))
+            .scheduleOnce(any(), eq(testDelay));
   }
 
   @Test
-  public void doNotFireEventsIfClosing() {
+  void doNotFireEventsIfClosing() {
     eventProcessor.stop();
     eventProcessor.handleEvent(prepareCREvent());
 
-    verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
+    verify(reconciliationDispatcherMock, after(50).times(0)).handleExecution(any());
   }
 
   @Test
-  public void whitelistNextEventIfTheCacheIsNotPropagatedAfterAnUpdate() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
-    var cr = testCustomResource(crID);
-    var updatedCr = testCustomResource(crID);
-    updatedCr.getMetadata().setResourceVersion("2");
-    var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventProcessor.getEventMarker().markEventReceived(crID);
-    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
-
-    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
-        PostExecutionControl.customResourceUpdated(updatedCr));
-
-    verify(mockCREventSource, times(1)).whitelistNextEvent(eq(crID));
-  }
-
-  @Test
-  public void dontWhitelistsEventWhenOtherChangeDuringExecution() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
-    var cr = testCustomResource(crID);
-    var updatedCr = testCustomResource(crID);
-    updatedCr.getMetadata().setResourceVersion("2");
-    var otherChangeCR = testCustomResource(crID);
-    otherChangeCR.getMetadata().setResourceVersion("3");
-    var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventProcessor.getEventMarker().markEventReceived(crID);
-    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(otherChangeCR));
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
-
-    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
-        PostExecutionControl.customResourceUpdated(updatedCr));
-
-    verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
-  }
-
-  @Test
-  public void dontWhitelistsEventIfUpdatedEventInCache() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
-    var cr = testCustomResource(crID);
-    var mockCREventSource = mock(ControllerResourceEventSource.class);
-    eventProcessor.getEventMarker().markEventReceived(crID);
-    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(cr));
-    when(eventSourceManagerMock.getControllerResourceEventSource()).thenReturn(mockCREventSource);
-
-    eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
-        PostExecutionControl.customResourceUpdated(cr));
-
-    verify(mockCREventSource, times(0)).whitelistNextEvent(eq(crID));
-  }
-
-  @Test
-  public void cancelScheduleOnceEventsOnSuccessfulExecution() {
+  void cancelScheduleOnceEventsOnSuccessfulExecution() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
@@ -276,12 +231,13 @@ class EventProcessorTest {
   }
 
   @Test
-  public void startProcessedMarkedEventReceivedBefore() {
+  void startProcessedMarkedEventReceivedBefore() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
             metricsMock));
-    when(resourceCacheMock.get(eq(crID))).thenReturn(Optional.of(testCustomResource()));
+    when(controllerResourceEventSourceMock.get(eq(crID)))
+        .thenReturn(Optional.of(testCustomResource()));
     eventProcessor.handleEvent(new Event(crID));
 
     verify(reconciliationDispatcherMock, timeout(100).times(0)).handleExecution(any());
@@ -290,6 +246,20 @@ class EventProcessorTest {
 
     verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
     verify(metricsMock, times(1)).reconcileCustomResource(any(), isNull());
+  }
+
+  @Test
+  void updatesEventSourceHandlerIfResourceUpdated() {
+    TestCustomResource customResource = testCustomResource();
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceUpdated(customResource);
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+
+    verify(controllerResourceEventSourceMock, times(1)).handleRecentResourceUpdate(any(), any(),
+        any());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {
@@ -310,7 +280,7 @@ class EventProcessorTest {
 
   private ResourceEvent prepareCREvent(ResourceID uid) {
     TestCustomResource customResource = testCustomResource(uid);
-    when(resourceCacheMock.get(eq(uid))).thenReturn(Optional.of(customResource));
+    when(controllerResourceEventSourceMock.get(eq(uid))).thenReturn(Optional.of(customResource));
     return new ResourceEvent(ResourceAction.UPDATED,
         ResourceID.fromResource(customResource));
   }

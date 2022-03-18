@@ -10,7 +10,7 @@ public class DuplicateCRController implements Reconciler<TestCustomResource> {
 
   @Override
   public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource,
-      Context context) {
+      Context<TestCustomResource> context) {
     return UpdateControl.noUpdate();
   }
 }

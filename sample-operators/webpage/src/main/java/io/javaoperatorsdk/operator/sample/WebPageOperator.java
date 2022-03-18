@@ -14,19 +14,24 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 
 public class WebPageOperator {
-
+  public static final String WEBPAGE_RECONCILER_ENV = "WEBPAGE_RECONCILER";
+  public static final String WEBPAGE_RECONCILER_ENV_VALUE = "classic";
   private static final Logger log = LoggerFactory.getLogger(WebPageOperator.class);
+
 
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
-    Operator operator = new Operator(client, DefaultConfigurationService.instance());
-    operator.register(new WebPageReconciler(client));
+    Operator operator = new Operator(client);
+    if (WEBPAGE_RECONCILER_ENV_VALUE.equals(System.getenv(WEBPAGE_RECONCILER_ENV))) {
+      operator.register(new WebPageReconciler(client));
+    } else {
+      operator.register(new WebPageReconcilerDependentResources(client));
+    }
     operator.installShutdownHook();
     operator.start();
 

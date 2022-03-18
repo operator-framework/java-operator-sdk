@@ -25,11 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class DefaultConfigurationServiceTest {
 
   public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
+  final DefaultConfigurationService configurationService = DefaultConfigurationService.instance();
 
   @Test
   void attemptingToRetrieveAnUnknownControllerShouldLogWarning() {
-    final var configurationService = DefaultConfigurationService.instance();
-
     final LoggerContext context = LoggerContext.getContext(false);
     final PatternLayout layout = PatternLayout.createDefaultLayout(context.getConfiguration());
     final ListAppender appender = new ListAppender("list", null, layout, false, false);
@@ -75,8 +74,7 @@ class DefaultConfigurationServiceTest {
   @Test
   void returnsValuesFromControllerAnnotationFinalizer() {
     final var reconciler = new TestCustomReconciler();
-    final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(reconciler);
+    final var configuration = configurationService.getConfigurationFor(reconciler);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class),
         configuration.getResourceTypeName());
     assertEquals(
@@ -89,8 +87,7 @@ class DefaultConfigurationServiceTest {
   @Test
   void returnCustomerFinalizerNameIfSet() {
     final var reconciler = new TestCustomFinalizerReconciler();
-    final var configuration =
-        DefaultConfigurationService.instance().getConfigurationFor(reconciler);
+    final var configuration = configurationService.getConfigurationFor(reconciler);
     assertEquals(CUSTOM_FINALIZER_NAME, configuration.getFinalizer());
   }
 
@@ -99,9 +96,7 @@ class DefaultConfigurationServiceTest {
     final var reconciler = new TestCustomFinalizerReconciler();
     assertDoesNotThrow(
         () -> {
-          DefaultConfigurationService.instance()
-              .getConfigurationFor(reconciler)
-              .getAssociatedReconcilerClassName();
+          configurationService.getConfigurationFor(reconciler).getAssociatedReconcilerClassName();
         });
   }
 
@@ -111,7 +106,7 @@ class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomFinalizerReconciler.InnerCustomResource> reconcile(
-        InnerCustomResource resource, Context context) {
+        InnerCustomResource resource, Context<InnerCustomResource> context) {
       return null;
     }
 
@@ -128,7 +123,7 @@ class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context context) {
+        TestCustomResource resource, Context<TestCustomResource> context) {
       return null;
     }
   }
@@ -138,7 +133,7 @@ class DefaultConfigurationServiceTest {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context context) {
+        TestCustomResource resource, Context<TestCustomResource> context) {
       return null;
     }
   }

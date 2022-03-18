@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -13,65 +16,82 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.DependentResourceManager;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-public class Controller<R extends HasMetadata> implements Reconciler<R>,
-    LifecycleAware, EventSourceInitializer<R> {
-  private final Reconciler<R> reconciler;
-  private final ControllerConfiguration<R> configuration;
-  private final KubernetesClient kubernetesClient;
-  private EventSourceManager<R> eventSourceManager;
-  private volatile ConfigurationService configurationService;
+@SuppressWarnings({"unchecked"})
+@Ignore
+public class Controller<P extends HasMetadata> implements Reconciler<P>,
+    LifecycleAware, EventSourceInitializer<P> {
 
-  public Controller(Reconciler<R> reconciler,
-      ControllerConfiguration<R> configuration,
+  private static final Logger log = LoggerFactory.getLogger(Controller.class);
+
+  private final Reconciler<P> reconciler;
+  private final ControllerConfiguration<P> configuration;
+  private final KubernetesClient kubernetesClient;
+  private final EventSourceManager<P> eventSourceManager;
+  private final DependentResourceManager<P> dependents;
+
+  public Controller(Reconciler<P> reconciler,
+      ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
+
+    eventSourceManager = new EventSourceManager<>(this);
+    dependents = new DependentResourceManager<>(this);
   }
 
   @Override
-  public DeleteControl cleanup(R resource, Context context) {
-    return metrics().timeControllerExecution(
-        new ControllerExecution<>() {
-          @Override
-          public String name() {
-            return "cleanup";
-          }
+  public DeleteControl cleanup(P resource, Context<P> context) {
+    dependents.cleanup(resource, context);
 
-          @Override
-          public String controllerName() {
-            return configuration.getName();
-          }
+    try {
+      return metrics().timeControllerExecution(
+          new ControllerExecution<>() {
+            @Override
+            public String name() {
+              return "cleanup";
+            }
 
-          @Override
-          public String successTypeName(DeleteControl deleteControl) {
-            return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
-          }
+            @Override
+            public String controllerName() {
+              return configuration.getName();
+            }
 
-          @Override
-          public DeleteControl execute() {
-            return reconciler.cleanup(resource, context);
-          }
-        });
+            @Override
+            public String successTypeName(DeleteControl deleteControl) {
+              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+            }
+
+            @Override
+            public DeleteControl execute() {
+              return reconciler.cleanup(resource, context);
+            }
+          });
+    } catch (Exception e) {
+      throw new OperatorException(e);
+    }
   }
 
   @Override
-  public UpdateControl<R> reconcile(R resource, Context context) {
+  public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
+    dependents.reconcile(resource, context);
+
     return metrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -85,7 +105,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           }
 
           @Override
-          public String successTypeName(UpdateControl<R> result) {
+          public String successTypeName(UpdateControl<P> result) {
             String successType = "resource";
             if (result.isUpdateStatus()) {
               successType = "status";
@@ -97,20 +117,28 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
           }
 
           @Override
-          public UpdateControl<R> execute() {
+          public UpdateControl<P> execute() throws Exception {
             return reconciler.reconcile(resource, context);
           }
         });
   }
 
+
   private Metrics metrics() {
-    final var metrics = configurationService().getMetrics();
+    final var metrics = ConfigurationServiceProvider.instance().getMetrics();
     return metrics != null ? metrics : Metrics.NOOP;
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<R> context) {
-    throw new UnsupportedOperationException("This method should never be called directly");
+  public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
+    final var dependentSources = dependents.prepareEventSources(context);
+    List<EventSource> sources = new LinkedList<>(dependentSources);
+
+    // add manually defined event sources
+    if (reconciler instanceof EventSourceInitializer) {
+      sources.addAll(((EventSourceInitializer<P>) reconciler).prepareEventSources(context));
+    }
+    return sources;
   }
 
   @Override
@@ -136,11 +164,11 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     return "'" + configuration.getName() + "' Controller";
   }
 
-  public Reconciler<R> getReconciler() {
+  public Reconciler<P> getReconciler() {
     return reconciler;
   }
 
-  public ControllerConfiguration<R> getConfiguration() {
+  public ControllerConfiguration<P> getConfiguration() {
     return configuration;
   }
 
@@ -148,7 +176,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     return kubernetesClient;
   }
 
-  public MixedOperation<R, KubernetesResourceList<R>, Resource<R>> getCRClient() {
+  public MixedOperation<P, KubernetesResourceList<P>, Resource<P>> getCRClient() {
     return kubernetesClient.resources(configuration.getResourceClass());
   }
 
@@ -161,14 +189,20 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
    * @throws OperatorException if a problem occurred during the registration process
    */
   public void start() throws OperatorException {
-    final Class<R> resClass = configuration.getResourceClass();
+    final Class<P> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
     final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
+    log.info("Starting '{}' controller for reconciler: {}, resource: {}", controllerName,
+        reconciler.getClass().getCanonicalName(), resClass.getCanonicalName());
+
+    // fail early if we're missing the current namespace information
+    failOnMissingCurrentNS();
+
     try {
       // check that the custom resource is known by the cluster if configured that way
       final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (configurationService().checkCRDAndValidateLocalModel()
+      if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
           && CustomResource.class.isAssignableFrom(resClass)) {
         crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
             .get();
@@ -180,41 +214,17 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
         CustomResourceUtils.assertCustomResource(resClass, crd);
       }
 
-      eventSourceManager = new EventSourceManager<>(this);
-      if (reconciler instanceof EventSourceInitializer) {
-        ((EventSourceInitializer<R>) reconciler)
-            .prepareEventSources(new EventSourceContext<>(
-                eventSourceManager.getControllerResourceEventSource().getResourceCache(),
-                configurationService(), kubernetesClient))
-            .forEach(eventSourceManager::registerEventSource);
-      }
-      if (failOnMissingCurrentNS()) {
-        throw new OperatorException(
-            "Controller '"
-                + controllerName
-                + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
-      }
+      final var context = new EventSourceContext<>(
+          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+
+      prepareEventSources(context).forEach(eventSourceManager::registerEventSource);
+
       eventSourceManager.start();
+
+      log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
-  }
-
-  private ConfigurationService configurationService() {
-    if (configurationService == null) {
-      configurationService = configuration.getConfigurationService();
-      // make sure we always have a default configuration service
-      if (configurationService == null) {
-        // we shouldn't need to register the configuration with the default service
-        configurationService = new BaseConfigurationService(Version.UNKNOWN) {
-          @Override
-          public boolean checkCRDAndValidateLocalModel() {
-            return false;
-          }
-        };
-      }
-    }
-    return configurationService;
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
@@ -231,22 +241,21 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
   }
 
   /**
-   * Determines whether we should fail because the current namespace is request as target namespace
-   * but is missing
-   *
-   * @return {@code true} if the current namespace is requested but is missing, {@code false}
-   *         otherwise
+   * Throws an {@link OperatorException} if the controller is configured to watch the current
+   * namespace but it's absent from the configuration.
    */
-  private boolean failOnMissingCurrentNS() {
-    if (configuration.watchCurrentNamespace()) {
-      final var effectiveNamespaces = configuration.getEffectiveNamespaces();
-      return effectiveNamespaces.size() == 1
-          && effectiveNamespaces.stream().allMatch(Objects::isNull);
+  private void failOnMissingCurrentNS() {
+    try {
+      configuration.getEffectiveNamespaces();
+    } catch (OperatorException e) {
+      throw new OperatorException(
+          "Controller '"
+              + configuration.getName()
+              + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
     }
-    return false;
   }
 
-  public EventSourceManager<R> getEventSourceManager() {
+  public EventSourceManager<P> getEventSourceManager() {
     return eventSourceManager;
   }
 
@@ -254,5 +263,10 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
     if (eventSourceManager != null) {
       eventSourceManager.stop();
     }
+  }
+
+  @SuppressWarnings("rawtypes")
+  public List<DependentResource> getDependents() {
+    return dependents.getDependents();
   }
 }

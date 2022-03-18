@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
@@ -18,30 +17,30 @@ import static io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCust
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class SubResourceUpdateIT {
+class SubResourceUpdateIT {
+
+  public static final int WAIT_AFTER_EXECUTION = 500;
+  public static final int EVENT_RECEIVE_WAIT = 200;
 
   @RegisterExtension
   OperatorExtension operator =
-      OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
-          .withReconciler(SubResourceTestCustomReconciler.class)
-          .build();
+      OperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class).build();
 
   @Test
-  public void updatesSubResourceStatus() {
+  void updatesSubResourceStatus() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     operator.create(SubResourceTestCustomResource.class, resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(2);
   }
 
   @Test
-  public void updatesSubResourceStatusNoFinalizer() {
+  void updatesSubResourceStatusNoFinalizer() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().setFinalizers(Collections.emptyList());
 
@@ -49,7 +48,7 @@ public class SubResourceUpdateIT {
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(2);
@@ -57,14 +56,14 @@ public class SubResourceUpdateIT {
 
   /** Note that we check on controller impl if there is finalizer on execution. */
   @Test
-  public void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
+  void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().getFinalizers().clear();
     operator.create(SubResourceTestCustomResource.class, resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
-    waitXms(200);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(2);
@@ -77,17 +76,19 @@ public class SubResourceUpdateIT {
    * fail since its resource version is outdated already.
    */
   @Test
-  public void updateCustomResourceAfterSubResourceChange() {
+  void updateCustomResourceAfterSubResourceChange() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     operator.create(SubResourceTestCustomResource.class, resource);
 
+    // waits for the resource to start processing
+    waitXms(EVENT_RECEIVE_WAIT);
     resource.getSpec().setValue("new value");
     operator.resources(SubResourceTestCustomResource.class).createOrReplace(resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
 
     // wait for sure, there are no more events
-    waitXms(500);
+    waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
     assertThat(TestUtils.getNumberOfExecutions(operator))
         .isEqualTo(3);
@@ -121,7 +122,7 @@ public class SubResourceUpdateIT {
     return resource;
   }
 
-  private void waitXms(int x) {
+  public static void waitXms(int x) {
     try {
       Thread.sleep(x);
     } catch (InterruptedException e) {

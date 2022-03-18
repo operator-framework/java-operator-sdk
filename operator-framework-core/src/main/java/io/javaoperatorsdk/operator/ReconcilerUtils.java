@@ -1,9 +1,14 @@
 package io.javaoperatorsdk.operator;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Locale;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -40,9 +45,13 @@ public class ReconcilerUtils {
     return Constants.NO_FINALIZER.equals(finalizer) || validator.isFinalizerValid(finalizer);
   }
 
-  public static String getResourceTypeName(Class<? extends HasMetadata> resourceClass) {
-    // todo: use fabric8 method when 5.12 is released
-    // return HasMetadata.getFullResourceName(resourceClass);
+  public static String getResourceTypeNameWithVersion(Class<? extends HasMetadata> resourceClass) {
+    final var version = HasMetadata.getVersion(resourceClass);
+    return getResourceTypeName(resourceClass) + "/" + version;
+  }
+
+  public static String getResourceTypeName(
+      Class<? extends HasMetadata> resourceClass) {
     final var group = HasMetadata.getGroup(resourceClass);
     final var plural = HasMetadata.getPlural(resourceClass);
     return (group == null || group.isEmpty()) ? plural : plural + "." + group;
@@ -94,4 +103,36 @@ public class ReconcilerUtils {
     }
     return reconcilerClassName.toLowerCase(Locale.ROOT);
   }
+
+  public static boolean specsEqual(HasMetadata r1, HasMetadata r2) {
+    return getSpec(r1).equals(getSpec(r2));
+  }
+
+  // will be replaced with: https://github.com/fabric8io/kubernetes-client/issues/3816
+  public static Object getSpec(HasMetadata resource) {
+    try {
+      Method getSpecMethod = resource.getClass().getMethod("getSpec");
+      return getSpecMethod.invoke(resource);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      throw new IllegalStateException("No spec found on resource", e);
+    }
+  }
+
+  public static Object setSpec(HasMetadata resource, Object spec) {
+    try {
+      Method setSpecMethod = resource.getClass().getMethod("setSpec", spec.getClass());
+      return setSpecMethod.invoke(resource, spec);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      throw new IllegalStateException("No spec found on resource", e);
+    }
+  }
+
+  public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
+    try (InputStream is = loader.getResourceAsStream(yaml)) {
+      return Serialization.unmarshal(is, clazz);
+    } catch (IOException ex) {
+      throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
+    }
+  }
+
 }

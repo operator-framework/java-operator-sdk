@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.Date;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -9,7 +8,6 @@ import java.util.function.Consumer;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.collections.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +17,10 @@ import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -45,14 +46,17 @@ public class CustomResourceSelectorTest {
   KubernetesClient client;
   ConfigurationService configurationService;
 
-  @SuppressWarnings("unchecked")
   @BeforeEach
   void setUpResources() {
+    // need to reset the provider if we plan on changing the configuration service since it likely
+    // has already been set in previous tests
+    ConfigurationServiceProvider.reset();
+
     configurationService = spy(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
-    when(configurationService.getConfigurationFor(any(MyController.class))).thenReturn(
-        new MyConfiguration(configurationService, null));
+    when(configurationService.getConfigurationFor(any(MyController.class)))
+        .thenReturn(new MyConfiguration());
   }
 
   @Test
@@ -78,7 +82,7 @@ public class CustomResourceSelectorTest {
                   c1err.incrementAndGet();
                 }
               }),
-          new MyConfiguration(configurationService, "app=foo"));
+          (overrider) -> overrider.settingNamespace(NAMESPACE).withLabelSelector("app=foo"));
       o1.start();
       o2.register(
           new MyController(
@@ -90,7 +94,7 @@ public class CustomResourceSelectorTest {
                   c2err.incrementAndGet();
                 }
               }),
-          new MyConfiguration(configurationService, "app=bar"));
+          (overrider) -> overrider.settingNamespace(NAMESPACE).withLabelSelector("app=bar"));
       o2.start();
 
       client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("foo",
@@ -127,36 +131,12 @@ public class CustomResourceSelectorTest {
     return resource;
   }
 
-  public static class MyConfiguration
-      implements
-      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<TestCustomResource> {
+  public static class MyConfiguration extends DefaultControllerConfiguration<TestCustomResource> {
 
-    private final String labelSelector;
-    private final ConfigurationService service;
-
-    public MyConfiguration(ConfigurationService configurationService, String labelSelector) {
-      this.labelSelector = labelSelector;
-      this.service = configurationService;
-    }
-
-    @Override
-    public String getLabelSelector() {
-      return labelSelector;
-    }
-
-    @Override
-    public String getAssociatedReconcilerClassName() {
-      return MyController.class.getCanonicalName();
-    }
-
-    @Override
-    public Set<String> getNamespaces() {
-      return Sets.newSet(NAMESPACE);
-    }
-
-    @Override
-    public ConfigurationService getConfigurationService() {
-      return service;
+    public MyConfiguration() {
+      super(MyController.class.getCanonicalName(), "mycontroller", null, Constants.NO_FINALIZER,
+          false, null,
+          null, null, null, TestCustomResource.class, null, null);
     }
   }
 
@@ -171,7 +151,7 @@ public class CustomResourceSelectorTest {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context context) {
+        TestCustomResource resource, Context<TestCustomResource> context) {
 
       LOGGER.info("Received event on: {}", resource);
 

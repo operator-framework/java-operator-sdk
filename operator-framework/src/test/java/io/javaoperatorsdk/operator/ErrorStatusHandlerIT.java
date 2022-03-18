@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.config.runtime.DefaultConfigurationService;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerTestCustomResource;
@@ -15,7 +14,7 @@ import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerT
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class ErrorStatusHandlerIT {
+class ErrorStatusHandlerIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;
   ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
@@ -23,13 +22,12 @@ public class ErrorStatusHandlerIT {
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder()
-          .withConfigurationService(DefaultConfigurationService.instance())
           .withReconciler(reconciler,
               new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
           .build();
 
   @Test
-  public void testErrorMessageSetEventually() {
+  void testErrorMessageSetEventually() {
     ErrorStatusHandlerTestCustomResource resource =
         operator.create(ErrorStatusHandlerTestCustomResource.class, createCustomResource());
 

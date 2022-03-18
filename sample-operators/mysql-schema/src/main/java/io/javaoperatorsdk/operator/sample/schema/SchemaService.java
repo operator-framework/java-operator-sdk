@@ -29,7 +29,7 @@ public class SchemaService {
     }
   }
 
-  public static void createSchemaAndRelatedUser(Connection connection, String schemaName,
+  public static Schema createSchemaAndRelatedUser(Connection connection, String schemaName,
       String encoding,
       String userName,
       String password) {
@@ -49,6 +49,8 @@ public class SchemaService {
         statement.execute(
             format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
       }
+
+      return new Schema(schemaName, encoding);
     } catch (SQLException e) {
       throw new IllegalStateException(e);
     }
@@ -76,7 +78,7 @@ public class SchemaService {
   private static boolean userExists(Connection connection, String username) {
     try (PreparedStatement ps =
         connection.prepareStatement(
-            "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = ?)")) {
+            "SELECT 1 FROM mysql.user WHERE user = ?")) {
       ps.setString(1, username);
       try (ResultSet resultSet = ps.executeQuery()) {
         return resultSet.next();

@@ -1,12 +1,17 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
+@SuppressWarnings({"rawtypes", "unchecked", "unused"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
@@ -16,6 +21,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
+  private Duration reconciliationMaxInterval;
+  private final List<DependentResourceSpec<?, ?>> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizer();
@@ -24,6 +31,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     retry = original.getRetryConfiguration();
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
+    reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
+    dependentResourceSpecs = original.getDependentResources();
     this.original = original;
   }
 
@@ -74,6 +83,45 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withReconciliationMaxInterval(
+      Duration reconciliationMaxInterval) {
+    this.reconciliationMaxInterval = reconciliationMaxInterval;
+    return this;
+  }
+
+  public void replaceDependentResourceConfig(
+      Class<? extends DependentResource<?, R>> dependentResourceClass,
+      Object dependentResourceConfig) {
+
+    var currentConfig =
+        findConfigForDependentResourceClass(dependentResourceClass);
+    if (currentConfig.isEmpty()) {
+      throw new IllegalStateException("Cannot find DependentResource config for class: "
+          + dependentResourceClass);
+    }
+    dependentResourceSpecs.remove(currentConfig.get());
+    dependentResourceSpecs
+        .add(new DependentResourceSpec(dependentResourceClass, dependentResourceConfig));
+  }
+
+  public void addNewDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
+    var currentConfig =
+        findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
+    if (currentConfig.isPresent()) {
+      throw new IllegalStateException(
+          "Config already present for class: "
+              + dependentResourceSpec.getDependentResourceClass());
+    }
+    dependentResourceSpecs.add(dependentResourceSpec);
+  }
+
+  private Optional<DependentResourceSpec<?, ?>> findConfigForDependentResourceClass(
+      Class<? extends DependentResource> dependentResourceClass) {
+    return dependentResourceSpecs.stream()
+        .filter(dc -> dc.getDependentResourceClass().equals(dependentResourceClass))
+        .findFirst();
+  }
+
   public ControllerConfiguration<R> build() {
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
@@ -86,7 +134,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         labelSelector,
         customResourcePredicate,
         original.getResourceClass(),
-        original.getConfigurationService());
+        reconciliationMaxInterval,
+        dependentResourceSpecs);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
