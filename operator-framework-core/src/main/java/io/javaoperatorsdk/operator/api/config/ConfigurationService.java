@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +20,7 @@ public interface ConfigurationService {
   ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   Cloner DEFAULT_CLONER = new Cloner() {
+    @SuppressWarnings("unchecked")
     @Override
     public HasMetadata clone(HasMetadata object) {
       try {
@@ -125,5 +127,9 @@ public interface ConfigurationService {
 
   default ObjectMapper getObjectMapper() {
     return OBJECT_MAPPER;
+  }
+
+  default DependentResourceFactory dependentResourceFactory() {
+    return new DependentResourceFactory() {};
   }
 }

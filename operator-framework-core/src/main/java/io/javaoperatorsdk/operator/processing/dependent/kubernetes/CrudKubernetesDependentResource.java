@@ -12,6 +12,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Updater;
  * @param <P> Primary Resource
  */
 public abstract class CrudKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends
-    KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P>, Deleter<P> {
+    extends KubernetesDependentResource<R, P>
+    implements Creator<R, P>, Updater<R, P>, Deleter<P> {
+
+  public CrudKubernetesDependentResource(Class<R> resourceType) {
+    super(resourceType);
+  }
 }

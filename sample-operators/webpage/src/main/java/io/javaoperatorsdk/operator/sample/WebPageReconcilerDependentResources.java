@@ -1,15 +1,27 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CrudKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -88,7 +100,7 @@ public class WebPageReconcilerDependentResources
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.deploymentDR =
-        new CrudKubernetesDependentResource<>() {
+        new CrudKubernetesDependentResource<>(Deployment.class) {
 
           @Override
           protected Deployment desired(WebPage webPage, Context<WebPage> context) {
@@ -114,18 +126,13 @@ public class WebPageReconcilerDependentResources
                     new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
             return deployment;
           }
-
-          @Override
-          protected Class<Deployment> resourceType() {
-            return Deployment.class;
-          }
         };
     deploymentDR.setKubernetesClient(client);
     deploymentDR.configureWith(new KubernetesDependentResourceConfig()
         .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
 
     this.serviceDR =
-        new CrudKubernetesDependentResource<>() {
+        new CrudKubernetesDependentResource<>(Service.class) {
 
           @Override
           protected Service desired(WebPage webPage, Context<WebPage> context) {
@@ -136,11 +143,6 @@ public class WebPageReconcilerDependentResources
             labels.put("app", deploymentName(webPage));
             service.getSpec().setSelector(labels);
             return service;
-          }
-
-          @Override
-          protected Class<Service> resourceType() {
-            return Service.class;
           }
         };
     serviceDR.setKubernetesClient(client);
@@ -162,8 +164,11 @@ public class WebPageReconcilerDependentResources
 
   private class ConfigMapDependentResource
       extends CrudKubernetesDependentResource<ConfigMap, WebPage>
-      implements
-      PrimaryToSecondaryMapper<WebPage> {
+      implements PrimaryToSecondaryMapper<WebPage> {
+
+    public ConfigMapDependentResource() {
+      super(ConfigMap.class);
+    }
 
     @Override
     protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {

@@ -16,7 +16,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
-import io.javaoperatorsdk.operator.sample.*;
+import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
+import io.javaoperatorsdk.operator.sample.MySQLSchema;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
@@ -34,6 +35,10 @@ public class SchemaDependentResource
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
+
+  public SchemaDependentResource() {
+    super(Schema.class);
+  }
 
   @Override
   public void configureWith(ResourcePollerConfig config) {
