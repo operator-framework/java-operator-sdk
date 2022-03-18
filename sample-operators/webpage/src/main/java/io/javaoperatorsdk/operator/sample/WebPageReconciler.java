@@ -70,7 +70,8 @@ public class WebPageReconciler
   }
 
   @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
+      throws Exception {
     log.info("Reconciling web page: {}", webPage);
     simulateErrorIfRequested(webPage);
 

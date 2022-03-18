@@ -54,7 +54,8 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
+      throws Exception {
     simulateErrorIfRequested(webPage);
 
     configMapDR.reconcile(webPage, context);

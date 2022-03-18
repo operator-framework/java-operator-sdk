@@ -31,7 +31,7 @@ public class Utils {
     return ErrorStatusUpdateControl.updateStatus(resource);
   }
 
-  static void simulateErrorIfRequested(WebPage webPage) {
+  static void simulateErrorIfRequested(WebPage webPage) throws ErrorSimulationException {
     if (webPage.getSpec().getHtml().contains("error")) {
       // special case just to showcase error if doing a demo
       throw new ErrorSimulationException("Simulating error");
