@@ -13,4 +13,9 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 public abstract class CRUKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends
     KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P> {
+
+
+  public CRUKubernetesDependentResource(Class<R> resourceType) {
+    super(resourceType);
+  }
 }

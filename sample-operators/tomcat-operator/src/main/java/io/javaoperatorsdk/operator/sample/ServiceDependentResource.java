@@ -12,6 +12,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat>
     implements Creator<Service, Tomcat>, Updater<Service, Tomcat> {
 
+  public ServiceDependentResource() {
+    super(Service.class);
+  }
+
   @Override
   protected Service desired(Tomcat tomcat, Context<Tomcat> context) {
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();

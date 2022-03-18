@@ -32,7 +32,7 @@ class GenericKubernetesResourceMatcherTest {
     var actual = createDeployment();
     final var desired = createDeployment();
     final var matcher = GenericKubernetesResourceMatcher.matcherFor(Deployment.class,
-        new KubernetesDependentResource<>() {
+        new KubernetesDependentResource<>(Deployment.class) {
           @Override
           protected Deployment desired(HasMetadata primary, Context context) {
             final var currentCase = Optional.ofNullable(primary)

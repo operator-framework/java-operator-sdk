@@ -123,6 +123,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
   }
 
+  @SuppressWarnings("unchecked")
   // this cannot be done in constructor since event source might be initialized later
   protected boolean isFilteringEventSource() {
     if (this instanceof EventSourceProvider) {
@@ -133,6 +134,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
+  @SuppressWarnings("unchecked")
   // this cannot be done in constructor since event source might be initialized later
   protected boolean isRecentOperationCacheFiller() {
     if (this instanceof EventSourceProvider) {

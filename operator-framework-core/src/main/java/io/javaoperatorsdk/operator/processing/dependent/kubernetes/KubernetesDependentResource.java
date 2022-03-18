@@ -11,11 +11,11 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceTypeAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractDependentResource<R, P>
-    implements KubernetesClientAware, EventSourceProvider<P>,
+    implements KubernetesClientAware, EventSourceProvider<P>, ResourceTypeAware<R>,
     DependentResourceConfigurator<KubernetesDependentResourceConfig> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
@@ -40,15 +40,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private boolean addOwnerReference;
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
+  private final Class<R> resourceType;
 
   @SuppressWarnings("unchecked")
-  public KubernetesDependentResource() {
+  public KubernetesDependentResource(Class<R> resourceType) {
+    this.resourceType = resourceType;
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
-        : GenericKubernetesResourceMatcher.matcherFor(resourceType(), this);
+        : GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
 
     processor = this instanceof ResourceUpdatePreProcessor
         ? (ResourceUpdatePreProcessor<R>) this
-        : GenericResourceUpdatePreProcessor.processorFor(resourceType());
+        : GenericResourceUpdatePreProcessor.processorFor(resourceType);
   }
 
   @Override
@@ -139,9 +141,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return this;
   }
 
-  @SuppressWarnings("unchecked")
-  protected Class<R> resourceType() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
+  @Override
+  public Class<R> resourceType() {
+    return resourceType;
   }
 
   @Override

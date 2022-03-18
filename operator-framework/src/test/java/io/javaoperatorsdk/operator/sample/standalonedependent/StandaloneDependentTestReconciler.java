@@ -84,6 +84,10 @@ public class StandaloneDependentTestReconciler
       implements Creator<Deployment, StandaloneDependentTestCustomResource>,
       Updater<Deployment, StandaloneDependentTestCustomResource> {
 
+    public DeploymentDependentResource() {
+      super(Deployment.class);
+    }
+
     @Override
     protected Deployment desired(StandaloneDependentTestCustomResource primary,
         Context<StandaloneDependentTestCustomResource> context) {

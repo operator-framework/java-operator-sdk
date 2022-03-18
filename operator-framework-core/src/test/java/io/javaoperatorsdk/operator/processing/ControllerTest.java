@@ -9,7 +9,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.dependent.DependentResourceManager;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,19 +70,4 @@ class ControllerTest {
 
     assertThat(controller.useFinalizer()).isTrue();
   }
-
-  @Test
-  void usesFinalizerIfReconcilerContainsDependentsWithCleanerImpl() {
-    Reconciler reconciler = mock(Reconciler.class);
-    var dependentResourceManager = mock(DependentResourceManager.class);
-    when(dependentResourceManager.requiresCleanup()).thenReturn(true);
-    when(configuration.getResourceClass()).thenReturn(TestCustomResource.class);
-
-    final var controller = new Controller<Secret>(reconciler,
-        configuration, MockKubernetesClient.client(TestCustomResource.class),
-        dependentResourceManager);
-
-    assertThat(controller.useFinalizer()).isTrue();
-  }
-
 }

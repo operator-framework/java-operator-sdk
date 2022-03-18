@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +25,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
@@ -152,15 +154,19 @@ class EventProcessorTest {
     eventProcessorWithRetry.handleEvent(event);
     verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
         .handleExecution(any());
+    waitUntilProcessingFinished(eventProcessorWithRetry, event.getRelatedCustomResourceID());
 
     eventProcessorWithRetry.handleEvent(event);
     verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(2))
         .handleExecution(any());
+    waitUntilProcessingFinished(eventProcessorWithRetry, event.getRelatedCustomResourceID());
 
     eventProcessorWithRetry.handleEvent(event);
     verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(3))
         .handleExecution(executionScopeArgumentCaptor.capture());
+    waitUntilProcessingFinished(eventProcessorWithRetry, event.getRelatedCustomResourceID());
     log.info("Finished successfulExecutionResetsTheRetry");
+
 
     List<ExecutionScope> executionScopes = executionScopeArgumentCaptor.getAllValues();
 
@@ -169,6 +175,12 @@ class EventProcessorTest {
     assertThat(executionScopes.get(2).getRetryInfo()).isNull();
     assertThat(executionScopes.get(1).getRetryInfo().getAttemptCount()).isEqualTo(1);
     assertThat(executionScopes.get(1).getRetryInfo().isLastAttempt()).isEqualTo(false);
+  }
+
+  private void waitUntilProcessingFinished(EventProcessor eventProcessor,
+      ResourceID relatedCustomResourceID) {
+    await().atMost(Duration.ofSeconds(3))
+        .until(() -> !eventProcessor.isUnderProcessing(relatedCustomResourceID));
   }
 
   @Test
