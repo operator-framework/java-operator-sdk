@@ -35,12 +35,12 @@ match -- No --> Update
 
 ```
 
-As this process is pretty much similar for each dependent resource, it makes sense for the SDK to
-offer some level of support for these repetitive actions to remove the boilerplate code. While these
-steps are not difficult in and of themselves, there are some subtleties that can lead to bugs or
-sub-optimal code if not done right. It should be possible to handle common cases (such as dealing
-with Kubernetes-native secondary resources) in a semi-declarative way with only a minimal amount of
-code, JOSDK taking care of wiring everything accordingly.
+While these steps are not difficult in and of themselves, there are some subtleties that can lead to
+bugs or sub-optimal code if not done right. As this process is pretty much similar for each
+dependent resource, it makes sense for the SDK to offer some level of support to remove the
+boilerplate code of these repetitive actions. It should be possible to handle common cases (such as
+dealing with Kubernetes-native secondary resources) in a semi-declarative way with only a minimal
+amount of code, JOSDK taking care of wiring everything accordingly.
 
 Moreover, in order for your reconciler to get informed of events on these secondary resources, you
 need to configure and create event sources and maintain them. JOSDK already makes it rather easy to
