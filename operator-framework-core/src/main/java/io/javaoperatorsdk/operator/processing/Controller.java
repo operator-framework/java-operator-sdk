@@ -9,12 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -261,27 +258,10 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
     failOnMissingCurrentNS();
 
     try {
-      // check that the custom resource is known by the cluster if configured that way
-      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
-          && CustomResource.class.isAssignableFrom(resClass)) {
-        crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
-            .get();
-        if (crd == null) {
-          throwMissingCRDException(crdName, specVersion, controllerName);
-        }
-
-        // Apply validations that are not handled by fabric8
-        CustomResourceUtils.assertCustomResource(resClass, crd);
-      }
-
       final var context = new EventSourceContext<>(
           eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
-
       prepareEventSources(context).forEach(eventSourceManager::registerEventSource);
-
       eventSourceManager.start();
-
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       throwMissingCRDException(crdName, specVersion, controllerName);

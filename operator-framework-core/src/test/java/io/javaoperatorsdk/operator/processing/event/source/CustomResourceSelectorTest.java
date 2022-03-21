@@ -53,7 +53,6 @@ public class CustomResourceSelectorTest {
     ConfigurationServiceProvider.reset();
 
     configurationService = spy(ConfigurationService.class);
-    when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
     when(configurationService.getConfigurationFor(any(MyController.class)))
         .thenReturn(new MyConfiguration());

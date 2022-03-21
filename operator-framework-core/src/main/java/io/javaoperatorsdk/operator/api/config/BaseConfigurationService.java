@@ -65,8 +65,4 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return true;
   }
 
-  @Override
-  public boolean checkCRDAndValidateLocalModel() {
-    return Utils.shouldCheckCRDAndValidateLocalModel();
-  }
 }

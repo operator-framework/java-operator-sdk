@@ -12,7 +12,6 @@ public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
   private Metrics metrics;
   private Config clientConfig;
-  private boolean checkCR;
   private int threadNumber;
   private Cloner cloner;
   private int timeoutSeconds;
@@ -22,7 +21,6 @@ public class ConfigurationServiceOverrider {
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
     this.clientConfig = original.getClientConfiguration();
-    this.checkCR = original.checkCRDAndValidateLocalModel();
     this.threadNumber = original.concurrentReconciliationThreads();
     this.cloner = original.getResourceCloner();
     this.timeoutSeconds = original.getTerminationTimeoutSeconds();
@@ -33,11 +31,6 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withClientConfiguration(Config configuration) {
     this.clientConfig = configuration;
-    return this;
-  }
-
-  public ConfigurationServiceOverrider checkingCRDAndValidateLocalModel(boolean check) {
-    this.checkCR = check;
     return this;
   }
 
@@ -81,11 +74,6 @@ public class ConfigurationServiceOverrider {
       @Override
       public Config getClientConfiguration() {
         return clientConfig;
-      }
-
-      @Override
-      public boolean checkCRDAndValidateLocalModel() {
-        return checkCR;
       }
 
       @Override

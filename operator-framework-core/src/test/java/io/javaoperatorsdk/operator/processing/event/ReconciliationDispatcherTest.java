@@ -65,13 +65,12 @@ class ReconciliationDispatcherTest {
      * implemented on TestCustomResourceSpec or TestCustomResourceStatus
      */
     ConfigurationServiceProvider.overrideCurrent(overrider -> {
-      overrider.checkingCRDAndValidateLocalModel(false)
-          .withResourceCloner(new Cloner() {
-            @Override
-            public <R extends HasMetadata> R clone(R object) {
-              return object;
-            }
-          });
+      overrider.withResourceCloner(new Cloner() {
+        @Override
+        public <R extends HasMetadata> R clone(R object) {
+          return object;
+        }
+      });
     });
   }
 
