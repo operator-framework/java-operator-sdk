@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -16,7 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 public class ManagedDependentResourceContext {
 
-  private final List<DependentResource> dependentResources;
+  private final Map<String, DependentResource> dependentResources;
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
 
   /**
@@ -70,43 +68,42 @@ public class ManagedDependentResourceContext {
             + ") is missing or not of the expected type"));
   }
 
-  public ManagedDependentResourceContext(List<DependentResource> dependentResources) {
-    this.dependentResources = Collections.unmodifiableList(dependentResources);
+  public ManagedDependentResourceContext(Map<String, DependentResource> dependentResources) {
+    this.dependentResources = dependentResources;
   }
 
   /**
    * Retrieve all the known {@link DependentResource} implementations
    *
-   * @return a list of known {@link DependentResource} implementations
+   * @return known {@link DependentResource} implementations keyed by their name
    */
-  public List<DependentResource> getDependentResources() {
+  public Map<String, DependentResource> getDependentResources() {
     return dependentResources;
   }
 
   /**
    * Retrieve the dependent resource implementation associated with the specified resource type.
    *
-   * @param resourceClass the dependent resource class for which we want to retrieve the associated
-   *        dependent resource implementation
+   * @param name the name of the {@link DependentResource} implementation we want to retrieve
+   * @param resourceClass the resource class for which we want to retrieve the associated dependent
+   *        resource implementation
    * @param <T> the type of the resources for which we want to retrieve the associated dependent
    *        resource implementation
    * @return the associated dependent resource implementation if it exists or an exception if it
    *         doesn't or several implementations are associated with the specified resource type
    */
-  @SuppressWarnings("unchecked")
-  public <T extends DependentResource> T getDependentResource(Class<T> resourceClass) {
-    var resourceList =
-        dependentResources.stream()
-            .filter(dr -> dr.getClass().equals(resourceClass))
-            .collect(Collectors.toList());
-    if (resourceList.isEmpty()) {
-      throw new OperatorException(
-          "No dependent resource found for class: " + resourceClass.getName());
+  @SuppressWarnings({"unchecked"})
+  public <T> DependentResource<T, ?> getDependentResource(String name, Class<T> resourceClass) {
+    var dependentResource = dependentResources.get(name);
+    if (dependentResource == null) {
+      throw new OperatorException("No dependent resource found with name: " + name);
     }
-    if (resourceList.size() > 1) {
+    final var actual = dependentResource.resourceType();
+    if (!actual.equals(resourceClass)) {
       throw new OperatorException(
-          "More than one dependent resource found for class: " + resourceClass.getName());
+          "Dependent resource implementation doesn't match expected resource type, was: "
+              + actual.getName() + " instead of: " + resourceClass.getName());
     }
-    return (T) resourceList.get(0);
+    return dependentResource;
   }
 }

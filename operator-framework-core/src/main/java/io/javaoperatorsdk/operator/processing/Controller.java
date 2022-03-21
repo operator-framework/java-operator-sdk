@@ -1,8 +1,11 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -51,7 +54,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
-  private final List<DependentResource> dependents;
+  private final Map<String, DependentResource> dependents;
   private final boolean contextInitializer;
   private final boolean hasDeleterDependents;
   private final boolean isCleaner;
@@ -71,15 +74,16 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
     eventSourceManager = new EventSourceManager<>(this);
 
     final var hasDeleterHolder = new boolean[] {false};
-    dependents = configuration.getDependentResources().stream()
-        .map(drs -> createAndConfigureFrom(drs, kubernetesClient))
-        .peek(d -> {
-          // check if any dependent implements Deleter to record that fact
-          if (!hasDeleterHolder[0] && d instanceof Deleter) {
-            hasDeleterHolder[0] = true;
-          }
-        })
-        .collect(Collectors.toList());
+    dependents = Collections.unmodifiableMap(
+        configuration.getDependentResources().stream()
+            .map(drs -> createAndConfigureFrom(drs, kubernetesClient))
+            .peek(d -> {
+              // check if any dependent implements Deleter to record that fact
+              if (!hasDeleterHolder[0] && d instanceof Deleter) {
+                hasDeleterHolder[0] = true;
+              }
+            })
+            .collect(Collectors.toMap(DependentResource::name, Function.identity())));
 
     hasDeleterDependents = hasDeleterHolder[0];
     isCleaner = reconciler instanceof Cleaner;
@@ -133,7 +137,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
                 public DeleteControl execute() {
                   initContextIfNeeded(resource, context);
                   if (hasDeleterDependents) {
-                    dependents.stream()
+                    dependents.values().stream()
                         .filter(d -> d instanceof Deleter)
                         .map(Deleter.class::cast)
                         .forEach(deleter -> deleter.delete(resource, context));
@@ -179,7 +183,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            dependents.forEach(dependent -> dependent.reconcile(resource, context));
+            dependents.values().forEach(dependent -> dependent.reconcile(resource, context));
             return reconciler.reconcile(resource, context);
           }
         });
@@ -188,7 +192,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
     List<EventSource> sources = new LinkedList<>();
-    dependents.stream()
+    dependents.values().stream()
         .filter(dependentResource -> dependentResource instanceof EventSourceProvider)
         .map(EventSourceProvider.class::cast)
         .map(provider -> provider.initEventSource(context))
@@ -330,7 +334,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   }
 
   @SuppressWarnings("rawtypes")
-  public List<DependentResource> getDependents() {
+  public Map<String, DependentResource> getDependents() {
     return dependents;
   }
 }
