@@ -103,7 +103,7 @@ the `operator-framework-core` module.
 As mentioned previously, one goal of this implementation is to make it possible to
 semi-declaratively create and wire dependent resources. You can annotate your reconciler with
 `@Dependent` annotations that specify which `DependentResource` implementation it depends upon.
-JOSDK will take the appropriate steps to wire everything thing together and call your
+JOSDK will take the appropriate steps to wire everything together and call your
 `DependentResource` implementations `reconcile` method before your primary resource is reconciled.
 This makes sense in most use cases where the logic associated with the primary resource is usually
 limited to status handling based on the state of the secondary resources. This behavior and
