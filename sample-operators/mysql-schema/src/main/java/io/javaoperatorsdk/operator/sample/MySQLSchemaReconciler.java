@@ -4,7 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
@@ -31,9 +36,7 @@ public class MySQLSchemaReconciler
     // we only need to update the status if we just built the schema, i.e. when it's present in the
     // context
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
-    SchemaDependentResource schemaDependentResource = context.managedDependentResourceContext()
-        .getDependentResource(SchemaDependentResource.class);
-    return schemaDependentResource.getResource(schema).map(s -> {
+    return context.getSecondaryResource(MySQLSchema.class).map(s -> {
       updateStatusPojo(schema, secret.getMetadata().getName(),
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
       log.info("Schema {} created - updating CR status", schema.getMetadata().getName());

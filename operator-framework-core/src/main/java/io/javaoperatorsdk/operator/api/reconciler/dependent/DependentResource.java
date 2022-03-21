@@ -9,4 +9,10 @@ public interface DependentResource<R, P extends HasMetadata> {
   ReconcileResult<R> reconcile(P primary, Context<P> context);
 
   Optional<R> getResource(P primaryResource);
+
+  Class<R> resourceType();
+
+  default String name() {
+    return getClass().getCanonicalName();
+  }
 }
