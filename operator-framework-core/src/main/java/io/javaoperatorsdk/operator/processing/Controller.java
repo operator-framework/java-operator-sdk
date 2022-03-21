@@ -105,7 +105,6 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
-    initContextIfNeeded(resource, context);
     try {
       return metrics()
           .timeControllerExecution(
@@ -127,6 +126,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
                 @Override
                 public DeleteControl execute() {
+                  initContextIfNeeded(resource, context);
                   if (hasDeleterDependents) {
                     dependents.stream()
                         .filter(d -> d instanceof Deleter)
@@ -147,7 +147,6 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
   @Override
   public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
-    initContextIfNeeded(resource, context);
     return metrics().timeControllerExecution(
         new ControllerExecution<>() {
           @Override
@@ -174,6 +173,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
           @Override
           public UpdateControl<P> execute() throws Exception {
+            initContextIfNeeded(resource, context);
             dependents.forEach(dependent -> dependent.reconcile(resource, context));
             return reconciler.reconcile(resource, context);
           }
