@@ -24,6 +24,7 @@ the `Deployment` controller.
 Controllers that deal with secondary resources typically need to perform the following steps, for
 each secondary resource:
 
+
 <div class="mermaid" markdown="0"> 
 flowchart TD
 
