@@ -46,7 +46,7 @@ amount of code, JOSDK taking care of wiring everything accordingly.
 
 Moreover, in order for your reconciler to get informed of events on these secondary resources, you
 need to configure and create event sources and maintain them. JOSDK already makes it rather easy to
-deal with these but we felt that we could make things even simpler.
+deal with these, but dependent resources makes it even simpler.
 
 Finally, there are also opportunities for the SDK to transparently add features that are even
 trickier to get right, such as immediate caching of updated or created resources (so that your
