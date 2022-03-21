@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -54,6 +55,8 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   private final boolean contextInitializer;
   private final boolean hasDeleterDependents;
   private final boolean isCleaner;
+  private final Metrics metrics;
+
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -61,6 +64,8 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
+    this.metrics = Optional.ofNullable(ConfigurationServiceProvider.instance().getMetrics())
+        .orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
 
     eventSourceManager = new EventSourceManager<>(this);
@@ -106,7 +111,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
     try {
-      return metrics()
+      return metrics
           .timeControllerExecution(
               new ControllerExecution<>() {
                 @Override
@@ -147,7 +152,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
 
   @Override
   public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
-    return metrics().timeControllerExecution(
+    return metrics.timeControllerExecution(
         new ControllerExecution<>() {
           @Override
           public String name() {
@@ -178,12 +183,6 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
             return reconciler.reconcile(resource, context);
           }
         });
-  }
-
-
-  private Metrics metrics() {
-    final var metrics = ConfigurationServiceProvider.instance().getMetrics();
-    return metrics != null ? metrics : Metrics.NOOP;
   }
 
   @Override
