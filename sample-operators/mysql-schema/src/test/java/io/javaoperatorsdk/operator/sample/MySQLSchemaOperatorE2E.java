@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
@@ -29,6 +28,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 class MySQLSchemaOperatorE2E {
 
@@ -70,9 +70,10 @@ class MySQLSchemaOperatorE2E {
                     c.replaceDependentResourceConfig(
                         SchemaDependentResource.class,
                         new ResourcePollerConfig(
-                            700, new MySQLDbConfig("127.0.0.1", "3306", "root", "password")));
+                            700, new MySQLDbConfig("127.0.0.1", "3307", "root", "password")));
                   })
               .withInfrastructure(infrastructure)
+              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, 3307)
               .build()
           : E2EOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
@@ -83,8 +84,6 @@ class MySQLSchemaOperatorE2E {
 
   @Test
   void test() throws IOException {
-    // Opening a port-forward if running locally
-    LocalPortForward portForward = createLocalPortForward();
 
     MySQLSchema testSchema = new MySQLSchema();
     testSchema.setMetadata(
@@ -114,26 +113,21 @@ class MySQLSchemaOperatorE2E {
               assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
             });
 
-    if (portForward != null) {
-      portForward.close();
-    }
-  }
+    client.resources(MySQLSchema.class).inNamespace(operator.getNamespace())
+        .withName(testSchema.getMetadata().getName()).delete();
 
-  private LocalPortForward createLocalPortForward() {
-    if (isLocal()) {
-      String podName =
-          client
-              .pods()
-              .inNamespace(MY_SQL_NS)
-              .withLabel("app", "mysql")
-              .list()
-              .getItems()
-              .get(0)
-              .getMetadata()
-              .getName();
-
-      return client.pods().inNamespace(MY_SQL_NS).withName(podName).portForward(3306, 3306);
-    }
-    return null;
+    await()
+        .atMost(2, MINUTES)
+        .ignoreExceptions()
+        .untilAsserted(
+            () -> {
+              MySQLSchema updatedSchema =
+                  client
+                      .resources(MySQLSchema.class)
+                      .inNamespace(operator.getNamespace())
+                      .withName(testSchema.getMetadata().getName())
+                      .get();
+              assertThat(updatedSchema, is(nullValue()));
+            });
   }
 }
