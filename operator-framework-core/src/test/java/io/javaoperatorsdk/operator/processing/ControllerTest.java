@@ -54,10 +54,10 @@ class ControllerTest {
   }
 
   @Test
-  void crdShouldBeCheckedForCustomResourcesByDefault() {
+  void crdCanBeCheckedForCustomResources() {
     final var client = mock(KubernetesClient.class);
     final var configurationService = mock(ConfigurationService.class);
-    when(configurationService.checkCRDAndValidateLocalModel()).thenCallRealMethod();
+    when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(true);
     final var reconciler = mock(Reconciler.class);
     final var configuration = mock(ControllerConfiguration.class);
     when(configuration.getResourceClass()).thenReturn(TestCustomResource.class);
