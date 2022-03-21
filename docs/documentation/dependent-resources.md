@@ -70,7 +70,7 @@ also use the declarative support with your own implementations as we shall see l
 they support by implementing trait interfaces. This design has been selected to express the fact
 that not all secondary resources are completely under the control of the primary reconciler: some
 dependent resources are only ever created or updated for example and we needed a way to let JOSDK
-when that is the case. We therefore provide trait interfaces: `Creator`,
+know when that is the case. We therefore provide trait interfaces: `Creator`,
 `Updater` and `Deleter` to express that the `DependentResource` implementation will provide custom
 functionality to create, update and delete its associated secondary resources, respectively. If
 these traits are not implemented then parts of the logic described above is never triggered: if your
