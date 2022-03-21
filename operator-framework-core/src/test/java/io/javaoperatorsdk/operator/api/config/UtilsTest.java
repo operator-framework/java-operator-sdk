@@ -101,6 +101,12 @@ class UtilsTest {
     public Optional<Deployment> getResource(TestCustomResource primaryResource) {
       return Optional.empty();
     }
+
+    @Override
+    public Class<Deployment> resourceType() {
+      return Deployment.class;
+    }
+
   }
 
   public static class TestKubernetesDependentResource

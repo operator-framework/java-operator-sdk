@@ -18,7 +18,11 @@ import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class AbstractSimpleDependentResourceTest {
@@ -135,6 +139,11 @@ class AbstractSimpleDependentResourceTest {
     protected SampleExternalResource desired(TestCustomResource primary,
         Context<TestCustomResource> context) {
       return SampleExternalResource.testResource1();
+    }
+
+    @Override
+    public Class<SampleExternalResource> resourceType() {
+      return SampleExternalResource.class;
     }
   }
 }
