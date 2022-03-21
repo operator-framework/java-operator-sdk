@@ -76,7 +76,7 @@ functionality to create, update and delete its associated secondary resources, r
 these traits are not implemented then parts of the logic described above is never triggered: if your
 implementation doesn't implement `Creator`, for example,
 `AbstractDependentResource` will never try to create the associated secondary resource, even if it
-doesn't exist. It is thus possible to create read-only dependent resources that will trigger your
+doesn't exist. It is possible to not implement any of these traits and therefore create read-only dependent resources that will trigger your
 reconciler whenever a user interacts with them but that are never modified by your reconciler
 itself.
 
