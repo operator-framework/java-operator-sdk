@@ -3,6 +3,7 @@ title: Dependent Resources Feature
 description: Dependent Resources Feature 
 layout: docs 
 permalink: /docs/dependent-resources
+use_mermaid: true
 ---
 
 # Dependent Resources
@@ -23,19 +24,19 @@ the `Deployment` controller.
 Controllers that deal with secondary resources typically need to perform the following steps, for
 each secondary resource:
 
-```mermaid
+<div class="mermaid" markdown="0"> 
 flowchart TD
 
-compute[Compute desired secondary resource based on primary state] --> A
 A{Secondary resource exists?}
 A -- Yes --> match
-A -- No --> Create --> Done
+A -- No --> compute
 
+compute[Compute desired state based on primary state] --> Create --> Done
 match{Matches desired state as defined by primary?}
 match -- Yes --> Done
-match -- No --> Update --> Done
+match -- No --> Update
 
-```
+</div>
 
 While these steps are not difficult in and of themselves, there are some subtleties that can lead to
 bugs or sub-optimal code if not done right. As this process is pretty much similar for each
