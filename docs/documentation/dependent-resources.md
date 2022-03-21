@@ -3,7 +3,6 @@ title: Dependent Resources Feature
 description: Dependent Resources Feature 
 layout: docs 
 permalink: /docs/dependent-resources
-use_mermaid: true
 ---
 
 # Dependent Resources
