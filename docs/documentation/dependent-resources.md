@@ -86,7 +86,7 @@ JOSDK also offers several other convenient implementations building on top of
 `AbstractDependentResource` that you can use as starting points for your own implementations.
 
 One such implementation is the `KubernetesDependentResource` class that makes it really easy to work
-with Kubernetes-native resources as, in this case, you usually only need to provide an
+with Kubernetes-native resources. In this case, you usually only need to provide an
 implementation for the `desired` method to tell JOSDK what the desired state of your secondary
 resource should be based on the specified primary resource state. JOSDK takes care of everything
 else using default implementations that you can override in case you need more precise control of
