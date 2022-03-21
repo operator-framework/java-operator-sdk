@@ -1,10 +1,13 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -190,7 +193,7 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             final var exceptions = new ArrayList<Exception>(dependents.size());
-            dependents.forEach((name, dependent) -> {
+            dependents.values().forEach((name, dependent) -> {
               try {
                 final var reconcileResult = dependent.reconcile(resource, context);
                 context.managedDependentResourceContext().setReconcileResult(name, reconcileResult);
@@ -209,7 +212,6 @@ public class Controller<P extends HasMetadata>
                       .collect(Collectors.joining("\n")),
                   exceptions);
             }
-
             return reconciler.reconcile(resource, context);
           }
         });
