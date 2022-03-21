@@ -28,14 +28,14 @@ each secondary resource:
 <div class="mermaid" markdown="0"> 
 flowchart TD
 
+compute[Compute desired secondary resource based on primary state] --> A
 A{Secondary resource exists?}
 A -- Yes --> match
-A -- No --> compute
+A -- No --> Create --> Done
 
-compute[Compute desired state based on primary state] --> Create --> Done
 match{Matches desired state as defined by primary?}
 match -- Yes --> Done
-match -- No --> Update
+match -- No --> Update --> Done
 
 </div>
 
