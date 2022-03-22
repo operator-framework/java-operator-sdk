@@ -21,7 +21,7 @@ class UtilsTest {
 
   @Test
   void shouldCheckCRDAndValidateLocalModelByDefault() {
-    assertTrue(Utils.shouldCheckCRDAndValidateLocalModel());
+    assertFalse(Utils.shouldCheckCRDAndValidateLocalModel());
   }
 
   @Test
