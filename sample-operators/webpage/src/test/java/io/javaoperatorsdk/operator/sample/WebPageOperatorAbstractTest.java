@@ -20,7 +20,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 
-import static io.javaoperatorsdk.operator.sample.WebPageReconcilerDependentResources.serviceName;
+import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -50,8 +51,7 @@ public abstract class WebPageOperatorAbstractTest {
         .until(
             () -> {
               var actual = operator().get(WebPage.class, TEST_PAGE);
-              var deployment = operator().get(Deployment.class,
-                  WebPageReconcilerDependentResources.deploymentName(webPage));
+              var deployment = operator().get(Deployment.class, deploymentName(webPage));
 
               return Boolean.TRUE.equals(actual.getStatus().getAreWeGood())
                   && Objects.equals(deployment.getSpec().getReplicas(),

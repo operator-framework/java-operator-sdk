@@ -20,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UtilsTest {
 
   @Test
-  void shouldCheckCRDAndValidateLocalModelByDefault() {
-    assertTrue(Utils.shouldCheckCRDAndValidateLocalModel());
+  void shouldNotCheckCRDAndValidateLocalModelByDefault() {
+    assertFalse(Utils.shouldCheckCRDAndValidateLocalModel());
   }
 
   @Test

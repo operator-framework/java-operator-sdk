@@ -18,7 +18,7 @@ class WebPageOperatorDependentResourcesE2E extends WebPageOperatorAbstractTest {
       isLocal()
           ? OperatorExtension.builder()
               .waitForNamespaceDeletion(false)
-              .withReconciler(new WebPageReconcilerDependentResources(client))
+              .withReconciler(new WebPageStandaloneDependentsReconciler(client))
               .build()
           : E2EOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
