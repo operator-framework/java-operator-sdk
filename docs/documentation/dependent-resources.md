@@ -7,10 +7,10 @@ permalink: /docs/dependent-resources
 
 # Dependent Resources
 
-DISCLAIMER: The Dependent Resource support is relatively new and, while we strove to cover what we
+DISCLAIMER: The Dependent Resource support is relatively new feature, while we strove to cover what we
 anticipate will be the most common use cases, the implementation is not simple and might still
-evolve. As a result, some APIs could be still a subject of change in the future. However,
-non-backwards compatible changes are expected to be trivial to adapt to.
+evolve. As a result, some APIs could be a subject of change in the future. However,
+non-backwards compatible changes are expected to be trivial to migrate to.
 
 ## Motivations and Goals
 
@@ -32,7 +32,7 @@ A{Secondary resource exists?}
 A -- Yes --> match
 A -- No --> Create --> Done
 
-match{Matches desired state as defined by primary?}
+match{Matches desired state?}
 match -- Yes --> Done
 match -- No --> Update --> Done
 
@@ -111,7 +111,7 @@ JOSDK will take the appropriate steps to wire everything together and call your
 This makes sense in most use cases where the logic associated with the primary resource is usually
 limited to status handling based on the state of the secondary resources. This behavior and
 automated handling is referred to as "managed" because the `DependentResource`
-implementations are managed by JOSDK. See related sample:
+implementations are managed by JOSDK. See [related sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java):
 
 ```java
 
@@ -141,8 +141,12 @@ public class WebPageManagedDependentsReconciler
 }
 ```
 
-
 ## Standalone Dependent Resources
+
+To use dependent resources in more complex workflows, when the reconciliation requires additional logic, the standalone
+mode is available. In practice this means that the developer is responsible to initializing and managing and 
+calling reconcile method. 
+
 
 
 
