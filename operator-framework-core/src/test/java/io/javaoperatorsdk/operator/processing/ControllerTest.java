@@ -45,13 +45,14 @@ class ControllerTest {
     }
   }
 
+
   @Test
   void usesFinalizerIfThereIfReconcilerImplementsCleaner() {
     Reconciler reconciler = mock(Reconciler.class, withSettings().extraInterfaces(Cleaner.class));
     when(configuration.getResourceClass()).thenReturn(TestCustomResource.class);
 
     final var controller = new Controller<Secret>(reconciler,
-        configuration, MockKubernetesClient.client(TestCustomResource.class));
+            configuration, MockKubernetesClient.client(TestCustomResource.class));
 
     assertThat(controller.useFinalizer()).isTrue();
   }
