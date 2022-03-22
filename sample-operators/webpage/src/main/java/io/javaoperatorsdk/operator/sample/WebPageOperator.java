@@ -30,7 +30,7 @@ public class WebPageOperator {
     if (WEBPAGE_RECONCILER_ENV_VALUE.equals(System.getenv(WEBPAGE_RECONCILER_ENV))) {
       operator.register(new WebPageReconciler(client));
     } else {
-      operator.register(new WebPageReconcilerDependentResources(client));
+      operator.register(new WebPageStandaloneDependentsReconciler(client));
     }
     operator.installShutdownHook();
     operator.start();

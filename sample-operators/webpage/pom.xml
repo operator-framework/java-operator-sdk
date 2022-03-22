@@ -10,7 +10,7 @@
         <version>3.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>webpage</artifactId>
+    <artifactId>sample-webpage-operator</artifactId>
     <name>Operator SDK - Samples - WebPage</name>
     <description>Provisions an nginx Webserver based on a CRD with give html</description>
     <packaging>jar</packaging>
