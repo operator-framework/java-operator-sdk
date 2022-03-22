@@ -111,8 +111,39 @@ JOSDK will take the appropriate steps to wire everything together and call your
 This makes sense in most use cases where the logic associated with the primary resource is usually
 limited to status handling based on the state of the secondary resources. This behavior and
 automated handling is referred to as "managed" because the `DependentResource`
-implementations are managed by JOSDK.
+implementations are managed by JOSDK. See related sample:
+
+```java
+
+@ControllerConfiguration(
+    labelSelector = SELECTOR,
+    dependents = {
+        @Dependent(type = ConfigMapDependentResource.class),
+        @Dependent(type = DeploymentDependentResource.class),
+        @Dependent(type = ServiceDependentResource.class)
+    })
+public class WebPageManagedDependentsReconciler
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+
+    // emitted code
+    
+    @Override
+    public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
+            throws Exception {
+        simulateErrorIfRequested(webPage);
+
+        final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
+                .getMetadata().getName();
+        webPage.setStatus(createStatus(name));
+        return UpdateControl.updateStatus(webPage);
+    }
+    
+}
+```
+
 
 ## Standalone Dependent Resources
+
+
 
 ## Other Dependent Resources features

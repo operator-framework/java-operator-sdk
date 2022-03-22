@@ -37,11 +37,11 @@ execution.
 [Kubernetes finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)
 make sure that a reconciliation happens when a custom resource is instructed to be deleted. Typical case when it's
 useful, when an operator is down (pod not running). Without a finalizer the reconciliation - thus the cleanup -
-i.e. [`Cleaner.cleanup(...)`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b82c1f106968cb3eb18835c5e9cd1e4d5c40362e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java#L28-L28)
+i.e. [`Cleaner.cleanup(...)`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java#L28)
 would not happen if a custom resource is deleted.
 
-To use finalizers the reconciler have to implement [`Cleaner<P>`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b82c1f106968cb3eb18835c5e9cd1e4d5c40362e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface.
-In other words, finalizer is added if the `Reconciler` implements `Cleaner` interface. If not, no
+To use finalizers the reconciler have to implement [`Cleaner<P>`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface.
+In other words, finalizer is added only if the `Reconciler` implements `Cleaner` interface. If not, no
 finalizer is added and/or removed.
 
 Finalizers are automatically added by the framework as the first step, thus after a custom resource is created, but
@@ -69,7 +69,7 @@ When automatic finalizer handling is turned off, the `Reconciler.cleanup(...)` m
 case when a delete event received. So it does not make sense to implement this method and turn off finalizer at the same
 time.
 
-## The `reconcile` and [`cleanup`](https://github.com/java-operator-sdk/java-operator-sdk/blob/b82c1f106968cb3eb18835c5e9cd1e4d5c40362e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) Methods on a [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
+## The [`reconcile`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L16) and [`cleanup`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java#L28)
 
 The lifecycle of a custom resource can be clearly separated into two phases from the perspective of an operator. When a
 custom resource is created or update, or on the other hand when the custom resource is deleted - or rather marked for
@@ -160,7 +160,7 @@ In order to have this feature working:
 If these conditions are fulfilled and generation awareness not turned off, the observed generation is automatically set
 by the framework after the `reconcile` method is called. Note that the observed generation is updated also
 when `UpdateControl.noUpdate()` is returned from the reconciler. See this feature working in
-the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/b91221bb54af19761a617bf18eef381e8ceb3b4c/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
+the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
 .
 
 ```java
@@ -361,7 +361,7 @@ of requests to Kubernetes API server, and leads to faster reconciliation cycles.
 Note that when an operator starts and the first reconciliation is executed the caches are already populated for example  
 for `InformerEventSource`. Currently, this is not true however for `PerResourceEventSource`, where the cache might or 
 might not be populated. To handle this situation elegantly methods are provided which checks the object in cache, if
-not found tries to get it from the supplier. See related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/e7fd79968a238d7e0acc446d949b83a06cea17b5/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java#L145)
+not found tries to get it from the supplier. See related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PerResourcePollingEventSource.java#L146)
 .
 
 ### Registering Event Sources
