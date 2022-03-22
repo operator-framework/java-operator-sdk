@@ -64,7 +64,7 @@ public class Utils {
   }
 
   public static boolean shouldCheckCRDAndValidateLocalModel() {
-    return getBooleanFromSystemPropsOrDefault(CHECK_CRD_ENV_KEY, true);
+    return getBooleanFromSystemPropsOrDefault(CHECK_CRD_ENV_KEY, false);
   }
 
   public static boolean debugThreadPool() {

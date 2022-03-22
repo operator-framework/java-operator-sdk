@@ -77,7 +77,7 @@ public interface ConfigurationService {
    * @return {@code true} if CRDs should be checked (default), {@code false} otherwise
    */
   default boolean checkCRDAndValidateLocalModel() {
-    return true;
+    return false;
   }
 
   int DEFAULT_RECONCILIATION_THREADS_NUMBER = 5;
