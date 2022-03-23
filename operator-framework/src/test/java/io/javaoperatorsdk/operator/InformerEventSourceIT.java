@@ -47,6 +47,7 @@ class InformerEventSourceIT {
   void deletingSecondaryResource() {
     var customResource = initialCustomResource();
     customResource = operator.create(InformerEventSourceTestCustomResource.class, customResource);
+    waitForCRStatusValue(MISSING_CONFIG_MAP);
     ConfigMap configMap =
         operator.create(ConfigMap.class, relatedConfigMap(customResource.getMetadata().getName()));
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
