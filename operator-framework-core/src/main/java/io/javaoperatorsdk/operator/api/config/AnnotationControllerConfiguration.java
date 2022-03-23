@@ -143,9 +143,9 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         return Collections.emptyList();
       }
 
-      Object config = null;
       specs = new ArrayList<>(dependents.length);
       for (Dependent dependent : dependents) {
+        Object config = null;
         final Class<? extends DependentResource> dependentType = dependent.type();
         if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
           final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
