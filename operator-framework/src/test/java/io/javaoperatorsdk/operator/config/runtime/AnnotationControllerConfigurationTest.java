@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AnnotationControllerConfigurationTest {
@@ -51,6 +52,20 @@ class AnnotationControllerConfigurationTest {
     assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
   }
 
+  @Test
+  void tryingToAddDuplicatedDependentsWithoutNameShouldFail() {
+    var configuration = new AnnotationControllerConfiguration<>(new DuplicatedDepReconciler());
+    assertThrows(IllegalArgumentException.class, configuration::getDependentResources);
+  }
+
+  @Test
+  void addingDuplicatedDependentsWithNameShouldWork() {
+    var config = new AnnotationControllerConfiguration<>(new NamedDuplicatedDepReconciler());
+    var dependents = config.getDependentResources();
+    assertEquals(2, dependents.size());
+    assertTrue(dependents.containsKey(NamedDuplicatedDepReconciler.NAME)
+        && dependents.containsKey(DependentResource.defaultNameFor(ReadOnlyDependent.class)));
+  }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
       dependents = @Dependent(type = ReadOnlyDependent.class))
@@ -68,6 +83,34 @@ class AnnotationControllerConfigurationTest {
       dependents = @Dependent(type = ReadOnlyDependent.class, name = NamedDepReconciler.NAME))
   private static class NamedDepReconciler implements Reconciler<ConfigMap> {
     private static final String NAME = "foo";
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+  }
+
+  @ControllerConfiguration(
+      dependents = {
+          @Dependent(type = ReadOnlyDependent.class),
+          @Dependent(type = ReadOnlyDependent.class)
+      })
+  private static class DuplicatedDepReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+  }
+
+  @ControllerConfiguration(
+      dependents = {
+          @Dependent(type = ReadOnlyDependent.class, name = NamedDuplicatedDepReconciler.NAME),
+          @Dependent(type = ReadOnlyDependent.class)
+      })
+  private static class NamedDuplicatedDepReconciler implements Reconciler<ConfigMap> {
+
+    private static final String NAME = "duplicated";
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
