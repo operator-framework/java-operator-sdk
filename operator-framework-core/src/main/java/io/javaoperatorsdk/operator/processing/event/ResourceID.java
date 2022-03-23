@@ -61,7 +61,7 @@ public class ResourceID implements Serializable {
 
   @Override
   public String toString() {
-    return "CustomResourceID{" +
+    return "ResourceID{" +
         "name='" + name + '\'' +
         ", namespace='" + namespace + '\'' +
         '}';
