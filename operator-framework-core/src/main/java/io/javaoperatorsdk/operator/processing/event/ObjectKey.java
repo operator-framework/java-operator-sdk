@@ -61,7 +61,7 @@ public class ObjectKey implements Serializable {
 
   @Override
   public String toString() {
-    return "CustomResourceID{" +
+    return "ObjectKey{" +
         "name='" + name + '\'' +
         ", namespace='" + namespace + '\'' +
         '}';
