@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
-    dependentResourceSpecs = original.getDependentResources();
+    // make the original specs modifiable
+    dependentResourceSpecs = new HashMap<>(original.getDependentResources());
     this.original = original;
   }
 
@@ -88,7 +90,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public void replaceNamedDependentResourceConfig(String name, Object dependentResourceConfig) {
+  public ControllerConfigurationOverrider<R> replaceNamedDependentResourceConfig(String name,
+      Object dependentResourceConfig) {
     final var currentConfig = dependentResourceSpecs.get(name);
     if (currentConfig == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
@@ -97,6 +100,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     dependentResourceSpecs.put(name,
         new DependentResourceSpec(currentConfig.getDependentResourceClass(),
             dependentResourceConfig, name));
+    return this;
   }
 
   public ControllerConfiguration<R> build() {
