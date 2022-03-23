@@ -94,10 +94,7 @@ public class ManagedDependentResourceContext {
    */
   @SuppressWarnings({"unchecked"})
   public <T> DependentResource<T, ?> getDependentResource(String name, Class<T> resourceClass) {
-    var dependentResource = dependentResources.get(name);
-    if (dependentResource == null) {
-      throw new OperatorException("No dependent resource found with name: " + name);
-    }
+    DependentResource dependentResource = getDependentResource(name);
     final var actual = dependentResource.resourceType();
     if (!actual.equals(resourceClass)) {
       throw new OperatorException(
@@ -105,5 +102,25 @@ public class ManagedDependentResourceContext {
               + actual.getName() + " instead of: " + resourceClass.getName());
     }
     return dependentResource;
+  }
+
+  private DependentResource getDependentResource(String name) {
+    var dependentResource = dependentResources.get(name);
+    if (dependentResource == null) {
+      throw new OperatorException("No dependent resource found with name: " + name);
+    }
+    return dependentResource;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T extends DependentResource> T getAdaptedDependentResource(String name,
+      Class<T> dependentResourceClass) {
+    DependentResource dependentResource = getDependentResource(name);
+    if (dependentResourceClass.isInstance(dependentResource)) {
+      return (T) dependentResource;
+    } else {
+      throw new IllegalArgumentException("Dependent resource associated with name: " + name
+          + " is not adaptable to type: " + dependentResourceClass.getCanonicalName());
+    }
   }
 }
