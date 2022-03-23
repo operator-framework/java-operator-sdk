@@ -97,7 +97,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
     if (eventRecorder.isRecordingFor(resourceID)) {
-      log.info("Recording event for: " + resourceID);
+      log.debug("Recording event for: {}", resourceID);
       eventRecorder.recordEvent(newObject);
       return;
     }
@@ -224,7 +224,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
       R resource) {
-    log.info("Starting event recording for: {}", resourceID);
+    log.debug("Starting event recording for: {}", resourceID);
     eventRecorder.startEventRecording(resourceID);
   }
 
@@ -237,7 +237,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID,
       R resource) {
-    log.info("Stopping event recording for: {}", resourceID);
+    log.debug("Stopping event recording for: {}", resourceID);
     eventRecorder.stopEventRecording(resourceID);
   }
 
