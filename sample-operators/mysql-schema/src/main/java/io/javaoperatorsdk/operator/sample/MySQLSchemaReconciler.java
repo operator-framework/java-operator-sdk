@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
 
@@ -36,7 +37,12 @@ public class MySQLSchemaReconciler
     // we only need to update the status if we just built the schema, i.e. when it's present in the
     // context
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
-    return context.getSecondaryResource(MySQLSchema.class).map(s -> {
+
+    SchemaDependentResource schemaDependentResource =
+        context.managedDependentResourceContext().getAdaptedDependentResource(
+            DependentResource.defaultNameFor(SchemaDependentResource.class),
+            SchemaDependentResource.class);
+    return schemaDependentResource.fetchResource(schema).map(s -> {
       updateStatusPojo(schema, secret.getMetadata().getName(),
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
       log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
