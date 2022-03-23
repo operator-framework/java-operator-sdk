@@ -99,7 +99,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
       try (InputStream is = getClass().getResourceAsStream(path)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
-        Thread.sleep(2000); // readiness is not applicable for CRD we just wait
+        Thread.sleep(2000); // readiness is not applicable for CRD, just wait a little
         LOGGER.debug("Applied CRD with name: {}", config.getResourceTypeName());
       } catch (InterruptedException ex) {
         LOGGER.error("Interrupted.", ex);
