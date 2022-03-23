@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,16 +73,22 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
     eventSourceManager = new EventSourceManager<>(this);
 
     final var hasDeleterHolder = new boolean[] {false};
-    dependents = Collections.unmodifiableMap(
-        configuration.getDependentResources().stream()
-            .map(drs -> createAndConfigureFrom(drs, kubernetesClient))
-            .peek(d -> {
-              // check if any dependent implements Deleter to record that fact
-              if (!hasDeleterHolder[0] && d instanceof Deleter) {
-                hasDeleterHolder[0] = true;
-              }
-            })
-            .collect(Collectors.toMap(DependentResource::name, Function.identity())));
+    final var specs = configuration.getDependentResources();
+    final var size = specs.size();
+    if (size == 0) {
+      dependents = Collections.emptyMap();
+    } else {
+      final var dependentsHolder = new HashMap<String, DependentResource>(size);
+      specs.forEach((name, drs) -> {
+        final var dependent = createAndConfigureFrom(drs, kubernetesClient);
+        // check if dependent implements Deleter to record that fact
+        if (!hasDeleterHolder[0] && dependent instanceof Deleter) {
+          hasDeleterHolder[0] = true;
+        }
+        dependentsHolder.put(name, dependent);
+      });
+      dependents = Collections.unmodifiableMap(dependentsHolder);
+    }
 
     hasDeleterDependents = hasDeleterHolder[0];
     isCleaner = reconciler instanceof Cleaner;

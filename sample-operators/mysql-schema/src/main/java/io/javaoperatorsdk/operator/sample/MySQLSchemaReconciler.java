@@ -21,7 +21,7 @@ import static java.lang.String.format;
 @ControllerConfiguration(
     dependents = {
         @Dependent(type = SecretDependentResource.class),
-        @Dependent(type = SchemaDependentResource.class)
+        @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME)
     })
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {

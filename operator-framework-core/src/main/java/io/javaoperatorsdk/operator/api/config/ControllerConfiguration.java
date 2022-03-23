@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -46,8 +46,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return ResourceEventFilters.passthrough();
   }
 
-  default List<DependentResourceSpec<?, ?>> getDependentResources() {
-    return Collections.emptyList();
+  default Map<String, DependentResourceSpec<?, ?>> getDependentResources() {
+    return Collections.emptyMap();
   }
 
   default Optional<Duration> reconciliationMaxInterval() {

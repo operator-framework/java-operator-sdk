@@ -3,12 +3,11 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @SuppressWarnings({"rawtypes", "unchecked", "unused"})
@@ -22,7 +21,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final List<DependentResourceSpec<?, ?>> dependentResourceSpecs;
+  private final Map<String, DependentResourceSpec<?, ?>> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -89,37 +88,15 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public void replaceDependentResourceConfig(
-      Class<? extends DependentResource<?, R>> dependentResourceClass,
-      Object dependentResourceConfig) {
-
-    var currentConfig =
-        findConfigForDependentResourceClass(dependentResourceClass);
-    if (currentConfig.isEmpty()) {
-      throw new IllegalStateException("Cannot find DependentResource config for class: "
-          + dependentResourceClass);
+  public void replaceNamedDependentResourceConfig(String name, Object dependentResourceConfig) {
+    final var currentConfig = dependentResourceSpecs.get(name);
+    if (currentConfig == null) {
+      throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    dependentResourceSpecs.remove(currentConfig.get());
-    dependentResourceSpecs
-        .add(new DependentResourceSpec(dependentResourceClass, dependentResourceConfig));
-  }
-
-  public void addNewDependentResourceConfig(DependentResourceSpec dependentResourceSpec) {
-    var currentConfig =
-        findConfigForDependentResourceClass(dependentResourceSpec.getDependentResourceClass());
-    if (currentConfig.isPresent()) {
-      throw new IllegalStateException(
-          "Config already present for class: "
-              + dependentResourceSpec.getDependentResourceClass());
-    }
-    dependentResourceSpecs.add(dependentResourceSpec);
-  }
-
-  private Optional<DependentResourceSpec<?, ?>> findConfigForDependentResourceClass(
-      Class<? extends DependentResource> dependentResourceClass) {
-    return dependentResourceSpecs.stream()
-        .filter(dc -> dc.getDependentResourceClass().equals(dependentResourceClass))
-        .findFirst();
+    dependentResourceSpecs.remove(name);
+    dependentResourceSpecs.put(name,
+        new DependentResourceSpec(currentConfig.getDependentResourceClass(),
+            dependentResourceConfig, name));
   }
 
   public ControllerConfiguration<R> build() {

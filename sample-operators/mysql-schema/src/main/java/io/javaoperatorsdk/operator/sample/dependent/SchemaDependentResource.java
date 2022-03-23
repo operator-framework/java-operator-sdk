@@ -30,7 +30,7 @@ public class SchemaDependentResource
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
-
+  public static final String NAME = "schema";
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
