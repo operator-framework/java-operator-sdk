@@ -66,7 +66,7 @@ class MySQLSchemaOperatorE2E {
           ? OperatorExtension.builder()
               .withReconciler(
                   new MySQLSchemaReconciler(),
-                  c -> c.replaceNamedDependentResourceConfig(
+                  c -> c.replacingNamedDependentResourceConfig(
                       SchemaDependentResource.NAME,
                       new ResourcePollerConfig(
                           700, new MySQLDbConfig("127.0.0.1", LOCAL_PORT.toString(), "root",
