@@ -11,7 +11,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
 
@@ -40,7 +39,7 @@ public class MySQLSchemaReconciler
 
     SchemaDependentResource schemaDependentResource =
         context.managedDependentResourceContext().getAdaptedDependentResource(
-            DependentResource.defaultNameFor(SchemaDependentResource.class),
+            SchemaDependentResource.NAME,
             SchemaDependentResource.class);
     return schemaDependentResource.fetchResource(schema).map(s -> {
       updateStatusPojo(schema, secret.getMetadata().getName(),
