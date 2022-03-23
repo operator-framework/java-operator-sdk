@@ -32,7 +32,7 @@ public class SchemaDependentResource
 // todo fix
 // , Deleter<MySQLSchema>
 {
-
+  public static final String NAME = "schema";
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;

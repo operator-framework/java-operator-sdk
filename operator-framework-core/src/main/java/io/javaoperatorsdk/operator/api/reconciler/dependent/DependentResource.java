@@ -12,7 +12,8 @@ public interface DependentResource<R, P extends HasMetadata> {
 
   Class<R> resourceType();
 
-  default String name() {
-    return getClass().getCanonicalName();
+  @SuppressWarnings("rawtypes")
+  static String defaultNameFor(Class<? extends DependentResource> dependentResourceClass) {
+    return dependentResourceClass.getCanonicalName();
   }
 }
