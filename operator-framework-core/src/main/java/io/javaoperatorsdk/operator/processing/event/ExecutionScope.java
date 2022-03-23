@@ -18,15 +18,15 @@ class ExecutionScope<R extends HasMetadata> {
     return resource;
   }
 
-  public ResourceID getCustomResourceID() {
-    return ResourceID.fromResource(resource);
+  public ObjectKey getCustomResourceID() {
+    return ObjectKey.fromResource(resource);
   }
 
   @Override
   public String toString() {
     return "ExecutionScope{"
         + " resource id: "
-        + ResourceID.fromResource(resource)
+        + ObjectKey.fromResource(resource)
         + ", version: "
         + resource.getMetadata().getResourceVersion()
         + '}';

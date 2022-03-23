@@ -11,42 +11,42 @@ public class ExternalResourceCachingEventSource<R, P extends HasMetadata>
     super(resourceClass);
   }
 
-  public synchronized void handleDelete(ResourceID relatedResourceID) {
+  public synchronized void handleDelete(ObjectKey relatedObjectKey) {
     if (!isRunning()) {
       return;
     }
-    var cachedValue = cache.get(relatedResourceID);
-    cache.remove(relatedResourceID);
+    var cachedValue = cache.get(relatedObjectKey);
+    cache.remove(relatedObjectKey);
     // we only propagate event if the resource was previously in cache
     if (cachedValue.isPresent()) {
-      getEventHandler().handleEvent(new Event(relatedResourceID));
+      getEventHandler().handleEvent(new Event(relatedObjectKey));
     }
   }
 
-  public synchronized void handleEvent(R value, ResourceID relatedResourceID) {
+  public synchronized void handleEvent(R value, ObjectKey relatedObjectKey) {
     if (!isRunning()) {
       return;
     }
-    var cachedValue = cache.get(relatedResourceID);
+    var cachedValue = cache.get(relatedObjectKey);
     if (cachedValue.map(v -> !v.equals(value)).orElse(true)) {
-      cache.put(relatedResourceID, value);
-      getEventHandler().handleEvent(new Event(relatedResourceID));
+      cache.put(relatedObjectKey, value);
+      getEventHandler().handleEvent(new Event(relatedObjectKey));
     }
   }
 
   @Override
-  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    if (cache.get(resourceID).isEmpty()) {
-      cache.put(resourceID, resource);
+  public synchronized void handleRecentResourceCreate(ObjectKey objectKey, R resource) {
+    if (cache.get(objectKey).isEmpty()) {
+      cache.put(objectKey, resource);
     }
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public synchronized void handleRecentResourceUpdate(ObjectKey objectKey, R resource,
       R previousResourceVersion) {
-    cache.get(resourceID).ifPresent(r -> {
+    cache.get(objectKey).ifPresent(r -> {
       if (r.equals(previousResourceVersion)) {
-        cache.put(resourceID, resource);
+        cache.put(objectKey, resource);
       }
     });
   }

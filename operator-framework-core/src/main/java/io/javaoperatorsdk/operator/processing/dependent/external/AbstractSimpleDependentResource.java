@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.DesiredEqualsMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
@@ -32,7 +32,7 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getResource(HasMetadata primaryResource) {
-    return cache.get(ResourceID.fromResource(primaryResource));
+    return cache.get(ObjectKey.fromResource(primaryResource));
   }
 
   /**
@@ -45,7 +45,7 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var resourceId = ResourceID.fromResource(primary);
+    var resourceId = ObjectKey.fromResource(primary);
     Optional<R> resource = fetchResource(primary);
     resource.ifPresentOrElse(r -> cache.put(resourceId, r), () -> cache.remove(resourceId));
     return super.reconcile(primary, context);
@@ -53,7 +53,7 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
 
   public final void delete(P primary, Context<P> context) {
     deleteResource(primary, context);
-    cache.remove(ResourceID.fromResource(primary));
+    cache.remove(ObjectKey.fromResource(primary));
   }
 
   protected abstract void deleteResource(P primary, Context<P> context);
@@ -61,14 +61,14 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   @Override
   protected R handleCreate(R desired, P primary, Context<P> context) {
     var res = this.creator.create(desired, primary, context);
-    cache.put(ResourceID.fromResource(primary), res);
+    cache.put(ObjectKey.fromResource(primary), res);
     return res;
   }
 
   @Override
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     var res = updater.update(actual, desired, primary, context);
-    cache.put(ResourceID.fromResource(primary), res);
+    cache.put(ObjectKey.fromResource(primary), res);
     return res;
   }
 

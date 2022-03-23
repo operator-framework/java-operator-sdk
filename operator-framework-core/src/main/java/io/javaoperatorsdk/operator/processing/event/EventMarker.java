@@ -24,33 +24,33 @@ class EventMarker {
     DELETE_EVENT_PRESENT,
   }
 
-  private final HashMap<ResourceID, EventingState> eventingState = new HashMap<>();
+  private final HashMap<ObjectKey, EventingState> eventingState = new HashMap<>();
 
-  private EventingState getEventingState(ResourceID resourceID) {
-    EventingState actualState = eventingState.get(resourceID);
+  private EventingState getEventingState(ObjectKey objectKey) {
+    EventingState actualState = eventingState.get(objectKey);
     return actualState == null ? NO_EVENT_PRESENT : actualState;
   }
 
-  private void setEventingState(ResourceID resourceID, EventingState state) {
-    eventingState.put(resourceID, state);
+  private void setEventingState(ObjectKey objectKey, EventingState state) {
+    eventingState.put(objectKey, state);
   }
 
   public void markEventReceived(Event event) {
     markEventReceived(event.getRelatedCustomResourceID());
   }
 
-  public void markEventReceived(ResourceID resourceID) {
-    if (deleteEventPresent(resourceID)) {
+  public void markEventReceived(ObjectKey objectKey) {
+    if (deleteEventPresent(objectKey)) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
-    setEventingState(resourceID, EventingState.EVENT_PRESENT);
+    setEventingState(objectKey, EventingState.EVENT_PRESENT);
   }
 
-  public void unMarkEventReceived(ResourceID resourceID) {
-    var actualState = getEventingState(resourceID);
+  public void unMarkEventReceived(ObjectKey objectKey) {
+    var actualState = getEventingState(objectKey);
     switch (actualState) {
       case EVENT_PRESENT:
-        setEventingState(resourceID,
+        setEventingState(objectKey,
             NO_EVENT_PRESENT);
         break;
       case DELETE_EVENT_PRESENT:
@@ -62,29 +62,29 @@ class EventMarker {
     markDeleteEventReceived(event.getRelatedCustomResourceID());
   }
 
-  public void markDeleteEventReceived(ResourceID resourceID) {
-    setEventingState(resourceID, EventingState.DELETE_EVENT_PRESENT);
+  public void markDeleteEventReceived(ObjectKey objectKey) {
+    setEventingState(objectKey, EventingState.DELETE_EVENT_PRESENT);
   }
 
-  public boolean deleteEventPresent(ResourceID resourceID) {
-    return getEventingState(resourceID) == EventingState.DELETE_EVENT_PRESENT;
+  public boolean deleteEventPresent(ObjectKey objectKey) {
+    return getEventingState(objectKey) == EventingState.DELETE_EVENT_PRESENT;
   }
 
-  public boolean eventPresent(ResourceID resourceID) {
-    var actualState = getEventingState(resourceID);
+  public boolean eventPresent(ObjectKey objectKey) {
+    var actualState = getEventingState(objectKey);
     return actualState == EventingState.EVENT_PRESENT;
   }
 
-  public boolean noEventPresent(ResourceID resourceID) {
-    var actualState = getEventingState(resourceID);
+  public boolean noEventPresent(ObjectKey objectKey) {
+    var actualState = getEventingState(objectKey);
     return actualState == NO_EVENT_PRESENT;
   }
 
-  public void cleanup(ResourceID resourceID) {
-    eventingState.remove(resourceID);
+  public void cleanup(ObjectKey objectKey) {
+    eventingState.remove(objectKey);
   }
 
-  public List<ResourceID> resourceIDsWithEventPresent() {
+  public List<ObjectKey> resourceIDsWithEventPresent() {
     return eventingState.entrySet().stream()
         .filter(e -> e.getValue() != NO_EVENT_PRESENT)
         .map(Map.Entry::getKey)

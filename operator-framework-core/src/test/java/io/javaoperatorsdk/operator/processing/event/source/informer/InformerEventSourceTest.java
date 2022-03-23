@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -60,7 +60,7 @@ class InformerEventSourceTest {
     when(informerConfiguration.getPrimaryResourcesRetriever())
         .thenReturn(secondaryToPrimaryMapper);
     when(secondaryToPrimaryMapper.associatedPrimaryResources(any()))
-        .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
+        .thenReturn(Set.of(ObjectKey.fromResource(testDeployment())));
   }
 
   @Test
@@ -96,10 +96,10 @@ class InformerEventSourceTest {
 
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+        .prepareForCreateOrUpdateEventFiltering(ObjectKey.fromResource(testDeployment),
             testDeployment);
     informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+    informerEventSource.handleRecentResourceUpdate(ObjectKey.fromResource(testDeployment),
         testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
@@ -112,10 +112,10 @@ class InformerEventSourceTest {
     var testDeployment = testDeployment();
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+        .prepareForCreateOrUpdateEventFiltering(ObjectKey.fromResource(testDeployment),
             testDeployment);
     informerEventSource.onAdd(testDeployment);
-    informerEventSource.handleRecentResourceCreate(ResourceID.fromResource(testDeployment),
+    informerEventSource.handleRecentResourceCreate(ObjectKey.fromResource(testDeployment),
         testDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
@@ -131,11 +131,11 @@ class InformerEventSourceTest {
     nextTestDeployment.getMetadata().setResourceVersion(NEXT_RESOURCE_VERSION);
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+        .prepareForCreateOrUpdateEventFiltering(ObjectKey.fromResource(testDeployment),
             testDeployment);
     informerEventSource.onUpdate(prevTestDeployment, testDeployment);
     informerEventSource.onUpdate(testDeployment, nextTestDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+    informerEventSource.handleRecentResourceUpdate(ObjectKey.fromResource(testDeployment),
         testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
@@ -151,11 +151,11 @@ class InformerEventSourceTest {
     prevPrevTestDeployment.getMetadata().setResourceVersion("-1");
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+        .prepareForCreateOrUpdateEventFiltering(ObjectKey.fromResource(testDeployment),
             testDeployment);
     informerEventSource.onUpdate(prevPrevTestDeployment, prevTestDeployment);
     informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+    informerEventSource.handleRecentResourceUpdate(ObjectKey.fromResource(testDeployment),
         testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
@@ -169,9 +169,9 @@ class InformerEventSourceTest {
     prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+        .prepareForCreateOrUpdateEventFiltering(ObjectKey.fromResource(testDeployment),
             testDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+    informerEventSource.handleRecentResourceUpdate(ObjectKey.fromResource(testDeployment),
         testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());
@@ -187,10 +187,10 @@ class InformerEventSourceTest {
     prevPrevTestDeployment.getMetadata().setResourceVersion("-1");
 
     informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
+        .prepareForCreateOrUpdateEventFiltering(ObjectKey.fromResource(testDeployment),
             testDeployment);
     informerEventSource.onUpdate(prevPrevTestDeployment, prevTestDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
+    informerEventSource.handleRecentResourceUpdate(ObjectKey.fromResource(testDeployment),
         testDeployment, prevTestDeployment);
 
     verify(eventHandlerMock, times(0)).handleEvent(any());

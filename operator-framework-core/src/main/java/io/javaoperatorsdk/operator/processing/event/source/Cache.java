@@ -4,19 +4,19 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public interface Cache<T> {
   Predicate TRUE = (a) -> true;
 
-  Optional<T> get(ResourceID resourceID);
+  Optional<T> get(ObjectKey objectKey);
 
-  default boolean contains(ResourceID resourceID) {
-    return get(resourceID).isPresent();
+  default boolean contains(ObjectKey objectKey) {
+    return get(objectKey).isPresent();
   }
 
-  Stream<ResourceID> keys();
+  Stream<ObjectKey> keys();
 
   default Stream<T> list() {
     return list(TRUE);

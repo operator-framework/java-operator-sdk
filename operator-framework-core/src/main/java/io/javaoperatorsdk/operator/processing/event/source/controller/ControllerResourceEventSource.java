@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
@@ -61,7 +61,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if (filter.acceptChange(controller, oldResource, resource)) {
         getEventHandler().handleEvent(
-            new ResourceEvent(action, ResourceID.fromResource(resource)));
+            new ResourceEvent(action, ObjectKey.fromResource(resource)));
       } else {
         log.debug("Skipping event handling resource {} with version: {}", getUID(resource),
             getVersion(resource));
@@ -102,6 +102,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @Override
   public Optional<T> getAssociated(T primary) {
-    return get(ResourceID.fromResource(primary));
+    return get(ObjectKey.fromResource(primary));
   }
 }

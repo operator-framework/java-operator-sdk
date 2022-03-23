@@ -6,17 +6,17 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class ResourceID implements Serializable {
+public class ObjectKey implements Serializable {
 
-  public static ResourceID fromResource(HasMetadata resource) {
-    return new ResourceID(resource.getMetadata().getName(),
+  public static ObjectKey fromResource(HasMetadata resource) {
+    return new ObjectKey(resource.getMetadata().getName(),
         resource.getMetadata().getNamespace());
   }
 
-  public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata resource) {
+  public static Optional<ObjectKey> fromFirstOwnerReference(HasMetadata resource) {
     var ownerReferences = resource.getMetadata().getOwnerReferences();
     if (!ownerReferences.isEmpty()) {
-      return Optional.of(new ResourceID(ownerReferences.get(0).getName(),
+      return Optional.of(new ObjectKey(ownerReferences.get(0).getName(),
           resource.getMetadata().getNamespace()));
     } else {
       return Optional.empty();
@@ -26,12 +26,12 @@ public class ResourceID implements Serializable {
   private final String name;
   private final String namespace;
 
-  public ResourceID(String name, String namespace) {
+  public ObjectKey(String name, String namespace) {
     this.name = name;
     this.namespace = namespace;
   }
 
-  public ResourceID(String name) {
+  public ObjectKey(String name) {
     this(name, null);
   }
 
@@ -49,7 +49,7 @@ public class ResourceID implements Serializable {
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    ResourceID that = (ResourceID) o;
+    ObjectKey that = (ObjectKey) o;
     return Objects.equals(name, that.name) && Objects.equals(namespace,
         that.namespace);
   }

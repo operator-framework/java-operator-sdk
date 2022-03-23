@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
@@ -59,8 +59,8 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  public ResourceID associatedSecondaryID(MySQLSchema primary) {
-    return new ResourceID(
+  public ObjectKey associatedSecondaryID(MySQLSchema primary) {
+    return new ObjectKey(
         String.format(SECRET_FORMAT, primary.getMetadata().getName()),
         primary.getMetadata().getNamespace());
   }

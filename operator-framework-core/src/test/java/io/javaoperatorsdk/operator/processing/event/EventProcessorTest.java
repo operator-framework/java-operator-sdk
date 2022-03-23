@@ -84,7 +84,7 @@ class EventProcessorTest {
 
   @Test
   void ifExecutionInProgressWaitsUntilItsFinished() throws InterruptedException {
-    ResourceID resourceUid = eventAlreadyUnderProcessing();
+    ObjectKey resourceUid = eventAlreadyUnderProcessing();
 
     eventProcessor.handleEvent(nonCREvent(resourceUid));
 
@@ -178,9 +178,9 @@ class EventProcessorTest {
   }
 
   private void waitUntilProcessingFinished(EventProcessor eventProcessor,
-      ResourceID relatedCustomResourceID) {
+      ObjectKey relatedObjectKey) {
     await().atMost(Duration.ofSeconds(3))
-        .until(() -> !eventProcessor.isUnderProcessing(relatedCustomResourceID));
+        .until(() -> !eventProcessor.isUnderProcessing(relatedObjectKey));
   }
 
   @Test
@@ -201,7 +201,7 @@ class EventProcessorTest {
     doAnswer(new AnswersWithDelay(FAKE_CONTROLLER_EXECUTION_DURATION,
         new Returns(PostExecutionControl.defaultDispatch().withReSchedule(testDelay))))
             .when(reconciliationDispatcherMock).handleExecution(any());
-    var resourceId = new ResourceID("test1", "default");
+    var resourceId = new ObjectKey("test1", "default");
     eventProcessor.handleEvent(prepareCREvent(resourceId));
     Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION / 3);
     eventProcessor.handleEvent(prepareCREvent(resourceId));
@@ -221,7 +221,7 @@ class EventProcessorTest {
 
   @Test
   void cancelScheduleOnceEventsOnSuccessfulExecution() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
+    var crID = new ObjectKey("test-cr", TEST_NAMESPACE);
     var cr = testCustomResource(crID);
 
     eventProcessor.eventProcessingFinished(new ExecutionScope(cr, null),
@@ -232,7 +232,7 @@ class EventProcessorTest {
 
   @Test
   void startProcessedMarkedEventReceivedBefore() {
-    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
+    var crID = new ObjectKey("test-cr", TEST_NAMESPACE);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
             metricsMock));
@@ -262,7 +262,7 @@ class EventProcessorTest {
         any());
   }
 
-  private ResourceID eventAlreadyUnderProcessing() {
+  private ObjectKey eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
             (Answer<PostExecutionControl>) invocationOnMock -> {
@@ -275,21 +275,21 @@ class EventProcessorTest {
   }
 
   private ResourceEvent prepareCREvent() {
-    return prepareCREvent(new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
+    return prepareCREvent(new ObjectKey(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private ResourceEvent prepareCREvent(ResourceID uid) {
+  private ResourceEvent prepareCREvent(ObjectKey uid) {
     TestCustomResource customResource = testCustomResource(uid);
     when(controllerResourceEventSourceMock.get(eq(uid))).thenReturn(Optional.of(customResource));
     return new ResourceEvent(ResourceAction.UPDATED,
-        ResourceID.fromResource(customResource));
+        ObjectKey.fromResource(customResource));
   }
 
-  private Event nonCREvent(ResourceID relatedCustomResourceUid) {
+  private Event nonCREvent(ObjectKey relatedCustomResourceUid) {
     return new Event(relatedCustomResourceUid);
   }
 
-  private void overrideData(ResourceID id, HasMetadata applyTo) {
+  private void overrideData(ObjectKey id, HasMetadata applyTo) {
     applyTo.getMetadata().setName(id.getName());
     applyTo.getMetadata().setNamespace(id.getNamespace().orElse(null));
   }

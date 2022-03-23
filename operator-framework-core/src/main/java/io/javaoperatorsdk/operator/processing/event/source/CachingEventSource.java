@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 /**
  * Base class for event sources with caching capabilities.
@@ -24,17 +24,17 @@ public abstract class CachingEventSource<R, P extends HasMetadata>
   }
 
   @Override
-  public Optional<R> get(ResourceID resourceID) {
-    return cache.get(resourceID);
+  public Optional<R> get(ObjectKey objectKey) {
+    return cache.get(objectKey);
   }
 
   @Override
-  public boolean contains(ResourceID resourceID) {
-    return cache.contains(resourceID);
+  public boolean contains(ObjectKey objectKey) {
+    return cache.contains(objectKey);
   }
 
   @Override
-  public Stream<ResourceID> keys() {
+  public Stream<ObjectKey> keys() {
     return cache.keys();
   }
 
@@ -49,13 +49,13 @@ public abstract class CachingEventSource<R, P extends HasMetadata>
     return new ConcurrentHashMapCache<>();
   }
 
-  public Optional<R> getCachedValue(ResourceID resourceID) {
-    return cache.get(resourceID);
+  public Optional<R> getCachedValue(ObjectKey objectKey) {
+    return cache.get(objectKey);
   }
 
   @Override
   public Optional<R> getAssociated(P primary) {
-    return cache.get(ResourceID.fromResource(primary));
+    return cache.get(ObjectKey.fromResource(primary));
   }
 
 }

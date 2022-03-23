@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
@@ -108,14 +108,14 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   @Override
-  public Optional<T> get(ResourceID resourceID) {
-    return getSource(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
-        .flatMap(source -> source.get(resourceID))
+  public Optional<T> get(ObjectKey objectKey) {
+    return getSource(objectKey.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
+        .flatMap(source -> source.get(objectKey))
         .map(cloner::clone);
   }
 
   @Override
-  public Stream<ResourceID> keys() {
+  public Stream<ObjectKey> keys() {
     return sources.values().stream().flatMap(Cache::keys);
   }
 
@@ -129,14 +129,14 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   @Override
-  public T remove(ResourceID key) {
+  public T remove(ObjectKey key) {
     return getSource(key.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
         .map(c -> c.remove(key))
         .orElse(null);
   }
 
   @Override
-  public void put(ResourceID key, T resource) {
+  public void put(ObjectKey key, T resource) {
     getSource(key.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
         .ifPresentOrElse(c -> c.put(key, resource),
             () -> log.warn(

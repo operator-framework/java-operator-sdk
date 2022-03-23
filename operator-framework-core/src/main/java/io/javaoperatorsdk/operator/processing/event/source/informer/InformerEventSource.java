@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 /**
@@ -95,7 +95,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
-    var resourceID = ResourceID.fromResource(newObject);
+    var resourceID = ObjectKey.fromResource(newObject);
     if (eventRecorder.isRecordingFor(resourceID)) {
       log.info("Recording event for: " + resourceID);
       eventRecorder.recordEvent(newObject);
@@ -105,7 +105,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
           operation,
-          ResourceID.fromResource(newObject));
+          ObjectKey.fromResource(newObject));
       superOnOp.run();
     } else {
       superOnOp.run();
@@ -162,21 +162,21 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public synchronized void handleRecentResourceUpdate(ObjectKey objectKey, R resource,
       R previousResourceVersion) {
     handleRecentCreateOrUpdate(resource,
-        () -> super.handleRecentResourceUpdate(resourceID, resource,
+        () -> super.handleRecentResourceUpdate(objectKey, resource,
             previousResourceVersion));
   }
 
   @Override
-  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public synchronized void handleRecentResourceCreate(ObjectKey objectKey, R resource) {
     handleRecentCreateOrUpdate(resource,
-        () -> super.handleRecentResourceCreate(resourceID, resource));
+        () -> super.handleRecentResourceCreate(objectKey, resource));
   }
 
   private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
-    if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
+    if (eventRecorder.isRecordingFor(ObjectKey.fromResource(resource))) {
       handleRecentResourceOperationAndStopEventRecording(resource);
     } else {
       runnable.run();
@@ -201,31 +201,31 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * @param resource just created or updated resource
    */
   private void handleRecentResourceOperationAndStopEventRecording(R resource) {
-    ResourceID resourceID = ResourceID.fromResource(resource);
+    ObjectKey objectKey = ObjectKey.fromResource(resource);
     try {
       if (!eventRecorder.containsEventWithResourceVersion(
-          resourceID, resource.getMetadata().getResourceVersion())) {
+          objectKey, resource.getMetadata().getResourceVersion())) {
         log.debug(
-            "Did not found event in buffer with target version and resource id: {}", resourceID);
+            "Did not found event in buffer with target version and resource id: {}", objectKey);
         temporaryResourceCache.unconditionallyCacheResource(resource);
       } else if (eventRecorder.containsEventWithVersionButItsNotLastOne(
-          resourceID, resource.getMetadata().getResourceVersion())) {
-        R lastEvent = eventRecorder.getLastEvent(resourceID);
+          objectKey, resource.getMetadata().getResourceVersion())) {
+        R lastEvent = eventRecorder.getLastEvent(objectKey);
         log.debug(
             "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
-            resourceID);
+            objectKey);
         propagateEvent(lastEvent);
       }
     } finally {
-      eventRecorder.stopEventRecording(resourceID);
+      eventRecorder.stopEventRecording(objectKey);
     }
   }
 
   @Override
-  public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
+  public synchronized void prepareForCreateOrUpdateEventFiltering(ObjectKey objectKey,
       R resource) {
-    log.info("Starting event recording for: {}", resourceID);
-    eventRecorder.startEventRecording(resourceID);
+    log.info("Starting event recording for: {}", objectKey);
+    eventRecorder.startEventRecording(objectKey);
   }
 
   /**
@@ -235,10 +235,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * @param resource handled by the informer
    */
   @Override
-  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID,
+  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ObjectKey objectKey,
       R resource) {
-    log.info("Stopping event recording for: {}", resourceID);
-    eventRecorder.stopEventRecording(resourceID);
+    log.info("Stopping event recording for: {}", objectKey);
+    eventRecorder.stopEventRecording(objectKey);
   }
 
 }

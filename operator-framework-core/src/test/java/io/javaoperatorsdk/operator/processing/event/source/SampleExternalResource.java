@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.source;
 import java.io.Serializable;
 import java.util.Objects;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public class SampleExternalResource implements Serializable {
 
@@ -20,12 +20,12 @@ public class SampleExternalResource implements Serializable {
     return new SampleExternalResource(NAME_2, DEFAULT_VALUE_2);
   }
 
-  public static ResourceID testResource1ID() {
-    return new ResourceID(NAME_1, "testns");
+  public static ObjectKey testResource1ID() {
+    return new ObjectKey(NAME_1, "testns");
   }
 
-  public static ResourceID testResource2ID() {
-    return new ResourceID(NAME_2, "testns");
+  public static ObjectKey testResource2ID() {
+    return new ObjectKey(NAME_2, "testns");
   }
 
   private String name;

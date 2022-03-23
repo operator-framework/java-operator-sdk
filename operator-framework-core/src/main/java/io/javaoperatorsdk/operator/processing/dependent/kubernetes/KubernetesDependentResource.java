@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesCl
 import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -67,7 +67,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     final PrimaryToSecondaryMapper<P> secondaryResourceIdentifier =
         (this instanceof PrimaryToSecondaryMapper)
             ? (PrimaryToSecondaryMapper<P>) this
-            : ResourceID::fromResource;
+            : ObjectKey::fromResource;
     InformerConfiguration<R, P> ic =
         InformerConfiguration.from(resourceType())
             .withLabelSelector(labelSelector)
@@ -117,7 +117,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
         desired.getClass(),
-        ResourceID.fromResource(desired));
+        ObjectKey.fromResource(desired));
     if (addOwnerReference) {
       desired.addOwnerReference(primary);
     }

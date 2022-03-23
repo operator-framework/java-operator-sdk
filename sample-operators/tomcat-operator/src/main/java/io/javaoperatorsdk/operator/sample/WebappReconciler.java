@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -48,14 +48,14 @@ public class WebappReconciler
     final SecondaryToPrimaryMapper<Tomcat> webappsMatchingTomcatName =
         (Tomcat t) -> context.getPrimaryCache()
             .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-            .map(ResourceID::fromResource)
+            .map(ObjectKey::fromResource)
             .collect(Collectors.toSet());
 
     /*
      * We retrieve the Tomcat instance associated with out Webapp from its spec
      */
     final PrimaryToSecondaryMapper<Webapp> tomcatFromWebAppSpec =
-        (Webapp webapp) -> new ResourceID(
+        (Webapp webapp) -> new ObjectKey(
             webapp.getSpec().getTomcat(),
             webapp.getMetadata().getNamespace());
 

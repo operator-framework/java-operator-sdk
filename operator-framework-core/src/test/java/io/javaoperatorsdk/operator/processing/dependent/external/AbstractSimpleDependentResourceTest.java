@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -74,11 +74,11 @@ class AbstractSimpleDependentResourceTest {
     simpleDependentResource.reconcile(TestUtils.testCustomResource1(), null);
 
     verify(updatableCacheMock, times(1))
-        .put(ResourceID.fromResource(TestUtils.testCustomResource1()), actual);
+        .put(ObjectKey.fromResource(TestUtils.testCustomResource1()), actual);
 
     verify(updatableCacheMock, times(1))
         .put(
-            ResourceID.fromResource(TestUtils.testCustomResource1()),
+            ObjectKey.fromResource(TestUtils.testCustomResource1()),
             SampleExternalResource.testResource1());
   }
 

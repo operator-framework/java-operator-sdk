@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourceTest.CapturingEventHandler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -50,7 +50,7 @@ class TimerEventSourceTest
     TestCustomResource customResource = TestUtils.testCustomResource();
 
     source.scheduleOnce(customResource, PERIOD);
-    source.cancelOnceSchedule(ResourceID.fromResource(customResource));
+    source.cancelOnceSchedule(ObjectKey.fromResource(customResource));
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }

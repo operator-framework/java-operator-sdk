@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
@@ -22,14 +22,14 @@ public class TimerEventSource<R extends HasMetadata>
 
   private final Timer timer = new Timer();
   private final AtomicBoolean running = new AtomicBoolean();
-  private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
+  private final Map<ObjectKey, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
 
   public void scheduleOnce(R resource, long delay) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
-    ResourceID resourceUid = ResourceID.fromResource(resource);
+    ObjectKey resourceUid = ObjectKey.fromResource(resource);
     if (onceTasks.containsKey(resourceUid)) {
       cancelOnceSchedule(resourceUid);
     }
@@ -40,10 +40,10 @@ public class TimerEventSource<R extends HasMetadata>
 
   @Override
   public void onResourceDeleted(R resource) {
-    cancelOnceSchedule(ResourceID.fromResource(resource));
+    cancelOnceSchedule(ObjectKey.fromResource(resource));
   }
 
-  public void cancelOnceSchedule(ResourceID customResourceUid) {
+  public void cancelOnceSchedule(ObjectKey customResourceUid) {
     TimerTask timerTask = onceTasks.remove(customResourceUid);
     if (timerTask != null) {
       timerTask.cancel();
@@ -64,9 +64,9 @@ public class TimerEventSource<R extends HasMetadata>
 
   public class EventProducerTimeTask extends TimerTask {
 
-    protected final ResourceID customResourceUid;
+    protected final ObjectKey customResourceUid;
 
-    public EventProducerTimeTask(ResourceID customResourceUid) {
+    public EventProducerTimeTask(ObjectKey customResourceUid) {
       this.customResourceUid = customResourceUid;
     }
 

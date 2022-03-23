@@ -6,18 +6,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public class ConcurrentHashMapCache<T> implements UpdatableCache<T> {
-  private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  private final Map<ObjectKey, T> cache = new ConcurrentHashMap<>();
 
   @Override
-  public Optional<T> get(ResourceID resourceID) {
-    return Optional.ofNullable(cache.get(resourceID));
+  public Optional<T> get(ObjectKey objectKey) {
+    return Optional.ofNullable(cache.get(objectKey));
   }
 
   @Override
-  public Stream<ResourceID> keys() {
+  public Stream<ObjectKey> keys() {
     return cache.keySet().stream();
   }
 
@@ -27,12 +27,12 @@ public class ConcurrentHashMapCache<T> implements UpdatableCache<T> {
   }
 
   @Override
-  public T remove(ResourceID key) {
+  public T remove(ObjectKey key) {
     return cache.remove(key);
   }
 
   @Override
-  public void put(ResourceID key, T resource) {
+  public void put(ObjectKey key, T resource) {
     cache.put(key, resource);
   }
 }

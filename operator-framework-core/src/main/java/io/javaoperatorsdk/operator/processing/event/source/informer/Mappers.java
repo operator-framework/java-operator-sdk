@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
 public class Mappers {
@@ -32,7 +32,7 @@ public class Mappers {
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference() {
-    return resource -> ResourceID.fromFirstOwnerReference(resource).map(Set::of)
+    return resource -> ObjectKey.fromFirstOwnerReference(resource).map(Set::of)
         .orElse(Collections.emptySet());
   }
 
@@ -53,12 +53,12 @@ public class Mappers {
         }
         var namespace =
             namespaceKey == null ? resource.getMetadata().getNamespace() : map.get(namespaceKey);
-        return Set.of(new ResourceID(name, namespace));
+        return Set.of(new ObjectKey(name, namespace));
       }
     };
   }
 
-  public static ResourceID fromString(String cacheKey) {
+  public static ObjectKey fromString(String cacheKey) {
     if (cacheKey == null) {
       return null;
     }
@@ -66,9 +66,9 @@ public class Mappers {
     final String[] split = cacheKey.split("/");
     switch (split.length) {
       case 1:
-        return new ResourceID(split[0]);
+        return new ObjectKey(split[0]);
       case 2:
-        return new ResourceID(split[1], split[0]);
+        return new ObjectKey(split[1], split[0]);
       default:
         throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
     }

@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public interface UpdatableCache<T> extends Cache<T> {
-  T remove(ResourceID key);
+  T remove(ObjectKey key);
 
-  void put(ResourceID key, T resource);
+  void put(ObjectKey key, T resource);
 }

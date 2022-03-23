@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 /**
  * <p>
@@ -34,7 +34,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
-  private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  private final Map<ObjectKey, T> cache = new ConcurrentHashMap<>();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
   public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
@@ -42,25 +42,25 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public synchronized void removeResourceFromCache(T resource) {
-    cache.remove(ResourceID.fromResource(resource));
+    cache.remove(ObjectKey.fromResource(resource));
   }
 
   public synchronized void unconditionallyCacheResource(T newResource) {
-    cache.put(ResourceID.fromResource(newResource), newResource);
+    cache.put(ObjectKey.fromResource(newResource), newResource);
   }
 
   public synchronized void putAddedResource(T newResource) {
-    ResourceID resourceID = ResourceID.fromResource(newResource);
-    if (managedInformerEventSource.get(resourceID).isEmpty()) {
-      log.debug("Putting resource to cache with ID: {}", resourceID);
-      cache.put(ResourceID.fromResource(newResource), newResource);
+    ObjectKey objectKey = ObjectKey.fromResource(newResource);
+    if (managedInformerEventSource.get(objectKey).isEmpty()) {
+      log.debug("Putting resource to cache with ID: {}", objectKey);
+      cache.put(ObjectKey.fromResource(newResource), newResource);
     } else {
-      log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
+      log.debug("Won't put resource into cache found already informer cache: {}", objectKey);
     }
   }
 
   public synchronized void putUpdatedResource(T newResource, String previousResourceVersion) {
-    var resourceId = ResourceID.fromResource(newResource);
+    var resourceId = ObjectKey.fromResource(newResource);
     var informerCacheResource = managedInformerEventSource.get(resourceId);
     if (informerCacheResource.isEmpty()) {
       log.debug("No cached value present for resource: {}", newResource);
@@ -77,7 +77,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-  public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
-    return Optional.ofNullable(cache.get(resourceID));
+  public synchronized Optional<T> getResourceFromCache(ObjectKey objectKey) {
+    return Optional.ofNullable(cache.get(objectKey));
   }
 }

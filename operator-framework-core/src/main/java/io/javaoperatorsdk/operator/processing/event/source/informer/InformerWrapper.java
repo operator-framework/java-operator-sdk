@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
@@ -34,17 +34,17 @@ class InformerWrapper<T extends HasMetadata>
   }
 
   @Override
-  public Optional<T> get(ResourceID resourceID) {
-    return cache.get(resourceID);
+  public Optional<T> get(ObjectKey objectKey) {
+    return cache.get(objectKey);
   }
 
   @Override
-  public boolean contains(ResourceID resourceID) {
-    return cache.contains(resourceID);
+  public boolean contains(ObjectKey objectKey) {
+    return cache.contains(objectKey);
   }
 
   @Override
-  public Stream<ResourceID> keys() {
+  public Stream<ObjectKey> keys() {
     return cache.keys();
   }
 
@@ -73,12 +73,12 @@ class InformerWrapper<T extends HasMetadata>
   }
 
   @Override
-  public T remove(ResourceID key) {
+  public T remove(ObjectKey key) {
     return cache.remove(key);
   }
 
   @Override
-  public void put(ResourceID key, T resource) {
+  public void put(ObjectKey key, T resource) {
     cache.put(key, resource);
   }
 

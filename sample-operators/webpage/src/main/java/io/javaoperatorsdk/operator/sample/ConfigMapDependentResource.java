@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
@@ -59,7 +59,7 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
   }
 
   @Override
-  public ResourceID associatedSecondaryID(WebPage primary) {
-    return new ResourceID(configMapName(primary), primary.getMetadata().getNamespace());
+  public ObjectKey associatedSecondaryID(WebPage primary) {
+    return new ObjectKey(configMapName(primary), primary.getMetadata().getNamespace());
   }
 }

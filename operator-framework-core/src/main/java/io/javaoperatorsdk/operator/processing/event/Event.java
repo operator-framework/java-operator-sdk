@@ -4,13 +4,13 @@ import java.util.Objects;
 
 public class Event {
 
-  private final ResourceID relatedCustomResource;
+  private final ObjectKey relatedCustomResource;
 
-  public Event(ResourceID targetCustomResource) {
+  public Event(ObjectKey targetCustomResource) {
     this.relatedCustomResource = targetCustomResource;
   }
 
-  public ResourceID getRelatedCustomResourceID() {
+  public ObjectKey getRelatedCustomResourceID() {
     return relatedCustomResource;
   }
 

@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.Cloner;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -47,21 +46,21 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
   }
 
   @Override
-  public Optional<T> get(ResourceID resourceID) {
+  public Optional<T> get(ObjectKey objectKey) {
     var sharedIndexInformer = sharedIndexInformers.get(ANY_NAMESPACE_MAP_KEY);
     if (sharedIndexInformer == null) {
       sharedIndexInformer =
-          sharedIndexInformers.get(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
+          sharedIndexInformers.get(objectKey.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY));
     }
     if (sharedIndexInformer == null) {
       throw new OperatorException(
-          "Cannot find informer for ResourceID: " + resourceID + ". This is usually " +
+          "Cannot find informer for ResourceID: " + objectKey + ". This is usually " +
               "due to invalid resource id mapping for registered informers.");
     }
     var resource = sharedIndexInformer.getStore()
         .getByKey(io.fabric8.kubernetes.client.informers.cache.Cache.namespaceKeyFunc(
-            resourceID.getNamespace().orElse(null),
-            resourceID.getName()));
+            objectKey.getNamespace().orElse(null),
+            objectKey.getName()));
     if (resource == null) {
       return Optional.empty();
     } else {
@@ -70,7 +69,7 @@ public class ControllerResourceCache<T extends HasMetadata> implements ResourceC
   }
 
   @Override
-  public Stream<ResourceID> keys() {
+  public Stream<ObjectKey> keys() {
     return sharedIndexInformers.values().stream()
         .flatMap(i -> i.getStore().listKeys().stream().map(Mappers::fromString));
   }

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
@@ -89,7 +89,7 @@ class PerResourcePollingEventSourceTest extends
 
     Thread.sleep(PERIOD / 2);
 
-    var value = source.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
+    var value = source.getValueFromCacheOrSupplier(ObjectKey.fromResource(testCustomResource));
 
     Thread.sleep(PERIOD * 2);
 

@@ -1,15 +1,15 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public class ResourceEvent extends Event {
 
   private final ResourceAction action;
 
   public ResourceEvent(ResourceAction action,
-      ResourceID resourceID) {
-    super(resourceID);
+      ObjectKey objectKey) {
+    super(objectKey);
     this.action = action;
   }
 

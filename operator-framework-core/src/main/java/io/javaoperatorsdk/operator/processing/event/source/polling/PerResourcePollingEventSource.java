@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
@@ -36,7 +36,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
   private final Timer timer = new Timer();
-  private final Map<ResourceID, TimerTask> timerTasks = new ConcurrentHashMap<>();
+  private final Map<ObjectKey, TimerTask> timerTasks = new ConcurrentHashMap<>();
   private final ResourceFetcher<R, P> resourceFetcher;
   private final Cache<P> resourceCache;
   private final Predicate<P> registerPredicate;
@@ -59,7 +59,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   private void pollForResource(P resource) {
     var value = resourceFetcher.fetchResource(resource);
-    var resourceID = ResourceID.fromResource(resource);
+    var resourceID = ObjectKey.fromResource(resource);
     if (value.isEmpty()) {
       super.handleDelete(resourceID);
     } else {
@@ -67,11 +67,11 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     }
   }
 
-  private Optional<R> getAndCacheResource(ResourceID resourceID) {
-    var resource = resourceCache.get(resourceID);
+  private Optional<R> getAndCacheResource(ObjectKey objectKey) {
+    var resource = resourceCache.get(objectKey);
     if (resource.isPresent()) {
       var value = resourceFetcher.fetchResource(resource.get());
-      value.ifPresent(v -> cache.put(resourceID, v));
+      value.ifPresent(v -> cache.put(objectKey, v));
       return value;
     }
     return Optional.empty();
@@ -89,7 +89,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   @Override
   public void onResourceDeleted(P resource) {
-    var resourceID = ResourceID.fromResource(resource);
+    var resourceID = ObjectKey.fromResource(resource);
     TimerTask task = timerTasks.remove(resourceID);
     if (task != null) {
       log.debug("Canceling task for resource: {}", resource);
@@ -103,7 +103,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   // important
   // because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
-    var resourceID = ResourceID.fromResource(resource);
+    var resourceID = ObjectKey.fromResource(resource);
     if (timerTasks.get(resourceID) == null && (registerPredicate == null
         || registerPredicate.test(resource))) {
       var task = new TimerTask() {
@@ -133,22 +133,22 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
    */
   @Override
   public Optional<R> getAssociated(P primary) {
-    return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
+    return getValueFromCacheOrSupplier(ObjectKey.fromResource(primary));
   }
 
   /**
    *
-   * @param resourceID of the target related resource
+   * @param objectKey of the target related resource
    * @return the cached value of the resource, if not present it gets the resource from the
    *         supplier. The value provided from the supplier is cached, but no new event is
    *         propagated.
    */
-  public Optional<R> getValueFromCacheOrSupplier(ResourceID resourceID) {
-    var cachedValue = getCachedValue(resourceID);
+  public Optional<R> getValueFromCacheOrSupplier(ObjectKey objectKey) {
+    var cachedValue = getCachedValue(objectKey);
     if (cachedValue.isPresent()) {
       return cachedValue;
     } else {
-      return getAndCacheResource(resourceID);
+      return getAndCacheResource(objectKey);
     }
   }
 

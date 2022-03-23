@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
@@ -21,12 +21,12 @@ class InformerResourceCache<T extends HasMetadata> implements ResourceCache<T>, 
   }
 
   @Override
-  public Optional<T> get(ResourceID resourceID) {
-    return Optional.ofNullable(cache.getByKey(getKey(resourceID)));
+  public Optional<T> get(ObjectKey objectKey) {
+    return Optional.ofNullable(cache.getByKey(getKey(objectKey)));
   }
 
-  private String getKey(ResourceID resourceID) {
-    return Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null), resourceID.getName());
+  private String getKey(ObjectKey objectKey) {
+    return Cache.namespaceKeyFunc(objectKey.getNamespace().orElse(null), objectKey.getName());
   }
 
   @Override
@@ -42,19 +42,19 @@ class InformerResourceCache<T extends HasMetadata> implements ResourceCache<T>, 
   }
 
   @Override
-  public Stream<ResourceID> keys() {
+  public Stream<ObjectKey> keys() {
     return cache.listKeys().stream().map(Mappers::fromString);
   }
 
   @Override
-  public T remove(ResourceID key) {
+  public T remove(ObjectKey key) {
     return cache.remove(cache.getByKey(getKey(key)));
   }
 
   @Override
-  public void put(ResourceID key, T resource) {
+  public void put(ObjectKey key, T resource) {
     // check that key matches the resource
-    final var fromResource = ResourceID.fromResource(resource);
+    final var fromResource = ObjectKey.fromResource(resource);
     if (!Objects.equals(key, fromResource)) {
       throw new IllegalArgumentException(
           "Key and resource don't match. Key: " + key + ", resource: " + fromResource);

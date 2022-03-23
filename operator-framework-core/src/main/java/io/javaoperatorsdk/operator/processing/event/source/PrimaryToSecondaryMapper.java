@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 @FunctionalInterface
 public interface PrimaryToSecondaryMapper<P extends HasMetadata> {
-  ResourceID associatedSecondaryID(P primary);
+  ObjectKey associatedSecondaryID(P primary);
 }

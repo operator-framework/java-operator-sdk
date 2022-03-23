@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +30,7 @@ class TemporaryResourceCacheTest {
 
     temporaryResourceCache.putUpdatedResource(testResource, "0");
 
-    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ObjectKey.fromResource(testResource));
     assertThat(cached).isPresent();
   }
 
@@ -43,7 +43,7 @@ class TemporaryResourceCacheTest {
 
     temporaryResourceCache.putUpdatedResource(testResource, "0");
 
-    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ObjectKey.fromResource(testResource));
     assertThat(cached).isNotPresent();
   }
 
@@ -54,7 +54,7 @@ class TemporaryResourceCacheTest {
 
     temporaryResourceCache.putAddedResource(testResource);
 
-    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ObjectKey.fromResource(testResource));
     assertThat(cached).isPresent();
   }
 
@@ -65,7 +65,7 @@ class TemporaryResourceCacheTest {
 
     temporaryResourceCache.putAddedResource(testResource);
 
-    var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
+    var cached = temporaryResourceCache.getResourceFromCache(ObjectKey.fromResource(testResource));
     assertThat(cached).isNotPresent();
   }
 
@@ -75,7 +75,7 @@ class TemporaryResourceCacheTest {
 
     temporaryResourceCache.removeResourceFromCache(testResource());
 
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+    assertThat(temporaryResourceCache.getResourceFromCache(ObjectKey.fromResource(testResource)))
         .isNotPresent();
   }
 
@@ -83,7 +83,7 @@ class TemporaryResourceCacheTest {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.empty());
     temporaryResourceCache.putAddedResource(testResource);
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+    assertThat(temporaryResourceCache.getResourceFromCache(ObjectKey.fromResource(testResource)))
         .isPresent();
     return testResource;
   }

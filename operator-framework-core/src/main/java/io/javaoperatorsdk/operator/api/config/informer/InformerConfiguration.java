@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -33,7 +33,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
           Objects.requireNonNullElse(secondaryToPrimaryResourcesIdSet,
               Mappers.fromOwnerReference());
       this.associatedWith =
-          Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
+          Objects.requireNonNullElseGet(associatedWith, () -> ObjectKey::fromResource);
     }
 
 

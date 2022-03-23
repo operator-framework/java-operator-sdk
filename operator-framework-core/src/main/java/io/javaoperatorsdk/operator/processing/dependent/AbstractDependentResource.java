@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.*;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
@@ -59,56 +59,56 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(primary);
+    ObjectKey objectKey = ObjectKey.fromResource(primary);
     R created = null;
     try {
-      prepareEventFiltering(desired, resourceID);
+      prepareEventFiltering(desired, objectKey);
       created = creator.create(desired, primary, context);
-      cacheAfterCreate(resourceID, created);
+      cacheAfterCreate(objectKey, created);
       return created;
     } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(desired, resourceID, created);
+      cleanupAfterEventFiltering(desired, objectKey, created);
       throw e;
     }
   }
 
-  private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
+  private void cleanupAfterEventFiltering(R desired, ObjectKey objectKey, R created) {
     if (isFilteringEventSource()) {
       eventSourceAsRecentOperationEventFilter()
-          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created);
+          .cleanupOnCreateOrUpdateEventFiltering(objectKey, created);
     }
   }
 
-  private void cacheAfterCreate(ResourceID resourceID, R created) {
+  private void cacheAfterCreate(ObjectKey objectKey, R created) {
     if (isRecentOperationCacheFiller()) {
-      eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
+      eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(objectKey, created);
     }
   }
 
-  private void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
+  private void cacheAfterUpdate(R actual, ObjectKey objectKey, R updated) {
     if (isRecentOperationCacheFiller()) {
-      eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
+      eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(objectKey, updated,
           actual);
     }
   }
 
-  private void prepareEventFiltering(R desired, ResourceID resourceID) {
+  private void prepareEventFiltering(R desired, ObjectKey objectKey) {
     if (isFilteringEventSource()) {
-      eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
+      eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(objectKey,
           desired);
     }
   }
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(primary);
+    ObjectKey objectKey = ObjectKey.fromResource(primary);
     R updated = null;
     try {
-      prepareEventFiltering(desired, resourceID);
+      prepareEventFiltering(desired, objectKey);
       updated = updater.update(actual, desired, primary, context);
-      cacheAfterUpdate(actual, resourceID, updated);
+      cacheAfterUpdate(actual, objectKey, updated);
       return updated;
     } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(desired, resourceID, updated);
+      cleanupAfterEventFiltering(desired, objectKey, updated);
       throw e;
     }
   }

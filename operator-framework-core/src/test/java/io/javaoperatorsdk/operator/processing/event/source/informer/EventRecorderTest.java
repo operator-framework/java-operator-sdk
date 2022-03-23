@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,7 +17,7 @@ class EventRecorderTest {
   ConfigMap testConfigMap = testConfigMap(RESOURCE_VERSION);
   ConfigMap testConfigMap2 = testConfigMap(RESOURCE_VERSION1);
 
-  ResourceID id = ResourceID.fromResource(testConfigMap);
+  ObjectKey id = ObjectKey.fromResource(testConfigMap);
 
   @Test
   void recordsEvents() {

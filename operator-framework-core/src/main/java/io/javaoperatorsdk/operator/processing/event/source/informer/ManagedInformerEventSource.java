@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
@@ -70,40 +70,40 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
+  public void handleRecentResourceUpdate(ObjectKey objectKey, R resource,
       R previousResourceVersion) {
     temporaryResourceCache.putUpdatedResource(resource,
         previousResourceVersion.getMetadata().getResourceVersion());
   }
 
   @Override
-  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public void handleRecentResourceCreate(ObjectKey objectKey, R resource) {
     temporaryResourceCache.putAddedResource(resource);
   }
 
   @Override
-  public Optional<R> get(ResourceID resourceID) {
-    Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
+  public Optional<R> get(ObjectKey objectKey) {
+    Optional<R> resource = temporaryResourceCache.getResourceFromCache(objectKey);
     if (resource.isPresent()) {
-      log.debug("Resource found in temporal cache for Resource ID: {}", resourceID);
+      log.debug("Resource found in temporal cache for Resource ID: {}", objectKey);
       return resource;
     } else {
-      return super.get(resourceID);
+      return super.get(objectKey);
     }
   }
 
   @Override
   public Optional<R> getAssociated(P primary) {
-    return get(ResourceID.fromResource(primary));
+    return get(ObjectKey.fromResource(primary));
   }
 
   @Override
-  public Optional<R> getCachedValue(ResourceID resourceID) {
-    return get(resourceID);
+  public Optional<R> getCachedValue(ObjectKey objectKey) {
+    return get(objectKey);
   }
 
   protected boolean temporalCacheHasResourceWithVersionAs(R resource) {
-    var resourceID = ResourceID.fromResource(resource);
+    var resourceID = ObjectKey.fromResource(resource);
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
     return res.map(r -> {
       boolean resVersionsEqual = r.getMetadata().getResourceVersion()

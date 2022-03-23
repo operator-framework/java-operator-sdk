@@ -8,71 +8,71 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EventMarkerTest {
 
   private final EventMarker eventMarker = new EventMarker();
-  private ResourceID sampleResourceID = new ResourceID("test-name");
-  private ResourceID sampleResourceID2 = new ResourceID("test-name2");
+  private ObjectKey sampleObjectKey = new ObjectKey("test-name");
+  private ObjectKey sampleObjectKey2 = new ObjectKey("test-name2");
 
   @Test
   public void returnsNoEventPresentIfNotMarkedYet() {
-    assertThat(eventMarker.noEventPresent(sampleResourceID)).isTrue();
+    assertThat(eventMarker.noEventPresent(sampleObjectKey)).isTrue();
   }
 
   @Test
   public void marksEvent() {
-    eventMarker.markEventReceived(sampleResourceID);
+    eventMarker.markEventReceived(sampleObjectKey);
 
-    assertThat(eventMarker.eventPresent(sampleResourceID)).isTrue();
-    assertThat(eventMarker.deleteEventPresent(sampleResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleObjectKey)).isTrue();
+    assertThat(eventMarker.deleteEventPresent(sampleObjectKey)).isFalse();
   }
 
   @Test
   public void marksDeleteEvent() {
-    eventMarker.markDeleteEventReceived(sampleResourceID);
+    eventMarker.markDeleteEventReceived(sampleObjectKey);
 
-    assertThat(eventMarker.deleteEventPresent(sampleResourceID))
+    assertThat(eventMarker.deleteEventPresent(sampleObjectKey))
         .isTrue();
-    assertThat(eventMarker.eventPresent(sampleResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleObjectKey)).isFalse();
   }
 
   @Test
   public void afterDeleteEventMarkEventIsNotRelevant() {
-    eventMarker.markEventReceived(sampleResourceID);
+    eventMarker.markEventReceived(sampleObjectKey);
 
-    eventMarker.markDeleteEventReceived(sampleResourceID);
+    eventMarker.markDeleteEventReceived(sampleObjectKey);
 
-    assertThat(eventMarker.deleteEventPresent(sampleResourceID))
+    assertThat(eventMarker.deleteEventPresent(sampleObjectKey))
         .isTrue();
-    assertThat(eventMarker.eventPresent(sampleResourceID)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleObjectKey)).isFalse();
   }
 
   @Test
   public void cleansUp() {
-    eventMarker.markEventReceived(sampleResourceID);
-    eventMarker.markDeleteEventReceived(sampleResourceID);
+    eventMarker.markEventReceived(sampleObjectKey);
+    eventMarker.markDeleteEventReceived(sampleObjectKey);
 
-    eventMarker.cleanup(sampleResourceID);
+    eventMarker.cleanup(sampleObjectKey);
 
-    assertThat(eventMarker.deleteEventPresent(sampleResourceID)).isFalse();
-    assertThat(eventMarker.eventPresent(sampleResourceID)).isFalse();
+    assertThat(eventMarker.deleteEventPresent(sampleObjectKey)).isFalse();
+    assertThat(eventMarker.eventPresent(sampleObjectKey)).isFalse();
   }
 
   @Test
   public void cannotMarkEventAfterDeleteEventReceived() {
     Assertions.assertThrows(IllegalStateException.class, () -> {
-      eventMarker.markDeleteEventReceived(sampleResourceID);
-      eventMarker.markEventReceived(sampleResourceID);
+      eventMarker.markDeleteEventReceived(sampleObjectKey);
+      eventMarker.markEventReceived(sampleObjectKey);
     });
   }
 
   @Test
   public void listsResourceIDSWithEventsPresent() {
-    eventMarker.markEventReceived(sampleResourceID);
-    eventMarker.markEventReceived(sampleResourceID2);
-    eventMarker.unMarkEventReceived(sampleResourceID);
+    eventMarker.markEventReceived(sampleObjectKey);
+    eventMarker.markEventReceived(sampleObjectKey2);
+    eventMarker.unMarkEventReceived(sampleObjectKey);
 
     var res = eventMarker.resourceIDsWithEventPresent();
 
     assertThat(res).hasSize(1);
-    assertThat(res).contains(sampleResourceID2);
+    assertThat(res).contains(sampleObjectKey2);
   }
 
 }

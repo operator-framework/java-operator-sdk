@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 /**
  * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * Another caveat with this is if the cached object is checked in the reconciler and created since
  * not in the cache it should be manually added to the cache, since it can happen that the
  * reconciler is triggered before the cache is propagated with the new resource from a scheduled
- * execution. See {@link #put(ResourceID, Object)} method. So the generic workflow in reconciler
+ * execution. See {@link #put(ObjectKey, Object)} method. So the generic workflow in reconciler
  * should be:
  *
  * <ul>
@@ -43,10 +43,10 @@ public class PollingEventSource<R, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
   private final Timer timer = new Timer();
-  private final Supplier<Map<ResourceID, R>> supplierToPoll;
+  private final Supplier<Map<ObjectKey, R>> supplierToPoll;
   private final long period;
 
-  public PollingEventSource(Supplier<Map<ResourceID, R>> supplier,
+  public PollingEventSource(Supplier<Map<ObjectKey, R>> supplier,
       long period, Class<R> resourceClass) {
     super(resourceClass);
     this.supplierToPoll = supplier;
@@ -78,7 +78,7 @@ public class PollingEventSource<R, P extends HasMetadata>
     cache.keys().filter(e -> !values.containsKey(e)).forEach(super::handleDelete);
   }
 
-  public void put(ResourceID key, R resource) {
+  public void put(ObjectKey key, R resource) {
     cache.put(key, resource);
   }
 
@@ -96,6 +96,6 @@ public class PollingEventSource<R, P extends HasMetadata>
    */
   @Override
   public Optional<R> getAssociated(P primary) {
-    return getCachedValue(ResourceID.fromResource(primary));
+    return getCachedValue(ObjectKey.fromResource(primary));
   }
 }

@@ -6,31 +6,31 @@ import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public class EventRecorder<R extends HasMetadata> {
 
-  private final Map<ResourceID, ArrayList<R>> resourceEvents = new HashMap<>();
+  private final Map<ObjectKey, ArrayList<R>> resourceEvents = new HashMap<>();
 
-  public void startEventRecording(ResourceID resourceID) {
-    resourceEvents.putIfAbsent(resourceID, new ArrayList<>(5));
+  public void startEventRecording(ObjectKey objectKey) {
+    resourceEvents.putIfAbsent(objectKey, new ArrayList<>(5));
   }
 
-  public boolean isRecordingFor(ResourceID resourceID) {
-    return resourceEvents.get(resourceID) != null;
+  public boolean isRecordingFor(ObjectKey objectKey) {
+    return resourceEvents.get(objectKey) != null;
   }
 
-  public void stopEventRecording(ResourceID resourceID) {
-    resourceEvents.remove(resourceID);
+  public void stopEventRecording(ObjectKey objectKey) {
+    resourceEvents.remove(objectKey);
   }
 
   public void recordEvent(R resource) {
-    resourceEvents.get(ResourceID.fromResource(resource)).add(resource);
+    resourceEvents.get(ObjectKey.fromResource(resource)).add(resource);
   }
 
-  public boolean containsEventWithResourceVersion(ResourceID resourceID,
+  public boolean containsEventWithResourceVersion(ObjectKey objectKey,
       String resourceVersion) {
-    List<R> events = resourceEvents.get(resourceID);
+    List<R> events = resourceEvents.get(objectKey);
     if (events == null) {
       return false;
     }
@@ -43,15 +43,15 @@ public class EventRecorder<R extends HasMetadata> {
   }
 
   public boolean containsEventWithVersionButItsNotLastOne(
-      ResourceID resourceID, String resourceVersion) {
-    List<R> resources = resourceEvents.get(resourceID);
+      ObjectKey objectKey, String resourceVersion) {
+    List<R> resources = resourceEvents.get(objectKey);
     if (resources == null) {
       throw new IllegalStateException(
           "Null events list, this is probably a result of invalid usage of the " +
-              "InformerEventSource. Resource ID: " + resourceID);
+              "InformerEventSource. Resource ID: " + objectKey);
     }
     if (resources.isEmpty()) {
-      throw new IllegalStateException("No events for resource id: " + resourceID);
+      throw new IllegalStateException("No events for resource id: " + objectKey);
     }
     return !resources
         .get(resources.size() - 1)
@@ -60,12 +60,12 @@ public class EventRecorder<R extends HasMetadata> {
         .equals(resourceVersion);
   }
 
-  public R getLastEvent(ResourceID resourceID) {
-    List<R> resources = resourceEvents.get(resourceID);
+  public R getLastEvent(ObjectKey objectKey) {
+    List<R> resources = resourceEvents.get(objectKey);
     if (resources == null) {
       throw new IllegalStateException(
           "Null events list, this is probably a result of invalid usage of the " +
-              "InformerEventSource. Resource ID: " + resourceID);
+              "InformerEventSource. Resource ID: " + objectKey);
     }
     return resources.get(resources.size() - 1);
   }

@@ -4,20 +4,20 @@ import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.Event;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.ObjectKey;
 
 public interface Metrics {
   Metrics NOOP = new Metrics() {};
 
   default void receivedEvent(Event event) {}
 
-  default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo) {}
+  default void reconcileCustomResource(ObjectKey objectKey, RetryInfo retryInfo) {}
 
-  default void failedReconciliation(ResourceID resourceID, Exception exception) {}
+  default void failedReconciliation(ObjectKey objectKey, Exception exception) {}
 
-  default void cleanupDoneFor(ResourceID customResourceUid) {}
+  default void cleanupDoneFor(ObjectKey customResourceUid) {}
 
-  default void finishedReconciliation(ResourceID resourceID) {}
+  default void finishedReconciliation(ObjectKey objectKey) {}
 
 
   interface ControllerExecution<T> {
