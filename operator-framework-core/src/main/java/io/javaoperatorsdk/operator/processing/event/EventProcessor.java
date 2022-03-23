@@ -182,7 +182,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       if (!running) {
         return;
       }
-      ResourceID resourceID = executionScope.getCustomResourceID();
+      ResourceID resourceID = executionScope.getResourceID();
       log.debug(
           "Event processing finished. Scope: {}, PostExecutionControl: {}",
           executionScope,
@@ -202,7 +202,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       cleanupOnSuccessfulExecution(executionScope);
       metrics.finishedReconciliation(resourceID);
       if (eventMarker.deleteEventPresent(resourceID)) {
-        cleanupForDeletedEvent(executionScope.getCustomResourceID());
+        cleanupForDeletedEvent(executionScope.getResourceID());
       } else {
         postExecutionControl.getUpdatedCustomResource().ifPresent(
             r -> eventSourceManager.getControllerResourceEventSource().handleRecentResourceUpdate(
@@ -244,7 +244,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void handleRetryOnException(
       ExecutionScope<R> executionScope, Exception exception) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
-    var customResourceID = executionScope.getCustomResourceID();
+    var customResourceID = executionScope.getResourceID();
     boolean eventPresent = eventMarker.eventPresent(customResourceID);
     eventMarker.markEventReceived(customResourceID);
 
@@ -271,16 +271,16 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     log.debug(
         "Cleanup for successful execution for resource: {}", getName(executionScope.getResource()));
     if (isRetryConfigured()) {
-      retryState.remove(executionScope.getCustomResourceID());
+      retryState.remove(executionScope.getResourceID());
     }
-    retryEventSource().cancelOnceSchedule(executionScope.getCustomResourceID());
+    retryEventSource().cancelOnceSchedule(executionScope.getResourceID());
   }
 
   private RetryExecution getOrInitRetryExecution(ExecutionScope<R> executionScope) {
-    RetryExecution retryExecution = retryState.get(executionScope.getCustomResourceID());
+    RetryExecution retryExecution = retryState.get(executionScope.getResourceID());
     if (retryExecution == null) {
       retryExecution = retry.initExecution();
-      retryState.put(executionScope.getCustomResourceID(), retryExecution);
+      retryState.put(executionScope.getResourceID(), retryExecution);
     }
     return retryExecution;
   }

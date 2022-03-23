@@ -18,7 +18,7 @@ class ExecutionScope<R extends HasMetadata> {
     return resource;
   }
 
-  public ResourceID getCustomResourceID() {
+  public ResourceID getResourceID() {
     return ResourceID.fromResource(resource);
   }
 
