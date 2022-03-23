@@ -100,7 +100,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
       try (InputStream is = getClass().getResourceAsStream(path)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
-        crd.waitUntilReady(2, TimeUnit.SECONDS);
+        Thread.sleep(2000); // readiness is not applicable for CRD we just wait
         LOGGER.debug("Applied CRD with name: {}", config.getResourceTypeName());
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);

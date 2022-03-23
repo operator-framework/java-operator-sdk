@@ -12,8 +12,6 @@ public class EventSourceTestCustomReconciler
     implements Reconciler<EventSourceTestCustomResource>,
     TestExecutionInfoProvider {
 
-  public static final String FINALIZER_NAME =
-      ReconcilerUtils.getDefaultFinalizerName(EventSourceTestCustomResource.class);
   public static final int TIMER_PERIOD = 500;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
