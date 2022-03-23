@@ -12,7 +12,6 @@ public class TestUtils {
 
   public static final String TEST_CUSTOM_RESOURCE_PREFIX = "test-custom-resource-";
   public static final String TEST_CUSTOM_RESOURCE_NAME = "test-custom-resource";
-  public static final String TEST_NAMESPACE = "java-operator-sdk-int-test";
 
   public static TestCustomResource testCustomResource() {
     return testCustomResource(UUID.randomUUID().toString());

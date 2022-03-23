@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,8 +99,11 @@ public class OperatorExtension extends AbstractOperatorExtension {
       try (InputStream is = getClass().getResourceAsStream(path)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
-        crd.waitUntilReady(2, TimeUnit.SECONDS);
+        Thread.sleep(2000); // readiness is not applicable for CRD, just wait a little
         LOGGER.debug("Applied CRD with name: {}", config.getResourceTypeName());
+      } catch (InterruptedException ex) {
+        LOGGER.error("Interrupted.", ex);
+        Thread.currentThread().interrupt();
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
       }
