@@ -42,7 +42,7 @@ class ControllerConfigurationOverriderTest {
     final var overriddenNS = "newNS";
     final var labelSelector = "foo=bar";
     final var overridden = ControllerConfigurationOverrider.override(configuration)
-        .replaceNamedDependentResourceConfig(
+        .replacingNamedDependentResourceConfig(
             DependentResource.defaultNameFor(ReadOnlyDependent.class),
             new KubernetesDependentResourceConfig(true, new String[] {overriddenNS}, labelSelector))
         .build();

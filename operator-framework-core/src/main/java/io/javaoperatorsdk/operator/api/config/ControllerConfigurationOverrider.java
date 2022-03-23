@@ -90,7 +90,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> replaceNamedDependentResourceConfig(String name,
+  public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
     final var currentConfig = dependentResourceSpecs.get(name);
     if (currentConfig == null) {
