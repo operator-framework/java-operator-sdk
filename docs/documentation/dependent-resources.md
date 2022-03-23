@@ -125,7 +125,7 @@ implementations are managed by JOSDK. See [related sample](https://github.com/ja
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
-    // emitted code
+    // omitted code
     
     @Override
     public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
