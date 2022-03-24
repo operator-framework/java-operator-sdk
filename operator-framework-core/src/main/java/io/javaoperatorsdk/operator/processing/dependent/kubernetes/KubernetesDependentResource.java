@@ -37,7 +37,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected KubernetesClient client;
   private InformerEventSource<R, P> informerEventSource;
-  private boolean addOwnerReference;
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final Class<R> resourceType;
@@ -55,12 +54,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
-    configureWith(config.labelSelector(), Set.of(config.namespaces()), config.addOwnerReference());
+    configureWith(config.labelSelector(), Set.of(config.namespaces()));
   }
 
   @SuppressWarnings("unchecked")
-  private void configureWith(String labelSelector, Set<String> namespaces,
-      boolean addOwnerReference) {
+  private void configureWith(String labelSelector, Set<String> namespaces) {
     final var primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
@@ -75,20 +73,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
             .withPrimaryResourcesRetriever(primaryResourcesRetriever)
             .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
             .build();
-    configureWith(new InformerEventSource<>(ic, client), addOwnerReference);
+    configureWith(new InformerEventSource<>(ic, client));
   }
 
   /**
    * Use to share informers between event more resources.
    *
-   * @param informerEventSource informer to use
-   * @param addOwnerReference to the created resource
+   * @param informerEventSource informer to use*
    */
   public void configureWith(
-      InformerEventSource<R, P> informerEventSource,
-      boolean addOwnerReference) {
+      InformerEventSource<R, P> informerEventSource) {
     this.informerEventSource = informerEventSource;
-    this.addOwnerReference = addOwnerReference;
+
   }
 
   public R create(R target, P primary, Context<P> context) {
@@ -105,7 +101,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    if (!addOwnerReference) {
+    if (!addOwnerReference()) {
       var resource = getResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());
     }
@@ -118,7 +114,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         actionName,
         desired.getClass(),
         ResourceID.fromResource(desired));
-    if (addOwnerReference) {
+    if (addOwnerReference()) {
       desired.addOwnerReference(primary);
     }
     Class<R> targetClass = (Class<R>) desired.getClass();
@@ -128,7 +124,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public EventSource initEventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
-      configureWith(null, null, KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+      configureWith(null, null);
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
@@ -139,6 +135,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       InformerEventSource<R, P> informerEventSource) {
     this.informerEventSource = informerEventSource;
     return this;
+  }
+
+  protected boolean addOwnerReference() {
+    return creatable && !deletable;
   }
 
   @Override

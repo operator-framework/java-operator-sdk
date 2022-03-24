@@ -12,8 +12,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
   private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);
 
-  private final boolean creatable = this instanceof Creator;
-  private final boolean updatable = this instanceof Updater;
+  protected final boolean creatable = this instanceof Creator;
+  protected final boolean updatable = this instanceof Updater;
+  protected final boolean deletable = this instanceof Deleter;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
 

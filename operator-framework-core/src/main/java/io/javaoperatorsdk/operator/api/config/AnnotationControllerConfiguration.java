@@ -156,13 +156,8 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
                   this.getNamespaces().toArray(new String[0]));
           final var labelSelector =
               Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
-          final var addOwnerReference =
-              Utils.valueOrDefault(
-                  kubeDependent,
-                  KubernetesDependent::addOwnerReference,
-                  KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
           config =
-              new KubernetesDependentResourceConfig(addOwnerReference, namespaces, labelSelector);
+              new KubernetesDependentResourceConfig(namespaces, labelSelector);
         }
         specs.add(new DependentResourceSpec(dependentType, config));
       }
