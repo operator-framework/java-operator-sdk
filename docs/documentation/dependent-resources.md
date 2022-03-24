@@ -130,6 +130,9 @@ the Kubernetes garbage collector through owner references, what is automatically
 `CRUKubernetesDependentResource` is only an adaptor class that already implements the`Creator` and `Updater` but 
 not the `Deleter` interface.
 
+The `@KuberentesDependent` annotation can be used to further configure **managed** dependent resource that are extending
+`KubernetesDependentResource`. 
+
 See the full source code [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/DeploymentDependentResource.java).
 
 ## Managed Dependent Resources
