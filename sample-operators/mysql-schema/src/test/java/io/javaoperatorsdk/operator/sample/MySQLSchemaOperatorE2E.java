@@ -70,7 +70,7 @@ class MySQLSchemaOperatorE2E {
                       SchemaDependentResource.NAME,
                       new ResourcePollerConfig(
                           700, new MySQLDbConfig("127.0.0.1", LOCAL_PORT.toString(), "root",
-                                "password"))))
+                              "password"))))
               .withInfrastructure(infrastructure)
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
               .build()
