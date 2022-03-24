@@ -3,9 +3,12 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 /**
  * Contextual information related to {@link DependentResource} either to retrieve the actual
@@ -14,7 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 public class ManagedDependentResourceContext {
 
-  private final Map<String, DependentResource> dependentResources;
+  private final Map<String, DependentResourceInfo> dependentResources;
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
 
   /**
@@ -69,42 +72,12 @@ public class ManagedDependentResourceContext {
   }
 
   public ManagedDependentResourceContext(Map<String, DependentResource> dependentResources) {
-    this.dependentResources = dependentResources;
+    this.dependentResources = dependentResources.entrySet().stream()
+        .map(entry -> new DependentResourceInfo(entry.getKey(), entry.getValue()))
+        .collect(Collectors.toMap(DependentResourceInfo::name, Function.identity()));
   }
 
-  /**
-   * Retrieve all the known {@link DependentResource} implementations
-   *
-   * @return known {@link DependentResource} implementations keyed by their name
-   */
-  public Map<String, DependentResource> getDependentResources() {
-    return dependentResources;
-  }
-
-  /**
-   * Retrieve the dependent resource implementation associated with the specified resource type.
-   *
-   * @param name the name of the {@link DependentResource} implementation we want to retrieve
-   * @param resourceClass the resource class for which we want to retrieve the associated dependent
-   *        resource implementation
-   * @param <T> the type of the resources for which we want to retrieve the associated dependent
-   *        resource implementation
-   * @return the associated dependent resource implementation if it exists or an exception if it
-   *         doesn't or several implementations are associated with the specified resource type
-   */
-  @SuppressWarnings({"unchecked"})
-  public <T> DependentResource<T, ?> getDependentResource(String name, Class<T> resourceClass) {
-    DependentResource dependentResource = getDependentResource(name);
-    final var actual = dependentResource.resourceType();
-    if (!actual.equals(resourceClass)) {
-      throw new OperatorException(
-          "Dependent resource implementation doesn't match expected resource type, was: "
-              + actual.getName() + " instead of: " + resourceClass.getName());
-    }
-    return dependentResource;
-  }
-
-  private DependentResource getDependentResource(String name) {
+  private DependentResourceInfo getDependentResource(String name) {
     var dependentResource = dependentResources.get(name);
     if (dependentResource == null) {
       throw new OperatorException("No dependent resource found with name: " + name);
@@ -112,15 +85,49 @@ public class ManagedDependentResourceContext {
     return dependentResource;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T extends DependentResource> T getAdaptedDependentResource(String name,
-      Class<T> dependentResourceClass) {
-    DependentResource dependentResource = getDependentResource(name);
-    if (dependentResourceClass.isInstance(dependentResource)) {
-      return (T) dependentResource;
-    } else {
-      throw new IllegalArgumentException("Dependent resource associated with name: " + name
-          + " is not adaptable to type: " + dependentResourceClass.getCanonicalName());
+  /**
+   * Retrieve the {@link ReconcileResult}, if it exists, associated with the
+   * {@link DependentResource} associated with the specified name
+   *
+   * @param name the name of the {@link DependentResource} for which we want to retrieve a
+   *        {@link ReconcileResult}
+   * @return an Optional containing the reconcile result or {@link Optional#empty()} if no such
+   *         result is available
+   */
+  @SuppressWarnings("rawtypes")
+  public Optional<ReconcileResult> getReconcileResult(String name) {
+    return Optional.of(getDependentResource(name)).map(DependentResourceInfo::result);
+  }
+
+  /**
+   * Set the {@link ReconcileResult} for the specified {@link DependentResource} implementation.
+   *
+   * @param name the name of the {@link DependentResource} for which we want to set the
+   *        {@link ReconcileResult}
+   * @param reconcileResult the reconcile result associated with the specified
+   *        {@link DependentResource}
+   */
+  public void setReconcileResult(String name, ReconcileResult reconcileResult) {
+    getDependentResource(name).result = reconcileResult;
+  }
+
+  private static class DependentResourceInfo {
+    private final String name;
+    private final DependentResource dependent;
+    private ReconcileResult result;
+
+
+    private DependentResourceInfo(String name, DependentResource dependent) {
+      this.name = name;
+      this.dependent = dependent;
+    }
+
+    private String name() {
+      return name;
+    }
+
+    public ReconcileResult result() {
+      return result;
     }
   }
 }
