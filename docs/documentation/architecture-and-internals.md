@@ -44,7 +44,7 @@ A typical workflows looks like following:
 2. In the event processor the related `CustomResource` is read from the cache based on the `ResourceID` in the event.
 3. If there is no other execution running for the custom resource, an execution is submitted for the executor (thread
    pool) .
-4. Executor call EventDispatcher what decides which method to execute of the reconciler. Let's say in this case it
+4. Executor calls ReconcilerDispatcher which decides which method to execute of the reconciler. Let's say in this case it
    was `reconcile(...)`
 5. After reconciler execution the Dispatcher calls Kubernetes API server, since the `reconcile` method returned
    with `UpdateControl.updateStatus(...)` result.
