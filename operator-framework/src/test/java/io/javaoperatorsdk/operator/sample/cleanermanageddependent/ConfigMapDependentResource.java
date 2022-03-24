@@ -38,6 +38,11 @@ public class ConfigMapDependentResource extends
     numberOfCleanupExecutions.incrementAndGet();
   }
 
+  @Override
+  protected boolean addOwnerReference() {
+    return true;
+  }
+
   public static int getNumberOfCleanupExecutions() {
     return numberOfCleanupExecutions.get();
   }
