@@ -13,20 +13,14 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 public interface EventSource extends LifecycleAware {
 
   /**
-   * An optional name for your EventSource. This is only required if you need to register multiple
-   * EventSources for the same resource type (e.g. {@code Deployment}).
-   *
-   * @return the name associated with this EventSource
-   */
-  default String name() {
-    return getClass().getCanonicalName();
-  }
-
-  /**
    * Sets the {@link EventHandler} that is linked to your reconciler when this EventSource is
    * registered.
    *
    * @param handler the {@link EventHandler} associated with your reconciler
    */
   void setEventHandler(EventHandler handler);
+
+  static String defaultNameFor(EventSource source) {
+    return source.getClass().getCanonicalName();
+  }
 }

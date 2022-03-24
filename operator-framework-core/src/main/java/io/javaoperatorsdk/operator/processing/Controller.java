@@ -40,12 +40,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
-public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner<P>,
-    LifecycleAware, EventSourceInitializer<P> {
+public class Controller<P extends HasMetadata>
+    implements Reconciler<P>, Cleaner<P>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
@@ -194,20 +193,21 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
         });
   }
 
-  @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
-    List<EventSource> sources = new LinkedList<>();
-    dependents.values().stream()
-        .filter(dependentResource -> dependentResource instanceof EventSourceProvider)
-        .map(EventSourceProvider.class::cast)
-        .map(provider -> provider.initEventSource(context))
-        .forEach(sources::add);
+  public void initAndRegisterEventSources(EventSourceContext<P> context) {
+    dependents.entrySet().stream()
+        .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
+        .forEach(drEntry -> {
+          final var provider = (EventSourceProvider) drEntry.getValue();
+          final var source = provider.initEventSource(context);
+          eventSourceManager.registerEventSource(drEntry.getKey(), source);
+        });
 
     // add manually defined event sources
     if (reconciler instanceof EventSourceInitializer) {
-      sources.addAll(((EventSourceInitializer<P>) reconciler).prepareEventSources(context));
+      final var provider = (EventSourceInitializer<P>) this.reconciler;
+      final var ownSources = provider.prepareEventSources(context);
+      ownSources.forEach(eventSourceManager::registerEventSource);
     }
-    return sources;
   }
 
   @Override
@@ -286,7 +286,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
       final var context = new EventSourceContext<>(
           eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
 
-      prepareEventSources(context).forEach(eventSourceManager::registerEventSource);
+      initAndRegisterEventSources(context);
 
       eventSourceManager.start();
 
