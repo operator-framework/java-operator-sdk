@@ -37,11 +37,7 @@ public class MySQLSchemaReconciler
     // context
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
 
-    SchemaDependentResource schemaDependentResource =
-        context.managedDependentResourceContext().getAdaptedDependentResource(
-            SchemaDependentResource.NAME,
-            SchemaDependentResource.class);
-    return schemaDependentResource.fetchResource(schema).map(s -> {
+    return context.getSecondaryResource(MySQLSchema.class, SchemaDependentResource.NAME).map(s -> {
       updateStatusPojo(schema, secret.getMetadata().getName(),
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
       log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
