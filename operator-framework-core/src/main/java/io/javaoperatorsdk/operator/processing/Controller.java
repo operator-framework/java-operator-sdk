@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
