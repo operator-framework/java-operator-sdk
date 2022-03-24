@@ -130,8 +130,7 @@ public class WebPageManagedDependentsReconciler
     @Override
     public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
             throws Exception {
-        simulateErrorIfRequested(webPage);
-
+        
         final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
                 .getMetadata().getName();
         webPage.setStatus(createStatus(name));
@@ -141,13 +140,85 @@ public class WebPageManagedDependentsReconciler
 }
 ```
 
+See the full source code of sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java).
+
 ## Standalone Dependent Resources
 
 To use dependent resources in more complex workflows, when the reconciliation requires additional logic, the standalone
 mode is available. In practice this means that the developer is responsible to initializing and managing and 
-calling reconcile method. 
+calling `reconcile` method. However, this gives possibility for developers to fully customize the workflow for 
+reconciliation. Like setting conditions (if creation of a resource is desired only in certain situations). Also, for 
+example if calling an API needs to happen if a service is already up and running 
+(think configuring a running DB instance). 
 
+The following sample is equivalent to the one above with managed dependent resources:
 
+```java
+@ControllerConfiguration
+public class WebPageStandaloneDependentsReconciler
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+    
+  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
+  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
+  private KubernetesDependentResource<Service, WebPage> serviceDR;
 
+  public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
+    // 1.
+    createDependentResources(kubernetesClient);
+  }
+
+  @Override
+  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    // 2.  
+    return List.of(
+      configMapDR.initEventSource(context),
+      deploymentDR.initEventSource(context),
+      serviceDR.initEventSource(context));
+  }
+
+  @Override
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
+      throws Exception {
+
+    // 3.  
+    configMapDR.reconcile(webPage, context);
+    deploymentDR.reconcile(webPage, context);
+    serviceDR.reconcile(webPage, context);
+
+    // 4.
+    webPage.setStatus(
+       createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
+    return UpdateControl.updateStatus(webPage);
+  }
+
+  private void createDependentResources(KubernetesClient client) {
+    this.configMapDR = new ConfigMapDependentResource();
+    this.configMapDR.setKubernetesClient(client);
+    configMapDR.configureWith(new KubernetesDependentResourceConfig()
+      .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+
+    this.deploymentDR = new DeploymentDependentResource();
+    deploymentDR.setKubernetesClient(client);
+    deploymentDR.configureWith(new KubernetesDependentResourceConfig()
+      .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+
+    this.serviceDR = new ServiceDependentResource();
+    serviceDR.setKubernetesClient(client);
+    serviceDR.configureWith(new KubernetesDependentResourceConfig()
+      .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+  }
+  
+  // omitted code
+}
+```
+
+There are multiple things happening here:
+1. Dependent resources are explicitly created, and can be access later by reference.
+2. Event sources are produced by the dependent resources, but needs to be explicitly registered in this case.
+3. Reconciliation is called explicitly, but here the workflow customization is fully in the hand of the developer.
+4. Status is set in a different way, this is just an alternative way to show, that the actual state can be read
+  using the reference. This could be written in a same way as in the managed example.
+
+See the full source code of sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java).
 
 ## Other Dependent Resources features
