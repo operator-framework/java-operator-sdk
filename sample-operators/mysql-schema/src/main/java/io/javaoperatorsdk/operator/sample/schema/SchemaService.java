@@ -59,11 +59,14 @@ public class SchemaService {
   public static void deleteSchemaAndRelatedUser(Connection connection, String schemaName,
       String userName) {
     try {
-      try (Statement statement = connection.createStatement()) {
-        statement.execute(format("DROP DATABASE `%1$s`", schemaName));
+      if (schemaExists(connection, schemaName)) {
+        try (Statement statement = connection.createStatement()) {
+          statement.execute(format("DROP DATABASE `%1$s`", schemaName));
+        }
+        log.info("Deleted Schema '{}'", schemaName);
       }
-      log.info("Deleted Schema '{}'", schemaName);
-      if (userName != null) {
+
+      if (userName != null && userExists(connection, userName)) {
         try (Statement statement = connection.createStatement()) {
           statement.execute(format("DROP USER '%1$s'", userName));
         }
@@ -86,6 +89,10 @@ public class SchemaService {
     } catch (SQLException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public static boolean schemaExists(Connection connection, String schemaName) {
+    return getSchema(connection, schemaName).isPresent();
   }
 
   public static Optional<Schema> getSchema(Connection connection, String schemaName) {

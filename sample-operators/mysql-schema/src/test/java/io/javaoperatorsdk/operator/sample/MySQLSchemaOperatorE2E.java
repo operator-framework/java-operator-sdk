@@ -40,6 +40,7 @@ class MySQLSchemaOperatorE2E {
 
   private final static List<HasMetadata> infrastructure = new ArrayList<>();
   public static final String TEST_RESOURCE_NAME = "mydb1";
+  public static final Integer LOCAL_PORT = 3307;
 
   static {
     infrastructure.add(
@@ -70,10 +71,11 @@ class MySQLSchemaOperatorE2E {
                     c.replaceDependentResourceConfig(
                         SchemaDependentResource.class,
                         new ResourcePollerConfig(
-                            700, new MySQLDbConfig("127.0.0.1", "3307", "root", "password")));
+                            700, new MySQLDbConfig("127.0.0.1", LOCAL_PORT.toString(), "root",
+                                "password")));
                   })
               .withInfrastructure(infrastructure)
-              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, 3307)
+              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
               .build()
           : E2EOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())

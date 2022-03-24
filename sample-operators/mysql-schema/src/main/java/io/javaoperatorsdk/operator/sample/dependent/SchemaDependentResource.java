@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
@@ -28,10 +29,7 @@ public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
-    Creator<Schema, MySQLSchema>
-// todo fix
-// , Deleter<MySQLSchema>
-{
+    Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
 
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
@@ -75,7 +73,7 @@ public class SchemaDependentResource
     return DriverManager.getConnection(connectURL, dbConfig.getUser(), dbConfig.getPassword());
   }
 
-  // @Override
+  @Override
   public void delete(MySQLSchema primary, Context<MySQLSchema> context) {
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
@@ -97,7 +95,7 @@ public class SchemaDependentResource
     }
   }
 
-  private static String decode(String value) {
+  public static String decode(String value) {
     return new String(Base64.getDecoder().decode(value.getBytes()));
   }
 
