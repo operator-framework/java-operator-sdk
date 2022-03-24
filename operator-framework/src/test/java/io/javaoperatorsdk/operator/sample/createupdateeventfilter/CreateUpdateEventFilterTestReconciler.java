@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.createupdateeventfilter;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -9,7 +9,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -94,14 +99,14 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public Map<String, EventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerConfiguration =
         InformerConfiguration.from(context, ConfigMap.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
     informerEventSource = new InformerEventSource<>(informerConfiguration, client);
-    return List.of(informerEventSource);
+    return Map.of("test-informer", informerEventSource);
   }
 
   @Override

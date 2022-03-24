@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -9,7 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -33,7 +38,7 @@ public class InformerEventSourceTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public Map<String, EventSource> prepareEventSources(
       EventSourceContext<InformerEventSourceTestCustomResource> context) {
 
     InformerConfiguration<ConfigMap, InformerEventSourceTestCustomResource> config =
@@ -41,7 +46,7 @@ public class InformerEventSourceTestCustomReconciler
             .withPrimaryResourcesRetriever(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
             .build();
 
-    return List.of(new InformerEventSource<>(config, context));
+    return Map.of("test-informer", new InformerEventSource<>(config, context));
   }
 
   @Override

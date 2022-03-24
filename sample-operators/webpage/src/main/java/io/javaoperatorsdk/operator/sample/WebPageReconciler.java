@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +52,7 @@ public class WebPageReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(context, ConfigMap.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
@@ -66,7 +65,8 @@ public class WebPageReconciler
         new InformerEventSource<>(InformerConfiguration.from(context, Service.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
-    return List.of(configMapEventSource, deploymentEventSource, serviceEventSource);
+    return Map.of("configmap", configMapEventSource, "deployment", deploymentEventSource, "service",
+        serviceEventSource);
   }
 
   @Override

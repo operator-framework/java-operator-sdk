@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +11,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +87,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   @SuppressWarnings("rawtypes")
-  private void logEventSourceEvent(EventSource eventSource, String event) {
+  private void logEventSourceEvent(NamedEventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
       if (eventSource instanceof ResourceEventSource) {
         ResourceEventSource source = (ResourceEventSource) eventSource;
@@ -119,17 +119,24 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     eventProcessor.stop();
   }
 
-  public final void registerEventSource(EventSource eventSource)
+  public final void registerEventSource(EventSource eventSource) throws OperatorException {
+    registerEventSource(null, eventSource);
+  }
+
+  public final void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     lock.lock();
     try {
-      eventSources.add(eventSource);
+      if (name == null || name.isBlank()) {
+        name = EventSource.defaultNameFor(eventSource);
+      }
+      eventSources.add(name, eventSource);
       eventSource.setEventHandler(eventProcessor);
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
-      throw new OperatorException("Couldn't register event source: " + eventSource.name() + " for "
+      throw new OperatorException("Couldn't register event source: " + name + " for "
           + controller.getConfiguration().getName() + " controller`", e);
     } finally {
       lock.unlock();
@@ -161,7 +168,9 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   Set<EventSource> getRegisteredEventSources() {
-    return eventSources.all();
+    return eventSources.flatMappedSources()
+        .map(NamedEventSource::original)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   public ControllerResourceEventSource<R> getControllerResourceEventSource() {
@@ -191,8 +200,46 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     return controller;
   }
 
-  private static class EventSources<R extends HasMetadata> implements Iterable<EventSource> {
-    private final ConcurrentNavigableMap<String, List<EventSource>> sources =
+  static class NamedEventSource implements EventSource {
+    private final EventSource original;
+    private final String name;
+
+    private NamedEventSource(EventSource original, String name) {
+      this.original = original;
+      this.name = name;
+    }
+
+    @Override
+    public void start() throws OperatorException {
+      original.start();
+    }
+
+    @Override
+    public void stop() throws OperatorException {
+      original.stop();
+    }
+
+    @Override
+    public void setEventHandler(EventHandler handler) {
+      original.setEventHandler(handler);
+    }
+
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public String toString() {
+      return original + " named: '" + name + "'}";
+    }
+
+    public EventSource original() {
+      return original;
+    }
+  }
+
+  private static class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> {
+    private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
         new ConcurrentSkipListMap<>();
     private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
     private ControllerResourceEventSource<R> controllerResourceEventSource;
@@ -208,34 +255,34 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
 
     @Override
-    public Iterator<EventSource> iterator() {
-      return sources.values().stream().flatMap(Collection::stream).iterator();
+    public Iterator<NamedEventSource> iterator() {
+      return flatMappedSources().iterator();
     }
 
-    public Set<EventSource> all() {
-      return sources.values().stream().flatMap(Collection::stream)
-          .collect(Collectors.toCollection(LinkedHashSet::new));
+    private Stream<NamedEventSource> flatMappedSources() {
+      return sources.values().stream().flatMap(c -> c.entrySet().stream()
+          .map(esEntry -> new NamedEventSource(esEntry.getValue(), esEntry.getKey())));
     }
 
     public void clear() {
       sources.clear();
     }
 
-    public boolean contains(EventSource source) {
+    public boolean contains(String name, EventSource source) {
       final var eventSources = sources.get(keyFor(source));
       if (eventSources == null || eventSources.isEmpty()) {
         return false;
       }
-      return findMatchingSource(name(source), eventSources).isPresent();
+      return eventSources.containsKey(name);
     }
 
-    public void add(EventSource eventSource) {
-      if (contains(eventSource)) {
+    public void add(String name, EventSource eventSource) {
+      if (contains(name, eventSource)) {
         throw new IllegalArgumentException("An event source is already registered for the "
-            + keyAsString(getDependentType(eventSource), name(eventSource))
+            + keyAsString(getDependentType(eventSource), name)
             + " class/name combination");
       }
-      sources.computeIfAbsent(keyFor(eventSource), k -> new ArrayList<>()).add(eventSource);
+      sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
     }
 
     @SuppressWarnings("rawtypes")
@@ -243,10 +290,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       return source instanceof ResourceEventSource
           ? ((ResourceEventSource) source).getResourceClass()
           : source.getClass();
-    }
-
-    private String name(EventSource source) {
-      return source.name();
     }
 
     private String keyFor(EventSource source) {
@@ -278,15 +321,15 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       final var size = sourcesForType.size();
       final EventSource source;
       if (size == 1) {
-        source = sourcesForType.get(0);
+        source = sourcesForType.values().stream().findFirst().orElse(null);
       } else {
         if (name == null || name.isBlank()) {
           throw new IllegalArgumentException("There are multiple EventSources registered for type "
               + dependentType.getCanonicalName()
               + ", you need to provide a name to specify which EventSource you want to query. Known names: "
-              + sourcesForType.stream().map(this::name).collect(Collectors.joining(",")));
+              + String.join(",", sourcesForType.keySet()));
         }
-        source = findMatchingSource(name, sourcesForType).orElse(null);
+        source = sourcesForType.get(name);
 
         if (source == null) {
           return null;
@@ -307,11 +350,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
             + dependentType.getName());
       }
       return res;
-    }
-
-    private Optional<EventSource> findMatchingSource(String name,
-        List<EventSource> sourcesForType) {
-      return sourcesForType.stream().filter(es -> name(es).equals(name)).findAny();
     }
 
     @SuppressWarnings("rawtypes")
