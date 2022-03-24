@@ -187,19 +187,23 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            final var result = dependents.values().stream()
-                .map(dependent -> {
+            final var result = dependents.entrySet().stream()
+                .map(entry -> {
+                  final var dependent = entry.getValue();
+                  final var name = entry.getKey();
+                  ReconcileResult reconcileResult;
                   try {
-                    return dependent.reconcile(resource, context);
+                    reconcileResult = dependent.reconcile(resource, context);
                   } catch (Exception e) {
-                    return ReconcileResult.error(resource, e);
+                    reconcileResult = ReconcileResult.error(resource, e);
                   }
+                  context.managedDependentResourceContext().setReconcileResult(name,
+                      reconcileResult);
+                  return reconcileResult;
                 });
 
             log.info("Dependents reconciliation:\n{}",
-                result
-                    .map(r -> "\t" + r.toString())
-                    .collect(Collectors.joining("\n")));
+                result.map(r -> "\t" + r.toString()).collect(Collectors.joining("\n")));
             return reconciler.reconcile(resource, context);
           }
         });
