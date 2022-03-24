@@ -94,6 +94,44 @@ We also provide implementations that make it very easy to cache
 resources (`PollingDependentResource`, `PerResourcePollingDependentResource`). All the provided implementations can be
 found in the `io/javaoperatorsdk/operator/processing/dependent` package of the `operator-framework-core` module.
 
+### Sample Kubernetes Dependent Resource 
+
+A typical use case, when a Kubernetes resource is fully managed - Created, Read, Updated and Deleted (or set to be garbage
+collected). The following example shows how to create a `Deployment` dependent resource:
+
+```java
+@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
+class DeploymentDependentResource extends CRUKubernetesDependentResource<Deployment, WebPage> {
+
+  public DeploymentDependentResource() {
+    super(Deployment.class);
+  }
+
+  @Override
+  protected Deployment desired(WebPage webPage, Context<WebPage> context) {
+    var deploymentName = deploymentName(webPage);
+    Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
+    deployment.getMetadata().setName(deploymentName);
+    deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
+    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
+
+    deployment.getSpec().getTemplate().getMetadata().getLabels()
+        .put("app", deploymentName);
+    deployment.getSpec().getTemplate().getSpec().getVolumes().get(0)
+        .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
+    return deployment;
+  }
+}
+```
+
+The only thing needs to be done is to extend the `CRUKubernetesDependentResource` and specify the desired state.
+Note that it is `CRU` instead of `CRUD`, since it not explicitly manages the delete operation. That is handled by
+the Kubernetes garbage collector through owner references, what is automatically set to the resource.
+`CRUKubernetesDependentResource` is only an adaptor class that already implements the`Creator` and `Updater` but 
+not the `Deleter` interface.
+
+See the full source code [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/DeploymentDependentResource.java).
+
 ## Managed Dependent Resources
 
 As mentioned previously, one goal of this implementation is to make it possible to semi-declaratively create and wire
@@ -211,7 +249,7 @@ public class WebPageStandaloneDependentsReconciler
 
 There are multiple things happening here:
 
-1. Dependent resources are explicitly created, and can be access later by reference.
+1. Dependent resources are explicitly created and can be access later by reference.
 2. Event sources are produced by the dependent resources, but needs to be explicitly registered in this case.
 3. Reconciliation is called explicitly, but here the workflow customization is fully in the hand of the developer.
 4. Status is set in a different way, this is just an alternative way to show, that the actual state can be read using
