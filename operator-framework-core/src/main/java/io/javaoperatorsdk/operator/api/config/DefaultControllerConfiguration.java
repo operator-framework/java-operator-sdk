@@ -23,6 +23,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final ResourceEventFilter<R> resourceEventFilter;
   private final Map<String, DependentResourceSpec<?, ?>> dependents;
   private final Duration reconciliationMaxInterval;
+  private final boolean failReconciliationOnDependentError;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -37,7 +38,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
-      Map<String, DependentResourceSpec<?, ?>> dependents) {
+      Map<String, DependentResourceSpec<?, ?>> dependents,
+      boolean failReconciliationOnDependentError) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -52,6 +54,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.resourceEventFilter = resourceEventFilter;
 
     this.dependents = dependents != null ? dependents : Collections.emptyMap();
+    this.failReconciliationOnDependentError = failReconciliationOnDependentError;
   }
 
   @Override
@@ -97,5 +100,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public Optional<Duration> reconciliationMaxInterval() {
     return Optional.ofNullable(reconciliationMaxInterval);
+  }
+
+  @Override
+  public boolean dependentErrorFailsReconciliation() {
+    return failReconciliationOnDependentError;
   }
 }

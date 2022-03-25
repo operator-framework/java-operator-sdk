@@ -27,6 +27,10 @@ public class ReconcileResult<R> {
     return new ReconcileResult<>(resource, Operation.ERROR, error);
   }
 
+  public boolean isError() {
+    return error != null;
+  }
+
   @Override
   public String toString() {
     return getResource()

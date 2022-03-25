@@ -71,6 +71,7 @@ public class Controller<P extends HasMetadata>
 
     eventSourceManager = new EventSourceManager<>(this);
 
+    // initialize dependents and check whether any implement Deleter while we're at it
     final var hasDeleterHolder = new boolean[] {false};
     final var specs = configuration.getDependentResources();
     final var size = specs.size();
@@ -88,8 +89,8 @@ public class Controller<P extends HasMetadata>
       });
       dependents = Collections.unmodifiableMap(dependentsHolder);
     }
-
     hasDeleterDependents = hasDeleterHolder[0];
+
     isCleaner = reconciler instanceof Cleaner;
   }
 
@@ -187,20 +188,31 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
+
+            final boolean[] hasErrorHolder = new boolean[] {false};
             final var result = dependents.entrySet().stream()
                 .map(entry -> {
                   final var dependent = entry.getValue();
                   final var name = entry.getKey();
-                  ReconcileResult reconcileResult;
+                  ReconcileResult<?> reconcileResult;
                   try {
                     reconcileResult = dependent.reconcile(resource, context);
                   } catch (Exception e) {
+                    hasErrorHolder[0] = true;
                     reconcileResult = ReconcileResult.error(resource, e);
                   }
                   context.managedDependentResourceContext().setReconcileResult(name,
                       reconcileResult);
                   return reconcileResult;
                 });
+
+            if (configuration.dependentErrorFailsReconciliation() && hasErrorHolder[0]) {
+              final var concatenatedErrorMessages = result.filter(ReconcileResult::isError)
+                  .map(rr -> rr.getError().get().getMessage())
+                  .collect(Collectors.joining("\n"));
+              throw new OperatorException(
+                  "One or more dependents failed: " + concatenatedErrorMessages);
+            }
 
             log.info("Dependents reconciliation:\n{}",
                 result.map(r -> "\t" + r.toString()).collect(Collectors.joining("\n")));

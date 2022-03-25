@@ -23,6 +23,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
   private final Map<String, DependentResourceSpec<?, ?>> dependentResourceSpecs;
+  private boolean failReconciliationOnDependentError;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -34,6 +35,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
     // make the original specs modifiable
     dependentResourceSpecs = new HashMap<>(original.getDependentResources());
+    failReconciliationOnDependentError = original.dependentErrorFailsReconciliation();
     this.original = original;
   }
 
@@ -103,6 +105,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> failingReconciliationOnDependentError(
+      boolean failOnError) {
+    this.failReconciliationOnDependentError = failOnError;
+    return this;
+  }
+
   public ControllerConfiguration<R> build() {
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
@@ -116,7 +124,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        dependentResourceSpecs);
+        dependentResourceSpecs,
+        failReconciliationOnDependentError);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

@@ -76,4 +76,6 @@ public @interface ControllerConfiguration {
    * @return the list of {@link Dependent} configurations
    */
   Dependent[] dependents() default {};
+
+  boolean dependentErrorFailsReconciliation() default Constants.DEPENDENT_ERROR_FAILS_RECONCILIATION_DEFAULT;
 }

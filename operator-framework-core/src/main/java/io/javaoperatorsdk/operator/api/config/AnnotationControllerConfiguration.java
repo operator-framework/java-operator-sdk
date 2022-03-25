@@ -11,6 +11,7 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -172,5 +173,11 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       }
     }
     return Collections.unmodifiableMap(specs);
+  }
+
+  @Override
+  public boolean dependentErrorFailsReconciliation() {
+    return valueOrDefault(annotation, ControllerConfiguration::dependentErrorFailsReconciliation,
+        Constants.DEPENDENT_ERROR_FAILS_RECONCILIATION_DEFAULT);
   }
 }
