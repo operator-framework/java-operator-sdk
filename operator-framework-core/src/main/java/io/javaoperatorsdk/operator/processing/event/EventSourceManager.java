@@ -1,17 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +168,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   public ControllerResourceEventSource<R> getControllerResourceEventSource() {
-    return eventSources.controllerResourceEventSource;
+    return eventSources.controllerResourceEventSource();
   }
 
   public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
@@ -193,170 +187,10 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   TimerEventSource<R> retryEventSource() {
-    return eventSources.retryAndRescheduleTimerEventSource;
+    return eventSources.retryEventSource();
   }
 
   Controller<R> getController() {
     return controller;
-  }
-
-  static class NamedEventSource implements EventSource {
-    private final EventSource original;
-    private final String name;
-
-    private NamedEventSource(EventSource original, String name) {
-      this.original = original;
-      this.name = name;
-    }
-
-    @Override
-    public void start() throws OperatorException {
-      original.start();
-    }
-
-    @Override
-    public void stop() throws OperatorException {
-      original.stop();
-    }
-
-    @Override
-    public void setEventHandler(EventHandler handler) {
-      original.setEventHandler(handler);
-    }
-
-    public String name() {
-      return name;
-    }
-
-    @Override
-    public String toString() {
-      return original + " named: '" + name + "'}";
-    }
-
-    public EventSource original() {
-      return original;
-    }
-  }
-
-  private static class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> {
-    private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
-        new ConcurrentSkipListMap<>();
-    private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
-    private ControllerResourceEventSource<R> controllerResourceEventSource;
-
-
-    ControllerResourceEventSource<R> initControllerEventSource(Controller<R> controller) {
-      controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
-      return controllerResourceEventSource;
-    }
-
-    TimerEventSource<R> retryEventSource() {
-      return retryAndRescheduleTimerEventSource;
-    }
-
-    @Override
-    public Iterator<NamedEventSource> iterator() {
-      return flatMappedSources().iterator();
-    }
-
-    private Stream<NamedEventSource> flatMappedSources() {
-      return sources.values().stream().flatMap(c -> c.entrySet().stream()
-          .map(esEntry -> new NamedEventSource(esEntry.getValue(), esEntry.getKey())));
-    }
-
-    public void clear() {
-      sources.clear();
-    }
-
-    public boolean contains(String name, EventSource source) {
-      final var eventSources = sources.get(keyFor(source));
-      if (eventSources == null || eventSources.isEmpty()) {
-        return false;
-      }
-      return eventSources.containsKey(name);
-    }
-
-    public void add(String name, EventSource eventSource) {
-      if (contains(name, eventSource)) {
-        throw new IllegalArgumentException("An event source is already registered for the "
-            + keyAsString(getDependentType(eventSource), name)
-            + " class/name combination");
-      }
-      sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Class<?> getDependentType(EventSource source) {
-      return source instanceof ResourceEventSource
-          ? ((ResourceEventSource) source).getResourceClass()
-          : source.getClass();
-    }
-
-    private String keyFor(EventSource source) {
-      return keyFor(getDependentType(source));
-    }
-
-    private String keyFor(Class<?> dependentType) {
-      var key = dependentType.getCanonicalName();
-
-      // make sure timer event source is started first, then controller event source
-      // this is needed so that these sources are set when informer sources start so that events can
-      // properly be processed
-      if (controllerResourceEventSource != null
-          && key.equals(controllerResourceEventSource.getResourceClass().getCanonicalName())) {
-        key = 1 + "-" + key;
-      } else if (key.equals(retryAndRescheduleTimerEventSource.getClass().getCanonicalName())) {
-        key = 0 + "-" + key;
-      }
-      return key;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <S> ResourceEventSource<R, S> get(Class<S> dependentType, String name) {
-      final var sourcesForType = sources.get(keyFor(dependentType));
-      if (sourcesForType == null || sourcesForType.isEmpty()) {
-        return null;
-      }
-
-      final var size = sourcesForType.size();
-      final EventSource source;
-      if (size == 1) {
-        source = sourcesForType.values().stream().findFirst().orElse(null);
-      } else {
-        if (name == null || name.isBlank()) {
-          throw new IllegalArgumentException("There are multiple EventSources registered for type "
-              + dependentType.getCanonicalName()
-              + ", you need to provide a name to specify which EventSource you want to query. Known names: "
-              + String.join(",", sourcesForType.keySet()));
-        }
-        source = sourcesForType.get(name);
-
-        if (source == null) {
-          return null;
-        }
-      }
-
-      if (!(source instanceof ResourceEventSource)) {
-        throw new IllegalArgumentException(source + " associated with "
-            + keyAsString(dependentType, name) + " is not a "
-            + ResourceEventSource.class.getSimpleName());
-      }
-      final var res = (ResourceEventSource<R, S>) source;
-      final var resourceClass = res.getResourceClass();
-      if (!resourceClass.isAssignableFrom(dependentType)) {
-        throw new IllegalArgumentException(source + " associated with "
-            + keyAsString(dependentType, name)
-            + " is handling " + resourceClass.getName() + " resources but asked for "
-            + dependentType.getName());
-      }
-      return res;
-    }
-
-    @SuppressWarnings("rawtypes")
-    private String keyAsString(Class dependentType, String name) {
-      return name != null && name.length() > 0
-          ? "(" + dependentType.getName() + ", " + name + ")"
-          : dependentType.getName();
-    }
   }
 }
