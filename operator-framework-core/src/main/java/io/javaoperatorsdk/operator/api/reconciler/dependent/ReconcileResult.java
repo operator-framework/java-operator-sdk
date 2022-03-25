@@ -9,22 +9,17 @@ public class ReconcileResult<R> {
 
   private final R resource;
   private final Operation operation;
-  private final Exception error;
 
   public static <T> ReconcileResult<T> resourceCreated(T resource) {
-    return new ReconcileResult<>(resource, Operation.CREATED, null);
+    return new ReconcileResult<>(resource, Operation.CREATED);
   }
 
   public static <T> ReconcileResult<T> resourceUpdated(T resource) {
-    return new ReconcileResult<>(resource, Operation.UPDATED, null);
+    return new ReconcileResult<>(resource, Operation.UPDATED);
   }
 
   public static <T> ReconcileResult<T> noOperation(T resource) {
-    return new ReconcileResult<>(resource, Operation.NONE, null);
-  }
-
-  public static <T> ReconcileResult<T> error(T resource, Exception error) {
-    return new ReconcileResult<>(resource, Operation.ERROR, error);
+    return new ReconcileResult<>(resource, Operation.NONE);
   }
 
   @Override
@@ -32,14 +27,12 @@ public class ReconcileResult<R> {
     return getResource()
         .map(r -> r instanceof HasMetadata ? ResourceID.fromResource((HasMetadata) r) : r)
         .orElse("no resource")
-        + " -> " + operation
-        + getError().map(e -> " (" + e.getMessage() + ")").orElse("");
+        + " -> " + operation;
   }
 
-  private ReconcileResult(R resource, Operation operation, Exception error) {
+  private ReconcileResult(R resource, Operation operation) {
     this.resource = resource;
     this.operation = operation;
-    this.error = error;
   }
 
   public Optional<R> getResource() {
@@ -50,11 +43,7 @@ public class ReconcileResult<R> {
     return operation;
   }
 
-  public Optional<Exception> getError() {
-    return Optional.ofNullable(error);
-  }
-
   public enum Operation {
-    CREATED, UPDATED, NONE, ERROR
+    CREATED, UPDATED, NONE
   }
 }

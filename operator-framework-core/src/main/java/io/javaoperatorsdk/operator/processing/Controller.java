@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -36,9 +37,9 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -187,23 +188,26 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            final var result = dependents.entrySet().stream()
-                .map(entry -> {
-                  final var dependent = entry.getValue();
-                  final var name = entry.getKey();
-                  ReconcileResult reconcileResult;
-                  try {
-                    reconcileResult = dependent.reconcile(resource, context);
-                  } catch (Exception e) {
-                    reconcileResult = ReconcileResult.error(resource, e);
-                  }
-                  context.managedDependentResourceContext().setReconcileResult(name,
-                      reconcileResult);
-                  return reconcileResult;
-                });
+            final var exceptions = new ArrayList<Exception>(dependents.size());
+            dependents.forEach((name, dependent) -> {
+              try {
+                final var reconcileResult = dependent.reconcile(resource, context);
+                context.managedDependentResourceContext().setReconcileResult(name, reconcileResult);
+                log.info("Reconciled dependent '{}' -> {}", name, reconcileResult.getOperation());
+              } catch (Exception e) {
+                final var message = e.getMessage();
+                exceptions.add(new ManagedDependentResourceException(name,
+                    "Couldn't reconcile DependentResource named: " + name + ", cause: " + message,
+                    e));
+                log.warn("Error reconciling dependent '{}': {}", name, message);
+              }
+            });
 
-            log.info("Dependents reconciliation:\n{}",
-                result.map(r -> "\t" + r.toString()).collect(Collectors.joining("\n")));
+            if (!exceptions.isEmpty()) {
+              throw new AggregatedOperatorException("One or more DependentResource(s) failed",
+                  exceptions);
+            }
+
             return reconciler.reconcile(resource, context);
           }
         });
