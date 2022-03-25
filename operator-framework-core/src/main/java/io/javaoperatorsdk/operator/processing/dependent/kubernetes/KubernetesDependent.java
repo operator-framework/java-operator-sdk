@@ -11,10 +11,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
 @Target({ElementType.TYPE})
 public @interface KubernetesDependent {
 
-  boolean ADD_OWNER_REFERENCE_DEFAULT = true;
-
-  boolean addOwnerReference() default ADD_OWNER_REFERENCE_DEFAULT;
-
   /**
    * Specified which namespaces this Controller monitors for custom resources events. If no
    * namespace is specified then the controller will monitor the namespaces configured for the
