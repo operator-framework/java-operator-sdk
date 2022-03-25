@@ -64,8 +64,11 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
-        crd.waitUntilReady(2, TimeUnit.SECONDS);
+        Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
         LOGGER.debug("Applied CRD with name: {}", crd.get().get(0).getMetadata().getName());
+      } catch (InterruptedException ex) {
+        LOGGER.error("Interrupted.", ex);
+        Thread.currentThread().interrupt();
       } catch (Exception ex) {
         throw new IllegalStateException("Cannot apply CRD yaml: " + crdFile.getAbsolutePath(), ex);
       }
