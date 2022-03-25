@@ -3,10 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
@@ -17,7 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 @SuppressWarnings("rawtypes")
 public class ManagedDependentResourceContext {
 
-  private final Map<String, DependentResourceInfo> dependentResources;
+  private final Map<String, ReconcileResult> reconcileResults = new ConcurrentHashMap<>();
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
 
   /**
@@ -65,24 +62,11 @@ public class ManagedDependentResourceContext {
    * @return the contextual object value associated with the specified key
    * @see #get(Object, Class)
    */
+  @SuppressWarnings("unused")
   public <T> T getMandatory(Object key, Class<T> expectedType) {
     return get(key, expectedType).orElseThrow(() -> new IllegalStateException(
         "Mandatory attribute (key: " + key + ", type: " + expectedType.getName()
             + ") is missing or not of the expected type"));
-  }
-
-  public ManagedDependentResourceContext(Map<String, DependentResource> dependentResources) {
-    this.dependentResources = dependentResources.entrySet().stream()
-        .map(entry -> new DependentResourceInfo(entry.getKey(), entry.getValue()))
-        .collect(Collectors.toMap(DependentResourceInfo::name, Function.identity()));
-  }
-
-  private DependentResourceInfo getDependentResource(String name) {
-    var dependentResource = dependentResources.get(name);
-    if (dependentResource == null) {
-      throw new OperatorException("No dependent resource found with name: " + name);
-    }
-    return dependentResource;
   }
 
   /**
@@ -94,9 +78,9 @@ public class ManagedDependentResourceContext {
    * @return an Optional containing the reconcile result or {@link Optional#empty()} if no such
    *         result is available
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unused"})
   public Optional<ReconcileResult> getReconcileResult(String name) {
-    return Optional.of(getDependentResource(name)).map(DependentResourceInfo::result);
+    return Optional.ofNullable(reconcileResults.get(name));
   }
 
   /**
@@ -108,26 +92,6 @@ public class ManagedDependentResourceContext {
    *        {@link DependentResource}
    */
   public void setReconcileResult(String name, ReconcileResult reconcileResult) {
-    getDependentResource(name).result = reconcileResult;
-  }
-
-  private static class DependentResourceInfo {
-    private final String name;
-    private final DependentResource dependent;
-    private ReconcileResult result;
-
-
-    private DependentResourceInfo(String name, DependentResource dependent) {
-      this.name = name;
-      this.dependent = dependent;
-    }
-
-    private String name() {
-      return name;
-    }
-
-    public ReconcileResult result() {
-      return result;
-    }
+    reconcileResults.put(name, reconcileResult);
   }
 }

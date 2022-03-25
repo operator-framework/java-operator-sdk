@@ -44,7 +44,7 @@ class ControllerConfigurationOverriderTest {
     final var overridden = ControllerConfigurationOverrider.override(configuration)
         .replacingNamedDependentResourceConfig(
             DependentResource.defaultNameFor(ReadOnlyDependent.class),
-            new KubernetesDependentResourceConfig(true, new String[] {overriddenNS}, labelSelector))
+            new KubernetesDependentResourceConfig(new String[] {overriddenNS}, labelSelector))
         .build();
     dependents = overridden.getDependentResources();
     dependentSpec = dependents.get(dependentResourceName);

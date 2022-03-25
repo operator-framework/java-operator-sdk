@@ -20,8 +20,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
-    this.managedDependentResourceContext = new ManagedDependentResourceContext(
-        controller.getDependents());
+    this.managedDependentResourceContext = new ManagedDependentResourceContext();
   }
 
   @Override
