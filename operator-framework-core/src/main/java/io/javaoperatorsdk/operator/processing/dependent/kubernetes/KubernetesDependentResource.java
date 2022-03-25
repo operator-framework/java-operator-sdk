@@ -124,7 +124,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public EventSource initEventSource(EventSourceContext<P> context) {
     if (informerEventSource == null) {
-      configureWith(null, null);
+      configureWith(null, context.getControllerConfiguration().getNamespaces());
       log.warn("Using default configuration for " + resourceType().getSimpleName()
           + " KubernetesDependentResource, call configureWith to provide configuration");
     }
