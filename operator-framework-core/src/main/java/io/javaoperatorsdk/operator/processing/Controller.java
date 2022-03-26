@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,15 +197,16 @@ public class Controller<P extends HasMetadata>
                 log.info("Reconciled dependent '{}' -> {}", name, reconcileResult.getOperation());
               } catch (Exception e) {
                 final var message = e.getMessage();
-                exceptions.add(new ManagedDependentResourceException(name,
-                    "Couldn't reconcile DependentResource named: " + name + ", cause: " + message,
-                    e));
-                log.warn("Error reconciling dependent '{}': {}", name, message);
+                exceptions.add(new ManagedDependentResourceException(
+                    name, "Error reconciling dependent '" + name + "': " + message, e));
               }
             });
 
             if (!exceptions.isEmpty()) {
-              throw new AggregatedOperatorException("One or more DependentResource(s) failed",
+              throw new AggregatedOperatorException("One or more DependentResource(s) failed:\n" +
+                  exceptions.stream()
+                      .map(e -> "\t\t- " + e.getMessage())
+                      .collect(Collectors.joining("\n")),
                   exceptions);
             }
 
