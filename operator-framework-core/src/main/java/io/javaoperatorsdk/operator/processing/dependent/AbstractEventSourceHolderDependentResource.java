@@ -28,11 +28,17 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   }
 
   public EventSource initEventSource(EventSourceContext<P> context) {
+    // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
+    // before this method is called in the managed case, so only create the event source if it
+    // hasn't already been set
     if (eventSource == null) {
       eventSource = createEventSource(context);
-      isFilteringEventSource = eventSource instanceof RecentOperationEventFilter;
-      isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
     }
+
+    // but we still need to record which interfaces the event source implements even if it has
+    // already been set before this method is called
+    isFilteringEventSource = eventSource instanceof RecentOperationEventFilter;
+    isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
     return this;
   }
 
