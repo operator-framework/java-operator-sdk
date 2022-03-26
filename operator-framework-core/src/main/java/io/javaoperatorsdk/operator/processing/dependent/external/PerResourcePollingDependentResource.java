@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
 public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>
@@ -17,9 +17,9 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   }
 
   @Override
-  public EventSource initEventSource(EventSourceContext<P> context) {
-    eventSource = new PerResourcePollingEventSource<>(this, context.getPrimaryCache(),
+  protected ExternalResourceCachingEventSource<R, P> createEventSource(
+      EventSourceContext<P> context) {
+    return new PerResourcePollingEventSource<>(this, context.getPrimaryCache(),
         getPollingPeriod(), resourceType());
-    return eventSource;
   }
 }

@@ -10,6 +10,4 @@ public interface EventSourceProvider<P extends HasMetadata> {
    * @return the initiated event source.
    */
   EventSource initEventSource(EventSourceContext<P> context);
-
-  EventSource getEventSource();
 }

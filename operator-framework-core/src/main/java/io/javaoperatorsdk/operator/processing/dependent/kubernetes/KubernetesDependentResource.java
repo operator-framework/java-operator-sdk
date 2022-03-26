@@ -14,28 +14,25 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends AbstractDependentResource<R, P>
-    implements KubernetesClientAware, EventSourceProvider<P>,
+    extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
+    implements KubernetesClientAware,
     DependentResourceConfigurator<KubernetesDependentResourceConfig> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
-  private InformerEventSource<R, P> informerEventSource;
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final Class<R> resourceType;
@@ -80,12 +77,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    *
    * @param informerEventSource informer to use*
    */
-  public void configureWith(
-      InformerEventSource<R, P> informerEventSource) {
-    this.informerEventSource = informerEventSource;
-
+  public void configureWith(InformerEventSource<R, P> informerEventSource) {
+    setEventSource(informerEventSource);
   }
 
+  @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     return prepare(target, primary, "Creating").create(target);
   }
@@ -121,19 +117,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public EventSource initEventSource(EventSourceContext<P> context) {
-    if (informerEventSource == null) {
-      configureWith(null, context.getControllerConfiguration().getNamespaces());
-      log.warn("Using default configuration for " + resourceType().getSimpleName()
-          + " KubernetesDependentResource, call configureWith to provide configuration");
-    }
-    return informerEventSource;
-  }
-
-  public KubernetesDependentResource<R, P> setInformerEventSource(
-      InformerEventSource<R, P> informerEventSource) {
-    this.informerEventSource = informerEventSource;
-    return this;
+  protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
+    configureWith(null, context.getControllerConfiguration().getNamespaces());
+    log.warn("Using default configuration for " + resourceType().getSimpleName()
+        + " KubernetesDependentResource, call configureWith to provide configuration");
+    return eventSource();
   }
 
   protected boolean addOwnerReference() {
@@ -147,7 +135,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Optional<R> getResource(P primaryResource) {
-    return informerEventSource.getAssociated(primaryResource);
+    return eventSource().getAssociated(primaryResource);
   }
 
   @Override
@@ -163,10 +151,5 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
-  }
-
-  @Override
-  public EventSource getEventSource() {
-    return informerEventSource;
   }
 }

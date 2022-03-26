@@ -63,89 +63,20 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
-    R created = null;
-    try {
-      prepareEventFiltering(desired, resourceID);
-      created = creator.create(desired, primary, context);
-      cacheAfterCreate(resourceID, created);
-      return created;
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(desired, resourceID, created);
-      throw e;
-    }
+    R created = creator.create(desired, primary, context);
+    cacheAfterCreate(resourceID, created);
+    return created;
   }
 
-  private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
-    if (isFilteringEventSource()) {
-      eventSourceAsRecentOperationEventFilter()
-          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created);
-    }
-  }
+  protected abstract void cacheAfterCreate(ResourceID resourceID, R created);
 
-  private void cacheAfterCreate(ResourceID resourceID, R created) {
-    if (isRecentOperationCacheFiller()) {
-      eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
-    }
-  }
-
-  private void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
-    if (isRecentOperationCacheFiller()) {
-      eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
-          actual);
-    }
-  }
-
-  private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    if (isFilteringEventSource()) {
-      eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
-          desired);
-    }
-  }
+  protected abstract void cacheAfterUpdate(R actual, ResourceID resourceID, R updated);
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
-    R updated = null;
-    try {
-      prepareEventFiltering(desired, resourceID);
-      updated = updater.update(actual, desired, primary, context);
-      cacheAfterUpdate(actual, resourceID, updated);
-      return updated;
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(desired, resourceID, updated);
-      throw e;
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private RecentOperationEventFilter<R> eventSourceAsRecentOperationEventFilter() {
-    return (RecentOperationEventFilter<R>) ((EventSourceProvider<P>) this).getEventSource();
-  }
-
-  @SuppressWarnings("unchecked")
-  private RecentOperationCacheFiller<R> eventSourceAsRecentOperationCacheFiller() {
-    return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
-  }
-
-  @SuppressWarnings("unchecked")
-  // this cannot be done in constructor since event source might be initialized later
-  protected boolean isFilteringEventSource() {
-    if (this instanceof EventSourceProvider) {
-      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
-      return eventSource instanceof RecentOperationEventFilter;
-    } else {
-      return false;
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  // this cannot be done in constructor since event source might be initialized later
-  protected boolean isRecentOperationCacheFiller() {
-    if (this instanceof EventSourceProvider) {
-      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
-      return eventSource instanceof RecentOperationCacheFiller;
-    } else {
-      return false;
-    }
+    R updated = updater.update(actual, desired, primary, context);
+    cacheAfterUpdate(actual, resourceID, updated);
+    return updated;
   }
 
   protected R desired(P primary, Context<P> context) {

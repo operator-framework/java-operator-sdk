@@ -20,6 +20,6 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    *        sources
    * @return list of event sources to register
    */
-  Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
+  Map<String, ? extends EventSource> prepareEventSources(EventSourceContext<P> context);
 
 }
