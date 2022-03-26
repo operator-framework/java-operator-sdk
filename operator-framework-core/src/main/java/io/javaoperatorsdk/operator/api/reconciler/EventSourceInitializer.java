@@ -14,11 +14,12 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 public interface EventSourceInitializer<P extends HasMetadata> {
 
   /**
-   * Prepares a list of {@link EventSource} implementations to be registered by the SDK.
+   * Prepares a map of {@link EventSource} implementations keyed by the name with which they need to
+   * be registered by the SDK.
    *
    * @param context a {@link EventSourceContext} providing access to information useful to event
    *        sources
-   * @return list of event sources to register
+   * @return a map of event sources to register
    */
   Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
 

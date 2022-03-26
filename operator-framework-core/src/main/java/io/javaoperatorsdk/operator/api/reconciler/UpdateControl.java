@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-@SuppressWarnings("rawtypes")
 public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
   private final T resource;
@@ -32,8 +31,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, false, true);
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> updateStatus(
-      T customResource) {
+  public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
     return new UpdateControl<>(customResource, true, false);
   }
 

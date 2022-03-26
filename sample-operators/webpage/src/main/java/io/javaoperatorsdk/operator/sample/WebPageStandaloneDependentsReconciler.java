@@ -1,13 +1,13 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -37,20 +37,25 @@ public class WebPageStandaloneDependentsReconciler
   private static final Logger log =
       LoggerFactory.getLogger(WebPageStandaloneDependentsReconciler.class);
 
-  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
-  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
-  private KubernetesDependentResource<Service, WebPage> serviceDR;
+  private final Map<String, KubernetesDependentResource<?, WebPage>> dependentResources;
 
   public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
-    createDependentResources(kubernetesClient);
+    dependentResources = Map.of(
+        "configmap", new ConfigMapDependentResource(),
+        "deployment", new DeploymentDependentResource(),
+        "service", new ServiceDependentResource());
+    final var config = new KubernetesDependentResourceConfig()
+        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR);
+    dependentResources.values().forEach(dr -> {
+      dr.setKubernetesClient(kubernetesClient);
+      dr.configureWith(config);
+    });
   }
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return Map.of(
-        "configmap", configMapDR.initEventSource(context),
-        "deployment", deploymentDR.initEventSource(context),
-        "service", serviceDR.initEventSource(context));
+    return dependentResources.entrySet().stream()
+        .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
   }
 
   @Override
@@ -58,13 +63,14 @@ public class WebPageStandaloneDependentsReconciler
       throws Exception {
     simulateErrorIfRequested(webPage);
 
-    configMapDR.reconcile(webPage, context);
-    deploymentDR.reconcile(webPage, context);
-    serviceDR.reconcile(webPage, context);
+    dependentResources.values().forEach(dr -> dr.reconcile(webPage, context));
 
-    webPage.setStatus(
-        createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
+    webPage.setStatus(createStatus(getConfigMapName(webPage)));
     return UpdateControl.updateStatus(webPage);
+  }
+
+  private String getConfigMapName(WebPage webPage) {
+    return dependent("configmap").getResource(webPage).orElseThrow().getMetadata().getName();
   }
 
   @Override
@@ -73,20 +79,7 @@ public class WebPageStandaloneDependentsReconciler
     return handleError(resource, e);
   }
 
-  private void createDependentResources(KubernetesClient client) {
-    this.configMapDR = new ConfigMapDependentResource();
-    this.configMapDR.setKubernetesClient(client);
-    configMapDR.configureWith(new KubernetesDependentResourceConfig()
-        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-
-    this.deploymentDR = new DeploymentDependentResource();
-    deploymentDR.setKubernetesClient(client);
-    deploymentDR.configureWith(new KubernetesDependentResourceConfig()
-        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-
-    this.serviceDR = new ServiceDependentResource();
-    serviceDR.setKubernetesClient(client);
-    serviceDR.configureWith(new KubernetesDependentResourceConfig()
-        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+  private KubernetesDependentResource<? extends HasMetadata, WebPage> dependent(String name) {
+    return dependentResources.get(name);
   }
 }
