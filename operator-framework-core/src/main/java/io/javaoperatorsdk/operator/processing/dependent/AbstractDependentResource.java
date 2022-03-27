@@ -5,7 +5,12 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.*;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
@@ -31,6 +36,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       if (maybeActual.isEmpty()) {
         if (creatable) {
           var desired = desired(primary, context);
+          log.info("Creating {} for primary {}", desired.getClass().getSimpleName(),
+              ResourceID.fromResource(primary));
           log.debug("Creating dependent {} for primary {}", desired, primary);
           var createdResource = handleCreate(desired, primary, context);
           return ReconcileResult.resourceCreated(createdResource);
@@ -41,6 +48,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
+            log.info("Updating {} for primary {}", desired.getClass().getSimpleName(),
+                ResourceID.fromResource(primary));
             log.debug("Updating dependent {} for primary {}", desired, primary);
             var updatedResource = handleUpdate(actual, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);

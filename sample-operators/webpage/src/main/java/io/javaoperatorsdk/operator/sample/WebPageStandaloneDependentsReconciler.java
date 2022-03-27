@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,11 +46,11 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return List.of(
-        configMapDR.initEventSource(context),
-        deploymentDR.initEventSource(context),
-        serviceDR.initEventSource(context));
+  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    return Map.of(
+        "configmap", configMapDR.initEventSource(context),
+        "deployment", deploymentDR.initEventSource(context),
+        "service", serviceDR.initEventSource(context));
   }
 
   @Override

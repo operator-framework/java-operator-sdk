@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +29,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 class EventSourceManagerTest {
 
   private final EventProcessor eventHandler = mock(EventProcessor.class);
@@ -48,7 +48,7 @@ class EventSourceManagerTest {
   }
 
   @Test
-  public void closeShouldCascadeToEventSources() throws IOException {
+  public void closeShouldCascadeToEventSources() {
     EventSource eventSource = mock(EventSource.class);
     EventSource eventSource2 = mock(TimerEventSource.class);
 
@@ -97,23 +97,23 @@ class EventSourceManagerTest {
   @Test
   void shouldNotBePossibleToAddEventSourcesForSameTypeAndName() {
     EventSourceManager manager = initManager();
+    final var name = "name1";
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
     when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
-    when(eventSource.name()).thenReturn("name1");
-    manager.registerEventSource(eventSource);
+    manager.registerEventSource(name, eventSource);
 
     eventSource = mock(CachingEventSource.class);
     when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
-    when(eventSource.name()).thenReturn("name1");
     final var source = eventSource;
 
     final var exception = assertThrows(OperatorException.class,
-        () -> manager.registerEventSource(source));
+        () -> manager.registerEventSource(name, source));
     final var cause = exception.getCause();
     assertTrue(cause instanceof IllegalArgumentException);
     assertThat(cause.getMessage()).contains(
-        "An event source is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, name1) class/name combination");
+        "An event source is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, "
+            + name + ") class/name combination");
   }
 
   @Test
@@ -122,13 +122,11 @@ class EventSourceManagerTest {
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
     when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
-    when(eventSource.name()).thenReturn("name1");
-    manager.registerEventSource(eventSource);
+    manager.registerEventSource("name1", eventSource);
 
     CachingEventSource eventSource2 = mock(CachingEventSource.class);
     when(eventSource2.getResourceClass()).thenReturn(TestCustomResource.class);
-    when(eventSource2.name()).thenReturn("name2");
-    manager.registerEventSource(eventSource2);
+    manager.registerEventSource("name2", eventSource2);
 
     final var exception = assertThrows(IllegalArgumentException.class,
         () -> manager.getResourceEventSourceFor(TestCustomResource.class));

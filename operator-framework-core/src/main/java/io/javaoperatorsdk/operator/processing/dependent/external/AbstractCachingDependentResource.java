@@ -4,14 +4,13 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ResourceTypeAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P>
-    implements EventSourceProvider<P>, ResourceTypeAware<R> {
+    implements EventSourceProvider<P> {
 
   protected ExternalResourceCachingEventSource<R, P> eventSource;
   private final Class<R> resourceType;

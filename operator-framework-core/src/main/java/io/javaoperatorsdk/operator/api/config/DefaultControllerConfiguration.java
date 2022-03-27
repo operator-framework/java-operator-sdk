@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
-@SuppressWarnings("rawtypes")
 public class DefaultControllerConfiguration<R extends HasMetadata>
     extends DefaultResourceConfiguration<R>
     implements ControllerConfiguration<R> {
@@ -22,7 +21,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final boolean generationAware;
   private final RetryConfiguration retryConfiguration;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final List<DependentResourceSpec<?, ?>> dependents;
+  private final Map<String, DependentResourceSpec<?, ?>> dependents;
   private final Duration reconciliationMaxInterval;
 
   // NOSONAR constructor is meant to provide all information
@@ -38,7 +37,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
-      List<DependentResourceSpec<?, ?>> dependents) {
+      Map<String, DependentResourceSpec<?, ?>> dependents) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -52,7 +51,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             : retryConfiguration;
     this.resourceEventFilter = resourceEventFilter;
 
-    this.dependents = dependents != null ? dependents : Collections.emptyList();
+    this.dependents = dependents != null ? dependents : Collections.emptyMap();
   }
 
   @Override
@@ -91,7 +90,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public List<DependentResourceSpec<?, ?>> getDependentResources() {
+  public Map<String, DependentResourceSpec<?, ?>> getDependentResources() {
     return dependents;
   }
 

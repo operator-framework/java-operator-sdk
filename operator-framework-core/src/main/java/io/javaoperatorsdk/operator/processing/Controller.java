@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -15,6 +17,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -37,13 +40,13 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
-public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner<P>,
-    LifecycleAware, EventSourceInitializer<P> {
+public class Controller<P extends HasMetadata>
+    implements Reconciler<P>, Cleaner<P>, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
@@ -51,7 +54,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
-  private final List<DependentResource> dependents;
+  private final Map<String, DependentResource> dependents;
   private final boolean contextInitializer;
   private final boolean hasDeleterDependents;
   private final boolean isCleaner;
@@ -71,15 +74,22 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
     eventSourceManager = new EventSourceManager<>(this);
 
     final var hasDeleterHolder = new boolean[] {false};
-    dependents = configuration.getDependentResources().stream()
-        .map(drs -> createAndConfigureFrom(drs, kubernetesClient))
-        .peek(d -> {
-          // check if any dependent implements Deleter to record that fact
-          if (!hasDeleterHolder[0] && d instanceof Deleter) {
-            hasDeleterHolder[0] = true;
-          }
-        })
-        .collect(Collectors.toList());
+    final var specs = configuration.getDependentResources();
+    final var size = specs.size();
+    if (size == 0) {
+      dependents = Collections.emptyMap();
+    } else {
+      final var dependentsHolder = new HashMap<String, DependentResource>(size);
+      specs.forEach((name, drs) -> {
+        final var dependent = createAndConfigureFrom(drs, kubernetesClient);
+        // check if dependent implements Deleter to record that fact
+        if (!hasDeleterHolder[0] && dependent instanceof Deleter) {
+          hasDeleterHolder[0] = true;
+        }
+        dependentsHolder.put(name, dependent);
+      });
+      dependents = Collections.unmodifiableMap(dependentsHolder);
+    }
 
     hasDeleterDependents = hasDeleterHolder[0];
     isCleaner = reconciler instanceof Cleaner;
@@ -133,7 +143,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
                 public DeleteControl execute() {
                   initContextIfNeeded(resource, context);
                   if (hasDeleterDependents) {
-                    dependents.stream()
+                    dependents.values().stream()
                         .filter(d -> d instanceof Deleter)
                         .map(Deleter.class::cast)
                         .forEach(deleter -> deleter.delete(resource, context));
@@ -179,26 +189,47 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            dependents.forEach(dependent -> dependent.reconcile(resource, context));
+            final var exceptions = new ArrayList<Exception>(dependents.size());
+            dependents.forEach((name, dependent) -> {
+              try {
+                final var reconcileResult = dependent.reconcile(resource, context);
+                context.managedDependentResourceContext().setReconcileResult(name, reconcileResult);
+                log.info("Reconciled dependent '{}' -> {}", name, reconcileResult.getOperation());
+              } catch (Exception e) {
+                final var message = e.getMessage();
+                exceptions.add(new ManagedDependentResourceException(
+                    name, "Error reconciling dependent '" + name + "': " + message, e));
+              }
+            });
+
+            if (!exceptions.isEmpty()) {
+              throw new AggregatedOperatorException("One or more DependentResource(s) failed:\n" +
+                  exceptions.stream()
+                      .map(e -> "\t\t- " + e.getMessage())
+                      .collect(Collectors.joining("\n")),
+                  exceptions);
+            }
+
             return reconciler.reconcile(resource, context);
           }
         });
   }
 
-  @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<P> context) {
-    List<EventSource> sources = new LinkedList<>();
-    dependents.stream()
-        .filter(dependentResource -> dependentResource instanceof EventSourceProvider)
-        .map(EventSourceProvider.class::cast)
-        .map(provider -> provider.initEventSource(context))
-        .forEach(sources::add);
+  public void initAndRegisterEventSources(EventSourceContext<P> context) {
+    dependents.entrySet().stream()
+        .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
+        .forEach(drEntry -> {
+          final var provider = (EventSourceProvider) drEntry.getValue();
+          final var source = provider.initEventSource(context);
+          eventSourceManager.registerEventSource(drEntry.getKey(), source);
+        });
 
     // add manually defined event sources
     if (reconciler instanceof EventSourceInitializer) {
-      sources.addAll(((EventSourceInitializer<P>) reconciler).prepareEventSources(context));
+      final var provider = (EventSourceInitializer<P>) this.reconciler;
+      final var ownSources = provider.prepareEventSources(context);
+      ownSources.forEach(eventSourceManager::registerEventSource);
     }
-    return sources;
   }
 
   @Override
@@ -277,7 +308,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
       final var context = new EventSourceContext<>(
           eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
 
-      prepareEventSources(context).forEach(eventSourceManager::registerEventSource);
+      initAndRegisterEventSources(context);
 
       eventSourceManager.start();
 
@@ -330,7 +361,7 @@ public class Controller<P extends HasMetadata> implements Reconciler<P>, Cleaner
   }
 
   @SuppressWarnings("rawtypes")
-  public List<DependentResource> getDependents() {
+  public Map<String, DependentResource> getDependents() {
     return dependents;
   }
 }

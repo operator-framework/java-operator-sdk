@@ -7,12 +7,16 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 public interface DependentResourceFactory {
 
   default <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
+    return createFrom(spec.getDependentResourceClass());
+  }
+
+  default <T extends DependentResource<?, ?>> T createFrom(Class<T> dependentResourceClass) {
     try {
-      return spec.getDependentResourceClass().getConstructor().newInstance();
+      return dependentResourceClass.getConstructor().newInstance();
     } catch (InstantiationException | NoSuchMethodException | IllegalAccessException
         | InvocationTargetException e) {
       throw new IllegalArgumentException("Cannot instantiate DependentResource "
-          + spec.getDependentResourceClass().getCanonicalName(), e);
+          + dependentResourceClass.getCanonicalName(), e);
     }
   }
 

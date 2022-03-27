@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
 import java.util.Optional;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
 public class ReconcileResult<R> {
 
   private final R resource;
@@ -17,6 +20,14 @@ public class ReconcileResult<R> {
 
   public static <T> ReconcileResult<T> noOperation(T resource) {
     return new ReconcileResult<>(resource, Operation.NONE);
+  }
+
+  @Override
+  public String toString() {
+    return getResource()
+        .map(r -> r instanceof HasMetadata ? ResourceID.fromResource((HasMetadata) r) : r)
+        .orElse("no resource")
+        + " -> " + operation;
   }
 
   private ReconcileResult(R resource, Operation operation) {

@@ -1,13 +1,11 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 /**
  * Contextual information related to {@link DependentResource} either to retrieve the actual
@@ -16,7 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 public class ManagedDependentResourceContext {
 
-  private final List<DependentResource> dependentResources;
+  private final Map<String, ReconcileResult> reconcileResults = new ConcurrentHashMap<>();
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
 
   /**
@@ -64,49 +62,36 @@ public class ManagedDependentResourceContext {
    * @return the contextual object value associated with the specified key
    * @see #get(Object, Class)
    */
+  @SuppressWarnings("unused")
   public <T> T getMandatory(Object key, Class<T> expectedType) {
     return get(key, expectedType).orElseThrow(() -> new IllegalStateException(
         "Mandatory attribute (key: " + key + ", type: " + expectedType.getName()
             + ") is missing or not of the expected type"));
   }
 
-  public ManagedDependentResourceContext(List<DependentResource> dependentResources) {
-    this.dependentResources = Collections.unmodifiableList(dependentResources);
+  /**
+   * Retrieve the {@link ReconcileResult}, if it exists, associated with the
+   * {@link DependentResource} associated with the specified name
+   *
+   * @param name the name of the {@link DependentResource} for which we want to retrieve a
+   *        {@link ReconcileResult}
+   * @return an Optional containing the reconcile result or {@link Optional#empty()} if no such
+   *         result is available
+   */
+  @SuppressWarnings({"rawtypes", "unused"})
+  public Optional<ReconcileResult> getReconcileResult(String name) {
+    return Optional.ofNullable(reconcileResults.get(name));
   }
 
   /**
-   * Retrieve all the known {@link DependentResource} implementations
+   * Set the {@link ReconcileResult} for the specified {@link DependentResource} implementation.
    *
-   * @return a list of known {@link DependentResource} implementations
+   * @param name the name of the {@link DependentResource} for which we want to set the
+   *        {@link ReconcileResult}
+   * @param reconcileResult the reconcile result associated with the specified
+   *        {@link DependentResource}
    */
-  public List<DependentResource> getDependentResources() {
-    return dependentResources;
-  }
-
-  /**
-   * Retrieve the dependent resource implementation associated with the specified resource type.
-   *
-   * @param resourceClass the dependent resource class for which we want to retrieve the associated
-   *        dependent resource implementation
-   * @param <T> the type of the resources for which we want to retrieve the associated dependent
-   *        resource implementation
-   * @return the associated dependent resource implementation if it exists or an exception if it
-   *         doesn't or several implementations are associated with the specified resource type
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends DependentResource> T getDependentResource(Class<T> resourceClass) {
-    var resourceList =
-        dependentResources.stream()
-            .filter(dr -> dr.getClass().equals(resourceClass))
-            .collect(Collectors.toList());
-    if (resourceList.isEmpty()) {
-      throw new OperatorException(
-          "No dependent resource found for class: " + resourceClass.getName());
-    }
-    if (resourceList.size() > 1) {
-      throw new OperatorException(
-          "More than one dependent resource found for class: " + resourceClass.getName());
-    }
-    return (T) resourceList.get(0);
+  public void setReconcileResult(String name, ReconcileResult reconcileResult) {
+    reconcileResults.put(name, reconcileResult);
   }
 }

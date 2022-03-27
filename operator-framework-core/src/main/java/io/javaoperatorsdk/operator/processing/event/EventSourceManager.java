@@ -1,15 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -87,7 +81,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   @SuppressWarnings("rawtypes")
-  private void logEventSourceEvent(EventSource eventSource, String event) {
+  private void logEventSourceEvent(NamedEventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
       if (eventSource instanceof ResourceEventSource) {
         ResourceEventSource source = (ResourceEventSource) eventSource;
@@ -119,17 +113,24 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     eventProcessor.stop();
   }
 
-  public final void registerEventSource(EventSource eventSource)
+  public final void registerEventSource(EventSource eventSource) throws OperatorException {
+    registerEventSource(null, eventSource);
+  }
+
+  public final void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     lock.lock();
     try {
-      eventSources.add(eventSource);
+      if (name == null || name.isBlank()) {
+        name = EventSource.defaultNameFor(eventSource);
+      }
+      eventSources.add(name, eventSource);
       eventSource.setEventHandler(eventProcessor);
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
-      throw new OperatorException("Couldn't register event source: " + eventSource.name() + " for "
+      throw new OperatorException("Couldn't register event source: " + name + " for "
           + controller.getConfiguration().getName() + " controller`", e);
     } finally {
       lock.unlock();
@@ -161,11 +162,13 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   Set<EventSource> getRegisteredEventSources() {
-    return eventSources.all();
+    return eventSources.flatMappedSources()
+        .map(NamedEventSource::original)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   public ControllerResourceEventSource<R> getControllerResourceEventSource() {
-    return eventSources.controllerResourceEventSource;
+    return eventSources.controllerResourceEventSource();
   }
 
   public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
@@ -184,141 +187,10 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   TimerEventSource<R> retryEventSource() {
-    return eventSources.retryAndRescheduleTimerEventSource;
+    return eventSources.retryEventSource();
   }
 
   Controller<R> getController() {
     return controller;
-  }
-
-  private static class EventSources<R extends HasMetadata> implements Iterable<EventSource> {
-    private final ConcurrentNavigableMap<String, List<EventSource>> sources =
-        new ConcurrentSkipListMap<>();
-    private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
-    private ControllerResourceEventSource<R> controllerResourceEventSource;
-
-
-    ControllerResourceEventSource<R> initControllerEventSource(Controller<R> controller) {
-      controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
-      return controllerResourceEventSource;
-    }
-
-    TimerEventSource<R> retryEventSource() {
-      return retryAndRescheduleTimerEventSource;
-    }
-
-    @Override
-    public Iterator<EventSource> iterator() {
-      return sources.values().stream().flatMap(Collection::stream).iterator();
-    }
-
-    public Set<EventSource> all() {
-      return sources.values().stream().flatMap(Collection::stream)
-          .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    public void clear() {
-      sources.clear();
-    }
-
-    public boolean contains(EventSource source) {
-      final var eventSources = sources.get(keyFor(source));
-      if (eventSources == null || eventSources.isEmpty()) {
-        return false;
-      }
-      return findMatchingSource(name(source), eventSources).isPresent();
-    }
-
-    public void add(EventSource eventSource) {
-      if (contains(eventSource)) {
-        throw new IllegalArgumentException("An event source is already registered for the "
-            + keyAsString(getDependentType(eventSource), name(eventSource))
-            + " class/name combination");
-      }
-      sources.computeIfAbsent(keyFor(eventSource), k -> new ArrayList<>()).add(eventSource);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Class<?> getDependentType(EventSource source) {
-      return source instanceof ResourceEventSource
-          ? ((ResourceEventSource) source).getResourceClass()
-          : source.getClass();
-    }
-
-    private String name(EventSource source) {
-      return source.name();
-    }
-
-    private String keyFor(EventSource source) {
-      return keyFor(getDependentType(source));
-    }
-
-    private String keyFor(Class<?> dependentType) {
-      var key = dependentType.getCanonicalName();
-
-      // make sure timer event source is started first, then controller event source
-      // this is needed so that these sources are set when informer sources start so that events can
-      // properly be processed
-      if (controllerResourceEventSource != null
-          && key.equals(controllerResourceEventSource.getResourceClass().getCanonicalName())) {
-        key = 1 + "-" + key;
-      } else if (key.equals(retryAndRescheduleTimerEventSource.getClass().getCanonicalName())) {
-        key = 0 + "-" + key;
-      }
-      return key;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <S> ResourceEventSource<R, S> get(Class<S> dependentType, String name) {
-      final var sourcesForType = sources.get(keyFor(dependentType));
-      if (sourcesForType == null || sourcesForType.isEmpty()) {
-        return null;
-      }
-
-      final var size = sourcesForType.size();
-      final EventSource source;
-      if (size == 1) {
-        source = sourcesForType.get(0);
-      } else {
-        if (name == null || name.isBlank()) {
-          throw new IllegalArgumentException("There are multiple EventSources registered for type "
-              + dependentType.getCanonicalName()
-              + ", you need to provide a name to specify which EventSource you want to query. Known names: "
-              + sourcesForType.stream().map(this::name).collect(Collectors.joining(",")));
-        }
-        source = findMatchingSource(name, sourcesForType).orElse(null);
-
-        if (source == null) {
-          return null;
-        }
-      }
-
-      if (!(source instanceof ResourceEventSource)) {
-        throw new IllegalArgumentException(source + " associated with "
-            + keyAsString(dependentType, name) + " is not a "
-            + ResourceEventSource.class.getSimpleName());
-      }
-      final var res = (ResourceEventSource<R, S>) source;
-      final var resourceClass = res.getResourceClass();
-      if (!resourceClass.isAssignableFrom(dependentType)) {
-        throw new IllegalArgumentException(source + " associated with "
-            + keyAsString(dependentType, name)
-            + " is handling " + resourceClass.getName() + " resources but asked for "
-            + dependentType.getName());
-      }
-      return res;
-    }
-
-    private Optional<EventSource> findMatchingSource(String name,
-        List<EventSource> sourcesForType) {
-      return sourcesForType.stream().filter(es -> name(es).equals(name)).findAny();
-    }
-
-    @SuppressWarnings("rawtypes")
-    private String keyAsString(Class dependentType, String name) {
-      return name != null && name.length() > 0
-          ? "(" + dependentType.getName() + ", " + name + ")"
-          : dependentType.getName();
-    }
   }
 }

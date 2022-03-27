@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -18,7 +19,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
@@ -38,7 +46,7 @@ public class WebappReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
+  public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
     /*
      * To create an event to a related WebApp resource and trigger the reconciliation we need to
      * find which WebApp this Tomcat custom resource is related to. To find the related
@@ -64,7 +72,7 @@ public class WebappReconciler
             .withPrimaryResourcesRetriever(webappsMatchingTomcatName)
             .withAssociatedSecondaryResourceIdentifier(tomcatFromWebAppSpec)
             .build();
-    return List.of(new InformerEventSource<>(configuration, context));
+    return Map.of("tomcat-informer", new InformerEventSource<>(configuration, context));
   }
 
   /**
@@ -182,8 +190,8 @@ public class WebappReconciler
 
   static class SimpleListener implements ExecListener {
 
-    private CompletableFuture<String> data;
-    private ByteArrayOutputStream baos;
+    private final CompletableFuture<String> data;
+    private final ByteArrayOutputStream baos;
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public SimpleListener(CompletableFuture<String> data, ByteArrayOutputStream baos) {
