@@ -190,7 +190,7 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             final var exceptions = new ArrayList<Exception>(dependents.size());
-            dependents.values().forEach((name, dependent) -> {
+            dependents.forEach((name, dependent) -> {
               try {
                 final var reconcileResult = dependent.reconcile(resource, context);
                 context.managedDependentResourceContext().setReconcileResult(name, reconcileResult);

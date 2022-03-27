@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,10 +53,9 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @Override
-  public Map<String, ? extends EventSource> prepareEventSources(
-      EventSourceContext<WebPage> context) {
-    dependentResources.values().forEach(dr -> dr.initEventSource(context));
-    return dependentResources;
+  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    return dependentResources.entrySet().stream()
+        .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
   }
 
   @Override
