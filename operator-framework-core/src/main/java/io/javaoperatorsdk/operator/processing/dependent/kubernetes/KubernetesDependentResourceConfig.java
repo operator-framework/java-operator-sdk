@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig {
 
   private String[] namespaces = new String[0];
-  private String labelSelector = EMPTY_STRING;
+  private String labelSelector = NO_VALUE_SET;
 
   public KubernetesDependentResourceConfig() {}
 
