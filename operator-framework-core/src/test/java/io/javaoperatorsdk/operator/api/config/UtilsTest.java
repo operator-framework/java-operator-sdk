@@ -98,7 +98,7 @@ class UtilsTest {
     }
 
     @Override
-    public Optional<Deployment> getResource(TestCustomResource primaryResource) {
+    public Optional<Deployment> getAssociatedResource(TestCustomResource primaryResource) {
       return Optional.empty();
     }
 

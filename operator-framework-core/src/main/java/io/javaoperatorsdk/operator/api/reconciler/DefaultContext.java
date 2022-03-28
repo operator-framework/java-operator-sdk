@@ -32,7 +32,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
     return controller.getEventSourceManager()
         .getResourceEventSourceFor(expectedType, eventSourceName)
-        .flatMap(es -> es.getAssociated(primaryResource));
+        .flatMap(es -> es.getAssociatedResource(primaryResource));
   }
 
   @Override

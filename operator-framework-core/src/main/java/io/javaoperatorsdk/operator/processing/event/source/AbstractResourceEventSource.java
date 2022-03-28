@@ -4,7 +4,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public abstract class AbstractResourceEventSource<P extends HasMetadata, R>
     extends AbstractEventSource
-    implements ResourceEventSource<P, R> {
+    implements ResourceEventSource<R, P> {
   private final Class<R> resourceClass;
 
   protected AbstractResourceEventSource(Class<R> resourceClass) {
@@ -12,7 +12,7 @@ public abstract class AbstractResourceEventSource<P extends HasMetadata, R>
   }
 
   @Override
-  public Class<R> getResourceClass() {
+  public Class<R> resourceType() {
     return resourceClass;
   }
 }

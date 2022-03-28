@@ -48,8 +48,8 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
         .build();
   }
 
-  private String getSecretName(String name) {
-    return String.format(SECRET_FORMAT, name);
+  private String getSecretName(String schemaName) {
+    return String.format(SECRET_FORMAT, schemaName);
   }
 
   @Override
@@ -61,7 +61,6 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   @Override
   public ResourceID associatedSecondaryID(MySQLSchema primary) {
     return new ResourceID(
-        String.format(SECRET_FORMAT, primary.getMetadata().getName()),
-        primary.getMetadata().getNamespace());
+        getSecretName(primary.getMetadata().getName()), primary.getMetadata().getNamespace());
   }
 }

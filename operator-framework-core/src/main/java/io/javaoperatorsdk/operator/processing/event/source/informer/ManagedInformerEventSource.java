@@ -93,7 +93,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public Optional<R> getAssociated(P primary) {
+  public Optional<R> getAssociatedResource(P primary) {
     return get(ResourceID.fromResource(primary));
   }
 
@@ -119,9 +119,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     return manager().list(namespace, predicate);
   }
 
-  ManagedInformerEventSource<R, P, C> setTemporalResourceCache(
-      TemporaryResourceCache<R> temporaryResourceCache) {
+  void setTemporalResourceCache(TemporaryResourceCache<R> temporaryResourceCache) {
     this.temporaryResourceCache = temporaryResourceCache;
-    return this;
   }
 }

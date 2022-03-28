@@ -205,7 +205,7 @@ public class Controller<P extends HasMetadata>
             if (!exceptions.isEmpty()) {
               throw new AggregatedOperatorException("One or more DependentResource(s) failed:\n" +
                   exceptions.stream()
-                      .map(e -> "\t\t- " + e.getMessage())
+                      .map(Controller.this::createExceptionInformation)
                       .collect(Collectors.joining("\n")),
                   exceptions);
             }
@@ -213,6 +213,24 @@ public class Controller<P extends HasMetadata>
             return reconciler.reconcile(resource, context);
           }
         });
+  }
+
+  private String createExceptionInformation(Exception e) {
+    final var exceptionLocation = Optional.ofNullable(e.getCause())
+        .map(Throwable::getStackTrace)
+        .filter(stackTrace -> stackTrace.length > 0)
+        .map(stackTrace -> {
+          int i = 0;
+          while (i < stackTrace.length) {
+            final var moduleName = stackTrace[i].getModuleName();
+            if (!"java.base".equals(moduleName)) {
+              return " at: " + stackTrace[i].toString();
+            }
+            i++;
+          }
+          return "";
+        });
+    return "\t\t- " + e.getMessage() + exceptionLocation.orElse("");
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {

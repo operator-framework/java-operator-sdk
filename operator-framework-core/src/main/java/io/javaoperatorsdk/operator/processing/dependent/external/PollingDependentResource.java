@@ -5,8 +5,8 @@ import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 public abstract class PollingDependentResource<R, P extends HasMetadata>
@@ -21,8 +21,8 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public EventSource initEventSource(EventSourceContext<P> context) {
-    eventSource = new PollingEventSource<>(this, getPollingPeriod(), resourceType());
-    return eventSource;
+  protected ExternalResourceCachingEventSource<R, P> createEventSource(
+      EventSourceContext<P> context) {
+    return new PollingEventSource<>(this, getPollingPeriod(), resourceType());
   }
 }

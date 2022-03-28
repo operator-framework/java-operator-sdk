@@ -7,9 +7,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -31,14 +28,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var maybeActual = getResource(primary);
+    var maybeActual = getAssociatedResource(primary);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
           var desired = desired(primary, context);
-          log.info("Creating {} for primary {}", desired.getClass().getSimpleName(),
-              ResourceID.fromResource(primary));
-          log.debug("Creating dependent {} for primary {}", desired, primary);
+          logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
           return ReconcileResult.resourceCreated(createdResource);
         }
@@ -48,9 +43,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
-            log.info("Updating {} for primary {}", desired.getClass().getSimpleName(),
-                ResourceID.fromResource(primary));
-            log.debug("Updating dependent {} for primary {}", desired, primary);
+            logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actual, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
           }
@@ -66,91 +59,47 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(maybeActual.orElse(null));
   }
 
+  private void logForOperation(String operation, P primary, R desired) {
+    final var desiredDesc = desired instanceof HasMetadata
+        ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
+            + ((HasMetadata) desired).getKind()
+        : desired.getClass().getSimpleName();
+    log.info("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
+    log.debug("{} dependent {} for primary {}", operation, desired, primary);
+  }
+
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
-    R created = null;
-    try {
-      prepareEventFiltering(desired, resourceID);
-      created = creator.create(desired, primary, context);
-      cacheAfterCreate(resourceID, created);
-      return created;
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(desired, resourceID, created);
-      throw e;
-    }
+    R created = creator.create(desired, primary, context);
+    onCreated(resourceID, created);
+    return created;
   }
 
-  private void cleanupAfterEventFiltering(R desired, ResourceID resourceID, R created) {
-    if (isFilteringEventSource()) {
-      eventSourceAsRecentOperationEventFilter()
-          .cleanupOnCreateOrUpdateEventFiltering(resourceID, created);
-    }
-  }
+  /**
+   * Allows sub-classes to perform additional processing (e.g. caching) on the created resource if
+   * needed.
+   *
+   * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
+   *        newly created resource
+   * @param created the newly created resource
+   */
+  protected abstract void onCreated(ResourceID primaryResourceId, R created);
 
-  private void cacheAfterCreate(ResourceID resourceID, R created) {
-    if (isRecentOperationCacheFiller()) {
-      eventSourceAsRecentOperationCacheFiller().handleRecentResourceCreate(resourceID, created);
-    }
-  }
-
-  private void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
-    if (isRecentOperationCacheFiller()) {
-      eventSourceAsRecentOperationCacheFiller().handleRecentResourceUpdate(resourceID, updated,
-          actual);
-    }
-  }
-
-  private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    if (isFilteringEventSource()) {
-      eventSourceAsRecentOperationEventFilter().prepareForCreateOrUpdateEventFiltering(resourceID,
-          desired);
-    }
-  }
+  /**
+   * Allows sub-classes to perform additional processing on the updated resource if needed.
+   *
+   * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
+   *        newly updated resource
+   * @param updated the updated resource
+   * @param actual the resource as it was before the update
+   */
+  protected abstract void onUpdated(ResourceID primaryResourceId, R updated, R actual);
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
-    R updated = null;
-    try {
-      prepareEventFiltering(desired, resourceID);
-      updated = updater.update(actual, desired, primary, context);
-      cacheAfterUpdate(actual, resourceID, updated);
-      return updated;
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(desired, resourceID, updated);
-      throw e;
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private RecentOperationEventFilter<R> eventSourceAsRecentOperationEventFilter() {
-    return (RecentOperationEventFilter<R>) ((EventSourceProvider<P>) this).getEventSource();
-  }
-
-  @SuppressWarnings("unchecked")
-  private RecentOperationCacheFiller<R> eventSourceAsRecentOperationCacheFiller() {
-    return (RecentOperationCacheFiller<R>) ((EventSourceProvider<P>) this).getEventSource();
-  }
-
-  @SuppressWarnings("unchecked")
-  // this cannot be done in constructor since event source might be initialized later
-  protected boolean isFilteringEventSource() {
-    if (this instanceof EventSourceProvider) {
-      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
-      return eventSource instanceof RecentOperationEventFilter;
-    } else {
-      return false;
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  // this cannot be done in constructor since event source might be initialized later
-  protected boolean isRecentOperationCacheFiller() {
-    if (this instanceof EventSourceProvider) {
-      final var eventSource = ((EventSourceProvider<P>) this).getEventSource();
-      return eventSource instanceof RecentOperationCacheFiller;
-    } else {
-      return false;
-    }
+    R updated = updater.update(actual, desired, primary, context);
+    onUpdated(resourceID, updated, actual);
+    return updated;
   }
 
   protected R desired(P primary, Context<P> context) {

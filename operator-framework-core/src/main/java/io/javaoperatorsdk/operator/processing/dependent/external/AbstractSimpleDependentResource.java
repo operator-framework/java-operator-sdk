@@ -31,7 +31,7 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public Optional<R> getResource(HasMetadata primaryResource) {
+  public Optional<R> getAssociatedResource(HasMetadata primaryResource) {
     return cache.get(ResourceID.fromResource(primaryResource));
   }
 
@@ -59,17 +59,13 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   protected abstract void deleteResource(P primary, Context<P> context);
 
   @Override
-  protected R handleCreate(R desired, P primary, Context<P> context) {
-    var res = this.creator.create(desired, primary, context);
-    cache.put(ResourceID.fromResource(primary), res);
-    return res;
+  protected void onCreated(ResourceID primaryResourceId, R created) {
+    cache.put(primaryResourceId, created);
   }
 
   @Override
-  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    var res = updater.update(actual, desired, primary, context);
-    cache.put(ResourceID.fromResource(primary), res);
-    return res;
+  protected void onUpdated(ResourceID primaryResourceId, R updated, R actual) {
+    cache.put(primaryResourceId, updated);
   }
 
   public Matcher.Result<R> match(R actualResource, P primary, Context<P> context) {

@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.ResourceOwner;
 
 /**
  * An interface to implement and provide dependent resource support.
@@ -11,7 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  * @param <R> the dependent resource type
  * @param <P> the associated primary resource type
  */
-public interface DependentResource<R, P extends HasMetadata> {
+public interface DependentResource<R, P extends HasMetadata> extends ResourceOwner<R, P> {
 
   /**
    * Reconciles the dependent resource given the desired primary state
@@ -21,25 +20,6 @@ public interface DependentResource<R, P extends HasMetadata> {
    * @return a {@link ReconcileResult} providing information about the reconciliation result
    */
   ReconcileResult<R> reconcile(P primary, Context<P> context);
-
-  /**
-   * The intention with get resource is to return the actual state of the resource. Usually from a
-   * local cache, what was updated after the reconciliation, or typically from the event source that
-   * caches the resources.
-   *
-   * @param primaryResource the primary resource for which we want to retrieve the secondary
-   *        resource
-   * @return an {@link Optional} containing the secondary resource or {@link Optional#empty()} if it
-   *         doesn't exist
-   */
-  Optional<R> getResource(P primaryResource);
-
-  /**
-   * Retrieves the resource type associated with this DependentResource
-   *
-   * @return the resource type associated with this DependentResource
-   */
-  Class<R> resourceType();
 
   /**
    * Computes a default name for the specified DependentResource class
