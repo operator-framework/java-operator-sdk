@@ -33,9 +33,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       if (maybeActual.isEmpty()) {
         if (creatable) {
           var desired = desired(primary, context);
-          log.info("Creating {} for primary {}", desired.getClass().getSimpleName(),
-              ResourceID.fromResource(primary));
-          log.debug("Creating dependent {} for primary {}", desired, primary);
+          logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
           return ReconcileResult.resourceCreated(createdResource);
         }
@@ -45,9 +43,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
-            log.info("Updating {} for primary {}", desired.getClass().getSimpleName(),
-                ResourceID.fromResource(primary));
-            log.debug("Updating dependent {} for primary {}", desired, primary);
+            logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actual, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
           }
@@ -61,6 +57,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           getClass().getSimpleName());
     }
     return ReconcileResult.noOperation(maybeActual.orElse(null));
+  }
+
+  private void logForOperation(String operation, P primary, R desired) {
+    final var desiredDesc = desired instanceof HasMetadata
+        ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
+            + ((HasMetadata) desired).getKind()
+        : desired.getClass().getSimpleName();
+    log.info("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
+    log.debug("{} dependent {} for primary {}", operation, desired, primary);
   }
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
