@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.EMPTY_STRING;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -27,5 +27,5 @@ public @interface KubernetesDependent {
    *
    * @return the label selector
    */
-  String labelSelector() default EMPTY_STRING;
+  String labelSelector() default NO_VALUE_SET;
 }

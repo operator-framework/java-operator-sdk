@@ -75,7 +75,7 @@ public class ReconcilerUtils {
     final var annotation = reconcilerClass.getAnnotation(ControllerConfiguration.class);
     if (annotation != null) {
       final var name = annotation.name();
-      if (!Constants.EMPTY_STRING.equals(name)) {
+      if (!Constants.NO_VALUE_SET.equals(name)) {
         return name;
       }
     }

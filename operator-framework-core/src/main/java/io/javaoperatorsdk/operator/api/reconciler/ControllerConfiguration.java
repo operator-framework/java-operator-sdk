@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 @Target({ElementType.TYPE})
 public @interface ControllerConfiguration {
 
-  String name() default Constants.EMPTY_STRING;
+  String name() default Constants.NO_VALUE_SET;
 
   /**
    * Optional finalizer name, if it is not provided, one will be automatically generated. Note that
@@ -22,7 +22,7 @@ public @interface ControllerConfiguration {
    *
    * @return the finalizer name
    */
-  String finalizerName() default Constants.EMPTY_STRING;
+  String finalizerName() default Constants.NO_VALUE_SET;
 
   /**
    * If true, will dispatch new event to the controller if generation increased since the last
@@ -48,7 +48,7 @@ public @interface ControllerConfiguration {
    *
    * @return the label selector
    */
-  String labelSelector() default Constants.EMPTY_STRING;
+  String labelSelector() default Constants.NO_VALUE_SET;
 
   /**
    * <p>
