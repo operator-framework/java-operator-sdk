@@ -59,12 +59,12 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   protected abstract void deleteResource(P primary, Context<P> context);
 
   @Override
-  protected void processPostCreate(ResourceID primaryResourceId, R created) {
+  protected void onCreated(ResourceID primaryResourceId, R created) {
     cache.put(primaryResourceId, created);
   }
 
   @Override
-  protected void processPostUpdate(ResourceID primaryResourceId, R updated, R actual) {
+  protected void onUpdated(ResourceID primaryResourceId, R updated, R actual) {
     cache.put(primaryResourceId, updated);
   }
 

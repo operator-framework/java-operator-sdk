@@ -71,7 +71,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = creator.create(desired, primary, context);
-    processPostCreate(resourceID, created);
+    onCreated(resourceID, created);
     return created;
   }
 
@@ -83,7 +83,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    *        newly created resource
    * @param created the newly created resource
    */
-  protected abstract void processPostCreate(ResourceID primaryResourceId, R created);
+  protected abstract void onCreated(ResourceID primaryResourceId, R created);
 
   /**
    * Allows sub-classes to perform additional processing on the updated resource if needed.
@@ -93,12 +93,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @param updated the updated resource
    * @param actual the resource as it was before the update
    */
-  protected abstract void processPostUpdate(ResourceID primaryResourceId, R updated, R actual);
+  protected abstract void onUpdated(ResourceID primaryResourceId, R updated, R actual);
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = updater.update(actual, desired, primary, context);
-    processPostUpdate(resourceID, updated, actual);
+    onUpdated(resourceID, updated, actual);
     return updated;
   }
 

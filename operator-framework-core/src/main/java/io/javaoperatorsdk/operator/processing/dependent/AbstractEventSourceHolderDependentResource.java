@@ -86,13 +86,13 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   }
 
 
-  protected void processPostCreate(ResourceID primaryResourceId, R created) {
+  protected void onCreated(ResourceID primaryResourceId, R created) {
     if (isCacheFillerEventSource) {
       recentOperationCacheFiller().handleRecentResourceCreate(primaryResourceId, created);
     }
   }
 
-  protected void processPostUpdate(ResourceID primaryResourceId, R updated, R actual) {
+  protected void onUpdated(ResourceID primaryResourceId, R updated, R actual) {
     if (isCacheFillerEventSource) {
       recentOperationCacheFiller().handleRecentResourceUpdate(primaryResourceId, updated, actual);
     }
