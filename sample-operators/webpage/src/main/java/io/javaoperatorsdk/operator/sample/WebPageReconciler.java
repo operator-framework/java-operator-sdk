@@ -65,7 +65,8 @@ public class WebPageReconciler
         new InformerEventSource<>(InformerConfiguration.from(context, Service.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
-    return Map.of("configmap", configMapEventSource, "deployment", deploymentEventSource, "service",
+    return EventSourceInitializer.defaultNamedEventSources(configMapEventSource,
+        deploymentEventSource,
         serviceEventSource);
   }
 

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -22,5 +23,13 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    * @return a map of event sources to register
    */
   Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
+
+  static Map<String, EventSource> defaultNamedEventSources(EventSource... eventSources) {
+    Map<String, EventSource> eventSourceMap = new HashMap<>(eventSources.length);
+    for (EventSource eventSource : eventSources) {
+      eventSourceMap.put(EventSource.defaultNameFor(eventSource), eventSource);
+    }
+    return eventSourceMap;
+  }
 
 }

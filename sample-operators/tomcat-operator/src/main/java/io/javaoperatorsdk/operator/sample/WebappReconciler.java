@@ -72,7 +72,8 @@ public class WebappReconciler
             .withPrimaryResourcesRetriever(webappsMatchingTomcatName)
             .withAssociatedSecondaryResourceIdentifier(tomcatFromWebAppSpec)
             .build();
-    return Map.of("tomcat-informer", new InformerEventSource<>(configuration, context));
+    return EventSourceInitializer
+        .defaultNamedEventSources(new InformerEventSource<>(configuration, context));
   }
 
   /**
