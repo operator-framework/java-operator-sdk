@@ -165,8 +165,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousResourceVersion) {
     handleRecentCreateOrUpdate(resource,
-        () -> super.handleRecentResourceUpdate(resourceID, resource,
-            previousResourceVersion));
+        () -> super.handleRecentResourceUpdate(resourceID, resource, previousResourceVersion));
   }
 
   @Override

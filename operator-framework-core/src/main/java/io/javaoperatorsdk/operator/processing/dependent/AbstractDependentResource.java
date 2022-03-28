@@ -71,18 +71,34 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = creator.create(desired, primary, context);
-    cacheAfterCreate(resourceID, created);
+    processPostCreate(resourceID, created);
     return created;
   }
 
-  protected abstract void cacheAfterCreate(ResourceID resourceID, R created);
+  /**
+   * Allows sub-classes to perform additional processing (e.g. caching) on the created resource if
+   * needed.
+   *
+   * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
+   *        newly created resource
+   * @param created the newly created resource
+   */
+  protected abstract void processPostCreate(ResourceID primaryResourceId, R created);
 
-  protected abstract void cacheAfterUpdate(R actual, ResourceID resourceID, R updated);
+  /**
+   * Allows sub-classes to perform additional processing on the updated resource if needed.
+   *
+   * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
+   *        newly updated resource
+   * @param updated the updated resource
+   * @param actual the resource as it was before the update
+   */
+  protected abstract void processPostUpdate(ResourceID primaryResourceId, R updated, R actual);
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = updater.update(actual, desired, primary, context);
-    cacheAfterUpdate(actual, resourceID, updated);
+    processPostUpdate(resourceID, updated, actual);
     return updated;
   }
 

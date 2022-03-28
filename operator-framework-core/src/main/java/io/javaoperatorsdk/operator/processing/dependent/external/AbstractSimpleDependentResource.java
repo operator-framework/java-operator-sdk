@@ -59,13 +59,13 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   protected abstract void deleteResource(P primary, Context<P> context);
 
   @Override
-  protected void cacheAfterCreate(ResourceID resourceID, R created) {
-    cache.put(resourceID, created);
+  protected void processPostCreate(ResourceID primaryResourceId, R created) {
+    cache.put(primaryResourceId, created);
   }
 
   @Override
-  protected void cacheAfterUpdate(R actual, ResourceID resourceID, R updated) {
-    cache.put(resourceID, updated);
+  protected void processPostUpdate(ResourceID primaryResourceId, R updated, R actual) {
+    cache.put(primaryResourceId, updated);
   }
 
   public Matcher.Result<R> match(R actualResource, P primary, Context<P> context) {
