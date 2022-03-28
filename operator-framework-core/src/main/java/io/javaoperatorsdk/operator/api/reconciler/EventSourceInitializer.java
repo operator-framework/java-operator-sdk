@@ -24,6 +24,12 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    */
   Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
 
+  /**
+   * Utility method to easily create map with default names of event sources.
+   *
+   * @param eventSources to name
+   * @return even source with default names
+   */
   static Map<String, EventSource> defaultNamedEventSources(EventSource... eventSources) {
     Map<String, EventSource> eventSourceMap = new HashMap<>(eventSources.length);
     for (EventSource eventSource : eventSources) {
