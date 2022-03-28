@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -95,7 +98,7 @@ public class PollingEventSource<R, P extends HasMetadata>
    * @return related resource
    */
   @Override
-  public Optional<R> getAssociated(P primary) {
+  public Optional<R> getAssociatedResource(P primary) {
     return getCachedValue(ResourceID.fromResource(primary));
   }
 }

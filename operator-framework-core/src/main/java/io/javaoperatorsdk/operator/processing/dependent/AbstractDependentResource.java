@@ -28,7 +28,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var maybeActual = getResource(primary);
+    var maybeActual = getAssociatedResource(primary);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {

@@ -16,7 +16,7 @@ public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
   }
 
   public Optional<R> fetchResource(P primaryResource) {
-    return eventSource().getAssociated(primaryResource);
+    return eventSource().getAssociatedResource(primaryResource);
   }
 
   @Override
@@ -25,7 +25,7 @@ public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public Optional<R> getResource(P primaryResource) {
-    return eventSource().getAssociated(primaryResource);
+  public Optional<R> getAssociatedResource(P primaryResource) {
+    return eventSource().getAssociatedResource(primaryResource);
   }
 }

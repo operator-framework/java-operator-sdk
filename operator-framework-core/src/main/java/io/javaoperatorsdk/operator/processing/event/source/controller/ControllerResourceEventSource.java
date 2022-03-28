@@ -29,6 +29,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private final Controller<T> controller;
   private final ResourceEventFilter<T> filter;
 
+  @SuppressWarnings("unchecked")
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
@@ -101,7 +102,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public Optional<T> getAssociated(T primary) {
+  public Optional<T> getAssociatedResource(T primary) {
     return get(ResourceID.fromResource(primary));
   }
 }

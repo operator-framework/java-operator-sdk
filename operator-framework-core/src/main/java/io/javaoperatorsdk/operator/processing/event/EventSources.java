@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.ResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
@@ -68,8 +69,8 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
 
   @SuppressWarnings("rawtypes")
   private Class<?> getDependentType(EventSource source) {
-    return source instanceof ResourceEventSource
-        ? ((ResourceEventSource) source).getResourceClass()
+    return source instanceof ResourceOwner
+        ? ((ResourceOwner) source).resourceType()
         : source.getClass();
   }
 
@@ -84,7 +85,7 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
     // this is needed so that these sources are set when informer sources start so that events can
     // properly be processed
     if (controllerResourceEventSource != null
-        && key.equals(controllerResourceEventSource.getResourceClass().getCanonicalName())) {
+        && key.equals(controllerResourceEventSource.resourceType().getCanonicalName())) {
       key = 1 + "-" + key;
     } else if (key.equals(retryAndRescheduleTimerEventSource.getClass().getCanonicalName())) {
       key = 0 + "-" + key;
@@ -93,7 +94,7 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
   }
 
   @SuppressWarnings("unchecked")
-  public <S> ResourceEventSource<R, S> get(Class<S> dependentType, String name) {
+  public <S> ResourceEventSource<S, R> get(Class<S> dependentType, String name) {
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null || sourcesForType.isEmpty()) {
       return null;
@@ -122,8 +123,8 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
           + keyAsString(dependentType, name) + " is not a "
           + ResourceEventSource.class.getSimpleName());
     }
-    final var res = (ResourceEventSource<R, S>) source;
-    final var resourceClass = res.getResourceClass();
+    final var res = (ResourceEventSource<S, R>) source;
+    final var resourceClass = res.resourceType();
     if (!resourceClass.isAssignableFrom(dependentType)) {
       throw new IllegalArgumentException(source + " associated with "
           + keyAsString(dependentType, name)

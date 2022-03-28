@@ -97,7 +97,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public void delete(P primary, Context<P> context) {
     if (!addOwnerReference()) {
-      var resource = getResource(primary);
+      var resource = getAssociatedResource(primary);
       resource.ifPresent(r -> client.resource(r).delete());
     }
   }
@@ -134,8 +134,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public Optional<R> getResource(P primaryResource) {
-    return eventSource().getAssociated(primaryResource);
+  public Optional<R> getAssociatedResource(P primaryResource) {
+    return eventSource().getAssociatedResource(primaryResource);
   }
 
   @Override

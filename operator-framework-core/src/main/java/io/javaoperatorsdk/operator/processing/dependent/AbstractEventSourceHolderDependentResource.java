@@ -10,9 +10,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEvent
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
-public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends EventSource>
-    extends AbstractDependentResource<R, P> implements EventSource, EventSourceProvider<P> {
+public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
+    extends AbstractDependentResource<R, P>
+    implements ResourceEventSource<R, P>, EventSourceProvider<P> {
   private T eventSource;
   private boolean isFilteringEventSource;
   private boolean isCacheFillerEventSource;

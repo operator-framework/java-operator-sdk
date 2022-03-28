@@ -86,7 +86,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       if (eventSource instanceof ResourceEventSource) {
         ResourceEventSource source = (ResourceEventSource) eventSource;
         log.debug("{} event source {} for {}", event, eventSource.name(),
-            source.getResourceClass());
+            source.resourceType());
       } else {
         log.debug("{} event source {}", event, eventSource.name());
       }
@@ -171,12 +171,12 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     return eventSources.controllerResourceEventSource();
   }
 
-  public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
+  public <S> Optional<ResourceEventSource<S, R>> getResourceEventSourceFor(
       Class<S> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
   }
 
-  public <S> Optional<ResourceEventSource<R, S>> getResourceEventSourceFor(
+  public <S> Optional<ResourceEventSource<S, R>> getResourceEventSourceFor(
       Class<S> dependentType, String qualifier) {
     if (dependentType == null) {
       return Optional.empty();

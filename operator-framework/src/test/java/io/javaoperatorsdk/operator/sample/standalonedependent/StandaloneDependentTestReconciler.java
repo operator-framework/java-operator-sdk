@@ -47,7 +47,7 @@ public class StandaloneDependentTestReconciler
       StandaloneDependentTestCustomResource primary,
       Context<StandaloneDependentTestCustomResource> context) {
     deploymentDependent.reconcile(primary, context);
-    Optional<Deployment> deployment = deploymentDependent.getResource(primary);
+    Optional<Deployment> deployment = deploymentDependent.getAssociatedResource(primary);
     if (deployment.isEmpty()) {
       throw new IllegalStateException("Resource should not be empty after reconcile.");
     }

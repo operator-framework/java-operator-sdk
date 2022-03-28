@@ -86,7 +86,7 @@ class EventSourceManagerTest {
     assertTrue(source.get() instanceof ControllerResourceEventSource);
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(String.class);
+    when(eventSource.resourceType()).thenReturn(String.class);
     manager.registerEventSource(eventSource);
 
     source = manager.getResourceEventSourceFor(String.class);
@@ -100,11 +100,11 @@ class EventSourceManagerTest {
     final var name = "name1";
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
+    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource(name, eventSource);
 
     eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
+    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
     final var source = eventSource;
 
     final var exception = assertThrows(OperatorException.class,
@@ -121,11 +121,11 @@ class EventSourceManagerTest {
     EventSourceManager manager = initManager();
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(TestCustomResource.class);
+    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource("name1", eventSource);
 
     CachingEventSource eventSource2 = mock(CachingEventSource.class);
-    when(eventSource2.getResourceClass()).thenReturn(TestCustomResource.class);
+    when(eventSource2.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource("name2", eventSource2);
 
     final var exception = assertThrows(IllegalArgumentException.class,
@@ -144,7 +144,7 @@ class EventSourceManagerTest {
     EventSourceManager manager = initManager();
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.getResourceClass()).thenReturn(String.class);
+    when(eventSource.resourceType()).thenReturn(String.class);
     manager.registerEventSource(eventSource);
 
     final Set<EventSource> sources = manager.getRegisteredEventSources();

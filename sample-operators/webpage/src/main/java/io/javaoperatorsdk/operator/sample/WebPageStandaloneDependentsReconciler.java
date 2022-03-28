@@ -70,7 +70,8 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   private String getConfigMapName(WebPage webPage) {
-    return dependent("configmap").getResource(webPage).orElseThrow().getMetadata().getName();
+    return dependent("configmap").getAssociatedResource(webPage).orElseThrow().getMetadata()
+        .getName();
   }
 
   @Override
