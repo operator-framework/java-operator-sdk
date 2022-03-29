@@ -152,7 +152,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * @return the informed resource associated with the specified primary resource
    */
   @Override
-  public Optional<R> getAssociatedResource(P resource) {
+  public Optional<R> getSecondaryResource(P resource) {
     final var id = configuration.getAssociatedResourceIdentifier().associatedSecondaryID(resource);
     return get(id);
   }

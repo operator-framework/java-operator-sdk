@@ -102,7 +102,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public Optional<T> getAssociatedResource(T primary) {
+  public Optional<T> getSecondaryResource(T primary) {
     return get(ResourceID.fromResource(primary));
   }
 }
