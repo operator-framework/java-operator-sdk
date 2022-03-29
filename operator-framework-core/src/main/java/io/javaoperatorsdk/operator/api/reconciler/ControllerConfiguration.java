@@ -16,8 +16,8 @@ public @interface ControllerConfiguration {
 
   /**
    * Optional finalizer name, if it is not provided, one will be automatically generated. Note that
-   * finalizers are only added when Reconciler implement {@link Cleaner} interface and/or at least one
-   * managed dependent resource implement
+   * finalizers are only added when Reconciler implement {@link Cleaner} interface and/or at least
+   * one managed dependent resource implement
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter} interface.
    *
    * @return the finalizer name

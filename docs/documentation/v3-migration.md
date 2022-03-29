@@ -13,7 +13,7 @@ trivial.
 ## Reconciler
 
 - [`Reonciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/67d8e25c26eb92392c6d2a9eb39ea6dddbbfafcc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L16-L16)
-  can throw checked Exception (not just runtime exception), and that also can be handled by `ErrorStatusHandler`.
+  can throw checked exception (not just runtime exception), and that also can be handled by `ErrorStatusHandler`.
 - `cleanup` method is extracted from the `Reconcile` to a
   separate [`Cleaner`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
   interface. It was articulated also until now, that finalizers only makes sense that the `Cleanup` is implemented, from
@@ -24,3 +24,13 @@ trivial.
 - [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/67d8e25c26eb92392c6d2a9eb39ea6dddbbfafcc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java)
   result changed, it's functionally has been extended, now can prevent Exception to be retries and handle checked
   exceptions as mentioned above.  
+
+
+## Event Sources
+
+- Event Sources are now registered with a name. But [utility method](https://github.com/java-operator-sdk/java-operator-sdk/blob/92bfafd8831e5fb9928663133f037f1bf4783e3e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java#L33-L33) 
+  is available to make it easy to [migrate](https://github.com/java-operator-sdk/java-operator-sdk/blob/92bfafd8831e5fb9928663133f037f1bf4783e3e/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java#L51-L52)
+  to a default name.  
+- [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/92bfafd8831e5fb9928663133f037f1bf4783e3e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java#L75-L75)
+  constructor changed to reflect additional functionality in a non backwards compatible way. But should be trivial to 
+  migrate.
