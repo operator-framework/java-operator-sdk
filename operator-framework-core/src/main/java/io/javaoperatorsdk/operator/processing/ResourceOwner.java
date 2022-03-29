@@ -22,5 +22,5 @@ public interface ResourceOwner<R, P extends HasMetadata> {
    * @return an {@link Optional} containing the secondary resource or {@link Optional#empty()} if it
    *         doesn't exist
    */
-  Optional<R> getAssociatedResource(P primary);
+  Optional<R> getResource(P primary);
 }

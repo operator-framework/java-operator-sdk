@@ -98,7 +98,7 @@ public class PollingEventSource<R, P extends HasMetadata>
    * @return related resource
    */
   @Override
-  public Optional<R> getAssociatedResource(P primary) {
+  public Optional<R> getResource(P primary) {
     return getCachedValue(ResourceID.fromResource(primary));
   }
 }

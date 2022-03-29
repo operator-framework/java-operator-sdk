@@ -93,7 +93,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public Optional<R> getAssociatedResource(P primary) {
+  public Optional<R> getResource(P primary) {
     return get(ResourceID.fromResource(primary));
   }
 

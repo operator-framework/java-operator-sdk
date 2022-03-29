@@ -132,7 +132,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
    * @return the related resource for this event source
    */
   @Override
-  public Optional<R> getAssociatedResource(P primary) {
+  public Optional<R> getResource(P primary) {
     return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
   }
 
