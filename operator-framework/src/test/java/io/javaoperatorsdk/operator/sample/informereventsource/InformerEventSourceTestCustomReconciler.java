@@ -46,7 +46,8 @@ public class InformerEventSourceTestCustomReconciler
             .withPrimaryResourcesRetriever(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
             .build();
 
-    return Map.of("test-informer", new InformerEventSource<>(config, context));
+    return EventSourceInitializer
+        .defaultNamedEventSources(new InformerEventSource<>(config, context));
   }
 
   @Override
