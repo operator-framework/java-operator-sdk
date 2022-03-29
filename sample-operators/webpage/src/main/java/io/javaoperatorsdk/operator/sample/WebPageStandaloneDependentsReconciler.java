@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -56,12 +57,12 @@ public class WebPageStandaloneDependentsReconciler
       throws Exception {
     simulateErrorIfRequested(webPage);
 
-    configMapDR.reconcile(webPage, context);
-    deploymentDR.reconcile(webPage, context);
-    serviceDR.reconcile(webPage, context);
+    Arrays.asList(configMapDR, deploymentDR, serviceDR)
+        .forEach(dr -> dr.reconcile(webPage, context));
 
     webPage.setStatus(
-        createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
+        createStatus(
+            configMapDR.getAssociatedResource(webPage).orElseThrow().getMetadata().getName()));
     return UpdateControl.updateStatus(webPage);
   }
 
@@ -73,18 +74,13 @@ public class WebPageStandaloneDependentsReconciler
 
   private void createDependentResources(KubernetesClient client) {
     this.configMapDR = new ConfigMapDependentResource();
-    this.configMapDR.setKubernetesClient(client);
-    configMapDR.configureWith(new KubernetesDependentResourceConfig()
-        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-
     this.deploymentDR = new DeploymentDependentResource();
-    deploymentDR.setKubernetesClient(client);
-    deploymentDR.configureWith(new KubernetesDependentResourceConfig()
-        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-
     this.serviceDR = new ServiceDependentResource();
-    serviceDR.setKubernetesClient(client);
-    serviceDR.configureWith(new KubernetesDependentResourceConfig()
-        .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+
+    Arrays.asList(configMapDR, deploymentDR, serviceDR).forEach(dr -> {
+      dr.setKubernetesClient(client);
+      dr.configureWith(new KubernetesDependentResourceConfig()
+          .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+    });
   }
 }
