@@ -83,7 +83,7 @@ class EventSourceManagerTest {
     assertThat(source).isInstanceOf(ControllerResourceEventSource.class);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> manager.getResourceEventSourceFor(HasMetadata.class, "not_known_name"));
+        .isThrownBy(() -> manager.getResourceEventSourceFor(HasMetadata.class, "unknown_name"));
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
     when(eventSource.resourceType()).thenReturn(String.class);
