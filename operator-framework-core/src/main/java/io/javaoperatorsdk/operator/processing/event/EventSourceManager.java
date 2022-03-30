@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.LinkedHashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -171,19 +170,15 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     return eventSources.controllerResourceEventSource();
   }
 
-  public <S> Optional<ResourceEventSource<S, R>> getResourceEventSourceFor(
+  <S> ResourceEventSource<S, R> getResourceEventSourceFor(
       Class<S> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
   }
 
-  public <S> Optional<ResourceEventSource<S, R>> getResourceEventSourceFor(
+  public <S> ResourceEventSource<S, R> getResourceEventSourceFor(
       Class<S> dependentType, String qualifier) {
-    if (dependentType == null) {
-      return Optional.empty();
-    }
-    String name = qualifier == null ? "" : qualifier;
-    final var eventSource = eventSources.get(dependentType, name);
-    return Optional.ofNullable(eventSource);
+    Objects.requireNonNull(dependentType, "dependentType is Mandatory");
+    return eventSources.get(dependentType, qualifier);
   }
 
   TimerEventSource<R> retryEventSource() {

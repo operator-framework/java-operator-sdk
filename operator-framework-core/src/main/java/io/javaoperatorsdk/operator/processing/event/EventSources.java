@@ -79,30 +79,20 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
   }
 
   private String keyFor(Class<?> dependentType) {
-    var key = dependentType.getCanonicalName();
-
-    // make sure timer event source is started first, then controller event source
-    // this is needed so that these sources are set when informer sources start so that events can
-    // properly be processed
-    if (controllerResourceEventSource != null
-        && key.equals(controllerResourceEventSource.resourceType().getCanonicalName())) {
-      key = 1 + "-" + key;
-    } else if (key.equals(retryAndRescheduleTimerEventSource.getClass().getCanonicalName())) {
-      key = 0 + "-" + key;
-    }
-    return key;
+    return dependentType.getCanonicalName();
   }
 
   @SuppressWarnings("unchecked")
   public <S> ResourceEventSource<S, R> get(Class<S> dependentType, String name) {
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null || sourcesForType.isEmpty()) {
-      return null;
+      throw new IllegalArgumentException(
+          "There is no event source found for class:" + dependentType.getName());
     }
 
     final var size = sourcesForType.size();
     final EventSource source;
-    if (size == 1) {
+    if (size == 1 && name == null) {
       source = sourcesForType.values().stream().findFirst().orElse(null);
     } else {
       if (name == null || name.isBlank()) {
@@ -114,7 +104,8 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
       source = sourcesForType.get(name);
 
       if (source == null) {
-        return null;
+        throw new IllegalArgumentException("There is no event source found for class:" +
+            " " + dependentType.getName() + ", name:" + name);
       }
     }
 
