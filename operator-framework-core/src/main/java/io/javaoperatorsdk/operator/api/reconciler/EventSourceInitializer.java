@@ -25,17 +25,30 @@ public interface EventSourceInitializer<P extends HasMetadata> {
   Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
 
   /**
-   * Utility method to easily create map with default names of event sources.
+   * Utility method to easily create map with generated name for event sources. This is for the use
+   * case when the event sources are not access explicitly by name in the reconciler.
    *
    * @param eventSources to name
    * @return even source with default names
    */
-  static Map<String, EventSource> defaultNamedEventSources(EventSource... eventSources) {
+  static Map<String, EventSource> nameEventSources(EventSource... eventSources) {
     Map<String, EventSource> eventSourceMap = new HashMap<>(eventSources.length);
     for (EventSource eventSource : eventSources) {
-      eventSourceMap.put(EventSource.defaultNameFor(eventSource), eventSource);
+      eventSourceMap.put(generateNameFor(eventSource), eventSource);
     }
     return eventSourceMap;
+  }
+
+  /**
+   * This is for the use case when the event sources are not access explicitly by name in the
+   * reconciler.
+   *
+   * @param eventSource EventSource
+   * @return generated name
+   */
+  static String generateNameFor(EventSource eventSource) {
+    // we can have multiple event sources for the same class
+    return eventSource.getClass().getName() + "#" + eventSource.hashCode();
   }
 
 }

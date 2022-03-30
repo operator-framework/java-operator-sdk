@@ -73,7 +73,7 @@ public class WebappReconciler
             .withAssociatedSecondaryResourceIdentifier(tomcatFromWebAppSpec)
             .build();
     return EventSourceInitializer
-        .defaultNamedEventSources(new InformerEventSource<>(configuration, context));
+        .nameEventSources(new InformerEventSource<>(configuration, context));
   }
 
   /**

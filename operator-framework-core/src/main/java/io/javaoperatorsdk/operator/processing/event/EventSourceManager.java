@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.LinkedHashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -13,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -123,7 +123,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     lock.lock();
     try {
       if (name == null || name.isBlank()) {
-        name = EventSource.defaultNameFor(eventSource);
+        name = EventSourceInitializer.generateNameFor(eventSource);
       }
       eventSources.add(name, eventSource);
       eventSource.setEventHandler(eventProcessor);
@@ -171,19 +171,15 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     return eventSources.controllerResourceEventSource();
   }
 
-  public <S> Optional<ResourceEventSource<S, R>> getResourceEventSourceFor(
+  <S> ResourceEventSource<S, R> getResourceEventSourceFor(
       Class<S> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
   }
 
-  public <S> Optional<ResourceEventSource<S, R>> getResourceEventSourceFor(
+  public <S> ResourceEventSource<S, R> getResourceEventSourceFor(
       Class<S> dependentType, String qualifier) {
-    if (dependentType == null) {
-      return Optional.empty();
-    }
-    String name = qualifier == null ? "" : qualifier;
-    final var eventSource = eventSources.get(dependentType, name);
-    return Optional.ofNullable(eventSource);
+    Objects.requireNonNull(dependentType, "dependentType is Mandatory");
+    return eventSources.get(dependentType, qualifier);
   }
 
   TimerEventSource<R> retryEventSource() {

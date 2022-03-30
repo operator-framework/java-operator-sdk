@@ -20,7 +20,5 @@ public interface EventSource extends LifecycleAware {
    */
   void setEventHandler(EventHandler handler);
 
-  static String defaultNameFor(EventSource source) {
-    return source.getClass().getCanonicalName();
-  }
+
 }

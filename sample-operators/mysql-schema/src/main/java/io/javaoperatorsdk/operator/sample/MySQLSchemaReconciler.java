@@ -39,7 +39,7 @@ public class MySQLSchemaReconciler
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
 
     return context.getSecondaryResource(Schema.class, SchemaDependentResource.NAME).map(s -> {
-      updateStatusPojo(schema, secret.getMetadata().getName(),
+      updateStatusPojo(schema, s, secret.getMetadata().getName(),
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
       log.info("Schema {} created - updating CR status", s.getName());
       return UpdateControl.updateStatus(schema);
@@ -60,15 +60,16 @@ public class MySQLSchemaReconciler
   }
 
 
-  private void updateStatusPojo(MySQLSchema schema, String secretName, String userName) {
+  private void updateStatusPojo(MySQLSchema mySQLSchema, Schema schema, String secretName,
+      String userName) {
     SchemaStatus status = new SchemaStatus();
     status.setUrl(
         format(
             "jdbc:mysql://%1$s/%2$s",
-            System.getenv("MYSQL_HOST"), schema.getMetadata().getName()));
+            System.getenv("MYSQL_HOST"), schema.getName()));
     status.setUserName(userName);
     status.setSecretName(secretName);
     status.setStatus("CREATED");
-    schema.setStatus(status);
+    mySQLSchema.setStatus(status);
   }
 }

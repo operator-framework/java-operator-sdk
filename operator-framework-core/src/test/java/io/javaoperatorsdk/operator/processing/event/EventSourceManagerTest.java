@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.Iterator;
-import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -19,10 +17,10 @@ import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourc
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -76,22 +74,24 @@ class EventSourceManagerTest {
 
   @Test
   void retrievingEventSourceForClassShouldWork() {
-    assertTrue(eventSourceManager.getResourceEventSourceFor(null).isEmpty());
-    assertTrue(eventSourceManager.getResourceEventSourceFor(Class.class).isEmpty());
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> eventSourceManager.getResourceEventSourceFor(Class.class));
 
     // manager is initialized with a controller configured to handle HasMetadata
     EventSourceManager manager = initManager();
-    Optional<EventSource> source = manager.getResourceEventSourceFor(HasMetadata.class);
-    assertTrue(source.isPresent());
-    assertTrue(source.get() instanceof ControllerResourceEventSource);
+    EventSource source = manager.getResourceEventSourceFor(HasMetadata.class);
+    assertThat(source).isInstanceOf(ControllerResourceEventSource.class);
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> manager.getResourceEventSourceFor(HasMetadata.class, "unknown_name"));
 
     CachingEventSource eventSource = mock(CachingEventSource.class);
     when(eventSource.resourceType()).thenReturn(String.class);
     manager.registerEventSource(eventSource);
 
     source = manager.getResourceEventSourceFor(String.class);
-    assertTrue(source.isPresent());
-    assertEquals(eventSource, source.get());
+    assertThat(source).isNotNull();
+    assertEquals(eventSource, source);
   }
 
   @Test
@@ -133,39 +133,10 @@ class EventSourceManagerTest {
     assertTrue(exception.getMessage().contains("name1"));
     assertTrue(exception.getMessage().contains("name2"));
 
-    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name2").get(),
+    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name2"),
         eventSource2);
-    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name1").get(),
+    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name1"),
         eventSource);
-  }
-
-  @Test
-  void timerAndControllerEventSourcesShouldBeListedFirst() {
-    EventSourceManager manager = initManager();
-
-    CachingEventSource eventSource = mock(CachingEventSource.class);
-    when(eventSource.resourceType()).thenReturn(String.class);
-    manager.registerEventSource(eventSource);
-
-    final Set<EventSource> sources = manager.getRegisteredEventSources();
-    assertEquals(3, sources.size());
-    final Iterator<EventSource> iterator = sources.iterator();
-    for (int i = 0; i < sources.size(); i++) {
-      final EventSource source = iterator.next();
-      switch (i) {
-        case 0:
-          assertTrue(source instanceof TimerEventSource);
-          break;
-        case 1:
-          assertTrue(source instanceof ControllerResourceEventSource);
-          break;
-        case 2:
-          assertTrue(source instanceof CachingEventSource);
-          break;
-        default:
-          fail();
-      }
-    }
   }
 
   private EventSourceManager initManager() {
