@@ -18,6 +18,6 @@ class EventSourceTest {
     var eventSourceName1 = EventSource.defaultNameFor(eventSource1);
     var eventSourceName2 = EventSource.defaultNameFor(eventSource2);
 
-    assertThat(eventSource1).isNotEqualTo(eventSource2);
+    assertThat(eventSourceName1).isNotEqualTo(eventSourceName2);
   }
 }
