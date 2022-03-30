@@ -13,6 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
+import io.javaoperatorsdk.operator.sample.schema.Schema;
 
 import static io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource.decode;
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
@@ -37,10 +38,10 @@ public class MySQLSchemaReconciler
     // context
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
 
-    return context.getSecondaryResource(MySQLSchema.class, SchemaDependentResource.NAME).map(s -> {
+    return context.getSecondaryResource(Schema.class, SchemaDependentResource.NAME).map(s -> {
       updateStatusPojo(schema, secret.getMetadata().getName(),
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
-      log.info("Schema {} created - updating CR status", schema.getMetadata().getName());
+      log.info("Schema {} created - updating CR status", s.getName());
       return UpdateControl.updateStatus(schema);
     }).orElse(UpdateControl.noUpdate());
   }
