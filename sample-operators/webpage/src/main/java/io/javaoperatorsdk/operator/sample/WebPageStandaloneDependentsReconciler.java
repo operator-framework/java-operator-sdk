@@ -48,7 +48,7 @@ public class WebPageStandaloneDependentsReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceInitializer.defaultNamedEventSources(configMapDR.initEventSource(context),
+    return EventSourceInitializer.generateNameForEventSources(configMapDR.initEventSource(context),
         deploymentDR.initEventSource(context), serviceDR.initEventSource(context));
   }
 

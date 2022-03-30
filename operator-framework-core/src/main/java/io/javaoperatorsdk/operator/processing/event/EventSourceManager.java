@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -122,7 +123,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     lock.lock();
     try {
       if (name == null || name.isBlank()) {
-        name = EventSource.defaultNameFor(eventSource);
+        name = EventSourceInitializer.generateNameFor(eventSource);
       }
       eventSources.add(name, eventSource);
       eventSource.setEventHandler(eventProcessor);

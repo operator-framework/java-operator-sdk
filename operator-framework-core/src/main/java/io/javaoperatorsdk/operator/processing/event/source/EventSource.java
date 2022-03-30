@@ -20,8 +20,5 @@ public interface EventSource extends LifecycleAware {
    */
   void setEventHandler(EventHandler handler);
 
-  static String defaultNameFor(EventSource source) {
-    // we can have multiple event sources for the same class
-    return source.getClass().getName() + "#" + source.hashCode();
-  }
+
 }

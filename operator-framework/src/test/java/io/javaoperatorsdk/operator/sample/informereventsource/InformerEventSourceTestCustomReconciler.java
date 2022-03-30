@@ -47,7 +47,7 @@ public class InformerEventSourceTestCustomReconciler
             .build();
 
     return EventSourceInitializer
-        .defaultNamedEventSources(new InformerEventSource<>(config, context));
+        .generateNameForEventSources(new InformerEventSource<>(config, context));
   }
 
   @Override
