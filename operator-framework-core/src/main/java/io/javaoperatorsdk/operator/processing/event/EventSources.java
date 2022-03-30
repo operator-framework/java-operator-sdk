@@ -61,21 +61,21 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
   public void add(String name, EventSource eventSource) {
     if (contains(name, eventSource)) {
       throw new IllegalArgumentException("An event source is already registered for the "
-          + keyAsString(getDependentType(eventSource), name)
+          + keyAsString(getResourceType(eventSource), name)
           + " class/name combination");
     }
     sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }
 
   @SuppressWarnings("rawtypes")
-  private Class<?> getDependentType(EventSource source) {
+  private Class<?> getResourceType(EventSource source) {
     return source instanceof ResourceOwner
         ? ((ResourceOwner) source).resourceType()
         : source.getClass();
   }
 
   private String keyFor(EventSource source) {
-    return keyFor(getDependentType(source));
+    return keyFor(getResourceType(source));
   }
 
   private String keyFor(Class<?> dependentType) {

@@ -31,7 +31,7 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    * @param eventSources to name
    * @return even source with default names
    */
-  static Map<String, EventSource> generateNameForEventSources(EventSource... eventSources) {
+  static Map<String, EventSource> nameEventSources(EventSource... eventSources) {
     Map<String, EventSource> eventSourceMap = new HashMap<>(eventSources.length);
     for (EventSource eventSource : eventSources) {
       eventSourceMap.put(generateNameFor(eventSource), eventSource);

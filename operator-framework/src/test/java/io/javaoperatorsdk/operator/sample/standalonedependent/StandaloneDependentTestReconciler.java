@@ -40,7 +40,7 @@ public class StandaloneDependentTestReconciler
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
     return EventSourceInitializer
-        .generateNameForEventSources(deploymentDependent.initEventSource(context));
+        .nameEventSources(deploymentDependent.initEventSource(context));
   }
 
   @Override

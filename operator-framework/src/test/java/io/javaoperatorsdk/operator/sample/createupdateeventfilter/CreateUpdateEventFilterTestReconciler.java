@@ -106,7 +106,7 @@ public class CreateUpdateEventFilterTestReconciler
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
     informerEventSource = new InformerEventSource<>(informerConfiguration, client);
-    return EventSourceInitializer.generateNameForEventSources(informerEventSource);
+    return EventSourceInitializer.nameEventSources(informerEventSource);
   }
 
   @Override
