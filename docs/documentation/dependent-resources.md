@@ -229,22 +229,17 @@ public class WebPageStandaloneDependentsReconciler
         return UpdateControl.updateStatus(webPage);
     }
 
-    private void createDependentResources(KubernetesClient client) {
+   private void createDependentResources(KubernetesClient client) {
         this.configMapDR = new ConfigMapDependentResource();
-        this.configMapDR.setKubernetesClient(client);
-        configMapDR.configureWith(new KubernetesDependentResourceConfig()
-                .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-
         this.deploymentDR = new DeploymentDependentResource();
-        deploymentDR.setKubernetesClient(client);
-        deploymentDR.configureWith(new KubernetesDependentResourceConfig()
-                .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-
         this.serviceDR = new ServiceDependentResource();
-        serviceDR.setKubernetesClient(client);
-        serviceDR.configureWith(new KubernetesDependentResourceConfig()
-                .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-    }
+
+        Arrays.asList(configMapDR, deploymentDR, serviceDR).forEach(dr -> {
+             dr.setKubernetesClient(client);
+             dr.configureWith(new KubernetesDependentResourceConfig()
+                  .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+        });
+   }
 
     // omitted code
 }

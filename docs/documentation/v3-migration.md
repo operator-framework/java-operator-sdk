@@ -33,4 +33,7 @@ trivial.
   to a default name.  
 - [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/92bfafd8831e5fb9928663133f037f1bf4783e3e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java#L75-L75)
   constructor changed to reflect additional functionality in a non backwards compatible way. But should be trivial to 
-  migrate.
+  migrate based on the new API.
+- `PrimaryResourcesRetriever` was renamed to `SecondaryToPrimaryMapper`
+- `AssociatedSecondaryResourceIdentifier` was renamed to `PrimaryToSecondaryMapper`
+- `getAssociatedResource` is now renamed to get `getSecondaryResource` in multiple places 
