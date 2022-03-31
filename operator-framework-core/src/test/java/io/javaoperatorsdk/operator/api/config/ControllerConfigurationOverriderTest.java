@@ -59,7 +59,7 @@ class ControllerConfigurationOverriderTest {
       dependents = @Dependent(type = ReadOnlyDependent.class))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
-    private static final String CONFIGURED_NS = "foo";
+    protected static final String CONFIGURED_NS = "foo";
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {

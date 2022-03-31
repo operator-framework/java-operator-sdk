@@ -71,7 +71,7 @@ class AnnotationControllerConfigurationTest {
       dependents = @Dependent(type = ReadOnlyDependent.class))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
-    private static final String CONFIGURED_NS = "foo";
+    protected static final String CONFIGURED_NS = "foo";
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
@@ -82,7 +82,7 @@ class AnnotationControllerConfigurationTest {
   @ControllerConfiguration(
       dependents = @Dependent(type = ReadOnlyDependent.class, name = NamedDepReconciler.NAME))
   private static class NamedDepReconciler implements Reconciler<ConfigMap> {
-    private static final String NAME = "foo";
+    protected static final String NAME = "foo";
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
@@ -110,7 +110,7 @@ class AnnotationControllerConfigurationTest {
       })
   private static class NamedDuplicatedDepReconciler implements Reconciler<ConfigMap> {
 
-    private static final String NAME = "duplicated";
+    protected static final String NAME = "duplicated";
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
