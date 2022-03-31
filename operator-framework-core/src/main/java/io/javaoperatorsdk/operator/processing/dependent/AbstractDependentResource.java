@@ -33,9 +33,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       if (maybeActual.isEmpty()) {
         if (creatable) {
           var desired = desired(primary, context);
-          logForOperation("Creating", primary, desired);
-          var createdResource = handleCreate(desired, primary, context);
-          return ReconcileResult.resourceCreated(createdResource);
+          if (desired != null) {
+            logForOperation("Creating", primary, desired);
+            var createdResource = handleCreate(desired, primary, context);
+            return ReconcileResult.resourceCreated(createdResource);
+          }
         }
       } else {
         final var actual = maybeActual.get();
@@ -60,10 +62,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private void logForOperation(String operation, P primary, R desired) {
-    final var desiredDesc = desired instanceof HasMetadata
-        ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
-            + ((HasMetadata) desired).getKind()
-        : desired.getClass().getSimpleName();
+    final var desiredDesc = desired == null ? "(null)"
+        : desired instanceof HasMetadata
+            ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
+                + ((HasMetadata) desired).getKind()
+            : desired.getClass().getSimpleName();
     log.info("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
     log.debug("{} dependent {} for primary {}", operation, desired, primary);
   }
