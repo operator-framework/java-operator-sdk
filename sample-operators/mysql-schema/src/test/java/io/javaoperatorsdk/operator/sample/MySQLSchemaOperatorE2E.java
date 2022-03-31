@@ -92,7 +92,7 @@ class MySQLSchemaOperatorE2E {
 
   private static void DatabaseAvailable(ConditionFactory awaiter) {
     var service = new SchemaService(MY_SQL_DB_CONFIG);
-    awaiter.atMost(30, TimeUnit.SECONDS).ignoreExceptionsInstanceOf(IllegalStateException.class)
+    awaiter.atMost(1, MINUTES).ignoreExceptionsInstanceOf(IllegalStateException.class)
         .untilAsserted(() -> {
           service.getSchema("foo");
         });
