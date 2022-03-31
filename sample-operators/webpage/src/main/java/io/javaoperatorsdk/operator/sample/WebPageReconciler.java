@@ -27,12 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /** Shows how to implement reconciler using the low level api directly. */
 @ControllerConfiguration(
@@ -75,6 +70,10 @@ public class WebPageReconciler
       throws Exception {
     log.info("Reconciling web page: {}", webPage);
     simulateErrorIfRequested(webPage);
+
+    if (!isValidHtml(webPage)) {
+      return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage));
+    }
 
     String ns = webPage.getMetadata().getNamespace();
     String configMapName = configMapName(webPage);

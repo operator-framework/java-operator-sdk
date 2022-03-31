@@ -37,4 +37,18 @@ public class Utils {
       throw new ErrorSimulationException("Simulating error");
     }
   }
+
+  static boolean isValidHtml(WebPage webPage) {
+    // very dummy html validation
+    var lowerCaseHtml = webPage.getSpec().getHtml().toLowerCase();
+    return lowerCaseHtml.contains("<html>") && lowerCaseHtml.contains("</html>");
+  }
+
+  static WebPage setInvalidHtmlErrorMessage(WebPage webPage) {
+    if (webPage.getStatus() == null) {
+      webPage.setStatus(new WebPageStatus());
+    }
+    webPage.getStatus().setErrorMessage("Invalid html.");
+    return webPage;
+  }
 }
