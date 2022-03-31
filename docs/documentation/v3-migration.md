@@ -12,7 +12,7 @@ trivial.
 
 ## Reconciler
 
-- [`Reonciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/67d8e25c26eb92392c6d2a9eb39ea6dddbbfafcc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L16-L16)
+- [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/67d8e25c26eb92392c6d2a9eb39ea6dddbbfafcc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L16-L16)
   can throw checked exception (not just runtime exception), and that also can be handled by `ErrorStatusHandler`.
 - `cleanup` method is extracted from the `Reconcile` to a
   separate [`Cleaner`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
