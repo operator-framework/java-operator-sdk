@@ -68,7 +68,7 @@ public class WebPageStandaloneDependentsReconciler
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       ingressDR.reconcile(webPage, context);
     } else {
-      ingressDR.delete(webPage,context);
+      ingressDR.delete(webPage, context);
     }
 
     webPage.setStatus(
