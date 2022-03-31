@@ -47,7 +47,9 @@ public class SchemaDependentResource
 
   @Override
   public Schema desired(MySQLSchema primary, Context<MySQLSchema> context) {
-    return new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding());
+    return context.getSecondaryResource(Secret.class)
+        .map(secret -> new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding()))
+        .orElse(null);
   }
 
   @Override
