@@ -143,9 +143,14 @@ dependent resources. You can annotate your reconciler with
 appropriate steps to wire everything together and call your
 `DependentResource` implementations `reconcile` method before your primary resource is reconciled. This makes sense in
 most use cases where the logic associated with the primary resource is usually limited to status handling based on the
-state of the secondary resources. This behavior and automated handling is referred to as "managed" because
-the `DependentResource`
-implementations are managed by JOSDK.
+state of the secondary resources and the resources are not dependent on each other. 
+
+Note that all dependents will be reconciled in order. If an exception happens in one or more reconciliations, the
+followup resources will be reconciled.
+
+This behavior and automated handling is referred to as "managed" because the `DependentResource` instances 
+are managed by JOSDK.
+
 See [related sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java):
 
 ```java
@@ -181,14 +186,15 @@ sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/s
 
 ## Standalone Dependent Resources
 
-To use dependent resources in more complex workflows, when the reconciliation requires additional logic, the standalone
-mode is available. In practice this means that the developer is responsible to initializing and managing and
-calling `reconcile` method. However, this gives possibility for developers to fully customize the workflow for
-reconciliation. Like setting conditions (if creation of a resource is desired only in certain situations). Also, for
-example if calling an API needs to happen if a service is already up and running
+To use dependent resources in more complex workflows, when there are some resources needs to be created only in certain 
+conditions the standalone mode is available or the dependent resources are not independent of each other.
+For example if calling an API needs to happen if a service is already up and running 
 (think configuring a running DB instance).
+In practice this means that the developer is responsible to initializing and managing and
+calling `reconcile` method. However, this gives possibility for developers to fully customize the workflow for
+reconciliation. Use standalone dependent resources for cases when managed does not fit.
 
-The following sample is equivalent to the one above with managed dependent resources:
+The sample is similar to one above it just performs additional checks, and conditionally creates an `Ingress`: 
 
 ```java
 
@@ -199,7 +205,8 @@ public class WebPageStandaloneDependentsReconciler
     private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
     private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
     private KubernetesDependentResource<Service, WebPage> serviceDR;
-
+    private KubernetesDependentResource<Service, WebPage> ingressDR;
+    
     public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
         // 1.
         createDependentResources(kubernetesClient);
@@ -217,13 +224,23 @@ public class WebPageStandaloneDependentsReconciler
     @Override
     public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
             throws Exception {
-
-        // 3.  
+        
+        // 3.
+        if (!isValidHtml(webPage.getHtml())) {
+            return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage)); 
+        }
+        
+        // 4.  
         configMapDR.reconcile(webPage, context);
         deploymentDR.reconcile(webPage, context);
         serviceDR.reconcile(webPage, context);
-
-        // 4.
+            
+        // 5.
+        if (webPage.isExposed()) {
+            ingressDR.reconcile();
+        }
+        
+        // 6.
         webPage.setStatus(
                 createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
         return UpdateControl.updateStatus(webPage);
@@ -233,8 +250,9 @@ public class WebPageStandaloneDependentsReconciler
         this.configMapDR = new ConfigMapDependentResource();
         this.deploymentDR = new DeploymentDependentResource();
         this.serviceDR = new ServiceDependentResource();
+        this.ingressDR = new IngressDependentResource();
 
-        Arrays.asList(configMapDR, deploymentDR, serviceDR).forEach(dr -> {
+        Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
              dr.setKubernetesClient(client);
              dr.configureWith(new KubernetesDependentResourceConfig()
                   .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
@@ -247,10 +265,12 @@ public class WebPageStandaloneDependentsReconciler
 
 There are multiple things happening here:
 
-1. Dependent resources are explicitly created and can be access later by reference.
+1. Dependent resources are explicitly created and can be access later by reference. 
 2. Event sources are produced by the dependent resources, but needs to be explicitly registered in this case.
-3. Reconciliation is called explicitly, but here the workflow customization is fully in the hand of the developer.
-4. Status is set in a different way, this is just an alternative way to show, that the actual state can be read using
+3. The input html is validated, and error message is set in case it is invalid.
+4. Reconciliation is called explicitly, but here the workflow customization is fully in the hand of the developer.
+5. An `Ingress` is created but only in case `exposed` flag set to true on custom resource.
+6. Status is set in a different way, this is just an alternative way to show, that the actual state can be read using
    the reference. This could be written in a same way as in the managed example.
 
 See the full source code of
