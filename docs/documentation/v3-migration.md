@@ -22,7 +22,7 @@ trivial.
 - [`Context`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Context.java#L9-L9)
   object of `Reconciler` now takes the Primary resource as parametrized type: `Context<MyCustomResource>`.
 - [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/67d8e25c26eb92392c6d2a9eb39ea6dddbbfafcc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java)
-  result changed, it's functionally has been extended, now can prevent Exception to be retries and handle checked
+  result changed, it functionally has been extended to now prevent Exception to be retried and handles checked
   exceptions as mentioned above.  
 
 
