@@ -71,7 +71,7 @@ public class CreateUpdateEventFilterTestReconciler
               client
                   .configMaps()
                   .inNamespace(resource.getMetadata().getNamespace())
-                  .replace(configMap);
+                  .createOrReplace(configMap);
           informerEventSource.handleRecentResourceUpdate(resourceID,
               newConfigMap, configMap);
         } catch (RuntimeException e) {
