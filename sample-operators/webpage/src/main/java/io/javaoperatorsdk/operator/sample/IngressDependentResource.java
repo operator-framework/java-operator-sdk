@@ -15,6 +15,6 @@ public class IngressDependentResource extends CRUKubernetesDependentResource<Ing
   @Override
   protected Ingress desired(WebPage webPage, Context<WebPage> context) {
     return makeDesiredIngress(webPage);
-  };
+  }
 
 }
