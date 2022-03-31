@@ -31,8 +31,10 @@ Version 3 introduces some breaking changes to APIs, however the migration to the
   is available to make it easy to [migrate](https://github.com/java-operator-sdk/java-operator-sdk/blob/92bfafd8831e5fb9928663133f037f1bf4783e3e/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java#L51-L52)
   to a default name.  
 - [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/92bfafd8831e5fb9928663133f037f1bf4783e3e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java#L75-L75)
-  constructor changed to reflect additional functionality in a non backwards compatible way. But should be trivial to 
-  migrate based on the new API.
+  constructor changed to reflect additional functionality in a non backwards compatible way. All the configuration
+  options from the constructor where moved to [`InformerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/f6c6d568ea0a098e11beeeded20fe70f9c5bf692/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/InformerConfiguration.java)
+  . See sample usage in [`WebPageReconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/f6c6d568ea0a098e11beeeded20fe70f9c5bf692/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageReconciler.java#L56-L59)
+  .
 - `PrimaryResourcesRetriever` was renamed to `SecondaryToPrimaryMapper`
 - `AssociatedSecondaryResourceIdentifier` was renamed to `PrimaryToSecondaryMapper`
 - `getAssociatedResource` is now renamed to get `getSecondaryResource` in multiple places 
