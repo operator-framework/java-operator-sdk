@@ -41,6 +41,7 @@ public class WebPageStandaloneDependentsReconciler
   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
   private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
   private KubernetesDependentResource<Service, WebPage> serviceDR;
+  private KubernetesDependentResource<Service, WebPage> ingressDR;
 
   public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
     createDependentResources(kubernetesClient);
@@ -59,6 +60,10 @@ public class WebPageStandaloneDependentsReconciler
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR)
         .forEach(dr -> dr.reconcile(webPage, context));
+
+    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
+      ingressDR.reconcile(webPage,context);
+    }
 
     webPage.setStatus(
         createStatus(
