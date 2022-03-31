@@ -78,19 +78,20 @@ class MySQLSchemaOperatorE2E {
                       new ResourcePollerConfig(
                           700, MY_SQL_DB_CONFIG)))
               .withInfrastructure(infrastructure)
-              .awaitInfrastructure(MySQLSchemaOperatorE2E::DatabaseAvailable)
+              .awaitInfrastructure(awaiter -> DatabaseAvailable(awaiter, MY_SQL_DB_CONFIG))
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
               .build()
           : E2EOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .withInfrastructure(infrastructure)
-              .awaitInfrastructure(MySQLSchemaOperatorE2E::DatabaseAvailable)
+              .awaitInfrastructure(awaiter -> DatabaseAvailable(awaiter,
+                  new MySQLDbConfig("mysql.mysql", "3306", "root", "password")))
               .build();
 
   public MySQLSchemaOperatorE2E() throws FileNotFoundException {}
 
-  private static void DatabaseAvailable(ConditionFactory awaiter) {
-    var service = new SchemaService(MY_SQL_DB_CONFIG);
+  private static void DatabaseAvailable(ConditionFactory awaiter, MySQLDbConfig mySQLDbConfig) {
+    var service = new SchemaService(mySQLDbConfig);
     awaiter.atMost(2, MINUTES).ignoreExceptionsInstanceOf(IllegalStateException.class)
         .untilAsserted(() -> {
           service.getSchema("foo");
