@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.LocalPortForward;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
@@ -44,6 +45,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected final boolean preserveNamespaceOnError;
   protected final boolean waitForNamespaceDeletion;
   protected final Consumer<ConditionFactory> infrastructureAwaiter;
+  private List<PortFowardSpec> portForwards;
+  private List<LocalPortForward> localPortForwards;
 
   protected String namespace;
 
@@ -52,7 +55,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       ConfigurationService configurationService,
       List<HasMetadata> infrastructure,
       Duration infrastructureTimeout,
-      Consumer<ConditionFactory> infrastructureAwaiter, boolean oneNamespacePerClass,
+      Consumer<ConditionFactory> infrastructureAwaiter,
+      List<PortFowardSpec> portForwards,
+      boolean oneNamespacePerClass,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion) {
 
@@ -64,6 +69,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     this.oneNamespacePerClass = oneNamespacePerClass;
     this.preserveNamespaceOnError = preserveNamespaceOnError;
     this.waitForNamespaceDeletion = waitForNamespaceDeletion;
+    this.portForwards = portForwards;
+    this.localPortForwards = new ArrayList<>(portForwards.size());
   }
 
 
@@ -157,6 +164,22 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     kubernetesClient
         .resourceList(infrastructure)
         .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+    for (var ref : portForwards) {
+      String podName = kubernetesClient.pods()
+          .inNamespace(ref.getNamespace())
+          .withLabel(ref.getLabelKey(), ref.getLabelValue())
+          .list()
+          .getItems()
+          .get(0)
+          .getMetadata()
+          .getName();
+
+      localPortForwards.add(kubernetesClient.pods().inNamespace(ref.getNamespace())
+          .withName(podName).portForward(ref.getPort(), ref.getLocalPort()));
+
+      waitForInfrastructureBeReady();
+    }
   }
 
   protected void afterAllImpl(ExtensionContext context) {
@@ -176,9 +199,22 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
         LOGGER.info("Preserving namespace {}", namespace);
       } else {
-        kubernetesClient.resourceList(infrastructure).delete();
+
+        for (var ref : localPortForwards) {
+          try {
+            ref.close();
+          } catch (Exception e) {
+            // ignored
+          }
+        }
+        localPortForwards.clear();
+
         deleteOperator();
+
+        kubernetesClient.resourceList(infrastructure).delete();
+
         LOGGER.info("Deleting namespace {} and stopping operator", namespace);
+
         kubernetesClient.namespaces().withName(namespace).delete();
         if (waitForNamespaceDeletion) {
           LOGGER.info("Waiting for namespace {} to be deleted", namespace);
@@ -210,6 +246,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean waitForNamespaceDeletion;
     protected boolean oneNamespacePerClass;
     protected Consumer<ConditionFactory> infrastructureAwaiter;
+    protected final List<PortFowardSpec> portForwards;
 
     protected AbstractBuilder() {
       this.configurationService = ConfigurationServiceProvider.instance();
@@ -217,6 +254,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       this.infrastructure = new ArrayList<>();
       this.infrastructureTimeout = Duration.ofMinutes(1);
       this.infrastructureAwaiter = null;
+      this.portForwards = new ArrayList<>();
 
       this.preserveNamespaceOnError = Utils.getSystemPropertyOrEnvVar(
           "josdk.it.preserveNamespaceOnError",
@@ -269,6 +307,49 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     public T awaitInfrastructure(Consumer<ConditionFactory> awaiter) {
       infrastructureAwaiter = awaiter;
       return (T) this;
+    }
+
+    public T withPortForward(String namespace, String labelKey, String labelValue, int port,
+        int localPort) {
+      portForwards.add(new PortFowardSpec(namespace, labelKey, labelValue, port, localPort));
+      return (T) this;
+    }
+  }
+
+  static class PortFowardSpec {
+    final String namespace;
+    final String labelKey;
+    final String labelValue;
+    final int port;
+    final int localPort;
+
+    public PortFowardSpec(String namespace, String labelKey, String labelValue, int port,
+        int localPort) {
+      this.namespace = namespace;
+      this.labelKey = labelKey;
+      this.labelValue = labelValue;
+      this.port = port;
+      this.localPort = localPort;
+    }
+
+    public String getNamespace() {
+      return namespace;
+    }
+
+    public String getLabelKey() {
+      return labelKey;
+    }
+
+    public String getLabelValue() {
+      return labelValue;
+    }
+
+    public int getPort() {
+      return port;
+    }
+
+    public int getLocalPort() {
+      return localPort;
     }
   }
 }

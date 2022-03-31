@@ -84,6 +84,7 @@ class MySQLSchemaOperatorE2E {
           : E2EOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .withInfrastructure(infrastructure)
+              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
               .awaitInfrastructure(MySQLSchemaOperatorE2E::DatabaseAvailable)
               .build();
 

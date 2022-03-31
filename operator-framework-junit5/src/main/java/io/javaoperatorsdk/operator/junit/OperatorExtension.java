@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
@@ -31,8 +30,6 @@ public class OperatorExtension extends AbstractOperatorExtension {
 
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
-  private List<PortFowardSpec> portForwards;
-  private List<LocalPortForward> localPortForwards;
 
   private OperatorExtension(
       ConfigurationService configurationService,
@@ -48,12 +45,11 @@ public class OperatorExtension extends AbstractOperatorExtension {
         infrastructure,
         infrastructureTimeout,
         infrastructureAwaiter,
+        portForwards,
         oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion);
     this.reconcilers = reconcilers;
-    this.portForwards = portForwards;
-    this.localPortForwards = new ArrayList<>(portForwards.size());
     this.operator = new Operator(getKubernetesClient(), this.configurationService);
   }
 
@@ -93,22 +89,6 @@ public class OperatorExtension extends AbstractOperatorExtension {
 
     final var kubernetesClient = getKubernetesClient();
 
-    for (var ref : portForwards) {
-      String podName = kubernetesClient.pods()
-          .inNamespace(ref.getNamespace())
-          .withLabel(ref.getLabelKey(), ref.getLabelValue())
-          .list()
-          .getItems()
-          .get(0)
-          .getMetadata()
-          .getName();
-
-      localPortForwards.add(kubernetesClient.pods().inNamespace(ref.getNamespace())
-          .withName(podName).portForward(ref.getPort(), ref.getLocalPort()));
-    }
-
-    waitForInfrastructureBeReady();
-
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
       final var oconfig = override(config).settingNamespace(namespace);
@@ -144,34 +124,22 @@ public class OperatorExtension extends AbstractOperatorExtension {
     this.operator.start();
   }
 
-  protected void after(ExtensionContext context) {
-    super.after(context);
-
+  @Override
+  protected void deleteOperator() {
     try {
       this.operator.stop();
     } catch (Exception e) {
       // ignored
     }
-
-    for (var ref : localPortForwards) {
-      try {
-        ref.close();
-      } catch (Exception e) {
-        // ignored
-      }
-    }
-    localPortForwards.clear();
   }
 
   @SuppressWarnings("rawtypes")
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<ReconcilerSpec> reconcilers;
-    private final List<PortFowardSpec> portForwards;
 
     protected Builder() {
       super();
       this.reconcilers = new ArrayList<>();
-      this.portForwards = new ArrayList<>();
     }
 
     public Builder withReconciler(
@@ -209,12 +177,6 @@ public class OperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
-    public Builder withPortForward(String namespace, String labelKey, String labelValue, int port,
-        int localPort) {
-      portForwards.add(new PortFowardSpec(namespace, labelKey, labelValue, port, localPort));
-      return this;
-    }
-
     public OperatorExtension build() {
       return new OperatorExtension(
           configurationService,
@@ -226,43 +188,6 @@ public class OperatorExtension extends AbstractOperatorExtension {
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass);
-    }
-  }
-
-  private static class PortFowardSpec {
-    final String namespace;
-    final String labelKey;
-    final String labelValue;
-    final int port;
-    final int localPort;
-
-    public PortFowardSpec(String namespace, String labelKey, String labelValue, int port,
-        int localPort) {
-      this.namespace = namespace;
-      this.labelKey = labelKey;
-      this.labelValue = labelValue;
-      this.port = port;
-      this.localPort = localPort;
-    }
-
-    public String getNamespace() {
-      return namespace;
-    }
-
-    public String getLabelKey() {
-      return labelKey;
-    }
-
-    public String getLabelValue() {
-      return labelValue;
-    }
-
-    public int getPort() {
-      return port;
-    }
-
-    public int getLocalPort() {
-      return localPort;
     }
   }
 

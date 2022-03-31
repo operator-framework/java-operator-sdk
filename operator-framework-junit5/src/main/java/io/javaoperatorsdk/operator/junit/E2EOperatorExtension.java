@@ -34,10 +34,13 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
       Duration operatorDeploymentTimeout,
       List<HasMetadata> infrastructure,
       Duration infrastructureTimeout,
-      Consumer<ConditionFactory> infrastructureAwaiter, boolean preserveNamespaceOnError,
+      Consumer<ConditionFactory> infrastructureAwaiter,
+      List<PortFowardSpec> portForwards,
+      boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass) {
     super(configurationService, infrastructure, infrastructureTimeout, infrastructureAwaiter,
+        portForwards,
         oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion);
@@ -95,8 +98,6 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
         .resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
-    waitForInfrastructureBeReady();
-
     LOGGER.debug("Operator resources deployed.");
   }
 
@@ -145,6 +146,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
           infrastructure,
           infrastructureTimeout,
           infrastructureAwaiter,
+          portForwards,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass);
