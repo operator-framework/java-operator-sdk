@@ -105,7 +105,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   }
 
   public <T extends HasMetadata> T replace(Class<T> type, T resource) {
-    return kubernetesClient.resources(type).inNamespace(namespace).replace(resource);
+    return kubernetesClient.resources(type).inNamespace(namespace).createOrReplace(resource);
   }
 
   @SuppressWarnings("unchecked")
