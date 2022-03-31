@@ -63,9 +63,13 @@ public class WebPageReconciler
         new InformerEventSource<>(InformerConfiguration.from(context, Service.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
+    var ingressEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, Ingress.class)
+            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .build(), context);
     return EventSourceInitializer.nameEventSources(configMapEventSource,
         deploymentEventSource,
-        serviceEventSource);
+        serviceEventSource, ingressEventSource);
   }
 
   @Override

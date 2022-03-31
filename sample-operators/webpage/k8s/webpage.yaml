@@ -1,9 +1,11 @@
 apiVersion: "sample.javaoperatorsdk/v1"
 kind: WebPage
 metadata:
+  labels:
+    low-level: "true"
   name: hellows
 spec:
-  exposed: true
+  exposed: false
   html: |
     <html>
       <head>
