@@ -122,7 +122,7 @@ public class WebPageReconciler
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
-      if (!match(desiredIngress, existingIngress.orElseGet(null))) {
+      if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
         kubernetesClient.resource(desiredIngress).inNamespace(ns).createOrReplace();
       }
     } else
@@ -140,17 +140,13 @@ public class WebPageReconciler
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {
-    if (existingIngress == null) {
-      return false;
-    } else {
-      String desiredServiceName =
-          desiredIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-              .getBackend().getService().getName();
-      String existingServiceName =
-          existingIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-              .getBackend().getService().getName();
-      return Objects.equals(desiredServiceName, existingServiceName);
-    }
+    String desiredServiceName =
+        desiredIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
+            .getBackend().getService().getName();
+    String existingServiceName =
+        existingIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
+            .getBackend().getService().getName();
+    return Objects.equals(desiredServiceName, existingServiceName);
   }
 
   private boolean match(Deployment desiredDeployment, Deployment deployment) {
