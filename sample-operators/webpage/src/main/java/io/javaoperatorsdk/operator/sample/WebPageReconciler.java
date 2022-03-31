@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -27,6 +29,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
+import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /** Shows how to implement reconciler using the low level api directly. */
@@ -112,6 +115,16 @@ public class WebPageReconciler
       kubernetesClient.services().inNamespace(ns).createOrReplace(desiredService);
     }
 
+    var existingIngress = context.getSecondaryResource(Ingress.class);
+    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
+      var desiredIngress = makeDesiredIngress(webPage);
+      if (!match(desiredIngress, existingIngress.orElseGet(null))) {
+        kubernetesClient.resource(desiredIngress).inNamespace(ns).createOrReplace();
+      }
+    } else
+      existingIngress.ifPresent(
+          ingress -> kubernetesClient.resource(ingress).delete());
+
     if (previousConfigMap != null && !StringUtils.equals(
         previousConfigMap.getData().get(INDEX_HTML),
         desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
@@ -120,6 +133,20 @@ public class WebPageReconciler
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
     return UpdateControl.updateStatus(webPage);
+  }
+
+  private boolean match(Ingress desiredIngress, Ingress existingIngress) {
+    if (existingIngress == null) {
+      return false;
+    } else {
+      String desiredServiceName =
+          desiredIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
+              .getBackend().getService().getName();
+      String existingServiceName =
+          existingIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
+              .getBackend().getService().getName();
+      return Objects.equals(desiredServiceName, existingServiceName);
+    }
   }
 
   private boolean match(Deployment desiredDeployment, Deployment deployment) {
