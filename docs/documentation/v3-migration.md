@@ -14,7 +14,7 @@ trivial.
 
 - [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/67d8e25c26eb92392c6d2a9eb39ea6dddbbfafcc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L16-L16)
   can throw checked exception (not just runtime exception), and that also can be handled by `ErrorStatusHandler`.
-- `cleanup` method is extracted from the `Reconcile` to a
+- `cleanup` method is extracted from the `Reconciler` interface to a
   separate [`Cleaner`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
   interface. It was articulated also until now, that finalizers only makes sense that the `Cleanup` is implemented, from
   now finalizer is only added if the `Reconciler` implements this interface (or has managed dependent resources
