@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +40,14 @@ public class OperatorExtension extends AbstractOperatorExtension {
       List<HasMetadata> infrastructure,
       List<PortFowardSpec> portForwards,
       Duration infrastructureTimeout,
-      boolean preserveNamespaceOnError,
+      Consumer<ConditionFactory> infrastructureAwaiter, boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass) {
     super(
         configurationService,
         infrastructure,
         infrastructureTimeout,
+        infrastructureAwaiter,
         oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion);
@@ -104,6 +106,8 @@ public class OperatorExtension extends AbstractOperatorExtension {
       localPortForwards.add(kubernetesClient.pods().inNamespace(ref.getNamespace())
           .withName(podName).portForward(ref.getPort(), ref.getLocalPort()));
     }
+
+    waitForInfrastructureBeReady();
 
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
@@ -218,6 +222,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
           infrastructure,
           portForwards,
           infrastructureTimeout,
+          infrastructureAwaiter,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass);

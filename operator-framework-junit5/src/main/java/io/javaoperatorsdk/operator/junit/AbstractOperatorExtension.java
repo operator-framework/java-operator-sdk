@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,17 +43,20 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected final boolean oneNamespacePerClass;
   protected final boolean preserveNamespaceOnError;
   protected final boolean waitForNamespaceDeletion;
+  protected final Consumer<ConditionFactory> infrastructureAwaiter;
 
   protected String namespace;
+
 
   protected AbstractOperatorExtension(
       ConfigurationService configurationService,
       List<HasMetadata> infrastructure,
       Duration infrastructureTimeout,
-      boolean oneNamespacePerClass,
+      Consumer<ConditionFactory> infrastructureAwaiter, boolean oneNamespacePerClass,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion) {
 
+    this.infrastructureAwaiter = infrastructureAwaiter;
     this.kubernetesClient = new DefaultKubernetesClient();
     this.configurationService = configurationService;
     this.infrastructure = infrastructure;
@@ -186,6 +191,12 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     }
   }
 
+  protected void waitForInfrastructureBeReady() {
+    if (infrastructureAwaiter != null) {
+      infrastructureAwaiter.accept(Awaitility.await());
+    }
+  }
+
   protected void deleteOperator() {
     // nothing to do by default: only needed if the operator is deployed to the cluster
   }
@@ -198,12 +209,14 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean preserveNamespaceOnError;
     protected boolean waitForNamespaceDeletion;
     protected boolean oneNamespacePerClass;
+    protected Consumer<ConditionFactory> infrastructureAwaiter;
 
     protected AbstractBuilder() {
       this.configurationService = ConfigurationServiceProvider.instance();
 
       this.infrastructure = new ArrayList<>();
       this.infrastructureTimeout = Duration.ofMinutes(1);
+      this.infrastructureAwaiter = null;
 
       this.preserveNamespaceOnError = Utils.getSystemPropertyOrEnvVar(
           "josdk.it.preserveNamespaceOnError",
@@ -253,5 +266,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       return (T) this;
     }
 
+    public T awaitInfrastructure(Consumer<ConditionFactory> awaiter) {
+      infrastructureAwaiter = awaiter;
+      return (T) this;
+    }
   }
 }

@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +34,11 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
       Duration operatorDeploymentTimeout,
       List<HasMetadata> infrastructure,
       Duration infrastructureTimeout,
-      boolean preserveNamespaceOnError,
+      Consumer<ConditionFactory> infrastructureAwaiter, boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass) {
-    super(configurationService, infrastructure, infrastructureTimeout, oneNamespacePerClass,
+    super(configurationService, infrastructure, infrastructureTimeout, infrastructureAwaiter,
+        oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion);
     this.operatorDeployment = operatorDeployment;
@@ -92,6 +94,9 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
     kubernetesClient
         .resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+    waitForInfrastructureBeReady();
+
     LOGGER.debug("Operator resources deployed.");
   }
 
@@ -139,6 +144,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
           deploymentTimeout,
           infrastructure,
           infrastructureTimeout,
+          infrastructureAwaiter,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass);
