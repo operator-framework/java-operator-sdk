@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.awaitility.core.ConditionFactory;
@@ -92,7 +91,7 @@ class MySQLSchemaOperatorE2E {
 
   private static void DatabaseAvailable(ConditionFactory awaiter) {
     var service = new SchemaService(MY_SQL_DB_CONFIG);
-    awaiter.atMost(1, MINUTES).ignoreExceptionsInstanceOf(IllegalStateException.class)
+    awaiter.atMost(2, MINUTES).ignoreExceptionsInstanceOf(IllegalStateException.class)
         .untilAsserted(() -> {
           service.getSchema("foo");
         });
