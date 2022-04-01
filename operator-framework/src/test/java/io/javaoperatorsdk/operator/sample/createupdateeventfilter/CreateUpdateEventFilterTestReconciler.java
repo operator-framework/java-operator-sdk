@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.createupdateeventfilter;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -16,8 +16,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
@@ -99,7 +99,7 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<NamedEventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerConfiguration =
         InformerConfiguration.from(context, ConfigMap.class)

@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.standalonedependent;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 
 @ControllerConfiguration
 public class StandaloneDependentTestReconciler
@@ -37,7 +37,7 @@ public class StandaloneDependentTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<NamedEventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
     return EventSourceInitializer
         .nameEventSources(deploymentDependent.initEventSource(context));

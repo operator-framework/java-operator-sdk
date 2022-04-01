@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -27,8 +26,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -46,7 +45,7 @@ public class WebappReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
+  public List<NamedEventSource> prepareEventSources(EventSourceContext<Webapp> context) {
     /*
      * To create an event to a related WebApp resource and trigger the reconciliation we need to
      * find which WebApp this Tomcat custom resource is related to. To find the related

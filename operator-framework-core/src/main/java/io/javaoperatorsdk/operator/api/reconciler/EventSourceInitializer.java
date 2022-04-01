@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 /**
@@ -22,7 +23,7 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    *        sources
    * @return a map of event sources to register
    */
-  Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
+  List<NamedEventSource> prepareEventSources(EventSourceContext<P> context);
 
   /**
    * Utility method to easily create map with generated name for event sources. This is for the use
@@ -31,12 +32,12 @@ public interface EventSourceInitializer<P extends HasMetadata> {
    * @param eventSources to name
    * @return even source with default names
    */
-  static Map<String, EventSource> nameEventSources(EventSource... eventSources) {
-    Map<String, EventSource> eventSourceMap = new HashMap<>(eventSources.length);
+  static List<NamedEventSource> nameEventSources(EventSource... eventSources) {
+    List<NamedEventSource> sources = new ArrayList<>(eventSources.length);
     for (EventSource eventSource : eventSources) {
-      eventSourceMap.put(generateNameFor(eventSource), eventSource);
+      sources.add(new NamedEventSource(eventSource, generateNameFor(eventSource)));
     }
-    return eventSourceMap;
+    return sources;
   }
 
   /**

@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +21,13 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
+import static io.javaoperatorsdk.operator.sample.Utils.handleError;
+import static io.javaoperatorsdk.operator.sample.Utils.isValidHtml;
+import static io.javaoperatorsdk.operator.sample.Utils.setInvalidHtmlErrorMessage;
+import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.
@@ -47,7 +51,7 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<NamedEventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     return EventSourceInitializer.nameEventSources(configMapDR.initEventSource(context),
         deploymentDR.initEventSource(context), serviceDR.initEventSource(context),
         ingressDR.initEventSource(context));
