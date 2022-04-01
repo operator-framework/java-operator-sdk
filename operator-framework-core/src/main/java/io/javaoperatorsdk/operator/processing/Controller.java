@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -34,7 +38,6 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.NamedDependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
@@ -51,7 +54,7 @@ public class Controller<P extends HasMetadata>
   private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
-  private final List<NamedDependentResource> dependents;
+  private final Map<String, DependentResource> dependents;
   private final boolean contextInitializer;
   private final boolean hasDeleterDependents;
   private final boolean isCleaner;
@@ -74,18 +77,18 @@ public class Controller<P extends HasMetadata>
     final var specs = configuration.getDependentResources();
     final var size = specs.size();
     if (size == 0) {
-      dependents = Collections.emptyList();
+      dependents = Collections.emptyMap();
     } else {
-      final List<NamedDependentResource> dependentsHolder = new ArrayList<>(size);
+      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(size);
       specs.forEach(drs -> {
         final var dependent = createAndConfigureFrom(drs, kubernetesClient);
         // check if dependent implements Deleter to record that fact
         if (!hasDeleterHolder[0] && dependent instanceof Deleter) {
           hasDeleterHolder[0] = true;
         }
-        dependentsHolder.add(new NamedDependentResource(drs.getName(), dependent));
+        dependentsHolder.put(drs.getName(), dependent);
       });
-      dependents = Collections.unmodifiableList(dependentsHolder);
+      dependents = Collections.unmodifiableMap(dependentsHolder);
     }
 
     hasDeleterDependents = hasDeleterHolder[0];
@@ -140,9 +143,9 @@ public class Controller<P extends HasMetadata>
                 public DeleteControl execute() {
                   initContextIfNeeded(resource, context);
                   if (hasDeleterDependents) {
-                    dependents.stream()
-                        .filter(d -> d.getDependentResource() instanceof Deleter)
-                        .map(d -> (Deleter) d.getDependentResource())
+                    dependents.values().stream()
+                        .filter(d -> d instanceof Deleter)
+                        .map(Deleter.class::cast)
                         .forEach(deleter -> deleter.delete(resource, context));
                   }
                   if (isCleaner) {
@@ -187,20 +190,16 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             final var exceptions = new ArrayList<Exception>(dependents.size());
-            dependents.forEach(dependent -> {
+            dependents.forEach((name, dependent) -> {
               try {
-                final var reconcileResult =
-                    ((DependentResource<?, P>) dependent.getDependentResource())
-                        .reconcile(resource, context);
-                context.managedDependentResourceContext().setReconcileResult(dependent.getName(),
+                final var reconcileResult = dependent.reconcile(resource, context);
+                context.managedDependentResourceContext().setReconcileResult(name,
                     reconcileResult);
-                log.info("Reconciled dependent '{}' -> {}", dependent.getName(),
-                    reconcileResult.getOperation());
+                log.info("Reconciled dependent '{}' -> {}", name, reconcileResult.getOperation());
               } catch (Exception e) {
                 final var message = e.getMessage();
                 exceptions.add(new ManagedDependentResourceException(
-                    dependent.getName(),
-                    "Error reconciling dependent '" + dependent.getName() + "': " + message, e));
+                    name, "Error reconciling dependent '" + name + "': " + message, e));
               }
             });
 
@@ -236,12 +235,12 @@ public class Controller<P extends HasMetadata>
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
-    dependents.stream()
-        .filter(ndr -> ndr.getDependentResource() instanceof EventSourceProvider)
-        .forEach(ndr -> {
-          final var provider = (EventSourceProvider) ndr.getDependentResource();
+    dependents.entrySet().stream()
+        .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
+        .forEach(drEntry -> {
+          final var provider = (EventSourceProvider) drEntry.getValue();
           final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(ndr.getName(), source);
+          eventSourceManager.registerEventSource(drEntry.getKey(), source);
         });
 
     // add manually defined event sources
@@ -378,10 +377,5 @@ public class Controller<P extends HasMetadata>
 
   public boolean useFinalizer() {
     return isCleaner || hasDeleterDependents;
-  }
-
-  @SuppressWarnings("rawtypes")
-  public List<NamedDependentResource> getDependents() {
-    return dependents;
   }
 }
