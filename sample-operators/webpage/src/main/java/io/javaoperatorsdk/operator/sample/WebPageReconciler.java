@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,7 +30,15 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
+import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
+import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.Utils.handleError;
+import static io.javaoperatorsdk.operator.sample.Utils.isValidHtml;
+import static io.javaoperatorsdk.operator.sample.Utils.makeDesiredIngress;
+import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
+import static io.javaoperatorsdk.operator.sample.Utils.setInvalidHtmlErrorMessage;
+import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 
 /** Shows how to implement reconciler using the low level api directly. */
 @ControllerConfiguration(
@@ -49,7 +58,8 @@ public class WebPageReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public LinkedHashMap<String, EventSource> prepareEventSources(
+      EventSourceContext<WebPage> context) {
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(context, ConfigMap.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)

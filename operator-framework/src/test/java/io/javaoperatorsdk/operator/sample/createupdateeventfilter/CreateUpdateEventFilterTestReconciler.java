@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.createupdateeventfilter;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -99,7 +99,7 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public LinkedHashMap<String, EventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerConfiguration =
         InformerConfiguration.from(context, ConfigMap.class)

@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.standalonedependent;
 
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -37,7 +37,7 @@ public class StandaloneDependentTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public LinkedHashMap<String, EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
     return EventSourceInitializer
         .nameEventSources(deploymentDependent.initEventSource(context));

@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -16,23 +15,27 @@ public interface EventSourceInitializer<P extends HasMetadata> {
 
   /**
    * Prepares a map of {@link EventSource} implementations keyed by the name with which they need to
-   * be registered by the SDK.
+   * be registered by the SDK. Please note that the return type is a {@link LinkedHashMap} to enfore
+   * the order in which resources associated to the sources will be handled by the SDK.
    *
    * @param context a {@link EventSourceContext} providing access to information useful to event
    *        sources
-   * @return a map of event sources to register
+   * @return an ordered list of {@link EventSource} implementations according to the order in which
+   *         they should be handled by the reconciler
    */
-  Map<String, EventSource> prepareEventSources(EventSourceContext<P> context);
+  LinkedHashMap<String, EventSource> prepareEventSources(EventSourceContext<P> context);
 
   /**
    * Utility method to easily create map with generated name for event sources. This is for the use
-   * case when the event sources are not access explicitly by name in the reconciler.
+   * case when the event sources are not access explicitly by name in the reconciler. Note that the
+   * order in which the {@link EventSource}s are added is meaningful as the SDK will process events
+   * according to this order.
    *
    * @param eventSources to name
-   * @return even source with default names
+   * @return {@link EventSource}s, ordered by their insertion order, with default names
    */
-  static Map<String, EventSource> nameEventSources(EventSource... eventSources) {
-    Map<String, EventSource> eventSourceMap = new HashMap<>(eventSources.length);
+  static LinkedHashMap<String, EventSource> nameEventSources(EventSource... eventSources) {
+    LinkedHashMap<String, EventSource> eventSourceMap = new LinkedHashMap<>(eventSources.length);
     for (EventSource eventSource : eventSources) {
       eventSourceMap.put(generateNameFor(eventSource), eventSource);
     }
