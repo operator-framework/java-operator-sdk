@@ -246,7 +246,7 @@ public class Controller<P extends HasMetadata>
     if (reconciler instanceof EventSourceInitializer) {
       final var provider = (EventSourceInitializer<P>) this.reconciler;
       final var ownSources = provider.prepareEventSources(context);
-      ownSources.forEach(eventSourceManager::registerEventSource);
+      ownSources.forEach(nes -> eventSourceManager.registerEventSource(nes.name(), nes));
     }
   }
 
