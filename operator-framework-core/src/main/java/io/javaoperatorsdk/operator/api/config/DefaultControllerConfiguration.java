@@ -1,10 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -21,7 +18,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final boolean generationAware;
   private final RetryConfiguration retryConfiguration;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final Map<String, DependentResourceSpec<?, ?>> dependents;
+  private final List<DependentResourceSpec<?, ?>> dependents;
   private final Duration reconciliationMaxInterval;
 
   // NOSONAR constructor is meant to provide all information
@@ -37,7 +34,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
-      Map<String, DependentResourceSpec<?, ?>> dependents) {
+      List<DependentResourceSpec<?, ?>> dependents) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -51,7 +48,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             : retryConfiguration;
     this.resourceEventFilter = resourceEventFilter;
 
-    this.dependents = dependents != null ? dependents : Collections.emptyMap();
+    this.dependents = dependents != null ? dependents : Collections.emptyList();
   }
 
   @Override
@@ -90,7 +87,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Map<String, DependentResourceSpec<?, ?>> getDependentResources() {
+  public List<DependentResourceSpec<?, ?>> getDependentResources() {
     return dependents;
   }
 

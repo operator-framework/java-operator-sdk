@@ -1,11 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -22,7 +19,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final Map<String, DependentResourceSpec<?, ?>> dependentResourceSpecs;
+  private final List<DependentResourceSpec<?, ?>> namedDependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -33,7 +30,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
     // make the original specs modifiable
-    dependentResourceSpecs = new HashMap<>(original.getDependentResources());
+    namedDependentResourceSpecs = new ArrayList<>(original.getDependentResources());
     this.original = original;
   }
 
@@ -92,14 +89,19 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
-    final var currentConfig = dependentResourceSpecs.get(name);
-    if (currentConfig == null) {
+
+    var namedRDS = namedDependentResourceSpecs.stream().filter(drs -> drs.getName().equals(name))
+        .collect(Collectors.toList());
+    if (namedRDS.size() > 1) {
+      throw new IllegalStateException(
+          "More than 1 NamedDependentResourceSpec for for name: " + name);
+    }
+    if (namedRDS.isEmpty()) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    dependentResourceSpecs.remove(name);
-    dependentResourceSpecs.put(name,
-        new DependentResourceSpec(currentConfig.getDependentResourceClass(),
-            dependentResourceConfig, name));
+    namedDependentResourceSpecs.remove(namedRDS.get(0));
+    namedDependentResourceSpecs.add(new DependentResourceSpec<>(
+        namedRDS.get(0).getDependentResourceClass(), dependentResourceConfig, name));
     return this;
   }
 
@@ -116,7 +118,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        dependentResourceSpecs);
+        namedDependentResourceSpecs);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
