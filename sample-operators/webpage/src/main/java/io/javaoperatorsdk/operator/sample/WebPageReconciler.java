@@ -27,7 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;

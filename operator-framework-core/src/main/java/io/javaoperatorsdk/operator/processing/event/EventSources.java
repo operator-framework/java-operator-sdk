@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.ResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;

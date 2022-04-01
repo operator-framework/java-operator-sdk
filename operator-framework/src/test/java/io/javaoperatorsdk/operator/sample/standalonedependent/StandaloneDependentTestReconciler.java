@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.NamedEventSource;
 
 @ControllerConfiguration
 public class StandaloneDependentTestReconciler

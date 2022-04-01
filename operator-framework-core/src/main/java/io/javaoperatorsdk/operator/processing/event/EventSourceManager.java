@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;

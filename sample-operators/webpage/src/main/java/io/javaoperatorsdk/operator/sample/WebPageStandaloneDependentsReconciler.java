@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.NamedEventSource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
 import static io.javaoperatorsdk.operator.sample.Utils.handleError;

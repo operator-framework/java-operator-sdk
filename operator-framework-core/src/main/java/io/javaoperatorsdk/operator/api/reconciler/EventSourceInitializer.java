@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.NamedEventSource;
 
 /**
  * An interface that a {@link Reconciler} can implement to have the SDK register the provided

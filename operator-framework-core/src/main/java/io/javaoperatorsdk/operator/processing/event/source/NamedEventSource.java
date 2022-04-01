@@ -1,7 +1,7 @@
-package io.javaoperatorsdk.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
 public class NamedEventSource implements EventSource {
 
