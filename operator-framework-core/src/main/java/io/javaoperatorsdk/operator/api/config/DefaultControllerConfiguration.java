@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -21,7 +21,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final boolean generationAware;
   private final RetryConfiguration retryConfiguration;
   private final ResourceEventFilter<R> resourceEventFilter;
-  private final Map<String, DependentResourceSpec<?, ?>> dependents;
+  private final LinkedHashMap<String, DependentResourceSpec<?, ?>> dependents;
   private final Duration reconciliationMaxInterval;
 
   // NOSONAR constructor is meant to provide all information
@@ -37,7 +37,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
-      Map<String, DependentResourceSpec<?, ?>> dependents) {
+      LinkedHashMap<String, DependentResourceSpec<?, ?>> dependents) {
     super(labelSelector, resourceClass, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -51,7 +51,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             : retryConfiguration;
     this.resourceEventFilter = resourceEventFilter;
 
-    this.dependents = dependents != null ? dependents : Collections.emptyMap();
+    this.dependents = dependents != null ? dependents : new LinkedHashMap<>();
   }
 
   @Override

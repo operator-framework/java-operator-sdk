@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,7 +26,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
-  private Map<String, DependentResourceSpec<?, ?>> specs;
+  private LinkedHashMap<String, DependentResourceSpec<?, ?>> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -143,7 +143,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         return Collections.emptyMap();
       }
 
-      specs = new HashMap<>(dependents.length);
+      specs = new LinkedHashMap<>(dependents.length);
       for (Dependent dependent : dependents) {
         Object config = null;
         final Class<? extends DependentResource> dependentType = dependent.type();

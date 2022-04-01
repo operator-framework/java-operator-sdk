@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -22,7 +21,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final Map<String, DependentResourceSpec<?, ?>> dependentResourceSpecs;
+  private final LinkedHashMap<String, DependentResourceSpec<?, ?>> dependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -32,8 +31,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
-    // make the original specs modifiable
-    dependentResourceSpecs = new HashMap<>(original.getDependentResources());
+    // make the original specs modifiable and preserve initial ordering
+    dependentResourceSpecs = new LinkedHashMap<>(original.getDependentResources());
     this.original = original;
   }
 
@@ -96,7 +95,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     if (currentConfig == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    dependentResourceSpecs.remove(name);
     dependentResourceSpecs.put(name,
         new DependentResourceSpec(currentConfig.getDependentResourceClass(),
             dependentResourceConfig, name));
