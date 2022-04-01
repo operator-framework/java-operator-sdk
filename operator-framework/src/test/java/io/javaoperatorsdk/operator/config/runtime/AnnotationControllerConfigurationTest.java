@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.config.runtime;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,8 +43,8 @@ class AnnotationControllerConfigurationTest {
     assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
     final var config = (KubernetesDependentResourceConfig) maybeConfig.orElseThrow();
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertEquals(1, config.namespaces().length);
-    assertEquals(OneDepReconciler.CONFIGURED_NS, config.namespaces()[0]);
+    assertEquals(1, config.namespaces().size());
+    assertEquals(Set.of(OneDepReconciler.CONFIGURED_NS), config.namespaces());
 
     configuration = new AnnotationControllerConfiguration<>(new NamedDepReconciler());
     dependents = configuration.getDependentResources();

@@ -50,7 +50,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
-    configureWith(config.labelSelector(), Set.of(config.namespaces()));
+    configureWith(config.labelSelector(), config.namespaces());
   }
 
   @SuppressWarnings("unchecked")

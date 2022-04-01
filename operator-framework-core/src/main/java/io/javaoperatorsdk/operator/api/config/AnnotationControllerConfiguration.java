@@ -1,7 +1,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -145,11 +150,13 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         final Class<? extends DependentResource> dependentType = dependent.type();
         if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
           final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
-          final var namespaces =
-              Utils.valueOrDefault(
-                  kubeDependent,
-                  KubernetesDependent::namespaces,
-                  this.getNamespaces().toArray(new String[0]));
+
+          var namespaces = getNamespaces();
+          if (kubeDependent != null && !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
+              kubeDependent.namespaces())) {
+            namespaces = Set.of(kubeDependent.namespaces());
+          }
+
           final var labelSelector =
               Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
           config =

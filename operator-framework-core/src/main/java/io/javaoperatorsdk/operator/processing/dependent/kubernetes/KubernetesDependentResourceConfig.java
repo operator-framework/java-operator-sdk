@@ -1,21 +1,24 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Collections;
+import java.util.Set;
+
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig {
 
-  private String[] namespaces = new String[0];
+  private Set<String> namespaces = Collections.emptySet();
   private String labelSelector = NO_VALUE_SET;
 
   public KubernetesDependentResourceConfig() {}
 
-  public KubernetesDependentResourceConfig(String[] namespaces,
+  public KubernetesDependentResourceConfig(Set<String> namespaces,
       String labelSelector) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
   }
 
-  public KubernetesDependentResourceConfig setNamespaces(String[] namespaces) {
+  public KubernetesDependentResourceConfig setNamespaces(Set<String> namespaces) {
     this.namespaces = namespaces;
     return this;
   }
@@ -25,7 +28,7 @@ public class KubernetesDependentResourceConfig {
     return this;
   }
 
-  public String[] namespaces() {
+  public Set<String> namespaces() {
     return namespaces;
   }
 

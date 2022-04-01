@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 @SuppressWarnings({"unused"})
@@ -95,16 +97,47 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
-    var namedRDS = namedDependentResourceSpecs.get(name);
-    if (namedRDS == null) {
+    var current = namedDependentResourceSpecs.get(name);
+    if (current == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    namedDependentResourceSpecs.put(name, new DependentResourceSpec<>(
-        namedRDS.getDependentResourceClass(), dependentResourceConfig, name));
+    replaceConfig(name, dependentResourceConfig, current);
     return this;
   }
 
+  private void replaceConfig(String name, Object newConfig, DependentResourceSpec<?, ?> current) {
+    namedDependentResourceSpecs.put(name,
+        new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name));
+  }
+
   public ControllerConfiguration<R> build() {
+    // propagate namespaces if needed
+    final List<DependentResourceSpec<?, ?>> newDependentSpecs;
+    if (!original.getNamespaces().equals(namespaces)) {
+      newDependentSpecs = namedDependentResourceSpecs.entrySet().stream()
+          .filter(drsEntry -> drsEntry.getValue().getDependentResourceConfiguration()
+              .map(c -> c instanceof KubernetesDependentResourceConfig)
+              .orElse(false))
+          .map(drsEntry -> {
+            final var spec = drsEntry.getValue();
+            final var existing =
+                (KubernetesDependentResourceConfig) spec.getDependentResourceConfiguration().get();
+
+            // only use the parent's namespaces if the configuration is the default one
+            // todo: the second part of this test isn't the proper behavior as it might just be a
+            // coincidence that both namespace sets match, we need to be able to know explicitly
+            // that the configuration inherits its namespaces from its parent
+            if (Set.of(KubernetesDependent.DEFAULT_NAMESPACES).equals(existing.namespaces())
+                || original.getNamespaces().equals(existing.namespaces())) {
+              replaceConfig(drsEntry.getKey(), existing.setNamespaces(namespaces), spec);
+            }
+            return spec;
+          }).collect(Collectors.toUnmodifiableList());
+    } else {
+      newDependentSpecs = namedDependentResourceSpecs.values().stream()
+          .collect(Collectors.toUnmodifiableList());
+    }
+
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
         original.getName(),
@@ -117,7 +150,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        namedDependentResourceSpecs.values().stream().collect(Collectors.toUnmodifiableList()));
+        newDependentSpecs);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
