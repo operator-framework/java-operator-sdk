@@ -5,6 +5,7 @@ metadata:
     low-level: "true"
   name: hellows
 spec:
+  exposed: false
   html: |
     <html>
       <head>

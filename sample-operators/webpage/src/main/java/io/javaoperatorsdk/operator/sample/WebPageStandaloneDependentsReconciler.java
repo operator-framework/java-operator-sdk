@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -22,9 +23,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.
@@ -41,6 +40,7 @@ public class WebPageStandaloneDependentsReconciler
   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
   private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
   private KubernetesDependentResource<Service, WebPage> serviceDR;
+  private KubernetesDependentResource<Ingress, WebPage> ingressDR;
 
   public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
     createDependentResources(kubernetesClient);
@@ -49,7 +49,8 @@ public class WebPageStandaloneDependentsReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     return EventSourceInitializer.nameEventSources(configMapDR.initEventSource(context),
-        deploymentDR.initEventSource(context), serviceDR.initEventSource(context));
+        deploymentDR.initEventSource(context), serviceDR.initEventSource(context),
+        ingressDR.initEventSource(context));
   }
 
   @Override
@@ -57,8 +58,18 @@ public class WebPageStandaloneDependentsReconciler
       throws Exception {
     simulateErrorIfRequested(webPage);
 
+    if (!isValidHtml(webPage)) {
+      return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage));
+    }
+
     Arrays.asList(configMapDR, deploymentDR, serviceDR)
         .forEach(dr -> dr.reconcile(webPage, context));
+
+    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
+      ingressDR.reconcile(webPage, context);
+    } else {
+      ingressDR.delete(webPage, context);
+    }
 
     webPage.setStatus(
         createStatus(
@@ -76,11 +87,15 @@ public class WebPageStandaloneDependentsReconciler
     this.configMapDR = new ConfigMapDependentResource();
     this.deploymentDR = new DeploymentDependentResource();
     this.serviceDR = new ServiceDependentResource();
+    this.ingressDR = new IngressDependentResource();
 
-    Arrays.asList(configMapDR, deploymentDR, serviceDR).forEach(dr -> {
+    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
       dr.configureWith(new KubernetesDependentResourceConfig()
           .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
     });
   }
+
+
+
 }

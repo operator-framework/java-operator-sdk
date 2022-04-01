@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -27,12 +29,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /** Shows how to implement reconciler using the low level api directly. */
 @ControllerConfiguration(
@@ -65,9 +62,13 @@ public class WebPageReconciler
         new InformerEventSource<>(InformerConfiguration.from(context, Service.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
+    var ingressEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(context, Ingress.class)
+            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .build(), context);
     return EventSourceInitializer.nameEventSources(configMapEventSource,
         deploymentEventSource,
-        serviceEventSource);
+        serviceEventSource, ingressEventSource);
   }
 
   @Override
@@ -75,6 +76,10 @@ public class WebPageReconciler
       throws Exception {
     log.info("Reconciling web page: {}", webPage);
     simulateErrorIfRequested(webPage);
+
+    if (!isValidHtml(webPage)) {
+      return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage));
+    }
 
     String ns = webPage.getMetadata().getNamespace();
     String configMapName = configMapName(webPage);
@@ -113,6 +118,16 @@ public class WebPageReconciler
       kubernetesClient.services().inNamespace(ns).createOrReplace(desiredService);
     }
 
+    var existingIngress = context.getSecondaryResource(Ingress.class);
+    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
+      var desiredIngress = makeDesiredIngress(webPage);
+      if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
+        kubernetesClient.resource(desiredIngress).inNamespace(ns).createOrReplace();
+      }
+    } else
+      existingIngress.ifPresent(
+          ingress -> kubernetesClient.resource(ingress).delete());
+
     if (previousConfigMap != null && !StringUtils.equals(
         previousConfigMap.getData().get(INDEX_HTML),
         desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
@@ -121,6 +136,16 @@ public class WebPageReconciler
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
     return UpdateControl.updateStatus(webPage);
+  }
+
+  private boolean match(Ingress desiredIngress, Ingress existingIngress) {
+    String desiredServiceName =
+        desiredIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
+            .getBackend().getService().getName();
+    String existingServiceName =
+        existingIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
+            .getBackend().getService().getName();
+    return Objects.equals(desiredServiceName, existingServiceName);
   }
 
   private boolean match(Deployment desiredDeployment, Deployment deployment) {

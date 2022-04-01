@@ -236,9 +236,11 @@ public class WebPageStandaloneDependentsReconciler
         serviceDR.reconcile(webPage, context);
             
         // 5.
-        if (webPage.isExposed()) {
-            ingressDR.reconcile();
-        }
+       if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
+          ingressDR.reconcile(webPage, context);
+       } else {
+          ingressDR.delete(webPage, context);
+       }
         
         // 6.
         webPage.setStatus(
@@ -269,7 +271,7 @@ There are multiple things happening here:
 2. Event sources are produced by the dependent resources, but needs to be explicitly registered in this case.
 3. The input html is validated, and error message is set in case it is invalid.
 4. Reconciliation is called explicitly, but here the workflow customization is fully in the hand of the developer.
-5. An `Ingress` is created but only in case `exposed` flag set to true on custom resource.
+5. An `Ingress` is created but only in case `exposed` flag set to true on custom resource. Tries to delete it if not.
 6. Status is set in a different way, this is just an alternative way to show, that the actual state can be read using
    the reference. This could be written in a same way as in the managed example.
 
