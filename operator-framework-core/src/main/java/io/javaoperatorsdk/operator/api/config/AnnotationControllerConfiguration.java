@@ -136,7 +136,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public List<DependentResourceSpec<?, ?>> getDependentResources() {
+  public List<DependentResourceSpec> getDependentResources() {
     if (specs == null) {
       final var dependents =
           valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});

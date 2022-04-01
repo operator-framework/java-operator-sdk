@@ -57,14 +57,16 @@ class AnnotationControllerConfigurationTest {
     assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
   }
 
-  private DependentResourceSpec<?, ?> findByName(
-      List<DependentResourceSpec<?, ?>> dependentResourceSpecList, String name) {
+  @SuppressWarnings("rawtypes")
+  private DependentResourceSpec findByName(
+      List<DependentResourceSpec> dependentResourceSpecList, String name) {
     return dependentResourceSpecList.stream().filter(d -> d.getName().equals(name)).findFirst()
         .get();
   }
 
-  private Optional<DependentResourceSpec<?, ?>> findByNameOptional(
-      List<DependentResourceSpec<?, ?>> dependentResourceSpecList, String name) {
+  @SuppressWarnings("rawtypes")
+  private Optional<DependentResourceSpec> findByNameOptional(
+      List<DependentResourceSpec> dependentResourceSpecList, String name) {
     return dependentResourceSpecList.stream().filter(d -> d.getName().equals(name)).findFirst();
   }
 

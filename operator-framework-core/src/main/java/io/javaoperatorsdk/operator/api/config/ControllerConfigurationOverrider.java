@@ -23,7 +23,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final LinkedHashMap<String, DependentResourceSpec<?, ?>> namedDependentResourceSpecs;
+  private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
