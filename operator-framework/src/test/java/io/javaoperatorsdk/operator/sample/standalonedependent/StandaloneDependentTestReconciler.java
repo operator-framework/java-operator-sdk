@@ -28,7 +28,7 @@ public class StandaloneDependentTestReconciler
     KubernetesClientAware, ErrorStatusHandler<StandaloneDependentTestCustomResource> {
 
   private KubernetesClient kubernetesClient;
-  private boolean errorOccurred = false;
+  private volatile boolean errorOccurred = false;
 
   DeploymentDependentResource deploymentDependent;
 

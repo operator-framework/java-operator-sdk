@@ -73,6 +73,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       cache.put(resourceId, newResource);
     } else {
       // if something is in cache it's surely obsolete now
+      log.debug("Trying to remove an obsolete resource from cache for id: {}", resourceId);
       cache.remove(resourceId);
     }
   }

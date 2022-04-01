@@ -88,6 +88,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
       log.debug("Resource found in temporal cache for Resource ID: {}", resourceID);
       return resource;
     } else {
+      log.debug("Resource not found in temporal cache reading it from informer cache," +
+          " for Resource ID: {}", resourceID);
       return super.get(resourceID);
     }
   }
