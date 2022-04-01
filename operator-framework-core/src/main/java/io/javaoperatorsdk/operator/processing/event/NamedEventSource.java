@@ -34,7 +34,7 @@ class NamedEventSource implements EventSource {
 
   @Override
   public String toString() {
-    return original + " named: '" + name + "'}";
+    return original + " named: '" + name + "'";
   }
 
   public EventSource original() {
