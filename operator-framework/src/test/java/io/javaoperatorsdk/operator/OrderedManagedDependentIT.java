@@ -36,9 +36,9 @@ class OrderedManagedDependentIT {
     assertThat(OrderedManagedDependentTestReconciler.dependentExecution.get(1))
         .isEqualTo(ConfigMapDependentResource2.class);
     assertThat(OrderedManagedDependentTestReconciler.dependentExecution.get(2))
-            .isEqualTo(ConfigMapDependentResource1.class);
+        .isEqualTo(ConfigMapDependentResource1.class);
     assertThat(OrderedManagedDependentTestReconciler.dependentExecution.get(3))
-            .isEqualTo(ConfigMapDependentResource2.class);
+        .isEqualTo(ConfigMapDependentResource2.class);
   }
 
 

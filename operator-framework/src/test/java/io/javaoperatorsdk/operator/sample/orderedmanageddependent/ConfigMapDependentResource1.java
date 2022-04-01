@@ -6,14 +6,13 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 public class ConfigMapDependentResource1 extends
-        CRUKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource>
-        implements PrimaryToSecondaryMapper<OrderedManagedDependentCustomResource> {
+    CRUKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource>
+    implements PrimaryToSecondaryMapper<OrderedManagedDependentCustomResource> {
 
   public ConfigMapDependentResource1() {
     super(ConfigMap.class);
@@ -42,6 +41,7 @@ public class ConfigMapDependentResource1 extends
 
   @Override
   public ResourceID associatedSecondaryID(OrderedManagedDependentCustomResource primary) {
-    return new ResourceID(primary.getMetadata().getName() + "1", primary.getMetadata().getNamespace());
+    return new ResourceID(primary.getMetadata().getName() + "1",
+        primary.getMetadata().getNamespace());
   }
 }
