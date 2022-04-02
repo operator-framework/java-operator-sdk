@@ -23,8 +23,83 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ControllerConfigurationOverriderTest {
 
   @Test
-  void overridingNamespacesShouldBePropagatedToDependents() {
-    var configuration = new AnnotationControllerConfiguration<>(new OneDepReconciler());
+  void configuredDependentShouldNotChangeOnParentOverrideEvenWhenInitialConfigIsSame() {
+    io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration =
+        new AnnotationControllerConfiguration<>(new OverriddenNSOnDepReconciler());
+    // retrieve the config for the first (and unique) dependent
+    var config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
+        .getDependentResourceConfiguration().orElseThrow();
+
+    // override the parent NS to match the dependent's
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .settingNamespace(OverriddenNSDependent.DEP_NS).build();
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), configuration.getNamespaces());
+
+    // check that the DependentResource inherits has its own configured NS
+    assertEquals(1, config.namespaces().size());
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
+
+    // override the parent's NS
+    final var newNS = "bar";
+    configuration =
+        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+
+    // check that dependent config is still using its own NS
+    config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
+        .getDependentResourceConfiguration().orElseThrow();
+    assertEquals(1, config.namespaces().size());
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
+  }
+
+  @Test
+  void dependentShouldWatchAllNamespacesIfParentDoesAsWell() {
+    io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration =
+        new AnnotationControllerConfiguration<>(new WatchAllNamespacesReconciler());
+    // retrieve the config for the first (and unique) dependent
+    var config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
+        .getDependentResourceConfiguration().orElseThrow();
+
+    // check that the DependentResource inherits the controller's configuration if applicable
+    assertEquals(0, config.namespaces().size());
+
+    // override the NS
+    final var newNS = "bar";
+    configuration =
+        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+
+    // check that dependent config is using the overridden namespace
+    config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
+        .getDependentResourceConfiguration().orElseThrow();
+    assertEquals(1, config.namespaces().size());
+    assertEquals(Set.of(newNS), config.namespaces());
+  }
+
+  @Test
+  void shouldBePossibleToForceDependentToWatchAllNamespaces() {
+    io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration =
+        new AnnotationControllerConfiguration<>(new DependentWatchesAllNSReconciler());
+    // retrieve the config for the first (and unique) dependent
+    var config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
+        .getDependentResourceConfiguration().orElseThrow();
+
+    // check that the DependentResource inherits the controller's configuration if applicable
+    assertEquals(0, config.namespaces().size());
+
+    // override the NS
+    final var newNS = "bar";
+    configuration =
+        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+
+    // check that dependent config is still configured to watch all NS
+    config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
+        .getDependentResourceConfiguration().orElseThrow();
+    assertEquals(0, config.namespaces().size());
+  }
+
+  @Test
+  void overridingNamespacesShouldBePropagatedToDependentsWithDefaultConfig() {
+    io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration =
+        new AnnotationControllerConfiguration<>(new OneDepReconciler());
     // retrieve the config for the first (and unique) dependent
     var config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
         .getDependentResourceConfiguration().orElseThrow();
@@ -35,7 +110,8 @@ class ControllerConfigurationOverriderTest {
 
     // override the NS
     final var newNS = "bar";
-    ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+    configuration =
+        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
 
     // check that dependent config is using the overridden namespace
     config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
@@ -46,20 +122,22 @@ class ControllerConfigurationOverriderTest {
 
   @Test
   void alreadyOverriddenDependentNamespacesShouldNotBePropagated() {
-    var configuration = new AnnotationControllerConfiguration<>(new OverriddenNSOnDepReconciler());
+    io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration =
+        new AnnotationControllerConfiguration<>(new OverriddenNSOnDepReconciler());
     // retrieve the config for the first (and unique) dependent
     var config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
         .getDependentResourceConfiguration().orElseThrow();
 
-    // check that the DependentResource inherits the controller's configuration if applicable
+    // DependentResource has its own NS
     assertEquals(1, config.namespaces().size());
     assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
 
     // override the NS
     final var newNS = "bar";
-    ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+    configuration =
+        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
 
-    // check that dependent config is using the overridden namespace
+    // check that dependent config is still using its own NS
     config = (KubernetesDependentResourceConfig) configuration.getDependentResources().get(0)
         .getDependentResourceConfiguration().orElseThrow();
     assertEquals(1, config.namespaces().size());
@@ -107,6 +185,24 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(overriddenNS), config.namespaces());
   }
 
+  @ControllerConfiguration(dependents = @Dependent(type = ReadOnlyDependent.class))
+  private static class WatchAllNamespacesReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+  }
+
+  @ControllerConfiguration(dependents = @Dependent(type = WatchAllNSDependent.class))
+  private static class DependentWatchesAllNSReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+  }
+
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
       dependents = @Dependent(type = ReadOnlyDependent.class))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
@@ -122,6 +218,15 @@ class ControllerConfigurationOverriderTest {
   private static class ReadOnlyDependent extends KubernetesDependentResource<ConfigMap, ConfigMap> {
 
     public ReadOnlyDependent() {
+      super(ConfigMap.class);
+    }
+  }
+
+  @KubernetesDependent(namespaces = KubernetesDependent.WATCH_ALL_NAMESPACES)
+  private static class WatchAllNSDependent
+      extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+
+    public WatchAllNSDependent() {
       super(ConfigMap.class);
     }
   }

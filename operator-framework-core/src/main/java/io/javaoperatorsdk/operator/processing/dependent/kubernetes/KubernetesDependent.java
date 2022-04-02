@@ -11,6 +11,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 @Target({ElementType.TYPE})
 public @interface KubernetesDependent {
   String SAME_AS_PARENT = "JOSDK_SAME_AS_PARENT";
+  String WATCH_ALL_NAMESPACES = "JOSDK_ALL_NAMESPACES";
+
   String[] DEFAULT_NAMESPACES = {SAME_AS_PARENT};
 
   /**

@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
@@ -123,12 +122,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
             final var existing =
                 (KubernetesDependentResourceConfig) spec.getDependentResourceConfiguration().get();
 
-            // only use the parent's namespaces if the configuration is the default one
-            // todo: the second part of this test isn't the proper behavior as it might just be a
-            // coincidence that both namespace sets match, we need to be able to know explicitly
-            // that the configuration inherits its namespaces from its parent
-            if (Set.of(KubernetesDependent.DEFAULT_NAMESPACES).equals(existing.namespaces())
-                || original.getNamespaces().equals(existing.namespaces())) {
+            // only use the dependent's namespaces were not explicitly configured
+            if (!existing.wereNamespacesConfigured()) {
               replaceConfig(drsEntry.getKey(), existing.setNamespaces(namespaces), spec);
             }
             return spec;

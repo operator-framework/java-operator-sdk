@@ -152,15 +152,17 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
           final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
 
           var namespaces = getNamespaces();
+          var configuredNS = false;
           if (kubeDependent != null && !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
               kubeDependent.namespaces())) {
             namespaces = Set.of(kubeDependent.namespaces());
+            configuredNS = true;
           }
 
           final var labelSelector =
               Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
           config =
-              new KubernetesDependentResourceConfig(namespaces, labelSelector);
+              new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
         }
         var name = dependent.name();
         if (name.isBlank()) {
