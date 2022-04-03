@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +53,7 @@ public class Controller<P extends HasMetadata>
   private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
-  private final Map<String, DependentResource> dependents;
+  private final LinkedHashMap<String, DependentResource> dependents;
   private final boolean contextInitializer;
   private final boolean hasDeleterDependents;
   private final boolean isCleaner;
@@ -77,7 +76,7 @@ public class Controller<P extends HasMetadata>
     final var specs = configuration.getDependentResources();
     final var size = specs.size();
     if (size == 0) {
-      dependents = Collections.emptyMap();
+      dependents = new LinkedHashMap<>();
     } else {
       final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(size);
       specs.forEach(drs -> {
@@ -88,7 +87,7 @@ public class Controller<P extends HasMetadata>
         }
         dependentsHolder.put(drs.getName(), dependent);
       });
-      dependents = Collections.unmodifiableMap(dependentsHolder);
+      dependents = new LinkedHashMap<>(dependentsHolder);
     }
 
     hasDeleterDependents = hasDeleterHolder[0];
