@@ -83,7 +83,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(primary);
+    ResourceID resourceID = ResourceID.fromResource(desired);
     R created = null;
     try {
       prepareEventFiltering(desired, resourceID);
@@ -96,7 +96,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(primary);
+    ResourceID resourceID = ResourceID.fromResource(desired);
     R updated = null;
     try {
       prepareEventFiltering(desired, resourceID);
