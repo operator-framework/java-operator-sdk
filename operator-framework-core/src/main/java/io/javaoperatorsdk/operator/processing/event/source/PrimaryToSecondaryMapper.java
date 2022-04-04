@@ -5,5 +5,5 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @FunctionalInterface
 public interface PrimaryToSecondaryMapper<P extends HasMetadata> {
-  ResourceID associatedSecondaryID(P primary);
+  ResourceID toSecondaryResourceID(P primary);
 }

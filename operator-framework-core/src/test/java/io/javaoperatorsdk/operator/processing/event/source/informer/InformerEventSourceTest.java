@@ -49,7 +49,7 @@ class InformerEventSourceTest {
         .thenReturn(labeledResourceClientMock);
     when(labeledResourceClientMock.runnableInformer(0)).thenReturn(informer);
 
-    when(informerConfiguration.getPrimaryResourcesRetriever())
+    when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
 
     informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
@@ -57,9 +57,9 @@ class InformerEventSourceTest {
     informerEventSource.setEventHandler(eventHandlerMock);
 
     SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
-    when(informerConfiguration.getPrimaryResourcesRetriever())
+    when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
-    when(secondaryToPrimaryMapper.associatedPrimaryResources(any()))
+    when(secondaryToPrimaryMapper.toPrimaryResourceID(any()))
         .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
   }
 
