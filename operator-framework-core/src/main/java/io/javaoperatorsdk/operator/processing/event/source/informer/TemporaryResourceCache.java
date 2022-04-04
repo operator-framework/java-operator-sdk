@@ -53,7 +53,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     ResourceID resourceID = ResourceID.fromResource(newResource);
     if (managedInformerEventSource.get(resourceID).isEmpty()) {
       log.debug("Putting resource to cache with ID: {}", resourceID);
-      cache.put(ResourceID.fromResource(newResource), newResource);
+      cache.put(resourceID, newResource);
     } else {
       log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
     }
