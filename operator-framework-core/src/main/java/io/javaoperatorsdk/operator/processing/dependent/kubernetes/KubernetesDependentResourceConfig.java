@@ -1,21 +1,32 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Collections;
+import java.util.Set;
+
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig {
 
-  private String[] namespaces = new String[0];
+  private Set<String> namespaces = Collections.emptySet();
   private String labelSelector = NO_VALUE_SET;
+
+  private boolean namespacesWereConfigured = false;
 
   public KubernetesDependentResourceConfig() {}
 
-  public KubernetesDependentResourceConfig(String[] namespaces,
-      String labelSelector) {
+  public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
+      boolean configuredNS) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
+    namespacesWereConfigured = configuredNS;
   }
 
-  public KubernetesDependentResourceConfig setNamespaces(String[] namespaces) {
+  public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
+    this(namespaces, labelSelector, true);
+  }
+
+  public KubernetesDependentResourceConfig setNamespaces(Set<String> namespaces) {
+    this.namespacesWereConfigured = true;
     this.namespaces = namespaces;
     return this;
   }
@@ -25,11 +36,19 @@ public class KubernetesDependentResourceConfig {
     return this;
   }
 
-  public String[] namespaces() {
-    return namespaces;
+  public Set<String> namespaces() {
+    if (!namespaces.contains(KubernetesDependent.WATCH_ALL_NAMESPACES)) {
+      return namespaces;
+    } else {
+      return Collections.emptySet();
+    }
   }
 
   public String labelSelector() {
     return labelSelector;
+  }
+
+  public boolean wereNamespacesConfigured() {
+    return namespacesWereConfigured;
   }
 }

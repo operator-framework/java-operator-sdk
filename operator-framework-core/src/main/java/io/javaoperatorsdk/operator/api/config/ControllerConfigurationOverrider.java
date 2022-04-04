@@ -4,14 +4,17 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"rawtypes", "unused"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
@@ -22,7 +25,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final LinkedHashMap<String, DependentResourceSpec<?, ?>> namedDependentResourceSpecs;
+  private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -95,16 +98,39 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
-    var namedRDS = namedDependentResourceSpecs.get(name);
-    if (namedRDS == null) {
+    var current = namedDependentResourceSpecs.get(name);
+    if (current == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    namedDependentResourceSpecs.put(name, new DependentResourceSpec<>(
-        namedRDS.getDependentResourceClass(), dependentResourceConfig, name));
+    replaceConfig(name, dependentResourceConfig, current);
     return this;
   }
 
+  private void replaceConfig(String name, Object newConfig, DependentResourceSpec<?, ?> current) {
+    namedDependentResourceSpecs.put(name,
+        new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name));
+  }
+
+  @SuppressWarnings("unchecked")
   public ControllerConfiguration<R> build() {
+    // propagate namespaces if needed
+    final List<DependentResourceSpec> newDependentSpecs;
+    final var hasModifiedNamespaces = !original.getNamespaces().equals(namespaces);
+    newDependentSpecs = namedDependentResourceSpecs.entrySet().stream()
+        .map(drsEntry -> {
+          final var spec = drsEntry.getValue();
+
+          // if the spec has a config and it's a KubernetesDependentResourceConfig, update the
+          // namespaces if needed, otherwise, just return the existing spec
+          final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
+          final Class<?> drClass = drsEntry.getValue().getDependentResourceClass();
+          return maybeConfig.filter(KubernetesDependentResourceConfig.class::isInstance)
+              .map(KubernetesDependentResourceConfig.class::cast)
+              .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
+              .map(c -> updateSpec(drsEntry.getKey(), drClass, c))
+              .orElse(drsEntry.getValue());
+        }).collect(Collectors.toUnmodifiableList());
+
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
         original.getName(),
@@ -117,7 +143,13 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        namedDependentResourceSpecs.values().stream().collect(Collectors.toUnmodifiableList()));
+        newDependentSpecs);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private DependentResourceSpec<?, ?> updateSpec(String name, Class<?> drClass,
+      KubernetesDependentResourceConfig c) {
+    return new DependentResourceSpec(drClass, c.setNamespaces(namespaces), name);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
