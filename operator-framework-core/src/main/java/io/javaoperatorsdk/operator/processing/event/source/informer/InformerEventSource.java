@@ -85,11 +85,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onAdd(R resource) {
+    if (log.isDebugEnabled()) {
+      log.debug("On add event received for resource id: {}", ResourceID.fromResource(resource));
+    }
     onAddOrUpdate("add", resource, () -> InformerEventSource.super.onAdd(resource));
   }
 
   @Override
   public void onUpdate(R oldObject, R newObject) {
+    if (log.isDebugEnabled()) {
+      log.debug("On update event received for resource id: {}", ResourceID.fromResource(newObject));
+    }
     onAddOrUpdate("update", newObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
@@ -118,12 +124,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onDelete(R r, boolean b) {
+  public void onDelete(R resource, boolean b) {
     if (log.isDebugEnabled()) {
-      log.debug("On delete event received for resource id: {}", ResourceID.fromResource(r));
+      log.debug("On delete event received for resource id: {}", ResourceID.fromResource(resource));
     }
-    super.onDelete(r, b);
-    propagateEvent(r);
+    super.onDelete(resource, b);
+    propagateEvent(resource);
   }
 
   private void propagateEvent(R object) {
