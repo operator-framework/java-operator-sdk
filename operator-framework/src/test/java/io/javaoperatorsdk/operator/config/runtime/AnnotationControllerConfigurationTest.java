@@ -1,8 +1,12 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -30,8 +34,8 @@ class AnnotationControllerConfigurationTest {
     assertFalse(dependents.isEmpty());
     assertEquals(1, dependents.size());
     final var dependentResourceName = DependentResource.defaultNameFor(ReadOnlyDependent.class);
-    assertTrue(dependents.containsKey(dependentResourceName));
-    var dependentSpec = dependents.get(dependentResourceName);
+    assertTrue(dependents.stream().anyMatch(d -> d.getName().equals(dependentResourceName)));
+    var dependentSpec = findByName(dependents, dependentResourceName);
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
     var maybeConfig = dependentSpec.getDependentResourceConfiguration();
     assertTrue(maybeConfig.isPresent());
@@ -45,11 +49,22 @@ class AnnotationControllerConfigurationTest {
     dependents = configuration.getDependentResources();
     assertFalse(dependents.isEmpty());
     assertEquals(1, dependents.size());
-    dependentSpec = dependents.get(NamedDepReconciler.NAME);
+    dependentSpec = findByName(dependents, NamedDepReconciler.NAME);
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
     maybeConfig = dependentSpec.getDependentResourceConfiguration();
     assertTrue(maybeConfig.isPresent());
     assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
+  }
+
+  private DependentResourceSpec<?, ?> findByName(
+      List<DependentResourceSpec<?, ?>> dependentResourceSpecList, String name) {
+    return dependentResourceSpecList.stream().filter(d -> d.getName().equals(name)).findFirst()
+        .get();
+  }
+
+  private Optional<DependentResourceSpec<?, ?>> findByNameOptional(
+      List<DependentResourceSpec<?, ?>> dependentResourceSpecList, String name) {
+    return dependentResourceSpecList.stream().filter(d -> d.getName().equals(name)).findFirst();
   }
 
   @Test
@@ -63,8 +78,9 @@ class AnnotationControllerConfigurationTest {
     var config = new AnnotationControllerConfiguration<>(new NamedDuplicatedDepReconciler());
     var dependents = config.getDependentResources();
     assertEquals(2, dependents.size());
-    assertTrue(dependents.containsKey(NamedDuplicatedDepReconciler.NAME)
-        && dependents.containsKey(DependentResource.defaultNameFor(ReadOnlyDependent.class)));
+    assertTrue(findByNameOptional(dependents, NamedDuplicatedDepReconciler.NAME).isPresent()
+        && findByNameOptional(dependents, DependentResource.defaultNameFor(ReadOnlyDependent.class))
+            .isPresent());
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,

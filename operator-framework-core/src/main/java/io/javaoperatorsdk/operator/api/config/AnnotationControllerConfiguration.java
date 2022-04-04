@@ -1,11 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -26,7 +22,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
-  private Map<String, DependentResourceSpec<?, ?>> specs;
+  private List<DependentResourceSpec<?, ?>> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -135,15 +131,15 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public Map<String, DependentResourceSpec<?, ?>> getDependentResources() {
+  public List<DependentResourceSpec<?, ?>> getDependentResources() {
     if (specs == null) {
       final var dependents =
           valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
       if (dependents.length == 0) {
-        return Collections.emptyMap();
+        return Collections.emptyList();
       }
 
-      specs = new HashMap<>(dependents.length);
+      specs = new ArrayList<>(dependents.length);
       for (Dependent dependent : dependents) {
         Object config = null;
         final Class<? extends DependentResource> dependentType = dependent.type();
@@ -163,14 +159,15 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         if (name.isBlank()) {
           name = DependentResource.defaultNameFor(dependentType);
         }
-        final DependentResourceSpec<?, ?> spec = specs.get(name);
-        if (spec != null) {
-          throw new IllegalArgumentException(
-              "A DependentResource named: " + name + " already exists: " + spec);
+        for (var spec : specs) {
+          if (spec.getName().equals(name)) {
+            throw new IllegalArgumentException(
+                "A DependentResource named: " + name + " already exists: " + spec);
+          }
         }
-        specs.put(name, new DependentResourceSpec(dependentType, config, name));
+        specs.add(new DependentResourceSpec(dependentType, config, name));
       }
     }
-    return Collections.unmodifiableMap(specs);
+    return Collections.unmodifiableList(specs);
   }
 }

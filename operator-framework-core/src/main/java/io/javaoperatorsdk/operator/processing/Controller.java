@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,7 +53,7 @@ public class Controller<P extends HasMetadata>
   private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
-  private final Map<String, DependentResource> dependents;
+  private final LinkedHashMap<String, DependentResource> dependents;
   private final boolean contextInitializer;
   private final boolean hasDeleterDependents;
   private final boolean isCleaner;
@@ -77,18 +76,18 @@ public class Controller<P extends HasMetadata>
     final var specs = configuration.getDependentResources();
     final var size = specs.size();
     if (size == 0) {
-      dependents = Collections.emptyMap();
+      dependents = new LinkedHashMap<>();
     } else {
-      final var dependentsHolder = new HashMap<String, DependentResource>(size);
-      specs.forEach((name, drs) -> {
+      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(size);
+      specs.forEach(drs -> {
         final var dependent = createAndConfigureFrom(drs, kubernetesClient);
         // check if dependent implements Deleter to record that fact
         if (!hasDeleterHolder[0] && dependent instanceof Deleter) {
           hasDeleterHolder[0] = true;
         }
-        dependentsHolder.put(name, dependent);
+        dependentsHolder.put(drs.getName(), dependent);
       });
-      dependents = Collections.unmodifiableMap(dependentsHolder);
+      dependents = new LinkedHashMap<>(dependentsHolder);
     }
 
     hasDeleterDependents = hasDeleterHolder[0];
@@ -193,7 +192,8 @@ public class Controller<P extends HasMetadata>
             dependents.forEach((name, dependent) -> {
               try {
                 final var reconcileResult = dependent.reconcile(resource, context);
-                context.managedDependentResourceContext().setReconcileResult(name, reconcileResult);
+                context.managedDependentResourceContext().setReconcileResult(name,
+                    reconcileResult);
                 log.info("Reconciled dependent '{}' -> {}", name, reconcileResult.getOperation());
               } catch (Exception e) {
                 final var message = e.getMessage();
@@ -376,10 +376,5 @@ public class Controller<P extends HasMetadata>
 
   public boolean useFinalizer() {
     return isCleaner || hasDeleterDependents;
-  }
-
-  @SuppressWarnings("rawtypes")
-  public Map<String, DependentResource> getDependents() {
-    return dependents;
   }
 }

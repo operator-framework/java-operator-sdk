@@ -25,13 +25,17 @@ class ControllerConfigurationOverriderTest {
     var dependents = configuration.getDependentResources();
     assertFalse(dependents.isEmpty());
     assertEquals(1, dependents.size());
+
     final var dependentResourceName = DependentResource.defaultNameFor(ReadOnlyDependent.class);
-    assertTrue(dependents.containsKey(dependentResourceName));
-    var dependentSpec = dependents.get(dependentResourceName);
+    assertTrue(dependents.stream().anyMatch(dr -> dr.getName().equals(dependentResourceName)));
+
+    var dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
+        .findFirst().get();
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
     var maybeConfig = dependentSpec.getDependentResourceConfiguration();
     assertTrue(maybeConfig.isPresent());
     assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
+
     var config = (KubernetesDependentResourceConfig) maybeConfig.orElseThrow();
     // check that the DependentResource inherits the controller's configuration if applicable
     assertEquals(1, config.namespaces().length);
@@ -47,7 +51,8 @@ class ControllerConfigurationOverriderTest {
             new KubernetesDependentResourceConfig(new String[] {overriddenNS}, labelSelector))
         .build();
     dependents = overridden.getDependentResources();
-    dependentSpec = dependents.get(dependentResourceName);
+    dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
+        .findFirst().get();
     config = (KubernetesDependentResourceConfig) dependentSpec.getDependentResourceConfiguration()
         .orElseThrow();
     assertEquals(1, config.namespaces().length);

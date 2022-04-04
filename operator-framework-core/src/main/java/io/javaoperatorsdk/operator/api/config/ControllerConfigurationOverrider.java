@@ -1,17 +1,17 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
-@SuppressWarnings({"rawtypes", "unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
@@ -22,7 +22,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final Map<String, DependentResourceSpec<?, ?>> dependentResourceSpecs;
+  private final LinkedHashMap<String, DependentResourceSpec<?, ?>> namedDependentResourceSpecs;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -33,7 +33,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
     // make the original specs modifiable
-    dependentResourceSpecs = new HashMap<>(original.getDependentResources());
+    final var dependentResources = original.getDependentResources();
+    namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
+    dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
   }
 
@@ -92,14 +94,13 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
-    final var currentConfig = dependentResourceSpecs.get(name);
-    if (currentConfig == null) {
+
+    var namedRDS = namedDependentResourceSpecs.get(name);
+    if (namedRDS == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    dependentResourceSpecs.remove(name);
-    dependentResourceSpecs.put(name,
-        new DependentResourceSpec(currentConfig.getDependentResourceClass(),
-            dependentResourceConfig, name));
+    namedDependentResourceSpecs.put(name, new DependentResourceSpec<>(
+        namedRDS.getDependentResourceClass(), dependentResourceConfig, name));
     return this;
   }
 
@@ -116,7 +117,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        dependentResourceSpecs);
+        namedDependentResourceSpecs.values().stream().collect(Collectors.toUnmodifiableList()));
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
