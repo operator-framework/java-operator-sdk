@@ -124,7 +124,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
           // namespaces if needed, otherwise, just return the existing spec
           final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
           final Class<?> drClass = drsEntry.getValue().getDependentResourceClass();
-          return maybeConfig.filter(c -> c instanceof KubernetesDependentResourceConfig)
+          return maybeConfig.filter(KubernetesDependentResourceConfig.class::isInstance)
               .map(KubernetesDependentResourceConfig.class::cast)
               .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
               .map(c -> updateSpec(drsEntry.getKey(), drClass, c))

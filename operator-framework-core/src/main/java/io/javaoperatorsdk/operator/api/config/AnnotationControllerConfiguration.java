@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -22,12 +23,13 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
+@SuppressWarnings("rawtypes")
 public class AnnotationControllerConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
 
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
-  private List<DependentResourceSpec<?, ?>> specs;
+  private List<DependentResourceSpec> specs;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -141,42 +143,56 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       final var dependents =
           valueOrDefault(annotation, ControllerConfiguration::dependents, new Dependent[] {});
       if (dependents.length == 0) {
-        return Collections.emptyList();
+        specs = Collections.emptyList();
+        return specs;
       }
 
-      specs = new ArrayList<>(dependents.length);
+      final var specsMap = new LinkedHashMap<String, DependentResourceSpec>(dependents.length);
       for (Dependent dependent : dependents) {
         Object config = null;
         final Class<? extends DependentResource> dependentType = dependent.type();
         if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
-          final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
+          config = createKubernetesResourceConfig(dependentType);
+        }
 
-          var namespaces = getNamespaces();
-          var configuredNS = false;
-          if (kubeDependent != null && !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
-              kubeDependent.namespaces())) {
-            namespaces = Set.of(kubeDependent.namespaces());
-            configuredNS = true;
-          }
-
-          final var labelSelector =
-              Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
-          config =
-              new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
+        final var name = getName(dependent, dependentType);
+        final var spec = specsMap.get(name);
+        if (spec != null) {
+          throw new IllegalArgumentException(
+              "A DependentResource named: " + name + " already exists: " + spec);
         }
-        var name = dependent.name();
-        if (name.isBlank()) {
-          name = DependentResource.defaultNameFor(dependentType);
-        }
-        for (var spec : specs) {
-          if (spec.getName().equals(name)) {
-            throw new IllegalArgumentException(
-                "A DependentResource named: " + name + " already exists: " + spec);
-          }
-        }
-        specs.add(new DependentResourceSpec(dependentType, config, name));
+        specsMap.put(name, new DependentResourceSpec(dependentType, config, name));
       }
+
+      specs = specsMap.values().stream().collect(Collectors.toUnmodifiableList());
     }
-    return Collections.unmodifiableList(specs);
+    return specs;
+  }
+
+  private String getName(Dependent dependent, Class<? extends DependentResource> dependentType) {
+    var name = dependent.name();
+    if (name.isBlank()) {
+      name = DependentResource.defaultNameFor(dependentType);
+    }
+    return name;
+  }
+
+  private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
+    Object config;
+    final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
+
+    var namespaces = getNamespaces();
+    var configuredNS = false;
+    if (kubeDependent != null && !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
+        kubeDependent.namespaces())) {
+      namespaces = Set.of(kubeDependent.namespaces());
+      configuredNS = true;
+    }
+
+    final var labelSelector =
+        Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
+    config =
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
+    return config;
   }
 }
