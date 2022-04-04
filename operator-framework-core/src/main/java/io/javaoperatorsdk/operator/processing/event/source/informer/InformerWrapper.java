@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -10,11 +13,12 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, ResourceCache<T>, UpdatableCache<T> {
+    implements LifecycleAware, IndexerResourceCache<T>, UpdatableCache<T> {
+
   private final SharedIndexInformer<T> informer;
   private final InformerResourceCache<T> cache;
 
@@ -82,4 +86,13 @@ class InformerWrapper<T extends HasMetadata>
     cache.put(key, resource);
   }
 
+  @Override
+  public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
+    informer.getIndexer().addIndexers(indexers);
+  }
+
+  @Override
+  public List<T> byIndex(String indexName, String indexKey) {
+    return informer.getIndexer().byIndex(indexName, indexKey);
+  }
 }

@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -22,11 +23,12 @@ import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 public class InformerManager<T extends HasMetadata, C extends ResourceConfiguration<T>>
-    implements LifecycleAware, ResourceCache<T>, UpdatableCache<T> {
+    implements LifecycleAware, IndexerResourceCache<T>, UpdatableCache<T> {
 
   private static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);
@@ -144,4 +146,14 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
                 key, resource));
   }
 
+  @Override
+  public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
+    sources.values().forEach(s -> s.addIndexers(indexers));
+  }
+
+  @Override
+  public List<T> byIndex(String indexName, String indexKey) {
+    return sources.values().stream().map(s -> s.byIndex(indexName, indexKey))
+        .flatMap(List::stream).collect(Collectors.toList());
+  }
 }
