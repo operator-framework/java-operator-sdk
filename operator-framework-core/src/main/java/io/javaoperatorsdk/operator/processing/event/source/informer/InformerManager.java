@@ -24,7 +24,6 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 public class InformerManager<T extends HasMetadata, C extends ResourceConfiguration<T>>
@@ -91,7 +90,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public Stream<T> list(Predicate<T> predicate) {
     if (predicate == null) {
-      return sources.values().stream().flatMap(ResourceCache::list);
+      return sources.values().stream().flatMap(IndexerResourceCache::list);
     }
     return sources.values().stream().flatMap(i -> i.list(predicate));
   }
