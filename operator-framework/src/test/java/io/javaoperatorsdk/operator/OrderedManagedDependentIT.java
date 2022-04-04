@@ -28,14 +28,12 @@ class OrderedManagedDependentIT {
 
     await().atMost(Duration.ofSeconds(5))
         .until(() -> ((OrderedManagedDependentTestReconciler) operator.getFirstReconciler())
-            .getNumberOfExecutions() >= 1);
-    // todo change to more precise values when event filtering is fixed
-    // assertThat(OrderedManagedDependentTestReconciler.dependentExecution).hasSize(4);
+            .getNumberOfExecutions() == 1);
+
     assertThat(OrderedManagedDependentTestReconciler.dependentExecution.get(0))
         .isEqualTo(ConfigMapDependentResource1.class);
     assertThat(OrderedManagedDependentTestReconciler.dependentExecution.get(1))
         .isEqualTo(ConfigMapDependentResource2.class);
-
   }
 
 
