@@ -56,7 +56,7 @@ public class CreateUpdateEventFilterTestReconciler
         informerEventSource.handleRecentResourceCreate(resourceID, configMap);
       } catch (RuntimeException e) {
         informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
+            .cleanupOnCreateOrUpdateEventFiltering(resourceID);
         throw e;
       }
     } else {
@@ -76,7 +76,7 @@ public class CreateUpdateEventFilterTestReconciler
               newConfigMap, configMap);
         } catch (RuntimeException e) {
           informerEventSource
-              .cleanupOnCreateOrUpdateEventFiltering(resourceID, configMap);
+              .cleanupOnCreateOrUpdateEventFiltering(resourceID);
           throw e;
         }
       }

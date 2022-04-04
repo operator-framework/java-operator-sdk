@@ -6,6 +6,6 @@ public interface RecentOperationEventFilter<R> extends RecentOperationCacheFille
 
   void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID, R resource);
 
-  void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID, R resource);
+  void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID);
 
 }

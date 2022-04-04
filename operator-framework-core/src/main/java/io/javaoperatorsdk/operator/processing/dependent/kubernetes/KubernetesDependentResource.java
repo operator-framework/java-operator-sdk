@@ -81,6 +81,33 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     setEventSource(informerEventSource);
   }
 
+
+  protected R handleCreate(R desired, P primary, Context<P> context) {
+    ResourceID resourceID = ResourceID.fromResource(primary);
+    R created = null;
+    try {
+      prepareEventFiltering(desired, resourceID);
+      created = super.handleCreate(desired, primary, context);
+      return created;
+    } catch (RuntimeException e) {
+      cleanupAfterEventFiltering(resourceID);
+      throw e;
+    }
+  }
+
+  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
+    ResourceID resourceID = ResourceID.fromResource(primary);
+    R updated = null;
+    try {
+      prepareEventFiltering(desired, resourceID);
+      updated = super.handleUpdate(actual, desired, primary, context);
+      return updated;
+    } catch (RuntimeException e) {
+      cleanupAfterEventFiltering(resourceID);
+      throw e;
+    }
+  }
+
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     return prepare(target, primary, "Creating").create(target);
@@ -152,4 +179,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
   }
+
+  private void prepareEventFiltering(R desired, ResourceID resourceID) {
+    eventSource().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
+  }
+
+  private void cleanupAfterEventFiltering(ResourceID resourceID) {
+    eventSource().cleanupOnCreateOrUpdateEventFiltering(resourceID);
+  }
+
 }
