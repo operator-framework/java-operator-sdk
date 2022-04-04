@@ -119,6 +119,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onDelete(R r, boolean b) {
+    if (log.isDebugEnabled()) {
+      log.debug("On delete event received for resource id: {}", ResourceID.fromResource(r));
+    }
     super.onDelete(r, b);
     propagateEvent(r);
   }
