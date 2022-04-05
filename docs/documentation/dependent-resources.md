@@ -293,4 +293,7 @@ makes sure that it or the related `InformerEventSource` always return the up-to-
 the reconciliation, the later received related event will not trigger the reconciliation again. This is a small
 optimization. For example if during a reconciliation a `ConfigMap` is updated using dependent resources, this won't
 trigger a new reconciliation. It' does not need to, since the change in the `ConfigMap` is made by the reconciler,
-and the fresh version is used further.
+and the fresh version is used further. To work properly, it is also required that all the changes are received only by
+one event source (this is a best practice in general) - so for example if there are two config map dependents either
+there should be a shared event source between them, or a label selector on the event sources just to selecting related
+events, see in [related integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/cd8d7e94f9d3f5d9f28dddbbb10f692546c22c9c/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/orderedmanageddependent/ConfigMapDependentResource1.java#L15-L15). 
