@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.operationeventfiltering;
+package io.javaoperatorsdk.operator.sample.primaryindexer;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -9,9 +9,10 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("OperationEventFilterCustomResource")
-@ShortNames("oef")
-public class OperationEventFilterCustomResource
-    extends CustomResource<OperationEventFilterCustomResourceSpec, String>
+@Kind("PrimaryIndexerTestCustomResource")
+@ShortNames("pi")
+public class PrimaryIndexerTestCustomResource
+    extends
+    CustomResource<PrimaryIndexerTestCustomResourceSpec, PrimaryIndexerTestCustomResourceStatus>
     implements Namespaced {
 }

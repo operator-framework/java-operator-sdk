@@ -14,7 +14,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEvent
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
 /**
  * <p>
@@ -64,7 +63,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
-    implements ResourceCache<R>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 

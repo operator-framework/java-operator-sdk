@@ -4,7 +4,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 /**
  * Contextual information made available to event sources.
@@ -13,11 +13,11 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
  */
 public class EventSourceContext<P extends HasMetadata> {
 
-  private final ResourceCache<P> primaryCache;
+  private final IndexerResourceCache<P> primaryCache;
   private final ControllerConfiguration<P> controllerConfiguration;
   private final KubernetesClient client;
 
-  public EventSourceContext(ResourceCache<P> primaryCache,
+  public EventSourceContext(IndexerResourceCache<P> primaryCache,
       ControllerConfiguration<P> controllerConfiguration,
       KubernetesClient client) {
     this.primaryCache = primaryCache;
@@ -30,7 +30,7 @@ public class EventSourceContext<P extends HasMetadata> {
    *
    * @return the primary resource cache
    */
-  public ResourceCache<P> getPrimaryCache() {
+  public IndexerResourceCache<P> getPrimaryCache() {
     return primaryCache;
   }
 

@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -16,12 +19,12 @@ import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends CachingEventSource<R, P>
-    implements ResourceEventHandler<R>, ResourceCache<R>, RecentOperationCacheFiller<R> {
+    implements ResourceEventHandler<R>, IndexerResourceCache<R>, RecentOperationCacheFiller<R> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
@@ -121,5 +124,13 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   void setTemporalResourceCache(TemporaryResourceCache<R> temporaryResourceCache) {
     this.temporaryResourceCache = temporaryResourceCache;
+  }
+
+  public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
+    manager().addIndexers(indexers);
+  }
+
+  public List<R> byIndex(String indexName, String indexKey) {
+    return manager().byIndex(indexName, indexKey);
   }
 }

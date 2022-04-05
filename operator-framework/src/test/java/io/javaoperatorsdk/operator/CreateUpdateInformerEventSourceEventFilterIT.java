@@ -16,7 +16,7 @@ import static io.javaoperatorsdk.operator.sample.createupdateeventfilter.CreateU
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class CreateUpdateDependentEventFilterIT {
+class CreateUpdateInformerEventSourceEventFilterIT {
 
   @RegisterExtension
   OperatorExtension operator =
