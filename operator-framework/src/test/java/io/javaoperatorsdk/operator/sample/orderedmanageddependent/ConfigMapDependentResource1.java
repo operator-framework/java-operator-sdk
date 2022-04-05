@@ -34,8 +34,8 @@ public class ConfigMapDependentResource1 extends
 
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMeta());
-    Map<String,String> labels = new HashMap<>();
-    labels.put("dependent","cm1");
+    Map<String, String> labels = new HashMap<>();
+    labels.put("dependent", "cm1");
     configMap.getMetadata().setLabels(labels);
     configMap.getMetadata().setName(primary.getMetadata().getName() + "1");
     configMap.getMetadata().setNamespace(primary.getMetadata().getNamespace());
