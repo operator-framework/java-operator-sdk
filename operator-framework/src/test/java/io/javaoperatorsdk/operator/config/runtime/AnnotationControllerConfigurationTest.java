@@ -14,15 +14,35 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AnnotationControllerConfigurationTest {
+
+  @Test
+  void defaultValuesShouldBeConsistent() {
+    final var configuration = new AnnotationControllerConfiguration<>(new SelectorReconciler());
+    final var annotated = extractDependentKubernetesResourceConfig(configuration, 1);
+    final var unannotated = extractDependentKubernetesResourceConfig(configuration, 0);
+
+    assertNull(annotated.labelSelector());
+    assertNull(unannotated.labelSelector());
+  }
+
+  private KubernetesDependentResourceConfig extractDependentKubernetesResourceConfig(
+      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
+    return (KubernetesDependentResourceConfig) configuration.getDependentResources().get(index)
+        .getDependentResourceConfiguration()
+        .orElseThrow();
+  }
 
   @Test
   void getDependentResources() {
@@ -142,6 +162,27 @@ class AnnotationControllerConfigurationTest {
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
+    }
+  }
+
+  @ControllerConfiguration(dependents = {
+      @Dependent(type = SelectorReconciler.WithAnnotation.class),
+      @Dependent(type = ReadOnlyDependent.class)
+  })
+  private static class SelectorReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return null;
+    }
+
+    @KubernetesDependent
+    private static class WithAnnotation extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+
+      public WithAnnotation() {
+        super(ConfigMap.class);
+      }
     }
   }
 }
