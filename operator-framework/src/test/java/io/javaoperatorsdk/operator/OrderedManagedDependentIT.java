@@ -26,7 +26,7 @@ class OrderedManagedDependentIT {
   void managedDependentsAreReconciledInOrder() {
     operator.create(OrderedManagedDependentCustomResource.class, createTestResource());
 
-    await().atMost(Duration.ofSeconds(5))
+    await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(5))
         .until(() -> ((OrderedManagedDependentTestReconciler) operator.getFirstReconciler())
             .getNumberOfExecutions() == 1);
 
