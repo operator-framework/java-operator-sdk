@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.primaryindexer;
 
-public class CustomFilteringTestResourceSpec {
+public class PrimaryIndexerTestCustomResourceSpec {
 
   private String configMapName;
 
@@ -8,7 +8,7 @@ public class CustomFilteringTestResourceSpec {
     return configMapName;
   }
 
-  public CustomFilteringTestResourceSpec setConfigMapName(String configMapName) {
+  public PrimaryIndexerTestCustomResourceSpec setConfigMapName(String configMapName) {
     this.configMapName = configMapName;
     return this;
   }

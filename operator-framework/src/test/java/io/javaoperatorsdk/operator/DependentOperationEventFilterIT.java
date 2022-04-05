@@ -30,12 +30,14 @@ class DependentOperationEventFilterIT {
 
   @Test
   void reconcileNotTriggeredWithDependentResourceCreateOrUpdate() {
-    var resource = operator.create(DependentOperationEventFilterCustomResource.class, createTestResource());
+    var resource =
+        operator.create(DependentOperationEventFilterCustomResource.class, createTestResource());
 
     await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
         .until(
-            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator.getFirstReconciler())
-                .getNumberOfExecutions() == 1);
+            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
+                .getFirstReconciler())
+                    .getNumberOfExecutions() == 1);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_1);
 
@@ -44,15 +46,17 @@ class DependentOperationEventFilterIT {
 
     await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
         .until(
-            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator.getFirstReconciler())
-                .getNumberOfExecutions() == 2);
+            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
+                .getFirstReconciler())
+                    .getNumberOfExecutions() == 2);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_2);
   }
 
 
   private DependentOperationEventFilterCustomResource createTestResource() {
-    DependentOperationEventFilterCustomResource cr = new DependentOperationEventFilterCustomResource();
+    DependentOperationEventFilterCustomResource cr =
+        new DependentOperationEventFilterCustomResource();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(TEST);
     cr.setSpec(new DependentOperationEventFilterCustomResourceSpec());

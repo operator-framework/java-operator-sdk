@@ -1,37 +1,68 @@
 package io.javaoperatorsdk.operator.sample.primaryindexer;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
 public class PrimaryIndexerTestReconciler
     implements Reconciler<PrimaryIndexerTestCustomResource>,
-    TestExecutionInfoProvider, EventSourceProvider<PrimaryIndexerTestCustomResource> {
+    EventSourceInitializer<PrimaryIndexerTestCustomResource> {
 
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+  private final Map<String, AtomicInteger> numberOfExecutions = new ConcurrentHashMap<>();
 
+  private static final String CONFIG_MAP_RELATION_INDEXER = "cm-indexer";
 
   @Override
-  public EventSource initEventSource(EventSourceContext<PrimaryIndexerTestCustomResource> context) {
+  public Map<String, EventSource> prepareEventSources(
+      EventSourceContext<PrimaryIndexerTestCustomResource> context) {
 
+    context
+        .getPrimaryCache()
+        .addIndexers(
+            Map.of(
+                CONFIG_MAP_RELATION_INDEXER,
+                (resource -> List.of(resource.getSpec().getConfigMapName()))));
 
-    return null;
+    var informerConfiguration =
+        InformerConfiguration.from(context, ConfigMap.class)
+            .withSecondaryToPrimaryMapper(
+                (ConfigMap secondaryResource) -> context
+                    .getPrimaryCache()
+                    .byIndex(
+                        CONFIG_MAP_RELATION_INDEXER,
+                        secondaryResource.getMetadata().getName())
+                    .stream()
+                    .map(ResourceID::fromResource)
+                    .collect(Collectors.toSet()))
+            .build();
+
+    var configMapInformerEventSource =
+        new InformerEventSource<>(informerConfiguration, context);
+
+    return EventSourceInitializer.nameEventSources(configMapInformerEventSource);
   }
 
   @Override
   public UpdateControl<PrimaryIndexerTestCustomResource> reconcile(
       PrimaryIndexerTestCustomResource resource,
       Context<PrimaryIndexerTestCustomResource> context) {
-    numberOfExecutions.addAndGet(1);
+    numberOfExecutions.computeIfAbsent(resource.getMetadata().getName(), r -> new AtomicInteger(0));
+    numberOfExecutions.get(resource.getMetadata().getName()).incrementAndGet();
     return UpdateControl.noUpdate();
   }
 
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
+  public Map<String, AtomicInteger> getNumberOfExecutions() {
+    return numberOfExecutions;
   }
 
 }

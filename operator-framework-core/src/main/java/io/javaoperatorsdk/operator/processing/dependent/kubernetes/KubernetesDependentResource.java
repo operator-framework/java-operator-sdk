@@ -66,8 +66,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         InformerConfiguration.from(resourceType())
             .withLabelSelector(labelSelector)
             .withNamespaces(namespaces)
-            .withPrimaryResourcesRetriever(primaryResourcesRetriever)
-            .withAssociatedSecondaryResourceIdentifier(secondaryResourceIdentifier)
+            .withSecondaryToPrimaryMapper(primaryResourcesRetriever)
+            .withPrimaryToSecondaryMapper(secondaryResourceIdentifier)
             .build();
     configureWith(new InformerEventSource<>(ic, client));
   }

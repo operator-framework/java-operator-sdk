@@ -18,7 +18,7 @@ public class ConfigMapDependentResource extends
 
   @Override
   protected ConfigMap desired(DependentOperationEventFilterCustomResource primary,
-                              Context<DependentOperationEventFilterCustomResource> context) {
+      Context<DependentOperationEventFilterCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMeta());

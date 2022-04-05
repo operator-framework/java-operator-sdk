@@ -69,8 +69,8 @@ public class WebappReconciler
 
     InformerConfiguration<Tomcat, Webapp> configuration =
         InformerConfiguration.from(context, Tomcat.class)
-            .withPrimaryResourcesRetriever(webappsMatchingTomcatName)
-            .withAssociatedSecondaryResourceIdentifier(tomcatFromWebAppSpec)
+            .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
+            .withPrimaryToSecondaryMapper(tomcatFromWebAppSpec)
             .build();
     return EventSourceInitializer
         .nameEventSources(new InformerEventSource<>(configuration, context));

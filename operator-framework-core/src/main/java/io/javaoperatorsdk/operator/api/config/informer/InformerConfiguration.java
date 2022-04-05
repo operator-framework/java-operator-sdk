@@ -64,13 +64,13 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       this.resourceClass = resourceClass;
     }
 
-    public InformerConfigurationBuilder<R, P> withPrimaryResourcesRetriever(
+    public InformerConfigurationBuilder<R, P> withSecondaryToPrimaryMapper(
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
       this.secondaryToPrimaryResourcesIdSet = secondaryToPrimaryMapper;
       return this;
     }
 
-    public InformerConfigurationBuilder<R, P> withAssociatedSecondaryResourceIdentifier(
+    public InformerConfigurationBuilder<R, P> withPrimaryToSecondaryMapper(
         PrimaryToSecondaryMapper<P> associatedWith) {
       this.associatedWith = associatedWith;
       return this;
@@ -115,8 +115,8 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
     return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass())
         .withNamespaces(configuration.getNamespaces())
         .withLabelSelector(configuration.getLabelSelector())
-        .withAssociatedSecondaryResourceIdentifier(
+        .withPrimaryToSecondaryMapper(
             configuration.getPrimaryToSecondaryMapper())
-        .withPrimaryResourcesRetriever(configuration.getSecondaryToPrimaryMapper());
+        .withSecondaryToPrimaryMapper(configuration.getSecondaryToPrimaryMapper());
   }
 }
