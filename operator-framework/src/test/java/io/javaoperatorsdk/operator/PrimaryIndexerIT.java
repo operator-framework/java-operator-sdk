@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.sample.primaryindexer.AbstractPrimaryIndexerTestReconciler;
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestCustomResource;
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestReconciler;
@@ -22,12 +23,15 @@ class PrimaryIndexerIT {
   public static final String RESOURCE_NAME2 = "test2";
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler()).build();
+  OperatorExtension operator = buildOperator();
+
+  protected OperatorExtension buildOperator() {
+    return OperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler()).build();
+  }
 
   @Test
-  void managedDependentsAreReconciledInOrder() {
-    var reconciler = (PrimaryIndexerTestReconciler) operator.getFirstReconciler();
+  void changesToSecondaryResourcesCorrectlyTriggerReconciler() {
+    var reconciler = (AbstractPrimaryIndexerTestReconciler) operator.getFirstReconciler();
     operator.create(PrimaryIndexerTestCustomResource.class, createTestResource(RESOURCE_NAME1));
     operator.create(PrimaryIndexerTestCustomResource.class, createTestResource(RESOURCE_NAME2));
 
