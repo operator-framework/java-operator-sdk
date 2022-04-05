@@ -46,10 +46,8 @@ public class PrimaryIndexerTestReconciler
                     .collect(Collectors.toSet()))
             .build();
 
-    var configMapInformerEventSource =
-        new InformerEventSource<>(informerConfiguration, context);
-
-    return EventSourceInitializer.nameEventSources(configMapInformerEventSource);
+    return EventSourceInitializer
+        .nameEventSources(new InformerEventSource<>(informerConfiguration, context));
   }
 
   @Override
