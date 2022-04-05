@@ -66,20 +66,25 @@ public class Operator implements LifecycleAware {
    * and start the cluster monitoring processes.
    */
   public void start() {
-    controllers.shouldStart();
+    try {
+      controllers.shouldStart();
 
-    final var version = configurationService.getVersion();
-    log.info(
-        "Operator SDK {} (commit: {}) built on {} starting...",
-        version.getSdkVersion(),
-        version.getCommit(),
-        version.getBuiltTime());
+      final var version = configurationService.getVersion();
+      log.info(
+          "Operator SDK {} (commit: {}) built on {} starting...",
+          version.getSdkVersion(),
+          version.getCommit(),
+          version.getBuiltTime());
 
-    final var clientVersion = Version.clientVersion();
-    log.info("Client version: {}", clientVersion);
+      final var clientVersion = Version.clientVersion();
+      log.info("Client version: {}", clientVersion);
 
-    ExecutorServiceManager.init(configurationService);
-    controllers.start();
+      ExecutorServiceManager.init(configurationService);
+      controllers.start();
+    } catch (Exception e) {
+      log.error("Error starting operator", e);
+      System.exit(1);
+    }
   }
 
   @Override
