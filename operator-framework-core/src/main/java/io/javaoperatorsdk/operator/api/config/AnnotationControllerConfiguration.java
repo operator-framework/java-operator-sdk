@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -189,8 +190,12 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       configuredNS = true;
     }
 
-    final var labelSelector =
-        Utils.valueOrDefault(kubeDependent, KubernetesDependent::labelSelector, null);
+    String labelSelector = null;
+    if (kubeDependent != null) {
+      final var fromAnnotation = kubeDependent.labelSelector();
+      labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
+    }
+
     config =
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
     return config;
