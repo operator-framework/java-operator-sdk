@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.operationeventfiltering;
+package io.javaoperatorsdk.operator.sample.dependentoperationeventfiltering;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("OperationEventFilterCustomResource")
 @ShortNames("oef")
-public class OperationEventFilterCustomResource
-    extends CustomResource<OperationEventFilterCustomResourceSpec, String>
+public class DependentOperationEventFilterCustomResource
+    extends CustomResource<DependentOperationEventFilterCustomResourceSpec, String>
     implements Namespaced {
 }
