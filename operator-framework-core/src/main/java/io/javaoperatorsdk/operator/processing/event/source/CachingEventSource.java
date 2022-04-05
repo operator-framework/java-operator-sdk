@@ -43,8 +43,6 @@ public abstract class CachingEventSource<R, P extends HasMetadata>
     return cache.list(predicate);
   }
 
-
-
   protected UpdatableCache<R> initCache() {
     return new ConcurrentHashMapCache<>();
   }

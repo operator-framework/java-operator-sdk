@@ -20,36 +20,36 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
   class DefaultInformerConfiguration<R extends HasMetadata, P extends HasMetadata> extends
       DefaultResourceConfiguration<R> implements InformerConfiguration<R, P> {
 
-    private final SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet;
-    private final PrimaryToSecondaryMapper<P> associatedWith;
+    private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
+    private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
-        SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet,
-        PrimaryToSecondaryMapper<P> associatedWith,
+        SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
+        PrimaryToSecondaryMapper<P> primaryToSecondaryMapper,
         Set<String> namespaces) {
       super(labelSelector, resourceClass, namespaces);
-      this.secondaryToPrimaryResourcesIdSet =
-          Objects.requireNonNullElse(secondaryToPrimaryResourcesIdSet,
+      this.secondaryToPrimaryMapper =
+          Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
-      this.associatedWith =
-          Objects.requireNonNullElseGet(associatedWith, () -> ResourceID::fromResource);
+      this.primaryToSecondaryMapper =
+          Objects.requireNonNullElseGet(primaryToSecondaryMapper, () -> ResourceID::fromResource);
     }
 
 
-    public SecondaryToPrimaryMapper<R> getPrimaryResourcesRetriever() {
-      return secondaryToPrimaryResourcesIdSet;
+    public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
+      return secondaryToPrimaryMapper;
     }
 
-    public PrimaryToSecondaryMapper<P> getAssociatedResourceIdentifier() {
-      return associatedWith;
+    public PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
+      return primaryToSecondaryMapper;
     }
 
   }
 
-  SecondaryToPrimaryMapper<R> getPrimaryResourcesRetriever();
+  SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  PrimaryToSecondaryMapper<P> getAssociatedResourceIdentifier();
+  PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
@@ -116,7 +116,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
         .withNamespaces(configuration.getNamespaces())
         .withLabelSelector(configuration.getLabelSelector())
         .withAssociatedSecondaryResourceIdentifier(
-            configuration.getAssociatedResourceIdentifier())
-        .withPrimaryResourcesRetriever(configuration.getPrimaryResourcesRetriever());
+            configuration.getPrimaryToSecondaryMapper())
+        .withPrimaryResourcesRetriever(configuration.getSecondaryToPrimaryMapper());
   }
 }

@@ -59,7 +59,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  public ResourceID associatedSecondaryID(MySQLSchema primary) {
+  public ResourceID toSecondaryResourceID(MySQLSchema primary) {
     return new ResourceID(
         getSecretName(primary.getMetadata().getName()), primary.getMetadata().getNamespace());
   }

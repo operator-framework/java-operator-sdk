@@ -95,9 +95,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public Optional<R> getSecondaryResource(P primary) {
-    return get(ResourceID.fromResource(primary));
-  }
+  public abstract Optional<R> getSecondaryResource(P primary);
 
   @Override
   public Optional<R> getCachedValue(ResourceID resourceID) {

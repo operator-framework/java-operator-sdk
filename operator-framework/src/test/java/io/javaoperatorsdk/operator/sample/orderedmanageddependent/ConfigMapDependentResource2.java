@@ -46,7 +46,7 @@ public class ConfigMapDependentResource2 extends
   }
 
   @Override
-  public ResourceID associatedSecondaryID(OrderedManagedDependentCustomResource primary) {
+  public ResourceID toSecondaryResourceID(OrderedManagedDependentCustomResource primary) {
     return new ResourceID(primary.getMetadata().getName() + "2",
         primary.getMetadata().getNamespace());
   }

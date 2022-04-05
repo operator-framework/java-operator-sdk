@@ -59,7 +59,7 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
   }
 
   @Override
-  public ResourceID associatedSecondaryID(WebPage primary) {
+  public ResourceID toSecondaryResourceID(WebPage primary) {
     return new ResourceID(configMapName(primary), primary.getMetadata().getNamespace());
   }
 }
