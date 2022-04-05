@@ -10,6 +10,10 @@ public interface IndexerResourceCache<T extends HasMetadata> extends ResourceCac
 
   void addIndexers(Map<String, Function<T, List<String>>> indexers);
 
+  default void addIndexer(String name, Function<T, List<String>> indexer) {
+    addIndexers(Map.of(name, indexer));
+  }
+
   List<T> byIndex(String indexName, String indexKey);
 
 }
