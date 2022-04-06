@@ -102,7 +102,8 @@ public class Operator implements LifecycleAware {
       controllers.start();
     } catch (Exception e) {
       log.error("Error starting operator", e);
-      System.exit(1);
+      stop();
+      throw e;
     }
   }
 
@@ -209,10 +210,6 @@ public class Operator implements LifecycleAware {
     }
 
     public synchronized void stop() {
-      if (!started) {
-        return;
-      }
-
       this.controllers.values().parallelStream().forEach(closeable -> {
         log.debug("closing {}", closeable);
         closeable.stop();

@@ -332,6 +332,7 @@ public class Controller<P extends HasMetadata>
 
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
+      stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
   }
