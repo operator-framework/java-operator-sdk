@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 on:
   pull_request:
-    branches: [ main, v1, next ]
+    branches: [ main, v1, v2, next ]
   workflow_dispatch:
 jobs:
   check_format_and_unit_tests:
