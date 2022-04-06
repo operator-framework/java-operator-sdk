@@ -4,9 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -113,6 +118,49 @@ public class ReconcilerUtils {
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);
     }
+  }
+
+  public static void handleKubernetesClientException(Exception e, String resourceTypeName) {
+    if (e instanceof MissingCRDException) {
+      throw ((MissingCRDException) e);
+    }
+
+    if (e instanceof KubernetesClientException) {
+      KubernetesClientException ke = (KubernetesClientException) e;
+      if (404 == ke.getCode()) {
+        // only throw MissingCRDException if the 404 error occurs on the target CRD
+        if (resourceTypeName.equals(ke.getFullResourceName())
+            || matchesResourceType(resourceTypeName, ke)) {
+          throw new MissingCRDException(resourceTypeName, null, e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  private static boolean matchesResourceType(String resourceTypeName,
+      KubernetesClientException exception) {
+    final var fullResourceName = exception.getFullResourceName();
+    if (fullResourceName != null) {
+      return resourceTypeName.equals(fullResourceName);
+    } else {
+      // extract matching information from URI in the message if available
+      final var message = exception.getMessage();
+      final var regex = Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*").matcher(message);
+      if (regex.matches()) {
+        var group = regex.group(3);
+        if (group.endsWith(".")) {
+          group = group.substring(0, group.length() - 1);
+        }
+        final var segments = Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty))
+            .collect(Collectors.toUnmodifiableList());
+        if (segments.size() != 3) {
+          return false;
+        }
+        final var targetResourceName = segments.get(2) + "." + segments.get(0);
+        return resourceTypeName.equals(targetResourceName);
+      }
+    }
+    return false;
   }
 
 }

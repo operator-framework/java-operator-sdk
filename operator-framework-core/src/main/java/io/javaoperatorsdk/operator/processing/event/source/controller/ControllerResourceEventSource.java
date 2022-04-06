@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
+import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
@@ -50,7 +50,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     try {
       super.start();
     } catch (KubernetesClientException e) {
-      handleKubernetesClientException(e);
+      handleKubernetesClientException(e, controller.getConfiguration().getResourceTypeName());
       throw e;
     }
   }
@@ -88,17 +88,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void onDelete(T resource, boolean b) {
     super.onDelete(resource, b);
     eventReceived(ResourceAction.DELETED, resource, null);
-  }
-
-  private void handleKubernetesClientException(Exception e) {
-    KubernetesClientException ke = (KubernetesClientException) e;
-    if (404 == ke.getCode()) {
-      // only throw MissingCRDException if the 404 error occurs on the target CRD
-      final var targetCRDName = controller.getConfiguration().getResourceTypeName();
-      if (targetCRDName.equals(ke.getFullResourceName())) {
-        throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
-      }
-    }
   }
 
   @Override
