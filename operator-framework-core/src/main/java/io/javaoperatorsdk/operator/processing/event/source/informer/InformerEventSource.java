@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedInformer;
 import io.fabric8.kubernetes.client.informers.cache.Store;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -142,7 +143,13 @@ public class InformerEventSource<T extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void start() {
-    sharedInformer.run();
+    try {
+      sharedInformer.run();
+    } catch (Exception e) {
+      ReconcilerUtils.handleKubernetesClientException(e,
+          HasMetadata.getFullResourceName(sharedInformer.getApiTypeClass()));
+      throw e;
+    }
   }
 
   @Override

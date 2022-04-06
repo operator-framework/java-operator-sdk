@@ -13,11 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
-import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -26,6 +24,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceCache;
 
+import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
@@ -46,6 +45,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private final ControllerResourceCache<T> cache;
   private final TemporaryResourceCache<T> temporaryResourceCache;
 
+  @SuppressWarnings("unchecked")
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getConfiguration().getResourceClass());
     this.controller = controller;
@@ -87,9 +87,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
         });
       }
     } catch (Exception e) {
-      if (e instanceof KubernetesClientException) {
-        handleKubernetesClientException(e);
-      }
+      handleKubernetesClientException(e, controller.getConfiguration().getResourceTypeName());
       throw e;
     }
     super.start();
@@ -191,17 +189,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   public SharedIndexInformer<T> getInformer(String namespace) {
     return getInformers().get(Objects.requireNonNullElse(namespace, ANY_NAMESPACE_MAP_KEY));
-  }
-
-  private void handleKubernetesClientException(Exception e) {
-    KubernetesClientException ke = (KubernetesClientException) e;
-    if (404 == ke.getCode()) {
-      // only throw MissingCRDException if the 404 error occurs on the target CRD
-      final var targetCRDName = controller.getConfiguration().getResourceTypeName();
-      if (targetCRDName.equals(ke.getFullResourceName())) {
-        throw new MissingCRDException(targetCRDName, null, e.getMessage(), e);
-      }
-    }
   }
 
   @Override
