@@ -133,22 +133,28 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     UpdateControl<R> updateControl = controller.reconcile(resourceForExecution, context);
     R updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
-      updatedCustomResource = updateCustomResource(updateControl.getResource());
+      updatedCustomResource =
+          updateCustomResource(updateControl.getResource(), updateControl.isPatch());
       updateControl
           .getResource()
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
-      updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
+      updatedCustomResource =
+          updateStatusGenerationAware(updateControl.getResource(), updateControl.isPatch());
     } else if (updateControl.isUpdateStatus()) {
-      updatedCustomResource = updateStatusGenerationAware(updateControl.getResource());
+      updatedCustomResource =
+          updateStatusGenerationAware(updateControl.getResource(), updateControl.isPatch());
     } else if (updateControl.isUpdateResource()) {
-      updatedCustomResource = updateCustomResource(updateControl.getResource());
+      updatedCustomResource =
+          updateCustomResource(updateControl.getResource(), updateControl.isPatch());
       if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
-        updatedCustomResource = updateStatusGenerationAware(originalResource);
+        updatedCustomResource =
+            updateStatusGenerationAware(originalResource, updateControl.isPatch());
       }
     } else if (updateControl.isNoUpdate()
         && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
-      updatedCustomResource = updateStatusGenerationAware(originalResource);
+      updatedCustomResource =
+          updateStatusGenerationAware(originalResource, updateControl.isPatch());
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -197,9 +203,13 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private R updateStatusGenerationAware(R resource) {
+  private R updateStatusGenerationAware(R resource, boolean patch) {
     updateStatusObservedGenerationIfRequired(resource);
-    return customResourceFacade.updateStatus(resource);
+    if (patch) {
+      return customResourceFacade.patchStatus(resource);
+    } else {
+      return customResourceFacade.updateStatus(resource);
+    }
   }
 
   private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
@@ -281,13 +291,17 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(configuration().getFinalizerName());
-    replace(resource);
+    customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private R updateCustomResource(R resource) {
+  private R updateCustomResource(R resource, boolean patch) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
-    return replace(resource);
+    if (patch) {
+      return customResourceFacade.patchResource(resource);
+    } else {
+      return customResourceFacade.replaceResourceWithLock(resource);
+    }
   }
 
   private R removeFinalizer(R resource) {
@@ -296,16 +310,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         getUID(resource),
         getVersion(resource));
     resource.removeFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.replaceWithLock(resource);
+    return customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private R replace(R resource) {
-    log.debug(
-        "Trying to replace resource {}, version: {}",
-        getName(resource),
-        resource.getMetadata().getResourceVersion());
-    return customResourceFacade.replaceWithLock(resource);
-  }
 
   ControllerConfiguration<R> configuration() {
     return controller.getConfiguration();
@@ -321,6 +328,25 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       this.resourceOperation = resourceOperation;
     }
 
+    public R replaceResourceWithLock(R resource) {
+      log.debug(
+          "Trying to replace resource {}, version: {}",
+          getName(resource),
+          resource.getMetadata().getResourceVersion());
+      return resourceOperation
+          .inNamespace(resource.getMetadata().getNamespace())
+          .withName(getName(resource))
+          .lockResourceVersion(resource.getMetadata().getResourceVersion())
+          .replace(resource);
+    }
+
+    public R patchResource(R resource) {
+      return resourceOperation
+          .inNamespace(resource.getMetadata().getNamespace())
+          .withName(getName(resource))
+          .patch(resource);
+    }
+
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resourceOperation
@@ -329,12 +355,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .replaceStatus(resource);
     }
 
-    public R replaceWithLock(R resource) {
+    public R patchStatus(R resource) {
+      log.trace("Updating status for resource: {}", resource);
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(getName(resource))
-          .lockResourceVersion(resource.getMetadata().getResourceVersion())
-          .replace(resource);
+          .patchStatus(resource);
     }
   }
 }

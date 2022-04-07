@@ -7,15 +7,17 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
   private final T resource;
   private final boolean updateStatus;
   private final boolean updateResource;
+  private final boolean patch;
 
   private UpdateControl(
-      T resource, boolean updateStatus, boolean updateResource) {
+      T resource, boolean updateStatus, boolean updateResource, boolean patch) {
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
     this.resource = resource;
     this.updateStatus = updateStatus;
     this.updateResource = updateResource;
+    this.patch = patch;
   }
 
   /**
@@ -28,11 +30,19 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
    * @return initialized update control
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
-    return new UpdateControl<>(customResource, false, true);
+    return new UpdateControl<>(customResource, false, true, false);
   }
 
   public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
-    return new UpdateControl<>(customResource, true, false);
+    return new UpdateControl<>(customResource, true, false, false);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource) {
+    return new UpdateControl<>(customResource, false, true, true);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
+    return new UpdateControl<>(customResource, true, false, true);
   }
 
   /**
@@ -45,11 +55,17 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatus(
       T customResource) {
-    return new UpdateControl<>(customResource, true, true);
+    return new UpdateControl<>(customResource, true, true, false);
   }
 
+  public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(
+      T customResource) {
+    return new UpdateControl<>(customResource, true, true, true);
+  }
+
+
   public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
-    return new UpdateControl<>(null, false, false);
+    return new UpdateControl<>(null, false, false, false);
   }
 
   public T getResource() {
@@ -62,6 +78,10 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
 
   public boolean isUpdateResource() {
     return updateResource;
+  }
+
+  public boolean isPatch() {
+    return patch;
   }
 
   public boolean isNoUpdate() {
