@@ -321,6 +321,21 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       this.resourceOperation = resourceOperation;
     }
 
+    public R replaceWithLock(R resource) {
+      return resourceOperation
+          .inNamespace(resource.getMetadata().getNamespace())
+          .withName(getName(resource))
+          .lockResourceVersion(resource.getMetadata().getResourceVersion())
+          .replace(resource);
+    }
+
+    public R patch(R resource) {
+      return resourceOperation
+          .inNamespace(resource.getMetadata().getNamespace())
+          .withName(getName(resource))
+          .patch(resource);
+    }
+
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resourceOperation
@@ -329,12 +344,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .replaceStatus(resource);
     }
 
-    public R replaceWithLock(R resource) {
+    public R patchStatus(R resource) {
+      log.trace("Updating status for resource: {}", resource);
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(getName(resource))
-          .lockResourceVersion(resource.getMetadata().getResourceVersion())
-          .replace(resource);
+          .patchStatus(resource);
     }
   }
 }
