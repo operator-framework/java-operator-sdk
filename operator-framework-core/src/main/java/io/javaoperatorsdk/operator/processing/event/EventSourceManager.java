@@ -71,7 +71,8 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
         try {
           eventSource.start();
         } catch (Exception e) {
-          log.warn("Error starting {}", eventSource, e);
+          log.warn("Error starting {} -> {}", eventSource, e);
+          throw e;
         }
       }
       eventProcessor.start();
@@ -118,6 +119,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
   }
 
+  @SuppressWarnings("unchecked")
   public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
     for (var eventSource : eventSources) {
       if (eventSource instanceof ResourceEventAware) {
@@ -194,8 +196,9 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
 
     public Set<EventSource> all() {
-      return new LinkedHashSet<>(sources.values().stream().flatMap(Collection::stream)
-          .collect(Collectors.toList()));
+      return sources.values().stream()
+          .flatMap(Collection::stream)
+          .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public void clear() {
@@ -219,6 +222,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       sources.computeIfAbsent(keyFor(eventSource), k -> new ArrayList<>()).add(eventSource);
     }
 
+    @SuppressWarnings("rawtypes")
     private Class getDependentType(EventSource source) {
       return source instanceof ResourceEventSource
           ? ((ResourceEventSource) source).getResourceClass()
@@ -248,6 +252,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       return key;
     }
 
+    @SuppressWarnings("unchecked")
     public <S> ResourceEventSource<R, S> get(Class<S> dependentType, String name) {
       final var sourcesForType = sources.get(keyFor(dependentType));
       if (sourcesForType == null || sourcesForType.isEmpty()) {

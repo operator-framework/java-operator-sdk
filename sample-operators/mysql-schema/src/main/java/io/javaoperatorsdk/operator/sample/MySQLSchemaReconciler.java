@@ -15,7 +15,16 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
@@ -57,7 +66,8 @@ public class MySQLSchemaReconciler
       if (dbSchema.isEmpty()) {
         log.debug("Creating Schema and related resources for: {}", schema.getMetadata().getName());
         var schemaName = schema.getMetadata().getName();
-        String password = RandomStringUtils.randomAlphanumeric(16);
+        String password = RandomStringUtils
+            .randomAlphanumeric(16); // NOSONAR: cryptographically-strong randomness unneeded
         String secretName = String.format(SECRET_FORMAT, schemaName);
         String userName = String.format(USERNAME_FORMAT, schemaName);
 

@@ -195,6 +195,7 @@ public class Controller<R extends HasMetadata> implements Reconciler<R>,
 
       eventSourceManager.start();
     } catch (MissingCRDException e) {
+      stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
   }

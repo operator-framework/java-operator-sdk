@@ -2,13 +2,14 @@ package io.javaoperatorsdk.operator.processing;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.MissingCRDException;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -22,11 +23,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("unchecked")
 class ControllerTest {
 
   @Test
   void crdShouldNotBeCheckedForNativeResources() {
-    final var client = mock(KubernetesClient.class);
+    final var client = MockKubernetesClient.client(Secret.class);
     final var configurationService = mock(ConfigurationService.class);
     final var reconciler = mock(Reconciler.class);
     final var configuration = mock(ControllerConfiguration.class);
@@ -40,7 +42,7 @@ class ControllerTest {
 
   @Test
   void crdShouldNotBeCheckedForCustomResourcesIfDisabled() {
-    final var client = mock(KubernetesClient.class);
+    final var client = MockKubernetesClient.client(TestCustomResource.class);
     final var configurationService = mock(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     final var reconciler = mock(Reconciler.class);
@@ -55,7 +57,7 @@ class ControllerTest {
 
   @Test
   void crdCanBeCheckedForCustomResources() {
-    final var client = mock(KubernetesClient.class);
+    final var client = MockKubernetesClient.client(HasMetadata.class);
     final var configurationService = mock(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(true);
     final var reconciler = mock(Reconciler.class);
