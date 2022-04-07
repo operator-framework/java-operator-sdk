@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -23,26 +22,7 @@ public class ReconcilerUtils {
   private ReconcilerUtils() {}
 
   public static boolean isFinalizerValid(String finalizer) {
-    // todo: use fabric8 method when 5.12 is released
-    // return HasMetadata.validateFinalizer(finalizer);
-    final var validator = new HasMetadata() {
-
-      @Override
-      public ObjectMeta getMetadata() {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public void setMetadata(ObjectMeta objectMeta) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public void setApiVersion(String s) {
-        throw new UnsupportedOperationException();
-      }
-    };
-    return validator.isFinalizerValid(finalizer);
+    return HasMetadata.validateFinalizer(finalizer);
   }
 
   public static String getResourceTypeNameWithVersion(Class<? extends HasMetadata> resourceClass) {
