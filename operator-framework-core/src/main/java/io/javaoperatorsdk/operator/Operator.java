@@ -85,20 +85,26 @@ public class Operator implements LifecycleAware {
    * and start the cluster monitoring processes.
    */
   public void start() {
-    controllers.shouldStart();
+    try {
+      controllers.shouldStart();
 
-    final var version = ConfigurationServiceProvider.instance().getVersion();
-    log.info(
-        "Operator SDK {} (commit: {}) built on {} starting...",
-        version.getSdkVersion(),
-        version.getCommit(),
-        version.getBuiltTime());
+      final var version = ConfigurationServiceProvider.instance().getVersion();
+      log.info(
+          "Operator SDK {} (commit: {}) built on {} starting...",
+          version.getSdkVersion(),
+          version.getCommit(),
+          version.getBuiltTime());
 
-    final var clientVersion = Version.clientVersion();
-    log.info("Client version: {}", clientVersion);
+      final var clientVersion = Version.clientVersion();
+      log.info("Client version: {}", clientVersion);
 
-    ExecutorServiceManager.init();
-    controllers.start();
+      ExecutorServiceManager.init();
+      controllers.start();
+    } catch (Exception e) {
+      log.error("Error starting operator", e);
+      stop();
+      throw e;
+    }
   }
 
   @Override
@@ -204,10 +210,6 @@ public class Operator implements LifecycleAware {
     }
 
     public synchronized void stop() {
-      if (!started) {
-        return;
-      }
-
       this.controllers.values().parallelStream().forEach(closeable -> {
         log.debug("closing {}", closeable);
         closeable.stop();

@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
@@ -31,7 +32,13 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public void start() throws OperatorException {
-    informer.run();
+    try {
+      informer.run();
+    } catch (Exception e) {
+      ReconcilerUtils.handleKubernetesClientException(e,
+          HasMetadata.getFullResourceName(informer.getApiTypeClass()));
+      throw e;
+    }
   }
 
   @Override
