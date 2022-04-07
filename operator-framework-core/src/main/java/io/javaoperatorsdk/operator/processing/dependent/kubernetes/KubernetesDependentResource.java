@@ -115,7 +115,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public R update(R actual, R target, P primary, Context<P> context) {
     var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-    return prepare(target, primary, "Updating").createOrReplace(updatedActual);
+    return prepare(target, primary, "Updating").replace(updatedActual);
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
