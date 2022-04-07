@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class ControllerExecutionIT {
+
   @RegisterExtension
   OperatorExtension operator =
       OperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
@@ -30,6 +31,17 @@ class ControllerExecutionIT {
     awaitResourcesCreatedOrUpdated();
     awaitStatusUpdated();
     assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
+  }
+
+  @Test
+  void patchesStatusForTestCustomResource() {
+    operator.getControllerOfType(TestReconciler.class).setPatchStatus(true);
+    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
+
+    TestCustomResource resource = TestUtils.testCustomResource();
+    operator.create(TestCustomResource.class, resource);
+
+    awaitStatusUpdated();
   }
 
   @Test

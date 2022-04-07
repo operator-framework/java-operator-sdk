@@ -31,10 +31,21 @@ public class TestReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
   private KubernetesClient kubernetesClient;
-  private boolean updateStatus;
+  private volatile boolean updateStatus;
+  private volatile boolean patchStatus;
 
   public TestReconciler(boolean updateStatus) {
+    this(updateStatus, false);
+  }
+
+  public TestReconciler(boolean updateStatus, boolean patchStatus) {
     this.updateStatus = updateStatus;
+    this.patchStatus = patchStatus;
+  }
+
+  public TestReconciler setPatchStatus(boolean patchStatus) {
+    this.patchStatus = patchStatus;
+    return this;
   }
 
   public void setUpdateStatus(boolean updateStatus) {
@@ -122,7 +133,11 @@ public class TestReconciler
       }
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
     }
-    return UpdateControl.updateStatus(resource);
+    if (patchStatus) {
+      return UpdateControl.patchStatus(resource);
+    } else {
+      return UpdateControl.updateStatus(resource);
+    }
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {
