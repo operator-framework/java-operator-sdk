@@ -129,7 +129,9 @@ public class ReconcilerUtils {
     } else {
       // extract matching information from URI in the message if available
       final var message = exception.getMessage();
-      final var regex = Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*").matcher(message);
+      final var regex = Pattern
+          .compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*") // NOSONAR: input is controlled
+          .matcher(message);
       if (regex.matches()) {
         var group = regex.group(3);
         if (group.endsWith(".")) {
