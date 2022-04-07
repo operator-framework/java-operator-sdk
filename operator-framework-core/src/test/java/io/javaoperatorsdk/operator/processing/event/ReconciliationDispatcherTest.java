@@ -120,7 +120,7 @@ class ReconciliationDispatcherTest {
     verify(reconciler, never())
         .reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
-        .replaceWithLock(
+        .replaceResourceWithLock(
             argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
     assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER)).isTrue();
   }
@@ -142,7 +142,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
-    verify(customResourceFacade, never()).replaceWithLock(any());
+    verify(customResourceFacade, never()).replaceResourceWithLock(any());
   }
 
   @Test
@@ -150,12 +150,40 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     reconciler.reconcile = (r, c) -> UpdateControl.updateResourceAndStatus(testCustomResource);
-    when(customResourceFacade.replaceWithLock(testCustomResource)).thenReturn(testCustomResource);
+    when(customResourceFacade.replaceResourceWithLock(testCustomResource))
+        .thenReturn(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).replaceWithLock(testCustomResource);
+    verify(customResourceFacade, times(1)).replaceResourceWithLock(testCustomResource);
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+  }
+
+
+  @Test
+  void patchesResource() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    reconciler.reconcile = (r, c) -> UpdateControl.patchResource(testCustomResource);
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, times(1)).patchResource(testCustomResource);
+    verify(customResourceFacade, never()).updateStatus(any());
+    verify(customResourceFacade, never()).replaceResourceWithLock(any());
+  }
+
+  @Test
+  void patchesStatus() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    reconciler.reconcile = (r, c) -> UpdateControl.patchStatus(testCustomResource);
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, times(1)).patchStatus(testCustomResource);
+    verify(customResourceFacade, never()).updateStatus(any());
+    verify(customResourceFacade, never()).replaceResourceWithLock(any());
   }
 
   @Test
@@ -216,7 +244,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).replaceWithLock(any());
+    verify(customResourceFacade, times(1)).replaceResourceWithLock(any());
   }
 
   @Test
@@ -229,7 +257,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, never()).replaceWithLock(any());
+    verify(customResourceFacade, never()).replaceResourceWithLock(any());
   }
 
   @Test
@@ -239,7 +267,7 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-    verify(customResourceFacade, never()).replaceWithLock(any());
+    verify(customResourceFacade, never()).replaceResourceWithLock(any());
     verify(customResourceFacade, never()).updateStatus(testCustomResource);
   }
 
@@ -252,7 +280,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).replaceWithLock(any());
+    verify(customResourceFacade, times(1)).replaceResourceWithLock(any());
   }
 
   @Test
@@ -262,7 +290,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, never()).replaceWithLock(any());
+    verify(customResourceFacade, never()).replaceResourceWithLock(any());
     verify(reconciler, never()).cleanup(eq(testCustomResource), any());
   }
 
@@ -388,7 +416,7 @@ class ReconciliationDispatcherTest {
     when(config.isGenerationAware()).thenReturn(true);
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.updateResource(observedGenResource));
-    when(facade.replaceWithLock(any())).thenReturn(observedGenResource);
+    when(facade.replaceResourceWithLock(any())).thenReturn(observedGenResource);
     when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
     var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 

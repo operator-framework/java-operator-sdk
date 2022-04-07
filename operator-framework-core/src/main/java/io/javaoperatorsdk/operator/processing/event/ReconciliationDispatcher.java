@@ -291,16 +291,16 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(configuration().getFinalizerName());
-    customResourceFacade.replaceWithLock(resource);
+    customResourceFacade.replaceResourceWithLock(resource);
   }
 
   private R updateCustomResource(R resource, boolean patch) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
     if (patch) {
-      return customResourceFacade.patch(resource);
+      return customResourceFacade.patchResource(resource);
     } else {
-      return customResourceFacade.replaceWithLock(resource);
+      return customResourceFacade.replaceResourceWithLock(resource);
     }
   }
 
@@ -310,7 +310,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         getUID(resource),
         getVersion(resource));
     resource.removeFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.replaceWithLock(resource);
+    return customResourceFacade.replaceResourceWithLock(resource);
   }
 
 
@@ -328,7 +328,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       this.resourceOperation = resourceOperation;
     }
 
-    public R replaceWithLock(R resource) {
+    public R replaceResourceWithLock(R resource) {
       log.debug(
           "Trying to replace resource {}, version: {}",
           getName(resource),
@@ -340,7 +340,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .replace(resource);
     }
 
-    public R patch(R resource) {
+    public R patchResource(R resource) {
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(getName(resource))
