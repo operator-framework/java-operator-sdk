@@ -33,7 +33,6 @@ public class Workflow<P extends HasMetadata> {
 
     public void reconcile(P primary, Context<P> context) {
 
-
     }
 
     public void cleanup(P resource, Context<P> context) {
