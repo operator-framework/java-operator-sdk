@@ -1,4 +1,4 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow.condition;
 
-public class Condition {
+public class ReconcileCondition {
 }
