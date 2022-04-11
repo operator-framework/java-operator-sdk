@@ -32,16 +32,18 @@ public class Workflow<P extends HasMetadata> {
   }
 
   public void reconcile(P primary, Context<P> context) {
-
+    WorkflowReconcileExecutor<P> workflowReconcileExecutor =
+        new WorkflowReconcileExecutor<>(this, primary, context);
+    workflowReconcileExecutor.reconcile();
   }
 
   public void cleanup(P resource, Context<P> context) {
 
   }
 
+  // add cycle detection?
   private void preprocessForReconcile() {
     reverseDependsOn = new ConcurrentHashMap<>(dependentResourceNodes.size());
-
     for (DependentResourceNode node : dependentResourceNodes) {
       if (node.getDependsOnRelations().isEmpty()) {
         topLevelResources.add(node);

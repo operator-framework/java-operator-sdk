@@ -11,8 +11,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.Recon
 public class DependentResourceNode {
 
   private final DependentResource<?, ?> dependentResource;
-  private final ReconcileCondition reconcileCondition;
-  private final CleanupCondition cleanupCondition;
+  private ReconcileCondition reconcileCondition;
+  private CleanupCondition cleanupCondition;
   private List<DependsOnRelation> dependsOnRelations = new ArrayList<>(1);
 
   public DependentResourceNode(DependentResource<?, ?> dependentResource) {
@@ -49,6 +49,10 @@ public class DependentResourceNode {
 
   public List<DependsOnRelation> getDependsOnRelations() {
     return dependsOnRelations;
+  }
+
+  public void addDependsOnRelation(DependsOnRelation dependsOnRelation) {
+    dependsOnRelations.add(dependsOnRelation);
   }
 
   @Override

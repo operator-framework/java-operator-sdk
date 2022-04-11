@@ -69,7 +69,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
     var future = nodeToFuture.remove(dependentResourceNode);
     actualExecutions.remove(future);
-    
+
     if (exceptionsPresent()) {
       if (actualExecutions.isEmpty()) {
         notifyMainReconcile();

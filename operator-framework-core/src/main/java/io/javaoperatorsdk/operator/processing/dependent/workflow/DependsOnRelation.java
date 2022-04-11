@@ -10,6 +10,10 @@ public class DependsOnRelation {
 
   public DependsOnRelation() {}
 
+  public DependsOnRelation(DependentResourceNode owner, DependentResourceNode dependsOn) {
+    this(owner, dependsOn, null);
+  }
+
   public DependsOnRelation(DependentResourceNode owner, DependentResourceNode dependsOn,
       WaitCondition waitCondition) {
     this.owner = owner;
