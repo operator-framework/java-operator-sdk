@@ -33,7 +33,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     this.workflow = workflow;
   }
 
-  public void reconcile() {
+  public synchronized void reconcile() {
     for (DependentResourceNode dependentResourceNode : workflow.getTopLevelDependentResources()) {
       submitForReconcile(dependentResourceNode);
     }
