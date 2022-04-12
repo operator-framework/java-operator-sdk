@@ -1,8 +1,9 @@
 apiVersion: "sample.javaoperatorsdk/v1"
 kind: WebPage
 metadata:
-  labels:
-    low-level: "true"
+# Use labels to match the resource with different reconciler implementations:
+# labels:
+#    low-level: "true"
   name: hellows
 spec:
   exposed: false

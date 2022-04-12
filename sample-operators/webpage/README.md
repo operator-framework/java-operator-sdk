@@ -46,6 +46,9 @@ page. Otherwise you can change the service to a LoadBalancer (e.g on a public cl
 You can also try to change the HTML code in `k8s/webpage.yaml` and do another `kubectl apply -f k8s/webpage.yaml`.
 This should update the actual NGINX deployment with the new configuration.  
 
+Note that there are multiple reconciler implementations that watch `WebPage` resources differentiated by a label.
+When you create a new `WebPage` resource, make sure its label matches the active reconciler's label selector.
+
 If you want the Operator to be running as a deployment in your cluster, follow the below steps.
 
 ### Build
