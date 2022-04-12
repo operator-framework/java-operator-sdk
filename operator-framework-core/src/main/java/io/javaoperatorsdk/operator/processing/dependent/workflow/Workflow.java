@@ -8,17 +8,30 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
+/**
+ * Dependents definition: so if B depends on A, the B is dependent of A.
+ *
+ * @param <P> primary resource
+ */
+// todo build time graph creation for quarkus
 public class Workflow<P extends HasMetadata> {
 
   private final List<DependentResourceNode> dependentResourceNodes;
 
   private List<DependentResourceNode> topLevelResources = new ArrayList<>();
-  private Map<DependentResourceNode, List<DependentResourceNode>> reverseDependsOn;
+  private Map<DependentResourceNode, List<DependentResourceNode>> dependents;
 
   // it's "global" executor service shared between multiple reconciliations running parallel
   private ExecutorService executorService;
+
+  public Workflow(List<DependentResourceNode> dependentResourceNodes) {
+    this.executorService = ConfigurationServiceProvider.instance().getExecutorService();
+    this.dependentResourceNodes = dependentResourceNodes;
+    preprocessForReconcile();
+  }
 
   public Workflow(List<DependentResourceNode> dependentResourceNodes,
       ExecutorService executorService) {
@@ -43,14 +56,14 @@ public class Workflow<P extends HasMetadata> {
 
   // add cycle detection?
   private void preprocessForReconcile() {
-    reverseDependsOn = new ConcurrentHashMap<>(dependentResourceNodes.size());
+    dependents = new ConcurrentHashMap<>(dependentResourceNodes.size());
     for (DependentResourceNode node : dependentResourceNodes) {
       if (node.getDependsOnRelations().isEmpty()) {
         topLevelResources.add(node);
       } else {
         for (DependsOnRelation relation : node.getDependsOnRelations()) {
-          reverseDependsOn.computeIfAbsent(relation.getDependsOn(), dr -> new ArrayList<>());
-          reverseDependsOn.get(relation.getDependsOn()).add(relation.getOwner());
+          dependents.computeIfAbsent(relation.getDependsOn(), dr -> new ArrayList<>());
+          dependents.get(relation.getDependsOn()).add(relation.getOwner());
         }
       }
     }
@@ -64,8 +77,8 @@ public class Workflow<P extends HasMetadata> {
     return topLevelResources;
   }
 
-  Map<DependentResourceNode, List<DependentResourceNode>> getReverseDependsOn() {
-    return reverseDependsOn;
+  Map<DependentResourceNode, List<DependentResourceNode>> getDependents() {
+    return dependents;
   }
 
   ExecutorService getExecutorService() {

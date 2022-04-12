@@ -61,7 +61,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
   private synchronized boolean allDependOnsReconciled(DependentResourceNode dependentResourceNode) {
-    return dependentResourceNode.getDependsOnRelations().stream()
+    return dependentResourceNode.getDependsOnRelations().isEmpty() || dependentResourceNode.getDependsOnRelations().stream()
         .allMatch(relation -> alreadyReconciled(relation.getDependsOn()));
   }
 
@@ -105,7 +105,10 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
   private synchronized void executeDependents(DependentResourceNode dependentResourceNode) {
     if (!exceptionsPresent()) {
-      workflow.getReverseDependsOn().get(dependentResourceNode).forEach(this::submitForReconcile);
+      var dependents = workflow.getDependents().get(dependentResourceNode);
+      if (dependents != null) {
+        dependents.forEach(this::submitForReconcile);
+      }
     }
   }
 
@@ -146,7 +149,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     public void run() {
       try {
         if (alreadyReconciled(dependentResourceNode)
-            || allDependOnsReconciled(dependentResourceNode)
+            || !allDependOnsReconciled(dependentResourceNode)
             || exceptionsPresent()) {
           return;
         }

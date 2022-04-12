@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.Workflo
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult.resourceCreated;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorkflowTest {
@@ -33,7 +34,7 @@ class WorkflowTest {
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    // assertThat(dependentResourceExecutions).hasSize(2);
+    assertThat(dependentResourceExecutions).hasSize(2);
   }
 
   @Test
