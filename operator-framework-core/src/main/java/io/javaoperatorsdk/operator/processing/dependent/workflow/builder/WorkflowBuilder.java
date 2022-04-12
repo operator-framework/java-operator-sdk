@@ -3,9 +3,9 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow.builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
@@ -14,8 +14,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   private List<DependentResourceNode<?, ?>> dependentResourceNodes = new ArrayList<>();
 
-  public DependentBuilder<P> addDependent(DependentResource dependentResource) {
-    DependentResourceNode node = new DependentResourceNode(dependentResource);
+  public DependentBuilder<P> addDependent(DependentResource<?, ?> dependentResource) {
+    DependentResourceNode<?, ?> node = new DependentResourceNode<>(dependentResource);
     dependentResourceNodes.add(node);
     return new DependentBuilder<>(this, node);
   }
@@ -32,7 +32,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   public Workflow<P> build() {
-    return new Workflow<>(dependentResourceNodes, Executors.newCachedThreadPool());
+    return new Workflow<>(dependentResourceNodes,
+        ConfigurationServiceProvider.instance().getExecutorService());
   }
 
   public Workflow<P> build(int parallelism) {
