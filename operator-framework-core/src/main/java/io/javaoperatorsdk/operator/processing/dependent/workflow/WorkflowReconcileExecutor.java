@@ -15,14 +15,16 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   // todo add log messages
   private static final Logger log = LoggerFactory.getLogger(WorkflowReconcileExecutor.class);
 
-  private Workflow<P> workflow;
+  private final Workflow<P> workflow;
 
-  private Set<DependentResourceNode> alreadyReconciled = ConcurrentHashMap.newKeySet();
-  private Set<Future<?>> actualExecutions = ConcurrentHashMap.newKeySet();
-  private Map<DependentResourceNode, Future<?>> nodeToFuture = new ConcurrentHashMap<>();
-  private List<Exception> exceptionsDuringExecution =
+  private final Set<DependentResourceNode<?, ?>> alreadyReconciled = ConcurrentHashMap.newKeySet();
+  private final Set<Future<?>> actualExecutions = ConcurrentHashMap.newKeySet();
+  private final Map<DependentResourceNode<?, ?>, Future<?>> nodeToFuture =
+      new ConcurrentHashMap<>();
+  private final List<Exception> exceptionsDuringExecution =
       Collections.synchronizedList(new ArrayList<>());
-  private Set<DependentResourceNode> markedToReconcileAgain = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode<?, ?>> markedToReconcileAgain =
+      ConcurrentHashMap.newKeySet();
 
   private final P primary;
   private final Context<P> context;
@@ -34,13 +36,15 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
   public synchronized void reconcile() {
-    for (DependentResourceNode dependentResourceNode : workflow.getTopLevelDependentResources()) {
+    for (DependentResourceNode<?, ?> dependentResourceNode : workflow
+        .getTopLevelDependentResources()) {
       submitForReconcile(dependentResourceNode);
     }
     while (true) {
       try {
         this.wait();
         if (exceptionsPresent()) {
+          log.debug("Exception during re");
           throw createFinalException();
         }
         if (noMoreExecutionsScheduled()) {
@@ -59,11 +63,13 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     return new AggregatedOperatorException("Exception during workflow.", exceptionsDuringExecution);
   }
 
-  private synchronized boolean alreadyReconciled(DependentResourceNode dependentResourceNode) {
+  private synchronized boolean alreadyReconciled(
+      DependentResourceNode<?, ?> dependentResourceNode) {
     return alreadyReconciled.contains(dependentResourceNode);
   }
 
-  private synchronized boolean allDependOnsReconciled(DependentResourceNode dependentResourceNode) {
+  private synchronized boolean allDependOnsReconciled(
+      DependentResourceNode<?, ?> dependentResourceNode) {
     return dependentResourceNode.getDependsOnRelations().isEmpty()
         || dependentResourceNode.getDependsOnRelations().stream()
             .allMatch(relation -> alreadyReconciled(relation.getDependsOn()));
@@ -96,7 +102,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
   }
 
-  private synchronized void submitForReconcile(DependentResourceNode dependentResourceNode) {
+  private synchronized void submitForReconcile(DependentResourceNode<?, ?> dependentResourceNode) {
     log.debug("Submitting for reconcile: {}", dependentResourceNode);
 
     if (alreadyReconciled(dependentResourceNode)
@@ -113,7 +119,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
-
     Future<?> nodeFuture =
         workflow.getExecutorService().submit(new NodeExecutor(dependentResourceNode));
     actualExecutions.add(nodeFuture);
@@ -121,7 +126,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     log.debug("Submitted to reconcile: {}", dependentResourceNode);
   }
 
-  private synchronized void submitDependents(DependentResourceNode dependentResourceNode) {
+  private synchronized void submitDependents(DependentResourceNode<?, ?> dependentResourceNode) {
     if (!exceptionsPresent()) {
       var dependents = workflow.getDependents().get(dependentResourceNode);
       if (dependents != null) {
@@ -151,7 +156,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
     private final DependentResourceNode dependentResourceNode;
 
-    private NodeExecutor(DependentResourceNode dependentResourceNode) {
+    private NodeExecutor(DependentResourceNode<?, ?> dependentResourceNode) {
       this.dependentResourceNode = dependentResourceNode;
     }
 

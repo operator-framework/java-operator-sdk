@@ -4,8 +4,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.WaitC
 
 public class DependsOnRelation {
 
-  private DependentResourceNode owner;
-  private DependentResourceNode dependsOn;
+  private DependentResourceNode<?, ?> owner;
+  private DependentResourceNode<?, ?> dependsOn;
   private WaitCondition waitCondition;
 
   public DependsOnRelation() {}
@@ -34,7 +34,7 @@ public class DependsOnRelation {
     this.waitCondition = waitCondition;
   }
 
-  public DependentResourceNode getOwner() {
+  public DependentResourceNode<?, ?> getOwner() {
     return owner;
   }
 
