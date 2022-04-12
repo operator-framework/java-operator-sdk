@@ -10,27 +10,15 @@ public class DependsOnRelation {
 
   public DependsOnRelation() {}
 
-  public DependsOnRelation(DependentResourceNode owner, DependentResourceNode dependsOn) {
+  public DependsOnRelation(DependentResourceNode<?, ?> owner,
+      DependentResourceNode<?, ?> dependsOn) {
     this(owner, dependsOn, null);
   }
 
-  public DependsOnRelation(DependentResourceNode owner, DependentResourceNode dependsOn,
+  public DependsOnRelation(DependentResourceNode<?, ?> owner, DependentResourceNode<?, ?> dependsOn,
       WaitCondition waitCondition) {
     this.owner = owner;
     this.dependsOn = dependsOn;
-    this.waitCondition = waitCondition;
-  }
-
-
-  public void setOwner(DependentResourceNode owner) {
-    this.owner = owner;
-  }
-
-  public void setDependsOn(DependentResourceNode dependsOn) {
-    this.dependsOn = dependsOn;
-  }
-
-  public void setWaitCondition(WaitCondition waitCondition) {
     this.waitCondition = waitCondition;
   }
 
@@ -38,7 +26,7 @@ public class DependsOnRelation {
     return owner;
   }
 
-  public DependentResourceNode getDependsOn() {
+  public DependentResourceNode<?, ?> getDependsOn() {
     return dependsOn;
   }
 

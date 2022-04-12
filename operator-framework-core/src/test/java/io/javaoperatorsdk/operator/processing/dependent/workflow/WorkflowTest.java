@@ -91,9 +91,8 @@ class WorkflowTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(errorDR2).build()
         .build();
-    assertThrows(AggregatedOperatorException.class, () -> {
-      workflow.reconcile(new TestCustomResource(), null);
-    });
+    assertThrows(AggregatedOperatorException.class,
+        () -> workflow.reconcile(new TestCustomResource(), null));
     assertThat(executionHistory).notReconciled(errorDR2);
   }
 
@@ -104,9 +103,8 @@ class WorkflowTest {
         .addDependent(errorDR2).dependsOn(dr1).build()
         .addDependent(dr2).dependsOn(errorDR2).build()
         .build();
-    assertThrows(AggregatedOperatorException.class, () -> {
-      workflow.reconcile(new TestCustomResource(), null);
-    });
+    assertThrows(AggregatedOperatorException.class,
+        () -> workflow.reconcile(new TestCustomResource(), null));
 
     assertThat(executionHistory).reconciled(dr1).notReconciled(errorDR2, dr2);
   }
@@ -118,9 +116,8 @@ class WorkflowTest {
         .addDependent(errorDR2).build()
         .addDependent(dr2).dependsOn(errorDR2).dependsOn(dr1).build()
         .build();
-    assertThrows(AggregatedOperatorException.class, () -> {
-      workflow.reconcile(new TestCustomResource(), null);
-    });
+    assertThrows(AggregatedOperatorException.class,
+        () -> workflow.reconcile(new TestCustomResource(), null));
 
     assertThat(executionHistory).notReconciled(dr2);
   }
