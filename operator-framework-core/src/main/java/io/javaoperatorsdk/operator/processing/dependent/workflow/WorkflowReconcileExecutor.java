@@ -42,12 +42,15 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
         this.wait();
         if (exceptionsPresent()) {
           throw createFinalException();
-        } else if (noMoreExecutionsScheduled()) {
+        }
+        if (noMoreExecutionsScheduled()) {
           break;
+        } else {
+          log.warn("Notified but still resources under execution. This should not happen.");
         }
       } catch (InterruptedException e) {
-        // todo check this better
-        throw new IllegalStateException(e);
+        log.warn("Thread interrupted", e);
+        Thread.currentThread().interrupt();
       }
     }
   }
@@ -61,12 +64,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
   private synchronized boolean allDependOnsReconciled(DependentResourceNode dependentResourceNode) {
-    return dependentResourceNode.getDependsOnRelations().isEmpty() || dependentResourceNode.getDependsOnRelations().stream()
-        .allMatch(relation -> alreadyReconciled(relation.getDependsOn()));
+    return dependentResourceNode.getDependsOnRelations().isEmpty()
+        || dependentResourceNode.getDependsOnRelations().stream()
+            .allMatch(relation -> alreadyReconciled(relation.getDependsOn()));
   }
 
   private synchronized void handleNodeExecutionFinish(DependentResourceNode dependentResourceNode) {
-
     var future = nodeToFuture.remove(dependentResourceNode);
     actualExecutions.remove(future);
 
@@ -76,14 +79,16 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       }
       return;
     }
-
     if (markedToReconcileAgain.contains(dependentResourceNode)
         && alreadyReconciled(dependentResourceNode)) {
-      log.warn("Something happened, this never should be the case.");
+      log.warn("Marked to reconcile but already reconciled, this should not happen. DR: {}",
+          dependentResourceNode);
     }
+
     if (markedToReconcileAgain.contains(dependentResourceNode)
         && !alreadyReconciled(dependentResourceNode)) {
       markedToReconcileAgain.remove(dependentResourceNode);
+      log.debug("Submitting marked resource to reconcile: {}", dependentResourceNode);
       submitForReconcile(dependentResourceNode);
     }
     if (actualExecutions.isEmpty()) {
@@ -92,18 +97,31 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
   private synchronized void submitForReconcile(DependentResourceNode dependentResourceNode) {
+    log.debug("Submitting for reconcile: {}", dependentResourceNode);
+
+    if (alreadyReconciled(dependentResourceNode)
+        || !allDependOnsReconciled(dependentResourceNode)
+        || exceptionsPresent()) {
+      log.debug("Skipping submit of: {}, ", dependentResourceNode);
+      return;
+    }
+
     if (nodeToFuture.containsKey(dependentResourceNode)) {
+      log.debug("The same dependent resource already bein reconciled," +
+          " marking it for future reconciliation: {}", dependentResourceNode);
       markedToReconcileAgain.add(dependentResourceNode);
       return;
     }
+
 
     Future<?> nodeFuture =
         workflow.getExecutorService().submit(new NodeExecutor(dependentResourceNode));
     actualExecutions.add(nodeFuture);
     nodeToFuture.put(dependentResourceNode, nodeFuture);
+    log.debug("Submitted to reconcile: {}", dependentResourceNode);
   }
 
-  private synchronized void executeDependents(DependentResourceNode dependentResourceNode) {
+  private synchronized void submitDependents(DependentResourceNode dependentResourceNode) {
     if (!exceptionsPresent()) {
       var dependents = workflow.getDependents().get(dependentResourceNode);
       if (dependents != null) {
@@ -112,15 +130,9 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
   }
 
-  private synchronized void handleExceptionInExecutor(
-      DependentResourceNode dependentResourceNode, RuntimeException e) {
+  private synchronized void handleExceptionInExecutor(RuntimeException e) {
     exceptionsDuringExecution.add(e);
     markedToReconcileAgain.clear();
-    // todo optimize to cancel futures?
-    // actualExecutions.forEach(actualExecution -> actualExecution.cancel(false));
-    // var doneExecutions =
-    // actualExecutions.stream().filter(Future::isDone).collect(Collectors.toSet());
-    // actualExecutions.removeAll(doneExecutions);
   }
 
   private boolean exceptionsPresent() {
@@ -143,21 +155,18 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       this.dependentResourceNode = dependentResourceNode;
     }
 
-    // todo conditions
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        if (alreadyReconciled(dependentResourceNode)
-            || !allDependOnsReconciled(dependentResourceNode)
-            || exceptionsPresent()) {
+        if (exceptionsPresent()) {
           return;
         }
         dependentResourceNode.getDependentResource().reconcile(primary, context);
         alreadyReconciled.add(dependentResourceNode);
-        executeDependents(dependentResourceNode);
+        submitDependents(dependentResourceNode);
       } catch (RuntimeException e) {
-        handleExceptionInExecutor(dependentResourceNode, e);
+        handleExceptionInExecutor(e);
       } finally {
         handleNodeExecutionFinish(dependentResourceNode);
       }

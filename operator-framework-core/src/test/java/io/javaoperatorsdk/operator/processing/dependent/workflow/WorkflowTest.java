@@ -13,9 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult.resourceCreated;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class WorkflowTest {
 
@@ -23,36 +21,76 @@ class WorkflowTest {
   private List<DependentResource<?, ?>> dependentResourceExecutions =
       Collections.synchronizedList(new ArrayList<>());
 
+  TestDependent dr1 = new TestDependent("DR_1");
+  TestDependent dr2 = new TestDependent("DR_2");
+
   @Test
   void reconcileTopLevelResources() {
-    var dr1 = new TestDependent();
-    var dr2 = new TestDependent();
-    Workflow<TestCustomResource> workflow = new WorkflowBuilder<TestCustomResource>()
+    var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dr1).build()
         .addDependent(dr2).build()
         .build();
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    assertThat(dependentResourceExecutions).hasSize(2);
+    ExecutionAssert.assertThat(dependentResourceExecutions).reconciledAll(dr1, dr2);
   }
 
   @Test
   void reconciliationWithSimpleDependsOn() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .build();
 
+    workflow.reconcile(new TestCustomResource(), null);
+
+    ExecutionAssert.assertThat(dependentResourceExecutions).reconciledInOrder(dr1, dr2);
   }
 
   @Test
-  void reconciliationWithTheDependsOns() {
+  void reconciliationWithTwoTheDependsOns() {
+    TestDependent dr3 = new TestDependent("DR_3");
 
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .addDependent(dr3).dependsOn(dr1).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    ExecutionAssert.assertThat(dependentResourceExecutions)
+        .reconciledInOrder(dr1, dr2).reconciledInOrder(dr1, dr3);
   }
 
   @Test
   void diamondShareWorkflowReconcile() {
+    TestDependent dr3 = new TestDependent("DR_3");
+    TestDependent dr4 = new TestDependent("DR_4");
 
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .addDependent(dr3).dependsOn(dr1).build()
+        .addDependent(dr4).dependsOn(dr3).dependsOn(dr2).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    ExecutionAssert.assertThat(dependentResourceExecutions)
+        .reconciledInOrder(dr1, dr2, dr4)
+        .reconciledInOrder(dr1, dr3, dr4);
   }
 
   private class TestDependent implements DependentResource<String, TestCustomResource> {
+
+    private String name;
+
+    public TestDependent(String name) {
+      this.name = name;
+    }
+
     @Override
     public ReconcileResult<String> reconcile(TestCustomResource primary,
         Context<TestCustomResource> context) {
@@ -68,6 +106,41 @@ class WorkflowTest {
     @Override
     public Optional<String> getSecondaryResource(TestCustomResource primary) {
       return Optional.of(VALUE);
+    }
+
+    @Override
+    public String toString() {
+      return name;
+    }
+  }
+
+  private class TestErrorDependent implements DependentResource<String, TestCustomResource> {
+    private String name;
+
+    public TestErrorDependent(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public ReconcileResult<String> reconcile(TestCustomResource primary,
+                                             Context<TestCustomResource> context) {
+      dependentResourceExecutions.add(this);
+      return ReconcileResult.resourceCreated(VALUE);
+    }
+
+    @Override
+    public Class<String> resourceType() {
+      return String.class;
+    }
+
+    @Override
+    public Optional<String> getSecondaryResource(TestCustomResource primary) {
+      return Optional.of(VALUE);
+    }
+
+    @Override
+    public String toString() {
+      return name;
     }
   }
 

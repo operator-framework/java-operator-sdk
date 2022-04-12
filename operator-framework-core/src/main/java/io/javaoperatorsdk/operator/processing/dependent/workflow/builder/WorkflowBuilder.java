@@ -14,10 +14,10 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   private List<DependentResourceNode> dependentResourceNodes = new ArrayList<>();
 
-  public DependentBuilder addDependent(DependentResource<?, P> dependentResource) {
+  public DependentBuilder<P> addDependent(DependentResource dependentResource) {
     DependentResourceNode node = new DependentResourceNode(dependentResource);
     dependentResourceNodes.add(node);
-    return new DependentBuilder(this, node);
+    return new DependentBuilder<>(this, node);
   }
 
   void addDependentResourceNode(DependentResourceNode node) {
