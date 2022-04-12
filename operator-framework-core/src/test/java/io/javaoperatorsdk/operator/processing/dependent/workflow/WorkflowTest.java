@@ -7,22 +7,25 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkflowTest {
 
   public static final String VALUE = "value";
-  private List<DependentResource<?, ?>> dependentResourceExecutions =
+  private List<DependentResource<?, ?>> executionHistory =
       Collections.synchronizedList(new ArrayList<>());
 
   TestDependent dr1 = new TestDependent("DR_1");
   TestDependent dr2 = new TestDependent("DR_2");
+  TestErrorDependent errorDR2 = new TestErrorDependent("ERROR_1");
 
   @Test
   void reconcileTopLevelResources() {
@@ -33,7 +36,7 @@ class WorkflowTest {
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    ExecutionAssert.assertThat(dependentResourceExecutions).reconciledAll(dr1, dr2);
+    assertThat(executionHistory).reconciled(dr1, dr2);
   }
 
   @Test
@@ -45,7 +48,7 @@ class WorkflowTest {
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    ExecutionAssert.assertThat(dependentResourceExecutions).reconciledInOrder(dr1, dr2);
+    assertThat(executionHistory).reconciledInOrder(dr1, dr2);
   }
 
   @Test
@@ -60,7 +63,7 @@ class WorkflowTest {
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    ExecutionAssert.assertThat(dependentResourceExecutions)
+    assertThat(executionHistory)
         .reconciledInOrder(dr1, dr2).reconciledInOrder(dr1, dr3);
   }
 
@@ -78,9 +81,48 @@ class WorkflowTest {
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    ExecutionAssert.assertThat(dependentResourceExecutions)
+    assertThat(executionHistory)
         .reconciledInOrder(dr1, dr2, dr4)
         .reconciledInOrder(dr1, dr3, dr4);
+  }
+
+  @Test
+  void exceptionHandlingSimpleCases() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(errorDR2).build()
+        .build();
+    assertThrows(AggregatedOperatorException.class, () -> {
+      workflow.reconcile(new TestCustomResource(), null);
+    });
+    assertThat(executionHistory).notReconciled(errorDR2);
+  }
+
+  @Test
+  void dependentsOnErroredResourceNotReconciled() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(errorDR2).dependsOn(dr1).build()
+        .addDependent(dr2).dependsOn(errorDR2).build()
+        .build();
+    assertThrows(AggregatedOperatorException.class, () -> {
+      workflow.reconcile(new TestCustomResource(), null);
+    });
+
+    assertThat(executionHistory).reconciled(dr1).notReconciled(errorDR2, dr2);
+  }
+
+  @Test
+  void onlyOneDependsOnErroredResourceNotReconciled() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(errorDR2).build()
+        .addDependent(dr2).dependsOn(errorDR2).dependsOn(dr1).build()
+        .build();
+    assertThrows(AggregatedOperatorException.class, () -> {
+      workflow.reconcile(new TestCustomResource(), null);
+    });
+
+    assertThat(executionHistory).notReconciled(dr2);
   }
 
   private class TestDependent implements DependentResource<String, TestCustomResource> {
@@ -94,7 +136,7 @@ class WorkflowTest {
     @Override
     public ReconcileResult<String> reconcile(TestCustomResource primary,
         Context<TestCustomResource> context) {
-      dependentResourceExecutions.add(this);
+      executionHistory.add(this);
       return ReconcileResult.resourceCreated(VALUE);
     }
 
@@ -123,9 +165,9 @@ class WorkflowTest {
 
     @Override
     public ReconcileResult<String> reconcile(TestCustomResource primary,
-                                             Context<TestCustomResource> context) {
-      dependentResourceExecutions.add(this);
-      return ReconcileResult.resourceCreated(VALUE);
+        Context<TestCustomResource> context) {
+      executionHistory.add(this);
+      throw new IllegalStateException("Test exception");
     }
 
     @Override

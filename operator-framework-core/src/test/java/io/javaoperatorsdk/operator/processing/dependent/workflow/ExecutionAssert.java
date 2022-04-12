@@ -17,7 +17,7 @@ public class ExecutionAssert
     return new ExecutionAssert(actual);
   }
 
-  ExecutionAssert reconciledAll(DependentResource... dependentResources) {
+  public ExecutionAssert reconciled(DependentResource<?, ?>... dependentResources) {
     for (int i = 0; i < dependentResources.length; i++) {
       if (!actual.contains(dependentResources[i])) {
         failWithMessage("Resource not reconciled: %s with index %d", dependentResources, i);
@@ -26,7 +26,7 @@ public class ExecutionAssert
     return this;
   }
 
-  ExecutionAssert reconciledInOrder(DependentResource... dependentResources) {
+  public ExecutionAssert reconciledInOrder(DependentResource<?, ?>... dependentResources) {
     if (dependentResources.length < 2) {
       throw new IllegalArgumentException("At least two dependent resource needs to be specified");
     }
@@ -42,7 +42,16 @@ public class ExecutionAssert
     return this;
   }
 
-  private void checkIfReconciled(int i, DependentResource[] dependentResources) {
+  public ExecutionAssert notReconciled(DependentResource<?, ?>... dependentResources) {
+    for (int i = 0; i < dependentResources.length - 1; i++) {
+      if (!actual.contains(dependentResources[i])) {
+        failWithMessage("Resource was reconciled: %s with index %d", dependentResources, i);
+      }
+    }
+    return this;
+  }
+
+  private void checkIfReconciled(int i, DependentResource<?, ?>[] dependentResources) {
     if (!actual.contains(dependentResources[i])) {
       failWithMessage("Dependent resource not reconciled on place %i", i);
     }

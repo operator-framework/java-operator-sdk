@@ -15,7 +15,7 @@ public class DependentBuilder<P extends HasMetadata> {
     this.node = node;
   }
 
-  public DependentBuilder dependsOn(DependentResource<?, ?> dependentResource) {
+  public DependentBuilder<P> dependsOn(DependentResource dependentResource) {
     var dependsOn = workflowBuilder.getNodeByDependentResource(dependentResource);
     node.addDependsOnRelation(new DependsOnRelation(node, dependsOn, null));
     return this;
