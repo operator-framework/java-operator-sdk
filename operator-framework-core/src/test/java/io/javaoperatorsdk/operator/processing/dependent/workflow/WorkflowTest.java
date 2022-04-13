@@ -9,9 +9,11 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.*;
@@ -19,13 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkflowTest {
 
+  private ReconcileCondition met_reconcile_condition =
+      (dependentResource, primary, context) -> true;
+  private ReconcileCondition not_met_reconcile_condition =
+      (dependentResource, primary, context) -> false;
+
   public static final String VALUE = "value";
-  private List<DependentResource<?, ?>> executionHistory =
+  private List<ReconcileRecord> executionHistory =
       Collections.synchronizedList(new ArrayList<>());
 
   TestDependent dr1 = new TestDependent("DR_1");
   TestDependent dr2 = new TestDependent("DR_2");
-  TestErrorDependent errorDR2 = new TestErrorDependent("ERROR_1");
+  TestDeleterDependent drDeleter = new TestDeleterDependent("DR_DELETER");
+  TestErrorDependent drError = new TestErrorDependent("ERROR_1");
 
   @Test
   void reconcileTopLevelResources() {
@@ -89,36 +97,106 @@ class WorkflowTest {
   @Test
   void exceptionHandlingSimpleCases() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependent(errorDR2).build()
+        .addDependent(drError).build()
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null));
-    assertThat(executionHistory).notReconciled(errorDR2);
+    assertThat(executionHistory).notReconciled(drError);
   }
 
   @Test
   void dependentsOnErroredResourceNotReconciled() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dr1).build()
-        .addDependent(errorDR2).dependsOn(dr1).build()
-        .addDependent(dr2).dependsOn(errorDR2).build()
+        .addDependent(drError).dependsOn(dr1).build()
+        .addDependent(dr2).dependsOn(drError).build()
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null));
 
-    assertThat(executionHistory).reconciled(dr1).notReconciled(errorDR2, dr2);
+    assertThat(executionHistory).reconciled(dr1).notReconciled(drError, dr2);
   }
 
   @Test
   void onlyOneDependsOnErroredResourceNotReconciled() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dr1).build()
-        .addDependent(errorDR2).build()
-        .addDependent(dr2).dependsOn(errorDR2).dependsOn(dr1).build()
+        .addDependent(drError).build()
+        .addDependent(dr2).dependsOn(drError).dependsOn(dr1).build()
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null));
 
+    assertThat(executionHistory).notReconciled(dr2);
+  }
+
+  @Test
+  void simpleReconcileCondition() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).withReconcileCondition(not_met_reconcile_condition).build()
+        .addDependent(dr2).withReconcileCondition(met_reconcile_condition).build()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).notReconciled(dr1);
+    assertThat(executionHistory).reconciled(dr2);
+    assertThat(executionHistory).deleted(drDeleter);
+  }
+
+  @Test
+  void reconcileConditionTransitiveDelete() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(dr2).withReconcileCondition(not_met_reconcile_condition).dependsOn(dr1)
+        .build()
+        .addDependent(drDeleter).withReconcileCondition(met_reconcile_condition).dependsOn(dr2)
+        .build()
+        .addDependent(drDeleter2).withReconcileCondition(met_reconcile_condition)
+        .dependsOn(drDeleter).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).notReconciled(dr2);
+    assertThat(executionHistory).reconciledInOrder(dr1, drDeleter, drDeleter2);
+    assertThat(executionHistory).deleted(drDeleter, drDeleter2);
+  }
+
+  @Test
+  void reconcileConditionAlsoErrorDependsOn() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(drError).build()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).build()
+        .addDependent(drDeleter2).withReconcileCondition(met_reconcile_condition)
+        .dependsOn(drError, drDeleter).build()
+        .build();
+
+    assertThrows(AggregatedOperatorException.class,
+        () -> workflow.reconcile(new TestCustomResource(), null));
+
+    assertThat(executionHistory).deleted(drDeleter);
+    assertThat(executionHistory).reconciled(drError);
+    assertThat(executionHistory).notReconciled(drDeleter2);
+  }
+
+  @Test
+  void oneDependsOnConditionNotMet() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(dr2).withReconcileCondition(not_met_reconcile_condition).build()
+        .addDependent(drDeleter).dependsOn(dr1, dr2).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).deleted(drDeleter);
+    assertThat(executionHistory).reconciledInOrder(dr1, drDeleter);
     assertThat(executionHistory).notReconciled(dr2);
   }
 
@@ -133,7 +211,7 @@ class WorkflowTest {
     @Override
     public ReconcileResult<String> reconcile(TestCustomResource primary,
         Context<TestCustomResource> context) {
-      executionHistory.add(this);
+      executionHistory.add(new ReconcileRecord(this));
       return ReconcileResult.resourceCreated(VALUE);
     }
 
@@ -153,6 +231,18 @@ class WorkflowTest {
     }
   }
 
+  private class TestDeleterDependent extends TestDependent implements Deleter<TestCustomResource> {
+
+    public TestDeleterDependent(String name) {
+      super(name);
+    }
+
+    @Override
+    public void delete(TestCustomResource primary, Context<TestCustomResource> context) {
+      executionHistory.add(new ReconcileRecord(this, true));
+    }
+  }
+
   private class TestErrorDependent implements DependentResource<String, TestCustomResource> {
     private String name;
 
@@ -163,7 +253,7 @@ class WorkflowTest {
     @Override
     public ReconcileResult<String> reconcile(TestCustomResource primary,
         Context<TestCustomResource> context) {
-      executionHistory.add(this);
+      executionHistory.add(new ReconcileRecord(this));
       throw new IllegalStateException("Test exception");
     }
 

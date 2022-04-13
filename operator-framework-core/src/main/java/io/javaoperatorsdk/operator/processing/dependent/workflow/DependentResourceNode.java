@@ -7,14 +7,16 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.CleanupCondition;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 
 public class DependentResourceNode<R, P extends HasMetadata> {
 
   private final DependentResource<R, P> dependentResource;
-  private ReconcileCondition reconcileCondition;
+  private ReconcileCondition<P> reconcileCondition;
   private CleanupCondition cleanupCondition;
-  private List<DependsOnRelation> dependsOnRelations = new ArrayList<>(1);
+  private ReadyCondition<R, P> readyCondition;
+  private List<DependentResourceNode> dependsOn = new ArrayList<>(1);
 
   public DependentResourceNode(DependentResource<R, P> dependentResource) {
     this(dependentResource, null, null);
@@ -26,7 +28,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   }
 
   public DependentResourceNode(DependentResource<R, P> dependentResource,
-      ReconcileCondition reconcileCondition, CleanupCondition cleanupCondition) {
+      ReconcileCondition<P> reconcileCondition, CleanupCondition cleanupCondition) {
     this.dependentResource = dependentResource;
     this.reconcileCondition = reconcileCondition;
     this.cleanupCondition = cleanupCondition;
@@ -36,7 +38,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return dependentResource;
   }
 
-  public Optional<ReconcileCondition> getReconcileCondition() {
+  public Optional<ReconcileCondition<P>> getReconcileCondition() {
     return Optional.ofNullable(reconcileCondition);
   }
 
@@ -44,16 +46,16 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(cleanupCondition);
   }
 
-  public void setDependsOnRelations(List<DependsOnRelation> dependsOnRelations) {
-    this.dependsOnRelations = dependsOnRelations;
+  public void setDependsOn(List<DependentResourceNode> dependsOn) {
+    this.dependsOn = dependsOn;
   }
 
-  public List<DependsOnRelation> getDependsOnRelations() {
-    return dependsOnRelations;
+  public List<DependentResourceNode> getDependsOn() {
+    return dependsOn;
   }
 
-  public void addDependsOnRelation(DependsOnRelation dependsOnRelation) {
-    dependsOnRelations.add(dependsOnRelation);
+  public void addDependsOnRelation(DependentResourceNode node) {
+    dependsOn.add(node);
   }
 
   @Override
@@ -61,5 +63,25 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return "DependentResourceNode{" +
         "dependentResource=" + dependentResource +
         '}';
+  }
+
+  public DependentResourceNode<R, P> setReconcileCondition(
+      ReconcileCondition<P> reconcileCondition) {
+    this.reconcileCondition = reconcileCondition;
+    return this;
+  }
+
+  public DependentResourceNode<R, P> setCleanupCondition(CleanupCondition cleanupCondition) {
+    this.cleanupCondition = cleanupCondition;
+    return this;
+  }
+
+  public ReadyCondition<R, P> getReadyCondition() {
+    return readyCondition;
+  }
+
+  public DependentResourceNode<R, P> setReadyCondition(ReadyCondition<R, P> readyCondition) {
+    this.readyCondition = readyCondition;
+    return this;
   }
 }

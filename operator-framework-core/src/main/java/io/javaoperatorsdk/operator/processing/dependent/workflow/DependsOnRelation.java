@@ -1,12 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.WaitCondition;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 
 public class DependsOnRelation {
 
   private DependentResourceNode<?, ?> owner;
   private DependentResourceNode<?, ?> dependsOn;
-  private WaitCondition waitCondition;
+  private ReadyCondition readyCondition;
 
   public DependsOnRelation() {}
 
@@ -16,10 +16,10 @@ public class DependsOnRelation {
   }
 
   public DependsOnRelation(DependentResourceNode<?, ?> owner, DependentResourceNode<?, ?> dependsOn,
-      WaitCondition waitCondition) {
+      ReadyCondition readyCondition) {
     this.owner = owner;
     this.dependsOn = dependsOn;
-    this.waitCondition = waitCondition;
+    this.readyCondition = readyCondition;
   }
 
   public DependentResourceNode<?, ?> getOwner() {
@@ -30,7 +30,7 @@ public class DependsOnRelation {
     return dependsOn;
   }
 
-  public WaitCondition getWaitCondition() {
-    return waitCondition;
+  public ReadyCondition getWaitCondition() {
+    return readyCondition;
   }
 }

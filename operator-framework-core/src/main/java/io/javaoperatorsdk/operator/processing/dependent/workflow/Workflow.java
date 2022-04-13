@@ -56,12 +56,12 @@ public class Workflow<P extends HasMetadata> {
   private void preprocessForReconcile() {
     dependents = new ConcurrentHashMap<>(dependentResourceNodes.size());
     for (DependentResourceNode<?, ?> node : dependentResourceNodes) {
-      if (node.getDependsOnRelations().isEmpty()) {
+      if (node.getDependsOn().isEmpty()) {
         topLevelResources.add(node);
       } else {
-        for (DependsOnRelation relation : node.getDependsOnRelations()) {
-          dependents.computeIfAbsent(relation.getDependsOn(), dr -> new ArrayList<>());
-          dependents.get(relation.getDependsOn()).add(relation.getOwner());
+        for (DependentResourceNode<?, ?> dependsOn : node.getDependsOn()) {
+          dependents.computeIfAbsent(dependsOn, dr -> new ArrayList<>());
+          dependents.get(dependsOn).add(node);
         }
       }
     }

@@ -9,22 +9,24 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 
 public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
-  // todo add log messages
   private static final Logger log = LoggerFactory.getLogger(WorkflowReconcileExecutor.class);
 
   private final Workflow<P> workflow;
 
   private final Set<DependentResourceNode<?, ?>> alreadyReconciled = ConcurrentHashMap.newKeySet();
-  private final Set<Future<?>> actualExecutions = ConcurrentHashMap.newKeySet();
-  private final Map<DependentResourceNode<?, ?>, Future<?>> nodeToFuture =
+  private final Set<DependentResourceNode<?, ?>> errored = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode<?, ?>> reconcileConditionOrParentsConditionNotMet =
+      ConcurrentHashMap.newKeySet();
+
+  private final Map<DependentResourceNode<?, ?>, Future<?>> actualExecutions =
       new ConcurrentHashMap<>();
   private final List<Exception> exceptionsDuringExecution =
       Collections.synchronizedList(new ArrayList<>());
-  private final Set<DependentResourceNode<?, ?>> markedToReconcileAgain =
-      ConcurrentHashMap.newKeySet();
 
   private final P primary;
   private final Context<P> context;
@@ -35,16 +37,17 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     this.workflow = workflow;
   }
 
+  // add reconcile results
   public synchronized void reconcile() {
     for (DependentResourceNode<?, ?> dependentResourceNode : workflow
         .getTopLevelDependentResources()) {
-      submitForReconcile(dependentResourceNode);
+      handleReconcileOrDelete(dependentResourceNode, false);
     }
     while (true) {
       try {
         this.wait();
-        if (exceptionsPresent()) {
-          log.debug("Exception during re");
+        if (!exceptionsDuringExecution.isEmpty()) {
+          log.debug("Exception during reconciliation for: {}", primary);
           throw createFinalException();
         }
         if (noMoreExecutionsScheduled()) {
@@ -59,122 +62,135 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
   }
 
-  private AggregatedOperatorException createFinalException() {
-    return new AggregatedOperatorException("Exception during workflow.", exceptionsDuringExecution);
-  }
-
-  private synchronized boolean alreadyReconciled(
-      DependentResourceNode<?, ?> dependentResourceNode) {
-    return alreadyReconciled.contains(dependentResourceNode);
-  }
-
-  private synchronized boolean allDependOnsReconciled(
-      DependentResourceNode<?, ?> dependentResourceNode) {
-    return dependentResourceNode.getDependsOnRelations().isEmpty()
-        || dependentResourceNode.getDependsOnRelations().stream()
-            .allMatch(relation -> alreadyReconciled(relation.getDependsOn()));
-  }
-
-  private synchronized void handleNodeExecutionFinish(DependentResourceNode dependentResourceNode) {
-    var future = nodeToFuture.remove(dependentResourceNode);
-    actualExecutions.remove(future);
-
-    if (exceptionsPresent()) {
-      if (actualExecutions.isEmpty()) {
-        notifyMainReconcile();
-      }
-      return;
-    }
-    if (markedToReconcileAgain.contains(dependentResourceNode)
-        && alreadyReconciled(dependentResourceNode)) {
-      log.warn("Marked to reconcile but already reconciled, this should not happen. DR: {}",
-          dependentResourceNode);
-    }
-
-    if (markedToReconcileAgain.contains(dependentResourceNode)
-        && !alreadyReconciled(dependentResourceNode)) {
-      markedToReconcileAgain.remove(dependentResourceNode);
-      log.debug("Submitting marked resource to reconcile: {}", dependentResourceNode);
-      submitForReconcile(dependentResourceNode);
-    }
-    if (actualExecutions.isEmpty()) {
-      notifyMainReconcile();
-    }
-  }
-
-  private synchronized void submitForReconcile(DependentResourceNode<?, ?> dependentResourceNode) {
+  private synchronized void handleReconcileOrDelete(
+      DependentResourceNode<?, ?> dependentResourceNode,
+      boolean onlyReconcileForPossibleDelete) {
     log.debug("Submitting for reconcile: {}", dependentResourceNode);
 
     if (alreadyReconciled(dependentResourceNode)
-        || !allDependOnsReconciled(dependentResourceNode)
-        || exceptionsPresent()) {
+        || isReconcilingNow(dependentResourceNode)
+        || !allDependsReconciled(dependentResourceNode)
+        || hasErroredDependOn(dependentResourceNode)) {
       log.debug("Skipping submit of: {}, ", dependentResourceNode);
       return;
     }
 
-    if (nodeToFuture.containsKey(dependentResourceNode)) {
-      log.debug("The same dependent resource already bein reconciled," +
-          " marking it for future reconciliation: {}", dependentResourceNode);
-      markedToReconcileAgain.add(dependentResourceNode);
-      return;
+    if (onlyReconcileForPossibleDelete) {
+      reconcileConditionOrParentsConditionNotMet.add(dependentResourceNode);
+    } else if (dependentResourceNode.getReconcileCondition().isPresent()) {
+      handleReconcileCondition(dependentResourceNode);
     }
 
     Future<?> nodeFuture =
-        workflow.getExecutorService().submit(new NodeExecutor(dependentResourceNode));
-    actualExecutions.add(nodeFuture);
-    nodeToFuture.put(dependentResourceNode, nodeFuture);
+        workflow.getExecutorService().submit(
+            new NodeExecutor(dependentResourceNode,
+                ownOrParentsReconcileConditionNotMet(dependentResourceNode)));
+    actualExecutions.put(dependentResourceNode, nodeFuture);
     log.debug("Submitted to reconcile: {}", dependentResourceNode);
   }
 
-  private synchronized void submitDependents(DependentResourceNode<?, ?> dependentResourceNode) {
-    if (!exceptionsPresent()) {
-      var dependents = workflow.getDependents().get(dependentResourceNode);
-      if (dependents != null) {
-        dependents.forEach(this::submitForReconcile);
-      }
+
+  private synchronized void handleExceptionInExecutor(DependentResourceNode dependentResourceNode,
+      RuntimeException e) {
+    exceptionsDuringExecution.add(e);
+    errored.add(dependentResourceNode);
+  }
+
+  private synchronized void handleNodeExecutionFinish(DependentResourceNode dependentResourceNode) {
+    actualExecutions.remove(dependentResourceNode);
+    if (actualExecutions.isEmpty()) {
+      this.notifyAll();
     }
   }
 
-  private synchronized void handleExceptionInExecutor(RuntimeException e) {
-    exceptionsDuringExecution.add(e);
-    markedToReconcileAgain.clear();
-  }
-
-  private boolean exceptionsPresent() {
-    return !exceptionsDuringExecution.isEmpty();
-  }
-
-  private boolean noMoreExecutionsScheduled() {
-    return actualExecutions.isEmpty() && markedToReconcileAgain.isEmpty();
-  }
-
-  private synchronized void notifyMainReconcile() {
-    this.notifyAll();
+  private boolean ownOrParentsReconcileConditionNotMet(
+      DependentResourceNode<?, ?> dependentResourceNode) {
+    return reconcileConditionOrParentsConditionNotMet.contains(dependentResourceNode) ||
+        dependentResourceNode.getDependsOn().stream()
+            .anyMatch(dependsOnRelation -> reconcileConditionOrParentsConditionNotMet
+                .contains(dependsOnRelation.getDependsOn()));
   }
 
   private class NodeExecutor implements Runnable {
 
     private final DependentResourceNode dependentResourceNode;
+    private final boolean onlyReconcileForPossibleDelete;
 
-    private NodeExecutor(DependentResourceNode<?, ?> dependentResourceNode) {
+    private NodeExecutor(DependentResourceNode<?, ?> dependentResourceNode,
+        boolean onlyReconcileForDelete) {
       this.dependentResourceNode = dependentResourceNode;
+      this.onlyReconcileForPossibleDelete = onlyReconcileForDelete;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        if (exceptionsPresent()) {
-          return;
+        var dependentResource = dependentResourceNode.getDependentResource();
+        if (onlyReconcileForPossibleDelete) {
+          if (dependentResource instanceof Deleter) {
+            ((Deleter<P>) dependentResource).delete(primary, context);
+          }
+        } else {
+          dependentResource.reconcile(primary, context);
         }
-        dependentResourceNode.getDependentResource().reconcile(primary, context);
         alreadyReconciled.add(dependentResourceNode);
-        submitDependents(dependentResourceNode);
+        handleDependentsReconcile(dependentResourceNode, onlyReconcileForPossibleDelete);
       } catch (RuntimeException e) {
-        handleExceptionInExecutor(e);
+        handleExceptionInExecutor(dependentResourceNode, e);
       } finally {
         handleNodeExecutionFinish(dependentResourceNode);
       }
     }
+  }
+
+  private boolean isReconcilingNow(DependentResourceNode<?, ?> dependentResourceNode) {
+    return actualExecutions.containsKey(dependentResourceNode);
+  }
+
+  private synchronized void handleDependentsReconcile(
+      DependentResourceNode<?, ?> dependentResourceNode, boolean onlyReconcileForPossibleDelete) {
+    var dependents = workflow.getDependents().get(dependentResourceNode);
+    if (dependents != null) {
+      dependents.forEach(d -> handleReconcileOrDelete(d, onlyReconcileForPossibleDelete));
+    }
+  }
+
+  private boolean noMoreExecutionsScheduled() {
+    return actualExecutions.isEmpty();
+  }
+
+  private AggregatedOperatorException createFinalException() {
+    return new AggregatedOperatorException("Exception during workflow.", exceptionsDuringExecution);
+  }
+
+  private boolean alreadyReconciled(
+      DependentResourceNode<?, ?> dependentResourceNode) {
+    return alreadyReconciled.contains(dependentResourceNode);
+  }
+
+
+  private void handleReconcileCondition(DependentResourceNode<?, ?> dependentResourceNode) {
+    ReconcileCondition<P> reconcileCondition =
+        (ReconcileCondition<P>) dependentResourceNode.getReconcileCondition().get();
+    boolean conditionMet =
+        reconcileCondition.isMet(dependentResourceNode.getDependentResource(), primary, context);
+    if (!conditionMet) {
+      reconcileConditionOrParentsConditionNotMet.add(dependentResourceNode);
+    }
+  }
+
+  private boolean allDependsReconciled(
+      DependentResourceNode<?, ?> dependentResourceNode) {
+    return dependentResourceNode.getDependsOn().isEmpty()
+        || dependentResourceNode.getDependsOn().stream()
+            .allMatch(this::alreadyReconciled);
+  }
+
+  private boolean hasErroredDependOn(
+      DependentResourceNode<?, ?> dependentResourceNode) {
+    return !dependentResourceNode.getDependsOn().isEmpty()
+        && dependentResourceNode.getDependsOn().stream()
+            .anyMatch(dependsOnRelation -> errored.contains(dependsOnRelation.getDependsOn()));
   }
 }
