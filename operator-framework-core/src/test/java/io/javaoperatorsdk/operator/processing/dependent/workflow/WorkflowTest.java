@@ -101,7 +101,7 @@ class WorkflowTest {
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null));
-    assertThat(executionHistory).notReconciled(drError);
+    assertThat(executionHistory).reconciled(drError);
   }
 
   @Test
@@ -114,7 +114,25 @@ class WorkflowTest {
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null));
 
-    assertThat(executionHistory).reconciled(dr1).notReconciled(drError, dr2);
+    assertThat(executionHistory).reconciled(dr1, drError).notReconciled(dr2);
+  }
+
+  @Test
+  void oneBranchErrorsOtherCompletes() {
+    TestDependent dr3 = new TestDependent("DR_3");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(drError).dependsOn(dr1).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .addDependent(dr3).dependsOn(dr2).build()
+        .build();
+
+    assertThrows(AggregatedOperatorException.class,
+        () -> workflow.reconcile(new TestCustomResource(), null));
+
+    assertThat(executionHistory).reconciledInOrder(dr1, dr2, dr3);
+    assertThat(executionHistory).reconciledInOrder(dr1, drError);
   }
 
   @Test
@@ -142,6 +160,21 @@ class WorkflowTest {
 
     assertThat(executionHistory).notReconciled(dr1);
     assertThat(executionHistory).reconciled(dr2);
+    assertThat(executionHistory).deleted(drDeleter);
+  }
+
+  @Test
+  void triangleOnceConditionNotMet() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).dependsOn(dr1)
+        .build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).reconciledInOrder(dr1, dr2);
     assertThat(executionHistory).deleted(drDeleter);
   }
 

@@ -77,8 +77,10 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
     if (onlyReconcileForPossibleDelete) {
       reconcileConditionOrParentsConditionNotMet.add(dependentResourceNode);
-    } else if (dependentResourceNode.getReconcileCondition().isPresent()) {
-      handleReconcileCondition(dependentResourceNode);
+    } else {
+      dependentResourceNode.getReconcileCondition()
+          .ifPresent(reconcileCondition -> handleReconcileCondition(dependentResourceNode,
+              reconcileCondition));
     }
 
     Future<?> nodeFuture =
@@ -107,8 +109,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       DependentResourceNode<?, ?> dependentResourceNode) {
     return reconcileConditionOrParentsConditionNotMet.contains(dependentResourceNode) ||
         dependentResourceNode.getDependsOn().stream()
-            .anyMatch(dependsOnRelation -> reconcileConditionOrParentsConditionNotMet
-                .contains(dependsOnRelation.getDependsOn()));
+            .anyMatch(reconcileConditionOrParentsConditionNotMet::contains);
   }
 
   private class NodeExecutor implements Runnable {
@@ -170,9 +171,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
 
-  private void handleReconcileCondition(DependentResourceNode<?, ?> dependentResourceNode) {
-    ReconcileCondition<P> reconcileCondition =
-        (ReconcileCondition<P>) dependentResourceNode.getReconcileCondition().get();
+  private void handleReconcileCondition(DependentResourceNode<?, ?> dependentResourceNode,
+      ReconcileCondition reconcileCondition) {
     boolean conditionMet =
         reconcileCondition.isMet(dependentResourceNode.getDependentResource(), primary, context);
     if (!conditionMet) {
@@ -191,6 +191,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       DependentResourceNode<?, ?> dependentResourceNode) {
     return !dependentResourceNode.getDependsOn().isEmpty()
         && dependentResourceNode.getDependsOn().stream()
-            .anyMatch(dependsOnRelation -> errored.contains(dependsOnRelation.getDependsOn()));
+            .anyMatch(errored::contains);
   }
 }

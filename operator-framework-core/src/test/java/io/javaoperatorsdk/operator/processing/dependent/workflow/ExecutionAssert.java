@@ -74,8 +74,8 @@ public class ExecutionAssert
   }
 
   public ExecutionAssert notReconciled(DependentResource<?, ?>... dependentResources) {
-    for (int i = 0; i < dependentResources.length - 1; i++) {
-      if (!getActualDependentResources().contains(dependentResources[i])) {
+    for (int i = 0; i < dependentResources.length; i++) {
+      if (getActualDependentResources().contains(dependentResources[i])) {
         failWithMessage("Resource was reconciled: %s with index %d", dependentResources, i);
       }
     }
