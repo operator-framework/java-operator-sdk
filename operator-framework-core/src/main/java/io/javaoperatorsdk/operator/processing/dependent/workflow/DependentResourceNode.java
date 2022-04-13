@@ -23,7 +23,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   }
 
   public DependentResourceNode(DependentResource<R, P> dependentResource,
-      ReconcileCondition reconcileCondition) {
+      ReconcileCondition<P> reconcileCondition) {
     this(dependentResource, reconcileCondition, null);
   }
 
@@ -76,8 +76,8 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return this;
   }
 
-  public ReadyCondition<R, P> getReadyCondition() {
-    return readyCondition;
+  public Optional<ReadyCondition<R, P>> getReadyCondition() {
+    return Optional.ofNullable(readyCondition);
   }
 
   public DependentResourceNode<R, P> setReadyCondition(ReadyCondition<R, P> readyCondition) {

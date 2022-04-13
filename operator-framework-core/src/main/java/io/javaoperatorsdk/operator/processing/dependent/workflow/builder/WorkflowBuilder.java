@@ -12,10 +12,10 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private List<DependentResourceNode<?, ?>> dependentResourceNodes = new ArrayList<>();
+  private List<DependentResourceNode<?, P>> dependentResourceNodes = new ArrayList<>();
 
-  public DependentBuilder<P> addDependent(DependentResource<?, ?> dependentResource) {
-    DependentResourceNode<?, ?> node = new DependentResourceNode<>(dependentResource);
+  public DependentBuilder<P> addDependent(DependentResource<?, P> dependentResource) {
+    DependentResourceNode<?, P> node = new DependentResourceNode<>(dependentResource);
     dependentResourceNodes.add(node);
     return new DependentBuilder<>(this, node);
   }

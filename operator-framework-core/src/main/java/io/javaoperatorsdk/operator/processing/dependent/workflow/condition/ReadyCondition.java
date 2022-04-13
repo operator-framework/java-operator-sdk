@@ -6,6 +6,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public interface ReadyCondition<R, P extends HasMetadata> {
 
-  void isMet(DependentResource<R, P> dependentResource, P primary, Context<P> context);
+  boolean isMet(DependentResource<R, P> dependentResource, P primary, Context<P> context);
 
 }
