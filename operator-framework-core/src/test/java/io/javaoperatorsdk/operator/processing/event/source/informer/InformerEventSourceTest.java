@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -48,6 +49,7 @@ class InformerEventSourceTest {
     when(specificResourceClientMock.withLabelSelector((String) null))
         .thenReturn(labeledResourceClientMock);
     when(labeledResourceClientMock.runnableInformer(0)).thenReturn(informer);
+    when(informer.getIndexer()).thenReturn(mock(Indexer.class));
 
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));

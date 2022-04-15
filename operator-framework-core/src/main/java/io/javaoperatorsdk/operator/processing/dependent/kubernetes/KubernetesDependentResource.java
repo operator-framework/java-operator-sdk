@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolde
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -58,16 +57,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     final var primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
-    final PrimaryToSecondaryMapper<P> secondaryResourceIdentifier =
-        (this instanceof PrimaryToSecondaryMapper)
-            ? (PrimaryToSecondaryMapper<P>) this
-            : ResourceID::fromResource;
     InformerConfiguration<R, P> ic =
         InformerConfiguration.from(resourceType())
             .withLabelSelector(labelSelector)
             .withNamespaces(namespaces)
             .withSecondaryToPrimaryMapper(primaryResourcesRetriever)
-            .withPrimaryToSecondaryMapper(secondaryResourceIdentifier)
             .build();
     configureWith(new InformerEventSource<>(ic, client));
   }

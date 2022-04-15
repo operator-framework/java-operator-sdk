@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
+import io.javaoperatorsdk.operator.processing.MultiResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -63,7 +65,9 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
-    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+    implements MultiResourceOwner<R, P>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+
+  public static String PRIMARY_TO_SECONDARY_INDEX_NAME = "primaryToSecondary";
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -75,11 +79,20 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
     super(context.getClient().resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+    initPrimaryToSecondaryIndexer();
   }
 
   public InformerEventSource(InformerConfiguration<R, P> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+    initPrimaryToSecondaryIndexer();
+  }
+
+  private void initPrimaryToSecondaryIndexer() {
+    addIndexer(PRIMARY_TO_SECONDARY_INDEX_NAME, r -> {
+      var resourceIDs = configuration.getSecondaryToPrimaryMapper().toPrimaryResourceIDs(r);
+      return resourceIDs.stream().map(this::resourceInToKey).collect(Collectors.toList());
+    });
   }
 
   @Override
@@ -152,17 +165,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         });
   }
 
-  /**
-   * Retrieves the informed resource associated with the specified primary resource as defined by
-   * the function provided when this InformerEventSource was created
-   *
-   * @param resource the primary resource we want to retrieve the associated resource for
-   * @return the informed resource associated with the specified primary resource
-   */
   @Override
-  public Optional<R> getSecondaryResource(P resource) {
-    final var id = configuration.getPrimaryToSecondaryMapper().toSecondaryResourceID(resource);
-    return get(id);
+  public List<R> getSecondaryResources(P primary) {
+    return byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME,
+        resourceInToKey(ResourceID.fromResource(primary)));
+  }
+
+  private String resourceInToKey(ResourceID resourceID) {
+    return resourceID.getName()
+        + (resourceID.getNamespace().isEmpty() ? "" : "#" + resourceID.getNamespace().get());
   }
 
   public InformerConfiguration<R, P> getConfiguration() {

@@ -1,11 +1,14 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.MultiResourceOwner;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -33,6 +36,18 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return controller.getEventSourceManager()
         .getResourceEventSourceFor(expectedType, eventSourceName)
         .getSecondaryResource(primaryResource);
+  }
+
+  @Override
+  public <T> List<T> getSecondaryResources(Class<T> expectedType, String eventSourceName) {
+    var eventSource = controller.getEventSourceManager()
+        .getResourceEventSourceFor(expectedType, eventSourceName);
+    if (eventSource instanceof MultiResourceOwner) {
+      return ((MultiResourceOwner<T, P>) eventSource).getSecondaryResources(primaryResource);
+    } else {
+      return eventSource.getSecondaryResource(primaryResource).map(List::of)
+          .orElse(Collections.EMPTY_LIST);
+    }
   }
 
   @Override

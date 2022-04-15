@@ -12,16 +12,13 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
-class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage>
-    implements PrimaryToSecondaryMapper<WebPage> {
+class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
@@ -56,10 +53,5 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
         .withLabel("app", deploymentName(primary))
         .delete();
     return res;
-  }
-
-  @Override
-  public ResourceID toSecondaryResourceID(WebPage primary) {
-    return new ResourceID(configMapName(primary), primary.getMetadata().getNamespace());
   }
 }
