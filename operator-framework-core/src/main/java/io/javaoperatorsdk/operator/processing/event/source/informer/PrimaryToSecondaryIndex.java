@@ -38,7 +38,7 @@ public class PrimaryToSecondaryIndex<R extends HasMetadata, P extends HasMetadat
 
   public synchronized Set<ResourceID> getSecondaryResources(P primary) {
     var resourceIDs = index.get(ResourceID.fromResource(primary));
-    if (resourceIDs.isEmpty()) {
+    if (resourceIDs == null) {
       return Collections.emptySet();
     } else {
       return Collections.unmodifiableSet(resourceIDs);
