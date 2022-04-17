@@ -102,18 +102,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     return get(resourceID);
   }
 
-  protected boolean temporalCacheHasResourceWithVersionAs(R resource) {
-    var resourceID = ResourceID.fromResource(resource);
-    var res = temporaryResourceCache.getResourceFromCache(resourceID);
-    return res.map(r -> {
-      boolean resVersionsEqual = r.getMetadata().getResourceVersion()
-          .equals(resource.getMetadata().getResourceVersion());
-      log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
-          resourceID, resVersionsEqual);
-      return resVersionsEqual;
-    }).orElse(false);
-  }
-
   @Override
   public Stream<R> list(String namespace, Predicate<R> predicate) {
     return manager().list(namespace, predicate);
