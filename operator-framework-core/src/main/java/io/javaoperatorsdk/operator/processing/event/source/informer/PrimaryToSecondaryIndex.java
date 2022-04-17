@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
-public class PrimaryToSecondaryIndex<R extends HasMetadata, P extends HasMetadata> {
+public class PrimaryToSecondaryIndex<R extends HasMetadata> {
 
   private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
   private Map<ResourceID, Set<ResourceID>> index = new HashMap<>();
@@ -36,8 +36,8 @@ public class PrimaryToSecondaryIndex<R extends HasMetadata, P extends HasMetadat
         });
   }
 
-  public synchronized Set<ResourceID> getSecondaryResources(P primary) {
-    var resourceIDs = index.get(ResourceID.fromResource(primary));
+  public synchronized Set<ResourceID> getSecondaryResources(ResourceID primary) {
+    var resourceIDs = index.get(primary);
     if (resourceIDs == null) {
       return Collections.emptySet();
     } else {

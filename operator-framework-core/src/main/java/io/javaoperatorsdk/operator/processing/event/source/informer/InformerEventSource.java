@@ -73,7 +73,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final InformerConfiguration<R, P> configuration;
   // always called from a synchronized method
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
-  private final PrimaryToSecondaryIndex<R, P> primaryToSecondaryIndex;
+  // we need direct control for the indexer to propagate the just update resource also to the index
+  private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
 
   public InformerEventSource(
       InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
@@ -177,7 +178,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public List<R> getSecondaryResources(P primary) {
-    var secondaryIDs = primaryToSecondaryIndex.getSecondaryResources(primary);
+    var secondaryIDs =
+        primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
     return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
