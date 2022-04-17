@@ -41,7 +41,7 @@ public class MultipleSecondaryEventSourceReconciler
           .createOrReplace(configMap(getName2(resource), resource));
     }
 
-    if (numberOfExecutions.get() >=3) {
+    if (numberOfExecutions.get() >= 3) {
       if (context.getSecondaryResources(ConfigMap.class).size() != 2) {
         throw new IllegalStateException("There should be 2 related config maps");
       }
