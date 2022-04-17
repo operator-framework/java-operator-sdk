@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
 
-  class DefaultInformerConfiguration<R extends HasMetadata, P extends HasMetadata> extends
+  class DefaultInformerConfiguration<R extends HasMetadata> extends
       DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
