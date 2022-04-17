@@ -173,7 +173,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private String resourceInToKey(ResourceID resourceID) {
     return resourceID.getName()
-        + (resourceID.getNamespace().isEmpty() ? "" : "#" + resourceID.getNamespace().get());
+        + (resourceID.getNamespace().map(ns-> "#" + ns).orElse(""));
   }
 
   public InformerConfiguration<R, P> getConfiguration() {
