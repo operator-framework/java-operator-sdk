@@ -51,9 +51,4 @@ public abstract class CachingEventSource<R, P extends HasMetadata>
     return cache.get(resourceID);
   }
 
-  @Override
-  public Optional<R> getSecondaryResource(P primary) {
-    return cache.get(ResourceID.fromResource(primary));
-  }
-
 }

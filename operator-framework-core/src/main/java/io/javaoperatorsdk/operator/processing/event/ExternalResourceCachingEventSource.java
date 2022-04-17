@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
@@ -49,5 +51,10 @@ public class ExternalResourceCachingEventSource<R, P extends HasMetadata>
         cache.put(resourceID, resource);
       }
     });
+  }
+
+  @Override
+  public Optional<R> getSecondaryResource(P primary) {
+    return cache.get(ResourceID.fromResource(primary));
   }
 }

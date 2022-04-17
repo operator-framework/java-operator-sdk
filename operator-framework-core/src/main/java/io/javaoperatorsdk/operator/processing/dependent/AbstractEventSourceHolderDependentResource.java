@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
     extends AbstractDependentResource<R, P>
     implements EventSourceProvider<P> {
+
   private T eventSource;
   private boolean isCacheFillerEventSource;
 
@@ -47,7 +48,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
       recentOperationCacheFiller().handleRecentResourceUpdate(primaryResourceId, updated, actual);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private RecentOperationCacheFiller<R> recentOperationCacheFiller() {
