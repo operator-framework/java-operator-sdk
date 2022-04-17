@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -32,21 +33,43 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public <T> List<T> getSecondaryResources(Class<T> expectedType) {
+    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
+        .map(
+            es -> {
+              if (es instanceof MultiResourceOwner) {
+                return ((MultiResourceOwner<T, P>) es).getSecondaryResources(primaryResource);
+              } else {
+                return es.getSecondaryResource(primaryResource)
+                    .map(List::of)
+                    .orElse(Collections.emptyList());
+              }
+            })
+        .flatMap(List::stream)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
-    return controller.getEventSourceManager()
+    return controller
+        .getEventSourceManager()
         .getResourceEventSourceFor(expectedType, eventSourceName)
         .getSecondaryResource(primaryResource);
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <T> List<T> getSecondaryResources(Class<T> expectedType, String eventSourceName) {
-    var eventSource = controller.getEventSourceManager()
-        .getResourceEventSourceFor(expectedType, eventSourceName);
+    var eventSource =
+        controller.getEventSourceManager().getResourceEventSourceFor(expectedType, eventSourceName);
     if (eventSource instanceof MultiResourceOwner) {
       return ((MultiResourceOwner<T, P>) eventSource).getSecondaryResources(primaryResource);
     } else {
-      return eventSource.getSecondaryResource(primaryResource).map(List::of)
-          .orElse(Collections.EMPTY_LIST);
+      return eventSource
+          .getSecondaryResource(primaryResource)
+          .map(List::of)
+          .orElse(Collections.emptyList());
     }
   }
 
