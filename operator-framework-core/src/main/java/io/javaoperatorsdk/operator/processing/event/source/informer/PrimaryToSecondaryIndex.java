@@ -6,7 +6,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
-// todo unit test
 public class PrimaryToSecondaryIndex<R extends HasMetadata, P extends HasMetadata> {
 
   private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
@@ -40,7 +39,7 @@ public class PrimaryToSecondaryIndex<R extends HasMetadata, P extends HasMetadat
   public synchronized Set<ResourceID> getSecondaryResources(P primary) {
     var resourceIDs = index.get(ResourceID.fromResource(primary));
     if (resourceIDs.isEmpty()) {
-        return Collections.emptySet();
+      return Collections.emptySet();
     } else {
       return Collections.unmodifiableSet(resourceIDs);
     }
