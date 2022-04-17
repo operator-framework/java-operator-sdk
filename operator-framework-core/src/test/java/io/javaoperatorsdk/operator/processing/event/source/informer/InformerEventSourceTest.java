@@ -39,7 +39,7 @@ class InformerEventSourceTest {
       mock(FilterWatchListMultiDeletable.class);
   private FilterWatchListDeletable labeledResourceClientMock = mock(FilterWatchListDeletable.class);
   private SharedIndexInformer informer = mock(SharedIndexInformer.class);
-  private InformerConfiguration<Deployment, TestCustomResource> informerConfiguration =
+  private InformerConfiguration<Deployment> informerConfiguration =
       mock(InformerConfiguration.class);
 
   @BeforeEach

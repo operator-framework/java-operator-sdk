@@ -101,7 +101,7 @@ public class CreateUpdateEventFilterTestReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
-    InformerConfiguration<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerConfiguration =
+    InformerConfiguration<ConfigMap> informerConfiguration =
         InformerConfiguration.from(context, ConfigMap.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();

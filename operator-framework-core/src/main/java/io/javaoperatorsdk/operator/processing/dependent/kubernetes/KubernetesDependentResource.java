@@ -57,7 +57,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     final var primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
-    InformerConfiguration<R, P> ic =
+    InformerConfiguration<R> ic =
         InformerConfiguration.from(resourceType())
             .withLabelSelector(labelSelector)
             .withNamespaces(namespaces)

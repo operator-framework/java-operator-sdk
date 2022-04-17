@@ -58,7 +58,7 @@ public class WebappReconciler
             .map(ResourceID::fromResource)
             .collect(Collectors.toSet());
 
-    InformerConfiguration<Tomcat, Webapp> configuration =
+    InformerConfiguration<Tomcat> configuration =
         InformerConfiguration.from(context, Tomcat.class)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
             .build();

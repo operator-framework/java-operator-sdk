@@ -65,26 +65,26 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <P> type of the primary resource
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
-    extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
+    extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
     implements MultiResourceOwner<R, P>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
-  private final InformerConfiguration<R, P> configuration;
+  private final InformerConfiguration<R> configuration;
   // always called from a synchronized method
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
 
   public InformerEventSource(
-      InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
+      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
     super(context.getClient().resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
     primaryToSecondaryIndex =
         new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
   }
 
-  public InformerEventSource(InformerConfiguration<R, P> configuration, KubernetesClient client) {
+  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
     primaryToSecondaryIndex =
@@ -184,7 +184,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         .collect(Collectors.toList());
   }
 
-  public InformerConfiguration<R, P> getConfiguration() {
+  public InformerConfiguration<R> getConfiguration() {
     return configuration;
   }
 

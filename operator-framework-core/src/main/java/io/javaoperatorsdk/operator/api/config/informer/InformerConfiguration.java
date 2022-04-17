@@ -12,11 +12,11 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @SuppressWarnings("rawtypes")
-public interface InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
+public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
 
   class DefaultInformerConfiguration<R extends HasMetadata, P extends HasMetadata> extends
-      DefaultResourceConfiguration<R> implements InformerConfiguration<R, P> {
+      DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
 
@@ -73,7 +73,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return this;
     }
 
-    public InformerConfiguration<R, P> build() {
+    public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           secondaryToPrimaryMapper,
           namespaces);
@@ -91,7 +91,7 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
   }
 
   static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
-      InformerConfiguration<R, P> configuration) {
+      InformerConfiguration<R> configuration) {
     return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass())
         .withNamespaces(configuration.getNamespaces())
         .withLabelSelector(configuration.getLabelSelector())
