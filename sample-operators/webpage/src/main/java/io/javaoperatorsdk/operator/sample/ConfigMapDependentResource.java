@@ -15,9 +15,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
-@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
+@KubernetesDependent(labelSelector = SELECTOR)
 class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
@@ -30,14 +31,19 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
   protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> data = new HashMap<>();
     data.put("index.html", webPage.getSpec().getHtml());
-    return new ConfigMapBuilder()
+    Map<String, String> labels = new HashMap<>();
+    labels.put(SELECTOR, "true");
+    ConfigMap configMap = new ConfigMapBuilder()
         .withMetadata(
             new ObjectMetaBuilder()
                 .withName(configMapName(webPage))
                 .withNamespace(webPage.getMetadata().getNamespace())
+                .withLabels(labels)
                 .build())
         .withData(data)
         .build();
+    configMap.addOwnerReference(webPage);
+    return configMap;
   }
 
   @Override
