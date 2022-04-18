@@ -59,7 +59,6 @@ public class Utils {
     Ingress ingress = loadYaml(Ingress.class, Utils.class, "ingress.yaml");
     ingress.getMetadata().setName(webPage.getMetadata().getName());
     ingress.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
-    ingress.addOwnerReference(webPage);
     ingress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
         .getBackend().getService().setName(serviceName(webPage));
     return ingress;

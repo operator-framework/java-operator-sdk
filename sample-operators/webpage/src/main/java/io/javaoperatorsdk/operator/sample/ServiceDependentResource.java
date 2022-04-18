@@ -32,7 +32,6 @@ class ServiceDependentResource extends CRUKubernetesDependentResource<Service, W
     Map<String, String> labels = new HashMap<>();
     labels.put("app", deploymentName(webPage));
     service.getSpec().setSelector(labels);
-    service.addOwnerReference(webPage);
     return service;
   }
 }

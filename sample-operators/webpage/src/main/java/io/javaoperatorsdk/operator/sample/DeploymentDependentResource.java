@@ -48,7 +48,6 @@ class DeploymentDependentResource extends CRUKubernetesDependentResource<Deploym
         .setConfigMap(
             new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
 
-    deployment.addOwnerReference(webPage);
     return deployment;
   }
 }

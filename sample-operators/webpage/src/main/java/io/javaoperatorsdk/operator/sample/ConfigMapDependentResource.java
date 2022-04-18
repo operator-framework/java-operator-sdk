@@ -42,7 +42,6 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
                 .build())
         .withData(data)
         .build();
-    configMap.addOwnerReference(webPage);
     return configMap;
   }
 
