@@ -33,7 +33,7 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
     data.put("index.html", webPage.getSpec().getHtml());
     Map<String, String> labels = new HashMap<>();
     labels.put(SELECTOR, "true");
-    ConfigMap configMap = new ConfigMapBuilder()
+    return new ConfigMapBuilder()
         .withMetadata(
             new ObjectMetaBuilder()
                 .withName(configMapName(webPage))
@@ -42,7 +42,6 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
                 .build())
         .withData(data)
         .build();
-    return configMap;
   }
 
   @Override
