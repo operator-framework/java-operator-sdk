@@ -115,7 +115,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug("On delete event received for resource id: {}", ResourceID.fromResource(resource));
     }
-    primaryToSecondaryIndex.onAddOrUpdate(resource);
+    primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
     propagateEvent(resource);
   }
@@ -127,7 +127,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       eventRecorder.recordEvent(newObject);
       return;
     }
-    if (temporalCacheHasResourceWithVersionAs(newObject)) {
+    if (temporaryCacheHasResourceWithSameVersionAs(newObject)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
           operation,
@@ -143,7 +143,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  private boolean temporalCacheHasResourceWithVersionAs(R resource) {
+  private boolean temporaryCacheHasResourceWithSameVersionAs(R resource) {
     var resourceID = ResourceID.fromResource(resource);
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
     return res.map(r -> {

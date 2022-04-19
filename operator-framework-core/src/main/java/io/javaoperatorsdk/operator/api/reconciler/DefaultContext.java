@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -34,7 +35,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> List<T> getSecondaryResources(Class<T> expectedType) {
+  public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(
             es -> {
@@ -47,7 +48,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
               }
             })
         .flatMap(List::stream)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
   }
 
   @Override
