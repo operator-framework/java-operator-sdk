@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
-public class PrimaryToSecondaryIndex<R extends HasMetadata> {
+class PrimaryToSecondaryIndex<R extends HasMetadata> {
 
   private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
   private Map<ResourceID, Set<ResourceID>> index = new HashMap<>();
