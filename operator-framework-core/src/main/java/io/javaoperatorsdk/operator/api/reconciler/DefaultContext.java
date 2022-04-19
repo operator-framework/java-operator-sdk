@@ -59,21 +59,6 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> List<T> getSecondaryResources(Class<T> expectedType, String eventSourceName) {
-    var eventSource =
-        controller.getEventSourceManager().getResourceEventSourceFor(expectedType, eventSourceName);
-    if (eventSource instanceof MultiResourceOwner) {
-      return ((MultiResourceOwner<T, P>) eventSource).getSecondaryResources(primaryResource);
-    } else {
-      return eventSource
-          .getSecondaryResource(primaryResource)
-          .map(List::of)
-          .orElse(Collections.emptyList());
-    }
-  }
-
-  @Override
   public ControllerConfiguration<P> getControllerConfiguration() {
     return controllerConfiguration;
   }

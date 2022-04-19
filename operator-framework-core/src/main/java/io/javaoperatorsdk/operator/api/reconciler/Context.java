@@ -17,8 +17,6 @@ public interface Context<P extends HasMetadata> {
 
   <T> List<T> getSecondaryResources(Class<T> expectedType);
 
-  <T> List<T> getSecondaryResources(Class<T> expectedType, String eventSourceName);
-
   <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName);
 
   ControllerConfiguration<P> getControllerConfiguration();
