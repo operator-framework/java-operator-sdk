@@ -38,7 +38,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     this.workflow = workflow;
   }
 
-  // add reconcile results
+  // todo add reconcile results
+  // - reconciled in results should contain only truly reconciled
   public synchronized WorkflowExecutionResult reconcile() {
     for (DependentResourceNode<?, P> dependentResourceNode : workflow
         .getTopLevelDependentResources()) {
