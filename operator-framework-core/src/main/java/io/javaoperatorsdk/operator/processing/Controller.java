@@ -75,11 +75,11 @@ public class Controller<P extends HasMetadata>
 
     final var hasDeleterHolder = new boolean[] {false};
     final var specs = configuration.getDependentResources();
-    final var size = specs.size();
-    if (size == 0) {
+    final var specsSize = specs.size();
+    if (specsSize == 0) {
       dependents = new LinkedHashMap<>();
     } else {
-      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(size);
+      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(specsSize);
       specs.forEach(drs -> {
         final var dependent = createAndConfigureFrom(drs, kubernetesClient);
         // check if dependent implements Deleter to record that fact
