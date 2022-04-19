@@ -17,8 +17,9 @@ import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
-@KubernetesDependent(labelSelector = SELECTOR)
-class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
+@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
+class ConfigMapDependentResource extends
+    io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
