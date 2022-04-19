@@ -279,6 +279,44 @@ See the full source code of
 sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java)
 .
 
+## Primary to secondary resource mapping
+
+Secondary resources has to be mapped to the primary resource. By default, a secondary resource belongs to a primary resource with the same `getMetadata().getName()` in the same `getMetadata().getNamespace()`.
+
+In case you can not follow the aforementioned naming convention, the mapping can be defined by implementing the `PrimaryToSecondaryMapper` interface as follows:
+
+```java
+
+@ControllerConfiguration
+public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema> implements PrimaryToSecondaryMapper<MySQLSchema> {
+    
+    @Override
+    protected Secret desired(MySQLSchema schema, Context<MySQLSchema> context) {
+       return new SecretBuilder()
+               .withNewMetadata()
+               .withName(getSecretName(name)) // The name differs from the primary resource name.
+               .withNamespace(schema.getMetadata().getNamespace())
+               .endMetadata()
+               // omitted code
+               .build();
+    }
+   
+
+   private String getSecretName(String schemaName) {
+      return String.format("%s-secret", schemaName);
+   }
+   
+   @Override
+   public ResourceID toSecondaryResourceID(MySQLSchema primary) {
+      return new ResourceID(
+              getSecretName(primary.getMetadata().getName()), primary.getMetadata().getNamespace());
+   }
+}
+```
+
+See the full source code of a sample dependent resource implementing `PrimaryToSecondaryMapper` [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/mysql-schema/src/main/java/io/javaoperatorsdk/operator/sample/dependent/SecretDependentResource.java)
+.
+
 ## Other Dependent Resource features
 
 ### Caching and Event Handling in [KubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractDependentResource.java)
