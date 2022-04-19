@@ -42,10 +42,10 @@ public class Workflow<P extends HasMetadata> {
     this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism));
   }
 
-  public void reconcile(P primary, Context<P> context) {
-    WorkflowReconcileExecutor<P> workflowReconcileExecutor =
+  public WorkflowExecutionResult reconcile(P primary, Context<P> context) {
+    WorkflowReconcileExecutor workflowReconcileExecutor =
         new WorkflowReconcileExecutor<>(this, primary, context);
-    workflowReconcileExecutor.reconcile();
+    return workflowReconcileExecutor.reconcile();
   }
 
   public void cleanup(P resource, Context<P> context) {
