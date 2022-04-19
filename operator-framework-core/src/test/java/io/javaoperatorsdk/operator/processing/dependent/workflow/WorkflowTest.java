@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
@@ -13,6 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -21,10 +23,30 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkflowTest {
 
+  public static final String NOT_READY_YET = "NOT READY YET";
   private ReconcileCondition met_reconcile_condition =
       (dependentResource, primary, context) -> true;
   private ReconcileCondition not_met_reconcile_condition =
       (dependentResource, primary, context) -> false;
+
+  private ReadyCondition<String, TestCustomResource> metReadyCondition =
+      (dependentResource, primary, context) -> true;
+  private ReadyCondition<String, TestCustomResource> notMetReadyCondition =
+      (dependentResource, primary, context) -> false;
+
+  private ReadyCondition<String, TestCustomResource> notMetReadyConditionWithStatusUpdate =
+      new ReadyCondition<>() {
+        @Override
+        public boolean isMet(DependentResource<String, TestCustomResource> dependentResource,
+            TestCustomResource primary, Context<TestCustomResource> context) {
+          return false;
+        }
+
+        @Override
+        public void addNotReadyStatusInfo(TestCustomResource primary) {
+          primary.getStatus().setConfigMapStatus(NOT_READY_YET);
+        }
+      };
 
   public static final String VALUE = "value";
   private List<ReconcileRecord> executionHistory =
@@ -231,6 +253,59 @@ class WorkflowTest {
     assertThat(executionHistory).deleted(drDeleter);
     assertThat(executionHistory).reconciledInOrder(dr1, drDeleter);
     assertThat(executionHistory).notReconciled(dr2);
+  }
+
+  @Test
+  void readyConditionTrivialCase() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).withReadyCondition(metReadyCondition).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).reconciledInOrder(dr1, dr2);
+  }
+
+  @Test
+  void readyConditionNotMetTrivialCase() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).withReadyCondition(notMetReadyCondition).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).reconciled(dr1).notReconciled(dr2);
+  }
+
+  @Test
+  void readyConditionNotMetStatusUpdates() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).withReadyCondition(notMetReadyConditionWithStatusUpdate).build()
+        .addDependent(dr2).dependsOn(dr1).build()
+        .build();
+
+    var cr = new TestCustomResource();
+    workflow.reconcile(cr, null);
+
+    assertThat(executionHistory).reconciled(dr1).notReconciled(dr2);
+    Assertions.assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo(NOT_READY_YET);
+  }
+
+  @Test
+  void readyConditionNotMetInOneParent() {
+    TestDependent dr3 = new TestDependent("DR_3");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).withReadyCondition(notMetReadyCondition).build()
+        .addDependent(dr2).build()
+        .addDependent(dr3).dependsOn(dr1, dr2).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).reconciled(dr1, dr2).notReconciled(dr3);
   }
 
   private class TestDependent implements DependentResource<String, TestCustomResource> {

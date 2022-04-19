@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 
 public class WorkflowReconcileExecutor<P extends HasMetadata> {
@@ -108,6 +109,10 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
   }
 
+  private synchronized void updateStatusForNotReady(ReadyCondition<?, P> readyCondition) {
+    readyCondition.addNotReadyStatusInfo(primary);
+  }
+
   private boolean ownOrParentsReconcileConditionNotMet(
       DependentResourceNode<?, ?> dependentResourceNode) {
     return reconcileConditionOrParentsConditionNotMet.contains(dependentResourceNode) ||
@@ -143,6 +148,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
                   .isMet(dependentResource, primary, context)) {
             handleDependents = false;
             reconciledButNotReady.add(dependentResourceNode);
+            // needs to be synced
+            updateStatusForNotReady(dependentResourceNode.getReadyCondition().get());
           }
         }
         alreadyReconciled.add(dependentResourceNode);
