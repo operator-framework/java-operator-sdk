@@ -162,7 +162,7 @@ class WorkflowTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dr1).build()
         .addDependent(drError).build()
-        .addDependent(dr2).dependsOn(drError).dependsOn(dr1).build()
+        .addDependent(dr2).dependsOn(drError, dr1).build()
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null));
@@ -313,17 +313,17 @@ class WorkflowTest {
     TestDependent dr4 = new TestDependent("DR_4");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
-            .addDependent(dr1).build()
-            .addDependent(dr2).dependsOn(dr1).withReadyCondition(notMetReadyCondition).build()
-            .addDependent(dr3).dependsOn(dr1).build()
-            .addDependent(dr4).dependsOn(dr2,dr3).build()
-            .build();
+        .addDependent(dr1).build()
+        .addDependent(dr2).dependsOn(dr1).withReadyCondition(notMetReadyCondition).build()
+        .addDependent(dr3).dependsOn(dr1).build()
+        .addDependent(dr4).dependsOn(dr2, dr3).build()
+        .build();
 
     workflow.reconcile(new TestCustomResource(), null);
 
     assertThat(executionHistory).reconciledInOrder(dr1, dr2)
-            .reconciledInOrder(dr1, dr3)
-            .notReconciled(dr4);
+        .reconciledInOrder(dr1, dr3)
+        .notReconciled(dr4);
   }
 
   private class TestDependent implements DependentResource<String, TestCustomResource> {
