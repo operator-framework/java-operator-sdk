@@ -146,7 +146,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected boolean addOwnerReference() {
-    return creatable && deletable && garbageCollected;
+    return garbageCollected;
   }
 
   @Override
