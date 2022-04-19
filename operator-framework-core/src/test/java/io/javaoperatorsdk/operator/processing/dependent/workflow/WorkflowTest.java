@@ -307,6 +307,25 @@ class WorkflowTest {
     assertThat(executionHistory).reconciled(dr1, dr2).notReconciled(dr3);
   }
 
+  @Test
+  void diamondShareWithReadyCondition() {
+    TestDependent dr3 = new TestDependent("DR_3");
+    TestDependent dr4 = new TestDependent("DR_4");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+            .addDependent(dr1).build()
+            .addDependent(dr2).dependsOn(dr1).withReadyCondition(notMetReadyCondition).build()
+            .addDependent(dr3).dependsOn(dr1).build()
+            .addDependent(dr4).dependsOn(dr2,dr3).build()
+            .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).reconciledInOrder(dr1, dr2)
+            .reconciledInOrder(dr1, dr3)
+            .notReconciled(dr4);
+  }
+
   private class TestDependent implements DependentResource<String, TestCustomResource> {
 
     private String name;
