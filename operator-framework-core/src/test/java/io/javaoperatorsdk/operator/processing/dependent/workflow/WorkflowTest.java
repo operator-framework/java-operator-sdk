@@ -180,9 +180,8 @@ class WorkflowTest {
 
     workflow.reconcile(new TestCustomResource(), null);
 
-    assertThat(executionHistory).notReconciled(dr1);
-    assertThat(executionHistory).reconciled(dr2);
-    assertThat(executionHistory).deleted(drDeleter);
+    assertThat(executionHistory).notReconciled(dr1).reconciled(dr2).deleted(drDeleter);
+
   }
 
   @Test
