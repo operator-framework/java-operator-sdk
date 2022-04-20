@@ -66,8 +66,7 @@ public class WebPageReconciler
         new InformerEventSource<>(InformerConfiguration.from(context, Ingress.class)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource,
-        deploymentEventSource,
+    return EventSourceInitializer.nameEventSources(configMapEventSource, deploymentEventSource,
         serviceEventSource, ingressEventSource);
   }
 
@@ -208,7 +207,7 @@ public class WebPageReconciler
 
   private ConfigMap makeDesiredHtmlConfigMap(String ns, String configMapName, WebPage webPage) {
     Map<String, String> data = new HashMap<>();
-    data.put("index.html", webPage.getSpec().getHtml());
+    data.put(INDEX_HTML, webPage.getSpec().getHtml());
     ConfigMap configMap =
         new ConfigMapBuilder()
             .withMetadata(

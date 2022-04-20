@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -13,6 +14,8 @@ public interface Context<P extends HasMetadata> {
   default <T> Optional<T> getSecondaryResource(Class<T> expectedType) {
     return getSecondaryResource(expectedType, null);
   }
+
+  <T> Set<T> getSecondaryResources(Class<T> expectedType);
 
   <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName);
 

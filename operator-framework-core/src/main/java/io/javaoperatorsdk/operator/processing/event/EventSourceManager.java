@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
@@ -174,6 +175,10 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   <S> ResourceEventSource<S, R> getResourceEventSourceFor(
       Class<S> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
+  }
+
+  public <S> List<ResourceEventSource<S, R>> getEventSourcesFor(Class<S> dependentType) {
+    return eventSources.getEventSources(dependentType);
   }
 
   public <S> ResourceEventSource<S, R> getResourceEventSourceFor(

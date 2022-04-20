@@ -10,12 +10,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
-    implements PrimaryToSecondaryMapper<MySQLSchema>, Creator<Secret, MySQLSchema> {
+    implements Creator<Secret, MySQLSchema> {
 
   public static final String SECRET_FORMAT = "%s-secret";
   public static final String USERNAME_FORMAT = "%s-user";
@@ -56,11 +54,5 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   public Result<Secret> match(Secret actual, MySQLSchema primary, Context<MySQLSchema> context) {
     final var desiredSecretName = getSecretName(primary.getMetadata().getName());
     return Result.nonComputed(actual.getMetadata().getName().equals(desiredSecretName));
-  }
-
-  @Override
-  public ResourceID toSecondaryResourceID(MySQLSchema primary) {
-    return new ResourceID(
-        getSecretName(primary.getMetadata().getName()), primary.getMetadata().getNamespace());
   }
 }

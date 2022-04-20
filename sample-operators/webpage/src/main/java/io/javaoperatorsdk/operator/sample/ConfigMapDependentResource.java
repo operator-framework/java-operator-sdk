@@ -12,16 +12,14 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
-@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
-class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage>
-    implements PrimaryToSecondaryMapper<WebPage> {
+@KubernetesDependent(labelSelector = SELECTOR)
+class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
@@ -33,11 +31,14 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
   protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> data = new HashMap<>();
     data.put("index.html", webPage.getSpec().getHtml());
+    Map<String, String> labels = new HashMap<>();
+    labels.put(SELECTOR, "true");
     return new ConfigMapBuilder()
         .withMetadata(
             new ObjectMetaBuilder()
                 .withName(configMapName(webPage))
                 .withNamespace(webPage.getMetadata().getNamespace())
+                .withLabels(labels)
                 .build())
         .withData(data)
         .build();
@@ -56,10 +57,5 @@ class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMa
         .withLabel("app", deploymentName(primary))
         .delete();
     return res;
-  }
-
-  @Override
-  public ResourceID toSecondaryResourceID(WebPage primary) {
-    return new ResourceID(configMapName(primary), primary.getMetadata().getNamespace());
   }
 }

@@ -29,7 +29,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
@@ -59,18 +58,9 @@ public class WebappReconciler
             .map(ResourceID::fromResource)
             .collect(Collectors.toSet());
 
-    /*
-     * We retrieve the Tomcat instance associated with out Webapp from its spec
-     */
-    final PrimaryToSecondaryMapper<Webapp> tomcatFromWebAppSpec =
-        (Webapp webapp) -> new ResourceID(
-            webapp.getSpec().getTomcat(),
-            webapp.getMetadata().getNamespace());
-
-    InformerConfiguration<Tomcat, Webapp> configuration =
+    InformerConfiguration<Tomcat> configuration =
         InformerConfiguration.from(context, Tomcat.class)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
-            .withPrimaryToSecondaryMapper(tomcatFromWebAppSpec)
             .build();
     return EventSourceInitializer
         .nameEventSources(new InformerEventSource<>(configuration, context));

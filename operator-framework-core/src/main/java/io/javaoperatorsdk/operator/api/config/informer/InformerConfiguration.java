@@ -8,32 +8,26 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @SuppressWarnings("rawtypes")
-public interface InformerConfiguration<R extends HasMetadata, P extends HasMetadata>
+public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
 
-  class DefaultInformerConfiguration<R extends HasMetadata, P extends HasMetadata> extends
-      DefaultResourceConfiguration<R> implements InformerConfiguration<R, P> {
+  class DefaultInformerConfiguration<R extends HasMetadata> extends
+      DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-    private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        PrimaryToSecondaryMapper<P> primaryToSecondaryMapper,
         Set<String> namespaces) {
       super(labelSelector, resourceClass, namespaces);
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
-      this.primaryToSecondaryMapper =
-          Objects.requireNonNullElseGet(primaryToSecondaryMapper, () -> ResourceID::fromResource);
     }
 
 
@@ -41,21 +35,14 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return secondaryToPrimaryMapper;
     }
 
-    public PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
-      return primaryToSecondaryMapper;
-    }
-
   }
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
-
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
 
-    private SecondaryToPrimaryMapper<R> secondaryToPrimaryResourcesIdSet;
-    private PrimaryToSecondaryMapper<P> associatedWith;
+    private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
@@ -66,16 +53,9 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
 
     public InformerConfigurationBuilder<R, P> withSecondaryToPrimaryMapper(
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
-      this.secondaryToPrimaryResourcesIdSet = secondaryToPrimaryMapper;
+      this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       return this;
     }
-
-    public InformerConfigurationBuilder<R, P> withPrimaryToSecondaryMapper(
-        PrimaryToSecondaryMapper<P> associatedWith) {
-      this.associatedWith = associatedWith;
-      return this;
-    }
-
 
     public InformerConfigurationBuilder<R, P> withNamespaces(String... namespaces) {
       this.namespaces = namespaces != null ? Set.of(namespaces) : Collections.emptySet();
@@ -93,9 +73,9 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
       return this;
     }
 
-    public InformerConfiguration<R, P> build() {
+    public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
-          secondaryToPrimaryResourcesIdSet, associatedWith,
+          secondaryToPrimaryMapper,
           namespaces);
     }
   }
@@ -111,12 +91,10 @@ public interface InformerConfiguration<R extends HasMetadata, P extends HasMetad
   }
 
   static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
-      InformerConfiguration<R, P> configuration) {
+      InformerConfiguration<R> configuration) {
     return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass())
         .withNamespaces(configuration.getNamespaces())
         .withLabelSelector(configuration.getLabelSelector())
-        .withPrimaryToSecondaryMapper(
-            configuration.getPrimaryToSecondaryMapper())
         .withSecondaryToPrimaryMapper(configuration.getSecondaryToPrimaryMapper());
   }
 }

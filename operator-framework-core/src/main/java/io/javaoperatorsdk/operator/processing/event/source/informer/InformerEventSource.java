@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +13,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
+import io.javaoperatorsdk.operator.processing.MultiResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -62,24 +65,30 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <P> type of the primary resource
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
-    extends ManagedInformerEventSource<R, P, InformerConfiguration<R, P>>
-    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+    extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
+    implements MultiResourceOwner<R, P>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
-  private final InformerConfiguration<R, P> configuration;
+  private final InformerConfiguration<R> configuration;
   // always called from a synchronized method
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
+  // we need direct control for the indexer to propagate the just update resource also to the index
+  private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
 
   public InformerEventSource(
-      InformerConfiguration<R, P> configuration, EventSourceContext<P> context) {
+      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
     super(context.getClient().resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+    primaryToSecondaryIndex =
+        new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
   }
 
-  public InformerEventSource(InformerConfiguration<R, P> configuration, KubernetesClient client) {
+  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+    primaryToSecondaryIndex =
+        new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
   }
 
   @Override
@@ -87,6 +96,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug("On add event received for resource id: {}", ResourceID.fromResource(resource));
     }
+    primaryToSecondaryIndex.onAddOrUpdate(resource);
     onAddOrUpdate("add", resource, () -> InformerEventSource.super.onAdd(resource));
   }
 
@@ -95,8 +105,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug("On update event received for resource id: {}", ResourceID.fromResource(newObject));
     }
+    primaryToSecondaryIndex.onAddOrUpdate(newObject);
     onAddOrUpdate("update", newObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
+  }
+
+  @Override
+  public void onDelete(R resource, boolean b) {
+    if (log.isDebugEnabled()) {
+      log.debug("On delete event received for resource id: {}", ResourceID.fromResource(resource));
+    }
+    primaryToSecondaryIndex.onDelete(resource);
+    super.onDelete(resource, b);
+    propagateEvent(resource);
   }
 
   private synchronized void onAddOrUpdate(String operation, R newObject, Runnable superOnOp) {
@@ -106,7 +127,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       eventRecorder.recordEvent(newObject);
       return;
     }
-    if (temporalCacheHasResourceWithVersionAs(newObject)) {
+    if (temporaryCacheHasResourceWithSameVersionAs(newObject)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
           operation,
@@ -122,13 +143,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  @Override
-  public void onDelete(R resource, boolean b) {
-    if (log.isDebugEnabled()) {
-      log.debug("On delete event received for resource id: {}", ResourceID.fromResource(resource));
-    }
-    super.onDelete(resource, b);
-    propagateEvent(resource);
+  private boolean temporaryCacheHasResourceWithSameVersionAs(R resource) {
+    var resourceID = ResourceID.fromResource(resource);
+    var res = temporaryResourceCache.getResourceFromCache(resourceID);
+    return res.map(r -> {
+      boolean resVersionsEqual = r.getMetadata().getResourceVersion()
+          .equals(resource.getMetadata().getResourceVersion());
+      log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
+          resourceID, resVersionsEqual);
+      return resVersionsEqual;
+    }).orElse(false);
   }
 
   private void propagateEvent(R object) {
@@ -152,20 +176,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         });
   }
 
-  /**
-   * Retrieves the informed resource associated with the specified primary resource as defined by
-   * the function provided when this InformerEventSource was created
-   *
-   * @param resource the primary resource we want to retrieve the associated resource for
-   * @return the informed resource associated with the specified primary resource
-   */
   @Override
-  public Optional<R> getSecondaryResource(P resource) {
-    final var id = configuration.getPrimaryToSecondaryMapper().toSecondaryResourceID(resource);
-    return get(id);
+  public List<R> getSecondaryResources(P primary) {
+    var secondaryIDs =
+        primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
+    return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
+        .collect(Collectors.toList());
   }
 
-  public InformerConfiguration<R, P> getConfiguration() {
+  public InformerConfiguration<R> getConfiguration() {
     return configuration;
   }
 
@@ -183,6 +202,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
+    primaryToSecondaryIndex.onAddOrUpdate(resource);
     if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
       handleRecentResourceOperationAndStopEventRecording(resource);
     } else {

@@ -76,7 +76,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
     return reconcilers().findFirst().orElseThrow();
   }
 
-  public <T extends Reconciler> T getControllerOfType(Class<T> type) {
+  public <T extends Reconciler> T getReconcilerOfType(Class<T> type) {
     return reconcilers()
         .filter(type::isInstance)
         .map(type::cast)

@@ -1,11 +1,16 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.MultiResourceOwner;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -29,8 +34,27 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
+    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
+        .map(
+            es -> {
+              if (es instanceof MultiResourceOwner) {
+                return ((MultiResourceOwner<T, P>) es).getSecondaryResources(primaryResource);
+              } else {
+                return es.getSecondaryResource(primaryResource)
+                    .map(List::of)
+                    .orElse(Collections.emptyList());
+              }
+            })
+        .flatMap(List::stream)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
   public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
-    return controller.getEventSourceManager()
+    return controller
+        .getEventSourceManager()
         .getResourceEventSourceFor(expectedType, eventSourceName)
         .getSecondaryResource(primaryResource);
   }

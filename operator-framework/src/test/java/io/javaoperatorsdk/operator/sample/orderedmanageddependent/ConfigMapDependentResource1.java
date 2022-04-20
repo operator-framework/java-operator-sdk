@@ -9,13 +9,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 @KubernetesDependent(labelSelector = "dependent = cm1")
 public class ConfigMapDependentResource1 extends
-    CRUKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource>
-    implements PrimaryToSecondaryMapper<OrderedManagedDependentCustomResource> {
+    CRUKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
   public ConfigMapDependentResource1() {
     super(ConfigMap.class);
@@ -45,9 +42,4 @@ public class ConfigMapDependentResource1 extends
     return configMap;
   }
 
-  @Override
-  public ResourceID toSecondaryResourceID(OrderedManagedDependentCustomResource primary) {
-    return new ResourceID(primary.getMetadata().getName() + "1",
-        primary.getMetadata().getNamespace());
-  }
 }

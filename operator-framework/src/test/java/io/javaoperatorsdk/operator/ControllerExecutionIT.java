@@ -23,7 +23,7 @@ class ControllerExecutionIT {
 
   @Test
   void configMapGetsCreatedForTestCustomResource() {
-    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
+    operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
     operator.create(TestCustomResource.class, resource);
@@ -35,8 +35,8 @@ class ControllerExecutionIT {
 
   @Test
   void patchesStatusForTestCustomResource() {
-    operator.getControllerOfType(TestReconciler.class).setPatchStatus(true);
-    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
+    operator.getReconcilerOfType(TestReconciler.class).setPatchStatus(true);
+    operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
     operator.create(TestCustomResource.class, resource);
@@ -46,7 +46,7 @@ class ControllerExecutionIT {
 
   @Test
   void eventIsSkippedChangedOnMetadataOnlyUpdate() {
-    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(false);
+    operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(false);
 
     TestCustomResource resource = TestUtils.testCustomResource();
     operator.create(TestCustomResource.class, resource);
@@ -57,7 +57,7 @@ class ControllerExecutionIT {
 
   @Test
   void cleanupExecuted() {
-    operator.getControllerOfType(TestReconciler.class).setUpdateStatus(true);
+    operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
     resource = operator.create(TestCustomResource.class, resource);

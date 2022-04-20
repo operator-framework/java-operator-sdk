@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -130,5 +129,14 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
     return name != null && name.length() > 0
         ? "(" + dependentType.getName() + ", " + name + ")"
         : dependentType.getName();
+  }
+
+  @SuppressWarnings("unchecked")
+  public <S> List<ResourceEventSource<S, R>> getEventSources(Class<S> dependentType) {
+    final var sourcesForType = sources.get(keyFor(dependentType));
+    return sourcesForType.values().stream()
+        .filter(ResourceEventSource.class::isInstance)
+        .map(es -> (ResourceEventSource<S, R>) es)
+        .collect(Collectors.toList());
   }
 }
