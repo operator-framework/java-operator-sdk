@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import io.javaoperatorsdk.operator.processing.event.source.IDProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +46,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
-      Cache<P> resourceCache, long period,
-      Predicate<P> registerPredicate, Class<R> resourceClass) {
-    super(resourceClass);
+                                       Cache<P> resourceCache, long period,
+                                       Predicate<P> registerPredicate, Class<R> resourceClass,
+                                       IDProvider<R> idProvider) {
+    super(resourceClass, idProvider);
     this.resourceFetcher = resourceFetcher;
     this.resourceCache = resourceCache;
     this.period = period;
@@ -58,7 +57,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   private void pollForResource(P resource) {
-    var value = resourceFetcher.fetchResource(resource);
+    var value = resourceFetcher.fetchResources(resource);
     var resourceID = ResourceID.fromResource(resource);
     if (value.isEmpty()) {
       super.handleDelete(resourceID);
@@ -70,7 +69,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private Optional<R> getAndCacheResource(ResourceID resourceID) {
     var resource = resourceCache.get(resourceID);
     if (resource.isPresent()) {
-      var value = resourceFetcher.fetchResource(resource.get());
+      var value = resourceFetcher.fetchResources(resource.get());
       value.ifPresent(v -> cache.put(resourceID, v));
       return value;
     }
@@ -153,7 +152,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   public interface ResourceFetcher<R, P> {
-    Optional<R> fetchResource(P primaryResource);
+    Set<R> fetchResources(P primaryResource);
   }
 
   @Override

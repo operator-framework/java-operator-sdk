@@ -8,7 +8,7 @@ public class CachingInboundEventSource<T, P extends HasMetadata>
     extends ExternalResourceCachingEventSource<T, P> {
 
   public CachingInboundEventSource(Class<T> resourceClass) {
-    super(resourceClass);
+    super(resourceClass, idProvider);
   }
 
   public void handleResourceEvent(T resource, ResourceID relatedResourceID) {
@@ -18,4 +18,5 @@ public class CachingInboundEventSource<T, P extends HasMetadata>
   public void handleResourceDeleteEvent(ResourceID resourceID) {
     super.handleDelete(resourceID);
   }
+
 }

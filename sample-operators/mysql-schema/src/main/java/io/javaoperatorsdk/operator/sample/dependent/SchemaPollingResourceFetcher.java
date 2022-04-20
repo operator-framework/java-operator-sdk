@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.dependent;
 
 import java.util.Optional;
+import java.util.Set;
 
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
@@ -18,7 +19,7 @@ public class SchemaPollingResourceFetcher
   }
 
   @Override
-  public Optional<Schema> fetchResource(MySQLSchema resource) {
-    return schemaService.getSchema(resource.getMetadata().getName());
+  public Set<Schema> fetchResources(MySQLSchema primaryResource) {
+    return null;
   }
 }

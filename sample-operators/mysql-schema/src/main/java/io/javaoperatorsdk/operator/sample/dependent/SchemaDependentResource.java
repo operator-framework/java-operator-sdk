@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,4 +100,8 @@ public class SchemaDependentResource
     return new String(Base64.getDecoder().decode(value.getBytes()));
   }
 
+  @Override
+  public Set<Schema> fetchResources(MySQLSchema primaryResource) {
+    return null;
+  }
 }

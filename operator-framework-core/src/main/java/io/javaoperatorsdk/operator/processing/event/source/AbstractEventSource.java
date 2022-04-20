@@ -4,7 +4,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
 public abstract class AbstractEventSource implements EventSource {
-
   private EventHandler handler;
   private volatile boolean running = false;
 

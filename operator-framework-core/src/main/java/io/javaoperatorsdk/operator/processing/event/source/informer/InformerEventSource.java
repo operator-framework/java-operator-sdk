@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
-import io.javaoperatorsdk.operator.processing.MultiResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -66,7 +65,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
-    implements MultiResourceOwner<R, P>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -190,9 +189,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
-      R previousResourceVersion) {
+      R previousVersionOfResource) {
     handleRecentCreateOrUpdate(resource,
-        () -> super.handleRecentResourceUpdate(resourceID, resource, previousResourceVersion));
+        () -> super.handleRecentResourceUpdate(resourceID, resource, previousVersionOfResource));
   }
 
   @Override

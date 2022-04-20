@@ -5,9 +5,13 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
+import java.util.Optional;
+
 public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>
     extends AbstractPollingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceFetcher<R, P> {
+
+
   public PerResourcePollingDependentResource(Class<R> resourceType) {
     super(resourceType);
   }
@@ -21,5 +25,10 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
       EventSourceContext<P> context) {
     return new PerResourcePollingEventSource<>(this, context.getPrimaryCache(),
         getPollingPeriod(), resourceType());
+  }
+
+  @Override
+  public Optional<R> fetchResource(P primaryResource) {
+    return Optional.empty();
   }
 }
