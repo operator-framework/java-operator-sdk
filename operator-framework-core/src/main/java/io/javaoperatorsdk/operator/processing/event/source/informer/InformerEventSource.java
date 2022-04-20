@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -176,11 +177,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public List<R> getSecondaryResources(P primary) {
+  public Set<R> getSecondaryResources(P primary) {
     var secondaryIDs =
         primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
     return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
   }
 
   public InformerConfiguration<R> getConfiguration() {

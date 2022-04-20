@@ -15,8 +15,6 @@ public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
     this.resourceType = resourceType;
   }
 
-  public abstract Optional<R> fetchResource(P primaryResource);
-
   @Override
   public Class<R> resourceType() {
     return resourceType;

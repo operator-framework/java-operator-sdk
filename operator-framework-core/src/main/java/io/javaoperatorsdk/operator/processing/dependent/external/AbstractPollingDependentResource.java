@@ -1,9 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
+
+import java.util.function.Function;
 
 public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
-    extends AbstractCachingDependentResource<R, P> {
+    extends AbstractCachingDependentResource<R, P> implements IDMapper<R> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;
   private long pollingPeriod;

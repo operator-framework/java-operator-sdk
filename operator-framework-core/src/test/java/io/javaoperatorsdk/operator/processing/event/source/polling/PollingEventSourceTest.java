@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,9 +21,10 @@ class PollingEventSourceTest
     extends
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
-  private Supplier<Map<ResourceID, SampleExternalResource>> supplier = mock(Supplier.class);
-  private PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(supplier, 50, SampleExternalResource.class);
+  private Supplier<Map<ResourceID, Set<SampleExternalResource>>> supplier = mock(Supplier.class);
+  private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
+      new PollingEventSource<>(supplier, 50L, SampleExternalResource.class,
+              (SampleExternalResource er) -> er.getName()+"#"+er.getValue());
 
   @BeforeEach
   public void setup() {
@@ -57,16 +59,16 @@ class PollingEventSourceTest
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
-  private Map<ResourceID, SampleExternalResource> testResponseWithOneValue() {
-    Map<ResourceID, SampleExternalResource> res = new HashMap<>();
-    res.put(testResource1ID(), testResource1());
+  private Map<ResourceID, Set<SampleExternalResource>> testResponseWithOneValue() {
+    Map<ResourceID, Set<SampleExternalResource>> res = new HashMap<>();
+    res.put(testResource1ID(), Set.of(testResource1()));
     return res;
   }
 
-  private Map<ResourceID, SampleExternalResource> testResponseWithTwoValues() {
-    Map<ResourceID, SampleExternalResource> res = new HashMap<>();
-    res.put(testResource1ID(), testResource1());
-    res.put(testResource2ID(), testResource2());
+  private Map<ResourceID, Set<SampleExternalResource>> testResponseWithTwoValues() {
+    Map<ResourceID, Set<SampleExternalResource>> res = new HashMap<>();
+    res.put(testResource1ID(), Set.of(testResource1()));
+    res.put(testResource2ID(), Set.of(testResource2()));
     return res;
   }
 

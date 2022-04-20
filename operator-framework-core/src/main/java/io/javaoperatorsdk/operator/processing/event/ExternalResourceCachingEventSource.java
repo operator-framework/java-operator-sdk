@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -10,10 +11,11 @@ import io.javaoperatorsdk.operator.processing.event.source.*;
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
     extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
-  protected final IDProvider<R> idProvider;
+  protected final IDMapper<R> idProvider;
+  
   protected Map<ResourceID, Map<String,R>> cache = new ConcurrentHashMap<>();
 
-  protected ExternalResourceCachingEventSource(Class<R> resourceClass, IDProvider<R> idProvider) {
+  protected ExternalResourceCachingEventSource(Class<R> resourceClass, IDMapper<R> idProvider) {
     super(resourceClass);
     this.idProvider = idProvider;
   }
@@ -25,7 +27,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var cachedValues = cache.get(primaryID);
     R cachedResource = cachedValues.remove(resourceID);
 
-    if (cache.isEmpty()) {
+    if (cachedValues.isEmpty()) {
       cache.remove(primaryID);
     }
     // we only propagate event if the resource was previously in cache
@@ -38,7 +40,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (!isRunning()) {
       return;
     }
-    var resourceId = idProvider.getID(resource);
+    var resourceId = idProvider.apply(resource);
     var cachedValues = cache.get(primaryID);
     if (cachedValues == null) {
       Map<String,R> values = new HashMap<>();
@@ -58,7 +60,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID primaryID, R resource) {
     var actualValues = cache.get(primaryID);
-    var resourceId = idProvider.getID(resource);
+    var resourceId = idProvider.apply(resource);
     if (actualValues == null) {
       actualValues = new HashMap<>();
       cache.put(primaryID,actualValues);
@@ -73,7 +75,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       R previousVersionOfResource) {
     var actualValues= cache.get(primaryID);
     if (actualValues != null) {
-      var resourceId = idProvider.getID(resource);
+      var resourceId = idProvider.apply(resource);
       R actualResource = actualValues.get(resourceId);
       if (actualResource.equals(previousVersionOfResource)) {
         actualValues.put(resourceId,resource);
@@ -82,8 +84,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   @Override
-  public List<R> getSecondaryResources(P primary) {
-    return new ArrayList<>(cache.get(ResourceID.fromResource(primary)).values());
+  public Set<R> getSecondaryResources(P primary) {
+    return new HashSet<>(cache.get(ResourceID.fromResource(primary)).values());
   }
 
   protected UpdatableCache<R> initCache() {

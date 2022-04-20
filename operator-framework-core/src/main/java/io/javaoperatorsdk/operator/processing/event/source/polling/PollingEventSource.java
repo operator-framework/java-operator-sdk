@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -52,7 +53,7 @@ public class PollingEventSource<R, P extends HasMetadata>
       Supplier<Map<ResourceID, Set<R>>> supplier,
       long period,
       Class<R> resourceClass,
-      IDProvider<R> idProvider) {
+      Function<R,String> idProvider) {
     super(resourceClass, idProvider);
     this.supplierToPoll = supplier;
     this.period = period;
@@ -86,7 +87,7 @@ public class PollingEventSource<R, P extends HasMetadata>
         (primaryID, resourcesMap) -> {
           var newIds =
               values.get(primaryID).stream()
-                  .map(idProvider::getID)
+                  .map(idProvider::apply)
                   .collect(Collectors.toSet());
           resourcesMap.forEach(
               (actualID, actualResource) -> {

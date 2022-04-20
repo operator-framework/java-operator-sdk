@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,10 +37,10 @@ class PerResourcePollingEventSourceTest extends
   public void setup() {
     when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
     when(supplier.fetchResources(any()))
-        .thenReturn(Optional.of(SampleExternalResource.testResource1()));
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
-        SampleExternalResource.class));
+        SampleExternalResource.class,));
   }
 
   @Test
@@ -55,7 +56,7 @@ class PerResourcePollingEventSourceTest extends
   public void registeringTaskOnAPredicate() throws InterruptedException {
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
-        SampleExternalResource.class));
+        SampleExternalResource.class,));
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
