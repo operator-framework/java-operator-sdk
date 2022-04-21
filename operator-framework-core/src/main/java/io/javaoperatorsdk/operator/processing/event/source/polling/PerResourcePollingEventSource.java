@@ -63,7 +63,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     this.registerPredicate = registerPredicate;
   }
 
-  private synchronized Set<R> getAndCacheResource(P primary, boolean fromGetter) {
+  private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
     var values = resourceFetcher.fetchResources(primary);
     handleResourcesUpdate(ResourceID.fromResource(primary), values, !fromGetter);
     fetchedForPrimaries.add(ResourceID.fromResource(primary));
@@ -135,12 +135,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     if (cachedValue != null && !cachedValue.isEmpty()) {
       return new HashSet<>(cachedValue.values());
     } else {
-      synchronized (this) {
-        if (fetchedForPrimaries.contains(primaryID)) {
-          return Collections.emptySet();
-        } else {
-          return getAndCacheResource(primary, true);
-        }
+      if (fetchedForPrimaries.contains(primaryID)) {
+        return Collections.emptySet();
+      } else {
+        return getAndCacheResource(primary, true);
       }
     }
   }

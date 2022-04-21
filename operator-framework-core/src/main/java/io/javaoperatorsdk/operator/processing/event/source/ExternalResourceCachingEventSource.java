@@ -26,22 +26,26 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     this.idMapper = idMapper;
   }
 
-  public synchronized void handleDelete(ResourceID primaryID) {
+  protected synchronized void handleDelete(ResourceID primaryID) {
     var res = cache.remove(primaryID);
     if (res != null) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }
 
-  public synchronized void handleDelete(ResourceID primaryID, String resourceID) {
+  protected synchronized void handleDelete(ResourceID primaryID, String resourceID) {
     handleDelete(primaryID, Set.of(resourceID));
   }
 
-  public synchronized void handleDelete(ResourceID primaryID, R resource) {
+  protected synchronized void handleDeleteResources(ResourceID primaryID, Set<R> resource) {
+    handleDelete(primaryID, resource.stream().map(idMapper).collect(Collectors.toSet()));
+  }
+
+  protected synchronized void handleDelete(ResourceID primaryID, R resource) {
     handleDelete(primaryID, Set.of(idMapper.apply(resource)));
   }
 
-  public synchronized void handleDelete(ResourceID primaryID, Set<String> resourceID) {
+  protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceID) {
     if (!isRunning()) {
       return;
     }
@@ -57,22 +61,22 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
   }
 
-  public synchronized void handleResourcesUpdate(ResourceID primaryID, R actualResource) {
+  protected synchronized void handleResourcesUpdate(ResourceID primaryID, R actualResource) {
     handleResourcesUpdate(primaryID, Set.of(actualResource), true);
   }
 
-  public synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources) {
+  protected synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources) {
     handleResourcesUpdate(primaryID, newResources, true);
   }
 
-  public synchronized void handleResourcesUpdate(Map<ResourceID, Set<R>> allNewResources) {
+  protected synchronized void handleResourcesUpdate(Map<ResourceID, Set<R>> allNewResources) {
     var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k))
         .collect(Collectors.toList());
     toDelete.forEach(this::handleDelete);
     allNewResources.forEach((primaryID, resources) -> handleResourcesUpdate(primaryID, resources));
   }
 
-  public synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources,
+  protected synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources,
       boolean propagateEvent) {
     log.debug("Handling resources update for: {} numberOfResources: {} ", primaryID,
         newResources.size());
