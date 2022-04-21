@@ -3,8 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.external;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 
-import java.util.function.Function;
-
 public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
     extends AbstractCachingDependentResource<R, P> implements IDMapper<R> {
 
@@ -26,5 +24,11 @@ public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
 
   public long getPollingPeriod() {
     return pollingPeriod;
+  }
+
+  // for now dependent resources support event sources only with one owned resource.
+  @Override
+  public String apply(R r) {
+    return IDMapper.singleResourceIDMapper().apply(r);
   }
 }

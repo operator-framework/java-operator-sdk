@@ -21,7 +21,8 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
     this.idProvider = idProvider;
   }
 
-  public PollingDependentResource(Class<R> resourceType, long pollingPeriod, IDMapper<R> idProvider) {
+  public PollingDependentResource(Class<R> resourceType, long pollingPeriod,
+      IDMapper<R> idProvider) {
     super(resourceType, pollingPeriod);
     this.idProvider = idProvider;
   }

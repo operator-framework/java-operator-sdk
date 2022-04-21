@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 

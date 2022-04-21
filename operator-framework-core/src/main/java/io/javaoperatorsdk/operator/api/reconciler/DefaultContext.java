@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,7 +35,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
-        .flatMap(List::stream)
+        .flatMap(Set::stream)
         .collect(Collectors.toSet());
   }
 

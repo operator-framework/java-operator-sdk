@@ -91,14 +91,10 @@ public class SchemaDependentResource
   public Set<Schema> fetchResources(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
       return SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
-              .map(Set::of).orElse(Collections.emptySet());
+          .map(Set::of).orElse(Collections.emptySet());
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying read Schema", e);
     }
   }
 
-  @Override
-  public String getID(Schema resource) {
-    return resource.getName();
-  }
 }

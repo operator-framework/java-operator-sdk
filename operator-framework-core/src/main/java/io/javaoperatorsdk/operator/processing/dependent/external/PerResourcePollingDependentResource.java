@@ -5,8 +5,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
-import java.util.Optional;
-
 public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>
     extends AbstractPollingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceFetcher<R, P> {

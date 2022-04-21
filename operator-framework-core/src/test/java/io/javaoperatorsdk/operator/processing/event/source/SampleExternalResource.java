@@ -20,7 +20,7 @@ public class SampleExternalResource implements Serializable {
     return new SampleExternalResource(NAME_2, DEFAULT_VALUE_2);
   }
 
-  public static ResourceID testResource1ID() {
+  public static ResourceID primaryID1() {
     return new ResourceID(NAME_1, "testns");
   }
 

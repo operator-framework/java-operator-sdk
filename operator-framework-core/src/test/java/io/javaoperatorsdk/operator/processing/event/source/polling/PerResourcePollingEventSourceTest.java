@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -8,9 +9,9 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -40,7 +41,7 @@ class PerResourcePollingEventSourceTest extends
         .thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
-        SampleExternalResource.class,));
+        SampleExternalResource.class));
   }
 
   @Test
@@ -56,7 +57,7 @@ class PerResourcePollingEventSourceTest extends
   public void registeringTaskOnAPredicate() throws InterruptedException {
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
-        SampleExternalResource.class,));
+        SampleExternalResource.class, IDMapper.singleResourceIDMapper()));
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
@@ -73,8 +74,8 @@ class PerResourcePollingEventSourceTest extends
   public void propagateEventOnDeletedResource() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
     when(supplier.fetchResources(any()))
-        .thenReturn(Optional.of(SampleExternalResource.testResource1()))
-        .thenReturn(Optional.empty());
+        .thenReturn(Set.of(SampleExternalResource.testResource1()))
+        .thenReturn(Collections.emptySet());
 
     Thread.sleep(3 * PERIOD);
     verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
@@ -85,16 +86,16 @@ class PerResourcePollingEventSourceTest extends
   public void getsValueFromCacheOrSupplier() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
     when(supplier.fetchResources(any()))
-        .thenReturn(Optional.empty())
-        .thenReturn(Optional.of(SampleExternalResource.testResource1()));
+        .thenReturn(Collections.emptySet())
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     Thread.sleep(PERIOD / 2);
 
-    var value = source.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
+    var value = source.getValueFromCacheOrSupplier(testCustomResource);
 
     Thread.sleep(PERIOD * 2);
 
-    assertThat(value).isPresent();
+    assertThat(value).hasSize(1);
     verify(eventHandler, never()).handleEvent(any());
   }
 

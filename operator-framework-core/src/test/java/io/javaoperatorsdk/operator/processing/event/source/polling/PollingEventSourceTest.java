@@ -24,7 +24,7 @@ class PollingEventSourceTest
   private Supplier<Map<ResourceID, Set<SampleExternalResource>>> supplier = mock(Supplier.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
       new PollingEventSource<>(supplier, 50L, SampleExternalResource.class,
-              (SampleExternalResource er) -> er.getName()+"#"+er.getValue());
+          (SampleExternalResource er) -> er.getName() + "#" + er.getValue());
 
   @BeforeEach
   public void setup() {
@@ -61,13 +61,13 @@ class PollingEventSourceTest
 
   private Map<ResourceID, Set<SampleExternalResource>> testResponseWithOneValue() {
     Map<ResourceID, Set<SampleExternalResource>> res = new HashMap<>();
-    res.put(testResource1ID(), Set.of(testResource1()));
+    res.put(primaryID1(), Set.of(testResource1()));
     return res;
   }
 
   private Map<ResourceID, Set<SampleExternalResource>> testResponseWithTwoValues() {
     Map<ResourceID, Set<SampleExternalResource>> res = new HashMap<>();
-    res.put(testResource1ID(), Set.of(testResource1()));
+    res.put(primaryID1(), Set.of(testResource1()));
     res.put(testResource2ID(), Set.of(testResource2()));
     return res;
   }

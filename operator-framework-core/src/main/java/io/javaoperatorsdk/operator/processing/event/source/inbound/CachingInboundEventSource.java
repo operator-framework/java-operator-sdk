@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.inbound;
 
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -12,12 +14,16 @@ public class CachingInboundEventSource<R, P extends HasMetadata>
     super(resourceClass, idProvider);
   }
 
-  public void handleResourceEvent(R resource, ResourceID primaryID) {
-    super.handleEvent(resource, primaryID);
+  public void handleResourceEvent(ResourceID primaryID, Set<R> resources) {
+    super.handleResourcesUpdate(primaryID, resources);
   }
 
-  public void handleResourceDeleteEvent(ResourceID primaryID,String resourceID) {
-    super.handleDelete(primaryID,resourceID);
+  public void handleResourceEvent(ResourceID primaryID, R resource) {
+    super.handleResourcesUpdate(primaryID, resource);
+  }
+
+  public void handleResourceDeleteEvent(ResourceID primaryID, String resourceID) {
+    super.handleDelete(primaryID, Set.of(resourceID));
   }
 
 }

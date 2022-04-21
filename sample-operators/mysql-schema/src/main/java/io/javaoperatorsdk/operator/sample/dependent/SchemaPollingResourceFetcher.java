@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample.dependent;
 
-import java.util.Optional;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
