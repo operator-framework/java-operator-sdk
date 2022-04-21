@@ -59,7 +59,7 @@
         <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
-        <maven-javadoc-plugin.version>3.3.2</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.4.0</maven-javadoc-plugin.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
