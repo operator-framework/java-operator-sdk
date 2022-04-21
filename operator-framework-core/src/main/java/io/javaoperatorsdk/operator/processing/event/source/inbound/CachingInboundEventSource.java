@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.processing.event.source.inbound;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 
 public class CachingInboundEventSource<R, P extends HasMetadata>

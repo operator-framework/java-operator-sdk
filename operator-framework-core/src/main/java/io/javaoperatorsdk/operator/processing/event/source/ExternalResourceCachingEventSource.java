@@ -1,15 +1,21 @@
-package io.javaoperatorsdk.operator.processing.event;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
-import io.javaoperatorsdk.operator.processing.event.source.*;
+import io.javaoperatorsdk.operator.processing.event.Event;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
     extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
+
+  private static Logger log = LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
 
   protected final IDMapper<R> idMapper;
 
@@ -21,7 +27,10 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   public synchronized void handleDelete(ResourceID primaryID) {
-    cache.remove(primaryID);
+    var res = cache.remove(primaryID);
+    if (res != null) {
+      getEventHandler().handleEvent(new Event(primaryID));
+    }
   }
 
   public synchronized void handleDelete(ResourceID primaryID, String resourceID) {
@@ -49,17 +58,31 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   public synchronized void handleResourcesUpdate(ResourceID primaryID, R actualResource) {
-    handleResourcesUpdate(primaryID, Set.of(actualResource));
+    handleResourcesUpdate(primaryID, Set.of(actualResource), true);
   }
 
   public synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources) {
+    handleResourcesUpdate(primaryID, newResources, true);
+  }
+
+  public synchronized void handleResourcesUpdate(Map<ResourceID, Set<R>> allNewResources) {
+    var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k))
+        .collect(Collectors.toList());
+    toDelete.forEach(this::handleDelete);
+    allNewResources.forEach((primaryID, resources) -> handleResourcesUpdate(primaryID, resources));
+  }
+
+  public synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources,
+      boolean propagateEvent) {
+    log.debug("Handling resources update for: {} numberOfResources: {} ", primaryID,
+        newResources.size());
     if (!isRunning()) {
       return;
     }
     var cachedResources = cache.get(primaryID);
     var newResourcesMap = newResources.stream().collect(Collectors.toMap(idMapper, r -> r));
     cache.put(primaryID, newResourcesMap);
-    if (!newResourcesMap.equals(cachedResources)) {
+    if (propagateEvent && !newResourcesMap.equals(cachedResources)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }

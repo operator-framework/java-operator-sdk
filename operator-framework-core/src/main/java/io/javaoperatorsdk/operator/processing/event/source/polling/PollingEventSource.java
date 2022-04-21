@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 
 /**
@@ -90,7 +90,7 @@ public class PollingEventSource<R, P extends HasMetadata>
 
   protected synchronized void getStateAndFillCache() {
     var values = supplierToPoll.get();
-    values.forEach(this::handleResourcesUpdate);
+    handleResourcesUpdate(values);
   }
 
   @Override

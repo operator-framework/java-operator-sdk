@@ -32,7 +32,7 @@ class PollingEventSourceTest
   }
 
   @Test
-  public void pollsAndProcessesEvents() throws InterruptedException {
+  void pollsAndProcessesEvents() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
     Thread.sleep(100);
@@ -41,7 +41,7 @@ class PollingEventSourceTest
   }
 
   @Test
-  public void propagatesEventForRemovedResources() throws InterruptedException {
+  void propagatesEventForRemovedResources() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
@@ -51,7 +51,7 @@ class PollingEventSourceTest
   }
 
   @Test
-  public void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
+  void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
     when(supplier.get()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
     Thread.sleep(250);
@@ -68,7 +68,7 @@ class PollingEventSourceTest
   private Map<ResourceID, Set<SampleExternalResource>> testResponseWithTwoValues() {
     Map<ResourceID, Set<SampleExternalResource>> res = new HashMap<>();
     res.put(primaryID1(), Set.of(testResource1()));
-    res.put(testResource2ID(), Set.of(testResource2()));
+    res.put(primaryID2(), Set.of(testResource2()));
     return res;
   }
 
