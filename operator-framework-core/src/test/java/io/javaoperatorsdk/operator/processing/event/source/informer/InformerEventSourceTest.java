@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -23,6 +24,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
@@ -30,16 +32,17 @@ class InformerEventSourceTest {
   private static final String NEXT_RESOURCE_VERSION = "2";
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
-  private KubernetesClient clientMock = mock(KubernetesClient.class);
-  private TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
+  private final KubernetesClient clientMock = mock(KubernetesClient.class);
+  private final TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
       mock(TemporaryResourceCache.class);
-  private EventHandler eventHandlerMock = mock(EventHandler.class);
-  private MixedOperation crClientMock = mock(MixedOperation.class);
-  private FilterWatchListMultiDeletable specificResourceClientMock =
+  private final EventHandler eventHandlerMock = mock(EventHandler.class);
+  private final MixedOperation crClientMock = mock(MixedOperation.class);
+  private final FilterWatchListMultiDeletable specificResourceClientMock =
       mock(FilterWatchListMultiDeletable.class);
-  private FilterWatchListDeletable labeledResourceClientMock = mock(FilterWatchListDeletable.class);
-  private SharedIndexInformer informer = mock(SharedIndexInformer.class);
-  private InformerConfiguration<Deployment> informerConfiguration =
+  private final FilterWatchListDeletable labeledResourceClientMock =
+      mock(FilterWatchListDeletable.class);
+  private final SharedIndexInformer informer = mock(SharedIndexInformer.class);
+  private final InformerConfiguration<Deployment> informerConfiguration =
       mock(InformerConfiguration.class);
 
   @BeforeEach
@@ -51,6 +54,8 @@ class InformerEventSourceTest {
     when(labeledResourceClientMock.runnableInformer(0)).thenReturn(informer);
     when(informer.getIndexer()).thenReturn(mock(Indexer.class));
 
+    when(informerConfiguration.getEffectiveNamespaces())
+        .thenReturn(ResourceConfiguration.DEFAULT_NAMESPACES);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
 

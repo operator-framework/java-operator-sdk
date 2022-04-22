@@ -6,6 +6,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -107,6 +108,63 @@ class ControllerConfigurationOverriderTest {
     return new AnnotationControllerConfiguration<>(reconciler);
   }
 
+  @ControllerConfiguration(namespaces = "foo")
+  private static class WatchCurrentReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return null;
+    }
+  }
+
+  @Test
+  void overridingNamespacesShouldWork() {
+    var configuration = createConfiguration(new WatchCurrentReconciler());
+    assertEquals(Set.of("foo"), configuration.getNamespaces());
+    assertFalse(configuration.watchAllNamespaces());
+    assertFalse(configuration.watchCurrentNamespace());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .addingNamespaces("foo", "bar")
+        .build();
+    assertEquals(Set.of("foo", "bar"), configuration.getNamespaces());
+    assertFalse(configuration.watchAllNamespaces());
+    assertFalse(configuration.watchCurrentNamespace());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .removingNamespaces("bar")
+        .build();
+    assertEquals(Set.of("foo"), configuration.getNamespaces());
+    assertFalse(configuration.watchAllNamespaces());
+    assertFalse(configuration.watchCurrentNamespace());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .removingNamespaces("foo")
+        .build();
+    assertTrue(configuration.watchAllNamespaces());
+    assertFalse(configuration.watchCurrentNamespace());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .settingNamespace("foo")
+        .build();
+    assertFalse(configuration.watchAllNamespaces());
+    assertFalse(configuration.watchCurrentNamespace());
+    assertEquals(Set.of("foo"), configuration.getNamespaces());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .watchingOnlyCurrentNamespace()
+        .build();
+    assertFalse(configuration.watchAllNamespaces());
+    assertTrue(configuration.watchCurrentNamespace());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .watchingAllNamespaces()
+        .build();
+    assertTrue(configuration.watchAllNamespaces());
+    assertFalse(configuration.watchCurrentNamespace());
+  }
+
   @Test
   void configuredDependentShouldNotChangeOnParentOverrideEvenWhenInitialConfigIsSame() {
     var configuration = createConfiguration(new OverriddenNSOnDepReconciler());
@@ -140,7 +198,7 @@ class ControllerConfigurationOverriderTest {
     var config = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertEquals(0, config.namespaces().size());
+    assertTrue(ResourceConfiguration.allNamespacesWatched(config.namespaces()));
 
     // override the NS
     final var newNS = "bar";
@@ -160,7 +218,7 @@ class ControllerConfigurationOverriderTest {
     var config = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertEquals(0, config.namespaces().size());
+    assertTrue(ResourceConfiguration.allNamespacesWatched(config.namespaces()));
 
     // override the NS
     final var newNS = "bar";
@@ -169,7 +227,7 @@ class ControllerConfigurationOverriderTest {
 
     // check that dependent config is still configured to watch all NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
-    assertEquals(0, config.namespaces().size());
+    assertTrue(ResourceConfiguration.allNamespacesWatched(config.namespaces()));
   }
 
   @Test
@@ -224,7 +282,8 @@ class ControllerConfigurationOverriderTest {
     final var dependentResourceName = DependentResource.defaultNameFor(ReadOnlyDependent.class);
     assertTrue(dependents.stream().anyMatch(dr -> dr.getName().equals(dependentResourceName)));
 
-    var dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
+    var dependentSpec = dependents.stream()
+        .filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().get();
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
     var maybeConfig = dependentSpec.getDependentResourceConfiguration();
@@ -292,7 +351,7 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @KubernetesDependent(namespaces = KubernetesDependent.WATCH_ALL_NAMESPACES)
+  @KubernetesDependent(namespaces = Constants.WATCH_ALL_NAMESPACES)
   private static class WatchAllNSDependent
       extends KubernetesDependentResource<ConfigMap, ConfigMap> {
 

@@ -37,11 +37,7 @@ public class KubernetesDependentResourceConfig {
   }
 
   public Set<String> namespaces() {
-    if (!namespaces.contains(KubernetesDependent.WATCH_ALL_NAMESPACES)) {
-      return namespaces;
-    } else {
-      return Collections.emptySet();
-    }
+    return namespaces;
   }
 
   public String labelSelector() {

@@ -10,15 +10,18 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
 public interface ResourceConfiguration<R extends HasMetadata> {
 
+  Set<String> DEFAULT_NAMESPACES = Set.of(Constants.WATCH_ALL_NAMESPACES);
+  Set<String> CURRENT_NAMESPACE_ONLY = Set.of(Constants.WATCH_CURRENT_NAMESPACE);
+
   default String getResourceTypeName() {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
   /**
    * Retrieves the label selector that is used to filter which resources are actually watched by the
-   * associated event source. See
-   * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more details on
-   * syntax.
+   * associated event source. See the official documentation on the
+   * <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">topic</a>
+   * for more details on syntax.
    *
    * @return the label selector filtering watched resources
    */
@@ -32,7 +35,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   default Set<String> getNamespaces() {
-    return Collections.emptySet();
+    return DEFAULT_NAMESPACES;
   }
 
   default boolean watchAllNamespaces() {
@@ -40,7 +43,8 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   static boolean allNamespacesWatched(Set<String> namespaces) {
-    return namespaces == null || namespaces.isEmpty();
+    failIfNotValid(namespaces);
+    return DEFAULT_NAMESPACES.equals(namespaces);
   }
 
   default boolean watchCurrentNamespace() {
@@ -48,9 +52,24 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   static boolean currentNamespaceWatched(Set<String> namespaces) {
-    return namespaces != null
-        && namespaces.size() == 1
-        && namespaces.contains(Constants.WATCH_CURRENT_NAMESPACE);
+    failIfNotValid(namespaces);
+    return CURRENT_NAMESPACE_ONLY.equals(namespaces);
+  }
+
+  static void failIfNotValid(Set<String> namespaces) {
+    if (namespaces != null && !namespaces.isEmpty()) {
+      final var present = namespaces.contains(Constants.WATCH_CURRENT_NAMESPACE)
+          || namespaces.contains(Constants.WATCH_ALL_NAMESPACES);
+      if (!present || namespaces.size() == 1) {
+        return;
+      }
+    }
+
+    throw new IllegalArgumentException(
+        "Must specify namespaces. To watch all namespaces, use only '"
+            + Constants.WATCH_ALL_NAMESPACES
+            + "'. To watch only the namespace in which the operator is deployed, use only '"
+            + Constants.WATCH_CURRENT_NAMESPACE + "'");
   }
 
   /**
