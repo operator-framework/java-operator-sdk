@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 
 public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
-    extends AbstractCachingDependentResource<R, P> {
+    extends AbstractCachingDependentResource<R, P> implements CacheKeyMapper<R> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;
   private long pollingPeriod;
@@ -23,5 +24,11 @@ public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
 
   public long getPollingPeriod() {
     return pollingPeriod;
+  }
+
+  // for now dependent resources support event sources only with one owned resource.
+  @Override
+  public String keyFor(R resource) {
+    return CacheKeyMapper.singleResourceCacheKeyMapper().keyFor(resource);
   }
 }

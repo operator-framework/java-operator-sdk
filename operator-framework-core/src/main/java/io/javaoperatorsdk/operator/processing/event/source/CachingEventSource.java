@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <R> represents the type of resources (usually external non-kubernetes ones) being handled.
  */
 public abstract class CachingEventSource<R, P extends HasMetadata>
-    extends AbstractResourceEventSource<P, R> implements Cache<R> {
+    extends AbstractResourceEventSource<R, P> implements Cache<R> {
 
   protected UpdatableCache<R> cache;
 
@@ -43,12 +43,9 @@ public abstract class CachingEventSource<R, P extends HasMetadata>
     return cache.list(predicate);
   }
 
-  protected UpdatableCache<R> initCache() {
-    return new ConcurrentHashMapCache<>();
-  }
-
   public Optional<R> getCachedValue(ResourceID resourceID) {
     return cache.get(resourceID);
   }
 
+  protected abstract UpdatableCache<R> initCache();
 }

@@ -74,9 +74,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
-      R previousResourceVersion) {
+      R previousVersionOfResource) {
     temporaryResourceCache.putUpdatedResource(resource,
-        previousResourceVersion.getMetadata().getResourceVersion());
+        previousVersionOfResource.getMetadata().getResourceVersion());
   }
 
   @Override

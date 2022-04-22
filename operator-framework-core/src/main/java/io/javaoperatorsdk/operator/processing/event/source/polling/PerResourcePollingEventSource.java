@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
@@ -12,10 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 /**
@@ -41,40 +39,36 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final Cache<P> resourceCache;
   private final Predicate<P> registerPredicate;
   private final long period;
+  private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
-    this(resourceFetcher, resourceCache, period, null, resourceClass);
+    this(resourceFetcher, resourceCache, period, null, resourceClass,
+        CacheKeyMapper.singleResourceCacheKeyMapper());
+  }
+
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+      Cache<P> resourceCache, long period, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    this(resourceFetcher, resourceCache, period, null, resourceClass, cacheKeyMapper);
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
-      Predicate<P> registerPredicate, Class<R> resourceClass) {
-    super(resourceClass);
+      Predicate<P> registerPredicate, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, cacheKeyMapper);
     this.resourceFetcher = resourceFetcher;
     this.resourceCache = resourceCache;
     this.period = period;
     this.registerPredicate = registerPredicate;
   }
 
-  private void pollForResource(P resource) {
-    var value = resourceFetcher.fetchResource(resource);
-    var resourceID = ResourceID.fromResource(resource);
-    if (value.isEmpty()) {
-      super.handleDelete(resourceID);
-    } else {
-      super.handleEvent(value.get(), resourceID);
-    }
-  }
-
-  private Optional<R> getAndCacheResource(ResourceID resourceID) {
-    var resource = resourceCache.get(resourceID);
-    if (resource.isPresent()) {
-      var value = resourceFetcher.fetchResource(resource.get());
-      value.ifPresent(v -> cache.put(resourceID, v));
-      return value;
-    }
-    return Optional.empty();
+  private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
+    var values = resourceFetcher.fetchResources(primary);
+    handleResources(ResourceID.fromResource(primary), values, !fromGetter);
+    fetchedForPrimaries.add(ResourceID.fromResource(primary));
+    return values;
   }
 
   @Override
@@ -95,7 +89,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
       log.debug("Canceling task for resource: {}", resource);
       task.cancel();
     }
-    cache.remove(resourceID);
+    handleDelete(resourceID);
+    fetchedForPrimaries.remove(resourceID);
   }
 
   // This method is always called from the same Thread for the same resource,
@@ -103,24 +98,27 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   // important
   // because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
-    var resourceID = ResourceID.fromResource(resource);
-    if (timerTasks.get(resourceID) == null && (registerPredicate == null
+    var primaryID = ResourceID.fromResource(resource);
+    if (timerTasks.get(primaryID) == null && (registerPredicate == null
         || registerPredicate.test(resource))) {
-      var task = new TimerTask() {
-        @Override
-        public void run() {
-          if (!isRunning()) {
-            log.debug("Event source not yet started. Will not run for: {}", resourceID);
-            return;
-          }
-          // always use up-to-date resource from cache
-          var res = resourceCache.get(resourceID);
-          res.ifPresentOrElse(r -> pollForResource(r),
-              () -> log.warn("No resource in cache for resource ID: {}", resourceID));
-        }
-      };
-      timerTasks.put(resourceID, task);
-      timer.schedule(task, 0, period);
+      var task =
+          new TimerTask() {
+            @Override
+            public void run() {
+              if (!isRunning()) {
+                log.debug("Event source not yet started. Will not run for: {}", primaryID);
+                return;
+              }
+              // always use up-to-date resource from cache
+              var res = resourceCache.get(primaryID);
+              res.ifPresentOrElse(p -> getAndCacheResource(p, false),
+                  () -> log.warn("No resource in cache for resource ID: {}", primaryID));
+            }
+          };
+      timerTasks.put(primaryID, task);
+      // there is a delay, to not do two fetches when the resources first appeared
+      // and getSecondaryResource is called on reconciliation.
+      timer.schedule(task, period, period);
     }
   }
 
@@ -132,28 +130,22 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
    * @return the related resource for this event source
    */
   @Override
-  public Optional<R> getSecondaryResource(P primary) {
-    return getValueFromCacheOrSupplier(ResourceID.fromResource(primary));
-  }
-
-  /**
-   *
-   * @param resourceID of the target related resource
-   * @return the cached value of the resource, if not present it gets the resource from the
-   *         supplier. The value provided from the supplier is cached, but no new event is
-   *         propagated.
-   */
-  public Optional<R> getValueFromCacheOrSupplier(ResourceID resourceID) {
-    var cachedValue = getCachedValue(resourceID);
-    if (cachedValue.isPresent()) {
-      return cachedValue;
+  public Set<R> getSecondaryResources(P primary) {
+    var primaryID = ResourceID.fromResource(primary);
+    var cachedValue = cache.get(primaryID);
+    if (cachedValue != null && !cachedValue.isEmpty()) {
+      return new HashSet<>(cachedValue.values());
     } else {
-      return getAndCacheResource(resourceID);
+      if (fetchedForPrimaries.contains(primaryID)) {
+        return Collections.emptySet();
+      } else {
+        return getAndCacheResource(primary, true);
+      }
     }
   }
 
   public interface ResourceFetcher<R, P> {
-    Optional<R> fetchResource(P primaryResource);
+    Set<R> fetchResources(P primaryResource);
   }
 
   @Override

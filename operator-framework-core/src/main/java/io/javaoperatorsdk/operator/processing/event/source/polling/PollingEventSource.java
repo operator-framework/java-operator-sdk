@@ -1,33 +1,33 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
 /**
  * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
- * instead to calls supplier periodically and independently of the number of state of custom
- * resources managed by the operator. It is called on start (synced). This means that when the
- * reconciler first time executed on startup a poll already happened before. So if the cache does
- * not contain the target resource it means it is not created yet or was deleted while an operator
- * was not running.
+ * instead to calls supplier periodically and independently of the number or state of custom
+ * resources managed by the controller. It is called on start (synced). This means that when the
+ * reconciler first time executed on startup the first poll already happened before. So if the cache
+ * does not contain the target resource it means it is not created yet or was deleted while an
+ * operator was not running.
  *
  * <p>
  * Another caveat with this is if the cached object is checked in the reconciler and created since
  * not in the cache it should be manually added to the cache, since it can happen that the
  * reconciler is triggered before the cache is propagated with the new resource from a scheduled
- * execution. See {@link #put(ResourceID, Object)} method. So the generic workflow in reconciler
- * should be:
+ * execution. See {@link #handleRecentResourceCreate(ResourceID, Object)} and update method. So the
+ * generic workflow in reconciler should be:
  *
  * <ul>
  * <li>Check if the cache contains the resource.
@@ -46,13 +46,25 @@ public class PollingEventSource<R, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
   private final Timer timer = new Timer();
-  private final Supplier<Map<ResourceID, R>> supplierToPoll;
+  private final GenericResourceFetcher<R> genericResourceFetcher;
   private final long period;
 
-  public PollingEventSource(Supplier<Map<ResourceID, R>> supplier,
-      long period, Class<R> resourceClass) {
-    super(resourceClass);
-    this.supplierToPoll = supplier;
+  public PollingEventSource(
+      GenericResourceFetcher<R> supplier,
+      long period,
+      Class<R> resourceClass) {
+    super(resourceClass, CacheKeyMapper.singleResourceCacheKeyMapper());
+    this.genericResourceFetcher = supplier;
+    this.period = period;
+  }
+
+  public PollingEventSource(
+      GenericResourceFetcher<R> supplier,
+      long period,
+      Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, cacheKeyMapper);
+    this.genericResourceFetcher = supplier;
     this.period = period;
   }
 
@@ -75,30 +87,19 @@ public class PollingEventSource<R, P extends HasMetadata>
         period);
   }
 
-  protected void getStateAndFillCache() {
-    var values = supplierToPoll.get();
-    values.forEach((k, v) -> super.handleEvent(v, k));
-    cache.keys().filter(e -> !values.containsKey(e)).forEach(super::handleDelete);
+  protected synchronized void getStateAndFillCache() {
+    var values = genericResourceFetcher.fetchResources();
+    handleResources(values);
   }
 
-  public void put(ResourceID key, R resource) {
-    cache.put(key, resource);
+
+  public interface GenericResourceFetcher<R> {
+    Map<ResourceID, Set<R>> fetchResources();
   }
 
   @Override
   public void stop() throws OperatorException {
     super.stop();
     timer.cancel();
-  }
-
-  /**
-   * See {@link PerResourcePollingEventSource} for more info.
-   *
-   * @param primary custom resource
-   * @return related resource
-   */
-  @Override
-  public Optional<R> getSecondaryResource(P primary) {
-    return getCachedValue(ResourceID.fromResource(primary));
   }
 }

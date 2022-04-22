@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.sample.dependent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Base64;
-import java.util.Optional;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,19 +83,18 @@ public class SchemaDependentResource
     }
   }
 
+  public static String decode(String value) {
+    return new String(Base64.getDecoder().decode(value.getBytes()));
+  }
+
   @Override
-  public Optional<Schema> fetchResource(MySQLSchema primaryResource) {
+  public Set<Schema> fetchResources(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
-      var schema =
-          SchemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);
-      return Optional.ofNullable(schema);
+      return SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
+          .map(Set::of).orElse(Collections.emptySet());
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying read Schema", e);
     }
-  }
-
-  public static String decode(String value) {
-    return new String(Base64.getDecoder().decode(value.getBytes()));
   }
 
 }

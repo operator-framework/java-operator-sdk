@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
-import io.javaoperatorsdk.operator.processing.event.ExternalResourceCachingEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
 public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
     extends
@@ -14,8 +14,6 @@ public abstract class AbstractCachingDependentResource<R, P extends HasMetadata>
   protected AbstractCachingDependentResource(Class<R> resourceType) {
     this.resourceType = resourceType;
   }
-
-  public abstract Optional<R> fetchResource(P primaryResource);
 
   @Override
   public Class<R> resourceType() {

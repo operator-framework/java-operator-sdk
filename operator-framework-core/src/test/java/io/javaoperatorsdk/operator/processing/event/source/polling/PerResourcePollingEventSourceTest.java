@@ -1,15 +1,17 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -35,66 +37,96 @@ class PerResourcePollingEventSourceTest extends
   @BeforeEach
   public void setup() {
     when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
-    when(supplier.fetchResource(any()))
-        .thenReturn(Optional.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any()))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
-        SampleExternalResource.class));
+        SampleExternalResource.class, r -> r.getName() + "#" + r.getValue()));
   }
 
   @Test
-  public void pollsTheResourceAfterAwareOfIt() throws InterruptedException {
+  void pollsTheResourceAfterAwareOfIt() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
 
     Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).fetchResource(eq(testCustomResource));
+    verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
   @Test
-  public void registeringTaskOnAPredicate() throws InterruptedException {
+  void registeringTaskOnAPredicate() throws InterruptedException {
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
-        SampleExternalResource.class));
+        SampleExternalResource.class, CacheKeyMapper.singleResourceCacheKeyMapper()));
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
-    verify(supplier, times(0)).fetchResource(eq(testCustomResource));
+    verify(supplier, times(0)).fetchResources(eq(testCustomResource));
     testCustomResource.getMetadata().setGeneration(2L);
     source.onResourceUpdated(testCustomResource, testCustomResource);
 
     Thread.sleep(2 * PERIOD);
 
-    verify(supplier, atLeast(1)).fetchResource(eq(testCustomResource));
+    verify(supplier, atLeast(1)).fetchResources(eq(testCustomResource));
   }
 
   @Test
-  public void propagateEventOnDeletedResource() throws InterruptedException {
+  void propagateEventOnDeletedResource() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
-    when(supplier.fetchResource(any()))
-        .thenReturn(Optional.of(SampleExternalResource.testResource1()))
-        .thenReturn(Optional.empty());
+    when(supplier.fetchResources(any()))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()))
+        .thenReturn(Collections.emptySet());
 
     Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).fetchResource(eq(testCustomResource));
+    verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
   @Test
-  public void getsValueFromCacheOrSupplier() throws InterruptedException {
+  void getSecondaryResourceInitiatesFetchJustForFirstTime() throws InterruptedException {
     source.onResourceCreated(testCustomResource);
-    when(supplier.fetchResource(any()))
-        .thenReturn(Optional.empty())
-        .thenReturn(Optional.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any()))
+        .thenReturn(Set.of(SampleExternalResource.testResource1()))
+        .thenReturn(
+            Set.of(SampleExternalResource.testResource1(), SampleExternalResource.testResource2()));
 
-    Thread.sleep(PERIOD / 2);
+    var value = source.getSecondaryResources(testCustomResource);
 
-    var value = source.getValueFromCacheOrSupplier(ResourceID.fromResource(testCustomResource));
+    verify(supplier, times(1)).fetchResources(eq(testCustomResource));
+    verify(eventHandler, never()).handleEvent(any());
+    assertThat(value).hasSize(1);
+
+    value = source.getSecondaryResources(testCustomResource);
+
+    assertThat(value).hasSize(1);
+    verify(supplier, times(1)).fetchResources(eq(testCustomResource));
+    verify(eventHandler, never()).handleEvent(any());
 
     Thread.sleep(PERIOD * 2);
 
-    assertThat(value).isPresent();
-    verify(eventHandler, never()).handleEvent(any());
+    verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
+    value = source.getSecondaryResources(testCustomResource);
+    assertThat(value).hasSize(2);
+  }
+
+  @Test
+  void getsValueFromCacheOrSupplier() throws InterruptedException {
+    source.onResourceCreated(testCustomResource);
+    when(supplier.fetchResources(any()))
+        .thenReturn(Collections.emptySet())
+        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    Thread.sleep(PERIOD / 2);
+
+    var value = source.getSecondaryResources(testCustomResource);
+    verify(eventHandler, times(0)).handleEvent(any());
+    assertThat(value).hasSize(0);
+
+    Thread.sleep(PERIOD * 2);
+
+    value = source.getSecondaryResources(testCustomResource);
+    assertThat(value).hasSize(1);
+    verify(eventHandler, times(1)).handleEvent(any());
   }
 
 }

@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
-import io.javaoperatorsdk.operator.processing.MultiResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -66,7 +65,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
-    implements MultiResourceOwner<R, P>, ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -177,11 +176,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public List<R> getSecondaryResources(P primary) {
+  public Set<R> getSecondaryResources(P primary) {
     var secondaryIDs =
         primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
     return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
   }
 
   public InformerConfiguration<R> getConfiguration() {
@@ -190,9 +189,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
-      R previousResourceVersion) {
+      R previousVersionOfResource) {
     handleRecentCreateOrUpdate(resource,
-        () -> super.handleRecentResourceUpdate(resourceID, resource, previousResourceVersion));
+        () -> super.handleRecentResourceUpdate(resourceID, resource, previousVersionOfResource));
   }
 
   @Override
