@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -9,8 +11,6 @@ import io.javaoperatorsdk.operator.junit.OperatorExtension;
 import io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection.DependentGarbageCollectionTestCustomResource;
 import io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection.DependentGarbageCollectionTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection.DependentGarbageCollectionTestReconciler;
-
-import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
