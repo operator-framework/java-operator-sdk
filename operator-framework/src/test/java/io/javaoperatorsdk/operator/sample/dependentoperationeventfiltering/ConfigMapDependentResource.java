@@ -5,12 +5,10 @@ import java.util.HashMap;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapDependentResource extends
-    io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource<ConfigMap, DependentOperationEventFilterCustomResource>
-    implements
-    io.javaoperatorsdk.operator.processing.dependent.Creator<ConfigMap, DependentOperationEventFilterCustomResource>,
-    io.javaoperatorsdk.operator.processing.dependent.Updater<ConfigMap, DependentOperationEventFilterCustomResource> {
+    CRUDKubernetesDependentResource<ConfigMap, DependentOperationEventFilterCustomResource> {
 
   public static final String KEY = "key1";
 
