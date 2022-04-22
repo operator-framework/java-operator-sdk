@@ -48,15 +48,16 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
-      Cache<P> resourceCache, long period, Class<R> resourceClass, CacheKeyMapper<R> idProvider) {
-    this(resourceFetcher, resourceCache, period, null, resourceClass, idProvider);
+      Cache<P> resourceCache, long period, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    this(resourceFetcher, resourceCache, period, null, resourceClass, cacheKeyMapper);
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
       Predicate<P> registerPredicate, Class<R> resourceClass,
-      CacheKeyMapper<R> idProvider) {
-    super(resourceClass, idProvider);
+      CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, cacheKeyMapper);
     this.resourceFetcher = resourceFetcher;
     this.resourceCache = resourceCache;
     this.period = period;

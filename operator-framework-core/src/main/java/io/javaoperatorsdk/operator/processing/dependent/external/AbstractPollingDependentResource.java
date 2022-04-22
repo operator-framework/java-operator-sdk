@@ -28,7 +28,7 @@ public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
 
   // for now dependent resources support event sources only with one owned resource.
   @Override
-  public String keyFor(R r) {
-    return CacheKeyMapper.singleResourceCacheKeyMapper().keyFor(r);
+  public String keyFor(R resource) {
+    return CacheKeyMapper.singleResourceCacheKeyMapper().keyFor(resource);
   }
 }
