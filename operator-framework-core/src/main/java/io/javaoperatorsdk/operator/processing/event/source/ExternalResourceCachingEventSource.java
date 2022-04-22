@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * <p>
  * There are two related concepts to understand:
  * <ul>
- * <li>IDMapper - maps or in other words extracts a id from the resources</li>
+ * <li>CacheKeyMapper - maps/extracts a key used to reference the associated resource in the cache</li>
  * <li>Object equals usage - compares if the two resources are the same or same version.</li>
  * </ul>
  *
