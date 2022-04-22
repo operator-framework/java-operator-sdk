@@ -10,10 +10,12 @@ import io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection.D
 import io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection.DependentGarbageCollectionTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection.DependentGarbageCollectionTestReconciler;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class KubernetesDependentGarbageCollectionIT {
+class KubernetesDependentGarbageCollectionIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
   @RegisterExtension
@@ -41,7 +43,7 @@ public class KubernetesDependentGarbageCollectionIT {
 
     operator.delete(DependentGarbageCollectionTestCustomResource.class, createdResources);
 
-    await().untilAsserted(() -> {
+    await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
       ConfigMap cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(cm).isNull();
     });
