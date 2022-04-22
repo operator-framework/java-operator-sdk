@@ -9,7 +9,7 @@ public interface IDMapper<R> extends Function<R, String> {
    * {@link ExternalResourceCachingEventSource}
    *
    * @return static id mapper, all resources are mapped for same id.
-   * @param <T>
+   * @param <T> secondary resource type
    */
   static <T> IDMapper<T> singleResourceIDMapper() {
     return r -> "id";
