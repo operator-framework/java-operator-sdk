@@ -5,7 +5,7 @@ public interface IDMapper<R> {
   String getID(R var1);
 
   /**
-   * Used If a polling event source handles only single secondary resource. See also docs for:
+   * Used if a polling event source handles only single secondary resource. See also docs for:
    * {@link ExternalResourceCachingEventSource}
    *
    * @return static id mapper, all resources are mapped for same id.
