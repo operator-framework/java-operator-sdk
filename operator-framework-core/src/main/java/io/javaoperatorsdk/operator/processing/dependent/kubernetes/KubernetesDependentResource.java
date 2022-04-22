@@ -117,10 +117,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    if (!addOwnerReference()) {
-      var resource = getSecondaryResource(primary);
-      resource.ifPresent(r -> client.resource(r).delete());
-    }
+    var resource = getSecondaryResource(primary);
+    resource.ifPresent(r -> client.resource(r).delete());
   }
 
   @SuppressWarnings("unchecked")
