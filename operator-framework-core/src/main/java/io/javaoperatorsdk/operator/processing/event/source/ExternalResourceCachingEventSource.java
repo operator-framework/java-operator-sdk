@@ -18,14 +18,16 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * <p>
  * There are two related concepts to understand:
  * <ul>
- * <li>CacheKeyMapper - maps/extracts a key used to reference the associated resource in the cache</li>
- * <li>Object equals usage - compares if the two resources are the same or same version.</li>
+ * <li>{@link CacheKeyMapper} - maps/extracts a key used to reference the associated resource in the
+ * cache</li>
+ * <li>External resources <strong>must</strong> properly implement {@link Object#equals(Object)} as
+ * the cache uses {@code equals} to check if the resource has changed</li>
  * </ul>
- *
- * When a resource is added for a primary resource its key is used to put in a map. Equals is used
- * to compare if it's still the same resource, or an updated version of it. Event is emitted only if
- * a new resource(s) is received or actually updated or deleted. Delete is detected by a missing
- * key.
+ * <p>
+ * When a resource is added for a primary resource its key is used to put in a map.
+ * {@link Object#equals(Object)} is used to compare if it's still the same resource, or an updated
+ * version of it. Event is emitted only if a new resource(s) is received or actually updated or
+ * deleted. Delete is detected by a missing key.
  *
  * @param <R> type of polled external secondary resource
  * @param <P> primary resource
@@ -33,7 +35,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
     extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
-  private static Logger log = LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
 
   protected final CacheKeyMapper<R> cacheKeyMapper;
 
@@ -89,7 +92,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k))
         .collect(Collectors.toList());
     toDelete.forEach(this::handleDelete);
-    allNewResources.forEach((primaryID, resources) -> handleResources(primaryID, resources));
+    allNewResources.forEach(this::handleResources);
   }
 
   protected synchronized void handleResources(ResourceID primaryID, Set<R> newResources,
