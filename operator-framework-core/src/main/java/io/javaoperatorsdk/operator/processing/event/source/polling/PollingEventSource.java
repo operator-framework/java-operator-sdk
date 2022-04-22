@@ -53,7 +53,7 @@ public class PollingEventSource<R, P extends HasMetadata>
       GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass) {
-    super(resourceClass, CacheKeyMapper.singleResourceIDMapper());
+    super(resourceClass, CacheKeyMapper.singleResourceCacheKeyMapper());
     this.genericResourceFetcher = supplier;
     this.period = period;
   }

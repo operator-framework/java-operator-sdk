@@ -11,7 +11,7 @@ public interface CacheKeyMapper<R> {
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
    */
-  static <T> CacheKeyMapper<T> singleResourceIDMapper() {
+  static <T> CacheKeyMapper<T> singleResourceCacheKeyMapper() {
     return r -> "id";
   }
 

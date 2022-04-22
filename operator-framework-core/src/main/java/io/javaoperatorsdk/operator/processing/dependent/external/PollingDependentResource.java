@@ -10,23 +10,23 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
     extends AbstractPollingDependentResource<R, P>
     implements PollingEventSource.GenericResourceFetcher<R> {
 
-  private final CacheKeyMapper<R> idProvider;
+  private final CacheKeyMapper<R> cacheKeyMapper;
 
-  public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R> idProvider) {
+  public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceType);
-    this.idProvider = idProvider;
+    this.cacheKeyMapper = cacheKeyMapper;
   }
 
   public PollingDependentResource(Class<R> resourceType, long pollingPeriod,
-      CacheKeyMapper<R> idProvider) {
+      CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceType, pollingPeriod);
-    this.idProvider = idProvider;
+    this.cacheKeyMapper = cacheKeyMapper;
   }
 
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
-    return new PollingEventSource<>(this, getPollingPeriod(), resourceType(), idProvider);
+    return new PollingEventSource<>(this, getPollingPeriod(), resourceType(), cacheKeyMapper);
   }
 
 }

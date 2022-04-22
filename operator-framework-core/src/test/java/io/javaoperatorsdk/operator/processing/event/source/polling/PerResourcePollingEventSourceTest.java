@@ -57,7 +57,7 @@ class PerResourcePollingEventSourceTest extends
   void registeringTaskOnAPredicate() throws InterruptedException {
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
-        SampleExternalResource.class, CacheKeyMapper.singleResourceIDMapper()));
+        SampleExternalResource.class, CacheKeyMapper.singleResourceCacheKeyMapper()));
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 
