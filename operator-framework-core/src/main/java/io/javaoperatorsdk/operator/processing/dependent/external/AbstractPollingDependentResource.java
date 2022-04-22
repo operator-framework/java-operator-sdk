@@ -28,7 +28,7 @@ public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
 
   // for now dependent resources support event sources only with one owned resource.
   @Override
-  public String apply(R r) {
-    return IDMapper.singleResourceIDMapper().apply(r);
+  public String getID(R r) {
+    return IDMapper.singleResourceIDMapper().getID(r);
   }
 }

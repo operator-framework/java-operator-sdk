@@ -52,11 +52,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected synchronized void handleDeletes(ResourceID primaryID, Set<R> resource) {
-    handleDelete(primaryID, resource.stream().map(idMapper).collect(Collectors.toSet()));
+    handleDelete(primaryID, resource.stream().map(idMapper::getID).collect(Collectors.toSet()));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, R resource) {
-    handleDelete(primaryID, Set.of(idMapper.apply(resource)));
+    handleDelete(primaryID, Set.of(idMapper.getID(resource)));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceID) {
@@ -98,7 +98,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return;
     }
     var cachedResources = cache.get(primaryID);
-    var newResourcesMap = newResources.stream().collect(Collectors.toMap(idMapper, r -> r));
+    var newResourcesMap = newResources.stream().collect(Collectors.toMap(idMapper::getID, r -> r));
     cache.put(primaryID, newResourcesMap);
     if (propagateEvent && !newResourcesMap.equals(cachedResources)) {
       getEventHandler().handleEvent(new Event(primaryID));
@@ -108,7 +108,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID primaryID, R resource) {
     var actualValues = cache.get(primaryID);
-    var resourceId = idMapper.apply(resource);
+    var resourceId = idMapper.getID(resource);
     if (actualValues == null) {
       actualValues = new HashMap<>();
       cache.put(primaryID, actualValues);
@@ -123,7 +123,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       ResourceID primaryID, R resource, R previousVersionOfResource) {
     var actualValues = cache.get(primaryID);
     if (actualValues != null) {
-      var resourceId = idMapper.apply(resource);
+      var resourceId = idMapper.getID(resource);
       R actualResource = actualValues.get(resourceId);
       if (actualResource.equals(previousVersionOfResource)) {
         actualValues.put(resourceId, resource);

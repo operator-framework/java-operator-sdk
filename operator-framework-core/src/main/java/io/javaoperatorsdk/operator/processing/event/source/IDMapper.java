@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.function.Function;
+public interface IDMapper<R> {
 
-public interface IDMapper<R> extends Function<R, String> {
+  String getID(R var1);
 
   /**
    * Used If a polling event source handles only single secondary resource. See also docs for:
