@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
 public class CachingInboundEventSource<R, P extends HasMetadata>
     extends ExternalResourceCachingEventSource<R, P> {
 
-  public CachingInboundEventSource(Class<R> resourceClass, CacheKeyMapper<R> idProvider) {
-    super(resourceClass, idProvider);
+  public CachingInboundEventSource(Class<R> resourceClass, CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, cacheKeyMapper);
   }
 
   public void handleResourceEvent(ResourceID primaryID, Set<R> resources) {
