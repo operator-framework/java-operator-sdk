@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-public interface IDMapper<R> {
+public interface CacheKeyMapper<R> {
 
-  String getID(R var1);
+  String keyFor(R var1);
 
   /**
    * Used if a polling event source handles only single secondary resource. See also docs for:
@@ -11,7 +11,7 @@ public interface IDMapper<R> {
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
    */
-  static <T> IDMapper<T> singleResourceIDMapper() {
+  static <T> CacheKeyMapper<T> singleResourceIDMapper() {
     return r -> "id";
   }
 

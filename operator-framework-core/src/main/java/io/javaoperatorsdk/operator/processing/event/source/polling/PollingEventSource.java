@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 
 /**
  * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
@@ -53,7 +53,7 @@ public class PollingEventSource<R, P extends HasMetadata>
       GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass) {
-    super(resourceClass, IDMapper.singleResourceIDMapper());
+    super(resourceClass, CacheKeyMapper.singleResourceIDMapper());
     this.genericResourceFetcher = supplier;
     this.period = period;
   }
@@ -62,8 +62,8 @@ public class PollingEventSource<R, P extends HasMetadata>
       GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass,
-      IDMapper<R> idMapper) {
-    super(resourceClass, idMapper);
+      CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, cacheKeyMapper);
     this.genericResourceFetcher = supplier;
     this.period = period;
   }

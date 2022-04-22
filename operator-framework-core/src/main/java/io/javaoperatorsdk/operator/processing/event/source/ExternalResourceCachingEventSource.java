@@ -35,13 +35,14 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   private static Logger log = LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
 
-  protected final IDMapper<R> idMapper;
+  protected final CacheKeyMapper<R> cacheKeyMapper;
 
   protected Map<ResourceID, Map<String, R>> cache = new ConcurrentHashMap<>();
 
-  protected ExternalResourceCachingEventSource(Class<R> resourceClass, IDMapper<R> idMapper) {
+  protected ExternalResourceCachingEventSource(Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceClass);
-    this.idMapper = idMapper;
+    this.cacheKeyMapper = cacheKeyMapper;
   }
 
   protected synchronized void handleDelete(ResourceID primaryID) {
@@ -52,11 +53,12 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected synchronized void handleDeletes(ResourceID primaryID, Set<R> resource) {
-    handleDelete(primaryID, resource.stream().map(idMapper::getID).collect(Collectors.toSet()));
+    handleDelete(primaryID,
+        resource.stream().map(cacheKeyMapper::keyFor).collect(Collectors.toSet()));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, R resource) {
-    handleDelete(primaryID, Set.of(idMapper.getID(resource)));
+    handleDelete(primaryID, Set.of(cacheKeyMapper.keyFor(resource)));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceID) {
@@ -98,7 +100,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return;
     }
     var cachedResources = cache.get(primaryID);
-    var newResourcesMap = newResources.stream().collect(Collectors.toMap(idMapper::getID, r -> r));
+    var newResourcesMap =
+        newResources.stream().collect(Collectors.toMap(cacheKeyMapper::keyFor, r -> r));
     cache.put(primaryID, newResourcesMap);
     if (propagateEvent && !newResourcesMap.equals(cachedResources)) {
       getEventHandler().handleEvent(new Event(primaryID));
@@ -108,7 +111,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID primaryID, R resource) {
     var actualValues = cache.get(primaryID);
-    var resourceId = idMapper.getID(resource);
+    var resourceId = cacheKeyMapper.keyFor(resource);
     if (actualValues == null) {
       actualValues = new HashMap<>();
       cache.put(primaryID, actualValues);
@@ -123,7 +126,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       ResourceID primaryID, R resource, R previousVersionOfResource) {
     var actualValues = cache.get(primaryID);
     if (actualValues != null) {
-      var resourceId = idMapper.getID(resource);
+      var resourceId = cacheKeyMapper.keyFor(resource);
       R actualResource = actualValues.get(resourceId);
       if (actualResource.equals(previousVersionOfResource)) {
         actualValues.put(resourceId, resource);

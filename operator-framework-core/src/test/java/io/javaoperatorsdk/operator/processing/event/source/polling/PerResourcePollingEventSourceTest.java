@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
-import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -57,7 +57,7 @@ class PerResourcePollingEventSourceTest extends
   void registeringTaskOnAPredicate() throws InterruptedException {
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
-        SampleExternalResource.class, IDMapper.singleResourceIDMapper()));
+        SampleExternalResource.class, CacheKeyMapper.singleResourceIDMapper()));
     source.onResourceCreated(testCustomResource);
     Thread.sleep(2 * PERIOD);
 

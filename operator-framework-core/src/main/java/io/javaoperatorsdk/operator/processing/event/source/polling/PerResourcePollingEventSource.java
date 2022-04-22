@@ -11,9 +11,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 /**
@@ -44,18 +44,18 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
     this(resourceFetcher, resourceCache, period, null, resourceClass,
-        IDMapper.singleResourceIDMapper());
+        CacheKeyMapper.singleResourceIDMapper());
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
-      Cache<P> resourceCache, long period, Class<R> resourceClass, IDMapper<R> idProvider) {
+      Cache<P> resourceCache, long period, Class<R> resourceClass, CacheKeyMapper<R> idProvider) {
     this(resourceFetcher, resourceCache, period, null, resourceClass, idProvider);
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
       Predicate<P> registerPredicate, Class<R> resourceClass,
-      IDMapper<R> idProvider) {
+      CacheKeyMapper<R> idProvider) {
     super(resourceClass, idProvider);
     this.resourceFetcher = resourceFetcher;
     this.resourceCache = resourceCache;
