@@ -19,7 +19,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
   private boolean generationAware;
-  private final Set<String> namespaces;
+  private Set<String> namespaces;
   private RetryConfiguration retry;
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
@@ -52,8 +52,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withCurrentNamespace() {
-    namespaces.clear();
+  public ControllerConfigurationOverrider<R> watchingOnlyCurrentNamespace() {
+    this.namespaces = ResourceConfiguration.DEPLOYED_NAMESPACE_ONLY;
     return this;
   }
 
@@ -64,12 +64,20 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   public ControllerConfigurationOverrider<R> removingNamespaces(String... namespaces) {
     List.of(namespaces).forEach(this.namespaces::remove);
+    if (this.namespaces.isEmpty()) {
+      this.namespaces = ResourceConfiguration.DEFAULT_NAMESPACES;
+    }
     return this;
   }
 
   public ControllerConfigurationOverrider<R> settingNamespace(String namespace) {
     this.namespaces.clear();
     this.namespaces.add(namespace);
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> watchingAllNamespaces() {
+    this.namespaces = ResourceConfiguration.DEFAULT_NAMESPACES;
     return this;
   }
 

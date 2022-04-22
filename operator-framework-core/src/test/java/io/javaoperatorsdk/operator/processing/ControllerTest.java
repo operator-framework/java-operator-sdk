@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -13,17 +13,15 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "rawtypes"})
 class ControllerTest {
 
-  final ControllerConfiguration configuration = mock(ControllerConfiguration.class);
   final Reconciler reconciler = mock(Reconciler.class);
 
   @Test
   void crdShouldNotBeCheckedForNativeResources() {
     final var client = MockKubernetesClient.client(Secret.class);
-
-    when(configuration.getResourceClass()).thenReturn(Secret.class);
+    final var configuration = MockControllerConfiguration.forResource(Secret.class);
 
     final var controller = new Controller<Secret>(reconciler, configuration, client);
     controller.start();
@@ -33,7 +31,7 @@ class ControllerTest {
   @Test
   void crdShouldNotBeCheckedForCustomResourcesIfDisabled() {
     final var client = MockKubernetesClient.client(TestCustomResource.class);
-    when(configuration.getResourceClass()).thenReturn(TestCustomResource.class);
+    final var configuration = MockControllerConfiguration.forResource(TestCustomResource.class);
 
     try {
       ConfigurationServiceProvider.overrideCurrent(o -> o.checkingCRDAndValidateLocalModel(false));
@@ -49,10 +47,10 @@ class ControllerTest {
   @Test
   void usesFinalizerIfThereIfReconcilerImplementsCleaner() {
     Reconciler reconciler = mock(Reconciler.class, withSettings().extraInterfaces(Cleaner.class));
-    when(configuration.getResourceClass()).thenReturn(TestCustomResource.class);
+    final var configuration = MockControllerConfiguration.forResource(Secret.class);
 
-    final var controller = new Controller<Secret>(reconciler,
-        configuration, MockKubernetesClient.client(TestCustomResource.class));
+    final var controller = new Controller<Secret>(reconciler, configuration,
+        MockKubernetesClient.client(Secret.class));
 
     assertThat(controller.useFinalizer()).isTrue();
   }
