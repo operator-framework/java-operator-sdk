@@ -23,7 +23,7 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void putsNewResourceIntoCacheAndProducesEvent() {
-    source.handleResourcesUpdate(primaryID1(), testResource1());
+    source.handleResources(primaryID1(), testResource1());
 
     verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResource(primaryID1())).isPresent();
@@ -33,8 +33,8 @@ class ExternalResourceCachingEventSourceTest extends
   void propagatesEventIfResourceChanged() {
     var res2 = testResource1();
     res2.setValue("changedValue");
-    source.handleResourcesUpdate(primaryID1(), testResource1());
-    source.handleResourcesUpdate(primaryID1(), res2);
+    source.handleResources(primaryID1(), testResource1());
+    source.handleResources(primaryID1(), res2);
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResource(primaryID1())).contains(res2);
@@ -42,8 +42,8 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void noEventPropagatedIfTheResourceIsNotChanged() {
-    source.handleResourcesUpdate(primaryID1(), testResource1());
-    source.handleResourcesUpdate(primaryID1(), testResource1());
+    source.handleResources(primaryID1(), testResource1());
+    source.handleResources(primaryID1(), testResource1());
 
     verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResource(primaryID1())).isPresent();
@@ -51,7 +51,7 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void propagatesEventOnDeleteIfThereIsPrevResourceInCache() {
-    source.handleResourcesUpdate(primaryID1(), testResource1());
+    source.handleResources(primaryID1(), testResource1());
     source.handleDelete(primaryID1());
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
@@ -67,7 +67,7 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void handleMultipleResourceTrivialCase() {
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
 
     verify(eventHandler, times(1)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResources(primaryID1()))
@@ -76,8 +76,8 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void handleOneResourceRemovedFromMultiple() {
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1(), testResource2()));
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1()));
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1()));
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource1());
@@ -85,8 +85,8 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void addingAdditionalResource() {
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1()));
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResources(primaryID1()))
@@ -95,8 +95,8 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void replacingResource() {
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1()));
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    source.handleResources(primaryID1(), Set.of(testResource2()));
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResources(primaryID1())).containsExactly(testResource2());
@@ -104,7 +104,7 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void handlesDeleteFromMultipleResources() {
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
     source.handleDelete(primaryID1(), testResource1());
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
@@ -113,8 +113,8 @@ class ExternalResourceCachingEventSourceTest extends
 
   @Test
   void handlesDeleteAllFromMultipleResources() {
-    source.handleResourcesUpdate(primaryID1(), Set.of(testResource1(), testResource2()));
-    source.handleDeleteResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleDeletes(primaryID1(), Set.of(testResource1(), testResource2()));
 
     verify(eventHandler, times(2)).handleEvent(new Event(primaryID1()));
     assertThat(source.getSecondaryResources(primaryID1())).isEmpty();

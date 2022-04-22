@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,9 +20,10 @@ class PollingEventSourceTest
     extends
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
-  private Supplier<Map<ResourceID, Set<SampleExternalResource>>> supplier = mock(Supplier.class);
+  private PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
+      mock(PollingEventSource.GenericResourceFetcher.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(supplier, 50L, SampleExternalResource.class,
+      new PollingEventSource<>(resourceFetcher, 50L, SampleExternalResource.class,
           (SampleExternalResource er) -> er.getName() + "#" + er.getValue());
 
   @BeforeEach
@@ -33,7 +33,7 @@ class PollingEventSourceTest
 
   @Test
   void pollsAndProcessesEvents() throws InterruptedException {
-    when(supplier.get()).thenReturn(testResponseWithTwoValues());
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
     Thread.sleep(100);
 
@@ -42,7 +42,7 @@ class PollingEventSourceTest
 
   @Test
   void propagatesEventForRemovedResources() throws InterruptedException {
-    when(supplier.get()).thenReturn(testResponseWithTwoValues())
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
     Thread.sleep(150);
@@ -52,7 +52,7 @@ class PollingEventSourceTest
 
   @Test
   void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
-    when(supplier.get()).thenReturn(testResponseWithTwoValues());
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
     Thread.sleep(250);
 

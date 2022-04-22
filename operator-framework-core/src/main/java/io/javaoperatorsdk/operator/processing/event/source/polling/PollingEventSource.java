@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +16,11 @@ import io.javaoperatorsdk.operator.processing.event.source.IDMapper;
 
 /**
  * Polls resource (on contrary to {@link PerResourcePollingEventSource}) not per resource bases but
- * instead to calls supplier periodically and independently of the number of state of custom
- * resources managed by the operator. It is called on start (synced). This means that when the
- * reconciler first time executed on startup a poll already happened before. So if the cache does
- * not contain the target resource it means it is not created yet or was deleted while an operator
- * was not running.
+ * instead to calls supplier periodically and independently of the number or state of custom
+ * resources managed by the controller. It is called on start (synced). This means that when the
+ * reconciler first time executed on startup the first poll already happened before. So if the cache
+ * does not contain the target resource it means it is not created yet or was deleted while an
+ * operator was not running.
  *
  * <p>
  * Another caveat with this is if the cached object is checked in the reconciler and created since
@@ -47,25 +46,25 @@ public class PollingEventSource<R, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
   private final Timer timer = new Timer();
-  private final Supplier<Map<ResourceID, Set<R>>> supplierToPoll;
+  private final GenericResourceFetcher<R> genericResourceFetcher;
   private final long period;
 
   public PollingEventSource(
-      Supplier<Map<ResourceID, Set<R>>> supplier,
+      GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass) {
     super(resourceClass, IDMapper.singleResourceIDMapper());
-    this.supplierToPoll = supplier;
+    this.genericResourceFetcher = supplier;
     this.period = period;
   }
 
   public PollingEventSource(
-      Supplier<Map<ResourceID, Set<R>>> supplier,
+      GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass,
       IDMapper<R> idMapper) {
     super(resourceClass, idMapper);
-    this.supplierToPoll = supplier;
+    this.genericResourceFetcher = supplier;
     this.period = period;
   }
 
@@ -89,8 +88,13 @@ public class PollingEventSource<R, P extends HasMetadata>
   }
 
   protected synchronized void getStateAndFillCache() {
-    var values = supplierToPoll.get();
-    handleResourcesUpdate(values);
+    var values = genericResourceFetcher.fetchResources();
+    handleResources(values);
+  }
+
+
+  public interface GenericResourceFetcher<R> {
+    Map<ResourceID, Set<R>> fetchResources();
   }
 
   @Override

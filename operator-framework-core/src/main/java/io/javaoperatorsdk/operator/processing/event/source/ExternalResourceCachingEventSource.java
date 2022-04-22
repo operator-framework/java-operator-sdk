@@ -12,6 +12,24 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCache
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+/**
+ * Handles caching and related operation of external event sources. It can handle multiple secondary
+ * resources for a single primary resources.
+ * <p>
+ * There are two related concepts to understand:
+ * <ul>
+ * <li>IDMapper - maps or in other words extracts a id from the resources</li>
+ * <li>Object equals usage - compares if the two resources are the same or same version.</li>
+ * </ul>
+ *
+ * When a resource is added for a primary resource its key is used to put in a map. Equals is used
+ * to compare if it's still the same resource, or an updated version of it. Event is emitted only if
+ * a new resource(s) is received or actually updated or deleted. Delete is detected by a missing
+ * key.
+ *
+ * @param <R> type of polled external secondary resource
+ * @param <P> primary resource
+ */
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
     extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
@@ -33,11 +51,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
   }
 
-  protected synchronized void handleDelete(ResourceID primaryID, String resourceID) {
-    handleDelete(primaryID, Set.of(resourceID));
-  }
-
-  protected synchronized void handleDeleteResources(ResourceID primaryID, Set<R> resource) {
+  protected synchronized void handleDeletes(ResourceID primaryID, Set<R> resource) {
     handleDelete(primaryID, resource.stream().map(idMapper).collect(Collectors.toSet()));
   }
 
@@ -61,22 +75,22 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
   }
 
-  protected synchronized void handleResourcesUpdate(ResourceID primaryID, R actualResource) {
-    handleResourcesUpdate(primaryID, Set.of(actualResource), true);
+  protected synchronized void handleResources(ResourceID primaryID, R actualResource) {
+    handleResources(primaryID, Set.of(actualResource), true);
   }
 
-  protected synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources) {
-    handleResourcesUpdate(primaryID, newResources, true);
+  protected synchronized void handleResources(ResourceID primaryID, Set<R> newResources) {
+    handleResources(primaryID, newResources, true);
   }
 
-  protected synchronized void handleResourcesUpdate(Map<ResourceID, Set<R>> allNewResources) {
+  protected synchronized void handleResources(Map<ResourceID, Set<R>> allNewResources) {
     var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k))
         .collect(Collectors.toList());
     toDelete.forEach(this::handleDelete);
-    allNewResources.forEach((primaryID, resources) -> handleResourcesUpdate(primaryID, resources));
+    allNewResources.forEach((primaryID, resources) -> handleResources(primaryID, resources));
   }
 
-  protected synchronized void handleResourcesUpdate(ResourceID primaryID, Set<R> newResources,
+  protected synchronized void handleResources(ResourceID primaryID, Set<R> newResources,
       boolean propagateEvent) {
     log.debug("Handling resources update for: {} numberOfResources: {} ", primaryID,
         newResources.size());
@@ -140,5 +154,9 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     } else {
       throw new IllegalStateException("More than 1 secondary resource related to primary");
     }
+  }
+
+  public Map<ResourceID, Map<String, R>> getCache() {
+    return Collections.unmodifiableMap(cache);
   }
 }

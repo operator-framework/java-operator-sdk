@@ -15,11 +15,11 @@ public class CachingInboundEventSource<R, P extends HasMetadata>
   }
 
   public void handleResourceEvent(ResourceID primaryID, Set<R> resources) {
-    super.handleResourcesUpdate(primaryID, resources);
+    super.handleResources(primaryID, resources);
   }
 
   public void handleResourceEvent(ResourceID primaryID, R resource) {
-    super.handleResourcesUpdate(primaryID, resource);
+    super.handleResources(primaryID, resource);
   }
 
   public void handleResourceDeleteEvent(ResourceID primaryID, String resourceID) {

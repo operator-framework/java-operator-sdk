@@ -65,7 +65,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
     var values = resourceFetcher.fetchResources(primary);
-    handleResourcesUpdate(ResourceID.fromResource(primary), values, !fromGetter);
+    handleResources(ResourceID.fromResource(primary), values, !fromGetter);
     fetchedForPrimaries.add(ResourceID.fromResource(primary));
     return values;
   }
