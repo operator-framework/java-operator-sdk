@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 public interface ResourceConfiguration<R extends HasMetadata> {
 
   Set<String> DEFAULT_NAMESPACES = Set.of(Constants.WATCH_ALL_NAMESPACES);
-  Set<String> DEPLOYED_NAMESPACE_ONLY = Set.of(Constants.WATCH_CURRENT_NAMESPACE);
+  Set<String> CURRENT_NAMESPACE_ONLY = Set.of(Constants.WATCH_CURRENT_NAMESPACE);
 
   default String getResourceTypeName() {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
@@ -53,7 +53,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     failIfNotValid(namespaces);
-    return DEPLOYED_NAMESPACE_ONLY.equals(namespaces);
+    return CURRENT_NAMESPACE_ONLY.equals(namespaces);
   }
 
   static void failIfNotValid(Set<String> namespaces) {

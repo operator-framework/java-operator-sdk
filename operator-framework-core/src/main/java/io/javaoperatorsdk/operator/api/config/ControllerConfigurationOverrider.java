@@ -53,7 +53,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> watchingOnlyCurrentNamespace() {
-    this.namespaces = ResourceConfiguration.DEPLOYED_NAMESPACE_ONLY;
+    this.namespaces = ResourceConfiguration.CURRENT_NAMESPACE_ONLY;
     return this;
   }
 
