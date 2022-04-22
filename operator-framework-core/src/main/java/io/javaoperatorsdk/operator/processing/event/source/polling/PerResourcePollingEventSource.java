@@ -48,7 +48,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
-      Cache<P> resourceCache, long period, Class<R> resourceClass, CacheKeyMapper<R> cacheKeyMapper) {
+      Cache<P> resourceCache, long period, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
     this(resourceFetcher, resourceCache, period, null, resourceClass, cacheKeyMapper);
   }
 
