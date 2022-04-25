@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow.builder;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private List<DependentResourceNode<?, P>> dependentResourceNodes = new ArrayList<>();
+  private Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
 
   public DependentBuilder<P> addDependent(DependentResource<?, P> dependentResource) {
     DependentResourceNode<?, P> node = new DependentResourceNode<>(dependentResource);
