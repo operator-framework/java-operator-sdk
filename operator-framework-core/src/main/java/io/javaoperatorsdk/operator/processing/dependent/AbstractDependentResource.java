@@ -33,6 +33,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       if (maybeActual.isEmpty()) {
         if (creatable) {
           var desired = desired(primary, context);
+          throwIfNull(desired, primary);
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
           return ReconcileResult.resourceCreated(createdResource);
@@ -43,6 +44,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
+            throwIfNull(desired, primary);
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actual, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
@@ -57,6 +59,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           getClass().getSimpleName());
     }
     return ReconcileResult.noOperation(maybeActual.orElse(null));
+  }
+
+  private void throwIfNull(R desired, P primary) {
+    if (desired == null) {
+      throw new DependentResourceException(
+          "Desired cannot be null. Primary ID: " + ResourceID.fromResource(primary));
+    }
   }
 
   private void logForOperation(String operation, P primary, R desired) {
