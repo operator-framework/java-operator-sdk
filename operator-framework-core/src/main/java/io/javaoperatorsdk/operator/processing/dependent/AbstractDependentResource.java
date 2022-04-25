@@ -33,7 +33,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       if (maybeActual.isEmpty()) {
         if (creatable) {
           var desired = desired(primary, context);
-          throwIfDesiredNull(desired, primary);
+          throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
           return ReconcileResult.resourceCreated(createdResource);
@@ -44,7 +44,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
-            throwIfDesiredNull(desired, primary);
+            throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actual, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
@@ -61,10 +61,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(maybeActual.orElse(null));
   }
 
-  private void throwIfDesiredNull(R desired, P primary) {
+  private void throwIfNull(R desired, P primary, String descriptor) {
     if (desired == null) {
       throw new DependentResourceException(
-          "Desired cannot be null. Primary ID: " + ResourceID.fromResource(primary));
+          descriptor + " cannot be null. Primary ID: " + ResourceID.fromResource(primary));
     }
   }
 
@@ -80,6 +80,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R created = creator.create(desired, primary, context);
+    throwIfNull(created, primary, "Created resource");
     onCreated(resourceID, created);
     return created;
   }
@@ -107,6 +108,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = updater.update(actual, desired, primary, context);
+    throwIfNull(updated, primary, "Updated resource");
     onUpdated(resourceID, updated, actual);
     return updated;
   }

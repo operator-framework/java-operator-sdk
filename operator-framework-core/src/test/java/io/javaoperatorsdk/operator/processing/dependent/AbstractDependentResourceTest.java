@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -30,11 +31,40 @@ class AbstractDependentResourceTest {
   @Test
   void throwsExceptionIfDesiredIsNullOnUpdate() {
     TestDependentResource testDependentResource = new TestDependentResource();
-    testDependentResource.setSecondary(new ConfigMap());
+    testDependentResource.setSecondary(configMap());
     testDependentResource.setDesired(null);
 
     assertThrows(DependentResourceException.class,
         () -> testDependentResource.reconcile(new TestCustomResource(), null));
+  }
+
+  @Test
+  void throwsExceptionIfCreateReturnsNull() {
+    TestDependentResource testDependentResource = new TestDependentResource();
+    testDependentResource.setSecondary(null);
+    testDependentResource.setDesired(configMap());
+
+    assertThrows(DependentResourceException.class,
+        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+  }
+
+  @Test
+  void throwsExceptionIfUpdateReturnsNull() {
+    TestDependentResource testDependentResource = new TestDependentResource();
+    testDependentResource.setSecondary(configMap());
+    testDependentResource.setDesired(configMap());
+
+    assertThrows(DependentResourceException.class,
+        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+  }
+
+  private ConfigMap configMap() {
+    ConfigMap configMap = new ConfigMap();
+    configMap.setMetadata(new ObjectMetaBuilder()
+        .withName("test")
+        .withNamespace("default")
+        .build());
+    return configMap;
   }
 
   private static class TestDependentResource
