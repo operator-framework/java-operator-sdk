@@ -21,9 +21,15 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
 
-  public WorkflowCleanupResult cleanup() {
-
+  public synchronized WorkflowCleanupResult cleanup() {
+    for (DependentResourceNode<?, P> dependentResourceNode : workflow
+        .getTopLevelDependentResources()) {
+      handleCleanup(dependentResourceNode, false);
+    }
     return null;
   }
 
+  private void handleCleanup(DependentResourceNode<?, P> dependentResourceNode, boolean b) {
+
+  }
 }
