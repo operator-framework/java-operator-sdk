@@ -59,7 +59,7 @@ public class WebappReconciler
             .collect(Collectors.toSet());
 
     InformerConfiguration<Tomcat> configuration =
-        InformerConfiguration.from(context, Tomcat.class)
+        InformerConfiguration.from(Tomcat.class)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
             .build();
     return EventSourceInitializer
