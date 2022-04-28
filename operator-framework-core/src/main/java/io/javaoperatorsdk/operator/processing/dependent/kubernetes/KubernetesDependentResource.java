@@ -54,7 +54,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   private void configureWith(String labelSelector, Set<String> namespaces) {
-    final var primaryResourcesRetriever =
+    final SecondaryToPrimaryMapper<R> primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
     InformerConfiguration<R> ic =

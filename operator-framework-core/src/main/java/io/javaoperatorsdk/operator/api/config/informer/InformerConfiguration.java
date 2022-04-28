@@ -7,7 +7,6 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -40,7 +39,7 @@ public interface InformerConfiguration<R extends HasMetadata>
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
   @SuppressWarnings("unused")
-  class InformerConfigurationBuilder<R extends HasMetadata, P extends HasMetadata> {
+  class InformerConfigurationBuilder<R extends HasMetadata> {
 
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private Set<String> namespaces;
@@ -51,24 +50,24 @@ public interface InformerConfiguration<R extends HasMetadata>
       this.resourceClass = resourceClass;
     }
 
-    public InformerConfigurationBuilder<R, P> withSecondaryToPrimaryMapper(
+    public InformerConfigurationBuilder<R> withSecondaryToPrimaryMapper(
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       return this;
     }
 
-    public InformerConfigurationBuilder<R, P> withNamespaces(String... namespaces) {
+    public InformerConfigurationBuilder<R> withNamespaces(String... namespaces) {
       this.namespaces = namespaces != null ? Set.of(namespaces) : Collections.emptySet();
       return this;
     }
 
-    public InformerConfigurationBuilder<R, P> withNamespaces(Set<String> namespaces) {
+    public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces) {
       this.namespaces = namespaces != null ? namespaces : Collections.emptySet();
       return this;
     }
 
 
-    public InformerConfigurationBuilder<R, P> withLabelSelector(String labelSelector) {
+    public InformerConfigurationBuilder<R> withLabelSelector(String labelSelector) {
       this.labelSelector = labelSelector;
       return this;
     }
@@ -80,19 +79,15 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
   }
 
-  static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
-      EventSourceContext<P> context, Class<R> resourceClass) {
+  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
+      Class<R> resourceClass) {
     return new InformerConfigurationBuilder<>(resourceClass);
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  static InformerConfigurationBuilder from(Class resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass);
-  }
 
-  static <R extends HasMetadata, P extends HasMetadata> InformerConfigurationBuilder<R, P> from(
+  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
       InformerConfiguration<R> configuration) {
-    return new InformerConfigurationBuilder<R, P>(configuration.getResourceClass())
+    return new InformerConfigurationBuilder<R>(configuration.getResourceClass())
         .withNamespaces(configuration.getNamespaces())
         .withLabelSelector(configuration.getLabelSelector())
         .withSecondaryToPrimaryMapper(configuration.getSecondaryToPrimaryMapper());

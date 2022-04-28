@@ -24,7 +24,7 @@ public class PrimaryIndexerTestReconciler
     context.getPrimaryCache().addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
 
     var informerConfiguration =
-        InformerConfiguration.from(context, ConfigMap.class)
+        InformerConfiguration.from(ConfigMap.class)
             .withSecondaryToPrimaryMapper(
                 (ConfigMap secondaryResource) -> context
                     .getPrimaryCache()
