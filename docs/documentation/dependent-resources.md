@@ -279,9 +279,19 @@ See the full source code of
 sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java)
 .
 
-## Other Dependent Resource features
 
-### Caching and Event Handling in [KubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractDependentResource.java)
+## Default `PrimaryToSecondaryMapper` And How to Override
+
+[`KubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
+automatically maps secondary resource to a primary by owner reference. This behavior can be customized by implementing
+[`PrimaryToSecondaryMapper`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java) by the dependent resource.
+.
+
+See sample in one of the integration tests [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/primaryindexer/DependentPrimaryIndexerTestReconciler.java#L25-L25).
+
+## Other Dependent Resource Features
+
+### Caching and Event Handling in [KubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
 
 1. When a Kubernetes resource is created or updated the related informer (more precisely the `InformerEventSource`),
 eventually will receive an event and will cache the up-to-date resource. However, there might be a small time window
