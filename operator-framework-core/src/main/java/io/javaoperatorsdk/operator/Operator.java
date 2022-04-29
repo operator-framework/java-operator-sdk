@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
+import io.javaoperatorsdk.operator.api.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -129,11 +130,11 @@ public class Operator implements LifecycleAware {
    * @param <R> the {@code CustomResource} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends HasMetadata> void register(Reconciler<R> reconciler)
+  public <R extends HasMetadata> RegisteredController register(Reconciler<R> reconciler)
       throws OperatorException {
     final var controllerConfiguration =
         ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
-    register(reconciler, controllerConfiguration);
+    return register(reconciler, controllerConfiguration);
   }
 
   /**
@@ -148,7 +149,7 @@ public class Operator implements LifecycleAware {
    * @param <R> the {@code HasMetadata} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends HasMetadata> void register(Reconciler<R> reconciler,
+  public <R extends HasMetadata> RegisteredController register(Reconciler<R> reconciler,
       ControllerConfiguration<R> configuration)
       throws OperatorException {
 
@@ -173,6 +174,7 @@ public class Operator implements LifecycleAware {
         configuration.getName(),
         configuration.getResourceClass(),
         watchedNS);
+    return new RegisteredController(controller);
   }
 
   /**
@@ -182,13 +184,13 @@ public class Operator implements LifecycleAware {
    * @param configOverrider consumer to use to change config values
    * @param <R> the {@code HasMetadata} type associated with the reconciler
    */
-  public <R extends HasMetadata> void register(Reconciler<R> reconciler,
+  public <R extends HasMetadata> RegisteredController register(Reconciler<R> reconciler,
       Consumer<ControllerConfigurationOverrider<R>> configOverrider) {
     final var controllerConfiguration =
         ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
-    register(reconciler, configToOverride.build());
+    return register(reconciler, configToOverride.build());
   }
 
   static class ControllerManager implements LifecycleAware {

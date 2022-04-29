@@ -29,11 +29,15 @@ import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 public class InformerManager<T extends HasMetadata, C extends ResourceConfiguration<T>>
     implements LifecycleAware, IndexerResourceCache<T>, UpdatableCache<T> {
 
-  private static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
+  private static final String ALL_NAMESPACE_MAP_KEY = "allNamespace";
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);
 
   private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
   private Cloner cloner;
+  private C configuration;
+  private MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
+  private ResourceEventHandler<T> eventHandler;
+  private Map<String, Function<T, List<String>>> indexers;
 
   @Override
   public void start() throws OperatorException {
@@ -43,6 +47,9 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
       C configuration, ResourceEventHandler<T> eventHandler) {
     cloner = ConfigurationServiceProvider.instance().getResourceCloner();
+    this.configuration = configuration;
+    this.client = client;
+    this.eventHandler = eventHandler;
 
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var labelSelector = configuration.getLabelSelector();
@@ -51,7 +58,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       final var filteredBySelectorClient =
           client.inAnyNamespace().withLabelSelector(labelSelector);
       final var source =
-          createEventSource(filteredBySelectorClient, eventHandler, ANY_NAMESPACE_MAP_KEY);
+          createEventSource(filteredBySelectorClient, eventHandler, ALL_NAMESPACE_MAP_KEY);
       log.debug("Registered {} -> {} for any namespace", this, source);
     } else {
       targetNamespaces.forEach(
@@ -64,6 +71,33 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
           });
     }
   }
+
+  public void changeNamespaces(Set<String> namespaces) {
+    if (ResourceConfiguration.allNamespacesWatched(namespaces)) {
+      throw new OperatorException("This feature is only supported for ");
+    }
+
+    var sourcesToRemove = sources.keySet().stream()
+        .filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
+    log.debug("Stopping to watch namespaces: {} for {}", sourcesToRemove, this);
+    sourcesToRemove.forEach(k -> {
+      sources.remove(k).stop();
+    });
+
+    namespaces.forEach(ns -> {
+      if (!sources.containsKey(ns)) {
+        final var source =
+            createEventSource(
+                client.inNamespace(ns).withLabelSelector(configuration.getLabelSelector()),
+                eventHandler, ns);
+        source.addIndexers(this.indexers);
+        source.start();
+        log.debug("Registered New {} -> {} for namespace: {}", this, source,
+            ns);
+      }
+    });
+  }
+
 
 
   private InformerWrapper<T> createEventSource(
@@ -98,7 +132,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     if (isWatchingAllNamespaces()) {
-      return getSource(ANY_NAMESPACE_MAP_KEY)
+      return getSource(ALL_NAMESPACE_MAP_KEY)
           .map(source -> source.list(namespace, predicate))
           .orElse(Stream.empty());
     } else {
@@ -110,7 +144,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public Optional<T> get(ResourceID resourceID) {
-    return getSource(resourceID.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
+    return getSource(resourceID.getNamespace().orElse(ALL_NAMESPACE_MAP_KEY))
         .flatMap(source -> source.get(resourceID))
         .map(cloner::clone);
   }
@@ -121,24 +155,24 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   private boolean isWatchingAllNamespaces() {
-    return sources.containsKey(ANY_NAMESPACE_MAP_KEY);
+    return sources.containsKey(ALL_NAMESPACE_MAP_KEY);
   }
 
   private Optional<InformerWrapper<T>> getSource(String namespace) {
-    namespace = isWatchingAllNamespaces() || namespace == null ? ANY_NAMESPACE_MAP_KEY : namespace;
+    namespace = isWatchingAllNamespaces() || namespace == null ? ALL_NAMESPACE_MAP_KEY : namespace;
     return Optional.ofNullable(sources.get(namespace));
   }
 
   @Override
   public T remove(ResourceID key) {
-    return getSource(key.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
+    return getSource(key.getNamespace().orElse(ALL_NAMESPACE_MAP_KEY))
         .map(c -> c.remove(key))
         .orElse(null);
   }
 
   @Override
   public void put(ResourceID key, T resource) {
-    getSource(key.getNamespace().orElse(ANY_NAMESPACE_MAP_KEY))
+    getSource(key.getNamespace().orElse(ALL_NAMESPACE_MAP_KEY))
         .ifPresentOrElse(c -> c.put(key, resource),
             () -> log.warn(
                 "Cannot put resource in the cache. No related cache found: {}. Resource: {}",
@@ -147,6 +181,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
+    this.indexers.putAll(indexers);
     sources.values().forEach(s -> s.addIndexers(indexers));
   }
 

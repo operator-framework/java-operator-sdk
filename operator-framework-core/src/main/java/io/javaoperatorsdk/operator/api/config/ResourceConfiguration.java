@@ -64,7 +64,6 @@ public interface ResourceConfiguration<R extends HasMetadata> {
         return;
       }
     }
-
     throw new IllegalArgumentException(
         "Must specify namespaces. To watch all namespaces, use only '"
             + Constants.WATCH_ALL_NAMESPACES

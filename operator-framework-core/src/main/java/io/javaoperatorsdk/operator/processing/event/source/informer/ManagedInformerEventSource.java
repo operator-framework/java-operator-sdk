@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -58,6 +59,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   protected InformerManager<R, C> manager() {
     return (InformerManager<R, C>) cache;
+  }
+
+  public void changeNamespaces(Set<String> namespaces) {
+    manager().changeNamespaces(namespaces);
   }
 
   @Override

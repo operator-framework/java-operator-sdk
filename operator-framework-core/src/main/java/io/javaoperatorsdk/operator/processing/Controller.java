@@ -307,34 +307,38 @@ public class Controller<P extends HasMetadata>
 
     // fail early if we're missing the current namespace information
     failOnMissingCurrentNS();
-
     try {
       // check that the custom resource is known by the cluster if configured that way
-      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
-          && CustomResource.class.isAssignableFrom(resClass)) {
-        crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
-            .get();
-        if (crd == null) {
-          throwMissingCRDException(crdName, specVersion, controllerName);
-        }
-
-        // Apply validations that are not handled by fabric8
-        CustomResourceUtils.assertCustomResource(resClass, crd);
-      }
-
+      validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
       final var context = new EventSourceContext<>(
           eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
 
       initAndRegisterEventSources(context);
-
       eventSourceManager.start();
-
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
+  }
+
+  private void validateCRDWithLocalModelIfRequired(Class<P> resClass, String controllerName,
+      String crdName, String specVersion) {
+    final CustomResourceDefinition crd;
+    if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
+        && CustomResource.class.isAssignableFrom(resClass)) {
+      crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
+          .get();
+      if (crd == null) {
+        throwMissingCRDException(crdName, specVersion, controllerName);
+      }
+      // Apply validations that are not handled by fabric8
+      CustomResourceUtils.assertCustomResource(resClass, crd);
+    }
+  }
+
+  public void changeNamespaces(String... namespaces) {
+
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {

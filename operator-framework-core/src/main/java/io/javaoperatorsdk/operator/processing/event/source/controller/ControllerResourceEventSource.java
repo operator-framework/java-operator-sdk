@@ -24,7 +24,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
     implements ResourceEventHandler<T> {
 
-  public static final String ANY_NAMESPACE_MAP_KEY = "anyNamespace";
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;

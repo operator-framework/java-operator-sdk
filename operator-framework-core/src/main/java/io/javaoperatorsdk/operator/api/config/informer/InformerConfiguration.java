@@ -45,6 +45,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
+    private boolean followNamespaceChanges = false;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -65,7 +66,6 @@ public interface InformerConfiguration<R extends HasMetadata>
       this.namespaces = namespaces != null ? namespaces : Collections.emptySet();
       return this;
     }
-
 
     public InformerConfigurationBuilder<R> withLabelSelector(String labelSelector) {
       this.labelSelector = labelSelector;
