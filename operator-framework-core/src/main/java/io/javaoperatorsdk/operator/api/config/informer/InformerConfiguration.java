@@ -7,6 +7,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -18,17 +19,22 @@ public interface InformerConfiguration<R extends HasMetadata>
       DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
+    private final Boolean inheritControllerNamespaces;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        Set<String> namespaces) {
+        Set<String> namespaces, Boolean inheritControllerNamespaces) {
       super(labelSelector, resourceClass, namespaces);
+      this.inheritControllerNamespaces = inheritControllerNamespaces;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
     }
 
+    public Boolean isInheritControllerNamespaces() {
+      return inheritControllerNamespaces;
+    }
 
     public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
       return secondaryToPrimaryMapper;
@@ -45,7 +51,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
-    private boolean followNamespaceChanges = false;
+    private boolean inheritControllerNamespaces = false;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -72,10 +78,17 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> inheritControllerNamespaces(
+        EventSourceContext<P> context) {
+      namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
+      this.inheritControllerNamespaces = true;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           secondaryToPrimaryMapper,
-          namespaces);
+          namespaces, inheritControllerNamespaces);
     }
   }
 
@@ -84,12 +97,4 @@ public interface InformerConfiguration<R extends HasMetadata>
     return new InformerConfigurationBuilder<>(resourceClass);
   }
 
-
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
-      InformerConfiguration<R> configuration) {
-    return new InformerConfigurationBuilder<R>(configuration.getResourceClass())
-        .withNamespaces(configuration.getNamespaces())
-        .withLabelSelector(configuration.getLabelSelector())
-        .withSecondaryToPrimaryMapper(configuration.getSecondaryToPrimaryMapper());
-  }
 }

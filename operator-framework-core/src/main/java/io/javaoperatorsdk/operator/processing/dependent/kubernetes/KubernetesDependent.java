@@ -10,9 +10,9 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface KubernetesDependent {
-  String SAME_AS_PARENT = "JOSDK_SAME_AS_PARENT";
+  String SAME_AS_CONTROLLER = "JOSDK_SAME_AS_CONTROLLER";
 
-  String[] DEFAULT_NAMESPACES = {SAME_AS_PARENT};
+  String[] DEFAULT_NAMESPACES = {SAME_AS_CONTROLLER};
 
   /**
    * Specified which namespaces this Controller monitors for custom resources events. If no
@@ -21,7 +21,7 @@ public @interface KubernetesDependent {
    *
    * @return the list of namespaces this controller monitors
    */
-  String[] namespaces() default {SAME_AS_PARENT};
+  String[] namespaces() default {SAME_AS_CONTROLLER};
 
   /**
    * Optional label selector used to identify the set of custom resources the controller will acc
