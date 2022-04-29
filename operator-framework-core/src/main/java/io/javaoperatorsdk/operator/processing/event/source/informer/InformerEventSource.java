@@ -266,4 +266,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     eventRecorder.stopEventRecording(resourceID);
   }
 
+  @Override
+  public void changeNamespaces(Set<String> namespaces) {
+    if (!configuration.isInheritControllerNamespacesOnChange()) {
+      throw new IllegalStateException(
+          "InformerEventSource is not configured to change inherit namespaces.");
+    }
+    super.changeNamespaces(namespaces);
+  }
 }

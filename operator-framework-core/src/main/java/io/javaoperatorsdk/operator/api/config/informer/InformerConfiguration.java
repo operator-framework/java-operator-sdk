@@ -32,7 +32,7 @@ public interface InformerConfiguration<R extends HasMetadata>
               Mappers.fromOwnerReference());
     }
 
-    public Boolean isInheritControllerNamespacesOnChange() {
+    public boolean isInheritControllerNamespacesOnChange() {
       return inheritControllerNamespaces;
     }
 
@@ -42,7 +42,7 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   }
 
-  Boolean isInheritControllerNamespacesOnChange();
+  boolean isInheritControllerNamespacesOnChange();
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 

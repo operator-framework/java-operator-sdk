@@ -80,9 +80,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     var sourcesToRemove = sources.keySet().stream()
         .filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
     log.debug("Stopping to watch namespaces: {} for {}", sourcesToRemove, this);
-    sourcesToRemove.forEach(k -> {
-      sources.remove(k).stop();
-    });
+    sourcesToRemove.forEach(k -> sources.remove(k).stop());
 
     namespaces.forEach(ns -> {
       if (!sources.containsKey(ns)) {
