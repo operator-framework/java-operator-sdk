@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api;
 
+import java.util.Set;
+
 import io.javaoperatorsdk.operator.processing.Controller;
 
 public class RegisteredController {
@@ -10,7 +12,12 @@ public class RegisteredController {
     this.controller = controller;
   }
 
-  public void changeNamespaces(String... namespaces) {
+
+  public void changeNamespaces(Set<String> namespaces) {
     controller.changeNamespaces(namespaces);
+  }
+
+  public void changeNamespaces(String... namespaces) {
+    changeNamespaces(Set.of(namespaces));
   }
 }

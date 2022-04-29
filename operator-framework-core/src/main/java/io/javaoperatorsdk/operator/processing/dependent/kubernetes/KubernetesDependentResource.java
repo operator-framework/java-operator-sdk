@@ -49,21 +49,26 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
-    configureWith(config.labelSelector(), config.namespaces());
+    configureWith(config.labelSelector(), config.namespaces(), !config.wereNamespacesConfigured());
   }
 
   @SuppressWarnings("unchecked")
-  private void configureWith(String labelSelector, Set<String> namespaces) {
+  private void configureWith(String labelSelector, Set<String> namespaces,
+      boolean inheritNamespacesOnChange) {
     final SecondaryToPrimaryMapper<R> primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
-    InformerConfiguration<R> ic =
+    InformerConfiguration.InformerConfigurationBuilder<R> ic =
         InformerConfiguration.from(resourceType())
             .withLabelSelector(labelSelector)
-            .withNamespaces(namespaces)
-            .withSecondaryToPrimaryMapper(primaryResourcesRetriever)
-            .build();
-    configureWith(new InformerEventSource<>(ic, client));
+            .withSecondaryToPrimaryMapper(primaryResourcesRetriever);
+    if (inheritNamespacesOnChange) {
+      ic.setAndInheritControllerNamespaces(namespaces);
+    } else {
+      ic.withNamespaces(namespaces);
+    }
+
+    configureWith(new InformerEventSource<>(ic.build(), client));
   }
 
   /**
@@ -139,7 +144,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
-    configureWith(null, context.getControllerConfiguration().getNamespaces());
+    configureWith(null, context.getControllerConfiguration().getNamespaces(), true);
     log.warn("Using default configuration for " + resourceType().getSimpleName()
         + " KubernetesDependentResource, call configureWith to provide configuration");
     return eventSource();

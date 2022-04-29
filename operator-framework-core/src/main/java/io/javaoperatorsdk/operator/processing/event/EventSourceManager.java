@@ -162,7 +162,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     return eventProcessor;
   }
 
-  Set<EventSource> getRegisteredEventSources() {
+  public Set<EventSource> getRegisteredEventSources() {
     return eventSources.flatMappedSources()
         .map(NamedEventSource::original)
         .collect(Collectors.toCollection(LinkedHashSet::new));

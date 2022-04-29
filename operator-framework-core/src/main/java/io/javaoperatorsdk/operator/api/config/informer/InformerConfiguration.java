@@ -19,7 +19,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-    private final Boolean inheritControllerNamespaces;
+    private final boolean inheritControllerNamespaces;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
@@ -32,7 +32,7 @@ public interface InformerConfiguration<R extends HasMetadata>
               Mappers.fromOwnerReference());
     }
 
-    public Boolean isInheritControllerNamespaces() {
+    public Boolean isInheritControllerNamespacesOnChange() {
       return inheritControllerNamespaces;
     }
 
@@ -41,6 +41,8 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
 
   }
+
+  Boolean isInheritControllerNamespacesOnChange();
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
@@ -51,7 +53,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
-    private boolean inheritControllerNamespaces = false;
+    private boolean inheritControllerNamespacesOnChange = false;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -78,17 +80,24 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> inheritControllerNamespaces(
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndInheritControllerNamespaces(
+        Set<String> namespaces) {
+      this.namespaces = namespaces;
+      this.inheritControllerNamespacesOnChange = true;
+      return this;
+    }
+
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndInheritControllerNamespaces(
         EventSourceContext<P> context) {
       namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
-      this.inheritControllerNamespaces = true;
+      this.inheritControllerNamespacesOnChange = true;
       return this;
     }
 
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           secondaryToPrimaryMapper,
-          namespaces, inheritControllerNamespaces);
+          namespaces, inheritControllerNamespacesOnChange);
     }
   }
 
