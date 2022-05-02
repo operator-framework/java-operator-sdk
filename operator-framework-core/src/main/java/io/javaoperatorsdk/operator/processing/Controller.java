@@ -38,7 +38,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentRes
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
@@ -336,15 +335,7 @@ public class Controller<P extends HasMetadata>
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    eventSourceManager.getRegisteredEventSources().forEach(es -> {
-      if (es instanceof InformerEventSource) {
-        InformerEventSource ies = (InformerEventSource) es;
-        if (ies.getConfiguration().isInheritControllerNamespacesOnChange()) {
-          ies.changeNamespaces(namespaces);
-        }
-      }
-    });
-    eventSourceManager.getControllerResourceEventSource().changeNamespaces(namespaces);
+    eventSourceManager.changeNamespaces(namespaces);
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {

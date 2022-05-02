@@ -4,7 +4,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -21,13 +20,13 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata> implements LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
-  private final ReentrantLock lock = new ReentrantLock();
   private final EventSources<R> eventSources = new EventSources<>();
   private final EventProcessor<R> eventProcessor;
   private final Controller<R> controller;
@@ -61,24 +60,19 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
    * {@link ControllerResourceEventSource} , which is started first.
    */
   @Override
-  public void start() {
-    lock.lock();
-    try {
-      for (var eventSource : eventSources) {
-        try {
-          logEventSourceEvent(eventSource, "Starting");
-          eventSource.start();
-          logEventSourceEvent(eventSource, "Started");
-        } catch (MissingCRDException e) {
-          throw e; // leave untouched
-        } catch (Exception e) {
-          throw new OperatorException("Couldn't start source " + eventSource.name(), e);
-        }
+  public synchronized void start() {
+    for (var eventSource : eventSources) {
+      try {
+        logEventSourceEvent(eventSource, "Starting");
+        eventSource.start();
+        logEventSourceEvent(eventSource, "Started");
+      } catch (MissingCRDException e) {
+        throw e; // leave untouched
+      } catch (Exception e) {
+        throw new OperatorException("Couldn't start source " + eventSource.name(), e);
       }
-      eventProcessor.start();
-    } finally {
-      lock.unlock();
     }
+    eventProcessor.start();
   }
 
   @SuppressWarnings("rawtypes")
@@ -95,22 +89,17 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   @Override
-  public void stop() {
-    lock.lock();
-    try {
-      for (var eventSource : eventSources) {
-        try {
-          logEventSourceEvent(eventSource, "Stopping");
-          eventSource.stop();
-          logEventSourceEvent(eventSource, "Stopped");
-        } catch (Exception e) {
-          log.warn("Error closing {} -> {}", eventSource.name(), e);
-        }
+  public synchronized void stop() {
+    for (var eventSource : eventSources) {
+      try {
+        logEventSourceEvent(eventSource, "Stopping");
+        eventSource.stop();
+        logEventSourceEvent(eventSource, "Stopped");
+      } catch (Exception e) {
+        log.warn("Error closing {} -> {}", eventSource.name(), e);
       }
-      eventSources.clear();
-    } finally {
-      lock.unlock();
     }
+    eventSources.clear();
     eventProcessor.stop();
   }
 
@@ -118,10 +107,9 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     registerEventSource(null, eventSource);
   }
 
-  public final void registerEventSource(String name, EventSource eventSource)
+  public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
-    lock.lock();
     try {
       if (name == null || name.isBlank()) {
         name = EventSourceInitializer.generateNameFor(eventSource);
@@ -133,8 +121,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     } catch (Exception e) {
       throw new OperatorException("Couldn't register event source: " + name + " for "
           + controller.getConfiguration().getName() + " controller`", e);
-    } finally {
-      lock.unlock();
     }
   }
 
@@ -156,6 +142,20 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
         }
       }
     }
+  }
+
+  public void changeNamespaces(Set<String> namespaces) {
+    eventProcessor.stop();
+    getRegisteredEventSources().forEach(es -> {
+      if (es instanceof InformerEventSource) {
+        InformerEventSource ies = (InformerEventSource) es;
+        if (ies.getConfiguration().isInheritControllerNamespacesOnChange()) {
+          ies.changeNamespaces(namespaces);
+        }
+      }
+    });
+    getControllerResourceEventSource().changeNamespaces(namespaces);
+    eventProcessor.start();
   }
 
   EventHandler getEventHandler() {
