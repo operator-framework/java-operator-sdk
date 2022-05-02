@@ -12,7 +12,6 @@ public class RegisteredController {
     this.controller = controller;
   }
 
-
   public void changeNamespaces(Set<String> namespaces) {
     controller.changeNamespaces(namespaces);
   }
