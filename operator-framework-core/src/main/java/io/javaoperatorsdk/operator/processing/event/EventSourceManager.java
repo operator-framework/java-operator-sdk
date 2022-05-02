@@ -144,6 +144,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void changeNamespaces(Set<String> namespaces) {
     eventProcessor.stop();
     getRegisteredEventSources().forEach(es -> {
