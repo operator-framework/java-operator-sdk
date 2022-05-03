@@ -458,7 +458,7 @@ following attributes are available in most parts of reconciliation logic and dur
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
 
-## Dynamically Adjusting Target Namespaces
+## Dynamically Changing Target Namespaces
 
 A controller can be configured to watch a set of namespaces (not only a single namespace or the whole cluster).
 The framework supports to dynamically change the list of these namespaces while the operator is running. 
