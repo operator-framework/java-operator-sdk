@@ -19,21 +19,21 @@ public interface InformerConfiguration<R extends HasMetadata>
       DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-    private final boolean inheritControllerNamespaces;
+    private final boolean followControllerNamespaceChanges;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        Set<String> namespaces, Boolean inheritControllerNamespaces) {
+        Set<String> namespaces, Boolean followControllerNamespaceChanges) {
       super(labelSelector, resourceClass, namespaces);
-      this.inheritControllerNamespaces = inheritControllerNamespaces;
+      this.followControllerNamespaceChanges = followControllerNamespaceChanges;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
     }
 
     public boolean isInheritControllerNamespacesOnChange() {
-      return inheritControllerNamespaces;
+      return followControllerNamespaceChanges;
     }
 
     public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
@@ -80,14 +80,14 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndInheritControllerNamespaces(
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndFollowControllerNamespaceChanges(
         Set<String> namespaces) {
       this.namespaces = namespaces;
       this.inheritControllerNamespacesOnChange = true;
       return this;
     }
 
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndInheritControllerNamespaces(
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndFollowControllerNamespaceChanges(
         EventSourceContext<P> context) {
       namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
       this.inheritControllerNamespacesOnChange = true;

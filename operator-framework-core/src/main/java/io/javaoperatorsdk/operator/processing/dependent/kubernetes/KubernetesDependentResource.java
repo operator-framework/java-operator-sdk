@@ -63,7 +63,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
             .withLabelSelector(labelSelector)
             .withSecondaryToPrimaryMapper(primaryResourcesRetriever);
     if (inheritNamespacesOnChange) {
-      ic.setAndInheritControllerNamespaces(namespaces);
+      ic.setAndFollowControllerNamespaceChanges(namespaces);
     } else {
       ic.withNamespaces(namespaces);
     }
