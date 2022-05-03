@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -174,7 +173,7 @@ public class Operator implements LifecycleAware {
         configuration.getName(),
         configuration.getResourceClass(),
         watchedNS);
-    return new RegisteredController(controller);
+    return controller;
   }
 
   /**

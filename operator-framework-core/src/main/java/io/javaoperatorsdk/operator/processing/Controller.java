@@ -13,10 +13,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.AggregatedOperatorException;
-import io.javaoperatorsdk.operator.CustomResourceUtils;
-import io.javaoperatorsdk.operator.MissingCRDException;
-import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.*;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -42,7 +39,7 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, Cleaner<P>, LifecycleAware {
+    implements Reconciler<P>, Cleaner<P>, LifecycleAware, RegisteredController {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
@@ -336,6 +333,11 @@ public class Controller<P extends HasMetadata>
 
   public void changeNamespaces(Set<String> namespaces) {
     eventSourceManager.changeNamespaces(namespaces);
+  }
+
+  @Override
+  public void changeNamespaces(String... namespaces) {
+    changeNamespaces(Set.of(namespaces));
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
