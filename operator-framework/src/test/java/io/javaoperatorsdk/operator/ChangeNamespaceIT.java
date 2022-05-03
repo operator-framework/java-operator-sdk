@@ -46,7 +46,7 @@ class ChangeNamespaceIT {
           () -> assertThat(client().resources(ChangeNamespaceTestCustomResource.class)
               .inNamespace(ADDITIONAL_TEST_NAMESPACE)
               .withName(TEST_RESOURCE_NAME_2).get().getStatus().getNumberOfStatusUpdates())
-                  .isEqualTo(0));
+                  .isZero());
 
       // adding additional namespace
       RegisteredController registeredController =

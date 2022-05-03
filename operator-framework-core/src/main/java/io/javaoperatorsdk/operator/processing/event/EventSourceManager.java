@@ -27,17 +27,27 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
-  private final EventSources<R> eventSources = new EventSources<>();
+  private final EventSources<R> eventSources;
   private final EventProcessor<R> eventProcessor;
   private final Controller<R> controller;
 
   EventSourceManager(EventProcessor<R> eventProcessor) {
+    this(eventProcessor, new EventSources<>());
+  }
+
+  EventSourceManager(EventProcessor<R> eventProcessor, EventSources<R> eventSources) {
     this.eventProcessor = eventProcessor;
+    this.eventSources = new EventSources<>();
     controller = null;
     registerEventSource(eventSources.retryEventSource());
   }
 
   public EventSourceManager(Controller<R> controller) {
+    this(controller, new EventSources<>());
+  }
+
+  EventSourceManager(Controller<R> controller, EventSources<R> eventSources) {
+    this.eventSources = eventSources;
     this.controller = controller;
     // controller event source needs to be available before we create the event processor
     final var controllerEventSource = eventSources.initControllerEventSource(controller);

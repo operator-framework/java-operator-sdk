@@ -8,11 +8,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -21,17 +23,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class EventSourceManagerTest {
 
-  private final EventProcessor eventHandler = mock(EventProcessor.class);
-  private final EventSourceManager eventSourceManager = new EventSourceManager(eventHandler);
+  private final EventProcessor eventProcessor = mock(EventProcessor.class);
+  private final EventSourceManager eventSourceManager = new EventSourceManager(eventProcessor);
 
   @Test
   public void registersEventSource() {
@@ -42,7 +40,7 @@ class EventSourceManagerTest {
     Set<EventSource> registeredSources = eventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).contains(eventSource);
 
-    verify(eventSource, times(1)).setEventHandler(eq(eventSourceManager.getEventHandler()));
+    verify(eventSource, times(1)).setEventHandler(eventSourceManager.getEventHandler());
   }
 
   @Test
@@ -137,6 +135,32 @@ class EventSourceManagerTest {
         eventSource2);
     assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name1"),
         eventSource);
+  }
+
+  @Test
+  void changesNamespacesOnControllerAndInformerEventSources() {
+    String newNamespaces = "new-namespace";
+
+    final var configuration = MockControllerConfiguration.forResource(HasMetadata.class);
+    final Controller controller = new Controller(mock(Reconciler.class), configuration,
+        MockKubernetesClient.client(HasMetadata.class));
+
+    EventSources eventSources = spy(new EventSources());
+    var controllerResourceEventSourceMock = mock(ControllerResourceEventSource.class);
+    doReturn(controllerResourceEventSourceMock).when(eventSources).controllerResourceEventSource();
+    var manager = new EventSourceManager(controller, eventSources);
+
+    InformerConfiguration informerConfigurationMock = mock(InformerConfiguration.class);
+    when(informerConfigurationMock.isInheritControllerNamespacesOnChange()).thenReturn(true);
+    InformerEventSource informerEventSource = mock(InformerEventSource.class);
+    when(informerEventSource.resourceType()).thenReturn(TestCustomResource.class);
+    when(informerEventSource.getConfiguration()).thenReturn(informerConfigurationMock);
+    manager.registerEventSource("ies", informerEventSource);
+
+    manager.changeNamespaces(Set.of(newNamespaces));
+
+    verify(informerEventSource, times(1)).changeNamespaces(Set.of(newNamespaces));
+    verify(controllerResourceEventSourceMock, times(1)).changeNamespaces(Set.of(newNamespaces));
   }
 
   private EventSourceManager initManager() {
