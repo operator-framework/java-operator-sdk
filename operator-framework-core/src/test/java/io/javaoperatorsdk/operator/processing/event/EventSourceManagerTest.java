@@ -147,6 +147,7 @@ class EventSourceManagerTest {
     EventSources eventSources = spy(new EventSources());
     var controllerResourceEventSourceMock = mock(ControllerResourceEventSource.class);
     doReturn(controllerResourceEventSourceMock).when(eventSources).controllerResourceEventSource();
+    when(controllerResourceEventSourceMock.allowsNamespaceChanges()).thenCallRealMethod();
     var manager = new EventSourceManager(controller, eventSources);
 
     InformerConfiguration informerConfigurationMock = mock(InformerConfiguration.class);
@@ -154,6 +155,7 @@ class EventSourceManagerTest {
     InformerEventSource informerEventSource = mock(InformerEventSource.class);
     when(informerEventSource.resourceType()).thenReturn(TestCustomResource.class);
     when(informerEventSource.getConfiguration()).thenReturn(informerConfigurationMock);
+    when(informerEventSource.allowsNamespaceChanges()).thenCallRealMethod();
     manager.registerEventSource("ies", informerEventSource);
 
     manager.changeNamespaces(Set.of(newNamespaces));

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -20,7 +21,6 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 public class EventSourceManager<R extends HasMetadata> implements LifecycleAware {
@@ -54,7 +54,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
    * caches propagated - although for non k8s related event sources this behavior might be different
    * (see
    * {@link io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}).
-   *
+   * <p>
    * Now the event sources are also started sequentially, mainly because others might depend on
    * {@link ControllerResourceEventSource} , which is started first.
    */
@@ -143,18 +143,13 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public void changeNamespaces(Set<String> namespaces) {
     eventProcessor.stop();
-    getRegisteredEventSources().forEach(es -> {
-      if (es instanceof InformerEventSource) {
-        InformerEventSource ies = (InformerEventSource) es;
-        if (ies.getConfiguration().followControllerNamespaceChanges()) {
-          ies.changeNamespaces(namespaces);
-        }
-      }
-    });
-    getControllerResourceEventSource().changeNamespaces(namespaces);
+    eventSources.allEventSources()
+        .filter(es -> es instanceof NamespaceChangeable)
+        .map(NamespaceChangeable.class::cast)
+        .filter(NamespaceChangeable::allowsNamespaceChanges)
+        .forEach(ies -> ies.changeNamespaces(namespaces));
     eventProcessor.start();
   }
 

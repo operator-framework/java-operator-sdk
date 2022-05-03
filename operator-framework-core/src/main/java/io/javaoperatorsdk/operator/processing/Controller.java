@@ -333,11 +333,6 @@ public class Controller<P extends HasMetadata>
     eventSourceManager.changeNamespaces(namespaces);
   }
 
-  @Override
-  public void changeNamespaces(String... namespaces) {
-    changeNamespaces(Set.of(namespaces));
-  }
-
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
     throw new MissingCRDException(
         crdName,

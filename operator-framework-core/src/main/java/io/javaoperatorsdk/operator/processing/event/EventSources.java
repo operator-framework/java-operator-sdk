@@ -45,6 +45,12 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
         .map(esEntry -> new NamedEventSource(esEntry.getValue(), esEntry.getKey())));
   }
 
+  Stream<EventSource> allEventSources() {
+    return Stream.concat(
+        Stream.of(retryEventSource(), controllerResourceEventSource()).filter(Objects::nonNull),
+        sources.values().stream().flatMap(c -> c.values().stream()));
+  }
+
   public void clear() {
     sources.clear();
   }

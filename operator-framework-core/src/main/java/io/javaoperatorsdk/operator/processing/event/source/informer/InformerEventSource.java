@@ -267,11 +267,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void changeNamespaces(Set<String> namespaces) {
-    if (!configuration.followControllerNamespaceChanges()) {
-      throw new IllegalStateException(
-          "InformerEventSource is not configured to change inherit namespaces.");
-    }
-    super.changeNamespaces(namespaces);
+  public boolean allowsNamespaceChanges() {
+    return getConfiguration().followControllerNamespaceChanges();
   }
 }

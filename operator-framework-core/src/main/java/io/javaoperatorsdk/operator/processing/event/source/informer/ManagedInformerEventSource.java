@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -25,7 +26,8 @@ import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends CachingEventSource<R, P>
-    implements ResourceEventHandler<R>, IndexerResourceCache<R>, RecentOperationCacheFiller<R> {
+    implements ResourceEventHandler<R>, IndexerResourceCache<R>, RecentOperationCacheFiller<R>,
+    NamespaceChangeable {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
@@ -61,8 +63,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     return (InformerManager<R, C>) cache;
   }
 
+  @Override
   public void changeNamespaces(Set<String> namespaces) {
-    manager().changeNamespaces(namespaces);
+    if (allowsNamespaceChanges()) {
+      manager().changeNamespaces(namespaces);
+    }
   }
 
   @Override
