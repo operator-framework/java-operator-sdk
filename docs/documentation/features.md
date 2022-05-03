@@ -460,16 +460,19 @@ For more information about MDC see this [link](https://www.baeldung.com/mdc-in-l
 
 ## Dynamically Changing Target Namespaces
 
-A controller can be configured to watch a set of namespaces (not only a single namespace or the whole cluster).
-The framework supports to dynamically change the list of these namespaces while the operator is running. 
-When a reconciler is registered the
-[`RegisteredController`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RegisteredController.java#L5-L5)
-is returned, which provides the related methods. These namespaces are meant to be changed when the operator is already 
-running. 
+A controller can be configured to watch a specific set of namespaces in addition of the 
+namespace in which it is currently deployed or the whole cluster. The framework supports 
+dynamically changing the list of these namespaces while the operator is running. 
+When a reconciler is registered, an instance of 
+[`RegisteredController`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RegisteredController.java#L5)
+is returned, providing access to the methods allowing users to change watched namespaces as the 
+operator is running.
 
-In a real life scenario usually the list of the target namespaces configured in `ConfigMap` or other input, 
-this part however is out of the scope of the framework. So in case you want to use a `ConfigMap` and react to change 
-of it, registering an Informer and calling the `RegisteredController` is up to the developer to implement.
+A typical scenario would probably involve extracting the list of target namespaces from a 
+`ConfigMap` or some other input but this part is out of the scope of the framework since this is 
+use-case specific. For example, reacting to changes to a `ConfigMap` would probably involve 
+registering an associated `Informer` and then calling the `changeNamespaces` method on 
+`RegisteredController`.
 
 ```java
 
@@ -485,9 +488,10 @@ of it, registering an Informer and calling the `RegisteredController` is up to t
 
 ```
 
-If a target namespaces change for a controller, it might be desirable to change the target namespaces of registered 
-`InformerEventSource`-s. In order to express this, the InformerEventSource needs to be configured to 
-`followControllerNamespaceChanges`, this the related method in `InformerConfiguration` should return `true`:
+If watched namespaces change for a controller, it might be desirable to propagate these changes to 
+`InformerEventSources` associated with the controller. In order to express this, 
+`InformerEventSource` implementations interested in following such changes need to be 
+configured appropriately so that the `followControllerNamespaceChanges` method returns `true`:
 
 ```java
 
@@ -501,7 +505,7 @@ public class MyReconciler
 
     InformerEventSource<ConfigMap, TestCustomResource> configMapES =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
-            .setAndFollowControllerNamespaceChanges(context)
+            .withNamespacesInheritedFromController(context)
             .build(), context);
 
     return EventSourceInitializer.nameEventSources(configMapES);
