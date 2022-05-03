@@ -458,9 +458,67 @@ following attributes are available in most parts of reconciliation logic and dur
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
 
+## Dynamically Adjusting Target Namespaces
+
+A controller can be configured to watch a set of namespaces (not only a single namespace or the whole cluster).
+The framework supports to dynamically change the list of these namespaces while the operator is running. 
+When a reconciler is registered the
+[`RegisteredController`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RegisteredController.java#L5-L5)
+is returned, which provides the related methods. These namespaces are meant to be changed when the operator is already 
+running. 
+
+In a real life scenario usually the list of the target namespaces configured in `ConfigMap` or other input, 
+this part however is out of the scope of the framework. So in case you want to use a `ConfigMap` and react to change 
+of it, registering an Informer and calling the `RegisteredController` is up to the developer to implement.
+
+```java
+
+  public static void main(String[] args) throws IOException {
+    KubernetesClient client = new DefaultKubernetesClient();
+    Operator operator = new Operator(client);
+    RegisteredController registeredController = operator.register(new WebPageReconciler(client));
+    operator.installShutdownHook();
+    operator.start();
+    
+    // call registeredController further while operator is running
+  }
+
+```
+
+If a target namespaces change for a controller, it might be desirable to change the target namespaces of registered 
+`InformerEventSource`-s. In order to express this, the InformerEventSource needs to be configured to 
+`followControllerNamespaceChanges`, this the related method in `InformerConfiguration` should return `true`:
+
+```java
+
+@ControllerConfiguration
+public class MyReconciler
+        implements Reconciler<TestCustomResource>, EventSourceInitializer<TestCustomResource>{
+
+ @Override
+  public Map<String, EventSource> prepareEventSources(
+      EventSourceContext<ChangeNamespaceTestCustomResource> context) {
+
+    InformerEventSource<ConfigMap, TestCustomResource> configMapES =
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
+            .setAndFollowControllerNamespaceChanges(context)
+            .build(), context);
+
+    return EventSourceInitializer.nameEventSources(configMapES);
+  }
+  
+}
+```
+
+As seen in the above code snippet, the informer will have the initial namespaces inherited from controller, but
+also will adjust the target namespaces if it changes for the controller.
+
+See also the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/changenamespace/ChangeNamespaceTestReconciler.java)
+for this feature.
+
 ## Monitoring with Micrometer
 
-## Automatic generation of CRDs
+## Automatic Generation of CRDs
 
 Note that this is feature of [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client) not the JOSDK.
 But it's worth to mention here.

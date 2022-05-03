@@ -37,7 +37,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private C configuration;
   private MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
   private ResourceEventHandler<T> eventHandler;
-  private Map<String, Function<T, List<String>>> indexers = new HashMap<>();
+  private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
 
   @Override
   public void start() throws OperatorException {

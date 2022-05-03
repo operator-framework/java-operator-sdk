@@ -32,7 +32,7 @@ public interface InformerConfiguration<R extends HasMetadata>
               Mappers.fromOwnerReference());
     }
 
-    public boolean isInheritControllerNamespacesOnChange() {
+    public boolean followControllerNamespaceChanges() {
       return followControllerNamespaceChanges;
     }
 
@@ -42,7 +42,13 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   }
 
-  boolean isInheritControllerNamespacesOnChange();
+  /**
+   * Used in case the watched namespaces are changed dynamically, thus when operator is running (See
+   * {@link io.javaoperatorsdk.operator.RegisteredController}). If true, changing the target
+   * namespaces of a controller would result to change target namespaces for the
+   * InformerEventSource.
+   */
+  boolean followControllerNamespaceChanges();
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 

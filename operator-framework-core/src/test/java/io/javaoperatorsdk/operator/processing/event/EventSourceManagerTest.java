@@ -28,7 +28,6 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"rawtypes", "unchecked"})
 class EventSourceManagerTest {
 
-  private final EventProcessor eventProcessor = mock(EventProcessor.class);
   private final EventSourceManager eventSourceManager = initManager();
 
   @Test
@@ -151,7 +150,7 @@ class EventSourceManagerTest {
     var manager = new EventSourceManager(controller, eventSources);
 
     InformerConfiguration informerConfigurationMock = mock(InformerConfiguration.class);
-    when(informerConfigurationMock.isInheritControllerNamespacesOnChange()).thenReturn(true);
+    when(informerConfigurationMock.followControllerNamespaceChanges()).thenReturn(true);
     InformerEventSource informerEventSource = mock(InformerEventSource.class);
     when(informerEventSource.resourceType()).thenReturn(TestCustomResource.class);
     when(informerEventSource.getConfiguration()).thenReturn(informerConfigurationMock);

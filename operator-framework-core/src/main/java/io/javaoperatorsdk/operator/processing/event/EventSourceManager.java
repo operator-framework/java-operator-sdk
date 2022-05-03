@@ -149,7 +149,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     getRegisteredEventSources().forEach(es -> {
       if (es instanceof InformerEventSource) {
         InformerEventSource ies = (InformerEventSource) es;
-        if (ies.getConfiguration().isInheritControllerNamespacesOnChange()) {
+        if (ies.getConfiguration().followControllerNamespaceChanges()) {
           ies.changeNamespaces(namespaces);
         }
       }
