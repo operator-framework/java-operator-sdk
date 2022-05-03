@@ -98,10 +98,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.eventSourceManager = eventSourceManager;
   }
 
-  EventMarker getEventMarker() {
-    return eventMarker;
-  }
-
   @Override
   public void handleEvent(Event event) {
     lock.lock();

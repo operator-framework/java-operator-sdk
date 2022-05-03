@@ -31,17 +31,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   private final EventProcessor<R> eventProcessor;
   private final Controller<R> controller;
 
-  EventSourceManager(EventProcessor<R> eventProcessor) {
-    this(eventProcessor, new EventSources<>());
-  }
-
-  EventSourceManager(EventProcessor<R> eventProcessor, EventSources<R> eventSources) {
-    this.eventProcessor = eventProcessor;
-    this.eventSources = new EventSources<>();
-    controller = null;
-    registerEventSource(eventSources.retryEventSource());
-  }
-
   public EventSourceManager(Controller<R> controller) {
     this(controller, new EventSources<>());
   }

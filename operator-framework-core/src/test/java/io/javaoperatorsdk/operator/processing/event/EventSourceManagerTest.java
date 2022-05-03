@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 class EventSourceManagerTest {
 
   private final EventProcessor eventProcessor = mock(EventProcessor.class);
-  private final EventSourceManager eventSourceManager = new EventSourceManager(eventProcessor);
+  private final EventSourceManager eventSourceManager = initManager();
 
   @Test
   public void registersEventSource() {
