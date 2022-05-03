@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
@@ -11,7 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-@SuppressWarnings("rawtypes")
 public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
 
@@ -72,31 +70,64 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
 
     public InformerConfigurationBuilder<R> withNamespaces(String... namespaces) {
-      this.namespaces = namespaces != null ? Set.of(namespaces) : Collections.emptySet();
-      return this;
+      return withNamespaces(
+          namespaces != null ? Set.of(namespaces) : ResourceConfiguration.DEFAULT_NAMESPACES);
     }
 
     public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces) {
-      this.namespaces = namespaces != null ? namespaces : Collections.emptySet();
+      return withNamespaces(namespaces, false);
+    }
+
+    /**
+     * Sets the initial set of namespaces to watch (typically extracted from the parent
+     * {@link io.javaoperatorsdk.operator.processing.Controller}'s configuration), specifying
+     * whether changes made to the parent controller configured namespaces should be tracked or not.
+     *
+     * @param namespaces the initial set of namespaces to watch
+     * @param followChanges {@code true} to follow the changes made to the parent controller
+     *        namespaces, {@code false} otherwise
+     * @return the builder instance so that calls can be chained fluently
+     */
+    public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces,
+        boolean followChanges) {
+      this.namespaces = namespaces != null ? namespaces : ResourceConfiguration.DEFAULT_NAMESPACES;
+      this.inheritControllerNamespacesOnChange = true;
+      return this;
+    }
+
+    /**
+     * Configures the informer to watch and track the same namespaces as the parent
+     * {@link io.javaoperatorsdk.operator.processing.Controller}, meaning that the informer will be
+     * restarted to watch the new namespaces if the parent controller's namespace configuration
+     * changes.
+     *
+     * @param context {@link EventSourceContext} from which the parent
+     *        {@link io.javaoperatorsdk.operator.processing.Controller}'s configuration is retrieved
+     * @param <P> the primary resource type associated with the parent controller
+     * @return the builder instance so that calls can be chained fluently
+     */
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> withNamespacesInheritedFromController(
+        EventSourceContext<P> context) {
+      namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
+      this.inheritControllerNamespacesOnChange = true;
+      return this;
+    }
+
+    /**
+     * Whether or not the associated informer should track changes made to the parent
+     * {@link io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
+     *
+     * @param followChanges {@code true} to reconfigure the associated informer when the parent
+     *        controller's namespaces are reconfigured, {@code false} otherwise
+     * @return the builder instance so that calls can be chained fluently
+     */
+    public InformerConfigurationBuilder<R> followNamespaceChanges(boolean followChanges) {
+      this.inheritControllerNamespacesOnChange = followChanges;
       return this;
     }
 
     public InformerConfigurationBuilder<R> withLabelSelector(String labelSelector) {
       this.labelSelector = labelSelector;
-      return this;
-    }
-
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndFollowControllerNamespaceChanges(
-        Set<String> namespaces) {
-      this.namespaces = namespaces;
-      this.inheritControllerNamespacesOnChange = true;
-      return this;
-    }
-
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> setAndFollowControllerNamespaceChanges(
-        EventSourceContext<P> context) {
-      namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
-      this.inheritControllerNamespacesOnChange = true;
       return this;
     }
 

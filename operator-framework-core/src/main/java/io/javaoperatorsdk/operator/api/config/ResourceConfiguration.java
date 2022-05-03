@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
 public interface ResourceConfiguration<R extends HasMetadata> {
 
-  Set<String> DEFAULT_NAMESPACES = Set.of(Constants.WATCH_ALL_NAMESPACES);
-  Set<String> CURRENT_NAMESPACE_ONLY = Set.of(Constants.WATCH_CURRENT_NAMESPACE);
+  Set<String> DEFAULT_NAMESPACES = Collections.singleton(Constants.WATCH_ALL_NAMESPACES);
+  Set<String> CURRENT_NAMESPACE_ONLY = Collections.singleton(Constants.WATCH_CURRENT_NAMESPACE);
 
   default String getResourceTypeName() {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());

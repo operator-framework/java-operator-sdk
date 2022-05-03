@@ -58,17 +58,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     final SecondaryToPrimaryMapper<R> primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
-    InformerConfiguration.InformerConfigurationBuilder<R> ic =
-        InformerConfiguration.from(resourceType())
-            .withLabelSelector(labelSelector)
-            .withSecondaryToPrimaryMapper(primaryResourcesRetriever);
-    if (inheritNamespacesOnChange) {
-      ic.setAndFollowControllerNamespaceChanges(namespaces);
-    } else {
-      ic.withNamespaces(namespaces);
-    }
+    var ic = InformerConfiguration.from(resourceType())
+        .withLabelSelector(labelSelector)
+        .withSecondaryToPrimaryMapper(primaryResourcesRetriever)
+        .withNamespaces(namespaces, inheritNamespacesOnChange)
+        .build();
 
-    configureWith(new InformerEventSource<>(ic.build(), client));
+    configureWith(new InformerEventSource<>(ic, client));
   }
 
   /**
@@ -83,11 +79,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(desired);
-    R created = null;
     try {
       prepareEventFiltering(desired, resourceID);
-      created = super.handleCreate(desired, primary, context);
-      return created;
+      return super.handleCreate(desired, primary, context);
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(resourceID);
       throw e;
@@ -96,11 +90,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(desired);
-    R updated = null;
     try {
       prepareEventFiltering(desired, resourceID);
-      updated = super.handleUpdate(actual, desired, primary, context);
-      return updated;
+      return super.handleUpdate(actual, desired, primary, context);
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(resourceID);
       throw e;
