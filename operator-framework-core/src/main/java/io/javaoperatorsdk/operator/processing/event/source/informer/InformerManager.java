@@ -79,7 +79,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
     var sourcesToRemove = sources.keySet().stream()
         .filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
-    log.debug("Stopping to watch namespaces: {} for {}", sourcesToRemove, this);
+    log.debug("Stopped informer {} for namespaces: {}", this, sourcesToRemove);
     sourcesToRemove.forEach(k -> sources.remove(k).stop());
 
     namespaces.forEach(ns -> {
@@ -90,7 +90,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
                 eventHandler, ns);
         source.addIndexers(this.indexers);
         source.start();
-        log.debug("Registered New {} -> {} for namespace: {}", this, source,
+        log.debug("Registered new {} -> {} for namespace: {}", this, source,
             ns);
       }
     });
