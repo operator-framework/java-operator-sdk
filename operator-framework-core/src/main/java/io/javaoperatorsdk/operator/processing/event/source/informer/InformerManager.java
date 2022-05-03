@@ -29,7 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 public class InformerManager<T extends HasMetadata, C extends ResourceConfiguration<T>>
     implements LifecycleAware, IndexerResourceCache<T>, UpdatableCache<T> {
 
-  private static final String ALL_NAMESPACE_MAP_KEY = "allNamespace";
+  private static final String ALL_NAMESPACES_MAP_KEY = "allNamespaces";
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);
 
   private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
@@ -58,7 +58,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       final var filteredBySelectorClient =
           client.inAnyNamespace().withLabelSelector(labelSelector);
       final var source =
-          createEventSource(filteredBySelectorClient, eventHandler, ALL_NAMESPACE_MAP_KEY);
+          createEventSource(filteredBySelectorClient, eventHandler, ALL_NAMESPACES_MAP_KEY);
       log.debug("Registered {} -> {} for any namespace", this, source);
     } else {
       targetNamespaces.forEach(
@@ -130,7 +130,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     if (isWatchingAllNamespaces()) {
-      return getSource(ALL_NAMESPACE_MAP_KEY)
+      return getSource(ALL_NAMESPACES_MAP_KEY)
           .map(source -> source.list(namespace, predicate))
           .orElse(Stream.empty());
     } else {
@@ -142,7 +142,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public Optional<T> get(ResourceID resourceID) {
-    return getSource(resourceID.getNamespace().orElse(ALL_NAMESPACE_MAP_KEY))
+    return getSource(resourceID.getNamespace().orElse(ALL_NAMESPACES_MAP_KEY))
         .flatMap(source -> source.get(resourceID))
         .map(cloner::clone);
   }
@@ -153,24 +153,24 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   private boolean isWatchingAllNamespaces() {
-    return sources.containsKey(ALL_NAMESPACE_MAP_KEY);
+    return sources.containsKey(ALL_NAMESPACES_MAP_KEY);
   }
 
   private Optional<InformerWrapper<T>> getSource(String namespace) {
-    namespace = isWatchingAllNamespaces() || namespace == null ? ALL_NAMESPACE_MAP_KEY : namespace;
+    namespace = isWatchingAllNamespaces() || namespace == null ? ALL_NAMESPACES_MAP_KEY : namespace;
     return Optional.ofNullable(sources.get(namespace));
   }
 
   @Override
   public T remove(ResourceID key) {
-    return getSource(key.getNamespace().orElse(ALL_NAMESPACE_MAP_KEY))
+    return getSource(key.getNamespace().orElse(ALL_NAMESPACES_MAP_KEY))
         .map(c -> c.remove(key))
         .orElse(null);
   }
 
   @Override
   public void put(ResourceID key, T resource) {
-    getSource(key.getNamespace().orElse(ALL_NAMESPACE_MAP_KEY))
+    getSource(key.getNamespace().orElse(ALL_NAMESPACES_MAP_KEY))
         .ifPresentOrElse(c -> c.put(key, resource),
             () -> log.warn(
                 "Cannot put resource in the cache. No related cache found: {}. Resource: {}",
