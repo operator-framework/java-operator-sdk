@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 
 public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
@@ -20,10 +21,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
       new HashMap<>();
   private final Map<DependentResourceNode<?, ?>, Exception> exceptionsDuringExecution =
       new HashMap<>();
-  private final Set<DependentResourceNode<?, ?>> alreadyReconciled = new HashSet<>();
+  private final Set<DependentResourceNode<?, ?>> alreadyVisited = new HashSet<>();
   private final Set<DependentResourceNode<?, ?>> notReady = new HashSet<>();
-  private final Set<DependentResourceNode<?, ?>> ownOrAncestorReconcileConditionConditionNotMet =
-      new HashSet<>();
 
   private final Workflow<P> workflow;
   private final P primary;
@@ -35,11 +34,13 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     this.context = context;
   }
 
+  // todo cleanup condition
+  // todo error handling
 
   public synchronized WorkflowCleanupResult cleanup() {
     for (DependentResourceNode<?, P> dependentResourceNode : workflow
         .getBottomLevelResource()) {
-      handleCleanup(dependentResourceNode, false);
+      handleCleanup(dependentResourceNode);
     }
     while (true) {
       try {
@@ -57,15 +58,11 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     return createCleanupResult();
   }
 
-  private WorkflowCleanupResult createCleanupResult() {
-    return new WorkflowCleanupResult();
-  }
-
   private synchronized boolean noMoreExecutionsScheduled() {
     return actualExecutions.isEmpty();
   }
 
-  private void handleCleanup(DependentResourceNode<?, P> dependentResourceNode, boolean b) {
+  private synchronized void handleCleanup(DependentResourceNode<?, P> dependentResourceNode) {
     log.debug("Submitting for cleanup: {}", dependentResourceNode);
 
     if (alreadyVisited(dependentResourceNode)
@@ -76,24 +73,30 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
       return;
     }
 
+    Future<?> nodeFuture =
+        workflow.getExecutorService().submit(
+            new NodeExecutor(dependentResourceNode));
+    actualExecutions.put(dependentResourceNode, nodeFuture);
+    log.debug("Submitted to reconcile: {}", dependentResourceNode);
   }
 
   private class NodeExecutor implements Runnable {
 
     private final DependentResourceNode<?, P> dependentResourceNode;
-    private final boolean onlyReconcileForPossibleDelete;
 
-    private NodeExecutor(DependentResourceNode<?, P> dependentResourceNode,
-        boolean onlyReconcileForDelete) {
+    private NodeExecutor(DependentResourceNode<?, P> dependentResourceNode) {
       this.dependentResourceNode = dependentResourceNode;
-      this.onlyReconcileForPossibleDelete = onlyReconcileForDelete;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-
+        if (dependentResourceNode.getDependentResource() instanceof Deleter) {
+          // todo check if not garbage collected
+          ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
+        }
+        handleDependentCleaned(dependentResourceNode);
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
       } finally {
@@ -102,12 +105,26 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     }
   }
 
-  private synchronized void handleExceptionInExecutor(DependentResourceNode dependentResourceNode,
+  @SuppressWarnings("unchecked")
+  private synchronized void handleDependentCleaned(
+      DependentResourceNode<?, P> dependentResourceNode) {
+    var dependOns = dependentResourceNode.getDependsOn();
+    if (dependOns != null) {
+      dependOns.forEach(d -> {
+        log.debug("Handle cleanup for dependent: {} of parent:{}", d, dependentResourceNode);
+        handleCleanup(d);
+      });
+    }
+  }
+
+  private synchronized void handleExceptionInExecutor(
+      DependentResourceNode<?, P> dependentResourceNode,
       RuntimeException e) {
     exceptionsDuringExecution.put(dependentResourceNode, e);
   }
 
-  private synchronized void handleNodeExecutionFinish(DependentResourceNode dependentResourceNode) {
+  private synchronized void handleNodeExecutionFinish(
+      DependentResourceNode<?, P> dependentResourceNode) {
     log.debug("Finished execution for: {}", dependentResourceNode);
     actualExecutions.remove(dependentResourceNode);
     if (actualExecutions.isEmpty()) {
@@ -119,23 +136,27 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     return actualExecutions.containsKey(dependentResourceNode);
   }
 
-
   private boolean alreadyVisited(
       DependentResourceNode<?, ?> dependentResourceNode) {
-    return alreadyReconciled.contains(dependentResourceNode);
+    return alreadyVisited.contains(dependentResourceNode);
   }
 
   private boolean allParentsCleaned(
       DependentResourceNode<?, ?> dependentResourceNode) {
-    return dependentResourceNode.getDependsOn().isEmpty()
-        || dependentResourceNode.getDependsOn().stream()
+    var parents = workflow.getDependents().get(dependentResourceNode);
+    return parents.isEmpty()
+        || parents.stream()
             .allMatch(d -> alreadyVisited(d) && !notReady.contains(d));
   }
 
   private boolean hasErroredParent(
       DependentResourceNode<?, ?> dependentResourceNode) {
-    return !dependentResourceNode.getDependsOn().isEmpty()
-        && dependentResourceNode.getDependsOn().stream()
-            .anyMatch(exceptionsDuringExecution::containsKey);
+    var parents = workflow.getDependents().get(dependentResourceNode);
+    return !parents.isEmpty()
+        && parents.stream().anyMatch(exceptionsDuringExecution::containsKey);
+  }
+
+  private WorkflowCleanupResult createCleanupResult() {
+    return new WorkflowCleanupResult();
   }
 }

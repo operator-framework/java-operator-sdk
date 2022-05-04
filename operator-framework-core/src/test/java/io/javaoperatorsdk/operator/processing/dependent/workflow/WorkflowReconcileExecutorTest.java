@@ -1,18 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
@@ -21,7 +14,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class WorkflowReconcileExecutorTest {
+class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   public static final String NOT_READY_YET = "NOT READY YET";
   private ReconcileCondition met_reconcile_condition =
@@ -47,15 +40,6 @@ class WorkflowReconcileExecutorTest {
           primary.getStatus().setConfigMapStatus(NOT_READY_YET);
         }
       };
-
-  public static final String VALUE = "value";
-  private List<ReconcileRecord> executionHistory =
-      Collections.synchronizedList(new ArrayList<>());
-
-  TestDependent dr1 = new TestDependent("DR_1");
-  TestDependent dr2 = new TestDependent("DR_2");
-  TestDeleterDependent drDeleter = new TestDeleterDependent("DR_DELETER");
-  TestErrorDependent drError = new TestErrorDependent("ERROR_1");
 
   @Test
   void reconcileTopLevelResources() {
@@ -339,79 +323,6 @@ class WorkflowReconcileExecutorTest {
     assertThat(executionHistory).reconciledInOrder(dr1, dr2)
         .reconciledInOrder(dr1, dr3)
         .notReconciled(dr4);
-  }
-
-  public class TestDependent implements DependentResource<String, TestCustomResource> {
-
-    private String name;
-
-    public TestDependent(String name) {
-      this.name = name;
-    }
-
-    @Override
-    public ReconcileResult<String> reconcile(TestCustomResource primary,
-        Context<TestCustomResource> context) {
-      executionHistory.add(new ReconcileRecord(this));
-      return ReconcileResult.resourceCreated(VALUE);
-    }
-
-    @Override
-    public Class<String> resourceType() {
-      return String.class;
-    }
-
-    @Override
-    public Optional<String> getSecondaryResource(TestCustomResource primary) {
-      return Optional.of(VALUE);
-    }
-
-    @Override
-    public String toString() {
-      return name;
-    }
-  }
-
-  private class TestDeleterDependent extends TestDependent implements Deleter<TestCustomResource> {
-
-    public TestDeleterDependent(String name) {
-      super(name);
-    }
-
-    @Override
-    public void delete(TestCustomResource primary, Context<TestCustomResource> context) {
-      executionHistory.add(new ReconcileRecord(this, true));
-    }
-  }
-
-  private class TestErrorDependent implements DependentResource<String, TestCustomResource> {
-    private String name;
-
-    public TestErrorDependent(String name) {
-      this.name = name;
-    }
-
-    @Override
-    public ReconcileResult<String> reconcile(TestCustomResource primary,
-        Context<TestCustomResource> context) {
-      executionHistory.add(new ReconcileRecord(this));
-      throw new IllegalStateException("Test exception");
-    }
-
-    @Override
-    public Class<String> resourceType() {
-      return String.class;
-    }
-
-    @Override
-    public Optional<String> getSecondaryResource(TestCustomResource primary) {
-      return Optional.of(VALUE);
-    }
-
-    @Override
-    public String toString() {
-      return name;
-    }
   }
 
 }
