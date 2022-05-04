@@ -5,9 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -17,8 +15,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected final boolean creatable = this instanceof Creator;
   protected final boolean updatable = this instanceof Updater;
-  protected final boolean deletable = this instanceof Deleter;
-  protected final boolean garbageCollected = this instanceof GarbageCollected;
+
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
 

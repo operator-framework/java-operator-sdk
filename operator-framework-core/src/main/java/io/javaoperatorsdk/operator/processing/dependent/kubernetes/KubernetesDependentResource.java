@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
@@ -35,6 +36,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final Class<R> resourceType;
+  private final boolean garbageCollected = this instanceof GarbageCollected;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -78,11 +80,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(desired);
-    R created = null;
     try {
       prepareEventFiltering(desired, resourceID);
-      created = super.handleCreate(desired, primary, context);
-      return created;
+      return super.handleCreate(desired, primary, context);
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(resourceID);
       throw e;
@@ -91,11 +91,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(desired);
-    R updated = null;
     try {
       prepareEventFiltering(desired, resourceID);
-      updated = super.handleUpdate(actual, desired, primary, context);
-      return updated;
+      return super.handleUpdate(actual, desired, primary, context);
     } catch (RuntimeException e) {
       cleanupAfterEventFiltering(resourceID);
       throw e;
