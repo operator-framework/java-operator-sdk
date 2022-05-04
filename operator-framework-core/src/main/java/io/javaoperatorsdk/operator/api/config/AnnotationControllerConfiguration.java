@@ -11,6 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -35,6 +36,11 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
+    if (annotation == null) {
+      throw new OperatorException(
+          "Missing mandatory @" + ControllerConfiguration.class.getSimpleName() +
+              " annotation for reconciler:  " + reconciler);
+    }
   }
 
   @Override

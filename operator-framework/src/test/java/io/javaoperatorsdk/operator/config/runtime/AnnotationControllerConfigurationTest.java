@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -75,6 +77,13 @@ class AnnotationControllerConfigurationTest {
     maybeConfig = dependentSpec.getDependentResourceConfiguration();
     assertTrue(maybeConfig.isPresent());
     assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
+  }
+
+  @Test
+  void missingAnnotationThrowsException() {
+    Assertions.assertThrows(OperatorException.class, () -> {
+      new AnnotationControllerConfiguration<>(new MissingAnnotationReconciler());
+    });
   }
 
   @SuppressWarnings("rawtypes")
@@ -157,6 +166,7 @@ class AnnotationControllerConfigurationTest {
     }
   }
 
+  @ControllerConfiguration
   private static class NoDepReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -183,6 +193,14 @@ class AnnotationControllerConfigurationTest {
       public WithAnnotation() {
         super(ConfigMap.class);
       }
+    }
+  }
+
+  private static class MissingAnnotationReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
     }
   }
 }
