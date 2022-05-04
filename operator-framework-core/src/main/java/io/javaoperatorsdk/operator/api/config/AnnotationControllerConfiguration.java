@@ -37,8 +37,9 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
     if (annotation == null) {
-      throw new OperatorException("Missing mandatory " +
-          "@ControllerConfiguration annotation from the reconciler:  " + reconciler);
+      throw new OperatorException(
+          "Missing mandatory @" + ControllerConfiguration.class.getSimpleName() +
+              " annotation for reconciler:  " + reconciler);
     }
   }
 
