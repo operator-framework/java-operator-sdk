@@ -22,7 +22,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        Set<String> namespaces, Boolean followControllerNamespaceChanges) {
+        Set<String> namespaces, boolean followControllerNamespaceChanges) {
       super(labelSelector, resourceClass, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
       this.secondaryToPrimaryMapper =

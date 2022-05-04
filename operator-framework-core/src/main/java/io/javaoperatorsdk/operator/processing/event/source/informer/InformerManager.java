@@ -73,10 +73,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    if (ResourceConfiguration.allNamespacesWatched(namespaces)) {
-      throw new OperatorException("This feature is only supported for ");
-    }
-
     var sourcesToRemove = sources.keySet().stream()
         .filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
     log.debug("Stopped informer {} for namespaces: {}", this, sourcesToRemove);
