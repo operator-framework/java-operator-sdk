@@ -84,7 +84,7 @@ public class ExecutionAssert
 
   private void checkIfReconciled(int i, DependentResource<?, ?>[] dependentResources) {
     if (!getActualDependentResources().contains(dependentResources[i])) {
-      failWithMessage("Dependent resource not reconciled on place %i", i);
+      failWithMessage("Dependent resource not reconciled on place %d", i);
     }
   }
 }

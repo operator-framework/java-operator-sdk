@@ -142,16 +142,16 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   private boolean allParentsCleaned(
-      DependentResourceNode<?, ?> dependentResourceNode) {
-    var parents = workflow.getDependents().get(dependentResourceNode);
+      DependentResourceNode<?, P> dependentResourceNode) {
+    var parents = workflow.getDependents(dependentResourceNode);
     return parents.isEmpty()
         || parents.stream()
             .allMatch(d -> alreadyVisited(d) && !notReady.contains(d));
   }
 
   private boolean hasErroredParent(
-      DependentResourceNode<?, ?> dependentResourceNode) {
-    var parents = workflow.getDependents().get(dependentResourceNode);
+      DependentResourceNode<?, P> dependentResourceNode) {
+    var parents = workflow.getDependents(dependentResourceNode);
     return !parents.isEmpty()
         && parents.stream().anyMatch(exceptionsDuringExecution::containsKey);
   }

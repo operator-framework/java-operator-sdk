@@ -178,14 +178,11 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
   private synchronized void handleDependentsReconcile(
       DependentResourceNode<?, P> dependentResourceNode, boolean onlyReconcileForPossibleDelete) {
-    var dependents = workflow.getDependents().get(dependentResourceNode);
-    if (dependents != null) {
-
-      dependents.forEach(d -> {
-        log.debug("Handle reconcile for dependent: {} of parent:{}", d, dependentResourceNode);
-        handleReconcile(d, onlyReconcileForPossibleDelete);
-      });
-    }
+    var dependents = workflow.getDependents(dependentResourceNode);
+    dependents.forEach(d -> {
+      log.debug("Handle reconcile for dependent: {} of parent:{}", d, dependentResourceNode);
+      handleReconcile(d, onlyReconcileForPossibleDelete);
+    });
   }
 
   private boolean noMoreExecutionsScheduled() {

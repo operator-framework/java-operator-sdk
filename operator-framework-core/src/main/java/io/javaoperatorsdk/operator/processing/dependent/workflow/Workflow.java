@@ -82,6 +82,15 @@ public class Workflow<P extends HasMetadata> {
     return bottomLevelResource;
   }
 
+  List<DependentResourceNode<?, P>> getDependents(DependentResourceNode<?, P> node) {
+    var deps = dependents.get(node);
+    if (deps == null) {
+      return Collections.emptyList();
+    } else {
+      return deps;
+    }
+  }
+
   Map<DependentResourceNode<?, P>, List<DependentResourceNode<?, P>>> getDependents() {
     return dependents;
   }
