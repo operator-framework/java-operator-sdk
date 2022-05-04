@@ -38,6 +38,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     this.workflow = workflow;
   }
 
+  // todo reverse delete order
+
   // todo add reconcile results
   // - reconciled in results should contain only truly reconciled
   public synchronized WorkflowExecutionResult reconcile() {
@@ -106,7 +108,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
   // needs to be synced
   private synchronized void updateStatusForNotReady(ReadyCondition<?, P> readyCondition) {
-    // todo think through this, since more can't be not ready
     readyCondition.addNotReadyStatusInfo(primary);
   }
 
