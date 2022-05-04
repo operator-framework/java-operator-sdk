@@ -60,6 +60,7 @@ public class WebappReconciler
 
     InformerConfiguration<Tomcat> configuration =
         InformerConfiguration.from(Tomcat.class)
+            .withNamespacesInheritedFromController(context)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
             .build();
     return EventSourceInitializer

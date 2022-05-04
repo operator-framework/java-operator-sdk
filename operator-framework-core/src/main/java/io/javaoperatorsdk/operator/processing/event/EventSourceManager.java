@@ -145,8 +145,9 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
 
   public void changeNamespaces(Set<String> namespaces) {
     eventProcessor.stop();
-    eventSources.allEventSources()
-        .filter(es -> es instanceof NamespaceChangeable)
+    eventSources
+        .allEventSources()
+        .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)
         .filter(NamespaceChangeable::allowsNamespaceChanges)
         .forEach(ies -> ies.changeNamespaces(namespaces));

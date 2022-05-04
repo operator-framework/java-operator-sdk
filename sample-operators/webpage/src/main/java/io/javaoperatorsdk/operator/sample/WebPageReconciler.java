@@ -52,18 +52,22 @@ public class WebPageReconciler
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
+            .withNamespacesInheritedFromController(context)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
     var deploymentEventSource =
         new InformerEventSource<>(InformerConfiguration.from(Deployment.class)
+            .withNamespacesInheritedFromController(context)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
     var serviceEventSource =
         new InformerEventSource<>(InformerConfiguration.from(Service.class)
+            .withNamespacesInheritedFromController(context)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
     var ingressEventSource =
         new InformerEventSource<>(InformerConfiguration.from(Ingress.class)
+            .withNamespacesInheritedFromController(context)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
             .build(), context);
     return EventSourceInitializer.nameEventSources(configMapEventSource, deploymentEventSource,
