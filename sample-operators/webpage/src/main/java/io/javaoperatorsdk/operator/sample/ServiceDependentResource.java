@@ -13,7 +13,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
-@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
+@KubernetesDependent(labelSelector = SELECTOR)
 class ServiceDependentResource extends
     io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource<Service, WebPage> {
 
