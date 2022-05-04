@@ -26,8 +26,7 @@ public class ChangeNamespaceTestReconciler
       EventSourceContext<ChangeNamespaceTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, ChangeNamespaceTestCustomResource> configMapES =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
-            .withNamespacesInheritedFromController(context)
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
 
     return EventSourceInitializer.nameEventSources(configMapES);

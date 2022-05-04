@@ -143,4 +143,19 @@ public interface InformerConfiguration<R extends HasMetadata>
     return new InformerConfigurationBuilder<>(resourceClass);
   }
 
+  /**
+   * Creates a configuration builder that inherits namespaces from the controller and follows
+   * namespaces changes.
+   *
+   * @param resourceClass secondary resource class
+   * @param eventSourceContext of the initializer
+   * @return builder
+   * @param <R> secondary resource type
+   */
+  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
+      Class<R> resourceClass, EventSourceContext<?> eventSourceContext) {
+    return new InformerConfigurationBuilder<>(resourceClass)
+        .withNamespacesInheritedFromController(eventSourceContext);
+  }
+
 }
