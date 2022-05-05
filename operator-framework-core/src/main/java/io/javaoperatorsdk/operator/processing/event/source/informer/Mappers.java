@@ -9,6 +9,9 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 
 public class Mappers {
 
+  public static final String DEFAULT_ANNOTATION_FOR_NAME = "primary-name";
+  public static final String DEFAULT_ANNOTATION_FOR_NAMESPACE = "primary-namespace";
+
   private Mappers() {}
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
@@ -24,6 +27,10 @@ public class Mappers {
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
       String nameKey) {
     return fromMetadata(nameKey, null, true);
+  }
+
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromDefaultAnnotations() {
+    return fromMetadata(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE, false);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(

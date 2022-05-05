@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
 
@@ -11,6 +12,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -57,16 +59,30 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unchecked")
   private void configureWith(String labelSelector, Set<String> namespaces,
       boolean inheritNamespacesOnChange) {
-    final SecondaryToPrimaryMapper<R> primaryResourcesRetriever =
-        (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
-            : Mappers.fromOwnerReference();
+
+    final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper =
+        getSecondaryToPrimaryMapper();
+
     var ic = InformerConfiguration.from(resourceType())
         .withLabelSelector(labelSelector)
-        .withSecondaryToPrimaryMapper(primaryResourcesRetriever)
+        .withSecondaryToPrimaryMapper(secondaryToPrimaryMapper)
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
     configureWith(new InformerEventSource<>(ic, client));
+  }
+
+  private SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
+    if (this instanceof SecondaryToPrimaryMapper) {
+      return (SecondaryToPrimaryMapper<R>) this;
+    } else if (garbageCollected) {
+      return Mappers.fromOwnerReference();
+    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
+      return Mappers.fromDefaultAnnotations();
+    } else {
+      throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
+          "this resource with the primary resource. DependentResource: " + getClass().getName());
+    }
   }
 
   /**
@@ -129,6 +145,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         ResourceID.fromResource(desired));
     if (addOwnerReference()) {
       desired.addOwnerReference(primary);
+    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
+      addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
     Class<R> targetClass = (Class<R>) desired.getClass();
     return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace());
@@ -140,6 +158,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     log.warn("Using default configuration for " + resourceType().getSimpleName()
         + " KubernetesDependentResource, call configureWith to provide configuration");
     return eventSource();
+  }
+
+  private boolean useDefaultAnnotationsToIdentifyPrimary() {
+    return !(this instanceof SecondaryToPrimaryMapper) && !garbageCollected && creatable;
+  }
+
+  private void addDefaultSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
+    var annotations = desired.getMetadata().getAnnotations();
+    if (annotations == null) {
+      annotations = new HashMap<>();
+      desired.getMetadata().setAnnotations(annotations);
+    }
+    annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAME, primary.getMetadata().getName());
+    annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, primary.getMetadata().getNamespace());
   }
 
   protected boolean addOwnerReference() {
