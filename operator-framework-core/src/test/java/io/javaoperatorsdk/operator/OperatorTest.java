@@ -10,12 +10,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SuppressWarnings("rawtypes")
 class OperatorTest {
@@ -28,20 +25,6 @@ class OperatorTest {
   @AfterAll
   static void setUpConfigurationServiceProvider() {
     ConfigurationServiceProvider.reset();
-  }
-
-  @Test
-  @DisplayName("should register `Reconciler` to Controller")
-  public void shouldRegisterReconcilerToController() {
-    // given
-    final var configuration = MockControllerConfiguration.forResource(ConfigMap.class);
-
-    // when
-    operator.register(fooReconciler, configuration);
-
-    // then
-    assertThat(operator.getControllers().size()).isEqualTo(1);
-    assertThat(operator.getControllers().get(0).getReconciler()).isEqualTo(fooReconciler);
   }
 
   @Test

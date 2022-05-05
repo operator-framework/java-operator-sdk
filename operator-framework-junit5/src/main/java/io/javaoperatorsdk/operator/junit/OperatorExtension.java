@@ -18,7 +18,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override;
@@ -65,7 +64,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
   }
 
   private Stream<Reconciler> reconcilers() {
-    return operator.getControllers().stream().map(Controller::getReconciler);
+    return reconcilers.stream().map(reconcilerSpec -> reconcilerSpec.reconciler);
   }
 
   public List<Reconciler> getReconcilers() {

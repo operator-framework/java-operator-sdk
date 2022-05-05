@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -73,10 +71,6 @@ public class Operator implements LifecycleAware {
 
   public KubernetesClient getKubernetesClient() {
     return kubernetesClient;
-  }
-
-  public List<Controller> getControllers() {
-    return new ArrayList<>(controllers.controllers.values());
   }
 
   /**
