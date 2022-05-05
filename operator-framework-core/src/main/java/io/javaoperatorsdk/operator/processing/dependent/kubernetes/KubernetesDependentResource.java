@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
@@ -35,6 +36,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final Class<R> resourceType;
+  private final boolean garbageCollected = this instanceof GarbageCollected;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -114,10 +116,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    if (!addOwnerReference()) {
-      var resource = getSecondaryResource(primary);
-      resource.ifPresent(r -> client.resource(r).delete());
-    }
+    var resource = getSecondaryResource(primary);
+    resource.ifPresent(r -> client.resource(r).delete());
   }
 
   @SuppressWarnings("unchecked")
@@ -143,7 +143,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected boolean addOwnerReference() {
-    return creatable && !deletable;
+    return garbageCollected;
   }
 
   @Override
