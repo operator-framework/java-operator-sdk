@@ -1,19 +1,22 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 
 /**
- * Adaptor Class for standalone mode for resources that manages Create, Read, Update and Delete
+ * Adaptor class for standalone mode for resources that manage Create, Read and Update operations
+ * and that should be automatically garbage-collected by Kubernetes when the associated primary
+ * resource is destroyed.
  *
- * @param <R> Managed resource
- * @param <P> Primary Resource
+ * @param <R> the type of the managed dependent resource
+ * @param <P> the type of the associated primary resource
  */
 public abstract class CRUDKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends
-    KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P>, Deleter<P> {
+    KubernetesDependentResource<R, P>
+    implements Creator<R, P>, Updater<R, P>, GarbageCollected<P> {
 
   public CRUDKubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
