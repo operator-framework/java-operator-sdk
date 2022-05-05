@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
@@ -19,7 +19,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = SELECTOR)
-public class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
+class ConfigMapDependentResource extends CRUDKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 

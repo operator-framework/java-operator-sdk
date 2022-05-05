@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
@@ -62,15 +63,16 @@ public class Controller<P extends HasMetadata>
 
     final var hasDeleterHolder = new boolean[] {false};
     final var specs = configuration.getDependentResources();
-    final var size = specs.size();
-    if (size == 0) {
+    final var specsSize = specs.size();
+    if (specsSize == 0) {
       dependents = new LinkedHashMap<>();
     } else {
-      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(size);
+      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(specsSize);
       specs.forEach(drs -> {
         final var dependent = createAndConfigureFrom(drs, kubernetesClient);
         // check if dependent implements Deleter to record that fact
-        if (!hasDeleterHolder[0] && dependent instanceof Deleter) {
+        if (!hasDeleterHolder[0] && dependent instanceof Deleter
+            && !(dependent instanceof GarbageCollected)) {
           hasDeleterHolder[0] = true;
         }
         dependentsHolder.put(drs.getName(), dependent);
@@ -131,7 +133,7 @@ public class Controller<P extends HasMetadata>
                   initContextIfNeeded(resource, context);
                   if (hasDeleterDependents) {
                     dependents.values().stream()
-                        .filter(d -> d instanceof Deleter)
+                        .filter(d -> d instanceof Deleter && !(d instanceof GarbageCollected))
                         .map(Deleter.class::cast)
                         .forEach(deleter -> deleter.delete(resource, context));
                   }
