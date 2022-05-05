@@ -25,6 +25,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
+
 @SuppressWarnings("rawtypes")
 public class AnnotationControllerConfiguration<R extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
@@ -73,7 +75,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   @Override
   public Set<String> getNamespaces() {
     return Set.of(valueOrDefault(annotation, ControllerConfiguration::namespaces,
-        new String[] {Constants.WATCH_ALL_NAMESPACES}));
+        DEFAULT_NAMESPACES.toArray(String[]::new)));
   }
 
   @Override
