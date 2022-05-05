@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.informers.cache.Indexer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -36,6 +37,8 @@ public class MockKubernetesClient {
     when(resources.inAnyNamespace()).thenReturn(inAnyNamespace);
     when(inAnyNamespace.withLabelSelector(nullable(String.class))).thenReturn(filterable);
     SharedIndexInformer<T> informer = mock(SharedIndexInformer.class);
+    Indexer mockIndexer = mock(Indexer.class);
+    when(informer.getIndexer()).thenReturn(mockIndexer);
     when(filterable.runnableInformer(anyLong())).thenReturn(informer);
     when(client.resources(clazz)).thenReturn(resources);
 

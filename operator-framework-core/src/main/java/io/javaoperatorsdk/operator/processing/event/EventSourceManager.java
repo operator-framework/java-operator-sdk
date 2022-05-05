@@ -4,7 +4,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -13,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -27,18 +27,16 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
-  private final ReentrantLock lock = new ReentrantLock();
-  private final EventSources<R> eventSources = new EventSources<>();
+  private final EventSources<R> eventSources;
   private final EventProcessor<R> eventProcessor;
   private final Controller<R> controller;
 
-  EventSourceManager(EventProcessor<R> eventProcessor) {
-    this.eventProcessor = eventProcessor;
-    controller = null;
-    registerEventSource(eventSources.retryEventSource());
+  public EventSourceManager(Controller<R> controller) {
+    this(controller, new EventSources<>());
   }
 
-  public EventSourceManager(Controller<R> controller) {
+  EventSourceManager(Controller<R> controller, EventSources<R> eventSources) {
+    this.eventSources = eventSources;
     this.controller = controller;
     // controller event source needs to be available before we create the event processor
     final var controllerEventSource = eventSources.initControllerEventSource(controller);
@@ -56,29 +54,24 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
    * caches propagated - although for non k8s related event sources this behavior might be different
    * (see
    * {@link io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}).
-   *
+   * <p>
    * Now the event sources are also started sequentially, mainly because others might depend on
    * {@link ControllerResourceEventSource} , which is started first.
    */
   @Override
-  public void start() {
-    lock.lock();
-    try {
-      for (var eventSource : eventSources) {
-        try {
-          logEventSourceEvent(eventSource, "Starting");
-          eventSource.start();
-          logEventSourceEvent(eventSource, "Started");
-        } catch (MissingCRDException e) {
-          throw e; // leave untouched
-        } catch (Exception e) {
-          throw new OperatorException("Couldn't start source " + eventSource.name(), e);
-        }
+  public synchronized void start() {
+    for (var eventSource : eventSources) {
+      try {
+        logEventSourceEvent(eventSource, "Starting");
+        eventSource.start();
+        logEventSourceEvent(eventSource, "Started");
+      } catch (MissingCRDException e) {
+        throw e; // leave untouched
+      } catch (Exception e) {
+        throw new OperatorException("Couldn't start source " + eventSource.name(), e);
       }
-      eventProcessor.start();
-    } finally {
-      lock.unlock();
     }
+    eventProcessor.start();
   }
 
   @SuppressWarnings("rawtypes")
@@ -95,22 +88,17 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   @Override
-  public void stop() {
-    lock.lock();
-    try {
-      for (var eventSource : eventSources) {
-        try {
-          logEventSourceEvent(eventSource, "Stopping");
-          eventSource.stop();
-          logEventSourceEvent(eventSource, "Stopped");
-        } catch (Exception e) {
-          log.warn("Error closing {} -> {}", eventSource.name(), e);
-        }
+  public synchronized void stop() {
+    for (var eventSource : eventSources) {
+      try {
+        logEventSourceEvent(eventSource, "Stopping");
+        eventSource.stop();
+        logEventSourceEvent(eventSource, "Stopped");
+      } catch (Exception e) {
+        log.warn("Error closing {} -> {}", eventSource.name(), e);
       }
-      eventSources.clear();
-    } finally {
-      lock.unlock();
     }
+    eventSources.clear();
     eventProcessor.stop();
   }
 
@@ -118,10 +106,9 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     registerEventSource(null, eventSource);
   }
 
-  public final void registerEventSource(String name, EventSource eventSource)
+  public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
-    lock.lock();
     try {
       if (name == null || name.isBlank()) {
         name = EventSourceInitializer.generateNameFor(eventSource);
@@ -133,8 +120,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     } catch (Exception e) {
       throw new OperatorException("Couldn't register event source: " + name + " for "
           + controller.getConfiguration().getName() + " controller`", e);
-    } finally {
-      lock.unlock();
     }
   }
 
@@ -158,11 +143,22 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
   }
 
+  public void changeNamespaces(Set<String> namespaces) {
+    eventProcessor.stop();
+    eventSources
+        .allEventSources()
+        .filter(NamespaceChangeable.class::isInstance)
+        .map(NamespaceChangeable.class::cast)
+        .filter(NamespaceChangeable::allowsNamespaceChanges)
+        .forEach(ies -> ies.changeNamespaces(namespaces));
+    eventProcessor.start();
+  }
+
   EventHandler getEventHandler() {
     return eventProcessor;
   }
 
-  Set<EventSource> getRegisteredEventSources() {
+  public Set<EventSource> getRegisteredEventSources() {
     return eventSources.flatMappedSources()
         .map(NamedEventSource::original)
         .collect(Collectors.toCollection(LinkedHashSet::new));

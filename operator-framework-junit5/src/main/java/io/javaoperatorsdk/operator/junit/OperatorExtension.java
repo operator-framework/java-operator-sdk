@@ -3,7 +3,9 @@ package io.javaoperatorsdk.operator.junit;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -31,6 +34,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
   private final List<ReconcilerSpec> reconcilers;
   private List<PortFowardSpec> portForwards;
   private List<LocalPortForward> localPortForwards;
+  private Map<Reconciler, RegisteredController> registeredControllers;
 
   private OperatorExtension(
       ConfigurationService configurationService,
@@ -52,6 +56,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.operator = new Operator(getKubernetesClient(), this.configurationService);
+    this.registeredControllers = new HashMap<>();
   }
 
   /**
@@ -82,6 +87,11 @@ public class OperatorExtension extends AbstractOperatorExtension {
         .findFirst()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to find a reconciler of type: " + type));
+  }
+
+  public RegisteredController getRegisteredControllerForReconcile(
+      Class<? extends Reconciler> type) {
+    return registeredControllers.get(getReconcilerOfType(type));
   }
 
   @SuppressWarnings("unchecked")
@@ -132,7 +142,8 @@ public class OperatorExtension extends AbstractOperatorExtension {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
       }
 
-      this.operator.register(ref.reconciler, oconfig.build());
+      var registeredController = this.operator.register(ref.reconciler, oconfig.build());
+      registeredControllers.put(ref.reconciler, registeredController);
     }
 
     LOGGER.debug("Starting the operator locally");

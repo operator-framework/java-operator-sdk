@@ -266,4 +266,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     eventRecorder.stopEventRecording(resourceID);
   }
 
+  @Override
+  public boolean allowsNamespaceChanges() {
+    return getConfiguration().followControllerNamespaceChanges();
+  }
 }

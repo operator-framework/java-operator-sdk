@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -16,24 +13,13 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.AggregatedOperatorException;
-import io.javaoperatorsdk.operator.CustomResourceUtils;
-import io.javaoperatorsdk.operator.MissingCRDException;
-import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.*;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
-import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
@@ -42,10 +28,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesCl
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
+
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, Cleaner<P>, LifecycleAware {
+    implements Reconciler<P>, Cleaner<P>, LifecycleAware, RegisteredController {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
@@ -307,34 +295,42 @@ public class Controller<P extends HasMetadata>
 
     // fail early if we're missing the current namespace information
     failOnMissingCurrentNS();
-
     try {
       // check that the custom resource is known by the cluster if configured that way
-      final CustomResourceDefinition crd; // todo: check proper CRD spec version based on config
-      if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
-          && CustomResource.class.isAssignableFrom(resClass)) {
-        crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
-            .get();
-        if (crd == null) {
-          throwMissingCRDException(crdName, specVersion, controllerName);
-        }
-
-        // Apply validations that are not handled by fabric8
-        CustomResourceUtils.assertCustomResource(resClass, crd);
-      }
-
+      validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
       final var context = new EventSourceContext<>(
           eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
 
       initAndRegisterEventSources(context);
-
       eventSourceManager.start();
-
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
+  }
+
+  private void validateCRDWithLocalModelIfRequired(Class<P> resClass, String controllerName,
+      String crdName, String specVersion) {
+    final CustomResourceDefinition crd;
+    if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
+        && CustomResource.class.isAssignableFrom(resClass)) {
+      crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
+          .get();
+      if (crd == null) {
+        throwMissingCRDException(crdName, specVersion, controllerName);
+      }
+      // Apply validations that are not handled by fabric8
+      CustomResourceUtils.assertCustomResource(resClass, crd);
+    }
+  }
+
+  public void changeNamespaces(Set<String> namespaces) {
+    if (namespaces.contains(Constants.WATCH_ALL_NAMESPACES)
+        || namespaces.contains(WATCH_CURRENT_NAMESPACE)) {
+      throw new OperatorException("Unexpected value in target namespaces: " + namespaces);
+    }
+    eventSourceManager.changeNamespaces(namespaces);
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
