@@ -8,10 +8,10 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
-public interface ResourceConfiguration<R extends HasMetadata> {
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
-  Set<String> DEFAULT_NAMESPACES = Collections.singleton(Constants.WATCH_ALL_NAMESPACES);
-  Set<String> CURRENT_NAMESPACE_ONLY = Collections.singleton(Constants.WATCH_CURRENT_NAMESPACE);
+public interface ResourceConfiguration<R extends HasMetadata> {
 
   default String getResourceTypeName() {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
@@ -53,7 +53,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     failIfNotValid(namespaces);
-    return CURRENT_NAMESPACE_ONLY.equals(namespaces);
+    return WATCH_CURRENT_NAMESPACE_SET.equals(namespaces);
   }
 
   static void failIfNotValid(Set<String> namespaces) {
