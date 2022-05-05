@@ -6,10 +6,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.Updater;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 public class ConfigMapDependentResource extends
-    CRUDKubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource> {
+    KubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource>
+    implements Creator<ConfigMap, CleanerForManagedDependentCustomResource>,
+    Updater<ConfigMap, CleanerForManagedDependentCustomResource>,
+    Deleter<CleanerForManagedDependentCustomResource> {
 
   private static final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
 
