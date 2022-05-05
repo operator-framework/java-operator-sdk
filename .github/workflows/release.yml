@@ -42,6 +42,7 @@ jobs:
   # This is separate job because there were issues with git after release step, was not able to commit changes. See history.
   update-working-version:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.release.tag_name, 'RC')"
     steps:
       - uses: actions/checkout@v3
         if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
