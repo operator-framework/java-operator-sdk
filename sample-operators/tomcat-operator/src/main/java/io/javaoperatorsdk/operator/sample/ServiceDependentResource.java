@@ -5,12 +5,11 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.Updater;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-public class ServiceDependentResource extends KubernetesDependentResource<Service, Tomcat>
-    implements Creator<Service, Tomcat>, Updater<Service, Tomcat> {
+@KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
+public class ServiceDependentResource extends CRUDKubernetesDependentResource<Service, Tomcat> {
 
   public ServiceDependentResource() {
     super(Service.class);
@@ -23,6 +22,7 @@ public class ServiceDependentResource extends KubernetesDependentResource<Servic
         .editMetadata()
         .withName(tomcatMetadata.getName())
         .withNamespace(tomcatMetadata.getNamespace())
+        .addToLabels("app.kubernetes.io/managed-by", "tomcat-operator")
         .endMetadata()
         .editSpec()
         .addToSelector("app", tomcatMetadata.getName())

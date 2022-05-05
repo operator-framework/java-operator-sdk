@@ -16,9 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.Updater;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
@@ -88,9 +86,7 @@ public class StandaloneDependentTestReconciler
   }
 
   private static class DeploymentDependentResource extends
-      KubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource>
-      implements Creator<Deployment, StandaloneDependentTestCustomResource>,
-      Updater<Deployment, StandaloneDependentTestCustomResource> {
+      CRUDKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
     public DeploymentDependentResource() {
       super(Deployment.class);
