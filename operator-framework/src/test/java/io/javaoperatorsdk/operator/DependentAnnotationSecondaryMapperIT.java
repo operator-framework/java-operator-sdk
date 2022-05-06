@@ -1,10 +1,14 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperReconciler;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperResource;
 
@@ -27,8 +31,22 @@ class DependentAnnotationSecondaryMapperIT {
     var reconciler =
         operator.getReconcilerOfType(DependentAnnotationSecondaryMapperReconciler.class);
 
-    await().untilAsserted(() -> {
+    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1);
+    });
+    var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
+
+    var annotations = configMap.getMetadata().getAnnotations();
+    assertThat(annotations.get(Mappers.DEFAULT_ANNOTATION_FOR_NAME)).isEqualTo(TEST_RESOURCE_NAME);
+    assertThat(annotations.get(Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE))
+        .isEqualTo(operator.getNamespace());
+    assertThat(configMap.getMetadata().getOwnerReferences()).isEmpty();
+
+    configMap.getData().put("additional_data", "data");
+    operator.replace(ConfigMap.class, configMap);
+
+    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
+      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2);
     });
   }
 
