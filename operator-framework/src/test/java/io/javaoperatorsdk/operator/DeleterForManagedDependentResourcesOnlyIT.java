@@ -18,7 +18,8 @@ class DeleterForManagedDependentResourcesOnlyIT {
 
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new CleanerForManagedDependentTestReconciler())
+      LocalOperatorExtension.builder()
+          .withReconciler(new CleanerForManagedDependentTestReconciler())
           .build();
 
 

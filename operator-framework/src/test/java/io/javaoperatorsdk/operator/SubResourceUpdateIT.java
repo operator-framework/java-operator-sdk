@@ -24,7 +24,8 @@ class SubResourceUpdateIT {
 
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class).build();
+      LocalOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class)
+          .build();
 
   @Test
   void updatesSubResourceStatus() {

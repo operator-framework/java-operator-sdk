@@ -18,7 +18,8 @@ import static org.awaitility.Awaitility.await;
 class EventSourceIT {
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class).build();
+      LocalOperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class)
+          .build();
 
   @Test
   void receivingPeriodicEvents() {

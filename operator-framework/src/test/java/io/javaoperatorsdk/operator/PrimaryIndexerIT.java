@@ -26,7 +26,8 @@ class PrimaryIndexerIT {
   LocalOperatorExtension operator = buildOperator();
 
   protected LocalOperatorExtension buildOperator() {
-    return LocalOperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler()).build();
+    return LocalOperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler())
+        .build();
   }
 
   @Test

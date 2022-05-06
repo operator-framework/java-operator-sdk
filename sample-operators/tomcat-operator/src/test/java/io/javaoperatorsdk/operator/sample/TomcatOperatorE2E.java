@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.*;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
-import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
+import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
 import io.javaoperatorsdk.operator.junit.InClusterCurl;
 import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 
@@ -45,7 +45,7 @@ class TomcatOperatorE2E {
       .withReconciler(new TomcatReconciler())
       .withReconciler(new WebappReconciler(client))
       .build()
-      : E2EOperatorExtension.builder()
+      : ClusterOperatorExtension.builder()
           .waitForNamespaceDeletion(false)
           .withOperatorDeployment(
               client.load(new FileInputStream("k8s/operator.yaml")).get())

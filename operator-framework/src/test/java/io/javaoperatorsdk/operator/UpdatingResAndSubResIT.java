@@ -19,7 +19,8 @@ import static org.awaitility.Awaitility.await;
 class UpdatingResAndSubResIT {
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class).build();
+      LocalOperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class)
+          .build();
 
   @Test
   void updatesSubResourceStatus() {

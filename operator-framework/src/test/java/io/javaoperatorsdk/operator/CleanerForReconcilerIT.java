@@ -17,7 +17,8 @@ class CleanerForReconcilerIT {
 
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler()).build();
+      LocalOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler())
+          .build();
 
 
   @Test

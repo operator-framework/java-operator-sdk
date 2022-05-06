@@ -22,7 +22,8 @@ class StandaloneDependentResourceIT {
 
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new StandaloneDependentTestReconciler()).build();
+      LocalOperatorExtension.builder().withReconciler(new StandaloneDependentTestReconciler())
+          .build();
 
   @Test
   void dependentResourceManagesDeployment() {

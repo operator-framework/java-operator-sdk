@@ -16,7 +16,8 @@ import static org.awaitility.Awaitility.await;
 class ObservedGenerationHandlingIT {
   @RegisterExtension
   LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new ObservedGenerationTestReconciler()).build();
+      LocalOperatorExtension.builder().withReconciler(new ObservedGenerationTestReconciler())
+          .build();
 
   @Test
   void testReconciliationOfNonCustomResourceAndStatusUpdate() {

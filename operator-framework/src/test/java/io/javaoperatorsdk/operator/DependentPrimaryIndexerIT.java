@@ -6,7 +6,8 @@ import io.javaoperatorsdk.operator.sample.primaryindexer.DependentPrimaryIndexer
 public class DependentPrimaryIndexerIT extends PrimaryIndexerIT {
 
   protected LocalOperatorExtension buildOperator() {
-    return LocalOperatorExtension.builder().withReconciler(new DependentPrimaryIndexerTestReconciler())
+    return LocalOperatorExtension.builder()
+        .withReconciler(new DependentPrimaryIndexerTestReconciler())
         .build();
   }
 }
