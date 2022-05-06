@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.*;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
 import io.javaoperatorsdk.operator.junit.InClusterCurl;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
@@ -40,7 +40,7 @@ class TomcatOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator = isLocal() ? OperatorExtension.builder()
+  AbstractOperatorExtension operator = isLocal() ? LocalOperatorExtension.builder()
       .waitForNamespaceDeletion(false)
       .withReconciler(new TomcatReconciler())
       .withReconciler(new WebappReconciler(client))

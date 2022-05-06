@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.orderedmanageddependent.ConfigMapDependentResource1;
 import io.javaoperatorsdk.operator.sample.orderedmanageddependent.ConfigMapDependentResource2;
 import io.javaoperatorsdk.operator.sample.orderedmanageddependent.OrderedManagedDependentCustomResource;
@@ -18,8 +18,8 @@ import static org.awaitility.Awaitility.await;
 class OrderedManagedDependentIT {
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(new OrderedManagedDependentTestReconciler())
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder().withReconciler(new OrderedManagedDependentTestReconciler())
           .build();
 
   @Test

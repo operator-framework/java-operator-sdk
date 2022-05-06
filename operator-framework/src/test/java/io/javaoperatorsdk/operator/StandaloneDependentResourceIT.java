@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResource;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestReconciler;
@@ -21,8 +21,8 @@ class StandaloneDependentResourceIT {
   public static final String DEPENDENT_TEST_NAME = "dependent-test1";
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(new StandaloneDependentTestReconciler()).build();
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder().withReconciler(new StandaloneDependentTestReconciler()).build();
 
   @Test
   void dependentResourceManagesDeployment() {

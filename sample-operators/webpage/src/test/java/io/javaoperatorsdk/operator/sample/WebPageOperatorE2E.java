@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 
 import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
 import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV_VALUE;
@@ -24,7 +24,7 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
   @RegisterExtension
   AbstractOperatorExtension operator =
       isLocal()
-          ? OperatorExtension.builder()
+          ? LocalOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withReconciler(new WebPageReconciler(client))
               .build()

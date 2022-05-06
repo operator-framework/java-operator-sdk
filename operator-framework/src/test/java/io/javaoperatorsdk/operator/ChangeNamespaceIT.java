@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.changenamespace.ChangeNamespaceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.changenamespace.ChangeNamespaceTestReconciler;
 
@@ -26,8 +26,8 @@ class ChangeNamespaceIT {
   public static final String TEST_RESOURCE_NAME_3 = "test3";
   public static final String ADDITIONAL_TEST_NAMESPACE = "additional-test-namespace";
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(new ChangeNamespaceTestReconciler()).build();
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder().withReconciler(new ChangeNamespaceTestReconciler()).build();
 
   @Test
   void addNewAndRemoveOldNamespaceTest() {
