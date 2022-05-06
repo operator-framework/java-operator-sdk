@@ -60,12 +60,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void configureWith(String labelSelector, Set<String> namespaces,
       boolean inheritNamespacesOnChange) {
 
-    final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper =
-        getSecondaryToPrimaryMapper();
-
     var ic = InformerConfiguration.from(resourceType())
         .withLabelSelector(labelSelector)
-        .withSecondaryToPrimaryMapper(secondaryToPrimaryMapper)
+        .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
@@ -171,7 +168,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       desired.getMetadata().setAnnotations(annotations);
     }
     annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAME, primary.getMetadata().getName());
-    annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, primary.getMetadata().getNamespace());
+    var primaryNamespaces = primary.getMetadata().getNamespace();
+    if (primaryNamespaces != null) {
+      annotations.put(
+          Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, primary.getMetadata().getNamespace());
+    }
   }
 
   protected boolean addOwnerReference() {
