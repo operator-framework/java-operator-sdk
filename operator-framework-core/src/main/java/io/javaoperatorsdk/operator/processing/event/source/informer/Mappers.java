@@ -9,8 +9,9 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 
 public class Mappers {
 
-  public static final String DEFAULT_ANNOTATION_FOR_NAME = "primary-name";
-  public static final String DEFAULT_ANNOTATION_FOR_NAMESPACE = "primary-namespace";
+  public static final String DEFAULT_ANNOTATION_FOR_NAME = "io.javaoperatorsdk/primary-name";
+  public static final String DEFAULT_ANNOTATION_FOR_NAMESPACE =
+      "io.javaoperatorsdk/primary-namespace";
 
   private Mappers() {}
 
