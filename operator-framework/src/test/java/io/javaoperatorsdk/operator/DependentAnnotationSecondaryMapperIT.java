@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperReconciler;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperResource;
 
@@ -21,8 +21,9 @@ class DependentAnnotationSecondaryMapperIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(DependentAnnotationSecondaryMapperReconciler.class)
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder()
+          .withReconciler(DependentAnnotationSecondaryMapperReconciler.class)
           .build();
 
   @Test
