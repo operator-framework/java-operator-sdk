@@ -36,7 +36,7 @@ class ControllerConfigurationOverriderTest {
     // override the NS
     final var namespace = "some-ns";
     final var externalDRName =
-        DependentResource.defaultNameFor(NamedDependentReconciler.ExternalDependendResource.class);
+        DependentResource.defaultNameFor(NamedDependentReconciler.ExternalDependentResource.class);
     final var stringConfig = "some String configuration";
     configuration = ControllerConfigurationOverrider.override(configuration)
         .settingNamespace(namespace)
@@ -54,7 +54,7 @@ class ControllerConfigurationOverriderTest {
 
   @ControllerConfiguration(dependents = {
       @Dependent(type = NamedDependentReconciler.NamedDependentResource.class),
-      @Dependent(type = NamedDependentReconciler.ExternalDependendResource.class)
+      @Dependent(type = NamedDependentReconciler.ExternalDependentResource.class)
   })
   private static class NamedDependentReconciler implements Reconciler<ConfigMap> {
 
@@ -72,7 +72,7 @@ class ControllerConfigurationOverriderTest {
       }
     }
 
-    private static class ExternalDependendResource implements DependentResource<Object, ConfigMap> {
+    private static class ExternalDependentResource implements DependentResource<Object, ConfigMap> {
 
       @Override
       public ReconcileResult<Object> reconcile(ConfigMap primary, Context<ConfigMap> context) {
