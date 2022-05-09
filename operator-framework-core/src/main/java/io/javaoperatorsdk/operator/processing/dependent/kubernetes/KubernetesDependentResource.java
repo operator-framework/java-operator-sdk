@@ -69,6 +69,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     configureWith(new InformerEventSource<>(ic, client));
   }
 
+  @SuppressWarnings("unchecked")
   private SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
     if (this instanceof SecondaryToPrimaryMapper) {
       return (SecondaryToPrimaryMapper<R>) this;
