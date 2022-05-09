@@ -1,7 +1,11 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -120,10 +124,10 @@ public class Operator implements LifecycleAware {
    * registration of the reconciler is delayed till the operator is started.
    *
    * @param reconciler the reconciler to register
-   * @param <R> the {@code CustomResource} type associated with the reconciler
+   * @param <P> the {@code CustomResource} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends HasMetadata> RegisteredController register(Reconciler<R> reconciler)
+  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler)
       throws OperatorException {
     final var controllerConfiguration =
         ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
@@ -139,11 +143,11 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler part of the reconciler to register
    * @param configuration the configuration with which we want to register the reconciler
-   * @param <R> the {@code HasMetadata} type associated with the reconciler
+   * @param <P> the {@code HasMetadata} type associated with the reconciler
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <R extends HasMetadata> RegisteredController register(Reconciler<R> reconciler,
-      ControllerConfiguration<R> configuration)
+  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
+      ControllerConfiguration<P> configuration)
       throws OperatorException {
 
     if (configuration == null) {
@@ -175,15 +179,27 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler part of the reconciler to register
    * @param configOverrider consumer to use to change config values
-   * @param <R> the {@code HasMetadata} type associated with the reconciler
+   * @param <P> the {@code HasMetadata} type associated with the reconciler
    */
-  public <R extends HasMetadata> RegisteredController register(Reconciler<R> reconciler,
-      Consumer<ControllerConfigurationOverrider<R>> configOverrider) {
+  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
+      Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
     final var controllerConfiguration =
         ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
     return register(reconciler, configToOverride.build());
+  }
+
+  public Optional<RegisteredController> getRegisteredController(String name) {
+    return controllers.get(name).map(RegisteredController.class::cast);
+  }
+
+  public Set<RegisteredController> getRegisteredControllers() {
+    return new HashSet<>(controllers.controllers());
+  }
+
+  public int getRegisteredControllersNumber() {
+    return controllers.size();
   }
 
   static class ControllerManager implements LifecycleAware {
@@ -200,12 +216,12 @@ public class Operator implements LifecycleAware {
     }
 
     public synchronized void start() {
-      controllers.values().parallelStream().forEach(Controller::start);
+      controllers().parallelStream().forEach(Controller::start);
       started = true;
     }
 
     public synchronized void stop() {
-      this.controllers.values().parallelStream().forEach(closeable -> {
+      controllers().parallelStream().forEach(closeable -> {
         log.debug("closing {}", closeable);
         closeable.stop();
       });
@@ -224,10 +240,24 @@ public class Operator implements LifecycleAware {
             + "': another controller named '" + existing.getConfiguration().getName()
             + "' is already registered for resource '" + resourceTypeName + "'");
       }
-      this.controllers.put(resourceTypeName, controller);
+      controllers.put(resourceTypeName, controller);
       if (started) {
         controller.start();
       }
+    }
+
+    synchronized Optional<Controller> get(String name) {
+      return controllers().stream()
+          .filter(c -> name.equals(c.getConfiguration().getName()))
+          .findFirst();
+    }
+
+    synchronized Collection<Controller> controllers() {
+      return controllers.values();
+    }
+
+    synchronized int size() {
+      return controllers.size();
     }
   }
 }

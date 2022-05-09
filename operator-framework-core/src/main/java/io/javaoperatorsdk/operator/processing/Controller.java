@@ -33,7 +33,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, Cleaner<P>, LifecycleAware, RegisteredController {
+    implements Reconciler<P>, Cleaner<P>, LifecycleAware, RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
