@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerTestCustomResource;
 import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerTestReconciler;
@@ -20,8 +20,8 @@ class ErrorStatusHandlerIT {
   ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder()
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder()
           .withReconciler(reconciler,
               new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
           .build();

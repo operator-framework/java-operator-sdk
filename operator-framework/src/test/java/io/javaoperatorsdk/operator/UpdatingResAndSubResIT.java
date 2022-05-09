@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResource;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResourceSpec;
@@ -18,8 +18,9 @@ import static org.awaitility.Awaitility.await;
 
 class UpdatingResAndSubResIT {
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class).build();
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class)
+          .build();
 
   @Test
   void updatesSubResourceStatus() {

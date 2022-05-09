@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResource;
 
@@ -24,8 +24,8 @@ class InformerEventSourceIT {
   public static final String UPDATE_STATUS_MESSAGE = "Updated Status";
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder()
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder()
           .withReconciler(new InformerEventSourceTestCustomReconciler())
           .build();
 
@@ -38,7 +38,7 @@ class InformerEventSourceIT {
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
     configMap.getData().put(TARGET_CONFIG_MAP_KEY, UPDATE_STATUS_MESSAGE);
-    configMap = operator.replace(ConfigMap.class, configMap);
+    operator.replace(ConfigMap.class, configMap);
 
     waitForCRStatusValue(UPDATE_STATUS_MESSAGE);
   }

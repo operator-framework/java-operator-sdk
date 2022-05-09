@@ -20,14 +20,14 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
-public class E2EOperatorExtension extends AbstractOperatorExtension {
+public class ClusterOperatorExtension extends AbstractOperatorExtension {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(E2EOperatorExtension.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClusterOperatorExtension.class);
 
   private final List<HasMetadata> operatorDeployment;
   private final Duration operatorDeploymentTimeout;
 
-  private E2EOperatorExtension(
+  private ClusterOperatorExtension(
       ConfigurationService configurationService,
       List<HasMetadata> operatorDeployment,
       Duration operatorDeploymentTimeout,
@@ -44,7 +44,7 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
   }
 
   /**
-   * Creates a {@link Builder} to set up an {@link E2EOperatorExtension} instance.
+   * Creates a {@link Builder} to set up an {@link ClusterOperatorExtension} instance.
    *
    * @return the builder.
    */
@@ -132,8 +132,8 @@ public class E2EOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
-    public E2EOperatorExtension build() {
-      return new E2EOperatorExtension(
+    public ClusterOperatorExtension build() {
+      return new ClusterOperatorExtension(
           configurationService,
           operatorDeployment,
           deploymentTimeout,

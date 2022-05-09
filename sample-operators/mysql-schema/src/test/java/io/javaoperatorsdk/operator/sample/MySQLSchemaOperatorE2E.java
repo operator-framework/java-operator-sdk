@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,8 +16,8 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
-import io.javaoperatorsdk.operator.junit.E2EOperatorExtension;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 
@@ -63,7 +62,7 @@ class MySQLSchemaOperatorE2E {
   @RegisterExtension
   AbstractOperatorExtension operator =
       isLocal()
-          ? OperatorExtension.builder()
+          ? LocalOperatorExtension.builder()
               .withReconciler(
                   new MySQLSchemaReconciler(),
                   c -> c.replacingNamedDependentResourceConfig(
@@ -74,7 +73,7 @@ class MySQLSchemaOperatorE2E {
               .withInfrastructure(infrastructure)
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
               .build()
-          : E2EOperatorExtension.builder()
+          : ClusterOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .withInfrastructure(infrastructure)
               .build();
@@ -82,7 +81,7 @@ class MySQLSchemaOperatorE2E {
   public MySQLSchemaOperatorE2E() throws FileNotFoundException {}
 
   @Test
-  void test() throws IOException {
+  void test() {
 
     MySQLSchema testSchema = new MySQLSchema();
     testSchema.setMetadata(

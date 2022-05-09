@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -19,8 +19,8 @@ class MultiVersionCRDIT {
   public static final String CR_V2_NAME = "crv2";
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder()
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder()
           .withReconciler(MultiVersionCRDTestReconciler1.class)
           .withReconciler(MultiVersionCRDTestReconciler2.class)
           .build();

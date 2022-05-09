@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestReconciler;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestResource;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestResourceSpec;
@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CustomResourceFilterIT {
 
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(new CustomFilteringTestReconciler()).build();
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder().withReconciler(new CustomFilteringTestReconciler()).build();
 
   @Test
   void doesCustomFiltering() throws InterruptedException {

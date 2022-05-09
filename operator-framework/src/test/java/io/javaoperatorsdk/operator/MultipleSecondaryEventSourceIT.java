@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource.MultipleSecondaryEventSourceCustomResource;
 import io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource.MultipleSecondaryEventSourceReconciler;
 
@@ -17,8 +17,8 @@ class MultipleSecondaryEventSourceIT {
 
   public static final String TEST_RESOURCE_NAME = "testresource";
   @RegisterExtension
-  OperatorExtension operator =
-      OperatorExtension.builder().withReconciler(MultipleSecondaryEventSourceReconciler.class)
+  LocalOperatorExtension operator =
+      LocalOperatorExtension.builder().withReconciler(MultipleSecondaryEventSourceReconciler.class)
           .build();
 
   @Test

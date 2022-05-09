@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.OperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.primaryindexer.AbstractPrimaryIndexerTestReconciler;
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestCustomResource;
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestCustomResourceSpec;
@@ -23,10 +23,11 @@ class PrimaryIndexerIT {
   public static final String RESOURCE_NAME2 = "test2";
 
   @RegisterExtension
-  OperatorExtension operator = buildOperator();
+  LocalOperatorExtension operator = buildOperator();
 
-  protected OperatorExtension buildOperator() {
-    return OperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler()).build();
+  protected LocalOperatorExtension buildOperator() {
+    return LocalOperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler())
+        .build();
   }
 
   @Test

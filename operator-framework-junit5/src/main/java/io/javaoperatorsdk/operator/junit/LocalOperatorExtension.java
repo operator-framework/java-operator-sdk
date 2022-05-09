@@ -26,17 +26,17 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override;
 
 @SuppressWarnings("rawtypes")
-public class OperatorExtension extends AbstractOperatorExtension {
+public class LocalOperatorExtension extends AbstractOperatorExtension {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(OperatorExtension.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(LocalOperatorExtension.class);
 
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
-  private List<PortFowardSpec> portForwards;
-  private List<LocalPortForward> localPortForwards;
-  private Map<Reconciler, RegisteredController> registeredControllers;
+  private final List<PortFowardSpec> portForwards;
+  private final List<LocalPortForward> localPortForwards;
+  private final Map<Reconciler, RegisteredController> registeredControllers;
 
-  private OperatorExtension(
+  private LocalOperatorExtension(
       ConfigurationService configurationService,
       List<ReconcilerSpec> reconcilers,
       List<HasMetadata> infrastructure,
@@ -60,7 +60,7 @@ public class OperatorExtension extends AbstractOperatorExtension {
   }
 
   /**
-   * Creates a {@link Builder} to set up an {@link OperatorExtension} instance.
+   * Creates a {@link Builder} to set up an {@link LocalOperatorExtension} instance.
    *
    * @return the builder.
    */
@@ -221,8 +221,8 @@ public class OperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
-    public OperatorExtension build() {
-      return new OperatorExtension(
+    public LocalOperatorExtension build() {
+      return new LocalOperatorExtension(
           configurationService,
           reconcilers,
           infrastructure,
