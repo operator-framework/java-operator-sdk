@@ -8,10 +8,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.OperatorExtension;
-import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperReconciler;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperResource;
 
+import static io.javaoperatorsdk.operator.processing.event.source.informer.Mappers.DEFAULT_ANNOTATION_FOR_NAME;
+import static io.javaoperatorsdk.operator.processing.event.source.informer.Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -37,9 +38,11 @@ class DependentAnnotationSecondaryMapperIT {
     var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
 
     var annotations = configMap.getMetadata().getAnnotations();
-    assertThat(annotations.get(Mappers.DEFAULT_ANNOTATION_FOR_NAME)).isEqualTo(TEST_RESOURCE_NAME);
-    assertThat(annotations.get(Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE))
-        .isEqualTo(operator.getNamespace());
+
+    assertThat(annotations)
+        .containsEntry(DEFAULT_ANNOTATION_FOR_NAME, TEST_RESOURCE_NAME)
+        .containsEntry(DEFAULT_ANNOTATION_FOR_NAMESPACE, operator.getNamespace());
+
     assertThat(configMap.getMetadata().getOwnerReferences()).isEmpty();
 
     configMap.getData().put("additional_data", "data");
