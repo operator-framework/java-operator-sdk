@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Collections;
 import java.util.Set;
+
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig {
 
-  private Set<String> namespaces = Collections.emptySet();
+  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES;
   private String labelSelector = NO_VALUE_SET;
 
   private boolean namespacesWereConfigured = false;
