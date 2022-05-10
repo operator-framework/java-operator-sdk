@@ -7,7 +7,7 @@ public final class Constants {
 
   public static final Set<String> DEFAULT_NAMESPACES =
       Collections.singleton(Constants.WATCH_ALL_NAMESPACES);
-  public static final Set<String> WATCH_CURRENT_NAMESPACE_SET =
+  public static final Set<String> WATCH_CURRENT_NAMESPACES =
       Collections.singleton(Constants.WATCH_CURRENT_NAMESPACE);
 
   public static final Set<String> SAME_AS_CONTROLLER_NAMESPACES =

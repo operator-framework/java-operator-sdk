@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACES;
 
 @SuppressWarnings({"rawtypes", "unused"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
@@ -56,7 +56,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> watchingOnlyCurrentNamespace() {
-    this.namespaces = WATCH_CURRENT_NAMESPACE_SET;
+    this.namespaces = WATCH_CURRENT_NAMESPACES;
     return this;
   }
 

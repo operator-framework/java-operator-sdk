@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACES;
 
 public interface ResourceConfiguration<R extends HasMetadata> {
 
@@ -53,7 +53,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     failIfNotValid(namespaces);
-    return WATCH_CURRENT_NAMESPACE_SET.equals(namespaces);
+    return WATCH_CURRENT_NAMESPACES.equals(namespaces);
   }
 
   static void failIfNotValid(Set<String> namespaces) {
