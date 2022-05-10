@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("MaxIntervalTestCustomResource")
-@ShortNames("mit")
 public class DependentResourceCrossRefResource
     extends CustomResource<Void, DependentResourceCrossRefResourceStatus>
     implements Namespaced {
