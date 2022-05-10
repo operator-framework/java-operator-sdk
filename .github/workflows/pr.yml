@@ -33,18 +33,18 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        kubernetes: [ 'v1.17.13','v1.18.20','v1.19.14','v1.20.10','v1.21.11', 'v1.22.8', 'v1.23.5' ]
+        kubernetes: [ 'v1.17.17','v1.18.20','v1.19.16','v1.20.15','v1.21.12', 'v1.22.9', 'v1.23.6', 'v1.24.0' ]
         exclude:
           - java: 11
             kubernetes: 'v1.18.20'
           - java: 11
-            kubernetes: 'v1.19.14'
+            kubernetes: 'v1.19.16'
           - java: 11
-            kubernetes: 'v1.20.10'
+            kubernetes: 'v1.20.15'
           - java: 11
-            kubernetes: 'v1.21.11'
+            kubernetes: 'v1.21.12'
           - java: 11
-            kubernetes: 'v1.22.8'
+            kubernetes: 'v1.22.9'
     steps:
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
