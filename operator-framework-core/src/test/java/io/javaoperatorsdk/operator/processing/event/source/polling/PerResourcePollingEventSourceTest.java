@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 class PerResourcePollingEventSourceTest extends
     AbstractEventSourceTestBase<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
-  public static final int PERIOD = 80;
+  public static final int PERIOD = 150;
   private PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
       mock(PerResourcePollingEventSource.ResourceFetcher.class);
   private Cache<TestCustomResource> resourceCache = mock(Cache.class);
@@ -116,11 +116,11 @@ class PerResourcePollingEventSourceTest extends
         .thenReturn(Collections.emptySet())
         .thenReturn(Set.of(SampleExternalResource.testResource1()));
 
-    Thread.sleep(PERIOD / 2);
+    Thread.sleep(PERIOD / 3);
 
     var value = source.getSecondaryResources(testCustomResource);
     verify(eventHandler, times(0)).handleEvent(any());
-    assertThat(value).hasSize(0);
+    assertThat(value).isEmpty();
 
     Thread.sleep(PERIOD * 2);
 
