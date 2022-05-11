@@ -102,7 +102,7 @@ public class WebappReconciler
       }
       webapp.getStatus().setDeployedArtifact(webapp.getSpec().getUrl());
       webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
-      return UpdateControl.updateStatus(webapp);
+      return UpdateControl.patchStatus(webapp);
     } else {
       log.info("WebappController invoked but Tomcat not ready yet ({}/{})",
           tomcat.getStatus() != null ? tomcat.getStatus().getReadyReplicas() : 0,

@@ -33,12 +33,13 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, false, true, false);
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
-    return new UpdateControl<>(customResource, true, false, false);
-  }
-
+  /** Preferred way to update the status. It does not do optimistic locking on change. */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
     return new UpdateControl<>(customResource, true, false, true);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
+    return new UpdateControl<>(customResource, true, false, false);
   }
 
   /**

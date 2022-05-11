@@ -47,7 +47,7 @@ public class ChangeNamespaceTestReconciler
 
     var statusUpdates = primary.getStatus().getNumberOfStatusUpdates();
     primary.getStatus().setNumberOfStatusUpdates(statusUpdates + 1);
-    return UpdateControl.updateStatus(primary);
+    return UpdateControl.patchStatus(primary);
   }
 
   public int getNumberOfExecutions() {

@@ -138,11 +138,11 @@ class ReconciliationDispatcherTest {
   void updatesOnlyStatusSubResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    reconciler.reconcile = (r, c) -> UpdateControl.updateStatus(testCustomResource);
+    reconciler.reconcile = (r, c) -> UpdateControl.patchStatus(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(customResourceFacade, times(1)).patchStatus(testCustomResource);
     verify(customResourceFacade, never()).replaceResourceWithLock(any());
   }
 
@@ -324,7 +324,7 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     reconciler.reconcile =
-        (r, c) -> UpdateControl.updateStatus(testCustomResource).rescheduleAfter(1000L);
+        (r, c) -> UpdateControl.patchStatus(testCustomResource).rescheduleAfter(1000L);
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
@@ -359,6 +359,7 @@ class ReconciliationDispatcherTest {
     var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     when(config.isGenerationAware()).thenReturn(true);
+    // todo to patch
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.updateStatus(observedGenResource));
     when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);

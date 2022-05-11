@@ -52,7 +52,7 @@ public class WebPageStandaloneDependentsReconciler
     simulateErrorIfRequested(webPage);
 
     if (!isValidHtml(webPage)) {
-      return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage));
+      return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
     }
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR)
@@ -67,7 +67,7 @@ public class WebPageStandaloneDependentsReconciler
     webPage.setStatus(
         createStatus(
             configMapDR.getSecondaryResource(webPage).orElseThrow().getMetadata().getName()));
-    return UpdateControl.updateStatus(webPage);
+    return UpdateControl.patchStatus(webPage);
   }
 
   @Override

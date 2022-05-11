@@ -43,6 +43,6 @@ public class WebPageManagedDependentsReconciler
     final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
         .getMetadata().getName();
     webPage.setStatus(createStatus(name));
-    return UpdateControl.updateStatus(webPage);
+    return UpdateControl.patchStatus(webPage);
   }
 }
