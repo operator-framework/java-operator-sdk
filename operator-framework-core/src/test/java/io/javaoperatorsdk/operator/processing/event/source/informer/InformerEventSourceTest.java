@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -55,7 +55,7 @@ class InformerEventSourceTest {
     when(informer.getIndexer()).thenReturn(mock(Indexer.class));
 
     when(informerConfiguration.getEffectiveNamespaces())
-        .thenReturn(DEFAULT_NAMESPACES);
+        .thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
 

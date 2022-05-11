@@ -4,7 +4,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 public class DefaultResourceConfiguration<R extends HasMetadata>
     implements ResourceConfiguration<R> {
@@ -16,7 +16,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       String... namespaces) {
     this(labelSelector, resourceClass,
-        namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES
+        namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES_SET
             : Set.of(namespaces));
   }
 
@@ -25,7 +25,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     this.labelSelector = labelSelector;
     this.resourceClass = resourceClass;
     this.namespaces =
-        namespaces == null || namespaces.isEmpty() ? DEFAULT_NAMESPACES
+        namespaces == null || namespaces.isEmpty() ? DEFAULT_NAMESPACES_SET
             : namespaces;
   }
 
