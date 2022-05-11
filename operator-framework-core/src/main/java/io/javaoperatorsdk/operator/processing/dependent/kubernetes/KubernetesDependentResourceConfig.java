@@ -19,7 +19,7 @@ public class KubernetesDependentResourceConfig {
       boolean configuredNS) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
-    namespacesWereConfigured = configuredNS;
+    this.namespacesWereConfigured = configuredNS;
   }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
@@ -48,4 +48,5 @@ public class KubernetesDependentResourceConfig {
   public boolean wereNamespacesConfigured() {
     return namespacesWereConfigured;
   }
+
 }
