@@ -160,20 +160,6 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
   }
 
-
-  @Test
-  void patchesResource() {
-    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
-
-    reconciler.reconcile = (r, c) -> UpdateControl.patchResource(testCustomResource);
-
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-
-    verify(customResourceFacade, times(1)).patchResource(testCustomResource);
-    verify(customResourceFacade, never()).updateStatus(any());
-    verify(customResourceFacade, never()).replaceResourceWithLock(any());
-  }
-
   @Test
   void patchesStatus() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);

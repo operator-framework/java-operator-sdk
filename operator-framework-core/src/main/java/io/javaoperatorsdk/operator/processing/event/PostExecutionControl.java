@@ -8,6 +8,7 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   private final boolean onlyFinalizerHandled;
   private final R updatedCustomResource;
+  private final boolean updateIsStatusPatch;
   private final Exception runtimeException;
 
   private Long reScheduleDelay = null;
@@ -15,28 +16,34 @@ final class PostExecutionControl<R extends HasMetadata> {
   private PostExecutionControl(
       boolean onlyFinalizerHandled,
       R updatedCustomResource,
-      Exception runtimeException) {
+      boolean updateIsStatusPatch, Exception runtimeException) {
     this.onlyFinalizerHandled = onlyFinalizerHandled;
     this.updatedCustomResource = updatedCustomResource;
+    this.updateIsStatusPatch = updateIsStatusPatch;
     this.runtimeException = runtimeException;
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded() {
-    return new PostExecutionControl<>(true, null, null);
+    return new PostExecutionControl<>(true, null, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> defaultDispatch() {
-    return new PostExecutionControl<>(false, null, null);
+    return new PostExecutionControl<>(false, null, false, null);
+  }
+
+  public static <R extends HasMetadata> PostExecutionControl<R> customResourceStatusPatched(
+      R updatedCustomResource) {
+    return new PostExecutionControl<>(false, updatedCustomResource, true, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceUpdated(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
       Exception exception) {
-    return new PostExecutionControl<>(false, null, exception);
+    return new PostExecutionControl<>(false, null, false, exception);
   }
 
   public boolean isOnlyFinalizerHandled() {
@@ -66,6 +73,10 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   public Optional<Long> getReScheduleDelay() {
     return Optional.ofNullable(reScheduleDelay);
+  }
+
+  public boolean updateIsStatusPatch() {
+    return updateIsStatusPatch;
   }
 
   @Override

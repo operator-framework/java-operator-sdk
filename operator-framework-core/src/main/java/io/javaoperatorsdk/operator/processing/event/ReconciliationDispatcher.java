@@ -212,6 +212,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
+  @SuppressWarnings("rawtypes")
   private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
     if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
@@ -226,6 +227,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return false;
   }
 
+  @SuppressWarnings("rawtypes")
   private void updateStatusObservedGenerationIfRequired(R resource) {
     if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
@@ -242,7 +244,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       UpdateControl<R> updateControl) {
     PostExecutionControl<R> postExecutionControl;
     if (updatedCustomResource != null) {
-      postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
+      if (updateControl.isUpdateStatus() && updateControl.isPatch()) {
+        postExecutionControl =
+            PostExecutionControl.customResourceStatusPatched(updatedCustomResource);
+      } else {
+        postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
+      }
     } else {
       postExecutionControl = PostExecutionControl.defaultDispatch();
     }
@@ -357,10 +364,15 @@ class ReconciliationDispatcher<R extends HasMetadata> {
 
     public R patchStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
-      return resourceOperation
+      String resourceVersion = resource.getMetadata().getResourceVersion();
+      // don't do optimistic locking on patch
+      resource.getMetadata().setResourceVersion(null);
+      var res = resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
           .withName(getName(resource))
           .patchStatus(resource);
+      resource.getMetadata().setResourceVersion(resourceVersion);
+      return res;
     }
   }
 }
