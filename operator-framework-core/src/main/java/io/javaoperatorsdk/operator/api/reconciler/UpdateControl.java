@@ -33,7 +33,7 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, false, true, false);
   }
 
-  /** Preferred way to update the status. It does not do optimistic locking on change. */
+  /** Preferred way to update the status. It does not do optimistic locking. */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
     return new UpdateControl<>(customResource, true, false, true);
   }
