@@ -14,8 +14,8 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
 @SuppressWarnings({"rawtypes", "unused"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
@@ -56,7 +56,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> watchingOnlyCurrentNamespace() {
-    this.namespaces = WATCH_CURRENT_NAMESPACES;
+    this.namespaces = WATCH_CURRENT_NAMESPACE_SET;
     return this;
   }
 
@@ -68,7 +68,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public ControllerConfigurationOverrider<R> removingNamespaces(String... namespaces) {
     List.of(namespaces).forEach(this.namespaces::remove);
     if (this.namespaces.isEmpty()) {
-      this.namespaces = DEFAULT_NAMESPACES;
+      this.namespaces = DEFAULT_NAMESPACES_SET;
     }
     return this;
   }
@@ -80,7 +80,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> watchingAllNamespaces() {
-    this.namespaces = DEFAULT_NAMESPACES;
+    this.namespaces = DEFAULT_NAMESPACES_SET;
     return this;
   }
 

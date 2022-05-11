@@ -8,7 +8,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig {
 
-  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES;
+  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector = NO_VALUE_SET;
 
   private boolean namespacesWereConfigured = false;

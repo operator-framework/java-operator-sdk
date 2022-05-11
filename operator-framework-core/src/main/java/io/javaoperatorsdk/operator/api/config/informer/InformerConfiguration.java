@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
@@ -73,7 +73,7 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     public InformerConfigurationBuilder<R> withNamespaces(String... namespaces) {
       return withNamespaces(
-          namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES);
+          namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES_SET);
     }
 
     public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces) {
@@ -92,7 +92,7 @@ public interface InformerConfiguration<R extends HasMetadata>
      */
     public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces,
         boolean followChanges) {
-      this.namespaces = namespaces != null ? namespaces : DEFAULT_NAMESPACES;
+      this.namespaces = namespaces != null ? namespaces : DEFAULT_NAMESPACES_SET;
       this.inheritControllerNamespacesOnChange = true;
       return this;
     }

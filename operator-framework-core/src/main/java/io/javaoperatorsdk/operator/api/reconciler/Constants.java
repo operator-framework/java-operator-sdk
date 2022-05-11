@@ -5,12 +5,12 @@ import java.util.Set;
 
 public final class Constants {
 
-  public static final Set<String> DEFAULT_NAMESPACES =
+  public static final Set<String> DEFAULT_NAMESPACES_SET =
       Collections.singleton(Constants.WATCH_ALL_NAMESPACES);
-  public static final Set<String> WATCH_CURRENT_NAMESPACES =
+  public static final Set<String> WATCH_CURRENT_NAMESPACE_SET =
       Collections.singleton(Constants.WATCH_CURRENT_NAMESPACE);
 
-  public static final Set<String> SAME_AS_CONTROLLER_NAMESPACES =
+  public static final Set<String> SAME_AS_CONTROLLER_NAMESPACES_SET =
       Collections.singleton(Constants.SAME_AS_CONTROLLER);
 
   public static final String NO_VALUE_SET = "";

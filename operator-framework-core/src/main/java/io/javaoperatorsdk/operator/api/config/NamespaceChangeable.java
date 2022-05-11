@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Set;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 public interface NamespaceChangeable {
 
@@ -18,7 +18,7 @@ public interface NamespaceChangeable {
 
   default void changeNamespaces(String... namespaces) {
     changeNamespaces(
-        namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES);
+        namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES_SET);
   }
 
   default boolean allowsNamespaceChanges() {

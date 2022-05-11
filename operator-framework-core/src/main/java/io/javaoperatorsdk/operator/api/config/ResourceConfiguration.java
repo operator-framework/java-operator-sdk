@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACES;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
 public interface ResourceConfiguration<R extends HasMetadata> {
 
@@ -35,7 +35,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   default Set<String> getNamespaces() {
-    return DEFAULT_NAMESPACES;
+    return DEFAULT_NAMESPACES_SET;
   }
 
   default boolean watchAllNamespaces() {
@@ -44,7 +44,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static boolean allNamespacesWatched(Set<String> namespaces) {
     failIfNotValid(namespaces);
-    return DEFAULT_NAMESPACES.equals(namespaces);
+    return DEFAULT_NAMESPACES_SET.equals(namespaces);
   }
 
   default boolean watchCurrentNamespace() {
@@ -53,7 +53,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static boolean currentNamespaceWatched(Set<String> namespaces) {
     failIfNotValid(namespaces);
-    return WATCH_CURRENT_NAMESPACES.equals(namespaces);
+    return WATCH_CURRENT_NAMESPACE_SET.equals(namespaces);
   }
 
   static void failIfNotValid(Set<String> namespaces) {
