@@ -359,10 +359,10 @@ class ReconciliationDispatcherTest {
     var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     when(config.isGenerationAware()).thenReturn(true);
-    // todo to patch
+
     when(reconciler.reconcile(any(), any()))
-        .thenReturn(UpdateControl.updateStatus(observedGenResource));
-    when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
+        .thenReturn(UpdateControl.patchStatus(observedGenResource));
+    when(facade.patchStatus(observedGenResource)).thenReturn(observedGenResource);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
