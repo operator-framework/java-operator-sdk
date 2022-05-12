@@ -58,7 +58,6 @@ class ChangeNamespaceIT {
           () -> assertThat(client().resources(ChangeNamespaceTestCustomResource.class)
               .inNamespace(ADDITIONAL_TEST_NAMESPACE)
               .withName(TEST_RESOURCE_NAME_2).get().getStatus().getNumberOfStatusUpdates())
-                  .withFailMessage("Informers don't watch the new namespace")
                   .isEqualTo(2));
 
       // removing a namespace
