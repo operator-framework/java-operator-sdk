@@ -262,6 +262,19 @@ class EventProcessorTest {
         any());
   }
 
+  @Test
+  void notUpdatesEventSourceHandlerIfResourceUpdated() {
+    TestCustomResource customResource = testCustomResource();
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceStatusPatched(customResource);
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+    verify(controllerResourceEventSourceMock, times(0)).handleRecentResourceUpdate(any(), any(),
+        any());
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(

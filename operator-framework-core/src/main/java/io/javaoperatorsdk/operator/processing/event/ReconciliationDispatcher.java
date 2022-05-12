@@ -135,7 +135,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     R updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource(), updateControl.isPatch());
+          updateCustomResource(updateControl.getResource());
       updateControl
           .getResource()
           .getMetadata()
@@ -147,7 +147,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           updateStatusGenerationAware(updateControl.getResource(), updateControl.isPatch());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource(), updateControl.isPatch());
+          updateCustomResource(updateControl.getResource());
       if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
         updatedCustomResource =
             updateStatusGenerationAware(originalResource, updateControl.isPatch());
@@ -302,7 +302,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private R updateCustomResource(R resource, boolean patch) {
+  private R updateCustomResource(R resource) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
     return customResourceFacade.replaceResourceWithLock(resource);
@@ -344,6 +344,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .replace(resource);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       HasMetadataOperationsImpl hasMetadataOperation = (HasMetadataOperationsImpl) resourceOperation
