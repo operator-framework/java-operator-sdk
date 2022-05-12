@@ -33,11 +33,29 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, false, true, false);
   }
 
-  /** Preferred way to update the status. It does not do optimistic locking. */
+  /**
+   * Preferred way to update the status. It does not do optimistic locking.
+   *
+   * @param <T> resource type
+   * @param customResource the custom resource with target status
+   * @return UpdateControl instance
+   */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
     return new UpdateControl<>(customResource, true, false, true);
   }
 
+  /**
+   * Note that usually "patchStatus" is advised to be used instead of this method.
+   * <p>
+   * Updates the status with optimistic locking regarding current resource version reconciled. Note
+   * that this also ensures that on next reconciliation is the most up-to-date custom resource is
+   * used.
+   * </p>
+   *
+   * @param <T> resource type
+   * @param customResource the custom resource with target status
+   * @return UpdateControl instance
+   */
   public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
     return new UpdateControl<>(customResource, true, false, false);
   }
