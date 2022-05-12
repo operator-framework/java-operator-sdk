@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -304,11 +305,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private R updateCustomResource(R resource, boolean patch) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
-    if (patch) {
-      return customResourceFacade.patchResource(resource);
-    } else {
-      return customResourceFacade.replaceResourceWithLock(resource);
-    }
+    return customResourceFacade.replaceResourceWithLock(resource);
   }
 
   private R removeFinalizer(R resource) {
@@ -347,19 +344,15 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .replace(resource);
     }
 
-    public R patchResource(R resource) {
-      return resourceOperation
-          .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource))
-          .patch(resource);
-    }
-
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
-      return resourceOperation
+      HasMetadataOperationsImpl hasMetadataOperation = (HasMetadataOperationsImpl) resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource))
-          .replaceStatus(resource);
+          .withName(getName(resource));
+      hasMetadataOperation =
+          (HasMetadataOperationsImpl) hasMetadataOperation
+              .lockResourceVersion(resource.getMetadata().getResourceVersion());
+      return (R) hasMetadataOperation.replaceStatus(resource);
     }
 
     public R patchStatus(R resource) {
