@@ -32,20 +32,19 @@ class ChangeNamespaceIT {
   @Test
   void addNewAndRemoveOldNamespaceTest() {
     try {
-      operator.create(ChangeNamespaceTestCustomResource.class,
+      var reconciler = operator.getReconcilerOfType(ChangeNamespaceTestReconciler.class);
+      var defaultNamespaceResource = operator.create(ChangeNamespaceTestCustomResource.class,
           customResource(TEST_RESOURCE_NAME_1));
 
       await().pollDelay(Duration.ofMillis(100)).untilAsserted(() -> assertThat(
-          operator.get(ChangeNamespaceTestCustomResource.class, TEST_RESOURCE_NAME_1)
-              .getStatus().getNumberOfStatusUpdates()).isEqualTo(2));
+          reconciler.numberOfResourceReconciliations(defaultNamespaceResource)).isEqualTo(2));
 
       client().namespaces().create(additionalTestNamespace());
-      createResourceInTestNamespace();
+      var resourceInAdditionalTestNamespace = createResourceInTestNamespace();
 
       await().pollDelay(Duration.ofMillis(200)).untilAsserted(
-          () -> assertThat(client().resources(ChangeNamespaceTestCustomResource.class)
-              .inNamespace(ADDITIONAL_TEST_NAMESPACE)
-              .withName(TEST_RESOURCE_NAME_2).get().getStatus().getNumberOfStatusUpdates())
+          () -> assertThat(
+              reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
                   .isZero());
 
       // adding additional namespace
@@ -55,39 +54,35 @@ class ChangeNamespaceIT {
           .changeNamespaces(Set.of(operator.getNamespace(), ADDITIONAL_TEST_NAMESPACE));
 
       await().untilAsserted(
-          () -> assertThat(client().resources(ChangeNamespaceTestCustomResource.class)
-              .inNamespace(ADDITIONAL_TEST_NAMESPACE)
-              .withName(TEST_RESOURCE_NAME_2).get().getStatus().getNumberOfStatusUpdates())
+          () -> assertThat(
+              reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
                   .isEqualTo(2));
 
       // removing a namespace
       registeredController.changeNamespaces(Set.of(ADDITIONAL_TEST_NAMESPACE));
 
-      operator.create(ChangeNamespaceTestCustomResource.class,
+      var newResourceInDefaultNamespace = operator.create(ChangeNamespaceTestCustomResource.class,
           customResource(TEST_RESOURCE_NAME_3));
       await().pollDelay(Duration.ofMillis(200))
           .untilAsserted(() -> assertThat(
-              operator.get(ChangeNamespaceTestCustomResource.class, TEST_RESOURCE_NAME_3)
-                  .getStatus().getNumberOfStatusUpdates()).isZero());
+              reconciler.numberOfResourceReconciliations(newResourceInDefaultNamespace)).isZero());
 
 
       ConfigMap firstMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME_1);
       firstMap.setData(Map.of("data", "newdata"));
       operator.replace(ConfigMap.class, firstMap);
 
-      assertThat(operator.get(ChangeNamespaceTestCustomResource.class, TEST_RESOURCE_NAME_1)
-          .getStatus().getNumberOfStatusUpdates())
-              .withFailMessage("ConfigMap change induced a reconcile")
-              .isEqualTo(2);
+      await().untilAsserted(() -> assertThat(
+          reconciler.numberOfResourceReconciliations(defaultNamespaceResource)).isEqualTo(2));
 
     } finally {
       client().namespaces().delete(additionalTestNamespace());
     }
   }
 
-  private void createResourceInTestNamespace() {
+  private ChangeNamespaceTestCustomResource createResourceInTestNamespace() {
     var res = customResource(TEST_RESOURCE_NAME_2);
-    client().resources(ChangeNamespaceTestCustomResource.class)
+    return client().resources(ChangeNamespaceTestCustomResource.class)
         .inNamespace(ADDITIONAL_TEST_NAMESPACE)
         .create(res);
   }
