@@ -156,7 +156,7 @@ class CustomResourceSelectorTest {
       LOGGER.info("Received event on: {}", resource);
 
       consumer.accept(resource);
-      // todo to patch
+      // patch status now increases generation, this seems to be an issue with the mock server
       return UpdateControl.updateStatus(resource);
     }
   }
