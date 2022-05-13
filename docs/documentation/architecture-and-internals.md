@@ -47,7 +47,7 @@ A typical workflows looks like following:
 4. Executor calls ReconcilerDispatcher which decides which method to execute of the reconciler. Let's say in this case it
    was `reconcile(...)`
 5. After reconciler execution the Dispatcher calls Kubernetes API server, since the `reconcile` method returned
-   with `UpdateControl.updateStatus(...)` result.
+   with `UpdateControl.patchStatus(...)` result.
 6. Now the dispatcher finishes the execution and calls back `EventProcessor` to finalize the execution.
 7. EventProcessor checks if there is no `reschedule` or `retry` required and if there are no subsequent events received
    for the custom resource

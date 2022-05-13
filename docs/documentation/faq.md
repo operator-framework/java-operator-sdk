@@ -22,7 +22,7 @@ Yes, this can be done using [`UpdateControl`](https://github.com/java-operator-s
   public UpdateControl<MyCustomResource> reconcile(
      EventSourceTestCustomResource resource, Context context) {
     ...
-    return UpdateControl.updateStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
+    return UpdateControl.patchStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
   }
 ```
 

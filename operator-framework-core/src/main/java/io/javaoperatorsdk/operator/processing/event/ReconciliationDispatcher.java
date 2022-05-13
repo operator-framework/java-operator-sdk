@@ -182,13 +182,16 @@ class ReconciliationDispatcher<R extends HasMetadata> {
 
         R updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
-          updatedResource =
-              customResourceFacade
+          updatedResource = errorStatusUpdateControl.isPatch() ? customResourceFacade
+              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow())
+              : customResourceFacade
                   .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
         }
         if (errorStatusUpdateControl.isNoRetry()) {
           if (updatedResource != null) {
-            return PostExecutionControl.customResourceUpdated(updatedResource);
+            return errorStatusUpdateControl.isPatch()
+                ? PostExecutionControl.customResourceStatusPatched(updatedResource)
+                : PostExecutionControl.customResourceUpdated(updatedResource);
           } else {
             return PostExecutionControl.defaultDispatch();
           }

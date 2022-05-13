@@ -72,7 +72,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     public UpdateControl<CustomService> reconcile(CustomService resource,
                                                                Context context) {
         // ... your logic ...
-        return UpdateControl.updateStatus(resource);
+        return UpdateControl.patchStatus(resource);
     }
 }
 ```
