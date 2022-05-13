@@ -508,6 +508,25 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
+  void errorStatusHandlerCanPatchResource() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    reconciler.errorHandler =
+        (r, ri, e) -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
+
+
+    reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+
+    verify(customResourceFacade, times(1)).patchStatus(testCustomResource);
+    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+        any(), any());
+  }
+
+  @Test
   void schedulesReconciliationIfMaxDelayIsSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
