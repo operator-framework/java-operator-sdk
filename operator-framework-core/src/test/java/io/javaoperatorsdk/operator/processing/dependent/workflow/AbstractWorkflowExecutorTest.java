@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -62,6 +63,28 @@ public class AbstractWorkflowExecutorTest {
     @Override
     public void delete(TestCustomResource primary, Context<TestCustomResource> context) {
       executionHistory.add(new ReconcileRecord(this, true));
+    }
+  }
+
+  public class GarbageCollectedDeleter extends TestDeleterDependent
+      implements GarbageCollected<TestCustomResource> {
+
+    public GarbageCollectedDeleter(String name) {
+      super(name);
+    }
+  }
+
+  public class TestErrorDeleterDependent extends TestDependent
+      implements Deleter<TestCustomResource> {
+
+    public TestErrorDeleterDependent(String name) {
+      super(name);
+    }
+
+    @Override
+    public void delete(TestCustomResource primary, Context<TestCustomResource> context) {
+      executionHistory.add(new ReconcileRecord(this, true));
+      throw new IllegalStateException("Test exception");
     }
   }
 

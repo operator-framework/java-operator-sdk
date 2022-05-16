@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 
 public class WorkflowReconcileExecutor<P extends HasMetadata> {
@@ -106,11 +105,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
   }
 
-  // needs to be synced
-  private synchronized void updateStatusForNotReady(ReadyCondition<?, P> readyCondition) {
-    readyCondition.addNotReadyStatusInfo(primary);
-  }
-
   // needs to be in one step
   private synchronized void setAlreadyReconciledButNotReady(
       DependentResourceNode<?, P> dependentResourceNode) {
@@ -148,12 +142,11 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
             ((Deleter<P>) dependentResource).delete(primary, context);
           }
         } else {
-          dependentResource.reconcile(primary, context);
+          var reconcileResult = dependentResource.reconcile(primary, context);
           if (dependentResourceNode.getReadyCondition().isPresent()
               && !dependentResourceNode.getReadyCondition().get()
                   .isMet(dependentResource, primary, context)) {
             ready = false;
-            updateStatusForNotReady(dependentResourceNode.getReadyCondition().get());
           }
         }
 

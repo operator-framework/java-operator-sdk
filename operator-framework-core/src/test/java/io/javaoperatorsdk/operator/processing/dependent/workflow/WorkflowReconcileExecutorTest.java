@@ -4,8 +4,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
@@ -28,18 +26,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
       (dependentResource, primary, context) -> false;
 
   private ReadyCondition<String, TestCustomResource> notMetReadyConditionWithStatusUpdate =
-      new ReadyCondition<>() {
-        @Override
-        public boolean isMet(DependentResource<String, TestCustomResource> dependentResource,
-            TestCustomResource primary, Context<TestCustomResource> context) {
-          return false;
-        }
-
-        @Override
-        public void addNotReadyStatusInfo(TestCustomResource primary) {
-          primary.getStatus().setConfigMapStatus(NOT_READY_YET);
-        }
-      };
+      (dependentResource, primary, context) -> false;
 
   @Test
   void reconcileTopLevelResources() {
@@ -272,21 +259,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).reconciled(dr1).notReconciled(dr2);
-  }
-
-  @Test
-  void readyConditionNotMetStatusUpdates() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependent(dr1).withReadyCondition(notMetReadyConditionWithStatusUpdate).build()
-        .addDependent(dr2).dependsOn(dr1).build()
-        .build();
-
-    var cr = new TestCustomResource();
-    var res = workflow.reconcile(cr, null);
-
-    Assertions.assertThat(res.getErroredDependents()).isEmpty();
-    assertThat(executionHistory).reconciled(dr1).notReconciled(dr2);
-    Assertions.assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo(NOT_READY_YET);
   }
 
   @Test

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
 public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
@@ -22,7 +23,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   private final Map<DependentResourceNode<?, ?>, Exception> exceptionsDuringExecution =
       new HashMap<>();
   private final Set<DependentResourceNode<?, ?>> alreadyVisited = new HashSet<>();
-  private final Set<DependentResourceNode<?, ?>> notReady = new HashSet<>();
+  private final Set<DependentResourceNode<?, ?>> cleanupConditionNotMet = new HashSet<>();
 
   private final Workflow<P> workflow;
   private final P primary;
@@ -35,7 +36,6 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   // todo cleanup condition
-  // todo error handling
 
   public synchronized WorkflowCleanupResult cleanup() {
     for (DependentResourceNode<?, P> dependentResourceNode : workflow
@@ -67,8 +67,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
     if (alreadyVisited(dependentResourceNode)
         || isCleaningNow(dependentResourceNode)
-        || !allParentsCleaned(dependentResourceNode)
-        || hasErroredParent(dependentResourceNode)) {
+        || !allDependentsCleaned(dependentResourceNode)
+        || hasErroredDependent(dependentResourceNode)) {
       log.debug("Skipping submit of: {}, ", dependentResourceNode);
       return;
     }
@@ -92,12 +92,22 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        if (dependentResourceNode.getDependentResource() instanceof Deleter) {
-          // todo check if not garbage collected
+        var dependentResource = dependentResourceNode.getDependentResource();
+
+        var cleanupCondition = dependentResourceNode.getCleanupCondition();
+
+        if (dependentResource instanceof Deleter
+            && !(dependentResource instanceof GarbageCollected)) {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
         }
         alreadyVisited.add(dependentResourceNode);
-        handleDependentCleaned(dependentResourceNode);
+        boolean cleanupConditionMet =
+            cleanupCondition.map(c -> c.isMet(dependentResource, primary, context)).orElse(true);
+        if (cleanupConditionMet) {
+          handleDependentCleaned(dependentResourceNode);
+        } else {
+          cleanupConditionNotMet.add(dependentResourceNode);
+        }
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
       } finally {
@@ -142,15 +152,15 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     return alreadyVisited.contains(dependentResourceNode);
   }
 
-  private boolean allParentsCleaned(
+  private boolean allDependentsCleaned(
       DependentResourceNode<?, P> dependentResourceNode) {
     var parents = workflow.getDependents(dependentResourceNode);
     return parents.isEmpty()
         || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && !notReady.contains(d));
+            .allMatch(d -> alreadyVisited(d) && !cleanupConditionNotMet.contains(d));
   }
 
-  private boolean hasErroredParent(
+  private boolean hasErroredDependent(
       DependentResourceNode<?, P> dependentResourceNode) {
     var parents = workflow.getDependents(dependentResourceNode);
     return !parents.isEmpty()
