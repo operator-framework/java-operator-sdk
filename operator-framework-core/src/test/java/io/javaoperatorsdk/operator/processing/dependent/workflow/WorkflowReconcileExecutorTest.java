@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReadyCondition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.*;
@@ -15,17 +13,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   public static final String NOT_READY_YET = "NOT READY YET";
-  private ReconcileCondition met_reconcile_condition =
+  private Condition met_reconcile_condition =
       (dependentResource, primary, context) -> true;
-  private ReconcileCondition not_met_reconcile_condition =
+  private Condition not_met_reconcile_condition =
       (dependentResource, primary, context) -> false;
 
-  private ReadyCondition<String, TestCustomResource> metReadyCondition =
+  private Condition<String, TestCustomResource> metReadyCondition =
       (dependentResource, primary, context) -> true;
-  private ReadyCondition<String, TestCustomResource> notMetReadyCondition =
+  private Condition<String, TestCustomResource> notMetReadyCondition =
       (dependentResource, primary, context) -> false;
 
-  private ReadyCondition<String, TestCustomResource> notMetReadyConditionWithStatusUpdate =
+  private Condition<String, TestCustomResource> notMetReadyConditionWithStatusUpdate =
       (dependentResource, primary, context) -> false;
 
   @Test

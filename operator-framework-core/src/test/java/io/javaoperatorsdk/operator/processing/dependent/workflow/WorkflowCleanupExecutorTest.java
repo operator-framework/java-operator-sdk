@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.CleanupCondition;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
@@ -16,9 +15,9 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   protected TestErrorDeleterDependent errorDD = new TestErrorDeleterDependent("ERROR_DELETER");
 
-  private final CleanupCondition noMetCleanupCondition =
+  private final Condition noMetCleanupCondition =
       (dependentResource, primary, context) -> false;
-  private final CleanupCondition metCleanupCondition =
+  private final Condition metCleanupCondition =
       (dependentResource, primary, context) -> true;
 
   @Test

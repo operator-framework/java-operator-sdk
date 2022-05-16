@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.condition.ReconcileCondition;
 
 public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
@@ -189,7 +188,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
 
   private void handleReconcileCondition(DependentResourceNode<?, ?> dependentResourceNode,
-      ReconcileCondition reconcileCondition) {
+      Condition reconcileCondition) {
     boolean conditionMet =
         reconcileCondition.isMet(dependentResourceNode.getDependentResource(), primary, context);
     if (!conditionMet) {
