@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 @ControllerConfiguration(dependents = {
     @Dependent(type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
@@ -47,7 +47,7 @@ public class DependentResourceCrossRefReconciler
   }
 
   public static class SecretDependentResource extends
-      CRUKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
+      CRUDKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
 
     public SecretDependentResource() {
       super(Secret.class);
@@ -67,9 +67,8 @@ public class DependentResourceCrossRefReconciler
   }
 
   public static class ConfigMapDependentResource extends
-      CRUKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
-
-
+      CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
+    
     public ConfigMapDependentResource() {
       super(ConfigMap.class);
     }
