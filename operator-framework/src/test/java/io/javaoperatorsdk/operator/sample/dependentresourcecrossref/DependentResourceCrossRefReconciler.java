@@ -68,7 +68,7 @@ public class DependentResourceCrossRefReconciler
 
   public static class ConfigMapDependentResource extends
       CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
-    
+
     public ConfigMapDependentResource() {
       super(ConfigMap.class);
     }
