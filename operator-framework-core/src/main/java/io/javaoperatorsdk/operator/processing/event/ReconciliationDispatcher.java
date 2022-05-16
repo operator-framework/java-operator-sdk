@@ -352,24 +352,25 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       log.trace("Updating status for resource: {}", resource);
       HasMetadataOperationsImpl hasMetadataOperation = (HasMetadataOperationsImpl) resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource));
-      hasMetadataOperation =
-          (HasMetadataOperationsImpl) hasMetadataOperation
-              .lockResourceVersion(resource.getMetadata().getResourceVersion());
+          .withName(getName(resource))
+          .lockResourceVersion(resource.getMetadata().getResourceVersion());
       return (R) hasMetadataOperation.replaceStatus(resource);
     }
 
     public R patchStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       String resourceVersion = resource.getMetadata().getResourceVersion();
-      // don't do optimistic locking on patch
-      resource.getMetadata().setResourceVersion(null);
-      var res = resourceOperation
-          .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource))
-          .patchStatus(resource);
-      resource.getMetadata().setResourceVersion(resourceVersion);
-      return res;
+      try {
+        // don't do optimistic locking on patch
+        resource.getMetadata().setResourceVersion(null);
+        return resourceOperation
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(getName(resource))
+            .patchStatus(resource);
+      } finally {
+        // restore initial resource version
+        resource.getMetadata().setResourceVersion(resourceVersion);
+      }
     }
   }
 }
