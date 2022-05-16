@@ -141,7 +141,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
             ((Deleter<P>) dependentResource).delete(primary, context);
           }
         } else {
-          var reconcileResult = dependentResource.reconcile(primary, context);
+          dependentResource.reconcile(primary, context);
           if (dependentResourceNode.getReadyCondition().isPresent()
               && !dependentResourceNode.getReadyCondition().get()
                   .isMet(dependentResource, primary, context)) {
