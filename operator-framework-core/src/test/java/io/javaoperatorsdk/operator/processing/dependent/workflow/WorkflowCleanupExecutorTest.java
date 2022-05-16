@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import org.junit.jupiter.api.Test;
+
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -12,7 +14,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   protected TestDeleterDependent dd2 = new TestDeleterDependent("DR_DELETER_2");
   protected TestDeleterDependent dd3 = new TestDeleterDependent("DR_DELETER_3");
 
-  // @Test
+  @Test
   void cleanUpDiamondWorkflow() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dd1).build()
@@ -23,7 +25,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
     workflow.cleanup(new TestCustomResource(), null);
 
-    assertThat(executionHistory).reconciledInOrder(dd1, dd2, dd3).reconciledInOrder();
+    assertThat(executionHistory).reconciledInOrder(dd3, dd2, dd1).notReconciled(dr1);
   }
 
 

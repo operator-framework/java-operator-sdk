@@ -96,6 +96,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
           // todo check if not garbage collected
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
         }
+        alreadyVisited.add(dependentResourceNode);
         handleDependentCleaned(dependentResourceNode);
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
