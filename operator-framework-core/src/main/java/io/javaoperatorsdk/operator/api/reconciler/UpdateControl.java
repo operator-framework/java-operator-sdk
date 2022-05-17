@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
 
 public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
@@ -35,6 +36,10 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
 
   /**
    * Preferred way to update the status. It does not do optimistic locking.
+   * <p>
+   * Note that this does not work, if the {@link CustomResource#initStatus() initStatus} is
+   * implemented, since it breaks the diffing process. Don't implement it if using this method.
+   * </p>
    *
    * @param <T> resource type
    * @param customResource the custom resource with target status

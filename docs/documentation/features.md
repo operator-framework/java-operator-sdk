@@ -152,10 +152,8 @@ In order to have this feature working:
   interface. See also
   the [`ObservedGenerationAwareStatus`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAwareStatus.java)
   which can also be extended.
-- The other condition is that the `CustomResource.getStatus()` method should not return `null`
-  , but an instance of the class representing `status`. The best way to achieve this is to
-  override [`CustomResource.initStatus()`](https://github.com/fabric8io/kubernetes-client/blob/865e0ddf67b99f954aa55ab14e5806d53ae149ec/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/CustomResource.java#L139)
-  .
+- The other condition is that the `CustomResource.getStatus()` should not return `null`. So the status should be instantiated
+  when the object is returned using the `UpdateControl`.
 
 If these conditions are fulfilled and generation awareness not turned off, the observed generation is automatically set
 by the framework after the `reconcile` method is called. Note that the observed generation is updated also
