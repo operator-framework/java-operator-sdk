@@ -39,7 +39,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(reconcileCondition);
   }
 
-  public Optional<Condition> getCleanupCondition() {
+  public Optional<Condition> getDeletePostCondition() {
     return Optional.ofNullable(cleanupCondition);
   }
 

@@ -23,7 +23,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   private final Map<DependentResourceNode<?, ?>, Exception> exceptionsDuringExecution =
       new HashMap<>();
   private final Set<DependentResourceNode<?, ?>> alreadyVisited = new HashSet<>();
-  private final Set<DependentResourceNode<?, ?>> cleanupConditionNotMet = new HashSet<>();
+  private final Set<DependentResourceNode<?, ?>> deleteConditionNotMet = new HashSet<>();
 
   private final Workflow<P> workflow;
   private final P primary;
@@ -93,20 +93,19 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     public void run() {
       try {
         var dependentResource = dependentResourceNode.getDependentResource();
-
-        var cleanupCondition = dependentResourceNode.getCleanupCondition();
+        var deletePostCondition = dependentResourceNode.getDeletePostCondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
         }
         alreadyVisited.add(dependentResourceNode);
-        boolean cleanupConditionMet =
-            cleanupCondition.map(c -> c.isMet(dependentResource, primary, context)).orElse(true);
-        if (cleanupConditionMet) {
+        boolean deletePostConditionMet =
+            deletePostCondition.map(c -> c.isMet(dependentResource, primary, context)).orElse(true);
+        if (deletePostConditionMet) {
           handleDependentCleaned(dependentResourceNode);
         } else {
-          cleanupConditionNotMet.add(dependentResourceNode);
+          deleteConditionNotMet.add(dependentResourceNode);
         }
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
@@ -157,7 +156,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     var parents = workflow.getDependents(dependentResourceNode);
     return parents.isEmpty()
         || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && !cleanupConditionNotMet.contains(d));
+            .allMatch(d -> alreadyVisited(d) && !deleteConditionNotMet.contains(d));
   }
 
   private boolean hasErroredDependent(
