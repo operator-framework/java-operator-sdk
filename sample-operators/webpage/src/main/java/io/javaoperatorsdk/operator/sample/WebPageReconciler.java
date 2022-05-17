@@ -77,7 +77,7 @@ public class WebPageReconciler
     simulateErrorIfRequested(webPage);
 
     if (!isValidHtml(webPage)) {
-      return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage));
+      return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
     }
 
     String ns = webPage.getMetadata().getNamespace();

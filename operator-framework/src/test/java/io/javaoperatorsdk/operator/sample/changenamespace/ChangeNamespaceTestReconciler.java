@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.changenamespace;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -9,16 +9,17 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class ChangeNamespaceTestReconciler
-    implements Reconciler<ChangeNamespaceTestCustomResource>, TestExecutionInfoProvider,
+    implements Reconciler<ChangeNamespaceTestCustomResource>,
     EventSourceInitializer<ChangeNamespaceTestCustomResource>, KubernetesClientAware {
 
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+  private final ConcurrentHashMap<ResourceID, Integer> numberOfResourceReconciliations =
+      new ConcurrentHashMap<>();
   private KubernetesClient client;
 
   @Override
@@ -43,15 +44,21 @@ public class ChangeNamespaceTestReconciler
           .create(configMap(primary));
     }
 
-    numberOfExecutions.addAndGet(1);
+    increaseNumberOfResourceExecutions(primary);
 
     var statusUpdates = primary.getStatus().getNumberOfStatusUpdates();
     primary.getStatus().setNumberOfStatusUpdates(statusUpdates + 1);
-    return UpdateControl.updateStatus(primary);
+    return UpdateControl.patchStatus(primary);
   }
 
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
+  private void increaseNumberOfResourceExecutions(ChangeNamespaceTestCustomResource primary) {
+    var resourceID = ResourceID.fromResource(primary);
+    var num = numberOfResourceReconciliations.getOrDefault(resourceID, 0);
+    numberOfResourceReconciliations.put(resourceID, num + 1);
+  }
+
+  public int numberOfResourceReconciliations(ChangeNamespaceTestCustomResource primary) {
+    return numberOfResourceReconciliations.getOrDefault(ResourceID.fromResource(primary), 0);
   }
 
   private ConfigMap configMap(ChangeNamespaceTestCustomResource primary) {

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true, https = false)
-public class CustomResourceSelectorTest {
+class CustomResourceSelectorTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomResourceSelectorTest.class);
   public static final String NAMESPACE = "test";
@@ -156,7 +156,7 @@ public class CustomResourceSelectorTest {
       LOGGER.info("Received event on: {}", resource);
 
       consumer.accept(resource);
-
+      // patch status now increases generation, this seems to be an issue with the mock server
       return UpdateControl.updateStatus(resource);
     }
   }

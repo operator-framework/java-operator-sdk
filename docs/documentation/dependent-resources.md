@@ -174,7 +174,7 @@ public class WebPageManagedDependentsReconciler
         final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
                 .getMetadata().getName();
         webPage.setStatus(createStatus(name));
-        return UpdateControl.updateStatus(webPage);
+        return UpdateControl.patchStatus(webPage);
     }
 
 }
@@ -227,7 +227,7 @@ public class WebPageStandaloneDependentsReconciler
         
         // 3.
         if (!isValidHtml(webPage.getHtml())) {
-            return UpdateControl.updateStatus(setInvalidHtmlErrorMessage(webPage)); 
+            return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage)); 
         }
         
         // 4.  
@@ -245,7 +245,7 @@ public class WebPageStandaloneDependentsReconciler
         // 6.
         webPage.setStatus(
                 createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
-        return UpdateControl.updateStatus(webPage);
+        return UpdateControl.patchStatus(webPage);
     }
 
    private void createDependentResources(KubernetesClient client) {

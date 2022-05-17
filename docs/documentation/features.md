@@ -93,7 +93,7 @@ reconciliation with a desired time delay.
   public UpdateControl<MyCustomResource> reconcile(
      EventSourceTestCustomResource resource, Context context) {
     ...
-    return UpdateControl.updateStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
+    return UpdateControl.patchStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
   }
 ```
 
@@ -299,7 +299,7 @@ resource after it is marked for deletion.
 Retry can be skipped for the cases of unrecoverable errors:
 
 ```java
- ErrorStatusUpdateControl.updateStatus(customResource).withNoRetry();
+ ErrorStatusUpdateControl.patchStatus(customResource).withNoRetry();
 ```
 
 ### Correctness and Automatic Retries

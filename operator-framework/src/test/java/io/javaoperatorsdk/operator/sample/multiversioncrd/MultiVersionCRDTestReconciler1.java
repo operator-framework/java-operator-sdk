@@ -24,6 +24,6 @@ public class MultiVersionCRDTestReconciler1
     if (!resource.getStatus().getReconciledBy().contains(getClass().getSimpleName())) {
       resource.getStatus().getReconciledBy().add(getClass().getSimpleName());
     }
-    return UpdateControl.updateStatus(resource);
+    return UpdateControl.patchStatus(resource);
   }
 }

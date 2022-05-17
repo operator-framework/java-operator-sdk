@@ -7,18 +7,25 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 public class ErrorStatusUpdateControl<P extends HasMetadata> {
 
   private final P resource;
+  private final boolean patch;
   private boolean noRetry = false;
 
+
+  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
+    return new ErrorStatusUpdateControl<>(resource, true);
+  }
+
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> updateStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource);
+    return new ErrorStatusUpdateControl<>(resource, false);
   }
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> noStatusUpdate() {
-    return new ErrorStatusUpdateControl<>(null);
+    return new ErrorStatusUpdateControl<>(null, true);
   }
 
-  private ErrorStatusUpdateControl(P resource) {
+  private ErrorStatusUpdateControl(P resource, boolean patch) {
     this.resource = resource;
+    this.patch = patch;
   }
 
   /**
@@ -37,5 +44,9 @@ public class ErrorStatusUpdateControl<P extends HasMetadata> {
 
   public boolean isNoRetry() {
     return noRetry;
+  }
+
+  public boolean isPatch() {
+    return patch;
   }
 }

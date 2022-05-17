@@ -43,7 +43,7 @@ public class RetryTestCustomReconciler
     ensureStatusExists(resource);
     resource.getStatus().setState(RetryTestCustomResourceStatus.State.SUCCESS);
 
-    return UpdateControl.updateStatus(resource);
+    return UpdateControl.patchStatus(resource);
   }
 
   private void ensureStatusExists(RetryTestCustomResource resource) {
