@@ -68,7 +68,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   /**
-   * Use to share informers between event more resources.
+   * Use to share informers between event more resources or to directly configure the informer.
    *
    * @param informerEventSource informer to use*
    */

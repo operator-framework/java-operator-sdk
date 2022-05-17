@@ -50,6 +50,7 @@ public class WebPageReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    // these explicit event sources are required to override the informer config to use labels
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .withLabelSelector(LOW_LEVEL_LABEL_KEY)
@@ -134,7 +135,7 @@ public class WebPageReconciler
       kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
-    return UpdateControl.updateStatus(webPage);
+    return UpdateControl.patchStatus(webPage);
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {

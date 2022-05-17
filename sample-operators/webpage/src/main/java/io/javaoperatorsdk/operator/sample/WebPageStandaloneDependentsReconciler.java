@@ -11,10 +11,11 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 
@@ -41,6 +42,32 @@ public class WebPageStandaloneDependentsReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    InformerEventSource<ConfigMap, WebPage> configMapEventSource = new InformerEventSource<>(
+        InformerConfiguration.from(ConfigMap.class, context)
+            .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+            .build(),
+        context);
+    configMapDR.configureWith(configMapEventSource);
+    InformerEventSource<Deployment, WebPage> deploymentEventSource = new InformerEventSource<>(
+        InformerConfiguration.from(Deployment.class, context)
+            .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+            .build(),
+        context);
+    deploymentDR.configureWith(deploymentEventSource);
+    InformerEventSource<Service, WebPage> serviceEventSource = new InformerEventSource<>(
+        InformerConfiguration.from(Service.class, context)
+            .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+            .build(),
+        context);
+    serviceDR.configureWith(serviceEventSource);
+    InformerEventSource<Ingress, WebPage> ingressEventSource = new InformerEventSource<>(
+        InformerConfiguration.from(Ingress.class, context)
+            .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+            .build(),
+        context);
+    ingressDR.configureWith(ingressEventSource);
+
+
     return EventSourceInitializer.nameEventSources(configMapDR.initEventSource(context),
         deploymentDR.initEventSource(context), serviceDR.initEventSource(context),
         ingressDR.initEventSource(context));
@@ -84,8 +111,6 @@ public class WebPageStandaloneDependentsReconciler
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
-      dr.configureWith(new KubernetesDependentResourceConfig()
-          .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
     });
   }
 
