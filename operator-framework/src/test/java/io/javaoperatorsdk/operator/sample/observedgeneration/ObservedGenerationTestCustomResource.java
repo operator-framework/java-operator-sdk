@@ -15,9 +15,4 @@ public class ObservedGenerationTestCustomResource
     extends CustomResource<Void, ObservedGenerationTestCustomResourceStatus>
     implements Namespaced {
 
-  @Override
-  protected ObservedGenerationTestCustomResourceStatus initStatus() {
-    return new ObservedGenerationTestCustomResourceStatus();
-  }
-
 }
