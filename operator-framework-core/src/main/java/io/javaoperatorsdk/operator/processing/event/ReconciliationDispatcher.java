@@ -363,6 +363,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       try (var bis = new ByteArrayInputStream(
           Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
         return resourceOperation
+            .inNamespace(resource.getMetadata().getNamespace())
             .load(bis)
             .editStatus(r -> resource);
       } catch (IOException e) {
