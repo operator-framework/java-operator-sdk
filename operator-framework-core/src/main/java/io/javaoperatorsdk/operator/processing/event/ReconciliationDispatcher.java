@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +13,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -96,31 +101,19 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       updateCustomResourceWithFinalizer(originalResource);
       return PostExecutionControl.onlyFinalizerAdded();
     } else {
+      var resourceForExecution =
+          cloneResource(originalResource);
       try {
-        var resourceForExecution =
-            cloneResourceForErrorStatusHandlerIfNeeded(originalResource);
         return reconcileExecution(executionScope, resourceForExecution, originalResource, context);
       } catch (Exception e) {
-        return handleErrorStatusHandler(originalResource, context, e);
+        return handleErrorStatusHandler(resourceForExecution, originalResource, context, e);
       }
     }
   }
 
-  /**
-   * Resource make sense only to clone for the ErrorStatusHandler or if the observed generation in
-   * status is handled automatically. Otherwise, this operation can be skipped since it can be
-   * memory and time-consuming. However, it needs to be cloned since it's common that the custom
-   * resource is changed during an execution, and it's much cleaner to have to original resource in
-   * place for status update.
-   */
-  private R cloneResourceForErrorStatusHandlerIfNeeded(R resource) {
-    if (isErrorStatusHandlerPresent() ||
-        shouldUpdateObservedGenerationAutomatically(resource)) {
-      final var cloner = ConfigurationServiceProvider.instance().getResourceCloner();
-      return cloner.clone(resource);
-    } else {
-      return resource;
-    }
+  private R cloneResource(R resource) {
+    final var cloner = ConfigurationServiceProvider.instance().getResourceCloner();
+    return cloner.clone(resource);
   }
 
   private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
@@ -141,27 +134,31 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
       updatedCustomResource =
-          updateStatusGenerationAware(updateControl.getResource(), updateControl.isPatch());
+          updateStatusGenerationAware(updateControl.getResource(), originalResource,
+              updateControl.isPatch());
     } else if (updateControl.isUpdateStatus()) {
       updatedCustomResource =
-          updateStatusGenerationAware(updateControl.getResource(), updateControl.isPatch());
+          updateStatusGenerationAware(updateControl.getResource(), originalResource,
+              updateControl.isPatch());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
           updateCustomResource(updateControl.getResource());
       if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
         updatedCustomResource =
-            updateStatusGenerationAware(originalResource, updateControl.isPatch());
+            updateStatusGenerationAware(updateControl.getResource(), originalResource,
+                updateControl.isPatch());
       }
     } else if (updateControl.isNoUpdate()
         && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
       updatedCustomResource =
-          updateStatusGenerationAware(originalResource, updateControl.isPatch());
+          updateStatusGenerationAware(originalResource, originalResource, updateControl.isPatch());
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
 
   @SuppressWarnings("unchecked")
-  private PostExecutionControl<R> handleErrorStatusHandler(R resource, Context<R> context,
+  private PostExecutionControl<R> handleErrorStatusHandler(R resource, R originalResource,
+      Context<R> context,
       Exception e) throws Exception {
     if (isErrorStatusHandlerPresent()) {
       try {
@@ -183,7 +180,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         R updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
           updatedResource = errorStatusUpdateControl.isPatch() ? customResourceFacade
-              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow())
+              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource)
               : customResourceFacade
                   .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
         }
@@ -207,10 +204,10 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private R updateStatusGenerationAware(R resource, boolean patch) {
+  private R updateStatusGenerationAware(R resource, R originalResource, boolean patch) {
     updateStatusObservedGenerationIfRequired(resource);
     if (patch) {
-      return customResourceFacade.patchStatus(resource);
+      return customResourceFacade.patchStatus(resource, originalResource);
     } else {
       return customResourceFacade.updateStatus(resource);
     }
@@ -357,18 +354,22 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return (R) hasMetadataOperation.replaceStatus(resource);
     }
 
-    public R patchStatus(R resource) {
+    public R patchStatus(R resource, R originalResource) {
       log.trace("Updating status for resource: {}", resource);
       String resourceVersion = resource.getMetadata().getResourceVersion();
-      try {
-        // don't do optimistic locking on patch
-        resource.getMetadata().setResourceVersion(null);
+      // don't do optimistic locking on patch
+      originalResource.getMetadata().setResourceVersion(null);
+      resource.getMetadata().setResourceVersion(null);
+      try (var bis = new ByteArrayInputStream(
+          Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
         return resourceOperation
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(getName(resource))
-            .patchStatus(resource);
+            .load(bis)
+            .editStatus(r -> resource);
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
       } finally {
         // restore initial resource version
+        originalResource.getMetadata().setResourceVersion(resourceVersion);
         resource.getMetadata().setResourceVersion(resourceVersion);
       }
     }
