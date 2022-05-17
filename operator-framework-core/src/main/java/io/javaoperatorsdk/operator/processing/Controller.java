@@ -303,7 +303,7 @@ public class Controller<P extends HasMetadata>
 
       initAndRegisterEventSources(context);
       eventSourceManager.start();
-      log.info("'{}' controller started, pending event sources initialization", controllerName);
+      log.info("'{}' controller started", controllerName);
     } catch (MissingCRDException e) {
       stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
