@@ -16,9 +16,4 @@ public class MultiVersionCRDTestCustomResource2
     CustomResource<MultiVersionCRDTestCustomResourceSpec2, MultiVersionCRDTestCustomResourceStatus2>
     implements Namespaced {
 
-  @Override
-  protected MultiVersionCRDTestCustomResourceStatus2 initStatus() {
-    return new MultiVersionCRDTestCustomResourceStatus2();
-  }
-
 }

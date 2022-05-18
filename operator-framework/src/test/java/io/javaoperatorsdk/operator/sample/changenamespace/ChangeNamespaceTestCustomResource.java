@@ -11,8 +11,4 @@ public class ChangeNamespaceTestCustomResource
     extends CustomResource<Void, ChangeNamespaceTestCustomResourceStatus>
     implements Namespaced {
 
-  @Override
-  protected ChangeNamespaceTestCustomResourceStatus initStatus() {
-    return new ChangeNamespaceTestCustomResourceStatus();
-  }
 }

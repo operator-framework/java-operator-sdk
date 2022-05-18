@@ -3,14 +3,17 @@ package io.javaoperatorsdk.operator;
 import java.time.Duration;
 import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResource;
+import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler;
 
+import static io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler.MESSAGE;
 import static io.javaoperatorsdk.operator.sample.statusupdatelocking.StatusUpdateLockingReconciler.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -44,8 +47,34 @@ class StatusPatchNotLockingIT {
     });
   }
 
+  // see https://github.com/fabric8io/kubernetes-client/issues/4158
+  @Disabled("Patch generated supported by K8S version below 1.20.x")
+  @Test
+  void valuesAreDeletedIfSetToNull() {
+    var resource = operator.create(StatusPatchLockingCustomResource.class, createResource());
+
+    await().untilAsserted(() -> {
+      var actual = operator.get(StatusPatchLockingCustomResource.class,
+          TEST_RESOURCE_NAME);
+      assertThat(actual.getStatus()).isNotNull();
+      assertThat(actual.getStatus().getMessage()).isEqualTo(MESSAGE);
+    });
+
+    resource.getSpec().setMessageInStatus(false);
+    operator.replace(StatusPatchLockingCustomResource.class, resource);
+
+    await().untilAsserted(() -> {
+      var actual = operator.get(StatusPatchLockingCustomResource.class,
+          TEST_RESOURCE_NAME);
+      assertThat(actual.getStatus()).isNotNull();
+      assertThat(actual.getStatus().getMessage()).isNull();
+    });
+  }
+
+
   StatusPatchLockingCustomResource createResource() {
     StatusPatchLockingCustomResource res = new StatusPatchLockingCustomResource();
+    res.setSpec(new StatusPatchLockingCustomResourceSpec());
     res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }

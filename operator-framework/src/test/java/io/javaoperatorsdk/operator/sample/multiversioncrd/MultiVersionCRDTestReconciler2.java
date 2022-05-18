@@ -20,6 +20,9 @@ public class MultiVersionCRDTestReconciler2
       Context<MultiVersionCRDTestCustomResource2> context) {
     log.info("Reconcile MultiVersionCRDTestCustomResource2: {}",
         resource.getMetadata().getName());
+    if (resource.getStatus() == null) {
+      resource.setStatus(new MultiVersionCRDTestCustomResourceStatus2());
+    }
     resource.getStatus().setValue1(resource.getStatus().getValue1() + 1);
     if (!resource.getStatus().getReconciledBy().contains(getClass().getSimpleName())) {
       resource.getStatus().getReconciledBy().add(getClass().getSimpleName());

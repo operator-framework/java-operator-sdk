@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
 
 public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateControl<T>> {
 
@@ -34,7 +35,15 @@ public class UpdateControl<T extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   /**
-   * Preferred way to update the status. It does not do optimistic locking.
+   * Preferred way to update the status. It does not do optimistic locking. Uses JSON Patch to patch
+   * the resource.
+   * <p>
+   * Note that this does not work, if the {@link CustomResource#initStatus() initStatus} is
+   * implemented, since it breaks the diffing process. Don't implement it if using this method.
+   * </p>
+   * There is also an issue with setting value to null with older Kubernetes versions (1.19 and
+   * below). See: <a href=
+   * "https://github.com/fabric8io/kubernetes-client/issues/4158">https://github.com/fabric8io/kubernetes-client/issues/4158</a>
    *
    * @param <T> resource type
    * @param customResource the custom resource with target status

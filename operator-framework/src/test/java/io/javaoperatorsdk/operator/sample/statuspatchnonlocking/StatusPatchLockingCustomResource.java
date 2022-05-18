@@ -12,11 +12,8 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("StatusUpdateLockingCustomResource")
 @ShortNames("sul")
 public class StatusPatchLockingCustomResource
-    extends CustomResource<Void, StatusPatchLockingCustomResourceStatus>
+    extends
+    CustomResource<StatusPatchLockingCustomResourceSpec, StatusPatchLockingCustomResourceStatus>
     implements Namespaced {
 
-  @Override
-  protected StatusPatchLockingCustomResourceStatus initStatus() {
-    return new StatusPatchLockingCustomResourceStatus();
-  }
 }
