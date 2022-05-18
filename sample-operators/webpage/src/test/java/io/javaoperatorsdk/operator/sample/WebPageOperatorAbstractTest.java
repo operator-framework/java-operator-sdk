@@ -7,7 +7,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -49,14 +48,14 @@ public abstract class WebPageOperatorAbstractTest {
     await()
         .atMost(Duration.ofSeconds(20))
         .pollInterval(Duration.ofSeconds(1))
-        .until(
+        .untilAsserted(
             () -> {
               var actual = operator().get(WebPage.class, TEST_PAGE);
               var deployment = operator().get(Deployment.class, deploymentName(webPage));
 
-              return Boolean.TRUE.equals(actual.getStatus().getAreWeGood())
-                  && Objects.equals(deployment.getSpec().getReplicas(),
-                      deployment.getStatus().getReadyReplicas());
+              assertThat(actual.getStatus().getAreWeGood()).isTrue();
+              assertThat(deployment.getSpec().getReplicas())
+                  .isEqualTo(deployment.getStatus().getReadyReplicas());
             });
 
     String response = httpGetForWebPage(webPage);
