@@ -364,6 +364,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
         return resourceOperation
             .inNamespace(resource.getMetadata().getNamespace())
+            // will be simplified in fabric8 v6
             .load(bis)
             .editStatus(r -> resource);
       } catch (IOException e) {
