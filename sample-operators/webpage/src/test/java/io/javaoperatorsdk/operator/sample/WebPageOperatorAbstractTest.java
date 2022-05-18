@@ -63,7 +63,7 @@ public abstract class WebPageOperatorAbstractTest {
             });
     assertThat(httpGetForWebPage(webPage)).contains(TITLE1);
 
-    // update test: changing title
+    // update part: changing title
     operator().replace(WebPage.class, createWebPage(TITLE2));
 
     await().atMost(Duration.ofSeconds(WAIT_SECONDS))
@@ -71,6 +71,16 @@ public abstract class WebPageOperatorAbstractTest {
         .untilAsserted(() -> {
           String page = httpGetForWebPage(webPage);
           assertThat(page).isNotNull().contains(TITLE2);
+        });
+
+    // delete part: deleting webpage
+    operator().delete(WebPage.class, createWebPage(TITLE2));
+
+    await().atMost(Duration.ofSeconds(WAIT_SECONDS))
+        .pollInterval(POLL_INTERVAL)
+        .untilAsserted(() -> {
+          Deployment deployment = operator().get(Deployment.class, deploymentName(webPage));
+          assertThat(deployment).isNull();
         });
   }
 
