@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
@@ -35,6 +36,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final Class<R> resourceType;
+  private KubernetesDependentResourceConfig kubernetesDependentResourceConfig;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -49,12 +51,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public void configureWith(KubernetesDependentResourceConfig config) {
-    configureWith(config.labelSelector(), config.namespaces(), !config.wereNamespacesConfigured());
+    this.kubernetesDependentResourceConfig = config;
   }
 
   @SuppressWarnings("unchecked")
   private void configureWith(String labelSelector, Set<String> namespaces,
-      boolean inheritNamespacesOnChange) {
+      boolean inheritNamespacesOnChange, EventSourceContext<P> context) {
+
+    if (namespaces.equals(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET)) {
+      namespaces = context.getControllerConfiguration().getNamespaces();
+    }
+
     final SecondaryToPrimaryMapper<R> primaryResourcesRetriever =
         (this instanceof SecondaryToPrimaryMapper) ? (SecondaryToPrimaryMapper<R>) this
             : Mappers.fromOwnerReference();
@@ -136,9 +143,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
-    configureWith(null, context.getControllerConfiguration().getNamespaces(), true);
-    log.warn("Using default configuration for " + resourceType().getSimpleName()
-        + " KubernetesDependentResource, call configureWith to provide configuration");
+    if (kubernetesDependentResourceConfig != null) {
+      configureWith(kubernetesDependentResourceConfig.labelSelector(),
+          kubernetesDependentResourceConfig.namespaces(),
+          !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);
+    } else {
+      configureWith(null, context.getControllerConfiguration().getNamespaces(),
+          true, context);
+      log.warn(
+          "Using default configuration for "
+              + resourceType().getSimpleName()
+              + " KubernetesDependentResource, call configureWith to provide configuration");
+    }
     return eventSource();
   }
 
