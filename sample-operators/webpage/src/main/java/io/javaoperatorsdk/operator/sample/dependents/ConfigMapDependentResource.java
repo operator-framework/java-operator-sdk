@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample.dependents;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.javaoperatorsdk.operator.sample.WebPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.sample.WebPage;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;

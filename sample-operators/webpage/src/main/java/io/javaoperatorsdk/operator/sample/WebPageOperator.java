@@ -28,10 +28,11 @@ public class WebPageOperator {
     Config config = new ConfigBuilder().withNamespace(null).build();
     KubernetesClient client = new DefaultKubernetesClient(config);
     Operator operator = new Operator(client);
-    if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(System.getenv(WEBPAGE_RECONCILER_ENV))) {
+    String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
+    if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler(client));
     } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE
-        .equals(System.getenv(WEBPAGE_RECONCILER_ENV))) {
+        .equals(reconcilerEnvVar)) {
       operator.register(new WebPageManagedDependentsReconciler());
     } else {
       operator.register(new WebPageStandaloneDependentsReconciler(client));

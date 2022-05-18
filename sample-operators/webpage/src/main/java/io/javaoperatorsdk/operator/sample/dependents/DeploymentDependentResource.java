@@ -18,7 +18,8 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
-public class DeploymentDependentResource extends CRUKubernetesDependentResource<Deployment, WebPage> {
+public class DeploymentDependentResource
+    extends CRUKubernetesDependentResource<Deployment, WebPage> {
 
   public DeploymentDependentResource() {
     super(Deployment.class);
