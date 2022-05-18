@@ -151,9 +151,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       configureWith(null, context.getControllerConfiguration().getNamespaces(),
           true, context);
       log.warn(
-          "Using default configuration for "
-              + resourceType().getSimpleName()
-              + " KubernetesDependentResource, call configureWith to provide configuration");
+          "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
+          resourceType().getSimpleName());
     }
     return eventSource();
   }
