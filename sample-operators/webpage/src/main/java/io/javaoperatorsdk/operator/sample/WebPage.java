@@ -11,11 +11,6 @@ public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
     implements Namespaced {
 
   @Override
-  protected WebPageStatus initStatus() {
-    return new WebPageStatus();
-  }
-
-  @Override
   public String toString() {
     return "WebPage{" +
         "spec=" + spec +
