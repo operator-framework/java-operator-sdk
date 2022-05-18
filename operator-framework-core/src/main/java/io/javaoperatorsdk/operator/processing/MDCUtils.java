@@ -29,7 +29,9 @@ public class MDCUtils {
     MDC.put(API_VERSION, resource.getApiVersion());
     MDC.put(KIND, resource.getKind());
     MDC.put(NAME, resource.getMetadata().getName());
-    MDC.put(NAMESPACE, resource.getMetadata().getNamespace());
+    if (resource.getMetadata().getNamespace() != null) {
+      MDC.put(NAMESPACE, resource.getMetadata().getNamespace());
+    }
     MDC.put(RESOURCE_VERSION, resource.getMetadata().getResourceVersion());
     if (resource.getMetadata().getGeneration() != null) {
       MDC.put(GENERATION, resource.getMetadata().getGeneration().toString());
