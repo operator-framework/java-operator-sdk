@@ -8,9 +8,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.sample.dependents.ConfigMapDependentResource;
-import io.javaoperatorsdk.operator.sample.dependents.DeploymentDependentResource;
-import io.javaoperatorsdk.operator.sample.dependents.ServiceDependentResource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
 import static io.javaoperatorsdk.operator.sample.Utils.handleError;

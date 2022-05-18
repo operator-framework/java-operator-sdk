@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.dependents;
+package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.sample.WebPage;
-import io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;

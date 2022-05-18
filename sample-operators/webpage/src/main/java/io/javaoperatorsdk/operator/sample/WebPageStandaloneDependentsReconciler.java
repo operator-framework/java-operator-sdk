@@ -15,10 +15,6 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.sample.dependents.ConfigMapDependentResource;
-import io.javaoperatorsdk.operator.sample.dependents.DeploymentDependentResource;
-import io.javaoperatorsdk.operator.sample.dependents.IngressDependentResource;
-import io.javaoperatorsdk.operator.sample.dependents.ServiceDependentResource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 
