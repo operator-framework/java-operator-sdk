@@ -9,8 +9,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResource;
+import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler;
 
+import static io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler.MESSAGE;
 import static io.javaoperatorsdk.operator.sample.statusupdatelocking.StatusUpdateLockingReconciler.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -44,8 +46,32 @@ class StatusPatchNotLockingIT {
     });
   }
 
+  @Test
+  void valuesAreDeletedIfSetToNull() {
+    var resource = operator.create(StatusPatchLockingCustomResource.class, createResource());
+
+    await().untilAsserted(() -> {
+      var actual = operator.get(StatusPatchLockingCustomResource.class,
+          TEST_RESOURCE_NAME);
+      assertThat(actual.getStatus()).isNotNull();
+      assertThat(actual.getStatus().getMessage()).isEqualTo(MESSAGE);
+    });
+
+    resource.getSpec().setMessageInStatus(false);
+    operator.replace(StatusPatchLockingCustomResource.class, resource);
+
+    await().untilAsserted(() -> {
+      var actual = operator.get(StatusPatchLockingCustomResource.class,
+          TEST_RESOURCE_NAME);
+      assertThat(actual.getStatus()).isNotNull();
+      assertThat(actual.getStatus().getMessage()).isNull();
+    });
+  }
+
+
   StatusPatchLockingCustomResource createResource() {
     StatusPatchLockingCustomResource res = new StatusPatchLockingCustomResource();
+    res.setSpec(new StatusPatchLockingCustomResourceSpec());
     res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
