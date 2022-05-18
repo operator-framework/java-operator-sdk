@@ -1,8 +1,9 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.dependents;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.sample.WebPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = SELECTOR)
-class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
+public class ConfigMapDependentResource extends CRUKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 

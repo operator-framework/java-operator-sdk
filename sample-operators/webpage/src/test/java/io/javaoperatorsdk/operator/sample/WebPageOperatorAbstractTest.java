@@ -27,7 +27,8 @@ import static org.awaitility.Awaitility.await;
 
 public abstract class WebPageOperatorAbstractTest {
 
-  static final Logger log = LoggerFactory.getLogger(WebPageOperatorDependentResourcesE2E.class);
+  static final Logger log =
+      LoggerFactory.getLogger(WebPageOperatorStandaloneDependentResourcesE2E.class);
 
   static final KubernetesClient client = new DefaultKubernetesClient();
   public static final String TEST_PAGE = "test-page";

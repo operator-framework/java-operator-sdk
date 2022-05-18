@@ -3,6 +3,10 @@ package io.javaoperatorsdk.operator.sample;
 import java.util.Arrays;
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.sample.dependents.ConfigMapDependentResource;
+import io.javaoperatorsdk.operator.sample.dependents.DeploymentDependentResource;
+import io.javaoperatorsdk.operator.sample.dependents.IngressDependentResource;
+import io.javaoperatorsdk.operator.sample.dependents.ServiceDependentResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

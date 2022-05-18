@@ -13,20 +13,18 @@ import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 
-import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE;
-import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
-import static io.javaoperatorsdk.operator.sample.WebPageReconciler.lowLevelLabel;
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.*;
 
-class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
+class WebPageOperatorManagedDependentResourcesE2E extends WebPageOperatorAbstractTest {
 
-  public WebPageOperatorE2E() throws FileNotFoundException {}
+  public WebPageOperatorManagedDependentResourcesE2E() throws FileNotFoundException {}
 
   @RegisterExtension
   AbstractOperatorExtension operator =
       isLocal()
           ? LocalOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
-              .withReconciler(new WebPageReconciler(client))
+              .withReconciler(new WebPageManagedDependentsReconciler())
               .build()
           : ClusterOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
@@ -40,21 +38,13 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
                       container.setEnv(new ArrayList<>());
                     }
                     container.getEnv().add(
-                        new EnvVar(WEBPAGE_RECONCILER_ENV, WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE,
-                            null));
+                        new EnvVar(WEBPAGE_RECONCILER_ENV,
+                            WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE, null));
                   })
               .build();
-
 
   @Override
   AbstractOperatorExtension operator() {
     return operator;
-  }
-
-  @Override
-  WebPage createWebPage() {
-    WebPage page = super.createWebPage();
-    page.getMetadata().setLabels(lowLevelLabel());
-    return page;
   }
 }

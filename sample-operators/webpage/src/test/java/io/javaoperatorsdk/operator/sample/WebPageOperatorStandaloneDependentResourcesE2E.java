@@ -9,9 +9,9 @@ import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
 
-class WebPageOperatorDependentResourcesE2E extends WebPageOperatorAbstractTest {
+class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbstractTest {
 
-  public WebPageOperatorDependentResourcesE2E() throws FileNotFoundException {}
+  public WebPageOperatorStandaloneDependentResourcesE2E() throws FileNotFoundException {}
 
   @RegisterExtension
   AbstractOperatorExtension operator =
