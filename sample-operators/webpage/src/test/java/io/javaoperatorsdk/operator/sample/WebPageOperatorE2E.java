@@ -52,8 +52,8 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
   }
 
   @Override
-  WebPage createWebPage() {
-    WebPage page = super.createWebPage();
+  WebPage createWebPage(String title) {
+    WebPage page = super.createWebPage(title);
     page.getMetadata().setLabels(lowLevelLabel());
     return page;
   }

@@ -31,6 +31,10 @@ public abstract class WebPageOperatorAbstractTest {
 
   static final KubernetesClient client = new DefaultKubernetesClient();
   public static final String TEST_PAGE = "test-page";
+  public static final String TITLE1 = "Hello Operator World";
+  public static final String TITLE2 = "Hello Operator World Title 2";
+  public static final int WAIT_SECONDS = 20;
+  public static final Duration POLL_INTERVAL = Duration.ofSeconds(1);
 
   boolean isLocal() {
     String deployment = System.getProperty("test.deployment");
@@ -42,12 +46,12 @@ public abstract class WebPageOperatorAbstractTest {
   @Test
   void testAddingWebPage() {
 
-    var webPage = createWebPage();
+    var webPage = createWebPage(TITLE1);
     operator().create(WebPage.class, webPage);
 
     await()
-        .atMost(Duration.ofSeconds(20))
-        .pollInterval(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(WAIT_SECONDS))
+        .pollInterval(POLL_INTERVAL)
         .untilAsserted(
             () -> {
               var actual = operator().get(WebPage.class, TEST_PAGE);
@@ -57,9 +61,17 @@ public abstract class WebPageOperatorAbstractTest {
               assertThat(deployment.getSpec().getReplicas())
                   .isEqualTo(deployment.getStatus().getReadyReplicas());
             });
+    assertThat(httpGetForWebPage(webPage)).contains(TITLE1);
 
-    String response = httpGetForWebPage(webPage);
-    assertThat(response).contains("<title>Hello Operator World</title>");
+    // update test: changing title
+    operator().replace(WebPage.class, createWebPage(TITLE2));
+
+    await().atMost(Duration.ofSeconds(WAIT_SECONDS))
+        .pollInterval(POLL_INTERVAL)
+        .untilAsserted(() -> {
+          String page = httpGetForWebPage(webPage);
+          assertThat(page).isNotNull().contains(TITLE2);
+        });
   }
 
   String httpGetForWebPage(WebPage webPage) {
@@ -75,7 +87,7 @@ public abstract class WebPageOperatorAbstractTest {
               .uri(new URI("http://localhost:" + portForward.getLocalPort())).build();
       return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
     } catch (URISyntaxException | IOException | InterruptedException e) {
-      throw new IllegalStateException(e);
+      return null;
     } finally {
       if (portForward != null) {
         try {
@@ -87,7 +99,7 @@ public abstract class WebPageOperatorAbstractTest {
     }
   }
 
-  WebPage createWebPage() {
+  WebPage createWebPage(String title) {
     WebPage webPage = new WebPage();
     webPage.setMetadata(new ObjectMeta());
     webPage.getMetadata().setName(TEST_PAGE);
@@ -98,7 +110,7 @@ public abstract class WebPageOperatorAbstractTest {
         .setHtml(
             "<html>\n"
                 + "      <head>\n"
-                + "        <title>Hello Operator World</title>\n"
+                + "        <title>" + title + "</title>\n"
                 + "      </head>\n"
                 + "      <body>\n"
                 + "        Hello World! \n"
