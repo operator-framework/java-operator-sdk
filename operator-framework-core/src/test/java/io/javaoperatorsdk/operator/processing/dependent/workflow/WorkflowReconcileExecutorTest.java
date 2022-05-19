@@ -230,8 +230,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).deleted(drDeleter);
-    assertThat(executionHistory).reconciledInOrder(dr1, drDeleter);
     assertThat(executionHistory).notReconciled(dr2);
+    assertThat(executionHistory).reconciledInOrder(dr1, drDeleter);
   }
 
   @Test
