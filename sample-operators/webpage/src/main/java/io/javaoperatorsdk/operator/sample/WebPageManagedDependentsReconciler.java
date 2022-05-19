@@ -12,13 +12,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
 import static io.javaoperatorsdk.operator.sample.Utils.handleError;
 import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
-import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 /**
  * Shows how to implement a reconciler with managed dependent resources.
  */
 @ControllerConfiguration(
-    labelSelector = SELECTOR,
     dependents = {
         @Dependent(type = ConfigMapDependentResource.class),
         @Dependent(type = DeploymentDependentResource.class),
@@ -27,7 +25,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
-  static final String SELECTOR = "managed";
+  public static final String SELECTOR = "managed";
 
   @Override
   public ErrorStatusUpdateControl<WebPage> updateErrorStatus(WebPage resource,
