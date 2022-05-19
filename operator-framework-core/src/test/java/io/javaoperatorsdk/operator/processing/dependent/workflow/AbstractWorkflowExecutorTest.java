@@ -19,6 +19,12 @@ public class AbstractWorkflowExecutorTest {
   protected TestDependent dr2 = new TestDependent("DR_2");
   protected TestDeleterDependent drDeleter = new TestDeleterDependent("DR_DELETER");
   protected TestErrorDependent drError = new TestErrorDependent("ERROR_1");
+  protected TestErrorDeleterDependent errorDD = new TestErrorDeleterDependent("ERROR_DELETER");
+
+  protected final Condition noMetDeletePostCondition =
+      (dependentResource, primary, context) -> false;
+  protected final Condition metDeletePostCondition =
+      (dependentResource, primary, context) -> true;
 
   protected List<ReconcileRecord> executionHistory =
       Collections.synchronizedList(new ArrayList<>());

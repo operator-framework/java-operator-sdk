@@ -11,7 +11,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
 
   private final DependentResource<R, P> dependentResource;
   private Condition reconcileCondition;
-  private Condition cleanupCondition;
+  private Condition deletePostCondition;
   private Condition readyCondition;
   private List<DependentResourceNode> dependsOn = new ArrayList<>(1);
 
@@ -25,10 +25,10 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   }
 
   public DependentResourceNode(DependentResource<R, P> dependentResource,
-      Condition reconcileCondition, Condition cleanupCondition) {
+      Condition reconcileCondition, Condition deletePostCondition) {
     this.dependentResource = dependentResource;
     this.reconcileCondition = reconcileCondition;
-    this.cleanupCondition = cleanupCondition;
+    this.deletePostCondition = deletePostCondition;
   }
 
   public DependentResource<R, P> getDependentResource() {
@@ -40,7 +40,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   }
 
   public Optional<Condition> getDeletePostCondition() {
-    return Optional.ofNullable(cleanupCondition);
+    return Optional.ofNullable(deletePostCondition);
   }
 
   public void setDependsOn(List<DependentResourceNode> dependsOn) {
@@ -68,8 +68,8 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return this;
   }
 
-  public DependentResourceNode<R, P> setCleanupCondition(Condition cleanupCondition) {
-    this.cleanupCondition = cleanupCondition;
+  public DependentResourceNode<R, P> setDeletePostCondition(Condition cleanupCondition) {
+    this.deletePostCondition = cleanupCondition;
     return this;
   }
 

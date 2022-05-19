@@ -33,8 +33,8 @@ public class DependentBuilder<P extends HasMetadata> {
     return this;
   }
 
-  public DependentBuilder<P> withCleanupCondition(Condition readyCondition) {
-    node.setCleanupCondition(readyCondition);
+  public DependentBuilder<P> withDeletePostCondition(Condition readyCondition) {
+    node.setDeletePostCondition(readyCondition);
     return this;
   }
 

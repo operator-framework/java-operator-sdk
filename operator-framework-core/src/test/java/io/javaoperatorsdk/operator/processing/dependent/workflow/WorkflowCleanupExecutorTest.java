@@ -13,13 +13,6 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   protected TestDeleterDependent dd2 = new TestDeleterDependent("DR_DELETER_2");
   protected TestDeleterDependent dd3 = new TestDeleterDependent("DR_DELETER_3");
 
-  protected TestErrorDeleterDependent errorDD = new TestErrorDeleterDependent("ERROR_DELETER");
-
-  private final Condition noMetCleanupCondition =
-      (dependentResource, primary, context) -> false;
-  private final Condition metCleanupCondition =
-      (dependentResource, primary, context) -> true;
-
   @Test
   void cleanUpDiamondWorkflow() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
@@ -53,7 +46,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionTrivialCase() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dd1).build()
-        .addDependent(dd2).dependsOn(dd1).withCleanupCondition(noMetCleanupCondition).build()
+        .addDependent(dd2).dependsOn(dd1).withDeletePostCondition(noMetDeletePostCondition).build()
         .build();
 
     workflow.cleanup(new TestCustomResource(), null);
@@ -65,7 +58,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionMet() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dd1).build()
-        .addDependent(dd2).dependsOn(dd1).withCleanupCondition(metCleanupCondition).build()
+        .addDependent(dd2).dependsOn(dd1).withDeletePostCondition(metDeletePostCondition).build()
         .build();
 
     workflow.cleanup(new TestCustomResource(), null);
@@ -80,7 +73,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(dd1).build()
         .addDependent(dd2).dependsOn(dd1).build()
-        .addDependent(dd3).dependsOn(dd1).withCleanupCondition(noMetCleanupCondition).build()
+        .addDependent(dd3).dependsOn(dd1).withDeletePostCondition(noMetDeletePostCondition).build()
         .addDependent(dd4).dependsOn(dd2, dd3).build()
         .build();
 

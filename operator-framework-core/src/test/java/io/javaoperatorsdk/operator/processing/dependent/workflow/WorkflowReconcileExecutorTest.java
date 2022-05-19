@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
-  public static final String NOT_READY_YET = "NOT READY YET";
   private Condition met_reconcile_condition =
       (dependentResource, primary, context) -> true;
   private Condition not_met_reconcile_condition =
@@ -232,6 +231,85 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     assertThat(executionHistory).deleted(drDeleter);
     assertThat(executionHistory).notReconciled(dr2);
     assertThat(executionHistory).reconciled(dr1);
+  }
+
+  @Test
+  void deletedIfReconcileConditionNotMet() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).dependsOn(dr1)
+        .build()
+        .addDependent(drDeleter2).dependsOn(dr1, drDeleter).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory)
+        .reconciledInOrder(dr1, drDeleter2, drDeleter)
+        .deleted(drDeleter2, drDeleter);
+  }
+
+  @Test
+  void deleteDoneInReverseOrder() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    TestDeleterDependent drDeleter3 = new TestDeleterDependent("DR_DELETER_3");
+    TestDeleterDependent drDeleter4 = new TestDeleterDependent("DR_DELETER_4");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(dr1).build()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).dependsOn(dr1)
+        .build()
+        .addDependent(drDeleter2).dependsOn(drDeleter).build()
+        .addDependent(drDeleter3).dependsOn(drDeleter).build()
+        .addDependent(drDeleter4).dependsOn(drDeleter3).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory)
+        .reconciledInOrder(dr1, drDeleter4, drDeleter3, drDeleter)
+        .reconciledInOrder(dr1, drDeleter2, drDeleter)
+        .deleted(drDeleter, drDeleter2, drDeleter3, drDeleter4);
+  }
+
+  @Test
+  void diamondDeleteWithPostConditionInMiddle() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    TestDeleterDependent drDeleter3 = new TestDeleterDependent("DR_DELETER_3");
+    TestDeleterDependent drDeleter4 = new TestDeleterDependent("DR_DELETER_4");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).build()
+        .addDependent(drDeleter2).dependsOn(drDeleter).build()
+        .addDependent(drDeleter3).dependsOn(drDeleter)
+        .withDeletePostCondition(noMetDeletePostCondition).build()
+        .addDependent(drDeleter4).dependsOn(drDeleter3, drDeleter2).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).notReconciled(drDeleter)
+        .reconciledInOrder(drDeleter4, drDeleter2)
+        .reconciledInOrder(drDeleter4, drDeleter3);
+  }
+
+  @Test
+  void diamondDeleteErrorInMiddle() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    TestDeleterDependent drDeleter3 = new TestDeleterDependent("DR_DELETER_3");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).build()
+        .addDependent(drDeleter2).dependsOn(drDeleter).build()
+        .addDependent(errorDD).dependsOn(drDeleter).build()
+        .addDependent(drDeleter3).dependsOn(errorDD, drDeleter2).build()
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), null);
+
+    assertThat(executionHistory).notReconciled(drDeleter, drError)
+        .reconciledInOrder(drDeleter3, drDeleter2);
   }
 
   @Test

@@ -116,7 +116,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   private boolean allDependentsDeletedAlready(DependentResourceNode dependentResourceNode) {
     var dependents = workflow.getDependents(dependentResourceNode);
     return dependents.stream().allMatch(d -> alreadyReconciled.contains(d) && !notReady.contains(d)
-        && !exceptionsDuringExecution.containsKey(d));
+        && !exceptionsDuringExecution.containsKey(d) && !deleteConditionNotMet.contains(d));
   }
 
 
