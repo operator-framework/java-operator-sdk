@@ -19,7 +19,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = SELECTOR)
-class ConfigMapDependentResource extends CRUDKubernetesDependentResource<ConfigMap, WebPage> {
+public class ConfigMapDependentResource extends CRUDKubernetesDependentResource<ConfigMap, WebPage> {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
