@@ -128,8 +128,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         () -> workflow.reconcile(new TestCustomResource(), null)
             .throwAggregatedExceptionIfErrorsPresent());
 
-    assertThat(executionHistory).reconciledInOrder(dr1, dr2, dr3);
-    assertThat(executionHistory).reconciledInOrder(dr1, drError);
+    assertThat(executionHistory).reconciledInOrder(dr1, dr2, dr3).reconciledInOrder(dr1, drError);
   }
 
   @Test

@@ -13,16 +13,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 class WorkflowTest {
 
   @Test
-  public void calculatesTopLevelResources() {
+  void calculatesTopLevelResources() {
     var dr1 = mock(DependentResource.class);
     var dr2 = mock(DependentResource.class);
     var independentDR = mock(DependentResource.class);
 
-    Workflow<TestCustomResource> workflow = new WorkflowBuilder<>()
+    var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(independentDR).build()
         .addDependent(dr1).build()
         .addDependent(dr2).dependsOn(dr1).build()
@@ -37,7 +37,7 @@ class WorkflowTest {
   }
 
   @Test
-  public void calculatesBottomLevelResources() {
+  void calculatesBottomLevelResources() {
     var dr1 = mock(DependentResource.class);
     var dr2 = mock(DependentResource.class);
     var independentDR = mock(DependentResource.class);

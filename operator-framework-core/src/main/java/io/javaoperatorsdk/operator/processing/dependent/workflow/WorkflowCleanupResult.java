@@ -10,16 +10,17 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 public class WorkflowCleanupResult {
 
-  private List<DependentResource> deletedDependents = new ArrayList<>();
+  private List<DependentResource> deleteCalledOnDependents = new ArrayList<>();
   private List<DependentResource> notDeletedDependents = new ArrayList<>();
   private Map<DependentResource, Exception> erroredDependents = new HashMap<>();
 
-  public List<DependentResource> getDeletedDependents() {
-    return deletedDependents;
+  public List<DependentResource> getDeleteCalledOnDependents() {
+    return deleteCalledOnDependents;
   }
 
-  public WorkflowCleanupResult setDeletedDependents(List<DependentResource> deletedDependents) {
-    this.deletedDependents = deletedDependents;
+  public WorkflowCleanupResult setDeleteCalledOnDependents(
+      List<DependentResource> deletedDependents) {
+    this.deleteCalledOnDependents = deletedDependents;
     return this;
   }
 

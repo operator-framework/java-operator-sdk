@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,16 +15,18 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
+@SuppressWarnings("rawtypes")
 public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
-  private static final Logger log = LoggerFactory.getLogger(WorkflowReconcileExecutor.class);
+  private static final Logger log = LoggerFactory.getLogger(WorkflowCleanupExecutor.class);
 
-  private final Map<DependentResourceNode<?, ?>, Future<?>> actualExecutions =
+  private final Map<DependentResourceNode, Future<?>> actualExecutions =
       new HashMap<>();
-  private final Map<DependentResourceNode<?, ?>, Exception> exceptionsDuringExecution =
+  private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
       new HashMap<>();
-  private final Set<DependentResourceNode<?, ?>> alreadyVisited = new HashSet<>();
-  private final Set<DependentResourceNode<?, ?>> deleteConditionNotMet = new HashSet<>();
+  private final Set<DependentResourceNode> alreadyVisited = new HashSet<>();
+  private final Set<DependentResourceNode> postDeleteConditionNotMet = new HashSet<>();
+  private final Set<DependentResourceNode> deleteCalled = new HashSet<>();
 
   private final Workflow<P> workflow;
   private final P primary;
@@ -35,10 +38,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     this.context = context;
   }
 
-  // todo cleanup condition
-
   public synchronized WorkflowCleanupResult cleanup() {
-    for (DependentResourceNode<?, P> dependentResourceNode : workflow
+    for (DependentResourceNode dependentResourceNode : workflow
         .getBottomLevelResource()) {
       handleCleanup(dependentResourceNode);
     }
@@ -62,7 +63,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     return actualExecutions.isEmpty();
   }
 
-  private synchronized void handleCleanup(DependentResourceNode<?, P> dependentResourceNode) {
+  private synchronized void handleCleanup(DependentResourceNode dependentResourceNode) {
     log.debug("Submitting for cleanup: {}", dependentResourceNode);
 
     if (alreadyVisited(dependentResourceNode)
@@ -98,6 +99,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
+          deleteCalled.add(dependentResourceNode);
         }
         alreadyVisited.add(dependentResourceNode);
         boolean deletePostConditionMet =
@@ -105,7 +107,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         if (deletePostConditionMet) {
           handleDependentCleaned(dependentResourceNode);
         } else {
-          deleteConditionNotMet.add(dependentResourceNode);
+          postDeleteConditionNotMet.add(dependentResourceNode);
         }
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
@@ -152,11 +154,11 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   private boolean allDependentsCleaned(
-      DependentResourceNode<?, P> dependentResourceNode) {
+      DependentResourceNode dependentResourceNode) {
     var parents = workflow.getDependents(dependentResourceNode);
     return parents.isEmpty()
         || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && !deleteConditionNotMet.contains(d));
+            .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
   }
 
   private boolean hasErroredDependent(
@@ -167,6 +169,17 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   private WorkflowCleanupResult createCleanupResult() {
-    return new WorkflowCleanupResult();
+    var result = new WorkflowCleanupResult();
+    result.setErroredDependents(exceptionsDuringExecution
+        .entrySet().stream()
+        .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)));
+
+    result.setNotDeletedDependents(
+        postDeleteConditionNotMet.stream().map(DependentResourceNode::getDependentResource)
+            .collect(Collectors.toList()));
+    result.setDeleteCalledOnDependents(
+        deleteCalled.stream().map(DependentResourceNode::getDependentResource)
+            .collect(Collectors.toList()));
+    return result;
   }
 }
