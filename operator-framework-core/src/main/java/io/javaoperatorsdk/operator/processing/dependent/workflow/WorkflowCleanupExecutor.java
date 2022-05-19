@@ -174,7 +174,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         .entrySet().stream()
         .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)));
 
-    result.setNotDeletedDependents(
+    result.setPostConditionNotMetDependents(
         postDeleteConditionNotMet.stream().map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toList()));
     result.setDeleteCalledOnDependents(

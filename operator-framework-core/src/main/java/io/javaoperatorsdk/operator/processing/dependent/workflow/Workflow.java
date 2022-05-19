@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  *
  * @param <P> primary resource
  */
+// todo results unit test
 @SuppressWarnings("rawtypes")
 public class Workflow<P extends HasMetadata> {
 

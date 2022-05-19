@@ -95,7 +95,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null)
-            .throwAggregatedExceptionIfErrorsPresent());
+            .throwAggregateExceptionIfErrorsPresent());
     assertThat(executionHistory).reconciled(drError);
   }
 
@@ -108,7 +108,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null)
-            .throwAggregatedExceptionIfErrorsPresent());
+            .throwAggregateExceptionIfErrorsPresent());
 
     assertThat(executionHistory).reconciled(dr1, drError).notReconciled(dr2);
   }
@@ -126,7 +126,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null)
-            .throwAggregatedExceptionIfErrorsPresent());
+            .throwAggregateExceptionIfErrorsPresent());
 
     assertThat(executionHistory).reconciledInOrder(dr1, dr2, dr3).reconciledInOrder(dr1, drError);
   }
@@ -140,7 +140,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .build();
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null)
-            .throwAggregatedExceptionIfErrorsPresent());
+            .throwAggregateExceptionIfErrorsPresent());
 
     assertThat(executionHistory).notReconciled(dr2);
   }
@@ -210,7 +210,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null)
-            .throwAggregatedExceptionIfErrorsPresent());
+            .throwAggregateExceptionIfErrorsPresent());
 
     assertThat(executionHistory).deleted(drDeleter2, drDeleter);
     assertThat(executionHistory).reconciled(drError);

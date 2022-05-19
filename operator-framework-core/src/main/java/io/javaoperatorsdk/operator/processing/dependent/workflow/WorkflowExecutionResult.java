@@ -45,7 +45,7 @@ public class WorkflowExecutionResult {
     return this;
   }
 
-  public void throwAggregatedExceptionIfErrorsPresent() {
+  public void throwAggregateExceptionIfErrorsPresent() {
     if (!erroredDependents.isEmpty()) {
       throw createFinalException();
     }
@@ -62,13 +62,6 @@ public class WorkflowExecutionResult {
 
   public boolean erroredDependentsExists() {
     return !erroredDependents.isEmpty();
-  }
-
-  public void throwAggregateExceptionIfErroredExists() {
-    if (erroredDependentsExists()) {
-      throw new AggregatedOperatorException("Exception(s) during workflow execution.",
-          new ArrayList<>(erroredDependents.values()));
-    }
   }
 
 }

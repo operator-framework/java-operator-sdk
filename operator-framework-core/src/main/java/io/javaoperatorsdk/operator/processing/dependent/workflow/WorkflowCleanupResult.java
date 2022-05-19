@@ -5,13 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowCleanupResult {
 
   private List<DependentResource> deleteCalledOnDependents = new ArrayList<>();
-  private List<DependentResource> notDeletedDependents = new ArrayList<>();
+  private List<DependentResource> postConditionNotMetDependents = new ArrayList<>();
   private Map<DependentResource, Exception> erroredDependents = new HashMap<>();
 
   public List<DependentResource> getDeleteCalledOnDependents() {
@@ -24,13 +25,13 @@ public class WorkflowCleanupResult {
     return this;
   }
 
-  public List<DependentResource> getNotDeletedDependents() {
-    return notDeletedDependents;
+  public List<DependentResource> getPostConditionNotMetDependents() {
+    return postConditionNotMetDependents;
   }
 
-  public WorkflowCleanupResult setNotDeletedDependents(
-      List<DependentResource> notDeletedDependents) {
-    this.notDeletedDependents = notDeletedDependents;
+  public WorkflowCleanupResult setPostConditionNotMetDependents(
+      List<DependentResource> postConditionNotMetDependents) {
+    this.postConditionNotMetDependents = postConditionNotMetDependents;
     return this;
   }
 
@@ -43,4 +44,21 @@ public class WorkflowCleanupResult {
     this.erroredDependents = erroredDependents;
     return this;
   }
+
+  public boolean postConditionsNotMet() {
+    return !postConditionNotMetDependents.isEmpty();
+  }
+
+  public boolean erroredDependentsExists() {
+    return !erroredDependents.isEmpty();
+  }
+
+  public void throwAggregateExceptionIfErroredExists() {
+    if (erroredDependentsExists()) {
+      throw new AggregatedOperatorException("Exception(s) during workflow execution.",
+          new ArrayList<>(erroredDependents.values()));
+    }
+  }
+
+
 }
