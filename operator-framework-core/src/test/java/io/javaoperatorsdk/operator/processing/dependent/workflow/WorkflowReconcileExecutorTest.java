@@ -194,8 +194,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).notReconciled(dr2);
-    assertThat(executionHistory).reconciledInOrder(dr1, drDeleter, drDeleter2);
-    assertThat(executionHistory).deleted(drDeleter, drDeleter2);
+    assertThat(executionHistory).reconciledInOrder(dr1, drDeleter2, drDeleter);
+    assertThat(executionHistory).deleted(drDeleter2, drDeleter);
   }
 
   @Test
@@ -206,16 +206,16 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(drError).build()
         .addDependent(drDeleter).withReconcileCondition(not_met_reconcile_condition).build()
         .addDependent(drDeleter2).withReconcileCondition(met_reconcile_condition)
-        .dependsOn(drError, drDeleter).build()
+        .dependsOn(drError, drDeleter)
+        .build()
         .build();
 
     assertThrows(AggregatedOperatorException.class,
         () -> workflow.reconcile(new TestCustomResource(), null)
             .throwAggregatedExceptionIfErrorsPresent());
 
-    assertThat(executionHistory).deleted(drDeleter);
+    assertThat(executionHistory).deleted(drDeleter2, drDeleter);
     assertThat(executionHistory).reconciled(drError);
-    assertThat(executionHistory).notReconciled(drDeleter2);
   }
 
   @Test
