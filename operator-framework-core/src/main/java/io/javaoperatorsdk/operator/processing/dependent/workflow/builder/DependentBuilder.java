@@ -23,17 +23,17 @@ public class DependentBuilder<P extends HasMetadata> {
     return this;
   }
 
-  public DependentBuilder<P> withReconcileCondition(Condition reconcileCondition) {
+  public DependentBuilder<P> withReconcileCondition(Condition<?, P> reconcileCondition) {
     node.setReconcileCondition(reconcileCondition);
     return this;
   }
 
-  public DependentBuilder<P> withReadyCondition(Condition readyCondition) {
+  public DependentBuilder<P> withReadyCondition(Condition<?, P> readyCondition) {
     node.setReadyCondition(readyCondition);
     return this;
   }
 
-  public DependentBuilder<P> withDeletePostCondition(Condition readyCondition) {
+  public DependentBuilder<P> withDeletePostCondition(Condition<?, P> readyCondition) {
     node.setDeletePostCondition(readyCondition);
     return this;
   }

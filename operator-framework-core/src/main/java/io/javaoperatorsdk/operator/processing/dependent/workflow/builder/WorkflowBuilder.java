@@ -10,9 +10,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
+  private final Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
 
   public DependentBuilder<P> addDependent(DependentResource<?, P> dependentResource) {
     DependentResourceNode<?, P> node = new DependentResourceNode<>(dependentResource);
@@ -32,15 +33,15 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   public Workflow<P> build() {
-    return new Workflow<>(dependentResourceNodes,
+    return new Workflow(dependentResourceNodes,
         ConfigurationServiceProvider.instance().getExecutorService());
   }
 
   public Workflow<P> build(int parallelism) {
-    return new Workflow<>(dependentResourceNodes, parallelism);
+    return new Workflow(dependentResourceNodes, parallelism);
   }
 
   public Workflow<P> build(ExecutorService executorService) {
-    return new Workflow<>(dependentResourceNodes, executorService);
+    return new Workflow(dependentResourceNodes, executorService);
   }
 }

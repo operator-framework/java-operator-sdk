@@ -14,30 +14,31 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  *
  * @param <P> primary resource
  */
+@SuppressWarnings("rawtypes")
 public class Workflow<P extends HasMetadata> {
 
-  private final Set<DependentResourceNode<?, P>> dependentResourceNodes;
-  private final Set<DependentResourceNode<?, P>> topLevelResources = new HashSet<>();
-  private final Set<DependentResourceNode<?, P>> bottomLevelResource = new HashSet<>();
-  private Map<DependentResourceNode<?, P>, List<DependentResourceNode<?, P>>> dependents;
+  private final Set<DependentResourceNode> dependentResourceNodes;
+  private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
+  private final Set<DependentResourceNode> bottomLevelResource = new HashSet<>();
+  private Map<DependentResourceNode, List<DependentResourceNode>> dependents;
 
   // it's "global" executor service shared between multiple reconciliations running parallel
   private ExecutorService executorService;
 
-  public Workflow(Set<DependentResourceNode<?, P>> dependentResourceNodes) {
+  public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
     this.executorService = ConfigurationServiceProvider.instance().getExecutorService();
     this.dependentResourceNodes = dependentResourceNodes;
     preprocessForReconcile();
   }
 
-  public Workflow(Set<DependentResourceNode<?, P>> dependentResourceNodes,
+  public Workflow(Set<DependentResourceNode> dependentResourceNodes,
       ExecutorService executorService) {
     this.executorService = executorService;
     this.dependentResourceNodes = dependentResourceNodes;
     preprocessForReconcile();
   }
 
-  public Workflow(Set<DependentResourceNode<?, P>> dependentResourceNodes, int globalParallelism) {
+  public Workflow(Set<DependentResourceNode> dependentResourceNodes, int globalParallelism) {
     this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism));
   }
 
@@ -61,7 +62,7 @@ public class Workflow<P extends HasMetadata> {
       if (node.getDependsOn().isEmpty()) {
         topLevelResources.add(node);
       } else {
-        for (DependentResourceNode<?, P> dependsOn : node.getDependsOn()) {
+        for (DependentResourceNode dependsOn : node.getDependsOn()) {
           dependents.computeIfAbsent(dependsOn, dr -> new ArrayList<>());
           dependents.get(dependsOn).add(node);
           bottomLevelResource.remove(dependsOn);
@@ -74,16 +75,16 @@ public class Workflow<P extends HasMetadata> {
     this.executorService = executorService;
   }
 
-  Set<DependentResourceNode<?, P>> getTopLevelDependentResources() {
+  Set<DependentResourceNode> getTopLevelDependentResources() {
     return topLevelResources;
   }
 
-  Set<DependentResourceNode<?, P>> getBottomLevelResource() {
+  Set<DependentResourceNode> getBottomLevelResource() {
     return bottomLevelResource;
   }
 
   @SuppressWarnings("rawtypes")
-  List<DependentResourceNode<?, P>> getDependents(DependentResourceNode node) {
+  List<DependentResourceNode> getDependents(DependentResourceNode node) {
     var deps = dependents.get(node);
     if (deps == null) {
       return Collections.emptyList();
@@ -92,7 +93,7 @@ public class Workflow<P extends HasMetadata> {
     }
   }
 
-  Map<DependentResourceNode<?, P>, List<DependentResourceNode<?, P>>> getDependents() {
+  Map<DependentResourceNode, List<DependentResourceNode>> getDependents() {
     return dependents;
   }
 

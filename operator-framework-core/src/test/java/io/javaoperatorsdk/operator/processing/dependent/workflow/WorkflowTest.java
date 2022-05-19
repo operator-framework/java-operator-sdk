@@ -13,9 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("unchecked")
 class WorkflowTest {
-
-
 
   @Test
   public void calculatesTopLevelResources() {
@@ -29,7 +28,7 @@ class WorkflowTest {
         .addDependent(dr2).dependsOn(dr1).build()
         .build();
 
-    Set<DependentResource<?, TestCustomResource>> topResources =
+    Set<DependentResource> topResources =
         workflow.getTopLevelDependentResources().stream()
             .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
@@ -43,13 +42,13 @@ class WorkflowTest {
     var dr2 = mock(DependentResource.class);
     var independentDR = mock(DependentResource.class);
 
-    Workflow<TestCustomResource> workflow = new WorkflowBuilder<>()
+    Workflow<TestCustomResource> workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependent(independentDR).build()
         .addDependent(dr1).build()
         .addDependent(dr2).dependsOn(dr1).build()
         .build();
 
-    Set<DependentResource<?, TestCustomResource>> bottomResources =
+    Set<DependentResource> bottomResources =
         workflow.getBottomLevelResource().stream()
             .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());

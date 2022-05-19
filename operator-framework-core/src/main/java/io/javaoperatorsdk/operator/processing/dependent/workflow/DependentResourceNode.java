@@ -7,6 +7,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
+@SuppressWarnings("rawtypes")
 public class DependentResourceNode<R, P extends HasMetadata> {
 
   private final DependentResource<R, P> dependentResource;

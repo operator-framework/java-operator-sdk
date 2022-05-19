@@ -8,51 +8,40 @@ import java.util.Map;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
+@SuppressWarnings("rawtypes")
 public class WorkflowExecutionResult {
 
-  // this includes also possibly deleted ones
-  private List<DependentResource<?, ?>> reconciledDependents = new ArrayList<>();
-  private List<DependentResource<?, ?>> notReconciledDependents = new ArrayList<>();
-  private List<DependentResource<?, ?>> notReadyDependents = new ArrayList<>();
-  private Map<DependentResource<?, ?>, Exception> erroredDependents = new HashMap<>();
+  private List<DependentResource> reconciledDependents = new ArrayList<>();
+  private List<DependentResource> notReadyDependents = new ArrayList<>();
+  private Map<DependentResource, Exception> erroredDependents = new HashMap<>();
 
-  public Map<DependentResource<?, ?>, Exception> getErroredDependents() {
+  public Map<DependentResource, Exception> getErroredDependents() {
     return erroredDependents;
   }
 
   public WorkflowExecutionResult setErroredDependents(
-      Map<DependentResource<?, ?>, Exception> erroredDependents) {
+      Map<DependentResource, Exception> erroredDependents) {
     this.erroredDependents = erroredDependents;
     return this;
   }
 
-  public List<DependentResource<?, ?>> getReconciledDependents() {
+  public List<DependentResource> getReconciledDependents() {
     return reconciledDependents;
   }
 
   public WorkflowExecutionResult setReconciledDependents(
-      List<DependentResource<?, ?>> reconciledDependents) {
+      List<DependentResource> reconciledDependents) {
     this.reconciledDependents = reconciledDependents;
     return this;
   }
 
-  public List<DependentResource<?, ?>> getNotReadyDependents() {
+  public List<DependentResource> getNotReadyDependents() {
     return notReadyDependents;
   }
 
   public WorkflowExecutionResult setNotReadyDependents(
-      List<DependentResource<?, ?>> notReadyDependents) {
+      List<DependentResource> notReadyDependents) {
     this.notReadyDependents = notReadyDependents;
-    return this;
-  }
-
-  public List<DependentResource<?, ?>> getNotReconciledDependents() {
-    return notReconciledDependents;
-  }
-
-  public WorkflowExecutionResult setNotReconciledDependents(
-      List<DependentResource<?, ?>> notReconciledDependents) {
-    this.notReconciledDependents = notReconciledDependents;
     return this;
   }
 
@@ -66,4 +55,20 @@ public class WorkflowExecutionResult {
     return new AggregatedOperatorException("Exception during workflow.",
         new ArrayList<>(erroredDependents.values()));
   }
+
+  public boolean notReadyDependentsExists() {
+    return !notReadyDependents.isEmpty();
+  }
+
+  public boolean erroredDependentsExists() {
+    return !erroredDependents.isEmpty();
+  }
+
+  public void throwAggregateExceptionIfErroredExists() {
+    if (erroredDependentsExists()) {
+      throw new AggregatedOperatorException("Exception(s) during workflow execution.",
+          new ArrayList<>(erroredDependents.values()));
+    }
+  }
+
 }
