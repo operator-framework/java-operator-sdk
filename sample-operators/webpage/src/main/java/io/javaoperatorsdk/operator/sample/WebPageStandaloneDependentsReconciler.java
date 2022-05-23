@@ -87,7 +87,7 @@ public class WebPageStandaloneDependentsReconciler
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
       dr.configureWith(new KubernetesDependentResourceConfig()
-          .setLabelSelector(SELECTOR+"=true"));
+          .setLabelSelector(SELECTOR + "=true"));
     });
   }
 
