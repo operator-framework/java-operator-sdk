@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.
@@ -27,6 +28,7 @@ public class WebPageStandaloneDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
+
   private static final Logger log =
       LoggerFactory.getLogger(WebPageStandaloneDependentsReconciler.class);
 
@@ -85,7 +87,7 @@ public class WebPageStandaloneDependentsReconciler
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
       dr.configureWith(new KubernetesDependentResourceConfig()
-          .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+          .setLabelSelector(SELECTOR+"=true"));
     });
   }
 
