@@ -2,10 +2,12 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
@@ -22,9 +24,10 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(dd3).dependsOn(dr1, dd2).build()
         .build();
 
-    workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), null);
 
     assertThat(executionHistory).reconciledInOrder(dd3, dd2, dd1).notReconciled(dr1);
+
   }
 
   @Test
@@ -34,9 +37,12 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(dd2).dependsOn(dd1).build()
         .addDependent(dd3).dependsOn(dd2).build()
         .addDependent(errorDD).dependsOn(dd2).build()
+        .withThrowExceptionFurther(false)
         .build();
 
-    workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), null);
+    assertThrows(AggregatedOperatorException.class,
+        res::throwAggregateExceptionIfErrorsPresent);
 
     assertThat(executionHistory).deleted(dd3, errorDD).notReconciled(dd1, dd2);
   }

@@ -10,10 +10,13 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
+import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
+
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
   private final Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
+  private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
   public DependentBuilder<P> addDependent(DependentResource dependentResource) {
     DependentResourceNode node = new DependentResourceNode<>(dependentResource);
@@ -32,9 +35,18 @@ public class WorkflowBuilder<P extends HasMetadata> {
         .orElseThrow();
   }
 
+  public boolean isThrowExceptionAutomatically() {
+    return throwExceptionAutomatically;
+  }
+
+  public WorkflowBuilder<P> withThrowExceptionFurther(boolean throwExceptionFurther) {
+    this.throwExceptionAutomatically = throwExceptionFurther;
+    return this;
+  }
+
   public Workflow<P> build() {
     return new Workflow(dependentResourceNodes,
-        ConfigurationServiceProvider.instance().getExecutorService());
+        ConfigurationServiceProvider.instance().getExecutorService(), throwExceptionAutomatically);
   }
 
   public Workflow<P> build(int parallelism) {
@@ -42,6 +54,6 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   public Workflow<P> build(ExecutorService executorService) {
-    return new Workflow(dependentResourceNodes, executorService);
+    return new Workflow(dependentResourceNodes, executorService, throwExceptionAutomatically);
   }
 }

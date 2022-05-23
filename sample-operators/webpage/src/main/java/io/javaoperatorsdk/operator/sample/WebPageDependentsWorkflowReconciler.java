@@ -63,9 +63,7 @@ public class WebPageDependentsWorkflowReconciler
       throws Exception {
     simulateErrorIfRequested(webPage);
 
-    var result = workflow.reconcile(webPage, context);
-    // todo default?
-    result.throwAggregateExceptionIfErrorsPresent();
+    workflow.reconcile(webPage, context);
 
     webPage.setStatus(
         createStatus(

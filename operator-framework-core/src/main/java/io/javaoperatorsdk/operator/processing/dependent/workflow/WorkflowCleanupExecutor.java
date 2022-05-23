@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -21,12 +20,13 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(WorkflowCleanupExecutor.class);
 
   private final Map<DependentResourceNode, Future<?>> actualExecutions =
-      new HashMap<>();
+      new ConcurrentHashMap<>();
   private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
-      new HashMap<>();
-  private final Set<DependentResourceNode> alreadyVisited = new HashSet<>();
-  private final Set<DependentResourceNode> postDeleteConditionNotMet = new HashSet<>();
-  private final Set<DependentResourceNode> deleteCalled = new HashSet<>();
+      new ConcurrentHashMap<>();
+  private final Set<DependentResourceNode> alreadyVisited = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode> postDeleteConditionNotMet =
+      ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode> deleteCalled = ConcurrentHashMap.newKeySet();
 
   private final Workflow<P> workflow;
   private final P primary;

@@ -21,17 +21,17 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   private final Workflow<P> workflow;
 
   /** Covers both deleted and reconciled */
-  private final Set<DependentResourceNode> alreadyVisited = new HashSet<>();
-  private final Set<DependentResourceNode> notReady = new HashSet<>();
+  private final Set<DependentResourceNode> alreadyVisited = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode> notReady = ConcurrentHashMap.newKeySet();
   private final Map<DependentResourceNode, Future<?>> actualExecutions =
       new HashMap<>();
   private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
-      new HashMap<>();
+      new ConcurrentHashMap<>();
 
-  private final Set<DependentResourceNode> markedForDelete = new HashSet<>();
-  private final Set<DependentResourceNode> deleteConditionNotMet = new HashSet<>();
+  private final Set<DependentResourceNode> markedForDelete = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode> deleteConditionNotMet = ConcurrentHashMap.newKeySet();
   // used to remember reconciled (not deleted or errored) dependents
-  private final Set<DependentResourceNode> reconciled = new HashSet<>();
+  private final Set<DependentResourceNode> reconciled = ConcurrentHashMap.newKeySet();
 
   private final P primary;
   private final Context<P> context;
@@ -244,7 +244,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   private void handleReconcileConditionNotMet(DependentResourceNode<?, ?> dependentResourceNode) {
     Set<DependentResourceNode> bottomNodes = new HashSet<>();
     markDependentsForDelete(dependentResourceNode, bottomNodes);
-    bottomNodes.forEach(bn -> handleDelete(bn));
+    bottomNodes.forEach(this::handleDelete);
   }
 
   private void markDependentsForDelete(DependentResourceNode<?, ?> dependentResourceNode,

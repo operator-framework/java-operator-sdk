@@ -53,7 +53,7 @@ public class WorkflowCleanupResult {
     return !erroredDependents.isEmpty();
   }
 
-  public void throwAggregateExceptionIfErroredExists() {
+  public void throwAggregateExceptionIfErrorsPresent() {
     if (erroredDependentsExists()) {
       throw new AggregatedOperatorException("Exception(s) during workflow execution.",
           new ArrayList<>(erroredDependents.values()));

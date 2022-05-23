@@ -14,45 +14,56 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  *
  * @param <P> primary resource
  */
-// todo results unit test
 @SuppressWarnings("rawtypes")
 public class Workflow<P extends HasMetadata> {
+
+  public static boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;
 
   private final Set<DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
   private final Set<DependentResourceNode> bottomLevelResource = new HashSet<>();
   private Map<DependentResourceNode, List<DependentResourceNode>> dependents;
-
+  private final boolean throwExceptionAutomatically;
   // it's "global" executor service shared between multiple reconciliations running parallel
   private ExecutorService executorService;
 
   public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
     this.executorService = ConfigurationServiceProvider.instance().getExecutorService();
     this.dependentResourceNodes = dependentResourceNodes;
+    this.throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
     preprocessForReconcile();
   }
 
   public Workflow(Set<DependentResourceNode> dependentResourceNodes,
-      ExecutorService executorService) {
+      ExecutorService executorService, boolean throwExceptionAutomatically) {
     this.executorService = executorService;
     this.dependentResourceNodes = dependentResourceNodes;
+    this.throwExceptionAutomatically = throwExceptionAutomatically;
     preprocessForReconcile();
   }
 
   public Workflow(Set<DependentResourceNode> dependentResourceNodes, int globalParallelism) {
-    this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism));
+    this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism), true);
   }
 
   public WorkflowExecutionResult reconcile(P primary, Context<P> context) {
     WorkflowReconcileExecutor<P> workflowReconcileExecutor =
         new WorkflowReconcileExecutor<>(this, primary, context);
-    return workflowReconcileExecutor.reconcile();
+    var result = workflowReconcileExecutor.reconcile();
+    if (throwExceptionAutomatically) {
+      result.throwAggregateExceptionIfErrorsPresent();
+    }
+    return result;
   }
 
   public WorkflowCleanupResult cleanup(P primary, Context<P> context) {
     WorkflowCleanupExecutor<P> workflowCleanupExecutor =
         new WorkflowCleanupExecutor<>(this, primary, context);
-    return workflowCleanupExecutor.cleanup();
+    var result = workflowCleanupExecutor.cleanup();
+    if (throwExceptionAutomatically) {
+      result.throwAggregateExceptionIfErrorsPresent();
+    }
+    return result;
   }
 
   // add cycle detection?
@@ -70,6 +81,10 @@ public class Workflow<P extends HasMetadata> {
         }
       }
     }
+  }
+
+  public boolean isThrowExceptionAutomatically() {
+    return throwExceptionAutomatically;
   }
 
   public void setExecutorService(ExecutorService executorService) {
