@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
@@ -28,6 +29,10 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
     assertThat(executionHistory).reconciledInOrder(dd3, dd2, dd1).notReconciled(dr1);
 
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd1, dd2,
+        dd3);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+    Assertions.assertThat(res.getPostConditionNotMetDependents()).isEmpty();
   }
 
   @Test
@@ -45,6 +50,10 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         res::throwAggregateExceptionIfErrorsPresent);
 
     assertThat(executionHistory).deleted(dd3, errorDD).notReconciled(dd1, dd2);
+
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd3);
+    Assertions.assertThat(res.getErroredDependents()).containsOnlyKeys(errorDD);
+    Assertions.assertThat(res.getPostConditionNotMetDependents()).isEmpty();
   }
 
 
@@ -55,9 +64,12 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(dd2).dependsOn(dd1).withDeletePostCondition(noMetDeletePostCondition).build()
         .build();
 
-    workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), null);
 
     assertThat(executionHistory).deleted(dd2).notReconciled(dd1);
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd2);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+    Assertions.assertThat(res.getPostConditionNotMetDependents()).containsExactlyInAnyOrder(dd2);
   }
 
   @Test
@@ -67,9 +79,13 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(dd2).dependsOn(dd1).withDeletePostCondition(metDeletePostCondition).build()
         .build();
 
-    workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), null);
 
     assertThat(executionHistory).deleted(dd2, dd1);
+
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd1, dd2);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+    Assertions.assertThat(res.getPostConditionNotMetDependents()).isEmpty();
   }
 
   @Test
@@ -83,12 +99,17 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(dd4).dependsOn(dd2, dd3).build()
         .build();
 
-    workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), null);
 
     assertThat(executionHistory)
         .reconciledInOrder(dd4, dd2)
         .reconciledInOrder(dd4, dd3)
         .notReconciled(dr1);
+
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd4, dd3,
+        dd2);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+    Assertions.assertThat(res.getPostConditionNotMetDependents()).containsExactlyInAnyOrder(dd3);
   }
 
   @Test
@@ -98,10 +119,12 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependent(gcDel).build()
         .build();
 
-    workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), null);
 
     assertThat(executionHistory)
         .notReconciled(gcDel);
+
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).isEmpty();
   }
 
 }

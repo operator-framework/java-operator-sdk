@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 @SuppressWarnings("rawtypes")
 public class Workflow<P extends HasMetadata> {
 
-  public static boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;
+  public static final boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;
 
   private final Set<DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
