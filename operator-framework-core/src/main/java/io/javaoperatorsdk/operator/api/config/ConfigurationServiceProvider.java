@@ -3,7 +3,8 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.function.Consumer;
 
 /**
- * For internal usage only, to avoid passing the operator configuration around. Preferred way to get to the ConfigurationService is via the reconciliation context.
+ * For internal usage only, to avoid passing the operator configuration around. Preferred way to get
+ * to the ConfigurationService is via the reconciliation context.
  */
 public class ConfigurationServiceProvider {
   static final ConfigurationService DEFAULT =
