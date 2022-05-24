@@ -1,19 +1,20 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowExecutionResult {
 
-  private List<DependentResource> reconciledDependents = new ArrayList<>();
-  private List<DependentResource> notReadyDependents = new ArrayList<>();
-  private Map<DependentResource, Exception> erroredDependents = new HashMap<>();
+  private List<DependentResource> reconciledDependents;
+  private List<DependentResource> notReadyDependents;
+  private Map<DependentResource, Exception> erroredDependents;
+  private Map<DependentResource, ReconcileResult> reconcileResults;
 
   public Map<DependentResource, Exception> getErroredDependents() {
     return erroredDependents;
@@ -45,6 +46,16 @@ public class WorkflowExecutionResult {
     return this;
   }
 
+  public Map<DependentResource, ReconcileResult> getReconcileResults() {
+    return reconcileResults;
+  }
+
+  public WorkflowExecutionResult setReconcileResults(
+      Map<DependentResource, ReconcileResult> reconcileResults) {
+    this.reconcileResults = reconcileResults;
+    return this;
+  }
+
   public void throwAggregateExceptionIfErrorsPresent() {
     if (!erroredDependents.isEmpty()) {
       throw createFinalException();
@@ -63,5 +74,6 @@ public class WorkflowExecutionResult {
   public boolean erroredDependentsExists() {
     return !erroredDependents.isEmpty();
   }
+
 
 }
