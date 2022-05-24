@@ -46,14 +46,11 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(deletePostCondition);
   }
 
-  public void setDependsOn(List<DependentResourceNode> dependsOn) {
-    this.dependsOn = dependsOn;
-  }
-
   public List<DependentResourceNode> getDependsOn() {
     return dependsOn;
   }
 
+  @SuppressWarnings("unchecked")
   public void addDependsOnRelation(DependentResourceNode node) {
     node.parents.add(this);
     dependsOn.add(node);
@@ -61,9 +58,13 @@ public class DependentResourceNode<R, P extends HasMetadata> {
 
   @Override
   public String toString() {
-    return "DependentResourceNode{" +
-        "dependentResource=" + dependentResource +
-        '}';
+    return "{"
+        + parents.stream().map(p -> p.dependentResource.toString())
+            .collect(Collectors.joining(", ", "[", "]->"))
+        + "(" + dependentResource + ")"
+        + dependsOn.stream().map(d -> d.dependentResource.toString())
+            .collect(Collectors.joining(", ", "->[", "]"))
+        + '}';
   }
 
   public DependentResourceNode<R, P> setReconcileCondition(
