@@ -117,7 +117,6 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     }
   }
 
-  @SuppressWarnings("unchecked")
   private synchronized void handleDependentCleaned(
       DependentResourceNode<?, P> dependentResourceNode) {
     var dependOns = dependentResourceNode.getDependsOn();
@@ -154,8 +153,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   private boolean allDependentsCleaned(
-      DependentResourceNode dependentResourceNode) {
-    var parents = workflow.getDependents(dependentResourceNode);
+      DependentResourceNode<?, P> dependentResourceNode) {
+    var parents = dependentResourceNode.getParents();
     return parents.isEmpty()
         || parents.stream()
             .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
@@ -163,7 +162,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
   private boolean hasErroredDependent(
       DependentResourceNode<?, P> dependentResourceNode) {
-    var parents = workflow.getDependents(dependentResourceNode);
+    var parents = dependentResourceNode.getParents();
     return !parents.isEmpty()
         && parents.stream().anyMatch(exceptionsDuringExecution::containsKey);
   }

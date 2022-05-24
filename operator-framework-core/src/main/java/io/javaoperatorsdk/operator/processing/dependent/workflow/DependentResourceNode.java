@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -14,7 +15,8 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   private Condition reconcileCondition;
   private Condition deletePostCondition;
   private Condition readyCondition;
-  private List<DependentResourceNode> dependsOn = new ArrayList<>(1);
+  private final List<DependentResourceNode> dependsOn = new LinkedList<>();
+  private final List<DependentResourceNode> parents = new LinkedList<>();
 
   public DependentResourceNode(DependentResource<R, P> dependentResource) {
     this(dependentResource, null, null);
@@ -53,6 +55,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   }
 
   public void addDependsOnRelation(DependentResourceNode node) {
+    node.parents.add(this);
     dependsOn.add(node);
   }
 
@@ -81,5 +84,9 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   public DependentResourceNode<R, P> setReadyCondition(Condition readyCondition) {
     this.readyCondition = readyCondition;
     return this;
+  }
+
+  public List<DependentResourceNode> getParents() {
+    return parents;
   }
 }

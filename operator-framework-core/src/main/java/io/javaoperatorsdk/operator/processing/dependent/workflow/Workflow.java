@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,7 +22,7 @@ public class Workflow<P extends HasMetadata> {
   private final Set<DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
   private final Set<DependentResourceNode> bottomLevelResource = new HashSet<>();
-  private Map<DependentResourceNode, List<DependentResourceNode>> dependents;
+
   private final boolean throwExceptionAutomatically;
   // it's "global" executor service shared between multiple reconciliations running parallel
   private ExecutorService executorService;
@@ -69,14 +69,11 @@ public class Workflow<P extends HasMetadata> {
   // add cycle detection?
   private void preprocessForReconcile() {
     bottomLevelResource.addAll(dependentResourceNodes);
-    dependents = new ConcurrentHashMap<>(dependentResourceNodes.size());
     for (DependentResourceNode<?, P> node : dependentResourceNodes) {
       if (node.getDependsOn().isEmpty()) {
         topLevelResources.add(node);
       } else {
         for (DependentResourceNode dependsOn : node.getDependsOn()) {
-          dependents.computeIfAbsent(dependsOn, dr -> new ArrayList<>());
-          dependents.get(dependsOn).add(node);
           bottomLevelResource.remove(dependsOn);
         }
       }
@@ -97,20 +94,6 @@ public class Workflow<P extends HasMetadata> {
 
   Set<DependentResourceNode> getBottomLevelResource() {
     return bottomLevelResource;
-  }
-
-  @SuppressWarnings("rawtypes")
-  List<DependentResourceNode> getDependents(DependentResourceNode node) {
-    var deps = dependents.get(node);
-    if (deps == null) {
-      return Collections.emptyList();
-    } else {
-      return deps;
-    }
-  }
-
-  Map<DependentResourceNode, List<DependentResourceNode>> getDependents() {
-    return dependents;
   }
 
   ExecutorService getExecutorService() {

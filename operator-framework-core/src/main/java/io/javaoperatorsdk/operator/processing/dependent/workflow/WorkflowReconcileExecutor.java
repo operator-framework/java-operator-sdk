@@ -1,7 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -115,8 +119,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     log.debug("Submitted to delete: {}", dependentResourceNode);
   }
 
-  private boolean allDependentsDeletedAlready(DependentResourceNode dependentResourceNode) {
-    var dependents = workflow.getDependents(dependentResourceNode);
+  private boolean allDependentsDeletedAlready(DependentResourceNode<?, P> dependentResourceNode) {
+    var dependents = dependentResourceNode.getParents();
     return dependents.stream().allMatch(d -> alreadyVisited.contains(d) && !notReady.contains(d)
         && !exceptionsDuringExecution.containsKey(d) && !deleteConditionNotMet.contains(d));
   }
@@ -222,13 +226,13 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     });
   }
 
-  private boolean isReconcilingNow(DependentResourceNode<?, ?> dependentResourceNode) {
+  private boolean isReconcilingNow(DependentResourceNode<?, P> dependentResourceNode) {
     return actualExecutions.containsKey(dependentResourceNode);
   }
 
   private synchronized void handleDependentsReconcile(
       DependentResourceNode<?, P> dependentResourceNode) {
-    var dependents = workflow.getDependents(dependentResourceNode);
+    var dependents = dependentResourceNode.getParents();
     dependents.forEach(d -> {
       log.debug("Handle reconcile for dependent: {} of parent:{}", d, dependentResourceNode);
       handleReconcile(d);
@@ -240,21 +244,21 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
   private boolean alreadyVisited(
-      DependentResourceNode<?, ?> dependentResourceNode) {
+      DependentResourceNode<?, P> dependentResourceNode) {
     return alreadyVisited.contains(dependentResourceNode);
   }
 
 
-  private void handleReconcileConditionNotMet(DependentResourceNode<?, ?> dependentResourceNode) {
+  private void handleReconcileConditionNotMet(DependentResourceNode<?, P> dependentResourceNode) {
     Set<DependentResourceNode> bottomNodes = new HashSet<>();
     markDependentsForDelete(dependentResourceNode, bottomNodes);
     bottomNodes.forEach(this::handleDelete);
   }
 
-  private void markDependentsForDelete(DependentResourceNode<?, ?> dependentResourceNode,
+  private void markDependentsForDelete(DependentResourceNode<?, P> dependentResourceNode,
       Set<DependentResourceNode> bottomNodes) {
     markedForDelete.add(dependentResourceNode);
-    var dependents = workflow.getDependents(dependentResourceNode);
+    var dependents = dependentResourceNode.getParents();
     if (dependents.isEmpty()) {
       bottomNodes.add(dependentResourceNode);
     } else {
