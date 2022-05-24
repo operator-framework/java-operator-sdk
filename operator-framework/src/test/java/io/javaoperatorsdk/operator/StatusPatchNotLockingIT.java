@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator;
 import java.time.Duration;
 import java.util.Map;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -48,7 +47,6 @@ class StatusPatchNotLockingIT {
   }
 
   // see https://github.com/fabric8io/kubernetes-client/issues/4158
-  @Disabled("Patch generated supported by K8S version below 1.20.x")
   @Test
   void valuesAreDeletedIfSetToNull() {
     var resource = operator.create(StatusPatchLockingCustomResource.class, createResource());
@@ -70,7 +68,6 @@ class StatusPatchNotLockingIT {
       assertThat(actual.getStatus().getMessage()).isNull();
     });
   }
-
 
   StatusPatchLockingCustomResource createResource() {
     StatusPatchLockingCustomResource res = new StatusPatchLockingCustomResource();
