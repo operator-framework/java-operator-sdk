@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -356,18 +357,22 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
 
     public R patchResource(R resource, R originalResource) {
-      log.trace("Patching resource: {}", resource);
+      return handlePatch(resource, originalResource, (r) -> r.edit((or) -> resource));
+    }
+
+    private R handlePatch(R resource, R originalResource, Function<Resource<R>, R> unaryOperator) {
+      log.trace("Updating for resource: {}", resource);
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // don't do optimistic locking on patch
       originalResource.getMetadata().setResourceVersion(null);
       resource.getMetadata().setResourceVersion(null);
       try (var bis = new ByteArrayInputStream(
           Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
-        return resourceOperation
+        var resOps = resourceOperation
             .inNamespace(resource.getMetadata().getNamespace())
             // will be simplified in fabric8 v6
-            .load(bis)
-            .edit(r -> resource);
+            .load(bis);
+        return unaryOperator.apply(resOps);
       } catch (IOException e) {
         throw new IllegalStateException(e);
       } finally {
@@ -378,25 +383,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
 
     public R patchStatus(R resource, R originalResource) {
-      log.trace("Updating status for resource: {}", resource);
-      String resourceVersion = resource.getMetadata().getResourceVersion();
-      // don't do optimistic locking on patch
-      originalResource.getMetadata().setResourceVersion(null);
-      resource.getMetadata().setResourceVersion(null);
-      try (var bis = new ByteArrayInputStream(
-          Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
-        return resourceOperation
-            .inNamespace(resource.getMetadata().getNamespace())
-            // will be simplified in fabric8 v6
-            .load(bis)
-            .editStatus(r -> resource);
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
-      } finally {
-        // restore initial resource version
-        originalResource.getMetadata().setResourceVersion(resourceVersion);
-        resource.getMetadata().setResourceVersion(resourceVersion);
-      }
+      return handlePatch(resource, originalResource, (r) -> r.editStatus((or) -> resource));
     }
   }
 }
