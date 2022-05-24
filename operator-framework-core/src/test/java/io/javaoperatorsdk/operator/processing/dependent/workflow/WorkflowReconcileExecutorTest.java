@@ -36,7 +36,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     assertThat(executionHistory).reconciled(dr1, dr2);
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
-    Assertions.assertThat(res.getReconciledDependents()).containsExactly(dr1, dr2);
+    Assertions.assertThat(res.getReconciledDependents()).containsExactlyInAnyOrder(dr1, dr2);
   }
 
   @Test
