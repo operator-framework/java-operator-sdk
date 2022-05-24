@@ -308,13 +308,14 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private R removeFinalizer(R resource) {
+  private R removeFinalizer(R originalResource) {
     log.debug(
         "Removing finalizer on resource: {} with version: {}",
-        getUID(resource),
-        getVersion(resource));
+        getUID(originalResource),
+        getVersion(originalResource));
+    var resource = cloneResource(originalResource);
     resource.removeFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.replaceResourceWithLock(resource);
+    return customResourceFacade.patchResource(resource, originalResource);
   }
 
 
@@ -352,6 +353,28 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           .withName(getName(resource))
           .lockResourceVersion(resource.getMetadata().getResourceVersion());
       return (R) hasMetadataOperation.replaceStatus(resource);
+    }
+
+    public R patchResource(R resource, R originalResource) {
+      log.trace("Patching resource: {}", resource);
+      String resourceVersion = resource.getMetadata().getResourceVersion();
+      // don't do optimistic locking on patch
+      originalResource.getMetadata().setResourceVersion(null);
+      resource.getMetadata().setResourceVersion(null);
+      try (var bis = new ByteArrayInputStream(
+          Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
+        return resourceOperation
+            .inNamespace(resource.getMetadata().getNamespace())
+            // will be simplified in fabric8 v6
+            .load(bis)
+            .edit(r -> resource);
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      } finally {
+        // restore initial resource version
+        originalResource.getMetadata().setResourceVersion(resourceVersion);
+        resource.getMetadata().setResourceVersion(resourceVersion);
+      }
     }
 
     public R patchStatus(R resource, R originalResource) {

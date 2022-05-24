@@ -231,7 +231,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).replaceResourceWithLock(any());
+    verify(customResourceFacade, times(1)).patchResource(any(), any());
   }
 
   @Test
