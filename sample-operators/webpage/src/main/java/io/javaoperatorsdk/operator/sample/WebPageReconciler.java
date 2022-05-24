@@ -30,14 +30,13 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 /** Shows how to implement reconciler using the low level api directly. */
-@ControllerConfiguration(
-    labelSelector = WebPageReconciler.LOW_LEVEL_LABEL_KEY)
+@ControllerConfiguration
 public class WebPageReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
-  public static final String LOW_LEVEL_LABEL_KEY = "low-level";
   public static final String INDEX_HTML = "index.html";
 
   private static final Logger log = LoggerFactory.getLogger(WebPageReconciler.class);
@@ -52,19 +51,19 @@ public class WebPageReconciler
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .withLabelSelector(SELECTOR)
             .build(), context);
     var deploymentEventSource =
         new InformerEventSource<>(InformerConfiguration.from(Deployment.class, context)
-            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .withLabelSelector(SELECTOR)
             .build(), context);
     var serviceEventSource =
         new InformerEventSource<>(InformerConfiguration.from(Service.class, context)
-            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .withLabelSelector(SELECTOR)
             .build(), context);
     var ingressEventSource =
         new InformerEventSource<>(InformerConfiguration.from(Ingress.class, context)
-            .withLabelSelector(LOW_LEVEL_LABEL_KEY)
+            .withLabelSelector(SELECTOR)
             .build(), context);
     return EventSourceInitializer.nameEventSources(configMapEventSource, deploymentEventSource,
         serviceEventSource, ingressEventSource);
@@ -224,7 +223,7 @@ public class WebPageReconciler
 
   public static Map<String, String> lowLevelLabel() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(LOW_LEVEL_LABEL_KEY, "true");
+    labels.put(SELECTOR, "true");
     return labels;
   }
 
