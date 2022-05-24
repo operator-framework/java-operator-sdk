@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.function.Consumer;
 
+/**
+ * For internal usage only. To access operator configuration through the code.
+ */
 public class ConfigurationServiceProvider {
   static final ConfigurationService DEFAULT =
       new BaseConfigurationService(Utils.loadFromProperties());
