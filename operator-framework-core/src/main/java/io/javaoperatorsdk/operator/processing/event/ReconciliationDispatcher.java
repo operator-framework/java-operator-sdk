@@ -360,8 +360,12 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return handlePatch(resource, originalResource, (r) -> r.edit((or) -> resource));
     }
 
+    public R patchStatus(R resource, R originalResource) {
+      return handlePatch(resource, originalResource, (r) -> r.editStatus((or) -> resource));
+    }
+
     private R handlePatch(R resource, R originalResource, Function<Resource<R>, R> unaryOperator) {
-      log.trace("Updating for resource: {}", resource);
+      log.trace("Updating resource: {}", resource);
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // don't do optimistic locking on patch
       originalResource.getMetadata().setResourceVersion(null);
@@ -380,10 +384,6 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         originalResource.getMetadata().setResourceVersion(resourceVersion);
         resource.getMetadata().setResourceVersion(resourceVersion);
       }
-    }
-
-    public R patchStatus(R resource, R originalResource) {
-      return handlePatch(resource, originalResource, (r) -> r.editStatus((or) -> resource));
     }
   }
 }
