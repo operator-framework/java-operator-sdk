@@ -76,9 +76,6 @@ class EventSourceManagerTest {
 
     // manager is initialized with a controller configured to handle HasMetadata
     EventSourceManager manager = initManager();
-    EventSource source = manager.getResourceEventSourceFor(HasMetadata.class);
-    assertThat(source).isInstanceOf(ControllerResourceEventSource.class);
-
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> manager.getResourceEventSourceFor(HasMetadata.class, "unknown_name"));
 
@@ -86,7 +83,7 @@ class EventSourceManagerTest {
     when(eventSource.resourceType()).thenReturn(String.class);
     manager.registerEventSource(eventSource);
 
-    source = manager.getResourceEventSourceFor(String.class);
+    var source = manager.getResourceEventSourceFor(String.class);
     assertThat(source).isNotNull();
     assertEquals(eventSource, source);
   }
