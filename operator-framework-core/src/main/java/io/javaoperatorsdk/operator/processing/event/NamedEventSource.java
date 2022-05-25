@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Objects;
+
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -39,5 +41,20 @@ class NamedEventSource implements EventSource {
 
   public EventSource original() {
     return original;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    NamedEventSource that = (NamedEventSource) o;
+    return Objects.equals(original, that.original) && Objects.equals(name, that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(original, name);
   }
 }

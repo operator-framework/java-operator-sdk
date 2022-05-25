@@ -56,7 +56,7 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
 
   Stream<EventSource> eventSources() {
     return Stream.concat(
-        Stream.of(retryEventSource(), controllerResourceEventSource()).filter(Objects::nonNull),
+        Stream.of(controllerResourceEventSource(), retryEventSource()).filter(Objects::nonNull),
         sources.values().stream().flatMap(c -> c.values().stream()));
   }
 
