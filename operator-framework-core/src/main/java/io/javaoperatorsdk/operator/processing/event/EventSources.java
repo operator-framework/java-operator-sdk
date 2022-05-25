@@ -16,7 +16,11 @@ import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourc
 
 class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> {
 
-  private static final String CONTROLLER_EVENT_SOURCE_KEY = "0";
+  public static final String CONTROLLER_RESOURCE_EVENT_SOURCE_NAME =
+      "ControllerResourceEventSource";
+  public static final String RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME =
+      "RetryAndRescheduleTimerEventSource";
+
   private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
       new ConcurrentSkipListMap<>();
   private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
@@ -38,7 +42,11 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
 
   @Override
   public Iterator<NamedEventSource> iterator() {
-    return flatMappedSources().iterator();
+    return Stream.concat(Stream.of(
+        new NamedEventSource(controllerResourceEventSource, CONTROLLER_RESOURCE_EVENT_SOURCE_NAME),
+        new NamedEventSource(retryAndRescheduleTimerEventSource,
+            RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
+        flatMappedSources()).iterator();
   }
 
   Stream<NamedEventSource> flatMappedSources() {
@@ -46,7 +54,7 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
         .map(esEntry -> new NamedEventSource(esEntry.getValue(), esEntry.getKey())));
   }
 
-  Stream<EventSource> allEventSources() {
+  Stream<EventSource> eventSources() {
     return Stream.concat(
         Stream.of(retryEventSource(), controllerResourceEventSource()).filter(Objects::nonNull),
         sources.values().stream().flatMap(c -> c.values().stream()));
@@ -81,9 +89,6 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
   }
 
   private String keyFor(EventSource source) {
-    if (source instanceof ControllerResourceEventSource) {
-      return CONTROLLER_EVENT_SOURCE_KEY;
-    }
     return keyFor(getResourceType(source));
   }
 

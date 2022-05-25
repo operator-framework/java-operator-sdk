@@ -31,7 +31,7 @@ class EventSourcesTest {
   @Test
   void allEventSourcesShouldReturnAll() {
     // initial state doesn't have ControllerResourceEventSource
-    assertEquals(Set.of(eventSources.retryEventSource()), eventSources.allEventSources().collect(
+    assertEquals(Set.of(eventSources.retryEventSource()), eventSources.eventSources().collect(
         Collectors.toSet()));
     final var configuration = MockControllerConfiguration.forResource(HasMetadata.class);
     final var controller = new Controller(mock(Reconciler.class), configuration,
@@ -39,12 +39,12 @@ class EventSourcesTest {
     eventSources.initControllerEventSource(controller);
     assertEquals(
         Set.of(eventSources.retryEventSource(), eventSources.controllerResourceEventSource()),
-        eventSources.allEventSources().collect(Collectors.toSet()));
+        eventSources.eventSources().collect(Collectors.toSet()));
     final var source = mock(EventSource.class);
     eventSources.add("foo", source);
     assertEquals(Set.of(eventSources.retryEventSource(),
         eventSources.controllerResourceEventSource(), source),
-        eventSources.allEventSources().collect(Collectors.toSet()));
+        eventSources.eventSources().collect(Collectors.toSet()));
   }
 
 }

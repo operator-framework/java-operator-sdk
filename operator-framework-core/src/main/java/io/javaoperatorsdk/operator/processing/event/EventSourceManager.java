@@ -39,13 +39,15 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     this.eventSources = eventSources;
     this.controller = controller;
     // controller event source needs to be available before we create the event processor
-    final var controllerEventSource = eventSources.initControllerEventSource(controller);
+    eventSources.initControllerEventSource(controller);
     this.eventProcessor = new EventProcessor<>(this);
 
-    // sources need to be registered after the event processor is created since it's set on the
-    // event source
-    registerEventSource(eventSources.retryEventSource());
-    registerEventSource(controllerEventSource);
+    postProcessDefaultEventSources();
+  }
+
+  private void postProcessDefaultEventSources() {
+    eventSources.controllerResourceEventSource().setEventHandler(eventProcessor);
+    eventSources.retryEventSource().setEventHandler(eventProcessor);
   }
 
   /**
@@ -146,7 +148,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   public void changeNamespaces(Set<String> namespaces) {
     eventProcessor.stop();
     eventSources
-        .allEventSources()
+        .eventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)
         .filter(NamespaceChangeable::allowsNamespaceChanges)
