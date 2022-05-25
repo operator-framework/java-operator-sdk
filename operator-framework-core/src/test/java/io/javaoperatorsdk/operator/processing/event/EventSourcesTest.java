@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -35,8 +32,7 @@ class EventSourcesTest {
   @Test
   void allEventSourcesShouldReturnAll() {
     // initial state doesn't have ControllerResourceEventSource
-    assertEquals(Set.of(eventSources.retryEventSource()), eventSources.eventSources().collect(
-        Collectors.toSet()));
+    assertThat(eventSources.eventSources()).containsExactly(eventSources.retryEventSource());
 
     initControllerEventSource();
 
