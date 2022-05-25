@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourc
 
 class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> {
 
+  private static final String CONTROLLER_EVENT_SOURCE_KEY = "0";
   private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
       new ConcurrentSkipListMap<>();
   private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
@@ -80,6 +81,9 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
   }
 
   private String keyFor(EventSource source) {
+    if (source instanceof ControllerResourceEventSource) {
+      return CONTROLLER_EVENT_SOURCE_KEY;
+    }
     return keyFor(getResourceType(source));
   }
 
