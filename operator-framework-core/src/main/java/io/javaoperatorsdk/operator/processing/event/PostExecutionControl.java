@@ -23,8 +23,9 @@ final class PostExecutionControl<R extends HasMetadata> {
     this.runtimeException = runtimeException;
   }
 
-  public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded() {
-    return new PostExecutionControl<>(true, null, false, null);
+  public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded(
+      R updatedCustomResource) {
+    return new PostExecutionControl<>(true, updatedCustomResource, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> defaultDispatch() {
@@ -46,16 +47,8 @@ final class PostExecutionControl<R extends HasMetadata> {
     return new PostExecutionControl<>(false, null, false, exception);
   }
 
-  public boolean isOnlyFinalizerHandled() {
-    return onlyFinalizerHandled;
-  }
-
   public Optional<R> getUpdatedCustomResource() {
     return Optional.ofNullable(updatedCustomResource);
-  }
-
-  public boolean customResourceUpdatedDuringExecution() {
-    return updatedCustomResource != null;
   }
 
   public boolean exceptionDuringExecution() {

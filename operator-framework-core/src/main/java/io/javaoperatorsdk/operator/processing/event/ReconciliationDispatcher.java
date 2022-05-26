@@ -98,8 +98,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
        * finalizer add. This will make sure that the resources are not created before there is a
        * finalizer.
        */
-      updateCustomResourceWithFinalizer(originalResource);
-      return PostExecutionControl.onlyFinalizerAdded();
+      var updatedResource = updateCustomResourceWithFinalizer(originalResource);
+      return PostExecutionControl.onlyFinalizerAdded(updatedResource);
     } else {
       var resourceForExecution =
           cloneResource(originalResource);
@@ -295,11 +295,11 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return postExecutionControl;
   }
 
-  private void updateCustomResourceWithFinalizer(R resource) {
+  private R updateCustomResourceWithFinalizer(R resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(configuration().getFinalizerName());
-    customResourceFacade.replaceResourceWithLock(resource);
+    return customResourceFacade.replaceResourceWithLock(resource);
   }
 
   private R updateCustomResource(R resource) {
