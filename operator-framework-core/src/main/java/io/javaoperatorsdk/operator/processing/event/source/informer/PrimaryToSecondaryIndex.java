@@ -41,7 +41,8 @@ class PrimaryToSecondaryIndex<R extends HasMetadata> {
     if (resourceIDs == null) {
       return Collections.emptySet();
     } else {
-      return Collections.unmodifiableSet(resourceIDs);
+      // see https://github.com/java-operator-sdk/java-operator-sdk/issues/1242
+      return Set.copyOf(resourceIDs);
     }
   }
 }
