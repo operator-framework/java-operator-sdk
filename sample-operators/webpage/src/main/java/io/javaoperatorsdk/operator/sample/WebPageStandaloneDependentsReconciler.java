@@ -22,12 +22,9 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 /**
  * Shows how to implement reconciler using standalone dependent resources.
  */
-@ControllerConfiguration(
-    labelSelector = WebPageStandaloneDependentsReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
+@ControllerConfiguration
 public class WebPageStandaloneDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
-
-  public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
 
   private static final Logger log =
       LoggerFactory.getLogger(WebPageStandaloneDependentsReconciler.class);
