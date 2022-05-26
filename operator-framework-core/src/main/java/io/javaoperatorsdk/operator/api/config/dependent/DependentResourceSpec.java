@@ -2,8 +2,10 @@ package io.javaoperatorsdk.operator.api.config.dependent;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
 
@@ -12,6 +14,14 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   private final C dependentResourceConfig;
 
   private final String name;
+
+  private Set<String> dependsOn;
+
+  private Condition<?,?> readyCondition;
+
+  private Condition<?,?> reconcileCondition;
+
+  private Condition<?,?> deletePostCondition;
 
   public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
       String name) {
@@ -54,5 +64,41 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   @Override
   public int hashCode() {
     return Objects.hash(name);
+  }
+
+  public Set<String> getDependsOn() {
+    return dependsOn;
+  }
+
+  public DependentResourceSpec<T, C> setDependsOn(Set<String> dependsOn) {
+    this.dependsOn = dependsOn;
+    return this;
+  }
+
+  public Condition<?, ?> getReadyCondition() {
+    return readyCondition;
+  }
+
+  public DependentResourceSpec<T, C> setReadyCondition(Condition<?, ?> readyCondition) {
+    this.readyCondition = readyCondition;
+    return this;
+  }
+
+  public Condition<?, ?> getReconcileCondition() {
+    return reconcileCondition;
+  }
+
+  public DependentResourceSpec<T, C> setReconcileCondition(Condition<?, ?> reconcileCondition) {
+    this.reconcileCondition = reconcileCondition;
+    return this;
+  }
+
+  public Condition<?, ?> getDeletePostCondition() {
+    return deletePostCondition;
+  }
+
+  public DependentResourceSpec<T, C> setDeletePostCondition(Condition<?, ?> deletePostCondition) {
+    this.deletePostCondition = deletePostCondition;
+    return this;
   }
 }

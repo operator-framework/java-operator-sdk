@@ -166,17 +166,24 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         }
 
         final var name = getName(dependent, dependentType);
-        final var spec = specsMap.get(name);
+        var spec = specsMap.get(name);
         if (spec != null) {
           throw new IllegalArgumentException(
               "A DependentResource named: " + name + " already exists: " + spec);
         }
-        specsMap.put(name, new DependentResourceSpec(dependentType, config, name));
+        spec = new DependentResourceSpec(dependentType, config, name);
+        spec.setDependsOn(Set.of(dependent.dependsOn()));
+        addConditions(spec,dependent);
+        specsMap.put(name, spec);
       }
 
       specs = specsMap.values().stream().collect(Collectors.toUnmodifiableList());
     }
     return specs;
+  }
+
+  private void addConditions(DependentResourceSpec spec, Dependent dependent) {
+    // todo
   }
 
   private String getName(Dependent dependent, Class<? extends DependentResource> dependentType) {
