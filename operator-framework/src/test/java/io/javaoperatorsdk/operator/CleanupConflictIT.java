@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -49,6 +50,30 @@ class CleanupConflictIT {
       assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
           .getNumberOfCleanupExecutions()).isEqualTo(1);
     });
+  }
+
+  @Test
+  void cleanupRemovesFinalizerOrderRemovalIssue() throws InterruptedException {
+    var testResource = createTestResource();
+    testResource.getMetadata().setFinalizers(List.of(ADDITIONAL_FINALIZER));
+    testResource = operator.create(CleanupConflictCustomResource.class, testResource);
+    await().untilAsserted(() -> {
+      assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
+          .getNumberReconcileExecutions()).isEqualTo(1);
+    });
+
+    operator.delete(CleanupConflictCustomResource.class, testResource);
+    Thread.sleep(WAIT_TIME / 2);
+    testResource = operator.get(CleanupConflictCustomResource.class, TEST_RESOURCE_NAME);
+    testResource.getMetadata().getFinalizers().remove(ADDITIONAL_FINALIZER);
+    testResource.getMetadata().setResourceVersion(null);
+    operator.replace(CleanupConflictCustomResource.class, testResource);
+
+    await().pollDelay(Duration.ofMillis(WAIT_TIME * 2)).untilAsserted(() -> {
+      assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
+          .getNumberOfCleanupExecutions()).isEqualTo(2);
+    });
+    assertThat(operator.get(CleanupConflictCustomResource.class, TEST_RESOURCE_NAME)).isNull();
   }
 
   private CleanupConflictCustomResource createTestResource() {
