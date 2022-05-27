@@ -261,13 +261,16 @@ class ReconciliationDispatcherTest {
   @Test
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
-
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    when(customResourceFacade.replaceResourceWithLock(any())).thenReturn(testCustomResource);
 
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    var postExecControl =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
     verify(customResourceFacade, times(1)).replaceResourceWithLock(any());
+    assertThat(postExecControl.updateIsStatusPatch()).isFalse();
+    assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
 
   @Test
