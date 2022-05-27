@@ -324,6 +324,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     int retryIndex = 0;
     while (true) {
       try {
+        if (resource == null) {
+          return null;
+        }
         var removed = resource.removeFinalizer(finalizer);
         if (!removed) {
           return resource;
