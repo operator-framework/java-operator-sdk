@@ -37,6 +37,8 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  */
 class ReconciliationDispatcher<R extends HasMetadata> {
 
+  public static final int MAX_FINALIZER_REMOVAL_RETRY = 10;
+
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
   private final Controller<R> controller;
@@ -282,8 +284,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       // cleanup is finished, nothing left to done
       if (deleteControl.isRemoveFinalizer()
           && resource.hasFinalizer(configuration().getFinalizerName())) {
-        R customResource =
-            customResourceFacade.removeFinalizer(resource, configuration().getFinalizerName());
+        R customResource = removeFinalizer(resource, configuration().getFinalizerName());
         return PostExecutionControl.customResourceUpdated(customResource);
       }
     }
@@ -315,9 +316,34 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return controller.getConfiguration();
   }
 
+  @SuppressWarnings("unchecked")
+  public R removeFinalizer(R resource, String finalizer) {
+    if (log.isDebugEnabled()) {
+      log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
+    }
+    int retryIndex = 0;
+    while (true) {
+      try {
+        var removed = resource.removeFinalizer(finalizer);
+        if (!removed) {
+          return resource;
+        }
+        return customResourceFacade.replaceResourceWithLock(resource);
+      } catch (KubernetesClientException e) {
+        log.trace("Exception during finalizer removal for resource: {}", resource);
+        retryIndex++;
+        if (e.getCode() != 409 || retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
+          throw e;
+        }
+        Class<R> rClass = (Class<R>) resource.getClass();
+        resource = customResourceFacade.getResource(rClass, resource.getMetadata().getNamespace(),
+            resource.getMetadata().getName());
+      }
+    }
+  }
+
   // created to support unit testing
   static class CustomResourceFacade<R extends HasMetadata> {
-    public static final int MAX_RETRY = 10;
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
     private final KubernetesClient client;
@@ -329,29 +355,10 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       this.client = client;
     }
 
-    public R removeFinalizer(R resource, String finalizer) {
-      if (log.isDebugEnabled()) {
-        log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
-      }
-      int retryIndex = 0;
-      while (true) {
-        try {
-          var removed = resource.removeFinalizer(finalizer);
-          if (!removed) {
-            return resource;
-          }
-          return replaceResourceWithLock(resource);
-        } catch (KubernetesClientException e) {
-          retryIndex++;
-          if (e.getCode() != 409 || retryIndex >= MAX_RETRY) {
-            throw e;
-          }
-          Class<R> rClass = (Class<R>) resource.getClass();
-          resource = client.resources(rClass)
-              .inNamespace(resource.getMetadata().getNamespace())
-              .withName(resource.getMetadata().getName()).get();
-        }
-      }
+    public R getResource(Class<R> rClass, String namespace, String name) {
+      return client.resources(rClass)
+          .inNamespace(namespace)
+          .withName(name).get();
     }
 
     public R replaceResourceWithLock(R resource) {

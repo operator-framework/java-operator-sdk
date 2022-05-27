@@ -12,10 +12,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.stubbing.Answer;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
@@ -29,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.Cus
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_FINALIZER_REMOVAL_RETRY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -194,6 +197,68 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
+  void removesDefaultFinalizerOnDeleteIfSet() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, times(1)).replaceResourceWithLock(testCustomResource);
+  }
+
+  @Test
+  void retriesFinalizerRemovalWithFreshResource() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+    var resourceWithFinalizer = TestUtils.testCustomResource();
+    resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
+    when(customResourceFacade.replaceResourceWithLock(testCustomResource))
+        .thenThrow(new KubernetesClientException(null, 409, null))
+        .thenReturn(testCustomResource);
+    when(customResourceFacade.getResource(any(), any(), any())).thenReturn(resourceWithFinalizer);
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, times(2)).replaceResourceWithLock(any());
+    verify(customResourceFacade, times(1)).getResource(any(), any(), any());
+  }
+
+  @Test
+  void throwsExceptionIfFinalizerRemovalRetryExceeded() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+    when(customResourceFacade.replaceResourceWithLock(any()))
+        .thenThrow(new KubernetesClientException(null, 409, null));
+    when(customResourceFacade.getResource(any(), any(), any()))
+        .thenAnswer((Answer<TestCustomResource>) invocationOnMock -> createResourceWithFinalizer());
+
+    var res =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    assertThat(res.getRuntimeException()).isPresent();
+    assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
+    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).replaceResourceWithLock(any());
+    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY - 1)).getResource(any(), any(),
+        any());
+  }
+
+  @Test
+  void throwsExceptionIfFinalizerRemovalClientExceptionIsNotConflict() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+    when(customResourceFacade.replaceResourceWithLock(any()))
+        .thenThrow(new KubernetesClientException(null, 400, null));
+
+    var res =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    assertThat(res.getRuntimeException()).isPresent();
+    assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
+    verify(customResourceFacade, times(1)).replaceResourceWithLock(any());
+    verify(customResourceFacade, never()).getResource(any(), any(), any());
+  }
+
+  @Test
   void doesNotCallDeleteOnControllerIfMarkedForDeletionWhenNoFinalizerIsConfigured() {
     final ReconciliationDispatcher<TestCustomResource> dispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, false);
@@ -223,15 +288,7 @@ class ReconciliationDispatcherTest {
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
   }
 
-  @Test
-  void removesDefaultFinalizerOnDeleteIfSet() {
-    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
-    markForDeletion(testCustomResource);
 
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-
-    verify(customResourceFacade, times(1)).removeFinalizer(testCustomResource, DEFAULT_FINALIZER);
-  }
 
   @Test
   void doesNotRemovesTheSetFinalizerIfTheDeleteNotMethodInstructsIt() {
@@ -563,6 +620,13 @@ class ReconciliationDispatcherTest {
     observedGenCustomResource.getMetadata().getFinalizers().add(DEFAULT_FINALIZER);
     return observedGenCustomResource;
   }
+
+  TestCustomResource createResourceWithFinalizer() {
+    var resourceWithFinalizer = TestUtils.testCustomResource();
+    resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
+    return resourceWithFinalizer;
+  }
+
 
   private void markForDeletion(CustomResource customResource) {
     customResource.getMetadata().setDeletionTimestamp("2019-8-10");
