@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -19,7 +20,8 @@ class PrimaryToSecondaryIndex<R extends HasMetadata> {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
     primaryResources.forEach(
         primaryResource -> {
-          var resourceSet = index.computeIfAbsent(primaryResource, pr -> new HashSet<>());
+          var resourceSet =
+              index.computeIfAbsent(primaryResource, pr -> ConcurrentHashMap.newKeySet());
           resourceSet.add(ResourceID.fromResource(resource));
         });
   }
