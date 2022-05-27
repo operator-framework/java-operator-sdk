@@ -285,7 +285,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       if (deleteControl.isRemoveFinalizer()
           && resource.hasFinalizer(configuration().getFinalizerName())) {
         R customResource = removeFinalizer(resource, configuration().getFinalizerName());
-        return PostExecutionControl.customResourceUpdated(customResource);
+        return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
     log.debug(

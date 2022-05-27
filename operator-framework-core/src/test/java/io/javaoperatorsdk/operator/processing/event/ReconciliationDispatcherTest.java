@@ -201,8 +201,10 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
 
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    var postExecControl =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
+    assertThat(postExecControl.isFinalizerRemoved()).isTrue();
     verify(customResourceFacade, times(1)).replaceResourceWithLock(testCustomResource);
   }
 
@@ -217,8 +219,10 @@ class ReconciliationDispatcherTest {
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any(), any())).thenReturn(resourceWithFinalizer);
 
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    var postExecControl =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
+    assertThat(postExecControl.isFinalizerRemoved()).isTrue();
     verify(customResourceFacade, times(2)).replaceResourceWithLock(any());
     verify(customResourceFacade, times(1)).getResource(any(), any(), any());
   }
@@ -232,11 +236,13 @@ class ReconciliationDispatcherTest {
     when(customResourceFacade.getResource(any(), any(), any()))
         .thenAnswer((Answer<TestCustomResource>) invocationOnMock -> createResourceWithFinalizer());
 
-    var res =
+    var postExecControl =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertThat(res.getRuntimeException()).isPresent();
-    assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
+    assertThat(postExecControl.isFinalizerRemoved()).isFalse();
+    assertThat(postExecControl.getRuntimeException()).isPresent();
+    assertThat(postExecControl.getRuntimeException().get())
+        .isInstanceOf(KubernetesClientException.class);
     verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).replaceResourceWithLock(any());
     verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY - 1)).getResource(any(), any(),
         any());
