@@ -275,6 +275,16 @@ class EventProcessorTest {
         any());
   }
 
+  @Test
+  void notReschedulesAfterTheFinalizerRemoveProcessed() {
+    // todo
+  }
+
+  @Test
+  void skipEventProcessingIfFinalizerRemoveProcessed() {
+    // todo
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
