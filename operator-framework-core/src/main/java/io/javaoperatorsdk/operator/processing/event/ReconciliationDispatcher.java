@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
@@ -47,7 +49,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   public ReconciliationDispatcher(Controller<R> controller) {
-    this(controller, new CustomResourceFacade<>(controller.getCRClient()));
+    this(controller, new CustomResourceFacade<>(controller.getCRClient(), controller.getClient()));
   }
 
   public PostExecutionControl<R> handleExecution(ExecutionScope<R> executionScope) {
@@ -280,7 +282,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       // cleanup is finished, nothing left to done
       if (deleteControl.isRemoveFinalizer()
           && resource.hasFinalizer(configuration().getFinalizerName())) {
-        R customResource = removeFinalizer(resource);
+        R customResource =
+            customResourceFacade.removeFinalizer(resource, configuration().getFinalizerName());
         return PostExecutionControl.customResourceUpdated(customResource);
       }
     }
@@ -308,28 +311,47 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private R removeFinalizer(R resource) {
-    log.debug(
-        "Removing finalizer on resource: {} with version: {}",
-        getUID(resource),
-        getVersion(resource));
-    resource.removeFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.replaceResourceWithLock(resource);
-  }
-
-
   ControllerConfiguration<R> configuration() {
     return controller.getConfiguration();
   }
 
   // created to support unit testing
   static class CustomResourceFacade<R extends HasMetadata> {
+    public static final int MAX_RETRY = 10;
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
+    private final KubernetesClient client;
 
     public CustomResourceFacade(
-        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation) {
+        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
+        KubernetesClient client) {
       this.resourceOperation = resourceOperation;
+      this.client = client;
+    }
+
+    public R removeFinalizer(R resource, String finalizer) {
+      if (log.isDebugEnabled()) {
+        log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
+      }
+      int retryIndex = 0;
+      while (true) {
+        try {
+          var removed = resource.removeFinalizer(finalizer);
+          if (!removed) {
+            return resource;
+          }
+          return replaceResourceWithLock(resource);
+        } catch (KubernetesClientException e) {
+          retryIndex++;
+          if (e.getCode() != 409 || retryIndex >= MAX_RETRY) {
+            throw e;
+          }
+          Class<R> rClass = (Class<R>) resource.getClass();
+          resource = client.resources(rClass)
+              .inNamespace(resource.getMetadata().getNamespace())
+              .withName(resource.getMetadata().getName()).get();
+        }
+      }
     }
 
     public R replaceResourceWithLock(R resource) {
