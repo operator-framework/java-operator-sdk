@@ -121,10 +121,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void handleMarkedEventForResource(ResourceID resourceID) {
-    if (!eventMarker.deleteEventPresent(resourceID)) {
-      submitReconciliationExecution(resourceID);
-    } else {
+    if (eventMarker.deleteEventPresent(resourceID)) {
       cleanupForDeletedEvent(resourceID);
+    } else if (!eventMarker.processedMarkForDeletionPresent(resourceID)) {
+      submitReconciliationExecution(resourceID);
     }
   }
 
@@ -199,6 +199,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       metrics.finishedReconciliation(resourceID);
       if (eventMarker.deleteEventPresent(resourceID)) {
         cleanupForDeletedEvent(executionScope.getResourceID());
+      } else if (postExecutionControl.isFinalizerRemoved()) {
+        eventMarker.markProcessedMarkForDeletion(resourceID);
       } else {
         postExecutionControl
             .getUpdatedCustomResource()
