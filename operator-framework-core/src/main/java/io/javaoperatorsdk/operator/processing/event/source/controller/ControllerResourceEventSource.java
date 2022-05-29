@@ -62,7 +62,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if (filter.acceptChange(controller, oldResource, resource)) {
         getEventHandler().handleEvent(
-            new ResourceEvent(action, ResourceID.fromResource(resource)));
+            new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
         log.debug("Skipping event handling resource {} with version: {}", getUID(resource),
             getVersion(resource));

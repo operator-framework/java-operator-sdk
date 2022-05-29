@@ -61,8 +61,8 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void cleanupDoneFor(ResourceID customResourceUid) {
-    incrementCounter(customResourceUid, "events.delete");
+  public void cleanupDoneFor(ResourceID resourceID) {
+    incrementCounter(resourceID, "events.delete");
   }
 
   @Override

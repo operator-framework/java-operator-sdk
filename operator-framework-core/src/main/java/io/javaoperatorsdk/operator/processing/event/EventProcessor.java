@@ -157,14 +157,50 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void handleEventMarking(Event event) {
-    if (event instanceof ResourceEvent
-        && ((ResourceEvent) event).getAction() == ResourceAction.DELETED) {
-      log.debug("Marking delete event received for: {}", event.getRelatedCustomResourceID());
-      eventMarker.markDeleteEventReceived(event);
-    } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID())) {
-      log.debug("Marking event received for: {}", event.getRelatedCustomResourceID());
-      eventMarker.markEventReceived(event);
+    if (event instanceof ResourceEvent) {
+      var resourceEvent = (ResourceEvent) event;
+      if (resourceEvent.getAction() == ResourceAction.DELETED) {
+        log.debug("Marking delete event received for: {}", event.getRelatedCustomResourceID());
+        eventMarker.markDeleteEventReceived(event);
+      } else {
+        /*
+         * if already processed mark for deletion we want to override that mark in case a custom
+         * resource in the cache and not it is not marked for deletion. This could happen in an edge
+         * case, when the resource is deleted while websocket was disconnected. And meanwhile a
+         * resource with same ResourceID was deleted and created again. So resource should not be
+         * marked received if processedMarkForDeletion present it's still marked for deletion, but
+         * otherwise yes.
+         */
+        if (eventMarker.processedMarkForDeletionPresent(event.getRelatedCustomResourceID())
+            && customResourceMarkedForDeletion(resourceEvent)) {
+          log.debug(
+              "Skipping mark of event received, since already processed mark for deletion and resource "
+                  +
+                  "marked for deletion: {}",
+              event.getRelatedCustomResourceID());
+          return;
+        }
+        markEventReceived(event);
+      }
+    } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID()) ||
+        !eventMarker.processedMarkForDeletionPresent(event.getRelatedCustomResourceID())) {
+      markEventReceived(event);
+    } else if (log.isDebugEnabled()) {
+      log.debug(
+          "Skipped marking event as received. Delete event present: {}, processed mark for deletion: {}",
+          eventMarker.deleteEventPresent(event.getRelatedCustomResourceID()),
+          eventMarker.processedMarkForDeletionPresent(event.getRelatedCustomResourceID()));
     }
+
+  }
+
+  private void markEventReceived(Event event) {
+    log.debug("Marking event received for: {}", event.getRelatedCustomResourceID());
+    eventMarker.markEventReceived(event);
+  }
+
+  private boolean customResourceMarkedForDeletion(ResourceEvent resourceEvent) {
+    return resourceEvent.getResource().map(HasMetadata::isMarkedForDeletion).orElse(false);
   }
 
   private RetryInfo retryInfo(ResourceID customResourceUid) {
@@ -290,10 +326,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     return retryExecution;
   }
 
-  private void cleanupForDeletedEvent(ResourceID customResourceUid) {
-    log.debug("Cleaning up for delete event for: {}", customResourceUid);
-    eventMarker.cleanup(customResourceUid);
-    metrics.cleanupDoneFor(customResourceUid);
+  private void cleanupForDeletedEvent(ResourceID resourceID) {
+    log.debug("Cleaning up for delete event for: {}", resourceID);
+    eventMarker.cleanup(resourceID);
+    metrics.cleanupDoneFor(resourceID);
   }
 
   private boolean isControllerUnderExecution(ResourceID customResourceUid) {

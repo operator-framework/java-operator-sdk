@@ -305,7 +305,7 @@ class EventProcessorTest {
     TestCustomResource customResource = testCustomResource(uid);
     when(controllerResourceEventSourceMock.get(eq(uid))).thenReturn(Optional.of(customResource));
     return new ResourceEvent(ResourceAction.UPDATED,
-        ResourceID.fromResource(customResource));
+        ResourceID.fromResource(customResource), customResource);
   }
 
   private Event nonCREvent(ResourceID relatedCustomResourceUid) {
