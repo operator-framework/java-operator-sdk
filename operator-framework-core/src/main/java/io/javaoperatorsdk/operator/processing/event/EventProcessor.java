@@ -157,10 +157,11 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private void handleEventMarking(Event event) {
+    final var relatedCustomResourceID = event.getRelatedCustomResourceID();
     if (event instanceof ResourceEvent) {
       var resourceEvent = (ResourceEvent) event;
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
-        log.debug("Marking delete event received for: {}", event.getRelatedCustomResourceID());
+        log.debug("Marking delete event received for: {}", relatedCustomResourceID);
         eventMarker.markDeleteEventReceived(event);
       } else {
         /*
@@ -171,27 +172,26 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
          * marked received if processedMarkForDeletion present it's still marked for deletion, but
          * otherwise yes.
          */
-        if (eventMarker.processedMarkForDeletionPresent(event.getRelatedCustomResourceID())
-            && customResourceMarkedForDeletion(resourceEvent)) {
+        if (eventMarker.processedMarkForDeletionPresent(relatedCustomResourceID)
+            && isResourceMarkedForDeletion(resourceEvent)) {
           log.debug(
               "Skipping mark of event received, since already processed mark for deletion and resource "
                   +
                   "marked for deletion: {}",
-              event.getRelatedCustomResourceID());
+              relatedCustomResourceID);
           return;
         }
         markEventReceived(event);
       }
-    } else if (!eventMarker.deleteEventPresent(event.getRelatedCustomResourceID()) ||
-        !eventMarker.processedMarkForDeletionPresent(event.getRelatedCustomResourceID())) {
+    } else if (!eventMarker.deleteEventPresent(relatedCustomResourceID) ||
+        !eventMarker.processedMarkForDeletionPresent(relatedCustomResourceID)) {
       markEventReceived(event);
     } else if (log.isDebugEnabled()) {
       log.debug(
           "Skipped marking event as received. Delete event present: {}, processed mark for deletion: {}",
-          eventMarker.deleteEventPresent(event.getRelatedCustomResourceID()),
-          eventMarker.processedMarkForDeletionPresent(event.getRelatedCustomResourceID()));
+          eventMarker.deleteEventPresent(relatedCustomResourceID),
+          eventMarker.processedMarkForDeletionPresent(relatedCustomResourceID));
     }
-
   }
 
   private void markEventReceived(Event event) {
@@ -199,12 +199,12 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     eventMarker.markEventReceived(event);
   }
 
-  private boolean customResourceMarkedForDeletion(ResourceEvent resourceEvent) {
+  private boolean isResourceMarkedForDeletion(ResourceEvent resourceEvent) {
     return resourceEvent.getResource().map(HasMetadata::isMarkedForDeletion).orElse(false);
   }
 
-  private RetryInfo retryInfo(ResourceID customResourceUid) {
-    return retryState.get(customResourceUid);
+  private RetryInfo retryInfo(ResourceID resourceID) {
+    return retryState.get(resourceID);
   }
 
   void eventProcessingFinished(
@@ -285,13 +285,13 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void handleRetryOnException(
       ExecutionScope<R> executionScope, Exception exception) {
     RetryExecution execution = getOrInitRetryExecution(executionScope);
-    var customResourceID = executionScope.getResourceID();
-    boolean eventPresent = eventMarker.eventPresent(customResourceID);
-    eventMarker.markEventReceived(customResourceID);
+    var resourceID = executionScope.getResourceID();
+    boolean eventPresent = eventMarker.eventPresent(resourceID);
+    eventMarker.markEventReceived(resourceID);
 
     if (eventPresent) {
-      log.debug("New events exists for for resource id: {}", customResourceID);
-      submitReconciliationExecution(customResourceID);
+      log.debug("New events exists for for resource id: {}", resourceID);
+      submitReconciliationExecution(resourceID);
       return;
     }
     Optional<Long> nextDelay = execution.nextDelay();
@@ -301,8 +301,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
           log.debug(
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
-              customResourceID);
-          metrics.failedReconciliation(customResourceID, exception);
+              resourceID);
+          metrics.failedReconciliation(resourceID, exception);
           retryEventSource().scheduleOnce(executionScope.getResource(), delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
@@ -332,16 +332,16 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     metrics.cleanupDoneFor(resourceID);
   }
 
-  private boolean isControllerUnderExecution(ResourceID customResourceUid) {
-    return underProcessing.contains(customResourceUid);
+  private boolean isControllerUnderExecution(ResourceID resourceID) {
+    return underProcessing.contains(resourceID);
   }
 
-  private void setUnderExecutionProcessing(ResourceID customResourceUid) {
-    underProcessing.add(customResourceUid);
+  private void setUnderExecutionProcessing(ResourceID resourceID) {
+    underProcessing.add(resourceID);
   }
 
-  private void unsetUnderExecution(ResourceID customResourceUid) {
-    underProcessing.remove(customResourceUid);
+  private void unsetUnderExecution(ResourceID resourceID) {
+    underProcessing.remove(resourceID);
   }
 
   private boolean isRetryConfigured() {
