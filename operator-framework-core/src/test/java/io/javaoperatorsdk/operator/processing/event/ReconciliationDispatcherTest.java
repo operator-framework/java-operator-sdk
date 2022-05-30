@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.Cus
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_FINALIZER_REMOVAL_RETRY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -633,10 +634,6 @@ class ReconciliationDispatcherTest {
     return resourceWithFinalizer;
   }
 
-
-  private void markForDeletion(CustomResource customResource) {
-    customResource.getMetadata().setDeletionTimestamp("2019-8-10");
-  }
 
   private void removeFinalizers(CustomResource customResource) {
     customResource.getMetadata().getFinalizers().clear();
