@@ -70,7 +70,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug("Handling dispatch for resource {}", getName(originalResource));
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (markedForDeletion && shouldNotDispatchToCleanup(originalResource)) {
+    if (markedForDeletion && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
           "Skipping cleanup of resource {} because finalizer(s) {} don't allow processing yet",
           getName(originalResource),
@@ -80,22 +80,21 @@ class ReconciliationDispatcher<R extends HasMetadata> {
 
     Context<R> context =
         new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource);
-    if (originalResource.isMarkedForDeletion()) {
+    if (markedForDeletion) {
       return handleCleanup(resourceForExecution, context);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
     }
   }
 
-  private boolean shouldNotDispatchToCleanup(R resource) {
-    var markedForDeletion = resource.isMarkedForDeletion();
+  private boolean shouldNotDispatchToCleanupWhenMarkedForDeletion(R resource) {
     var alreadyRemovedFinalizer = controller.useFinalizer()
         && !resource.hasFinalizer(configuration().getFinalizerName());
-    if (markedForDeletion && alreadyRemovedFinalizer) {
+    if (alreadyRemovedFinalizer) {
       log.warn("This should not happen. Marked for deletion & already removed finalizer: {}",
           ResourceID.fromResource(resource));
     }
-    return markedForDeletion && (!controller.useFinalizer() || alreadyRemovedFinalizer);
+    return !controller.useFinalizer() || alreadyRemovedFinalizer;
   }
 
   private PostExecutionControl<R> handleReconcile(
