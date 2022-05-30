@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,9 +20,11 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.VoidCondition;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 
@@ -173,6 +176,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         }
         spec = new DependentResourceSpec(dependentType, config, name);
         spec.setDependsOn(Set.of(dependent.dependsOn()));
+        // todo tests
         addConditions(spec,dependent);
         specsMap.put(name, spec);
       }
@@ -182,8 +186,28 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     return specs;
   }
 
+  @SuppressWarnings("unchecked")
   private void addConditions(DependentResourceSpec spec, Dependent dependent) {
-    // todo
+      if (dependent.deletePostCondition() != VoidCondition.class) {
+        spec.setDeletePostCondition(instantiateCondition(dependent.deletePostCondition()));
+      }
+      if (dependent.readyCondition() != VoidCondition.class) {
+        spec.setReadyCondition(instantiateCondition(dependent.readyCondition()));
+      }
+      if (dependent.reconcileCondition() != VoidCondition.class) {
+        spec.setReconcileCondition(instantiateCondition(dependent.reconcileCondition()));
+      }
+  }
+
+  private Condition<?, ?> instantiateCondition(Class<? extends Condition> condition) {
+    try {
+     return condition.getDeclaredConstructor().newInstance();
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new OperatorException(e);
+    }
   }
 
   private String getName(Dependent dependent, Class<? extends DependentResource> dependentType) {
