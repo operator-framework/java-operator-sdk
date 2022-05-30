@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.javaoperatorsdk.operator.processing.event.EventMarker.EventingState.NO_EVENT_PRESENT;
+import static io.javaoperatorsdk.operator.processing.event.EventMarker.EventingState.PROCESSED_MARK_FOR_DELETION;
 
 /**
  * Manages the state of received events. Basically there can be only three distinct states relevant
@@ -18,8 +19,9 @@ import static io.javaoperatorsdk.operator.processing.event.EventMarker.EventingS
 class EventMarker {
 
   public enum EventingState {
-    /** Event but NOT Delete event present */
     EVENT_PRESENT, NO_EVENT_PRESENT,
+    /** Resource has been marked for deletion, and cleanup already executed successfully */
+    PROCESSED_MARK_FOR_DELETION,
     /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
   }
@@ -53,9 +55,19 @@ class EventMarker {
         setEventingState(resourceID,
             NO_EVENT_PRESENT);
         break;
+      case PROCESSED_MARK_FOR_DELETION:
+        throw new IllegalStateException("Cannot unmark processed marked for deletion.");
       case DELETE_EVENT_PRESENT:
         throw new IllegalStateException("Cannot unmark delete event.");
     }
+  }
+
+  public void markProcessedMarkForDeletion(ResourceID resourceID) {
+    setEventingState(resourceID, PROCESSED_MARK_FOR_DELETION);
+  }
+
+  public boolean processedMarkForDeletionPresent(ResourceID resourceID) {
+    return getEventingState(resourceID) == PROCESSED_MARK_FOR_DELETION;
   }
 
   public void markDeleteEventReceived(Event event) {

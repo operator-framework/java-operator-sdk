@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 
 final class PostExecutionControl<R extends HasMetadata> {
 
-  private final boolean onlyFinalizerHandled;
+  private final boolean finalizerRemoved;
   private final R updatedCustomResource;
   private final boolean updateIsStatusPatch;
   private final Exception runtimeException;
@@ -14,10 +14,10 @@ final class PostExecutionControl<R extends HasMetadata> {
   private Long reScheduleDelay = null;
 
   private PostExecutionControl(
-      boolean onlyFinalizerHandled,
+      boolean finalizerRemoved,
       R updatedCustomResource,
       boolean updateIsStatusPatch, Exception runtimeException) {
-    this.onlyFinalizerHandled = onlyFinalizerHandled;
+    this.finalizerRemoved = finalizerRemoved;
     this.updatedCustomResource = updatedCustomResource;
     this.updateIsStatusPatch = updateIsStatusPatch;
     this.runtimeException = runtimeException;
@@ -25,7 +25,7 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(true, updatedCustomResource, false, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> defaultDispatch() {
@@ -40,6 +40,11 @@ final class PostExecutionControl<R extends HasMetadata> {
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceUpdated(
       R updatedCustomResource) {
     return new PostExecutionControl<>(false, updatedCustomResource, false, null);
+  }
+
+  public static <R extends HasMetadata> PostExecutionControl<R> customResourceFinalizerRemoved(
+      R updatedCustomResource) {
+    return new PostExecutionControl<>(true, updatedCustomResource, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
@@ -76,11 +81,15 @@ final class PostExecutionControl<R extends HasMetadata> {
   public String toString() {
     return "PostExecutionControl{"
         + "onlyFinalizerHandled="
-        + onlyFinalizerHandled
+        + finalizerRemoved
         + ", updatedCustomResource="
         + updatedCustomResource
         + ", runtimeException="
         + runtimeException
         + '}';
+  }
+
+  public boolean isFinalizerRemoved() {
+    return finalizerRemoved;
   }
 }

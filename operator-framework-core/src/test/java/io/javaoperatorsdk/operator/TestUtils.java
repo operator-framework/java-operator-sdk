@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator;
 import java.util.HashMap;
 import java.util.UUID;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
@@ -48,5 +49,8 @@ public class TestUtils {
     return resource;
   }
 
+  public static void markForDeletion(HasMetadata customResource) {
+    customResource.getMetadata().setDeletionTimestamp("2019-8-10");
+  }
 
 }

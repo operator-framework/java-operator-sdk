@@ -15,7 +15,7 @@ public interface Metrics {
 
   default void failedReconciliation(ResourceID resourceID, Exception exception) {}
 
-  default void cleanupDoneFor(ResourceID customResourceUid) {}
+  default void cleanupDoneFor(ResourceID resourceID) {}
 
   default void finishedReconciliation(ResourceID resourceID) {}
 

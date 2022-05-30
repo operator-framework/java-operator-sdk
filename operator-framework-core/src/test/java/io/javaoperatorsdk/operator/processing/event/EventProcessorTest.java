@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourc
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -275,6 +276,52 @@ class EventProcessorTest {
         any());
   }
 
+  @Test
+  void notReschedulesAfterTheFinalizerRemoveProcessed() {
+    TestCustomResource customResource = testCustomResource();
+    markForDeletion(customResource);
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceFinalizerRemoved(customResource);
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+
+    verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
+  }
+
+  @Test
+  void skipEventProcessingIfFinalizerRemoveProcessed() {
+    TestCustomResource customResource = testCustomResource();
+    markForDeletion(customResource);
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceFinalizerRemoved(customResource);
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+    eventProcessorWithRetry.handleEvent(prepareCREvent(customResource));
+
+    verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
+  }
+
+  /**
+   * Cover corner case when a delete event missed and a new resource with same ResourceID is created
+   */
+  @Test
+  void newResourceAfterMissedDeleteEvent() {
+    TestCustomResource customResource = testCustomResource();
+    markForDeletion(customResource);
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceFinalizerRemoved(customResource);
+    var newResource = testCustomResource();
+    newResource.getMetadata().setName(customResource.getMetadata().getName());
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+    eventProcessorWithRetry.handleEvent(prepareCREvent(newResource));
+
+    verify(reconciliationDispatcherMock, timeout(50).times(1)).handleExecution(any());
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
@@ -291,11 +338,19 @@ class EventProcessorTest {
     return prepareCREvent(new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
   }
 
-  private ResourceEvent prepareCREvent(ResourceID uid) {
-    TestCustomResource customResource = testCustomResource(uid);
-    when(controllerResourceEventSourceMock.get(eq(uid))).thenReturn(Optional.of(customResource));
+  private ResourceEvent prepareCREvent(HasMetadata hasMetadata) {
+    when(controllerResourceEventSourceMock.get(eq(ResourceID.fromResource(hasMetadata))))
+        .thenReturn(Optional.of(hasMetadata));
     return new ResourceEvent(ResourceAction.UPDATED,
-        ResourceID.fromResource(customResource));
+        ResourceID.fromResource(hasMetadata), hasMetadata);
+  }
+
+  private ResourceEvent prepareCREvent(ResourceID resourceID) {
+    TestCustomResource customResource = testCustomResource(resourceID);
+    when(controllerResourceEventSourceMock.get(eq(resourceID)))
+        .thenReturn(Optional.of(customResource));
+    return new ResourceEvent(ResourceAction.UPDATED,
+        ResourceID.fromResource(customResource), customResource);
   }
 
   private Event nonCREvent(ResourceID relatedCustomResourceUid) {
