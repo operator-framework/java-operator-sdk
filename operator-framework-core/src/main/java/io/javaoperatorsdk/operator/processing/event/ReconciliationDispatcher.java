@@ -335,6 +335,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       } catch (KubernetesClientException e) {
         log.trace("Exception during finalizer removal for resource: {}", resource);
         retryIndex++;
+        // only retry on conflict (HTTP 409), otherwise fail
         if (e.getCode() != 409) {
           throw e;
         }
