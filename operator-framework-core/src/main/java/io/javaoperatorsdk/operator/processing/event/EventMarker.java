@@ -19,8 +19,9 @@ import static io.javaoperatorsdk.operator.processing.event.EventMarker.EventingS
 class EventMarker {
 
   public enum EventingState {
-    /** Event but NOT Delete event present */
-    EVENT_PRESENT, NO_EVENT_PRESENT, PROCESSED_MARK_FOR_DELETION,
+    EVENT_PRESENT, NO_EVENT_PRESENT,
+    /** Resource has been marked for deletion, and cleanup already executed successfully */
+    PROCESSED_MARK_FOR_DELETION,
     /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
   }

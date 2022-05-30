@@ -164,23 +164,19 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         log.debug("Marking delete event received for: {}", relatedCustomResourceID);
         eventMarker.markDeleteEventReceived(event);
       } else {
-        /*
-         * if already processed mark for deletion we want to override that mark in case a custom
-         * resource in the cache and not it is not marked for deletion. This could happen in an edge
-         * case, when the resource is deleted while websocket was disconnected. And meanwhile a
-         * resource with same ResourceID was deleted and created again. So resource should not be
-         * marked received if processedMarkForDeletion present it's still marked for deletion, but
-         * otherwise yes.
-         */
         if (eventMarker.processedMarkForDeletionPresent(relatedCustomResourceID)
             && isResourceMarkedForDeletion(resourceEvent)) {
           log.debug(
-              "Skipping mark of event received, since already processed mark for deletion and resource "
-                  +
-                  "marked for deletion: {}",
+              "Skipping mark of event received, since already processed mark for deletion and resource marked for deletion: {}",
               relatedCustomResourceID);
           return;
         }
+        // Normally when eventMarker is in state PROCESSED_MARK_FOR_DELETION it is expected to
+        // receive a Delete event or an event where resource is marked for deletion. In a rare edge
+        // case however it can happen that the finalizer related to the current controller is
+        // removed, but also the informers websocket is disconnected and later reconnected. So
+        // meanwhile the resource could be deleted and recreated. In this case we just mark a new
+        // event as below.
         markEventReceived(event);
       }
     } else if (!eventMarker.deleteEventPresent(relatedCustomResourceID) ||
