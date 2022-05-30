@@ -303,6 +303,25 @@ class EventProcessorTest {
     verify(reconciliationDispatcherMock, timeout(50).times(0)).handleExecution(any());
   }
 
+  /**
+   * Cover corner case when a delete event missed and a new resource with same ResourceID is created
+   */
+  @Test
+  void newResourceAfterMissedDeleteEvent() {
+    TestCustomResource customResource = testCustomResource();
+    markForDeletion(customResource);
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.customResourceFinalizerRemoved(customResource);
+    var newResource = testCustomResource();
+    newResource.getMetadata().setName(customResource.getMetadata().getName());
+
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
+    eventProcessorWithRetry.handleEvent(prepareCREvent(newResource));
+
+    verify(reconciliationDispatcherMock, timeout(50).times(1)).handleExecution(any());
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
