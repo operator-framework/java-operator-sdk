@@ -19,13 +19,21 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.CustomResourceFacade;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
@@ -243,7 +251,7 @@ class ReconciliationDispatcherTest {
     assertThat(postExecControl.isFinalizerRemoved()).isFalse();
     assertThat(postExecControl.getRuntimeException()).isPresent();
     assertThat(postExecControl.getRuntimeException().get())
-        .isInstanceOf(KubernetesClientException.class);
+        .isInstanceOf(OperatorException.class);
     verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).replaceResourceWithLock(any());
     verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY - 1)).getResource(any(), any(),
         any());

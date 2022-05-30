@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -286,9 +287,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to done
-      if (deleteControl.isRemoveFinalizer()
-          && resource.hasFinalizer(configuration().getFinalizerName())) {
-        R customResource = removeFinalizer(resource, configuration().getFinalizerName());
+      final var finalizerName = configuration().getFinalizerName();
+      if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
+        R customResource = removeFinalizer(resource, finalizerName);
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -336,8 +337,14 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       } catch (KubernetesClientException e) {
         log.trace("Exception during finalizer removal for resource: {}", resource);
         retryIndex++;
-        if (e.getCode() != 409 || retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
+        if (e.getCode() != 409) {
           throw e;
+        }
+        if (retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
+          throw new OperatorException(
+              "Exceeded maximum (" + MAX_FINALIZER_REMOVAL_RETRY
+                  + ") retry attempts to remove finalizer '" + finalizer + "' for resource "
+                  + ResourceID.fromResource(resource));
         }
         Class<R> rClass = (Class<R>) resource.getClass();
         resource = customResourceFacade.getResource(rClass, resource.getMetadata().getNamespace(),
