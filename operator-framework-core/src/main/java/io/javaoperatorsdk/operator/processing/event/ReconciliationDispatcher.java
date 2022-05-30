@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -52,7 +51,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   public ReconciliationDispatcher(Controller<R> controller) {
-    this(controller, new CustomResourceFacade<>(controller.getCRClient(), controller.getClient()));
+    this(controller, new CustomResourceFacade<>(controller.getCRClient()));
   }
 
   public PostExecutionControl<R> handleExecution(ExecutionScope<R> executionScope) {
@@ -321,7 +320,6 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return controller.getConfiguration();
   }
 
-  @SuppressWarnings("unchecked")
   public R removeFinalizer(R resource, String finalizer) {
     if (log.isDebugEnabled()) {
       log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
@@ -346,8 +344,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
                   + ") retry attempts to remove finalizer '" + finalizer + "' for resource "
                   + ResourceID.fromResource(resource));
         }
-        Class<R> rClass = (Class<R>) resource.getClass();
-        resource = customResourceFacade.getResource(rClass, resource.getMetadata().getNamespace(),
+        resource = customResourceFacade.getResource(resource.getMetadata().getNamespace(),
             resource.getMetadata().getName());
       }
     }
@@ -357,19 +354,14 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   static class CustomResourceFacade<R extends HasMetadata> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
-    private final KubernetesClient client;
 
     public CustomResourceFacade(
-        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
-        KubernetesClient client) {
+        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation) {
       this.resourceOperation = resourceOperation;
-      this.client = client;
     }
 
-    public R getResource(Class<R> rClass, String namespace, String name) {
-      return client.resources(rClass)
-          .inNamespace(namespace)
-          .withName(name).get();
+    public R getResource(String namespace, String name) {
+      return resourceOperation.inNamespace(namespace).withName(name).get();
     }
 
     public R replaceResourceWithLock(R resource) {
