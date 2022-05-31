@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
 import java.util.Map;
@@ -15,13 +15,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowExecutionResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 
 @SuppressWarnings("rawtypes")
-class ManagedWorkflow<P extends HasMetadata> {
+public class ManagedWorkflow<P extends HasMetadata> {
 
   private final Workflow<P> workflow;
   private final boolean isCleaner;
@@ -30,7 +27,7 @@ class ManagedWorkflow<P extends HasMetadata> {
 
   public ManagedWorkflow(KubernetesClient client,
       List<DependentResourceSpec> dependentResourceSpecs) {
-    var orderedSpecs = orderDependentsToBeAdded(dependentResourceSpecs);
+    var orderedSpecs = ManagedWorkflowUtils.orderAndDetectCycles(dependentResourceSpecs);
     dependentResourceByName = orderedSpecs
         .stream().collect(Collectors.toMap(DependentResourceSpec::getName,
             spec -> createAndConfigureFrom(spec, client)));
@@ -107,10 +104,6 @@ class ManagedWorkflow<P extends HasMetadata> {
 
   public boolean isEmptyWorkflow() {
     return isEmptyWorkflow;
-  }
-
-  public Set<DependentResource> getDependentResources() {
-    return workflow.getDependentResources();
   }
 
   public Map<String, DependentResource> getDependentResourceByName() {
