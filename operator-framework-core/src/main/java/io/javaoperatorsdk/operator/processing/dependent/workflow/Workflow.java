@@ -4,10 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 /**
  * Dependents definition: so if B depends on A, the B is dependent of A.
@@ -98,5 +100,10 @@ public class Workflow<P extends HasMetadata> {
 
   ExecutorService getExecutorService() {
     return executorService;
+  }
+
+  public Set<DependentResource> getDependentResources() {
+    return dependentResourceNodes.stream().map(DependentResourceNode::getDependentResource)
+        .collect(Collectors.toSet());
   }
 }

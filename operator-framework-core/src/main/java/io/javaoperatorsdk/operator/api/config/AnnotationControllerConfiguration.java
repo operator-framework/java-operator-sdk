@@ -177,7 +177,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         spec = new DependentResourceSpec(dependentType, config, name);
         spec.setDependsOn(Set.of(dependent.dependsOn()));
         // todo tests
-        addConditions(spec,dependent);
+        addConditions(spec, dependent);
         specsMap.put(name, spec);
       }
 
@@ -188,20 +188,20 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   private void addConditions(DependentResourceSpec spec, Dependent dependent) {
-      if (dependent.deletePostCondition() != VoidCondition.class) {
-        spec.setDeletePostCondition(instantiateCondition(dependent.deletePostCondition()));
-      }
-      if (dependent.readyCondition() != VoidCondition.class) {
-        spec.setReadyCondition(instantiateCondition(dependent.readyCondition()));
-      }
-      if (dependent.reconcileCondition() != VoidCondition.class) {
-        spec.setReconcileCondition(instantiateCondition(dependent.reconcileCondition()));
-      }
+    if (dependent.deletePostCondition() != VoidCondition.class) {
+      spec.setDeletePostCondition(instantiateCondition(dependent.deletePostCondition()));
+    }
+    if (dependent.readyCondition() != VoidCondition.class) {
+      spec.setReadyCondition(instantiateCondition(dependent.readyCondition()));
+    }
+    if (dependent.reconcileCondition() != VoidCondition.class) {
+      spec.setReconcileCondition(instantiateCondition(dependent.reconcileCondition()));
+    }
   }
 
   private Condition<?, ?> instantiateCondition(Class<? extends Condition> condition) {
     try {
-     return condition.getDeclaredConstructor().newInstance();
+      return condition.getDeclaredConstructor().newInstance();
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException

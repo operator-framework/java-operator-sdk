@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,17 +15,10 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.*;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
@@ -42,12 +34,10 @@ public class Controller<P extends HasMetadata>
   private final ControllerConfiguration<P> configuration;
   private final KubernetesClient kubernetesClient;
   private final EventSourceManager<P> eventSourceManager;
-  private final LinkedHashMap<String, DependentResource> dependents;
   private final boolean contextInitializer;
-  private final boolean hasDeleterDependents;
   private final boolean isCleaner;
   private final Metrics metrics;
-
+  private final ManagedWorkflow<P> managedWorkflow;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -58,92 +48,46 @@ public class Controller<P extends HasMetadata>
     this.metrics = Optional.ofNullable(ConfigurationServiceProvider.instance().getMetrics())
         .orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
-
     eventSourceManager = new EventSourceManager<>(this);
-
-    final var hasDeleterHolder = new boolean[] {false};
-    final var specs = configuration.getDependentResources();
-    final var specsSize = specs.size();
-    if (specsSize == 0) {
-      dependents = new LinkedHashMap<>();
-    } else {
-      final Map<String, DependentResource> dependentsHolder = new LinkedHashMap<>(specsSize);
-      specs.forEach(drs -> {
-        final var dependent = createAndConfigureFrom(drs, kubernetesClient);
-        // check if dependent implements Deleter to record that fact
-        if (!hasDeleterHolder[0] && dependent instanceof Deleter
-            && !(dependent instanceof GarbageCollected)) {
-          hasDeleterHolder[0] = true;
-        }
-        dependentsHolder.put(drs.getName(), dependent);
-      });
-      dependents = new LinkedHashMap<>(dependentsHolder);
-    }
-
-    hasDeleterDependents = hasDeleterHolder[0];
     isCleaner = reconciler instanceof Cleaner;
-  }
-
-  @SuppressWarnings("rawtypes")
-  private DependentResource createAndConfigureFrom(DependentResourceSpec spec,
-      KubernetesClient client) {
-    final var dependentResource =
-        ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
-
-    if (dependentResource instanceof KubernetesClientAware) {
-      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
-    }
-
-    if (dependentResource instanceof DependentResourceConfigurator) {
-      final var configurator = (DependentResourceConfigurator) dependentResource;
-      spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
-    }
-    return dependentResource;
-  }
-
-  private void initContextIfNeeded(P resource, Context<P> context) {
-    if (contextInitializer) {
-      ((ContextInitializer<P>) reconciler).initContext(resource, context);
-    }
+    managedWorkflow =
+        new ManagedWorkflow<>(kubernetesClient, configuration.getDependentResources());
   }
 
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
     try {
-      return metrics
-          .timeControllerExecution(
-              new ControllerExecution<>() {
-                @Override
-                public String name() {
-                  return "cleanup";
-                }
+      return metrics.timeControllerExecution(
+          new ControllerExecution<>() {
+            @Override
+            public String name() {
+              return "cleanup";
+            }
 
-                @Override
-                public String controllerName() {
-                  return configuration.getName();
-                }
+            @Override
+            public String controllerName() {
+              return configuration.getName();
+            }
 
-                @Override
-                public String successTypeName(DeleteControl deleteControl) {
-                  return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
-                }
+            @Override
+            public String successTypeName(DeleteControl deleteControl) {
+              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+            }
 
-                @Override
-                public DeleteControl execute() {
-                  initContextIfNeeded(resource, context);
-                  if (hasDeleterDependents) {
-                    dependents.values().stream()
-                        .filter(d -> d instanceof Deleter && !(d instanceof GarbageCollected))
-                        .map(Deleter.class::cast)
-                        .forEach(deleter -> deleter.delete(resource, context));
-                  }
-                  if (isCleaner) {
-                    return ((Cleaner<P>) reconciler).cleanup(resource, context);
-                  } else {
-                    return DeleteControl.defaultDelete();
-                  }
-                }
-              });
+            @Override
+            public DeleteControl execute() {
+              initContextIfNeeded(resource, context);
+              if (managedWorkflow.isCleaner()) {
+                // todo use result
+                managedWorkflow.cleanup(resource, context);
+              }
+              if (isCleaner) {
+                return ((Cleaner<P>) reconciler).cleanup(resource, context);
+              } else {
+                return DeleteControl.defaultDelete();
+              }
+            }
+          });
     } catch (Exception e) {
       throw new OperatorException(e);
     }
@@ -178,53 +122,24 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            final var exceptions = new ArrayList<Exception>(dependents.size());
-            dependents.forEach((name, dependent) -> {
-              try {
-                final var reconcileResult = dependent.reconcile(resource, context);
-                context.managedDependentResourceContext().setReconcileResult(name,
-                    reconcileResult);
-                log.info("Reconciled dependent '{}' -> {}", name, reconcileResult.getOperation());
-              } catch (Exception e) {
-                final var message = e.getMessage();
-                exceptions.add(new ManagedDependentResourceException(
-                    name, "Error reconciling dependent '" + name + "': " + message, e));
-              }
-            });
-
-            if (!exceptions.isEmpty()) {
-              throw new AggregatedOperatorException("One or more DependentResource(s) failed:\n" +
-                  exceptions.stream()
-                      .map(Controller.this::createExceptionInformation)
-                      .collect(Collectors.joining("\n")),
-                  exceptions);
+            if (!managedWorkflow.isEmptyWorkflow()) {
+              // todo use result
+              managedWorkflow.reconcile(resource, context);
             }
-
             return reconciler.reconcile(resource, context);
           }
         });
   }
 
-  private String createExceptionInformation(Exception e) {
-    final var exceptionLocation = Optional.ofNullable(e.getCause())
-        .map(Throwable::getStackTrace)
-        .filter(stackTrace -> stackTrace.length > 0)
-        .map(stackTrace -> {
-          int i = 0;
-          while (i < stackTrace.length) {
-            final var moduleName = stackTrace[i].getModuleName();
-            if (!"java.base".equals(moduleName)) {
-              return " at: " + stackTrace[i].toString();
-            }
-            i++;
-          }
-          return "";
-        });
-    return "\t\t- " + e.getMessage() + exceptionLocation.orElse("");
+  private void initContextIfNeeded(P resource, Context<P> context) {
+    if (contextInitializer) {
+      ((ContextInitializer<P>) reconciler).initContext(resource, context);
+    }
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
-    dependents.entrySet().stream()
+    managedWorkflow
+        .getDependentResourceByName().entrySet().stream()
         .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
         .forEach(drEntry -> {
           final var provider = (EventSourceProvider) drEntry.getValue();
@@ -374,6 +289,6 @@ public class Controller<P extends HasMetadata>
   }
 
   public boolean useFinalizer() {
-    return isCleaner || hasDeleterDependents;
+    return isCleaner || managedWorkflow.isCleaner();
   }
 }

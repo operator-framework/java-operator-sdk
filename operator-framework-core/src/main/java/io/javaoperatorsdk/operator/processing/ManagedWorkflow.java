@@ -1,66 +1,119 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowExecutionResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
-
-import java.util.List;
 
 @SuppressWarnings("rawtypes")
 class ManagedWorkflow<P extends HasMetadata> {
 
-    private Workflow<P> workflow;
-    private final boolean isCleaner;
+  private final Workflow<P> workflow;
+  private final boolean isCleaner;
+  private final boolean isEmptyWorkflow;
+  private final Map<String, DependentResource> dependentResourceByName;
 
-    public ManagedWorkflow(KubernetesClient client, List<DependentResourceSpec> dependentResourceSpecs) {
-        workflow = toWorkFlow(client,dependentResourceSpecs);
+  public ManagedWorkflow(KubernetesClient client,
+      List<DependentResourceSpec> dependentResourceSpecs) {
+    var orderedSpecs = orderDependentsToBeAdded(dependentResourceSpecs);
+    dependentResourceByName = orderedSpecs
+        .stream().collect(Collectors.toMap(DependentResourceSpec::getName,
+            spec -> createAndConfigureFrom(spec, client)));
 
-        isCleaner = checkIfCleaner();
+
+    workflow = toWorkFlow(client, orderedSpecs);
+    isCleaner = checkIfCleaner();
+    isEmptyWorkflow = workflow.getDependentResources().isEmpty();
+  }
+
+  public WorkflowExecutionResult reconcile(P primary, Context<P> context) {
+    return workflow.reconcile(primary, context);
+  }
+
+  public WorkflowCleanupResult cleanup(P primary, Context<P> context) {
+    return workflow.cleanup(primary, context);
+  }
+
+
+  private boolean checkIfCleaner() {
+    for (var dr : workflow.getDependentResources()) {
+      if (dr instanceof Deleter && !(dr instanceof GarbageCollected)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  @SuppressWarnings("unchecked")
+  private Workflow<P> toWorkFlow(KubernetesClient client,
+      List<DependentResourceSpec> dependentResourceSpecs) {
+    var orderedSpecs = orderDependentsToBeAdded(dependentResourceSpecs);
+
+    var workflow = new WorkflowBuilder<P>();
+    orderedSpecs.forEach(spec -> {
+      var drBuilder =
+          workflow.addDependent(dependentResourceByName.get(spec.getName())).dependsOn(
+              (Set<DependentResource>) spec.getDependsOn()
+                  .stream().map(dependentResourceByName::get).collect(Collectors.toSet()));
+      drBuilder.withDeletePostCondition(spec.getDeletePostCondition());
+      drBuilder.withReconcileCondition(spec.getReconcileCondition());
+      drBuilder.withReadyCondition(spec.getReadyCondition());
+    });
+    return workflow.build();
+  }
+
+  // todo
+  private List<DependentResourceSpec> orderDependentsToBeAdded(
+      List<DependentResourceSpec> dependentResourceSpecs) {
+    return dependentResourceSpecs;
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private DependentResource createAndConfigureFrom(DependentResourceSpec spec,
+      KubernetesClient client) {
+    final var dependentResource =
+        ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
+
+    if (dependentResource instanceof KubernetesClientAware) {
+      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
     }
 
-    // todo
-    private boolean checkIfCleaner() {
-        return false;
+    if (dependentResource instanceof DependentResourceConfigurator) {
+      final var configurator = (DependentResourceConfigurator) dependentResource;
+      spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
     }
+    return dependentResource;
+  }
 
-    // todo
-    public boolean isCleaner() {
-        return isCleaner;
-    }
+  public boolean isCleaner() {
+    return isCleaner;
+  }
 
-    private Workflow<P> toWorkFlow(KubernetesClient client, List<DependentResourceSpec> dependentResourceSpecs) {
-        List<DependentResourceSpec> orderedDependentResources = orderDependentsToBeAdded(dependentResourceSpecs);
+  public boolean isEmptyWorkflow() {
+    return isEmptyWorkflow;
+  }
 
-        var w = new WorkflowBuilder<P>();
-        return w.build();
-    }
+  public Set<DependentResource> getDependentResources() {
+    return workflow.getDependentResources();
+  }
 
-    private List<DependentResourceSpec> orderDependentsToBeAdded(List<DependentResourceSpec> dependentResourceSpecs) {
-        return null;
-    }
-
-    private DependentResource createAndConfigureFrom(DependentResourceSpec spec,
-                                                     KubernetesClient client) {
-        final var dependentResource =
-                ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
-
-        if (dependentResource instanceof KubernetesClientAware) {
-            ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
-        }
-
-        if (dependentResource instanceof DependentResourceConfigurator) {
-            final var configurator = (DependentResourceConfigurator) dependentResource;
-            spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
-        }
-        return dependentResource;
-    }
-
-
-
+  public Map<String, DependentResource> getDependentResourceByName() {
+    return dependentResourceByName;
+  }
 }

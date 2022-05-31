@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow.builder;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -16,12 +20,16 @@ public class DependentBuilder<P extends HasMetadata> {
     this.node = node;
   }
 
-  public DependentBuilder<P> dependsOn(DependentResource... dependentResources) {
+  public DependentBuilder<P> dependsOn(Set<DependentResource> dependentResources) {
     for (var dependentResource : dependentResources) {
       var dependsOn = workflowBuilder.getNodeByDependentResource(dependentResource);
       node.addDependsOnRelation(dependsOn);
     }
     return this;
+  }
+
+  public DependentBuilder<P> dependsOn(DependentResource... dependentResources) {
+    return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
   }
 
   public DependentBuilder<P> withReconcileCondition(Condition reconcileCondition) {

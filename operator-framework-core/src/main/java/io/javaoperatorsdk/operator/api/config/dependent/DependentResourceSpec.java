@@ -17,11 +17,11 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
 
   private Set<String> dependsOn;
 
-  private Condition<?,?> readyCondition;
+  private Condition<?, ?> readyCondition;
 
-  private Condition<?,?> reconcileCondition;
+  private Condition<?, ?> reconcileCondition;
 
-  private Condition<?,?> deletePostCondition;
+  private Condition<?, ?> deletePostCondition;
 
   public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
       String name) {
