@@ -8,11 +8,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResource;
 
-import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.*;
+import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.MISSING_CONFIG_MAP;
+import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.RELATED_RESOURCE_NAME;
+import static io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler.TARGET_CONFIG_MAP_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
@@ -24,8 +26,8 @@ class InformerEventSourceIT {
   public static final String UPDATE_STATUS_MESSAGE = "Updated Status";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(new InformerEventSourceTestCustomReconciler())
           .build();
 

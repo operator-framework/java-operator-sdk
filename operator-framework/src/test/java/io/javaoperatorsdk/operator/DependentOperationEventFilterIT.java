@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependentoperationeventfiltering.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.dependentoperationeventfiltering.DependentOperationEventFilterCustomResource;
 import io.javaoperatorsdk.operator.sample.dependentoperationeventfiltering.DependentOperationEventFilterCustomResourceSpec;
@@ -23,8 +23,8 @@ class DependentOperationEventFilterIT {
   public static final String SPEC_VAL_2 = "val2";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(new DependentOperationEventFilterCustomResourceTestReconciler())
           .build();
 

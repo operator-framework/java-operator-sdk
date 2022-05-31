@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.cleanerforreconciler.CleanerForReconcilerCustomResource;
 import io.javaoperatorsdk.operator.sample.cleanerforreconciler.CleanerForReconcilerTestReconciler;
 
@@ -16,8 +16,8 @@ class CleanerForReconcilerIT {
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler())
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler())
           .build();
 
 
