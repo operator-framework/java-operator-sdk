@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
@@ -20,8 +20,8 @@ class RetryMaxAttemptIT {
   RetryTestCustomReconciler reconciler = new RetryTestCustomReconciler(ALL_EXECUTION_TO_FAIL);
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(reconciler,
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
                   .setMaxAttempts(MAX_RETRY_ATTEMPTS))

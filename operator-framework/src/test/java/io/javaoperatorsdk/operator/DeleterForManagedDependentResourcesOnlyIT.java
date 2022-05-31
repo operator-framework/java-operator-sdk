@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.cleanermanageddependent.CleanerForManagedDependentCustomResource;
 import io.javaoperatorsdk.operator.sample.cleanermanageddependent.CleanerForManagedDependentTestReconciler;
 import io.javaoperatorsdk.operator.sample.cleanermanageddependent.ConfigMapDependentResource;
@@ -17,8 +17,8 @@ class DeleterForManagedDependentResourcesOnlyIT {
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(new CleanerForManagedDependentTestReconciler())
           .build();
 

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefReconciler;
 import io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefResource;
 
@@ -21,8 +21,8 @@ class DependentResourceCrossRefIT {
   public static final int EXECUTION_NUMBER = 50;
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(new DependentResourceCrossRefReconciler())
           .build();
 
