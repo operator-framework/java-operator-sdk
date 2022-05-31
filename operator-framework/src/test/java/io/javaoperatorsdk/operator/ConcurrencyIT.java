@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestReconciler;
 import io.javaoperatorsdk.operator.support.TestUtils;
@@ -26,8 +26,8 @@ class ConcurrencyIT {
   private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
 
   @Test
   void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {

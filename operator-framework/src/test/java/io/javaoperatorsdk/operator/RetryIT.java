@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
@@ -24,8 +24,8 @@ class RetryIT {
   public static final int NUMBER_FAILED_EXECUTIONS = 3;
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(
               new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
