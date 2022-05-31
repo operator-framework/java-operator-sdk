@@ -116,7 +116,11 @@ class EventProcessorTest {
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
 
     when(reconciliationDispatcherMock.handleExecution(any()))
-        .thenReturn(postExecutionControl)
+        .thenAnswer((Answer<PostExecutionControl>) invocationOnMock -> {
+          // avoid to process the first event before the second submitted
+          Thread.sleep(50);
+          return postExecutionControl;
+        })
         .thenReturn(PostExecutionControl.defaultDispatch());
 
     // start processing an event
