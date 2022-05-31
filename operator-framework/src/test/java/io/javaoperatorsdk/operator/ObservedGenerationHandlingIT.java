@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationTestCustomResource;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationTestReconciler;
 
@@ -15,8 +15,8 @@ import static org.awaitility.Awaitility.await;
 
 class ObservedGenerationHandlingIT {
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new ObservedGenerationTestReconciler())
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(new ObservedGenerationTestReconciler())
           .build();
 
   @Test

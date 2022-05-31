@@ -20,14 +20,15 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
-public class ClusterOperatorExtension extends AbstractOperatorExtension {
+public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ClusterOperatorExtension.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(ClusterDeployedOperatorExtension.class);
 
   private final List<HasMetadata> operatorDeployment;
   private final Duration operatorDeploymentTimeout;
 
-  private ClusterOperatorExtension(
+  private ClusterDeployedOperatorExtension(
       ConfigurationService configurationService,
       List<HasMetadata> operatorDeployment,
       Duration operatorDeploymentTimeout,
@@ -44,7 +45,7 @@ public class ClusterOperatorExtension extends AbstractOperatorExtension {
   }
 
   /**
-   * Creates a {@link Builder} to set up an {@link ClusterOperatorExtension} instance.
+   * Creates a {@link Builder} to set up an {@link ClusterDeployedOperatorExtension} instance.
    *
    * @return the builder.
    */
@@ -110,6 +111,7 @@ public class ClusterOperatorExtension extends AbstractOperatorExtension {
       this.deploymentTimeout = Duration.ofMinutes(1);
     }
 
+    @SuppressWarnings("unused")
     public Builder withDeploymentTimeout(Duration value) {
       deploymentTimeout = value;
       return this;
@@ -127,13 +129,14 @@ public class ClusterOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    @SuppressWarnings("unused")
     public Builder withOperatorDeployment(HasMetadata... hms) {
       operatorDeployment.addAll(Arrays.asList(hms));
       return this;
     }
 
-    public ClusterOperatorExtension build() {
-      return new ClusterOperatorExtension(
+    public ClusterDeployedOperatorExtension build() {
+      return new ClusterDeployedOperatorExtension(
           configurationService,
           operatorDeployment,
           deploymentTimeout,

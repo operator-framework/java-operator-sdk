@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 
@@ -56,7 +56,7 @@ public class TestUtils {
     }
   }
 
-  public static int getNumberOfExecutions(LocalOperatorExtension extension) {
+  public static int getNumberOfExecutions(LocallyRunOperatorExtension extension) {
     return ((TestExecutionInfoProvider) extension.getReconcilers().get(0)).getNumberOfExecutions();
   }
 }

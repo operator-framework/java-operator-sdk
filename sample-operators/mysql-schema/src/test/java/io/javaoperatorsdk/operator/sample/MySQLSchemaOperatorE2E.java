@@ -16,8 +16,8 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
-import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 
@@ -62,7 +62,7 @@ class MySQLSchemaOperatorE2E {
   @RegisterExtension
   AbstractOperatorExtension operator =
       isLocal()
-          ? LocalOperatorExtension.builder()
+          ? LocallyRunOperatorExtension.builder()
               .withReconciler(
                   new MySQLSchemaReconciler(),
                   c -> c.replacingNamedDependentResourceConfig(
@@ -73,7 +73,7 @@ class MySQLSchemaOperatorE2E {
               .withInfrastructure(infrastructure)
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
               .build()
-          : ClusterOperatorExtension.builder()
+          : ClusterDeployedOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .withInfrastructure(infrastructure)
               .build();

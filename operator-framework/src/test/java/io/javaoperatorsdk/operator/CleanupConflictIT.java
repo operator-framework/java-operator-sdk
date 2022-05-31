@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.cleanupconflict.CleanupConflictCustomResource;
 import io.javaoperatorsdk.operator.sample.cleanupconflict.CleanupConflictReconciler;
 
@@ -20,8 +20,8 @@ class CleanupConflictIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(new CleanupConflictReconciler())
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(new CleanupConflictReconciler())
           .build();
 
   @Test
@@ -30,10 +30,9 @@ class CleanupConflictIT {
     testResource.addFinalizer(ADDITIONAL_FINALIZER);
     testResource = operator.create(CleanupConflictCustomResource.class, testResource);
 
-    await().untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
-          .getNumberReconcileExecutions()).isEqualTo(1);
-    });
+    await().untilAsserted(
+        () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
+            .getNumberReconcileExecutions()).isEqualTo(1));
 
     operator.delete(CleanupConflictCustomResource.class, testResource);
     Thread.sleep(WAIT_TIME / 2);
@@ -42,10 +41,9 @@ class CleanupConflictIT {
     testResource.getMetadata().setResourceVersion(null);
     operator.replace(CleanupConflictCustomResource.class, testResource);
 
-    await().pollDelay(Duration.ofMillis(WAIT_TIME * 2)).untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
-          .getNumberOfCleanupExecutions()).isEqualTo(1);
-    });
+    await().pollDelay(Duration.ofMillis(WAIT_TIME * 2)).untilAsserted(
+        () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
+            .getNumberOfCleanupExecutions()).isEqualTo(1));
   }
 
   private CleanupConflictCustomResource createTestResource() {
