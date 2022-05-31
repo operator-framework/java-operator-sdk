@@ -7,8 +7,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
-import io.javaoperatorsdk.operator.sample.multiversioncrd.*;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResource1;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResource2;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResourceSpec1;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResourceSpec2;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler1;
+import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler2;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -19,8 +24,8 @@ class MultiVersionCRDIT {
   public static final String CR_V2_NAME = "crv2";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(MultiVersionCRDTestReconciler1.class)
           .withReconciler(MultiVersionCRDTestReconciler2.class)
           .build();
