@@ -6,8 +6,8 @@ import java.io.FileNotFoundException;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
-import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbstractTest {
 
@@ -16,11 +16,11 @@ class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbst
   @RegisterExtension
   AbstractOperatorExtension operator =
       isLocal()
-          ? LocalOperatorExtension.builder()
+          ? LocallyRunOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withReconciler(new WebPageStandaloneDependentsReconciler(client))
               .build()
-          : ClusterOperatorExtension.builder()
+          : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
               .build();

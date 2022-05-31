@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.event.EventSourceTestCustomResourceSpec;
@@ -17,8 +17,8 @@ import static org.awaitility.Awaitility.await;
 
 class EventSourceIT {
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class)
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class)
           .build();
 
   @Test
