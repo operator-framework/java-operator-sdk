@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResource;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler;
@@ -22,8 +22,8 @@ class StatusPatchNotLockingIT {
   public static final String TEST_RESOURCE_NAME = "test";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(StatusPatchLockingReconciler.class)
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(StatusPatchLockingReconciler.class)
           .build();
 
   @Test

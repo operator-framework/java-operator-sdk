@@ -10,10 +10,11 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
-import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
-import static io.javaoperatorsdk.operator.sample.WebPageOperator.*;
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE;
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
 
 class WebPageOperatorManagedDependentResourcesE2E extends WebPageOperatorAbstractTest {
 
@@ -22,11 +23,11 @@ class WebPageOperatorManagedDependentResourcesE2E extends WebPageOperatorAbstrac
   @RegisterExtension
   AbstractOperatorExtension operator =
       isLocal()
-          ? LocalOperatorExtension.builder()
+          ? LocallyRunOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withReconciler(new WebPageManagedDependentsReconciler())
               .build()
-          : ClusterOperatorExtension.builder()
+          : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get(),
                   resources -> {

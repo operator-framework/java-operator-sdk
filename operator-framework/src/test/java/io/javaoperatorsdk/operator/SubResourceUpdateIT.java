@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
@@ -23,8 +23,8 @@ class SubResourceUpdateIT {
   public static final int EVENT_RECEIVE_WAIT = 200;
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class)
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class)
           .build();
 
   @Test

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperReconciler;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperResource;
 
@@ -21,8 +21,8 @@ class DependentAnnotationSecondaryMapperIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withReconciler(DependentAnnotationSecondaryMapperReconciler.class)
           .build();
 
@@ -33,9 +33,8 @@ class DependentAnnotationSecondaryMapperIT {
     var reconciler =
         operator.getReconcilerOfType(DependentAnnotationSecondaryMapperReconciler.class);
 
-    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1);
-    });
+    await().pollDelay(Duration.ofMillis(150))
+        .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1));
     var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
 
     var annotations = configMap.getMetadata().getAnnotations();
@@ -49,9 +48,8 @@ class DependentAnnotationSecondaryMapperIT {
     configMap.getData().put("additional_data", "data");
     operator.replace(ConfigMap.class, configMap);
 
-    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2);
-    });
+    await().pollDelay(Duration.ofMillis(150))
+        .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2));
   }
 
 
