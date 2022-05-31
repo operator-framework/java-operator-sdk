@@ -8,12 +8,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
-import io.javaoperatorsdk.operator.junit.ClusterOperatorExtension;
+import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
 import io.javaoperatorsdk.operator.junit.InClusterCurl;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.awaitility.Awaitility.await;
@@ -40,12 +42,12 @@ class TomcatOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator = isLocal() ? LocalOperatorExtension.builder()
+  AbstractOperatorExtension operator = isLocal() ? LocallyRunOperatorExtension.builder()
       .waitForNamespaceDeletion(false)
       .withReconciler(new TomcatReconciler())
       .withReconciler(new WebappReconciler(client))
       .build()
-      : ClusterOperatorExtension.builder()
+      : ClusterDeployedOperatorExtension.builder()
           .waitForNamespaceDeletion(false)
           .withOperatorDeployment(
               client.load(new FileInputStream("k8s/operator.yaml")).get())
