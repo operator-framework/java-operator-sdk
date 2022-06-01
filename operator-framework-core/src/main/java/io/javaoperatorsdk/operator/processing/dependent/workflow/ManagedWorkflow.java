@@ -27,6 +27,7 @@ public class ManagedWorkflow<P extends HasMetadata> {
 
   public ManagedWorkflow(KubernetesClient client,
       List<DependentResourceSpec> dependentResourceSpecs) {
+    ManagedWorkflowUtils.checkForNameDuplication(dependentResourceSpecs);
     var orderedSpecs = ManagedWorkflowUtils.orderAndDetectCycles(dependentResourceSpecs);
     dependentResourceByName = orderedSpecs
         .stream().collect(Collectors.toMap(DependentResourceSpec::getName,

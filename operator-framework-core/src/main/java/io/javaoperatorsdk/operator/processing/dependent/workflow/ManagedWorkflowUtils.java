@@ -7,9 +7,9 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class ManagedWorkflowUtils {
+class ManagedWorkflowUtils {
 
-  public void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
+  public static void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
     if (dependentResourceSpecs.size() <= 1) {
       return;
     }
@@ -46,24 +46,28 @@ public class ManagedWorkflowUtils {
       res.addAll(selectedLastIteration);
       alreadySelected.addAll(selectedLastIteration);
       Set<DependentResourceSpec> newAdds = new HashSet<>();
-      selectedLastIteration.forEach(dr -> dependOnIndex.get(dr.getName()).forEach(ndr -> {
-        if (allDependsOnsAlreadySelected(ndr, alreadySelected, nameToDR, dr.getName())) {
-          newAdds.add(ndr);
-        }
-      }));
+      selectedLastIteration.forEach(dr -> {
+        var dependsOn = dependOnIndex.get(dr.getName());
+        if (dependsOn == null)
+          dependsOn = Collections.emptyList();
+        dependsOn.forEach(ndr -> {
+          if (allDependsOnsAlreadySelected(ndr, alreadySelected, nameToDR, dr.getName())) {
+            newAdds.add(ndr);
+          }
+        });
+      });
       selectedLastIteration = newAdds;
     }
+
     if (res.size() != dependentResourceSpecs.size()) {
-      var cycleNames = dependentResourceSpecs.stream().filter(dr -> !alreadySelected.contains(dr))
-          .map(dr -> dr.getName())
-          .collect(Collectors.toList());
       // could provide improved message where the exact cycles are made visible
       throw new OperatorException(
-          "Cycle between in dependent resources. Involved resource names: " + cycleNames);
+          "Cycle(s) between dependent resources.");
     }
-
     return res;
   }
+
+
 
   private static boolean allDependsOnsAlreadySelected(DependentResourceSpec dr,
       Set<DependentResourceSpec> alreadySelected,
