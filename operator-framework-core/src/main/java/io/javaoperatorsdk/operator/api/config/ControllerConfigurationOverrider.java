@@ -69,10 +69,14 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> settingNamespaces(String ... newNamespaces) {
+  public ControllerConfigurationOverrider<R> settingNamespaces(Set<String> newNamespaces) {
     this.namespaces.clear();
-    this.namespaces.addAll(List.of(newNamespaces));
+    this.namespaces.addAll(newNamespaces);
     return this;
+  }
+
+  public ControllerConfigurationOverrider<R> settingNamespaces(String... newNamespaces) {
+    return settingNamespaces(Set.of(newNamespaces));
   }
 
   public ControllerConfigurationOverrider<R> settingNamespace(String namespace) {
