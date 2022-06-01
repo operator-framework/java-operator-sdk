@@ -87,7 +87,8 @@ public class Controller<P extends HasMetadata>
             initContextIfNeeded(resource, context);
             if (!managedWorkflow.isEmptyWorkflow()) {
               var res = managedWorkflow.reconcile(resource, context);
-              ((DefaultManagedDependentResourceContext) context).setWorkflowExecutionResult(res);
+              ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
+                  .setWorkflowExecutionResult(res);
               res.throwAggregateExceptionIfErrorsPresent();
             }
             return reconciler.reconcile(resource, context);
@@ -120,7 +121,8 @@ public class Controller<P extends HasMetadata>
               initContextIfNeeded(resource, context);
               if (managedWorkflow.isCleaner()) {
                 var res = managedWorkflow.cleanup(resource, context);
-                ((DefaultManagedDependentResourceContext) context).setWorkflowCleanupResult(res);
+                ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
+                    .setWorkflowCleanupResult(res);
                 res.throwAggregateExceptionIfErrorsPresent();
               }
               if (isCleaner) {

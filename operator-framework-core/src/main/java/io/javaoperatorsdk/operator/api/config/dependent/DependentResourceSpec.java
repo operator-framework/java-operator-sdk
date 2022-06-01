@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config.dependent;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -67,6 +68,9 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   }
 
   public Set<String> getDependsOn() {
+    if (dependsOn == null) {
+      dependsOn = new HashSet<>(0);
+    }
     return dependsOn;
   }
 

@@ -67,8 +67,8 @@ public class WorkflowExecutionResult {
         new ArrayList<>(erroredDependents.values()));
   }
 
-  public boolean notReadyDependentsExists() {
-    return !notReadyDependents.isEmpty();
+  public boolean allDependentResourcesReady() {
+    return notReadyDependents.isEmpty();
   }
 
   public boolean erroredDependentsExists() {
