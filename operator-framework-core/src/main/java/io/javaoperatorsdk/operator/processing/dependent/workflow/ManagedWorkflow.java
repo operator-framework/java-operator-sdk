@@ -57,30 +57,24 @@ public class ManagedWorkflow<P extends HasMetadata> {
     return false;
   }
 
-
   @SuppressWarnings("unchecked")
   private Workflow<P> toWorkFlow(KubernetesClient client,
-      List<DependentResourceSpec> dependentResourceSpecs) {
-    var orderedSpecs = orderDependentsToBeAdded(dependentResourceSpecs);
+      List<DependentResourceSpec> orderedResourceSpecs) {
 
-    var workflow = new WorkflowBuilder<P>();
-    orderedSpecs.forEach(spec -> {
+    var w = new WorkflowBuilder<P>();
+    w.withThrowExceptionFurther(false);
+    orderedResourceSpecs.forEach(spec -> {
       var drBuilder =
-          workflow.addDependent(dependentResourceByName.get(spec.getName())).dependsOn(
+          w.addDependent(dependentResourceByName.get(spec.getName())).dependsOn(
               (Set<DependentResource>) spec.getDependsOn()
                   .stream().map(dependentResourceByName::get).collect(Collectors.toSet()));
       drBuilder.withDeletePostCondition(spec.getDeletePostCondition());
       drBuilder.withReconcileCondition(spec.getReconcileCondition());
       drBuilder.withReadyCondition(spec.getReadyCondition());
     });
-    return workflow.build();
+    return w.build();
   }
 
-  // todo
-  private List<DependentResourceSpec> orderDependentsToBeAdded(
-      List<DependentResourceSpec> dependentResourceSpecs) {
-    return dependentResourceSpecs;
-  }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private DependentResource createAndConfigureFrom(DependentResourceSpec spec,

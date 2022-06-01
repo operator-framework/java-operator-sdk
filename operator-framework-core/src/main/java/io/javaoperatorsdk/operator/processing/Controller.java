@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
@@ -56,45 +57,6 @@ public class Controller<P extends HasMetadata>
   }
 
   @Override
-  public DeleteControl cleanup(P resource, Context<P> context) {
-    try {
-      return metrics.timeControllerExecution(
-          new ControllerExecution<>() {
-            @Override
-            public String name() {
-              return "cleanup";
-            }
-
-            @Override
-            public String controllerName() {
-              return configuration.getName();
-            }
-
-            @Override
-            public String successTypeName(DeleteControl deleteControl) {
-              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
-            }
-
-            @Override
-            public DeleteControl execute() {
-              initContextIfNeeded(resource, context);
-              if (managedWorkflow.isCleaner()) {
-                // todo use result
-                managedWorkflow.cleanup(resource, context);
-              }
-              if (isCleaner) {
-                return ((Cleaner<P>) reconciler).cleanup(resource, context);
-              } else {
-                return DeleteControl.defaultDelete();
-              }
-            }
-          });
-    } catch (Exception e) {
-      throw new OperatorException(e);
-    }
-  }
-
-  @Override
   public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
     return metrics.timeControllerExecution(
         new ControllerExecution<>() {
@@ -124,12 +86,53 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             if (!managedWorkflow.isEmptyWorkflow()) {
-              // todo use result
-              managedWorkflow.reconcile(resource, context);
+              var res = managedWorkflow.reconcile(resource, context);
+              ((DefaultManagedDependentResourceContext) context).setWorkflowExecutionResult(res);
+              res.throwAggregateExceptionIfErrorsPresent();
             }
             return reconciler.reconcile(resource, context);
           }
         });
+  }
+
+  @Override
+  public DeleteControl cleanup(P resource, Context<P> context) {
+    try {
+      return metrics.timeControllerExecution(
+          new ControllerExecution<>() {
+            @Override
+            public String name() {
+              return "cleanup";
+            }
+
+            @Override
+            public String controllerName() {
+              return configuration.getName();
+            }
+
+            @Override
+            public String successTypeName(DeleteControl deleteControl) {
+              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+            }
+
+            @Override
+            public DeleteControl execute() {
+              initContextIfNeeded(resource, context);
+              if (managedWorkflow.isCleaner()) {
+                var res = managedWorkflow.cleanup(resource, context);
+                ((DefaultManagedDependentResourceContext) context).setWorkflowCleanupResult(res);
+                res.throwAggregateExceptionIfErrorsPresent();
+              }
+              if (isCleaner) {
+                return ((Cleaner<P>) reconciler).cleanup(resource, context);
+              } else {
+                return DeleteControl.defaultDelete();
+              }
+            }
+          });
+    } catch (Exception e) {
+      throw new OperatorException(e);
+    }
   }
 
   private void initContextIfNeeded(P resource, Context<P> context) {
