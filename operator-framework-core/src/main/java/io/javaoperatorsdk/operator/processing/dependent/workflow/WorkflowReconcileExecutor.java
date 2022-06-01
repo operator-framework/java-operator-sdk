@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowReconcileExecutor<P extends HasMetadata> {
@@ -160,7 +161,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     public void run() {
       try {
         DependentResource dependentResource = dependentResourceNode.getDependentResource();
-
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Reconciling {} for primary: {}",
+              dependentResourceNode,
+              ResourceID.fromResource(primary));
+        }
         ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
         reconcileResults.put(dependentResource, reconcileResult);
         reconciled.add(dependentResourceNode);

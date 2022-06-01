@@ -13,8 +13,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 @ControllerConfiguration(dependents = {
-    @Dependent(type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
-    @Dependent(type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class)})
+    @Dependent(name = "secret",
+        type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
+    @Dependent(type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class,
+        dependsOn = "secret")})
 public class DependentResourceCrossRefReconciler
     implements Reconciler<DependentResourceCrossRefResource>,
     ErrorStatusHandler<DependentResourceCrossRefResource> {

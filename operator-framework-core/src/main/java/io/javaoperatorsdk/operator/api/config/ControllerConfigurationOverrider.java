@@ -140,11 +140,10 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
           // if the spec has a config and it's a KubernetesDependentResourceConfig, update the
           // namespaces if needed, otherwise, just return the existing spec
           final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
-          final Class<?> drClass = drsEntry.getValue().getDependentResourceClass();
           return maybeConfig.filter(KubernetesDependentResourceConfig.class::isInstance)
               .map(KubernetesDependentResourceConfig.class::cast)
               .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
-              .map(c -> updateSpec(drsEntry.getKey(), drClass, c))
+              .map(c -> updateSpec(drsEntry.getKey(), spec, c))
               .orElse(drsEntry.getValue());
         }).collect(Collectors.toUnmodifiableList());
 
@@ -164,9 +163,15 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private DependentResourceSpec<?, ?> updateSpec(String name, Class<?> drClass,
+  private DependentResourceSpec<?, ?> updateSpec(String name, DependentResourceSpec spec,
       KubernetesDependentResourceConfig c) {
-    return new DependentResourceSpec(drClass, c.setNamespaces(namespaces), name);
+    var res = new DependentResourceSpec(spec.getDependentResourceClass(),
+        c.setNamespaces(namespaces), name);
+    res.setReadyCondition(spec.getReadyCondition());
+    res.setReconcileCondition(spec.getReconcileCondition());
+    res.setDeletePostCondition(spec.getDeletePostCondition());
+    res.setDependsOn(spec.getDependsOn());
+    return res;
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

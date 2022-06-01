@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
     implements Creator<Secret, MySQLSchema>, SecondaryToPrimaryMapper<Secret> {
-
+  public static final String NAME = "secret";
   public static final String SECRET_SUFFIX = "-secret";
   public static final String SECRET_FORMAT = "%s" + SECRET_SUFFIX;
   public static final String USERNAME_FORMAT = "%s-user";
