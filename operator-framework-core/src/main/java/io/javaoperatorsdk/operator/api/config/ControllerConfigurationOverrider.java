@@ -1,11 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -70,6 +66,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     if (this.namespaces.isEmpty()) {
       this.namespaces = DEFAULT_NAMESPACES_SET;
     }
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> settingNamespaces(String ... newNamespaces) {
+    this.namespaces.clear();
+    this.namespaces.addAll(List.of(newNamespaces));
     return this;
   }
 
