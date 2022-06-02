@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowExecutionResult;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 public interface ManagedDependentResourceContext {
   <T> Optional<T> get(Object key, Class<T> expectedType);
@@ -14,7 +14,7 @@ public interface ManagedDependentResourceContext {
   @SuppressWarnings("unused")
   <T> T getMandatory(Object key, Class<T> expectedType);
 
-  Optional<WorkflowExecutionResult> getWorkflowExecutionResult();
+  Optional<WorkflowReconcileResult> getWorkflowExecutionResult();
 
   Optional<WorkflowCleanupResult> getWorkflowCleanupResult();
 }

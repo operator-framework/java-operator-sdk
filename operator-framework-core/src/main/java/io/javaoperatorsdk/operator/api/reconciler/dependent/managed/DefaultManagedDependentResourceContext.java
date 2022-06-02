@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowExecutionResult;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 /**
  * Contextual information related to {@link DependentResource} either to retrieve the actual
@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowExecuti
 @SuppressWarnings("rawtypes")
 public class DefaultManagedDependentResourceContext implements ManagedDependentResourceContext {
 
-  private WorkflowExecutionResult workflowExecutionResult;
+  private WorkflowReconcileResult workflowReconcileResult;
   private WorkflowCleanupResult workflowCleanupResult;
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
 
@@ -74,8 +74,8 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
   }
 
   public DefaultManagedDependentResourceContext setWorkflowExecutionResult(
-      WorkflowExecutionResult workflowExecutionResult) {
-    this.workflowExecutionResult = workflowExecutionResult;
+      WorkflowReconcileResult workflowReconcileResult) {
+    this.workflowReconcileResult = workflowReconcileResult;
     return this;
   }
 
@@ -86,8 +86,8 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
   }
 
   @Override
-  public Optional<WorkflowExecutionResult> getWorkflowExecutionResult() {
-    return Optional.ofNullable(workflowExecutionResult);
+  public Optional<WorkflowReconcileResult> getWorkflowExecutionResult() {
+    return Optional.ofNullable(workflowReconcileResult);
   }
 
   @Override

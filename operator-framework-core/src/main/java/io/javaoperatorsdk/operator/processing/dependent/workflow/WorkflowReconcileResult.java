@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 @SuppressWarnings("rawtypes")
-public class WorkflowExecutionResult {
+public class WorkflowReconcileResult {
 
   private List<DependentResource> reconciledDependents;
   private List<DependentResource> notReadyDependents;
@@ -20,7 +20,7 @@ public class WorkflowExecutionResult {
     return erroredDependents;
   }
 
-  public WorkflowExecutionResult setErroredDependents(
+  public WorkflowReconcileResult setErroredDependents(
       Map<DependentResource, Exception> erroredDependents) {
     this.erroredDependents = erroredDependents;
     return this;
@@ -30,7 +30,7 @@ public class WorkflowExecutionResult {
     return reconciledDependents;
   }
 
-  public WorkflowExecutionResult setReconciledDependents(
+  public WorkflowReconcileResult setReconciledDependents(
       List<DependentResource> reconciledDependents) {
     this.reconciledDependents = reconciledDependents;
     return this;
@@ -40,7 +40,7 @@ public class WorkflowExecutionResult {
     return notReadyDependents;
   }
 
-  public WorkflowExecutionResult setNotReadyDependents(
+  public WorkflowReconcileResult setNotReadyDependents(
       List<DependentResource> notReadyDependents) {
     this.notReadyDependents = notReadyDependents;
     return this;
@@ -50,7 +50,7 @@ public class WorkflowExecutionResult {
     return reconcileResults;
   }
 
-  public WorkflowExecutionResult setReconcileResults(
+  public WorkflowReconcileResult setReconcileResults(
       Map<DependentResource, ReconcileResult> reconcileResults) {
     this.reconcileResults = reconcileResults;
     return this;

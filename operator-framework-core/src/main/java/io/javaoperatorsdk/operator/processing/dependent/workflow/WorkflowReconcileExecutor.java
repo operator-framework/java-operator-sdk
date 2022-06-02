@@ -50,7 +50,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     this.workflow = workflow;
   }
 
-  public synchronized WorkflowExecutionResult reconcile() {
+  public synchronized WorkflowReconcileResult reconcile() {
     for (DependentResourceNode dependentResourceNode : workflow
         .getTopLevelDependentResources()) {
       handleReconcile(dependentResourceNode);
@@ -286,18 +286,18 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
             .anyMatch(exceptionsDuringExecution::containsKey);
   }
 
-  private WorkflowExecutionResult createReconcileResult() {
-    WorkflowExecutionResult workflowExecutionResult = new WorkflowExecutionResult();
-    workflowExecutionResult.setErroredDependents(exceptionsDuringExecution
+  private WorkflowReconcileResult createReconcileResult() {
+    WorkflowReconcileResult workflowReconcileResult = new WorkflowReconcileResult();
+    workflowReconcileResult.setErroredDependents(exceptionsDuringExecution
         .entrySet().stream()
         .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)));
-    workflowExecutionResult.setNotReadyDependents(notReady.stream()
+    workflowReconcileResult.setNotReadyDependents(notReady.stream()
         .map(DependentResourceNode::getDependentResource)
         .collect(Collectors.toList()));
-    workflowExecutionResult.setReconciledDependents(reconciled.stream()
+    workflowReconcileResult.setReconciledDependents(reconciled.stream()
         .map(DependentResourceNode::getDependentResource).collect(Collectors.toList()));
-    workflowExecutionResult.setReconcileResults(reconcileResults);
-    return workflowExecutionResult;
+    workflowReconcileResult.setReconcileResults(reconcileResults);
+    return workflowReconcileResult;
   }
 
 }

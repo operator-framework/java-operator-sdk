@@ -48,7 +48,7 @@ public class Workflow<P extends HasMetadata> {
     this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism), true);
   }
 
-  public WorkflowExecutionResult reconcile(P primary, Context<P> context) {
+  public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
     WorkflowReconcileExecutor<P> workflowReconcileExecutor =
         new WorkflowReconcileExecutor<>(this, primary, context);
     var result = workflowReconcileExecutor.reconcile();

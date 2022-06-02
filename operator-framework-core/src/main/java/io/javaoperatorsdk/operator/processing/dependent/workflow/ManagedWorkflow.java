@@ -39,7 +39,7 @@ public class ManagedWorkflow<P extends HasMetadata> {
     isEmptyWorkflow = workflow.getDependentResources().isEmpty();
   }
 
-  public WorkflowExecutionResult reconcile(P primary, Context<P> context) {
+  public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
     return workflow.reconcile(primary, context);
   }
 
