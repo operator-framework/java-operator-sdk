@@ -31,20 +31,19 @@ class ManagedWorkflowSupport<P extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public Workflow<P> toWorkflow(KubernetesClient client,
-      List<DependentResourceSpec> dependentResourceSpecs,
+  public Workflow<P> createWorkflow(List<DependentResourceSpec> dependentResourceSpecs,
       Map<String, DependentResource> dependentResourceByName) {
     var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs);
     var w = new WorkflowBuilder<P>();
     w.withThrowExceptionFurther(false);
     orderedResourceSpecs.forEach(spec -> {
       var drBuilder =
-          w.addDependent(dependentResourceByName.get(spec.getName())).dependsOn(
+          w.addDependentResource(dependentResourceByName.get(spec.getName())).dependsOn(
               (Set<DependentResource>) spec.getDependsOn()
                   .stream().map(dependentResourceByName::get).collect(Collectors.toSet()));
-      drBuilder.withDeletePostCondition(spec.getDeletePostCondition());
-      drBuilder.withReconcileCondition(spec.getReconcileCondition());
-      drBuilder.withReadyCondition(spec.getReadyCondition());
+      drBuilder.withDeletePostCondition(spec.getDeletePostCondition())
+          .withReconcileCondition(spec.getReconcileCondition())
+          .withReadyCondition(spec.getReadyCondition());
     });
     return w.build();
   }

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -84,7 +85,7 @@ class UtilsTest {
 
   @Test
   void getsFirstTypeArgumentFromInterface() {
-    assertThat(Utils.getFirstTypeArgumentFromInterface(TestDependentResource.class))
+    assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class))
         .isEqualTo(Deployment.class);
   }
 

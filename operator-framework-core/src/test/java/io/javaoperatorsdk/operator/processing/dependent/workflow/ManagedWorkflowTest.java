@@ -27,7 +27,7 @@ class ManagedWorkflowTest {
   @Test
   void checksIfWorkflowEmpty() {
     var mockWorkflow = mock(Workflow.class);
-    when(managedWorkflowSupportMock.toWorkflow(any(), any(), any())).thenReturn(mockWorkflow);
+    when(managedWorkflowSupportMock.createWorkflow(any(), any())).thenReturn(mockWorkflow);
     when(managedWorkflowSupportMock.createAndConfigureFrom(any(), any()))
         .thenReturn(mock(DependentResource.class));
     assertThat(managedWorkflow().isEmptyWorkflow()).isTrue();
@@ -39,7 +39,7 @@ class ManagedWorkflowTest {
   @Test
   void isCleanerIfAtLeastOneDRIsDeleterAndNoGC() {
     var mockWorkflow = mock(Workflow.class);
-    when(managedWorkflowSupportMock.toWorkflow(any(), any(), any())).thenReturn(mockWorkflow);
+    when(managedWorkflowSupportMock.createWorkflow(any(), any())).thenReturn(mockWorkflow);
     when(managedWorkflowSupportMock.createAndConfigureFrom(any(), any()))
         .thenReturn(mock(DependentResource.class));
     when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class)));

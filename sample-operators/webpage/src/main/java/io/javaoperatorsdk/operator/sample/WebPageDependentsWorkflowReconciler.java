@@ -44,10 +44,10 @@ public class WebPageDependentsWorkflowReconciler
   public WebPageDependentsWorkflowReconciler(KubernetesClient kubernetesClient) {
     initDependentResources(kubernetesClient);
     workflow = new WorkflowBuilder<WebPage>()
-        .addDependent(configMapDR).build()
-        .addDependent(deploymentDR).build()
-        .addDependent(serviceDR).build()
-        .addDependent(ingressDR).withReconcileCondition(new IngressCondition()).build()
+        .addDependentResource(configMapDR).build()
+        .addDependentResource(deploymentDR).build()
+        .addDependentResource(serviceDR).build()
+        .addDependentResource(ingressDR).withReconcileCondition(new IngressCondition()).build()
         .build();
   }
 

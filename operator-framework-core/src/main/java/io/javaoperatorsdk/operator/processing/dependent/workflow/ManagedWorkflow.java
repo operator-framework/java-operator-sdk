@@ -35,7 +35,7 @@ public class ManagedWorkflow<P extends HasMetadata> {
 
     isEmptyWorkflow = dependentResourceSpecs.isEmpty();
     workflow =
-        managedWorkflowSupport.toWorkflow(client, dependentResourceSpecs, dependentResourceByName);
+        managedWorkflowSupport.createWorkflow(dependentResourceSpecs, dependentResourceByName);
     isCleaner = checkIfCleaner();
   }
 

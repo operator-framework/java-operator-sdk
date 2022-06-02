@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -58,13 +57,9 @@ public class DependentResourceNode<R, P extends HasMetadata> {
 
   @Override
   public String toString() {
-    return "{"
-        + parents.stream().map(p -> p.dependentResource.toString())
-            .collect(Collectors.joining(", ", "[", "]->"))
-        + "(" + dependentResource + ")"
-        + dependsOn.stream().map(d -> d.dependentResource.toString())
-            .collect(Collectors.joining(", ", "->[", "]"))
-        + '}';
+    return "DependentResourceNode{" +
+        "dependentResource=" + dependentResource +
+        '}';
   }
 
   public DependentResourceNode<R, P> setReconcileCondition(
