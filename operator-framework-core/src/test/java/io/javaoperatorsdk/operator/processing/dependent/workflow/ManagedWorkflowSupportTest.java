@@ -52,7 +52,7 @@ class ManagedWorkflowSupportTest {
 
     assertThat(managedWorkflowSupport
         .orderAndDetectCycles(List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1))))
-            .map(DependentResourceSpec::getName).containsExactly(NAME_1, NAME_2);
+        .map(DependentResourceSpec::getName).containsExactly(NAME_1, NAME_2);
   }
 
   @Test
