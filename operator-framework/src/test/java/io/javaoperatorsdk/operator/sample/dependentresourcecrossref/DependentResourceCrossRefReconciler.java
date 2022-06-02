@@ -12,15 +12,18 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
+import static io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefReconciler.SECRET_NAME;
+
 @ControllerConfiguration(dependents = {
-    @Dependent(name = "secret",
+    @Dependent(name = SECRET_NAME,
         type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
     @Dependent(type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class,
-        dependsOn = "secret")})
+        dependsOn = SECRET_NAME)})
 public class DependentResourceCrossRefReconciler
     implements Reconciler<DependentResourceCrossRefResource>,
     ErrorStatusHandler<DependentResourceCrossRefResource> {
 
+  public static final String SECRET_NAME = "secret";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private volatile boolean errorHappened = false;
 
