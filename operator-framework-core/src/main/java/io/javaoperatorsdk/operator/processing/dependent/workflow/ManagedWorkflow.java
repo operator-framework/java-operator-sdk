@@ -2,20 +2,15 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 
 @SuppressWarnings("rawtypes")
 public class ManagedWorkflow<P extends HasMetadata> {
@@ -27,16 +22,21 @@ public class ManagedWorkflow<P extends HasMetadata> {
 
   public ManagedWorkflow(KubernetesClient client,
       List<DependentResourceSpec> dependentResourceSpecs) {
-    ManagedWorkflowUtils.checkForNameDuplication(dependentResourceSpecs);
-    var orderedSpecs = ManagedWorkflowUtils.orderAndDetectCycles(dependentResourceSpecs);
-    dependentResourceByName = orderedSpecs
+    this(client, dependentResourceSpecs, new ManagedWorkflowSupport<>());
+  }
+
+  ManagedWorkflow(KubernetesClient client,
+      List<DependentResourceSpec> dependentResourceSpecs,
+      ManagedWorkflowSupport<P> managedWorkflowSupport) {
+    managedWorkflowSupport.checkForNameDuplication(dependentResourceSpecs);
+    dependentResourceByName = dependentResourceSpecs
         .stream().collect(Collectors.toMap(DependentResourceSpec::getName,
-            spec -> createAndConfigureFrom(spec, client)));
+            spec -> managedWorkflowSupport.createAndConfigureFrom(spec, client)));
 
-
-    workflow = toWorkFlow(client, orderedSpecs);
+    isEmptyWorkflow = dependentResourceSpecs.isEmpty();
+    workflow =
+        managedWorkflowSupport.toWorkflow(client, dependentResourceSpecs, dependentResourceByName);
     isCleaner = checkIfCleaner();
-    isEmptyWorkflow = workflow.getDependentResources().isEmpty();
   }
 
   public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
@@ -47,7 +47,6 @@ public class ManagedWorkflow<P extends HasMetadata> {
     return workflow.cleanup(primary, context);
   }
 
-
   private boolean checkIfCleaner() {
     for (var dr : workflow.getDependentResources()) {
       if (dr instanceof Deleter && !(dr instanceof GarbageCollected)) {
@@ -55,42 +54,6 @@ public class ManagedWorkflow<P extends HasMetadata> {
       }
     }
     return false;
-  }
-
-  @SuppressWarnings("unchecked")
-  private Workflow<P> toWorkFlow(KubernetesClient client,
-      List<DependentResourceSpec> orderedResourceSpecs) {
-
-    var w = new WorkflowBuilder<P>();
-    w.withThrowExceptionFurther(false);
-    orderedResourceSpecs.forEach(spec -> {
-      var drBuilder =
-          w.addDependent(dependentResourceByName.get(spec.getName())).dependsOn(
-              (Set<DependentResource>) spec.getDependsOn()
-                  .stream().map(dependentResourceByName::get).collect(Collectors.toSet()));
-      drBuilder.withDeletePostCondition(spec.getDeletePostCondition());
-      drBuilder.withReconcileCondition(spec.getReconcileCondition());
-      drBuilder.withReadyCondition(spec.getReadyCondition());
-    });
-    return w.build();
-  }
-
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private DependentResource createAndConfigureFrom(DependentResourceSpec spec,
-      KubernetesClient client) {
-    final var dependentResource =
-        ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
-
-    if (dependentResource instanceof KubernetesClientAware) {
-      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
-    }
-
-    if (dependentResource instanceof DependentResourceConfigurator) {
-      final var configurator = (DependentResourceConfigurator) dependentResource;
-      spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
-    }
-    return dependentResource;
   }
 
   public boolean isCleaner() {
