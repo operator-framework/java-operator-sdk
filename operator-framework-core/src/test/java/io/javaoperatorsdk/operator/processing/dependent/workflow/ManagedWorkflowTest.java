@@ -19,6 +19,8 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"rawtypes", "unchecked"})
 class ManagedWorkflowTest {
 
+  public static final String NAME = "name";
+
   ManagedWorkflowSupport managedWorkflowSupportMock = mock(ManagedWorkflowSupport.class);
   KubernetesClient kubernetesClientMock = mock(KubernetesClient.class);
 
@@ -31,7 +33,7 @@ class ManagedWorkflowTest {
     assertThat(managedWorkflow().isEmptyWorkflow()).isTrue();
 
     when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class)));
-    assertThat(managedWorkflow(createDRS("name1")).isEmptyWorkflow()).isFalse();
+    assertThat(managedWorkflow(createDRS(NAME)).isEmptyWorkflow()).isFalse();
   }
 
   @Test
@@ -42,15 +44,15 @@ class ManagedWorkflowTest {
         .thenReturn(mock(DependentResource.class));
     when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class)));
 
-    assertThat(managedWorkflow(createDRS("name1")).isCleaner()).isFalse();
+    assertThat(managedWorkflow(createDRS(NAME)).isCleaner()).isFalse();
 
     when(mockWorkflow.getDependentResources()).thenReturn(
         Set.of(mock(DependentResource.class, withSettings().extraInterfaces(Deleter.class))));
-    assertThat(managedWorkflow(createDRS("name1")).isCleaner()).isTrue();
+    assertThat(managedWorkflow(createDRS(NAME)).isCleaner()).isTrue();
 
     when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class,
         withSettings().extraInterfaces(Deleter.class, GarbageCollected.class))));
-    assertThat(managedWorkflow(createDRS("name1")).isCleaner()).isFalse();
+    assertThat(managedWorkflow(createDRS(NAME)).isCleaner()).isFalse();
   }
 
   ManagedWorkflow managedWorkflow(DependentResourceSpec... specs) {
