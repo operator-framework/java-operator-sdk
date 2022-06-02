@@ -36,7 +36,7 @@ class StatusPatchNotLockingIT {
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
       assertThat(
           operator.getReconcilerOfType(StatusPatchLockingReconciler.class).getNumberOfExecutions())
-              .isEqualTo(1);
+          .isEqualTo(1);
       var actual = operator.get(StatusPatchLockingCustomResource.class,
           TEST_RESOURCE_NAME);
       assertThat(actual

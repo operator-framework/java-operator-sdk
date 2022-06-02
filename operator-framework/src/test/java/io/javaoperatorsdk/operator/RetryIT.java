@@ -50,7 +50,7 @@ class RetryIT {
         .untilAsserted(() -> {
           assertThat(
               TestUtils.getNumberOfExecutions(operator))
-                  .isEqualTo(NUMBER_FAILED_EXECUTIONS + 1);
+              .isEqualTo(NUMBER_FAILED_EXECUTIONS + 1);
 
           RetryTestCustomResource finalResource =
               operator.get(RetryTestCustomResource.class,

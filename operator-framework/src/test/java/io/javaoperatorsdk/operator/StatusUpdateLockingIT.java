@@ -34,7 +34,7 @@ class StatusUpdateLockingIT {
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
       assertThat(
           operator.getReconcilerOfType(StatusUpdateLockingReconciler.class).getNumberOfExecutions())
-              .isEqualTo(2);
+          .isEqualTo(2);
       assertThat(operator.get(StatusUpdateLockingCustomResource.class, TEST_RESOURCE_NAME)
           .getStatus().getValue()).isEqualTo(1);
     });

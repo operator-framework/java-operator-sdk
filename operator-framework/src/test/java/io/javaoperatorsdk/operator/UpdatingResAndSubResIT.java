@@ -45,7 +45,7 @@ class UpdatingResAndSubResIT {
             .getMetadata()
             .getAnnotations()
             .get(DoubleUpdateTestCustomReconciler.TEST_ANNOTATION))
-                .isNotNull();
+        .isNotNull();
   }
 
   void awaitStatusUpdated(String name) {

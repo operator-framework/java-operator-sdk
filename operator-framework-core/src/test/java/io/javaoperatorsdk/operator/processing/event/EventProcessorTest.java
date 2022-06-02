@@ -205,7 +205,7 @@ class EventProcessorTest {
     var testDelay = 10000L;
     doAnswer(new AnswersWithDelay(FAKE_CONTROLLER_EXECUTION_DURATION,
         new Returns(PostExecutionControl.defaultDispatch().withReSchedule(testDelay))))
-            .when(reconciliationDispatcherMock).handleExecution(any());
+        .when(reconciliationDispatcherMock).handleExecution(any());
     var resourceId = new ResourceID("test1", "default");
     eventProcessor.handleEvent(prepareCREvent(resourceId));
     Thread.sleep(FAKE_CONTROLLER_EXECUTION_DURATION / 3);
@@ -213,7 +213,7 @@ class EventProcessorTest {
 
     verify(retryTimerEventSourceMock,
         after((long) (FAKE_CONTROLLER_EXECUTION_DURATION * 1.5)).times(0))
-            .scheduleOnce(any(), eq(testDelay));
+        .scheduleOnce(any(), eq(testDelay));
   }
 
   @Test

@@ -30,7 +30,7 @@ class CustomResourceFilterIT {
 
     assertThat(
         ((CustomFilteringTestReconciler) operator.getReconcilers().get(0)).getNumberOfExecutions())
-            .isEqualTo(1);
+        .isEqualTo(1);
   }
 
 

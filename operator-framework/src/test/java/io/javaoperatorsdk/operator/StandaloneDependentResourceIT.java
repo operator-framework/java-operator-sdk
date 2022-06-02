@@ -37,7 +37,7 @@ class StandaloneDependentResourceIT {
     awaitForDeploymentReadyReplicas(1);
     assertThat(
         ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
-            .isFalse();
+        .isFalse();
   }
 
   @Test
@@ -58,7 +58,7 @@ class StandaloneDependentResourceIT {
     awaitForDeploymentReadyReplicas(2);
     assertThat(
         ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
-            .isFalse();
+        .isFalse();
   }
 
   void awaitForDeploymentReadyReplicas(int expectedReplicaCount) {
