@@ -12,10 +12,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -47,7 +45,8 @@ public class WebPageDependentsWorkflowReconciler
         .addDependentResource(configMapDR).build()
         .addDependentResource(deploymentDR).build()
         .addDependentResource(serviceDR).build()
-        .addDependentResource(ingressDR).withReconcileCondition(new IngressCondition()).build()
+        .addDependentResource(ingressDR).withReconcileCondition(new ExposedIngressCondition())
+        .build()
         .build();
   }
 
@@ -90,12 +89,6 @@ public class WebPageDependentsWorkflowReconciler
     });
   }
 
-  static class IngressCondition implements Condition<Ingress, WebPage> {
-    @Override
-    public boolean isMet(DependentResource<Ingress, WebPage> dependentResource, WebPage primary,
-        Context<WebPage> context) {
-      return primary.getSpec().getExposed();
-    }
-  }
+
 
 }

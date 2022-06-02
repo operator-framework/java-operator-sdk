@@ -20,7 +20,9 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
     dependents = {
         @Dependent(type = ConfigMapDependentResource.class),
         @Dependent(type = DeploymentDependentResource.class),
-        @Dependent(type = ServiceDependentResource.class)
+        @Dependent(type = ServiceDependentResource.class),
+        @Dependent(type = IngressDependentResource.class,
+            reconcileCondition = ExposedIngressCondition.class)
     })
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
