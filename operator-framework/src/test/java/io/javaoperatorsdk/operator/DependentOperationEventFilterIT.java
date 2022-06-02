@@ -37,7 +37,7 @@ class DependentOperationEventFilterIT {
         .until(
             () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
                 .getFirstReconciler())
-                    .getNumberOfExecutions() == 1);
+                .getNumberOfExecutions() == 1);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_1);
 
@@ -48,7 +48,7 @@ class DependentOperationEventFilterIT {
         .until(
             () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
                 .getFirstReconciler())
-                    .getNumberOfExecutions() == 2);
+                .getNumberOfExecutions() == 2);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_2);
   }

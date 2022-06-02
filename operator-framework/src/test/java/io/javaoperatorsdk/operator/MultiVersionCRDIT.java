@@ -66,7 +66,7 @@ class MultiVersionCRDIT {
         operator
             .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
             .getStatus())
-                .isNull();
+        .isNull();
   }
 
 

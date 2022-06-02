@@ -45,7 +45,7 @@ class ChangeNamespaceIT {
       await().pollDelay(Duration.ofMillis(200)).untilAsserted(
           () -> assertThat(
               reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
-                  .isZero());
+              .isZero());
 
       // adding additional namespace
       RegisteredController registeredController =
@@ -56,7 +56,7 @@ class ChangeNamespaceIT {
       await().untilAsserted(
           () -> assertThat(
               reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
-                  .isEqualTo(2));
+              .isEqualTo(2));
 
       // removing a namespace
       registeredController.changeNamespaces(Set.of(ADDITIONAL_TEST_NAMESPACE));

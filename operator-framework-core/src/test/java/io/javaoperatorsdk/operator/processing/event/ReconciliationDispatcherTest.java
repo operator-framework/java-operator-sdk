@@ -442,7 +442,7 @@ class ReconciliationDispatcherTest {
         executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
-            .isEqualTo(1L);
+        .isEqualTo(1L);
   }
 
   @Test
@@ -462,7 +462,7 @@ class ReconciliationDispatcherTest {
         executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
-            .isEqualTo(1L);
+        .isEqualTo(1L);
   }
 
   @Test
@@ -483,7 +483,7 @@ class ReconciliationDispatcherTest {
         executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
-            .isEqualTo(1L);
+        .isEqualTo(1L);
   }
 
   @Test

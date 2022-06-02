@@ -36,7 +36,8 @@ class KubernetesResourceStatusUpdateIT {
       assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
       assertThat(
           d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
-              .count()).isEqualTo(1);
+              .count())
+          .isEqualTo(1);
     });
   }
 

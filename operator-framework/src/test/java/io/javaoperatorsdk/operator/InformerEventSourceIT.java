@@ -60,7 +60,7 @@ class InformerEventSourceIT {
     waitForCRStatusValue(MISSING_CONFIG_MAP);
     assertThat(((InformerEventSourceTestCustomReconciler) operator.getReconcilers().get(0))
         .getNumberOfExecutions())
-            .isEqualTo(3);
+        .isEqualTo(3);
   }
 
   private ConfigMap relatedConfigMap(String relatedResourceAnnotation) {
