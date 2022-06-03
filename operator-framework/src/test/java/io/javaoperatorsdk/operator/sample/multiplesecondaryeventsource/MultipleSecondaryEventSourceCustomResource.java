@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("MaxIntervalTestCustomResource")
-@ShortNames("mit")
+@Kind("MultipleSecondaryEventSourceCustomResource")
+@ShortNames("mses")
 public class MultipleSecondaryEventSourceCustomResource
     extends CustomResource<Void, MultipleSecondaryEventSourceStatus>
     implements Namespaced {
