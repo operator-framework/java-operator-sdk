@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependen
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class StandaloneDependentResourceIT {
+public class StandaloneDependentResourceIT {
 
   public static final String DEPENDENT_TEST_NAME = "dependent-test1";
 

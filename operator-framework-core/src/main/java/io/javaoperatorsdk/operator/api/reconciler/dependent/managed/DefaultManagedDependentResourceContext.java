@@ -86,7 +86,7 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
   }
 
   @Override
-  public Optional<WorkflowReconcileResult> getWorkflowExecutionResult() {
+  public Optional<WorkflowReconcileResult> getWorkflowReconcileResult() {
     return Optional.ofNullable(workflowReconcileResult);
   }
 

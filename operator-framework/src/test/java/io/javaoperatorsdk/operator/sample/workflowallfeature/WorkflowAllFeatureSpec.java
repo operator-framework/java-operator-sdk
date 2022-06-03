@@ -2,18 +2,14 @@ package io.javaoperatorsdk.operator.sample.workflowallfeature;
 
 public class WorkflowAllFeatureSpec {
 
-  private String inputData;
-  private boolean secretApproved = false;
   private boolean createConfigMap = false;
 
-
-  public String getInputData() {
-    return inputData;
+  public boolean isCreateConfigMap() {
+    return createConfigMap;
   }
 
-  public void setInputData(String inputData) {
-    this.inputData = inputData;
+  public WorkflowAllFeatureSpec setCreateConfigMap(boolean createConfigMap) {
+    this.createConfigMap = createConfigMap;
+    return this;
   }
-
-
 }

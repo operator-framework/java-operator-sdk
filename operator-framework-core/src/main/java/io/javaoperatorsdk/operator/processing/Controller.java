@@ -21,6 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
@@ -119,21 +120,38 @@ public class Controller<P extends HasMetadata>
             @Override
             public DeleteControl execute() {
               initContextIfNeeded(resource, context);
+              WorkflowCleanupResult workflowCleanupResult = null;
               if (managedWorkflow.isCleaner()) {
-                var res = managedWorkflow.cleanup(resource, context);
+                workflowCleanupResult = managedWorkflow.cleanup(resource, context);
                 ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                    .setWorkflowCleanupResult(res);
-                res.throwAggregateExceptionIfErrorsPresent();
+                    .setWorkflowCleanupResult(workflowCleanupResult);
+                workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
               }
               if (isCleaner) {
-                return ((Cleaner<P>) reconciler).cleanup(resource, context);
+                var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);
+                if (!cleanupResult.isRemoveFinalizer()) {
+                  return cleanupResult;
+                } else {
+                  // this means there is no reschedule
+                  return workflowCleanupResultToDefaultDelete(workflowCleanupResult);
+                }
               } else {
-                return DeleteControl.defaultDelete();
+                return workflowCleanupResultToDefaultDelete(workflowCleanupResult);
               }
             }
           });
     } catch (Exception e) {
       throw new OperatorException(e);
+    }
+  }
+
+  private DeleteControl workflowCleanupResultToDefaultDelete(
+      WorkflowCleanupResult workflowCleanupResult) {
+    if (workflowCleanupResult == null) {
+      return DeleteControl.defaultDelete();
+    } else {
+      return workflowCleanupResult.allPostConditionsMet() ? DeleteControl.defaultDelete()
+          : DeleteControl.noFinalizerRemoval();
     }
   }
 

@@ -12,4 +12,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 public class WorkflowAllFeatureCustomResource
     extends CustomResource<WorkflowAllFeatureSpec, WorkflowAllFeatureStatus>
     implements Namespaced {
+
+
+
 }
