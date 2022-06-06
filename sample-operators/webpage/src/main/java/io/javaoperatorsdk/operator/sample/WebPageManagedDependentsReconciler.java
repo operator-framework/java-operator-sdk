@@ -22,7 +22,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
         @Dependent(type = DeploymentDependentResource.class),
         @Dependent(type = ServiceDependentResource.class),
         @Dependent(type = IngressDependentResource.class,
-            reconcileCondition = ExposedIngressCondition.class)
+            reconcilePrecondition = ExposedIngressCondition.class)
     })
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {

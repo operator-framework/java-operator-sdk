@@ -83,7 +83,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return readyCondition;
   }
 
-  public DependentResourceSpec<T, C> setReadyCondition(Condition<?, ?> readyCondition) {
+  public DependentResourceSpec<T, C> setReadyPostcondition(Condition<?, ?> readyCondition) {
     this.readyCondition = readyCondition;
     return this;
   }
@@ -92,7 +92,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return reconcileCondition;
   }
 
-  public DependentResourceSpec<T, C> setReconcileCondition(Condition<?, ?> reconcileCondition) {
+  public DependentResourceSpec<T, C> setReconcilePrecondition(Condition<?, ?> reconcileCondition) {
     this.reconcileCondition = reconcileCondition;
     return this;
   }

@@ -61,7 +61,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionTrivialCase() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1).build()
-        .addDependentResource(dd2).dependsOn(dd1).withDeletePostCondition(noMetDeletePostCondition)
+        .addDependentResource(dd2).dependsOn(dd1).withDeletePostcondition(noMetDeletePostCondition)
         .build()
         .build();
 
@@ -77,7 +77,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionMet() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1).build()
-        .addDependentResource(dd2).dependsOn(dd1).withDeletePostCondition(metDeletePostCondition)
+        .addDependentResource(dd2).dependsOn(dd1).withDeletePostcondition(metDeletePostCondition)
         .build()
         .build();
 
@@ -97,7 +97,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1).build()
         .addDependentResource(dd2).dependsOn(dd1).build()
-        .addDependentResource(dd3).dependsOn(dd1).withDeletePostCondition(noMetDeletePostCondition)
+        .addDependentResource(dd3).dependsOn(dd1).withDeletePostcondition(noMetDeletePostCondition)
         .build()
         .addDependentResource(dd4).dependsOn(dd2, dd3).build()
         .build();

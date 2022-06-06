@@ -94,7 +94,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     public void run() {
       try {
         var dependentResource = dependentResourceNode.getDependentResource();
-        var deletePostCondition = dependentResourceNode.getDeletePostCondition();
+        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {

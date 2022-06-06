@@ -187,14 +187,14 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   private void addConditions(DependentResourceSpec spec, Dependent dependent) {
-    if (dependent.deletePostCondition() != VoidCondition.class) {
-      spec.setDeletePostCondition(instantiateCondition(dependent.deletePostCondition()));
+    if (dependent.deletePostcondition() != VoidCondition.class) {
+      spec.setDeletePostCondition(instantiateCondition(dependent.deletePostcondition()));
     }
-    if (dependent.readyCondition() != VoidCondition.class) {
-      spec.setReadyCondition(instantiateCondition(dependent.readyCondition()));
+    if (dependent.readyPostcondition() != VoidCondition.class) {
+      spec.setReadyPostcondition(instantiateCondition(dependent.readyPostcondition()));
     }
-    if (dependent.reconcileCondition() != VoidCondition.class) {
-      spec.setReconcileCondition(instantiateCondition(dependent.reconcileCondition()));
+    if (dependent.reconcilePrecondition() != VoidCondition.class) {
+      spec.setReconcilePrecondition(instantiateCondition(dependent.reconcilePrecondition()));
     }
   }
 

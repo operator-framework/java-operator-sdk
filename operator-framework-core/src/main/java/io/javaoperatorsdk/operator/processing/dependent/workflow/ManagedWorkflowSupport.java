@@ -41,9 +41,9 @@ class ManagedWorkflowSupport<P extends HasMetadata> {
           w.addDependentResource(dependentResourceByName.get(spec.getName())).dependsOn(
               (Set<DependentResource>) spec.getDependsOn()
                   .stream().map(dependentResourceByName::get).collect(Collectors.toSet()));
-      drBuilder.withDeletePostCondition(spec.getDeletePostCondition())
-          .withReconcileCondition(spec.getReconcileCondition())
-          .withReadyCondition(spec.getReadyCondition());
+      drBuilder.withDeletePostcondition(spec.getDeletePostCondition())
+          .withReconcilePrecondition(spec.getReconcileCondition())
+          .withReadyPostcondition(spec.getReadyCondition());
     });
     return w.build();
   }

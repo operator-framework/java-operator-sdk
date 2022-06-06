@@ -167,8 +167,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
       KubernetesDependentResourceConfig c) {
     var res = new DependentResourceSpec(spec.getDependentResourceClass(),
         c.setNamespaces(namespaces), name);
-    res.setReadyCondition(spec.getReadyCondition());
-    res.setReconcileCondition(spec.getReconcileCondition());
+    res.setReadyPostcondition(spec.getReadyCondition());
+    res.setReconcilePrecondition(spec.getReconcileCondition());
     res.setDeletePostCondition(spec.getDeletePostCondition());
     res.setDependsOn(spec.getDependsOn());
     return res;

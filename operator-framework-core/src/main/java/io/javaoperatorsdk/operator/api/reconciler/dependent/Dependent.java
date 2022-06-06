@@ -12,13 +12,13 @@ public @interface Dependent {
   String name() default NO_VALUE_SET;
 
   @SuppressWarnings("rawtypes")
-  Class<? extends Condition> readyCondition() default VoidCondition.class;
+  Class<? extends Condition> readyPostcondition() default VoidCondition.class;
 
   @SuppressWarnings("rawtypes")
-  Class<? extends Condition> reconcileCondition() default VoidCondition.class;
+  Class<? extends Condition> reconcilePrecondition() default VoidCondition.class;
 
   @SuppressWarnings("rawtypes")
-  Class<? extends Condition> deletePostCondition() default VoidCondition.class;
+  Class<? extends Condition> deletePostcondition() default VoidCondition.class;
 
   String[] dependsOn() default {};
 }

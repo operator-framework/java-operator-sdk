@@ -9,10 +9,10 @@ import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllF
 
 @ControllerConfiguration(dependents = {
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
-        readyCondition = DeploymentReadyCondition.class),
+        readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
-        reconcileCondition = ConfigMapReconcileCondition.class,
-        deletePostCondition = ConfigMapDeletePostCondition.class,
+        reconcilePrecondition = ConfigMapReconcileCondition.class,
+        deletePostcondition = ConfigMapDeletePostCondition.class,
         dependsOn = DEPLOYMENT_NAME)
 })
 public class WorkflowAllFeatureReconciler

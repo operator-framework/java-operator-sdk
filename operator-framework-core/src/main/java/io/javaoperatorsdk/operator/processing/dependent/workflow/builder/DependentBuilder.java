@@ -32,18 +32,18 @@ public class DependentBuilder<P extends HasMetadata> {
     return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
   }
 
-  public DependentBuilder<P> withReconcileCondition(Condition reconcileCondition) {
-    node.setReconcileCondition(reconcileCondition);
+  public DependentBuilder<P> withReconcilePrecondition(Condition reconcilePrecondition) {
+    node.setReconcilePrecondition(reconcilePrecondition);
     return this;
   }
 
-  public DependentBuilder<P> withReadyCondition(Condition readyCondition) {
-    node.setReadyCondition(readyCondition);
+  public DependentBuilder<P> withReadyPostcondition(Condition readyPostcondition) {
+    node.setReadyPostcondition(readyPostcondition);
     return this;
   }
 
-  public DependentBuilder<P> withDeletePostCondition(Condition readyCondition) {
-    node.setDeletePostCondition(readyCondition);
+  public DependentBuilder<P> withDeletePostcondition(Condition deletePostcondition) {
+    node.setDeletePostcondition(deletePostcondition);
     return this;
   }
 
