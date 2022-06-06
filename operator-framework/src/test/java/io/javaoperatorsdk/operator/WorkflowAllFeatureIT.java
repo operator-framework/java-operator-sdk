@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
-import java.util.Map;
+import java.util.HashMap;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -22,47 +21,94 @@ import static org.awaitility.Awaitility.await;
 public class WorkflowAllFeatureIT {
 
   public static final String RESOURCE_NAME = "test";
+  private static final Duration ONE_MINUTE = Duration.ofMinutes(1);
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(WorkflowAllFeatureReconciler.class)
           .build();
 
-  @Disabled
   @Test
   void configMapNotReconciledUntilDeploymentNotReady() {
     operator.create(WorkflowAllFeatureCustomResource.class, customResource(true));
-    await()
-        .pollInterval(Duration.ofMillis(20))
-        .untilAsserted(
-            () -> {
-              assertThat(
-                  operator
-                      .getReconcilerOfType(WorkflowAllFeatureReconciler.class)
-                      .getNumberOfReconciliationExecution())
-                  .isPositive();
-            });
-    assertThat(operator.get(Deployment.class, RESOURCE_NAME)).isNotNull();
-    assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+    await().untilAsserted(
+        () -> {
+          assertThat(operator
+              .getReconcilerOfType(WorkflowAllFeatureReconciler.class)
+              .getNumberOfReconciliationExecution())
+              .isPositive();
+          assertThat(operator.get(Deployment.class, RESOURCE_NAME)).isNotNull();
+          assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+        });
 
-    await().atMost(Duration.ofSeconds(230)).untilAsserted(() -> {
+    await().atMost(ONE_MINUTE).untilAsserted(() -> {
+      assertThat(operator
+          .getReconcilerOfType(WorkflowAllFeatureReconciler.class)
+          .getNumberOfReconciliationExecution())
+          .isGreaterThan(1);
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
+          .getStatus().getReady()).isTrue();
     });
+
     markConfigMapForDelete();
   }
 
-  // @Test
-  void configMapNotReconciledIfReconcileConditionNotMet() {
 
+  @Test
+  void configMapNotReconciledIfReconcileConditionNotMet() {
+    var resource = operator.create(WorkflowAllFeatureCustomResource.class, customResource(false));
+
+    await().atMost(ONE_MINUTE).untilAsserted(() -> {
+      assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
+          .getStatus().getReady()).isTrue();
+    });
+
+    resource.getSpec().setCreateConfigMap(true);
+    operator.replace(WorkflowAllFeatureCustomResource.class, resource);
+
+    await().untilAsserted(() -> {
+      assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
+          .getStatus().getReady()).isTrue();
+    });
   }
 
-  // @Test
-  void configMapNotDeletedUntilNotMarked() {
 
+  @Test
+  void configMapNotDeletedUntilNotMarked() {
+    var resource = operator.create(WorkflowAllFeatureCustomResource.class, customResource(true));
+
+    await().atMost(ONE_MINUTE).untilAsserted(() -> {
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME).getStatus())
+          .isNotNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
+          .getStatus().getReady()).isTrue();
+      assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
+    });
+
+    operator.delete(WorkflowAllFeatureCustomResource.class, resource);
+
+    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
+      assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)).isNotNull();
+    });
+
+    markConfigMapForDelete();
+
+    await().atMost(ONE_MINUTE).untilAsserted(() -> {
+      assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)).isNull();
+    });
   }
 
   private void markConfigMapForDelete() {
     var cm = operator.get(ConfigMap.class, RESOURCE_NAME);
-    cm.getMetadata().setAnnotations(Map.of(READY_TO_DELETE_ANNOTATION, "true"));
+    if (cm.getMetadata().getAnnotations() == null) {
+      cm.getMetadata().setAnnotations(new HashMap<>());
+    }
+    cm.getMetadata().getAnnotations().put(READY_TO_DELETE_ANNOTATION, "true");
     operator.replace(ConfigMap.class, cm);
   }
 

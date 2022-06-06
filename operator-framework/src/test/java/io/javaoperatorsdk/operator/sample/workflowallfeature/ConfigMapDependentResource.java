@@ -3,6 +3,9 @@ package io.javaoperatorsdk.operator.sample.workflowallfeature;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -10,6 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class ConfigMapDependentResource
     extends KubernetesDependentResource<ConfigMap, WorkflowAllFeatureCustomResource>
@@ -18,6 +22,8 @@ public class ConfigMapDependentResource
     Deleter<WorkflowAllFeatureCustomResource> {
 
   public static final String READY_TO_DELETE_ANNOTATION = "ready-to-delete";
+
+  private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
   public ConfigMapDependentResource() {
     super(ConfigMap.class);
@@ -40,6 +46,7 @@ public class ConfigMapDependentResource
       Context<WorkflowAllFeatureCustomResource> context) {
     Optional<ConfigMap> optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
     if (optionalConfigMap.isEmpty()) {
+      log.debug("Config Map not found for primary: {}", ResourceID.fromResource(primary));
       return;
     }
     optionalConfigMap.ifPresent((configMap -> {

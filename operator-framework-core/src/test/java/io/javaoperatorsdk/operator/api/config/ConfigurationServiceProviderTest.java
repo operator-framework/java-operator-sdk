@@ -55,7 +55,8 @@ class ConfigurationServiceProviderTest {
     shouldBePossibleToOverrideConfigOnce();
 
     ConfigurationServiceProvider.reset();
-    assertEquals(ConfigurationServiceProvider.DEFAULT, ConfigurationServiceProvider.getDefault());
+    assertNotEquals(ConfigurationServiceProvider.getDefault(),
+        ConfigurationServiceProvider.createDefault());
 
     shouldBePossibleToOverrideConfigOnce();
   }

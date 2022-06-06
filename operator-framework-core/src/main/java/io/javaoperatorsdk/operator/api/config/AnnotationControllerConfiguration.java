@@ -176,7 +176,6 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         }
         spec = new DependentResourceSpec(dependentType, config, name);
         spec.setDependsOn(Set.of(dependent.dependsOn()));
-        // todo tests
         addConditions(spec, dependent);
         specsMap.put(name, spec);
       }

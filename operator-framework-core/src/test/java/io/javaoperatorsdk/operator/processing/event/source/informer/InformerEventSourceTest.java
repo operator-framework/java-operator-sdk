@@ -58,10 +58,12 @@ class InformerEventSourceTest {
         .thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
+    when(informerConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
     informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
     informerEventSource.setTemporalResourceCache(temporaryResourceCacheMock);
     informerEventSource.setEventHandler(eventHandlerMock);
+
 
     SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
