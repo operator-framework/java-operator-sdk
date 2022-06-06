@@ -3,8 +3,12 @@
 name: Integration & End to End tests
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
     branches: [ main, next ]
   push:
+    paths-ignore:
+      - 'docs/**'
     branches:
       - main
       - next
