@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource;
+package io.javaoperatorsdk.operator.sample.multipledependentresource;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -9,9 +9,13 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("MultipleSecondaryEventSourceCustomResource")
-@ShortNames("mses")
-public class MultipleSecondaryEventSourceCustomResource
-    extends CustomResource<Void, MultipleSecondaryEventSourceStatus>
+@Kind("MultipleDependentResourceCustomResource")
+@ShortNames("mdr")
+public class MultipleDependentResourceCustomResource
+    extends CustomResource<Void, MultipleDependentResourceStatus>
     implements Namespaced {
+
+  public String getConfigMapName(int id) {
+    return "configmap" + id;
+  }
 }
