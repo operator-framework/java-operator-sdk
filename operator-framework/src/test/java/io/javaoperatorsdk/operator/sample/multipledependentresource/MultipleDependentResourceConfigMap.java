@@ -6,12 +6,12 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
 public class MultipleDependentResourceConfigMap
-    extends CRUKubernetesDependentResource<ConfigMap, MultipleDependentResourceCustomResource> {
+    extends CRUDKubernetesDependentResource<ConfigMap, MultipleDependentResourceCustomResource> {
 
   public static final String DATA_KEY = "key";
   private final int value;
