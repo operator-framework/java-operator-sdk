@@ -7,11 +7,13 @@ permalink: /docs/workflows
 
 ## Overview
 
+## Elements of Workflow 
+
 ## Defining Workflows
 
 ## Reconcile 
 
 ## Cleanup
 
-
+## Notes and some Caveats
 
