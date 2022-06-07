@@ -53,6 +53,12 @@ If you want the Operator to be running as a deployment in your cluster, follow t
 
 ### Build
 
+In order to point your docker build to minikube docker registry run:
+
+```
+eval $(minikube docker-env)
+```
+
 You can build the sample using `mvn jib:dockerBuild` this will produce a Docker image you can push to the registry 
 of your choice. The JAR file is built using your local Maven and JDK and then copied into the Docker image.
 
