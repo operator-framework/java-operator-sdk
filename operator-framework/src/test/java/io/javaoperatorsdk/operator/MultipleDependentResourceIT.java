@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceConfigMap;
 import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceCustomResource;
 import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceReconciler;
@@ -20,8 +20,9 @@ class MultipleDependentResourceIT {
 
   public static final String TEST_RESOURCE_NAME = "multipledependentresource-testresource";
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder().withReconciler(MultipleDependentResourceReconciler.class)
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(MultipleDependentResourceReconciler.class)
           .waitForNamespaceDeletion(true)
           .build();
 
