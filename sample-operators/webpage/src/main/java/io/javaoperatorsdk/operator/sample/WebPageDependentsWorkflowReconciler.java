@@ -3,9 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -29,8 +26,6 @@ public class WebPageDependentsWorkflowReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
-  private static final Logger log =
-      LoggerFactory.getLogger(WebPageDependentsWorkflowReconciler.class);
 
   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
   private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
