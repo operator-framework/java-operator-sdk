@@ -12,23 +12,24 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.sample.AbstractExecutionNumberRecordingReconciler;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestReconciler
-    implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
-    TestExecutionInfoProvider,
-    KubernetesClientAware {
+    extends AbstractExecutionNumberRecordingReconciler<TestCustomResource>
+    implements Cleaner<TestCustomResource>, KubernetesClientAware {
 
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
   public static final String FINALIZER_NAME =
       ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
   private KubernetesClient kubernetesClient;
   private volatile boolean updateStatus;
@@ -89,7 +90,7 @@ public class TestReconciler
   @Override
   public UpdateControl<TestCustomResource> reconcile(
       TestCustomResource resource, Context<TestCustomResource> context) {
-    numberOfExecutions.addAndGet(1);
+    recordReconcileExecution();
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
     }
@@ -144,10 +145,6 @@ public class TestReconciler
     Map<String, String> data = new HashMap<>();
     data.put(resource.getSpec().getKey(), resource.getSpec().getValue());
     return data;
-  }
-
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
   }
 
   public int getNumberOfCleanupExecutions() {

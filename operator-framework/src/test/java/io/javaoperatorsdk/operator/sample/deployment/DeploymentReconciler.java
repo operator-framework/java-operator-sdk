@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.deployment;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,25 +10,23 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.sample.AbstractExecutionNumberRecordingReconciler;
 
 @ControllerConfiguration(labelSelector = "test=KubernetesResourceStatusUpdateIT")
 public class DeploymentReconciler
-    implements Reconciler<Deployment>, TestExecutionInfoProvider {
+    extends AbstractExecutionNumberRecordingReconciler<Deployment> {
 
   public static final String STATUS_MESSAGE = "Reconciled by DeploymentReconciler";
 
   private static final Logger log = LoggerFactory.getLogger(DeploymentReconciler.class);
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
   public UpdateControl<Deployment> reconcile(
       Deployment resource, Context<Deployment> context) {
 
     log.info("Reconcile deployment: {}", resource);
-    numberOfExecutions.incrementAndGet();
+    recordReconcileExecution();
     if (resource.getStatus() == null) {
       resource.setStatus(new DeploymentStatus());
     }
@@ -46,11 +43,5 @@ public class DeploymentReconciler
     } else {
       return UpdateControl.noUpdate();
     }
-  }
-
-
-  @Override
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
   }
 }

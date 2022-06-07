@@ -1,27 +1,28 @@
 package io.javaoperatorsdk.operator.sample.errorstatushandler;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.sample.AbstractExecutionNumberRecordingReconciler;
 
 @ControllerConfiguration
 public class ErrorStatusHandlerTestReconciler
-    implements Reconciler<ErrorStatusHandlerTestCustomResource>, TestExecutionInfoProvider,
-    ErrorStatusHandler<ErrorStatusHandlerTestCustomResource> {
+    extends AbstractExecutionNumberRecordingReconciler<ErrorStatusHandlerTestCustomResource>
+    implements ErrorStatusHandler<ErrorStatusHandlerTestCustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(ErrorStatusHandlerTestReconciler.class);
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   public static final String ERROR_STATUS_MESSAGE = "Error Retries Exceeded";
 
   @Override
   public UpdateControl<ErrorStatusHandlerTestCustomResource> reconcile(
       ErrorStatusHandlerTestCustomResource resource,
       Context<ErrorStatusHandlerTestCustomResource> context) {
-    var number = numberOfExecutions.addAndGet(1);
+    var number = recordReconcileExecution();
     var retryAttempt = -1;
     if (context.getRetryInfo().isPresent()) {
       retryAttempt = context.getRetryInfo().get().getAttemptCount();
@@ -37,10 +38,6 @@ public class ErrorStatusHandlerTestReconciler
       status = new ErrorStatusHandlerTestCustomResourceStatus();
       resource.setStatus(status);
     }
-  }
-
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
   }
 
   @Override

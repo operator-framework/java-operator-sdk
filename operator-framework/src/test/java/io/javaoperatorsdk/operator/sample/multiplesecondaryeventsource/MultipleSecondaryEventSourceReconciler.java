@@ -3,32 +3,35 @@ package io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.sample.AbstractExecutionNumberRecordingReconciler;
 
 @ControllerConfiguration
 public class MultipleSecondaryEventSourceReconciler
-    implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleSecondaryEventSourceCustomResource>, KubernetesClientAware {
+    extends AbstractExecutionNumberRecordingReconciler<MultipleSecondaryEventSourceCustomResource>
+    implements EventSourceInitializer<MultipleSecondaryEventSourceCustomResource>,
+    KubernetesClientAware {
 
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private KubernetesClient client;
 
   @Override
   public UpdateControl<MultipleSecondaryEventSourceCustomResource> reconcile(
       MultipleSecondaryEventSourceCustomResource resource,
       Context<MultipleSecondaryEventSourceCustomResource> context) {
-    numberOfExecutions.addAndGet(1);
+    recordReconcileExecution();
 
     if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(getName1(resource)).get() == null) {
@@ -41,7 +44,7 @@ public class MultipleSecondaryEventSourceReconciler
           .createOrReplace(configMap(getName2(resource), resource));
     }
 
-    if (numberOfExecutions.get() >= 3) {
+    if (getNumberOfExecutions() >= 3) {
       if (context.getSecondaryResources(ConfigMap.class).size() != 2) {
         throw new IllegalStateException("There should be 2 related config maps");
       }
@@ -55,10 +58,6 @@ public class MultipleSecondaryEventSourceReconciler
 
   public static String getName2(MultipleSecondaryEventSourceCustomResource resource) {
     return resource.getMetadata().getName() + "2";
-  }
-
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
   }
 
   @Override
@@ -75,8 +74,7 @@ public class MultipleSecondaryEventSourceReconciler
           return Set.of(new ResourceID(name.toString(), s.getMetadata().getNamespace()));
         }).build();
     InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
-        new InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource>(config,
-            context);
+        new InformerEventSource<>(config, context);
     return EventSourceInitializer.nameEventSources(configMapEventSource);
   }
 

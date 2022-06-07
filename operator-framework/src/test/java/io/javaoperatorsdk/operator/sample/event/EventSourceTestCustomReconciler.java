@@ -1,24 +1,21 @@
 package io.javaoperatorsdk.operator.sample.event;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.sample.AbstractExecutionNumberRecordingReconciler;
 
 @ControllerConfiguration
 public class EventSourceTestCustomReconciler
-    implements Reconciler<EventSourceTestCustomResource>,
-    TestExecutionInfoProvider {
+    extends AbstractExecutionNumberRecordingReconciler<EventSourceTestCustomResource> {
 
   public static final int TIMER_PERIOD = 500;
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
   public UpdateControl<EventSourceTestCustomResource> reconcile(
       EventSourceTestCustomResource resource, Context<EventSourceTestCustomResource> context) {
 
-    numberOfExecutions.addAndGet(1);
+    recordReconcileExecution();
     ensureStatusExists(resource);
     resource.getStatus().setState(EventSourceTestCustomResourceStatus.State.SUCCESS);
 
@@ -31,9 +28,5 @@ public class EventSourceTestCustomReconciler
       status = new EventSourceTestCustomResourceStatus();
       resource.setStatus(status);
     }
-  }
-
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
   }
 }

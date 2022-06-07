@@ -7,18 +7,15 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import io.javaoperatorsdk.operator.sample.AbstractExecutionNumberRecordingReconciler;
 
 @ControllerConfiguration
 public class RetryTestCustomReconciler
-    implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
+    extends AbstractExecutionNumberRecordingReconciler<RetryTestCustomResource> {
 
   private static final Logger log =
       LoggerFactory.getLogger(RetryTestCustomReconciler.class);
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-
   private final AtomicInteger numberOfExecutionFails;
 
 
@@ -29,11 +26,11 @@ public class RetryTestCustomReconciler
   @Override
   public UpdateControl<RetryTestCustomResource> reconcile(RetryTestCustomResource resource,
       Context<RetryTestCustomResource> context) {
-    numberOfExecutions.addAndGet(1);
+    recordReconcileExecution();
 
     log.info("Value: " + resource.getSpec().getValue());
 
-    if (numberOfExecutions.get() < numberOfExecutionFails.get() + 1) {
+    if (getNumberOfExecutions() < numberOfExecutionFails.get() + 1) {
       throw new RuntimeException("Testing Retry");
     }
     if (context.getRetryInfo().isEmpty() || context.getRetryInfo().get().isLastAttempt()) {
@@ -52,9 +49,5 @@ public class RetryTestCustomReconciler
       status = new RetryTestCustomResourceStatus();
       resource.setStatus(status);
     }
-  }
-
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
   }
 }
