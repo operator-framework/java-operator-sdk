@@ -17,8 +17,8 @@ public class RuntimeControllerMetadata {
             RECONCILERS_RESOURCE_PATH, Reconciler.class, HasMetadata.class);
   }
 
-  static <R extends HasMetadata> Class<R> getResourceClass(
-      Reconciler<R> reconciler) {
+  @SuppressWarnings("unchecked")
+  static <R extends HasMetadata> Class<R> getResourceClass(Reconciler<R> reconciler) {
     final Class<? extends HasMetadata> resourceClass =
         controllerToCustomResourceMappings.get(reconciler.getClass());
     if (resourceClass == null) {

@@ -34,6 +34,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   protected final Reconciler<R> reconciler;
   private final ControllerConfiguration annotation;
   private List<DependentResourceSpec> specs;
+  private Class<R> resourceClass;
 
   public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
     this.reconciler = reconciler;
@@ -81,7 +82,12 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   @Override
   @SuppressWarnings("unchecked")
   public Class<R> getResourceClass() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromInterface(reconciler.getClass());
+    if (resourceClass == null) {
+      resourceClass =
+          (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(reconciler.getClass(),
+              Reconciler.class);
+    }
+    return resourceClass;
   }
 
   @Override

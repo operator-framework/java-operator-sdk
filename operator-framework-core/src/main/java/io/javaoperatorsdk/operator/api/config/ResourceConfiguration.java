@@ -31,7 +31,8 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   default Class<R> getResourceClass() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromInterface(getClass());
+    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
+        ResourceConfiguration.class);
   }
 
   default Set<String> getNamespaces() {

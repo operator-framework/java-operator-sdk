@@ -5,6 +5,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
 import java.util.function.Function;
@@ -89,13 +90,44 @@ public class Utils {
   }
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
-    Type type = clazz.getGenericSuperclass();
-    return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+    try {
+      Type type = clazz.getGenericSuperclass();
+      return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+    } catch (Exception e) {
+      throw new RuntimeException("Couldn't retrieve generic parameter type from "
+          + clazz.getSimpleName()
+          + " because it doesn't extend a class that is parameterized with the type we want to retrieve",
+          e);
+    }
   }
 
-  public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz) {
-    ParameterizedType type = (ParameterizedType) clazz.getGenericInterfaces()[0];
-    return (Class<?>) type.getActualTypeArguments()[0];
+  public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz,
+      Class<?> expectedImplementedInterface) {
+    return Arrays.stream(clazz.getGenericInterfaces())
+        .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
+            && type instanceof ParameterizedType)
+        .map(ParameterizedType.class::cast)
+        .findFirst()
+        .map(t -> (Class<?>) t.getActualTypeArguments()[0])
+        .orElseThrow(() -> new RuntimeException(
+            "Couldn't retrieve generic parameter type from " + clazz.getSimpleName()
+                + " because it doesn't implement "
+                + expectedImplementedInterface.getSimpleName()
+                + " directly"));
+  }
+
+  public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
+      Class<?> expectedImplementedInterface) {
+    // first check super class if it exists
+    if (!clazz.getSuperclass().equals(Object.class)) {
+      try {
+        return getFirstTypeArgumentFromExtendedClass(clazz);
+      } catch (Exception e) {
+        // try interfaces
+        return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+      }
+    }
+    return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
   }
 
   public static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
