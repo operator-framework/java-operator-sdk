@@ -79,7 +79,8 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return this;
   }
 
-  public Condition<?, ?> getReadyCondition() {
+  @SuppressWarnings("rawtypes")
+  public Condition getReadyCondition() {
     return readyCondition;
   }
 
@@ -88,7 +89,8 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return this;
   }
 
-  public Condition<?, ?> getReconcileCondition() {
+  @SuppressWarnings("rawtypes")
+  public Condition getReconcileCondition() {
     return reconcileCondition;
   }
 
@@ -97,7 +99,8 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return this;
   }
 
-  public Condition<?, ?> getDeletePostCondition() {
+  @SuppressWarnings("rawtypes")
+  public Condition getDeletePostCondition() {
     return deletePostCondition;
   }
 
