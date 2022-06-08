@@ -1,12 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -90,57 +90,70 @@ class ManagedWorkflowSupport {
   }
 
   /**
-   * Throws also exception if there is a cycle in the dependencies.
    *
    * @param dependentResourceSpecs list of specs
    * @return top-bottom ordered resources that can be added safely to workflow
+   * @throws OperatorException if there is a cycle in the dependencies
    *
    */
   public List<DependentResourceSpec> orderAndDetectCycles(
       List<DependentResourceSpec> dependentResourceSpecs) {
 
-    List<DependentResourceSpec> res = new ArrayList<>(dependentResourceSpecs.size());
-    Set<DependentResourceSpec> alreadySelected = new HashSet<>();
-    Map<String, List<DependentResourceSpec>> dependOnIndex =
-        createDependOnIndex(dependentResourceSpecs);
-    Map<String, DependentResourceSpec> nameToDR = dependentResourceSpecs.stream()
-        .collect(Collectors.toMap(DependentResourceSpec::getName, s -> s));
-    Set<DependentResourceSpec> selectedLastIteration =
-        getTopDependentResources(dependentResourceSpecs);
+    final var drInfosByName = createDRInfos(dependentResourceSpecs);
+    final var orderedSpecs = new ArrayList<DependentResourceSpec>(dependentResourceSpecs.size());
+    final var alreadyVisited = new HashSet<String>();
+    var toVisit = getTopDependentResources(dependentResourceSpecs);
 
-    while (!selectedLastIteration.isEmpty()) {
-      res.addAll(selectedLastIteration);
-      alreadySelected.addAll(selectedLastIteration);
-      Set<DependentResourceSpec> newAdds = new HashSet<>();
-      selectedLastIteration.forEach(dr -> {
-        var dependsOn = dependOnIndex.get(dr.getName());
-        if (dependsOn == null)
-          dependsOn = Collections.emptyList();
-        dependsOn.forEach(ndr -> {
-          if (allDependsOnsAlreadySelected(ndr, alreadySelected, nameToDR, dr.getName())) {
-            newAdds.add(ndr);
-          }
-        });
+    while (!toVisit.isEmpty()) {
+      final var toVisitNext = new HashSet<DependentResourceSpec>();
+      toVisit.forEach(dr -> {
+        final var name = dr.getName();
+        var drInfo = drInfosByName.get(name);
+        if (drInfo != null) {
+          drInfo.waitingForCompletion.forEach(spec -> {
+            if (isReadyForVisit(spec, alreadyVisited, name)) {
+              toVisitNext.add(spec);
+            }
+          });
+          orderedSpecs.add(dr);
+        }
+        alreadyVisited.add(name);
       });
-      selectedLastIteration = newAdds;
+
+      toVisit = toVisitNext;
     }
 
-    if (res.size() != dependentResourceSpecs.size()) {
+    if (orderedSpecs.size() != dependentResourceSpecs.size()) {
       // could provide improved message where the exact cycles are made visible
-      throw new OperatorException(
-          "Cycle(s) between dependent resources.");
+      throw new OperatorException("Cycle(s) between dependent resources.");
     }
-    return res;
+    return orderedSpecs;
   }
 
-  private boolean allDependsOnsAlreadySelected(DependentResourceSpec dr,
-      Set<DependentResourceSpec> alreadySelected,
-      Map<String, DependentResourceSpec> nameToDR,
+  private static class DRInfo {
+    private final DependentResourceSpec spec;
+    private final List<DependentResourceSpec> waitingForCompletion;
+
+    private DRInfo(DependentResourceSpec spec) {
+      this.spec = spec;
+      this.waitingForCompletion = new LinkedList<>();
+    }
+
+    void add(DependentResourceSpec spec) {
+      waitingForCompletion.add(spec);
+    }
+
+    String name() {
+      return spec.getName();
+    }
+  }
+
+  private boolean isReadyForVisit(DependentResourceSpec dr, Set<String> alreadyVisited,
       String alreadyPresentName) {
     for (var name : dr.getDependsOn()) {
       if (name.equals(alreadyPresentName))
         continue;
-      if (!alreadySelected.contains(nameToDR.get(name))) {
+      if (!alreadyVisited.contains(name)) {
         return false;
       }
     }
@@ -153,14 +166,19 @@ class ManagedWorkflowSupport {
         .collect(Collectors.toSet());
   }
 
-  private Map<String, List<DependentResourceSpec>> createDependOnIndex(
-      List<DependentResourceSpec> dependentResourceSpecs) {
-    Map<String, List<DependentResourceSpec>> dependsOnSpec = new HashMap<>();
-    dependentResourceSpecs.forEach(dr -> dr.getDependsOn().forEach(name -> {
-      dependsOnSpec.computeIfAbsent((String) name, n -> new ArrayList<>());
-      dependsOnSpec.get(name).add(dr);
+  private Map<String, DRInfo> createDRInfos(List<DependentResourceSpec> dependentResourceSpecs) {
+    // first create mappings
+    final var infos = dependentResourceSpecs.stream()
+        .map(DRInfo::new)
+        .collect(Collectors.toMap(DRInfo::name, Function.identity()));
+
+    // then populate the reverse depends on information
+    dependentResourceSpecs.forEach(spec -> spec.getDependsOn().forEach(name -> {
+      final var drInfo = infos.get(name);
+      drInfo.add(spec);
     }));
-    return dependsOnSpec;
+
+    return infos;
   }
 
 }
