@@ -18,7 +18,7 @@ public class ManagedWorkflow<P extends HasMetadata> {
   private final Workflow<P> workflow;
   private final boolean isCleaner;
   private final boolean isEmptyWorkflow;
-  private final Map<String, DependentResource> dependentResourceByName;
+  private final Map<String, DependentResource> dependentResourcesByName;
 
   public ManagedWorkflow(KubernetesClient client,
       List<DependentResourceSpec> dependentResourceSpecs) {
@@ -29,13 +29,13 @@ public class ManagedWorkflow<P extends HasMetadata> {
       List<DependentResourceSpec> dependentResourceSpecs,
       ManagedWorkflowSupport managedWorkflowSupport) {
     managedWorkflowSupport.checkForNameDuplication(dependentResourceSpecs);
-    dependentResourceByName = dependentResourceSpecs
+    dependentResourcesByName = dependentResourceSpecs
         .stream().collect(Collectors.toMap(DependentResourceSpec::getName,
             spec -> managedWorkflowSupport.createAndConfigureFrom(spec, client)));
 
     isEmptyWorkflow = dependentResourceSpecs.isEmpty();
     workflow =
-        managedWorkflowSupport.createWorkflow(dependentResourceSpecs, dependentResourceByName);
+        managedWorkflowSupport.createWorkflow(dependentResourceSpecs, dependentResourcesByName);
     isCleaner = checkIfCleaner();
   }
 
@@ -64,7 +64,7 @@ public class ManagedWorkflow<P extends HasMetadata> {
     return isEmptyWorkflow;
   }
 
-  public Map<String, DependentResource> getDependentResourceByName() {
-    return dependentResourceByName;
+  public Map<String, DependentResource> getDependentResourcesByName() {
+    return dependentResourcesByName;
   }
 }
