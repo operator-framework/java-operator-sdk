@@ -119,15 +119,27 @@ public class Utils {
   public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
       Class<?> expectedImplementedInterface) {
     // first check super class if it exists
-    if (!clazz.getSuperclass().equals(Object.class)) {
-      try {
-        return getFirstTypeArgumentFromExtendedClass(clazz);
-      } catch (Exception e) {
-        // try interfaces
-        return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+    try {
+      final Class<?> superclass = clazz.getSuperclass();
+      if (!superclass.equals(Object.class)) {
+        try {
+          return getFirstTypeArgumentFromExtendedClass(clazz);
+        } catch (Exception e) {
+          // try interfaces
+          try {
+            return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+          } catch (Exception ex) {
+            // try on the parent
+            return getFirstTypeArgumentFromSuperClassOrInterface(superclass,
+                expectedImplementedInterface);
+          }
+        }
       }
+      return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Couldn't retrieve generic parameter type from " + clazz.getSimpleName(), e);
     }
-    return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
   }
 
   public static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
