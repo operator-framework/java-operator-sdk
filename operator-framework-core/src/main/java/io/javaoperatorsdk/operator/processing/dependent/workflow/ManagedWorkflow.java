@@ -22,12 +22,12 @@ public class ManagedWorkflow<P extends HasMetadata> {
 
   public ManagedWorkflow(KubernetesClient client,
       List<DependentResourceSpec> dependentResourceSpecs) {
-    this(client, dependentResourceSpecs, new ManagedWorkflowSupport<>());
+    this(client, dependentResourceSpecs, ManagedWorkflowSupport.instance());
   }
 
   ManagedWorkflow(KubernetesClient client,
       List<DependentResourceSpec> dependentResourceSpecs,
-      ManagedWorkflowSupport<P> managedWorkflowSupport) {
+      ManagedWorkflowSupport managedWorkflowSupport) {
     managedWorkflowSupport.checkForNameDuplication(dependentResourceSpecs);
     dependentResourceByName = dependentResourceSpecs
         .stream().collect(Collectors.toMap(DependentResourceSpec::getName,

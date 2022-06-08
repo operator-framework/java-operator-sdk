@@ -17,7 +17,6 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedW
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@SuppressWarnings("rawtypes")
 class ManagedWorkflowSupportTest {
 
   public static final String NAME_1 = "name1";
@@ -25,7 +24,7 @@ class ManagedWorkflowSupportTest {
   public static final String NAME_3 = "name3";
   public static final String NAME_4 = "name4";
 
-  ManagedWorkflowSupport<?> managedWorkflowSupport = new ManagedWorkflowSupport();
+  ManagedWorkflowSupport managedWorkflowSupport = ManagedWorkflowSupport.instance();
 
   @Test
   void trivialCasesNameDuplicates() {

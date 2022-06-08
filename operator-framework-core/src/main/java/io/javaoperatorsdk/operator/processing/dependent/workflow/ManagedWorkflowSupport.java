@@ -1,6 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -14,7 +20,15 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesCl
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-class ManagedWorkflowSupport<P extends HasMetadata> {
+class ManagedWorkflowSupport {
+
+  private final static ManagedWorkflowSupport instance = new ManagedWorkflowSupport();
+
+  static ManagedWorkflowSupport instance() {
+    return instance;
+  }
+
+  private ManagedWorkflowSupport() {}
 
   public void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
     if (dependentResourceSpecs.size() <= 1) {
@@ -31,7 +45,8 @@ class ManagedWorkflowSupport<P extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public Workflow<P> createWorkflow(List<DependentResourceSpec> dependentResourceSpecs,
+  public <P extends HasMetadata> Workflow<P> createWorkflow(
+      List<DependentResourceSpec> dependentResourceSpecs,
       Map<String, DependentResource> dependentResourceByName) {
     var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs);
     var w = new WorkflowBuilder<P>();
