@@ -1,23 +1,19 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 @SuppressWarnings("rawtypes")
 public class ManagedWorkflowTestUtils {
 
+  @SuppressWarnings("unchecked")
   public static DependentResourceSpec createDRS(String name, String... dependOns) {
-    var drcMock = mock(DependentResourceSpec.class);
-    when(drcMock.getDependentResourceClass()).thenReturn(EmptyTestDependentResource.class);
-    when(drcMock.getName()).thenReturn(name);
-    when(drcMock.getDependsOn()).thenReturn(new HashSet(Arrays.asList(dependOns)));
-    return drcMock;
+    final var spec = new DependentResourceSpec(EmptyTestDependentResource.class,
+        null, name);
+    spec.setDependsOn(Set.of(dependOns));
+    return spec;
   }
 
 }
