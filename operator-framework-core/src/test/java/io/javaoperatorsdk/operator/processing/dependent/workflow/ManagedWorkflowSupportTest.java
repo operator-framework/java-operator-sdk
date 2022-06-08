@@ -28,6 +28,7 @@ class ManagedWorkflowSupportTest {
 
   @Test
   void trivialCasesNameDuplicates() {
+    managedWorkflowSupport.checkForNameDuplication(null);
     managedWorkflowSupport.checkForNameDuplication(Collections.emptyList());
     managedWorkflowSupport.checkForNameDuplication(List.of(createDRS(NAME_1)));
     managedWorkflowSupport.checkForNameDuplication(List.of(createDRS(NAME_1), createDRS(NAME_2)));
@@ -35,13 +36,20 @@ class ManagedWorkflowSupportTest {
 
   @Test
   void checkFindsDuplicates() {
+    final var drs2 = createDRS(NAME_2);
+    final var drs1 = createDRS(NAME_1);
+
     Assertions.assertThrows(OperatorException.class, () -> managedWorkflowSupport
-        .checkForNameDuplication(List.of(createDRS(NAME_2), createDRS(NAME_2))));
+        .checkForNameDuplication(List.of(drs2, drs2)));
 
     Assertions.assertThrows(OperatorException.class,
-        () -> managedWorkflowSupport.checkForNameDuplication(List.of(createDRS(NAME_1),
-            createDRS(NAME_2),
-            createDRS(NAME_2))));
+        () -> managedWorkflowSupport.checkForNameDuplication(
+            List.of(drs1, drs2, drs2)));
+
+    final var exception = Assertions.assertThrows(OperatorException.class,
+        () -> managedWorkflowSupport.checkForNameDuplication(
+            List.of(drs1, drs2, drs2, drs1)));
+    assertThat(exception.getMessage()).contains(NAME_1, NAME_2);
   }
 
   @Test

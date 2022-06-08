@@ -31,16 +31,24 @@ class ManagedWorkflowSupport {
   private ManagedWorkflowSupport() {}
 
   public void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
-    if (dependentResourceSpecs.size() <= 1) {
+    if (dependentResourceSpecs == null) {
       return;
     }
-    var nameList =
-        dependentResourceSpecs.stream().map(DependentResourceSpec::getName)
-            .sorted().collect(Collectors.toList());
-    for (int i = 0; i < nameList.size() - 1; i++) {
-      if (nameList.get(i).equals(nameList.get(i + 1))) {
-        throw new OperatorException("Duplicate dependent resource name:" + nameList.get(i));
+    final var size = dependentResourceSpecs.size();
+    if (size == 0) {
+      return;
+    }
+
+    final var uniqueNames = new HashSet<>(size);
+    final var duplicatedNames = new HashSet<>(size);
+    dependentResourceSpecs.forEach(spec -> {
+      final var name = spec.getName();
+      if (!uniqueNames.add(name)) {
+        duplicatedNames.add(name);
       }
+    });
+    if (!duplicatedNames.isEmpty()) {
+      throw new OperatorException("Duplicated dependent resource name(s): " + duplicatedNames);
     }
   }
 
