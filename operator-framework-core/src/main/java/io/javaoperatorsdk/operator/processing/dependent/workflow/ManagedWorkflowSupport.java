@@ -49,18 +49,19 @@ class ManagedWorkflowSupport {
       List<DependentResourceSpec> dependentResourceSpecs,
       Map<String, DependentResource> dependentResourceByName) {
     var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs);
-    var w = new WorkflowBuilder<P>();
-    w.withThrowExceptionFurther(false);
+    var workflowBuilder = new WorkflowBuilder<P>().withThrowExceptionFurther(false);
     orderedResourceSpecs.forEach(spec -> {
-      var drBuilder =
-          w.addDependentResource(dependentResourceByName.get(spec.getName())).dependsOn(
-              (Set<DependentResource>) spec.getDependsOn()
-                  .stream().map(dependentResourceByName::get).collect(Collectors.toSet()));
-      drBuilder.withDeletePostcondition(spec.getDeletePostCondition())
+      final var dependentResource = dependentResourceByName.get(spec.getName());
+      final var dependsOn = (Set<DependentResource>) spec.getDependsOn()
+          .stream().map(dependentResourceByName::get).collect(Collectors.toSet());
+      workflowBuilder
+          .addDependentResource(dependentResource)
+          .dependsOn(dependsOn)
+          .withDeletePostcondition(spec.getDeletePostCondition())
           .withReconcilePrecondition(spec.getReconcileCondition())
           .withReadyPostcondition(spec.getReadyCondition());
     });
-    return w.build();
+    return workflowBuilder.build();
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
