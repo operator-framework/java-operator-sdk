@@ -14,7 +14,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class ManagedWorkflowTest {
@@ -56,7 +58,8 @@ class ManagedWorkflowTest {
   }
 
   ManagedWorkflow managedWorkflow(DependentResourceSpec... specs) {
-    return new ManagedWorkflow(kubernetesClientMock, List.of(specs), managedWorkflowSupportMock);
+    return new DefaultManagedWorkflow(kubernetesClientMock, List.of(specs),
+        managedWorkflowSupportMock);
   }
 
 }

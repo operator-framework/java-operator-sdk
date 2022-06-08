@@ -67,7 +67,7 @@ public class Controller<P extends HasMetadata>
     eventSourceManager = new EventSourceManager<>(this);
     isCleaner = reconciler instanceof Cleaner;
     managedWorkflow =
-        new ManagedWorkflow<>(kubernetesClient, configuration.getDependentResources());
+        ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
   }
 
   @Override
