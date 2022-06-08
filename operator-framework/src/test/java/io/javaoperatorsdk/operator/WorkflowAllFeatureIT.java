@@ -29,7 +29,7 @@ public class WorkflowAllFeatureIT {
           .build();
 
   @Test
-  void configMapNotReconciledUntilDeploymentNotReady() {
+  void configMapNotReconciledUntilDeploymentReady() {
     operator.create(WorkflowAllFeatureCustomResource.class, customResource(true));
     await().untilAsserted(
         () -> {
