@@ -55,7 +55,15 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return Optional.of(Duration.ofHours(10L));
   }
 
+  @SuppressWarnings("unused")
   default ConfigurationService getConfigurationService() {
     return ConfigurationServiceProvider.instance();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  default Class<R> getResourceClass() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
+        ControllerConfiguration.class);
   }
 }

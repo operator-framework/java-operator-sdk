@@ -6,6 +6,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -160,4 +161,10 @@ public interface InformerConfiguration<R extends HasMetadata>
         .withNamespacesInheritedFromController(eventSourceContext);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  default Class<R> getResourceClass() {
+    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
+        InformerConfiguration.class);
+  }
 }

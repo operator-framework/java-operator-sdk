@@ -4,8 +4,12 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -84,8 +88,26 @@ class UtilsTest {
 
   @Test
   void getsFirstTypeArgumentFromInterface() {
-    assertThat(Utils.getFirstTypeArgumentFromInterface(TestDependentResource.class))
+    assertThat(Utils.getFirstTypeArgumentFromInterface(TestDependentResource.class,
+        DependentResource.class))
         .isEqualTo(Deployment.class);
+  }
+
+  @Test
+  void getsFirstTypeArgumentFromInterfaceFromParent() {
+    assertThat(Utils.getFirstTypeArgumentFromSuperClassOrInterface(ConcreteReconciler.class,
+        Reconciler.class)).isEqualTo(ConfigMap.class);
+  }
+
+  public abstract static class AbstractReconciler<P extends HasMetadata> implements Reconciler<P> {
+  }
+
+  public static class ConcreteReconciler extends AbstractReconciler<ConfigMap> {
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return null;
+    }
   }
 
   public static class TestDependentResource

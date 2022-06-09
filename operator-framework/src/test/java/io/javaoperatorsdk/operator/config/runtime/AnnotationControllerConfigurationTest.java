@@ -81,16 +81,15 @@ class AnnotationControllerConfigurationTest {
 
   @Test
   void missingAnnotationThrowsException() {
-    Assertions.assertThrows(OperatorException.class, () -> {
-      new AnnotationControllerConfiguration<>(new MissingAnnotationReconciler());
-    });
+    Assertions.assertThrows(OperatorException.class,
+        () -> new AnnotationControllerConfiguration<>(new MissingAnnotationReconciler()));
   }
 
   @SuppressWarnings("rawtypes")
   private DependentResourceSpec findByName(
       List<DependentResourceSpec> dependentResourceSpecList, String name) {
     return dependentResourceSpecList.stream().filter(d -> d.getName().equals(name)).findFirst()
-        .get();
+        .orElseThrow();
   }
 
   @SuppressWarnings("rawtypes")

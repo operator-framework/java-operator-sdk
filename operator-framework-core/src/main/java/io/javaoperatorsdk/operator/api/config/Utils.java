@@ -5,12 +5,14 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.operator.OperatorException;
 
 public class Utils {
 
@@ -59,6 +61,8 @@ public class Utils {
         builtTime);
   }
 
+  @SuppressWarnings("unused")
+  // this is used in the Quarkus extension
   public static boolean isValidateCustomResourcesEnvVarSet() {
     return System.getProperty(CHECK_CRD_ENV_KEY) != null;
   }
@@ -89,16 +93,55 @@ public class Utils {
   }
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
-    Type type = clazz.getGenericSuperclass();
-    return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+    try {
+      Type type = clazz.getGenericSuperclass();
+      return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+    } catch (Exception e) {
+      throw new RuntimeException("Couldn't retrieve generic parameter type from "
+          + clazz.getSimpleName()
+          + " because it doesn't extend a class that is parameterized with the type we want to retrieve",
+          e);
+    }
   }
 
-  public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz) {
-    ParameterizedType type = (ParameterizedType) clazz.getGenericInterfaces()[0];
-    return (Class<?>) type.getActualTypeArguments()[0];
+  public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz,
+      Class<?> expectedImplementedInterface) {
+    return Arrays.stream(clazz.getGenericInterfaces())
+        .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
+            && type instanceof ParameterizedType)
+        .map(ParameterizedType.class::cast)
+        .findFirst()
+        .map(t -> (Class<?>) t.getActualTypeArguments()[0])
+        .orElseThrow(() -> new RuntimeException(
+            "Couldn't retrieve generic parameter type from " + clazz.getSimpleName()
+                + " because it doesn't implement "
+                + expectedImplementedInterface.getSimpleName()
+                + " directly"));
   }
 
-  public static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
-    return annotation == null ? defaultValue : mapper.apply(annotation);
+  public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
+      Class<?> expectedImplementedInterface) {
+    // first check super class if it exists
+    try {
+      final Class<?> superclass = clazz.getSuperclass();
+      if (!superclass.equals(Object.class)) {
+        try {
+          return getFirstTypeArgumentFromExtendedClass(clazz);
+        } catch (Exception e) {
+          // try interfaces
+          try {
+            return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+          } catch (Exception ex) {
+            // try on the parent
+            return getFirstTypeArgumentFromSuperClassOrInterface(superclass,
+                expectedImplementedInterface);
+          }
+        }
+      }
+      return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+    } catch (Exception e) {
+      throw new OperatorException(
+          "Couldn't retrieve generic parameter type from " + clazz.getSimpleName(), e);
+    }
   }
 }
