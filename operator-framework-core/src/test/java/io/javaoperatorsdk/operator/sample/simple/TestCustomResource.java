@@ -14,9 +14,4 @@ public class TestCustomResource
     return new TestCustomResourceSpec();
   }
 
-  @Override
-  protected TestCustomResourceStatus initStatus() {
-    return new TestCustomResourceStatus();
-  }
-
 }
