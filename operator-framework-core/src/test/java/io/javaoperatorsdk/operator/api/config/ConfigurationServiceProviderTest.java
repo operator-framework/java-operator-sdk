@@ -55,6 +55,7 @@ class ConfigurationServiceProviderTest {
     shouldBePossibleToOverrideConfigOnce();
 
     ConfigurationServiceProvider.reset();
+    // makes sure createDefault creates a new instance
     assertNotEquals(ConfigurationServiceProvider.getDefault(),
         ConfigurationServiceProvider.createDefault());
 
