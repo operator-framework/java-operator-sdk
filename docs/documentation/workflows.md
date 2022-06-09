@@ -241,7 +241,6 @@ does not implement `Deleter` interface, it is considered as deleted automaticall
 
 ### Sample
 
-
 <div class="mermaid" markdown="0"> 
 
 stateDiagram-v2
@@ -260,12 +259,16 @@ stateDiagram-v2
 
 ## Error Handling
 
+As mentioned before if an error happens during a reconciliation, the reconciliation of other dependent resources will
+still happen. There might a case that multiple DRs are errored, therefore workflows throws an
+['AggregatedOperatorException'](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/AggregatedOperatorException.java) 
+that will contain all the related exceptions. 
 
+The exceptions can be handled by [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/AggregatedOperatorException.java)
 
-## Notes
+## Notes and Caveats
+ 
+- If a resource has owner references, it will be automatically deleted by Kubernetes garbage collector if 
+  the owner resource is marked for deletion. This might not be desirable, to make sure that delete is handled by the
+  workflow don't use garbage collected kubernetes dependent resource, use for example [`CRUDNoGCKubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/CRUDNoGCKubernetesDependentResource.java).
 
-- Workflows can be seen as a Directed Acyclic Graph (DAG) - or more precisely a set of DAGs - where nodes are the 
-dependent resources and edges are the dependencies.  
-
-[//]: # (ready vs precondition)
-[//]: # (issue with garbage collection)
