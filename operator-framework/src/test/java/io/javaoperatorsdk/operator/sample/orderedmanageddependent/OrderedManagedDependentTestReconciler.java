@@ -16,8 +16,8 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration(
     namespaces = Constants.WATCH_CURRENT_NAMESPACE,
     dependents = {
-        @Dependent(type = ConfigMapDependentResource1.class),
-        @Dependent(type = ConfigMapDependentResource2.class)
+        @Dependent(type = ConfigMapDependentResource1.class, name = "cm1"),
+        @Dependent(type = ConfigMapDependentResource2.class, dependsOn = "cm1")
     })
 public class OrderedManagedDependentTestReconciler
     implements Reconciler<OrderedManagedDependentCustomResource>,

@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -88,8 +89,9 @@ class UtilsTest {
 
   @Test
   void getsFirstTypeArgumentFromInterface() {
-    assertThat(Utils.getFirstTypeArgumentFromInterface(TestDependentResource.class,
-        DependentResource.class))
+    assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class))
+//    assertThat(Utils.getFirstTypeArgumentFromInterface(TestDependentResource.class,
+//        DependentResource.class))
         .isEqualTo(Deployment.class);
   }
 
