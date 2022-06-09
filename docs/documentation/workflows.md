@@ -22,12 +22,14 @@ Workflows are defined as a set of [dependent resources](https://javaoperatorsdk.
 and dependencies between them, along with some conditions that mainly helps define optional resources and 
 pre- and post-conditions to describe expected states of a resource at a certain point in the workflow.    
 
+When or after a workflow executed no state is persisted regarding the workflow execution. On every reconciliation
+all the resources are reconciled again, in other words the whole workflow is evaluated again.
 
 ## Elements of Workflow 
 
-- **Dependent resource** (DR) - are the resources which are reconciled.
+- **Dependent resource** (DR) - are the resources which are managed in reconcile logic.
 - **Depends-on relation** - if a DR B depends on another DR A, means that B will be reconciled after A is successfully 
-  reconciled - and ready if readyPostCondition is used. 
+  reconciled and ready if readyPostCondition is used. 
 - **Reconcile precondition** - is a condition that needs to be fulfilled before the DR is reconciled. This allows also
   to define optional resources, that for example only created if a flag in a custom resource `.spec` has some 
   specific value.
@@ -168,8 +170,8 @@ This section describes how a workflow is executed, first the rules are defined, 
 ### Rules
 
   1. DR is reconciled if it does not depend on another DR, or ALL the DRs it depends on are ready. In case it
-     has a reconcile-precondition that must met too. (Ready means that it is successfully reconciled - without any error - and 
-     if it has a ready condition that is met).
+     has a reconcile-precondition that must be met too. (So her ready means that it is successfully reconciled - without
+     any error - and if it has a ready condition that is met).
   2. If a reconcile-precondition of a DR is not met, it is deleted. If there are dependent resources which depends on it   
      are deleted first too - this applies recursively. That means that DRs are always deleted in revers order compared    
      how are reconciled.
@@ -182,11 +184,83 @@ This section describes how a workflow is executed, first the rules are defined, 
   
 ### Samples
 
+Notation: The arrows depicts reconciliation ordering, or in depends-on relation in reverse direction: 
+`1 --> 2` mean `DR 2` depends-on `DR 1`.   
 
+#### Reconcile Sample
+
+<div class="mermaid" markdown="0"> 
+
+stateDiagram-v2
+1 --> 2
+1 --> 3
+2 --> 4
+3 --> 4
+
+</div>
+
+- At the workflow the reconciliation of the nodes would happen in the following way. DR with index `1` is reconciled.
+  After DR `2` and `3` is reconciled concurrently, if both finished reconciling, node `4` is reconciled. 
+- In case for example `2` would have a ready condition, that would be evaluated as "not met", `4` would not be reconciled.
+  However `1`,`2` and `3` would be reconciled. 
+- In case `1` would have a ready condition that is not met, neither `2`,`3` or `4` would be reconciled.
+- If there would be an error during the reconciliation of `2`, `4` would not be reconciled, but `3` would be 
+  (also `1` of course).
+
+#### Sample with Reconcile Precondition
+
+<div class="mermaid" markdown="0"> 
+
+stateDiagram-v2
+1 --> 2
+1 --> 3
+3 --> 4
+3 --> 5
+
+</div>
+
+- Considering this sample for case `3` has reconcile-precondition, what is not met. In that case DR `1` and `2` would be
+  reconciled. However, DR `3`,`4`,`5` would be deleted in the following way. DR `4` and `5` would be deleted concurrently.
+  DR `3` would be deleted if `4` and `5` is deleted successfully, thus no error happened during deletion and all 
+  delete-postconditions are met. 
+  - If delete-postcondition for `5` would not be met `3` would not be deleted; `4` would be.
+  - Similarly, in there would be an error for `5`, `3` would not be deleted, `4` would be. 
 
 ## Cleanup
 
+Cleanup works identically as delete for resources in reconciliation in case reconcile-precondition is not met, just for
+the whole workflow.
+
+The rule is relatively simple:
+
+Delete is called on a DR if there is no DR that depends on it, or if the DR-s which depends on it are
+successfully already deleted. Successfully deleted means, that it is deleted and if a delete-postcondition is present 
+it is met. "Delete is called" means, that the dependent resource is checked if it implements `Deleter` interface,
+if implements it but do not implement `GarbageCollected` interface, the `Deleter.delete` method called. If a DR   
+does not implement `Deleter` interface, it is considered as deleted automatically. 
+
+### Sample
+
+
+<div class="mermaid" markdown="0"> 
+
+stateDiagram-v2
+1 --> 2
+1 --> 3
+2 --> 4
+3 --> 4
+
+</div>
+
+- The DRs are deleted in the following order: `4` is deleted, after `2` and `3` are deleted concurrently, after both
+  succeeded `1` is deleted.
+- If delete-postcondition would not be met for `2`, node `1` would not be deleted. DR `4` and `3` would be deleted.
+- If `2` would be errored, DR `1` would not be deleted. DR `4` and `3` would be deleted.
+- if `4` would be errored, no other DR would be deleted.
+
 ## Error Handling
+
+
 
 ## Notes
 
