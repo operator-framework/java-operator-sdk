@@ -22,14 +22,10 @@ Workflows are defined as a set of [dependent resources](https://javaoperatorsdk.
 and dependencies between them, along with some conditions that mainly helps define optional resources and 
 pre- and post-conditions to describe expected states of a resource at a certain point in the workflow.    
 
-When or after a workflow executed no state is persisted regarding the workflow execution. On every reconciliation
-all the resources are reconciled again, in other words the whole workflow is evaluated again.
-
 ## Elements of Workflow 
 
 - **Dependent resource** (DR) - are the resources which are managed in reconcile logic.
-- **Depends-on relation** - if a DR B depends on another DR A, means that B will be reconciled after A is successfully 
-  reconciled and ready if readyPostCondition is used. 
+- **Depends-on relation** - if a DR `B` depends on another DR `A`, means that `B` will be reconciled after `A`.
 - **Reconcile precondition** - is a condition that needs to be fulfilled before the DR is reconciled. This allows also
   to define optional resources, that for example only created if a flag in a custom resource `.spec` has some 
   specific value.
@@ -40,7 +36,7 @@ all the resources are reconciled again, in other words the whole workflow is eva
 
 ## Defining Workflows
 
-Similarly to dependent resources, there are two ways to define workflows, in managed and standalone way.
+Similarly to dependent resources, there are two ways to define workflows, in managed and standalone manner.
 
 ### Managed
 
@@ -49,7 +45,7 @@ before the `reconcile` method is called. The result of the reconciliation is acc
 
 Following sample shows a hypothetical sample, where there are two resources a Deployment and a ConfigMap, where 
 the ConfigMap depends on the deployment. Deployment has a ready condition so, the config map is only reconciled after
-the Deployment and only if that is ready (see ready postcondition). The ConfigMap has a reconcile precondition, there
+the Deployment and only if that is ready (see ready postcondition). The ConfigMap reconcile precondition, there
 only reconciled if that condition holds. In addition to that contains a delete postCondition, do only considered to be
 deleted if that condition holds.
 
@@ -271,4 +267,6 @@ The exceptions can be handled by [`ErrorStatusHandler`](https://github.com/java-
 - If a resource has owner references, it will be automatically deleted by Kubernetes garbage collector if 
   the owner resource is marked for deletion. This might not be desirable, to make sure that delete is handled by the
   workflow don't use garbage collected kubernetes dependent resource, use for example [`CRUDNoGCKubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/CRUDNoGCKubernetesDependentResource.java).
+- After a workflow executed no state is persisted regarding the workflow execution. On every reconciliation
+  all the resources are reconciled again, in other words the whole workflow is evaluated again.
 
