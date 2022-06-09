@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -11,7 +9,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -110,7 +107,7 @@ class UtilsTest {
       return null;
     }
   }
-  
+
   public static class TestKubernetesDependentResource
       extends KubernetesDependentResource<Deployment, TestCustomResource> {
 
