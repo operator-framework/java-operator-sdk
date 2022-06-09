@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 
@@ -15,14 +16,14 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
-  private final ManagedDependentResourceContext managedDependentResourceContext;
+  private final DefaultManagedDependentResourceContext defaultManagedDependentResourceContext;
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
-    this.managedDependentResourceContext = new ManagedDependentResourceContext();
+    this.defaultManagedDependentResourceContext = new DefaultManagedDependentResourceContext();
   }
 
   @Override
@@ -52,8 +53,9 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return controllerConfiguration;
   }
 
+  @Override
   public ManagedDependentResourceContext managedDependentResourceContext() {
-    return managedDependentResourceContext;
+    return defaultManagedDependentResourceContext;
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {

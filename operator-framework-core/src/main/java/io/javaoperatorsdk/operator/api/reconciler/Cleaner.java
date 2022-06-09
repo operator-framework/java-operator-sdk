@@ -5,7 +5,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 public interface Cleaner<P extends HasMetadata> {
 
   /**
-   * Note that this method turns on automatic finalizer usage.
+   * This method turns on automatic finalizer usage.
    *
    * The implementation should delete the associated component(s). This method is called when an
    * object is marked for deletion. After it's executed the custom resource finalizer is
