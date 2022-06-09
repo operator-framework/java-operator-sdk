@@ -99,13 +99,9 @@ class UtilsTest {
         Reconciler.class)).isEqualTo(ConfigMap.class);
   }
 
-  public abstract static class AbstractReconciler<P extends HasMetadata> implements Reconciler<P> {
-
-
-  }
+  public abstract static class AbstractReconciler<P extends HasMetadata> implements Reconciler<P> {}
 
   public static class ConcreteReconciler extends AbstractReconciler<ConfigMap> {
-
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
         throws Exception {
