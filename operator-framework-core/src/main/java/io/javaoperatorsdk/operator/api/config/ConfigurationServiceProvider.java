@@ -7,10 +7,8 @@ import java.util.function.Consumer;
  * to the ConfigurationService is via the reconciliation context.
  */
 public class ConfigurationServiceProvider {
-  static final ConfigurationService DEFAULT =
-      new BaseConfigurationService(Utils.loadFromProperties());
   private static ConfigurationService instance;
-  private static ConfigurationService defaultConfigurationService = DEFAULT;
+  private static ConfigurationService defaultConfigurationService = createDefault();
   private static boolean alreadyConfigured = false;
 
   private ConfigurationServiceProvider() {}
@@ -64,8 +62,12 @@ public class ConfigurationServiceProvider {
   }
 
   public synchronized static void reset() {
-    defaultConfigurationService = DEFAULT;
+    defaultConfigurationService = createDefault();
     instance = null;
     alreadyConfigured = false;
+  }
+
+  static ConfigurationService createDefault() {
+    return new BaseConfigurationService(Utils.loadFromProperties());
   }
 }

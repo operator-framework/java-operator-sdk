@@ -61,9 +61,18 @@ public class ResourceID implements Serializable {
 
   @Override
   public String toString() {
+    return toString(name, namespace);
+  }
+
+  public static String toString(HasMetadata resource) {
+    return toString(resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+  }
+
+  private static String toString(String name, String namespace) {
     return "ResourceID{" +
         "name='" + name + '\'' +
         ", namespace='" + namespace + '\'' +
         '}';
   }
+
 }
