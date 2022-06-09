@@ -110,28 +110,7 @@ class UtilsTest {
       return null;
     }
   }
-
-  public static class TestDependentResource
-      implements DependentResource<Deployment, TestCustomResource> {
-
-    @Override
-    public ReconcileResult<Deployment> reconcile(TestCustomResource primary,
-        Context<TestCustomResource> context) {
-      return null;
-    }
-
-    @Override
-    public Optional<Deployment> getSecondaryResource(TestCustomResource primaryResource) {
-      return Optional.empty();
-    }
-
-    @Override
-    public Class<Deployment> resourceType() {
-      return Deployment.class;
-    }
-
-  }
-
+  
   public static class TestKubernetesDependentResource
       extends KubernetesDependentResource<Deployment, TestCustomResource> {
 
