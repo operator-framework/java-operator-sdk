@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow.builder;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -16,7 +20,7 @@ public class DependentBuilder<P extends HasMetadata> {
     this.node = node;
   }
 
-  public DependentBuilder<P> dependsOn(DependentResource... dependentResources) {
+  public DependentBuilder<P> dependsOn(Set<DependentResource> dependentResources) {
     for (var dependentResource : dependentResources) {
       var dependsOn = workflowBuilder.getNodeByDependentResource(dependentResource);
       node.addDependsOnRelation(dependsOn);
@@ -24,18 +28,25 @@ public class DependentBuilder<P extends HasMetadata> {
     return this;
   }
 
-  public DependentBuilder<P> withReconcileCondition(Condition reconcileCondition) {
-    node.setReconcileCondition(reconcileCondition);
+  public DependentBuilder<P> dependsOn(DependentResource... dependentResources) {
+    if (dependentResources != null) {
+      return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
+    }
     return this;
   }
 
-  public DependentBuilder<P> withReadyCondition(Condition readyCondition) {
-    node.setReadyCondition(readyCondition);
+  public DependentBuilder<P> withReconcilePrecondition(Condition reconcilePrecondition) {
+    node.setReconcilePrecondition(reconcilePrecondition);
     return this;
   }
 
-  public DependentBuilder<P> withDeletePostCondition(Condition readyCondition) {
-    node.setDeletePostCondition(readyCondition);
+  public DependentBuilder<P> withReadyPostcondition(Condition readyPostcondition) {
+    node.setReadyPostcondition(readyPostcondition);
+    return this;
+  }
+
+  public DependentBuilder<P> withDeletePostcondition(Condition deletePostcondition) {
+    node.setDeletePostcondition(deletePostcondition);
     return this;
   }
 

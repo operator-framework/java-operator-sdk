@@ -161,6 +161,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   }
 
   protected void afterEachImpl(ExtensionContext context) {
+    // resets the config service provider so the controller configs are reconstructed always
+    ConfigurationServiceProvider.reset();
     if (!oneNamespacePerClass) {
       after(context);
     }

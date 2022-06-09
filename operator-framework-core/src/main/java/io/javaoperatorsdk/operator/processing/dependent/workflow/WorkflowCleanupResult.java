@@ -45,8 +45,8 @@ public class WorkflowCleanupResult {
     return this;
   }
 
-  public boolean postConditionsNotMet() {
-    return !postConditionNotMetDependents.isEmpty();
+  public boolean allPostConditionsMet() {
+    return postConditionNotMetDependents.isEmpty();
   }
 
   public boolean erroredDependentsExists() {

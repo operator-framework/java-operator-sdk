@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.StandaloneDependentResourceIT;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
@@ -96,7 +97,8 @@ public class StandaloneDependentTestReconciler
     protected Deployment desired(StandaloneDependentTestCustomResource primary,
         Context<StandaloneDependentTestCustomResource> context) {
       Deployment deployment =
-          ReconcilerUtils.loadYaml(Deployment.class, getClass(), "nginx-deployment.yaml");
+          ReconcilerUtils.loadYaml(Deployment.class, StandaloneDependentResourceIT.class,
+              "nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());
       deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());
       deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
