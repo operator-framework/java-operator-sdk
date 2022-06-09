@@ -8,10 +8,11 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.operator.OperatorException;
 
 public class Utils {
 
@@ -137,7 +138,7 @@ public class Utils {
       }
       return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
     } catch (Exception e) {
-      throw new RuntimeException(
+      throw new OperatorException(
           "Couldn't retrieve generic parameter type from " + clazz.getSimpleName(), e);
     }
   }
