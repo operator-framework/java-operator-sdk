@@ -29,7 +29,10 @@ public class DependentBuilder<P extends HasMetadata> {
   }
 
   public DependentBuilder<P> dependsOn(DependentResource... dependentResources) {
-    return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
+    if (dependentResources != null) {
+      return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
+    }
+    return this;
   }
 
   public DependentBuilder<P> withReconcilePrecondition(Condition reconcilePrecondition) {
