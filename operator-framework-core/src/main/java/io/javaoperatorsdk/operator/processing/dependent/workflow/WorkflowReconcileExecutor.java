@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowReconcileExecutor<P extends HasMetadata> {
@@ -49,7 +50,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     this.workflow = workflow;
   }
 
-  public synchronized WorkflowExecutionResult reconcile() {
+  public synchronized WorkflowReconcileResult reconcile() {
     for (DependentResourceNode dependentResourceNode : workflow
         .getTopLevelDependentResources()) {
       handleReconcile(dependentResourceNode);
@@ -83,19 +84,15 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
-    boolean reconcileConditionMet = dependentResourceNode.getReconcileCondition().map(
+    boolean reconcileConditionMet = dependentResourceNode.getReconcilePrecondition().map(
         rc -> rc.isMet(dependentResourceNode.getDependentResource(), primary, context))
         .orElse(true);
 
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
-      Future<?> nodeFuture =
-          workflow
-              .getExecutorService()
-              .submit(
-                  new NodeReconcileExecutor(
-                      dependentResourceNode));
+      Future<?> nodeFuture = workflow.getExecutorService()
+          .submit(new NodeReconcileExecutor(dependentResourceNode));
       actualExecutions.put(dependentResourceNode, nodeFuture);
       log.debug("Submitted to reconcile: {}", dependentResourceNode);
     }
@@ -112,9 +109,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
-    Future<?> nodeFuture =
-        workflow.getExecutorService()
-            .submit(new NodeDeleteExecutor(dependentResourceNode));
+    Future<?> nodeFuture = workflow.getExecutorService()
+        .submit(new NodeDeleteExecutor(dependentResourceNode));
     actualExecutions.put(dependentResourceNode, nodeFuture);
     log.debug("Submitted to delete: {}", dependentResourceNode);
   }
@@ -160,11 +156,16 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     public void run() {
       try {
         DependentResource dependentResource = dependentResourceNode.getDependentResource();
-
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Reconciling {} for primary: {}",
+              dependentResourceNode,
+              ResourceID.fromResource(primary));
+        }
         ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
         reconcileResults.put(dependentResource, reconcileResult);
         reconciled.add(dependentResourceNode);
-        boolean ready = dependentResourceNode.getReadyCondition()
+        boolean ready = dependentResourceNode.getReadyPostcondition()
             .map(rc -> rc.isMet(dependentResource, primary, context))
             .orElse(true);
 
@@ -196,7 +197,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     public void run() {
       try {
         DependentResource dependentResource = dependentResourceNode.getDependentResource();
-        var deletePostCondition = dependentResourceNode.getDeletePostCondition();
+        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
@@ -280,18 +281,18 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
             .anyMatch(exceptionsDuringExecution::containsKey);
   }
 
-  private WorkflowExecutionResult createReconcileResult() {
-    WorkflowExecutionResult workflowExecutionResult = new WorkflowExecutionResult();
-    workflowExecutionResult.setErroredDependents(exceptionsDuringExecution
+  private WorkflowReconcileResult createReconcileResult() {
+    WorkflowReconcileResult workflowReconcileResult = new WorkflowReconcileResult();
+    workflowReconcileResult.setErroredDependents(exceptionsDuringExecution
         .entrySet().stream()
         .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)));
-    workflowExecutionResult.setNotReadyDependents(notReady.stream()
+    workflowReconcileResult.setNotReadyDependents(notReady.stream()
         .map(DependentResourceNode::getDependentResource)
         .collect(Collectors.toList()));
-    workflowExecutionResult.setReconciledDependents(reconciled.stream()
+    workflowReconcileResult.setReconciledDependents(reconciled.stream()
         .map(DependentResourceNode::getDependentResource).collect(Collectors.toList()));
-    workflowExecutionResult.setReconcileResults(reconcileResults);
-    return workflowExecutionResult;
+    workflowReconcileResult.setReconcileResults(reconcileResults);
+    return workflowReconcileResult;
   }
 
 }

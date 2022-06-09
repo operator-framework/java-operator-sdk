@@ -95,6 +95,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   protected void before(ExtensionContext context) {
     super.before(context);
 
@@ -150,6 +151,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.operator.start();
   }
 
+  @Override
   protected void after(ExtensionContext context) {
     super.after(context);
 

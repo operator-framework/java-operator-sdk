@@ -78,7 +78,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         workflow.getExecutorService().submit(
             new NodeExecutor(dependentResourceNode));
     actualExecutions.put(dependentResourceNode, nodeFuture);
-    log.debug("Submitted to reconcile: {}", dependentResourceNode);
+    log.debug("Submitted for cleanup: {}", dependentResourceNode);
   }
 
   private class NodeExecutor implements Runnable {
@@ -94,7 +94,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     public void run() {
       try {
         var dependentResource = dependentResourceNode.getDependentResource();
-        var deletePostCondition = dependentResourceNode.getDeletePostCondition();
+        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {

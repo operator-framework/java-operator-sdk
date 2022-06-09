@@ -18,7 +18,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
   private final Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
-  public DependentBuilder<P> addDependent(DependentResource dependentResource) {
+  public DependentBuilder<P> addDependentResource(DependentResource dependentResource) {
     DependentResourceNode node = new DependentResourceNode<>(dependentResource);
     dependentResourceNodes.add(node);
     return new DependentBuilder<>(this, node);
