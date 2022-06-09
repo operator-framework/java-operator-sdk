@@ -61,6 +61,8 @@ public class Utils {
         builtTime);
   }
 
+  @SuppressWarnings("unused")
+  // this is used in the Quarkus extension
   public static boolean isValidateCustomResourcesEnvVarSet() {
     return System.getProperty(CHECK_CRD_ENV_KEY) != null;
   }
@@ -141,9 +143,5 @@ public class Utils {
       throw new OperatorException(
           "Couldn't retrieve generic parameter type from " + clazz.getSimpleName(), e);
     }
-  }
-
-  public static <C, T> T valueOrDefault(C annotation, Function<C, T> mapper, T defaultValue) {
-    return annotation == null ? defaultValue : mapper.apply(annotation);
   }
 }
