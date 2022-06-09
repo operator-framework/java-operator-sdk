@@ -89,9 +89,8 @@ class UtilsTest {
 
   @Test
   void getsFirstTypeArgumentFromInterface() {
-    assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class))
-//    assertThat(Utils.getFirstTypeArgumentFromInterface(TestDependentResource.class,
-//        DependentResource.class))
+    assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class,
+        DependentResource.class))
         .isEqualTo(Deployment.class);
   }
 
