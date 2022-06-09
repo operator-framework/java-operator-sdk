@@ -91,12 +91,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
-      Future<?> nodeFuture =
-          workflow
-              .getExecutorService()
-              .submit(
-                  new NodeReconcileExecutor(
-                      dependentResourceNode));
+      Future<?> nodeFuture = workflow.getExecutorService()
+          .submit(new NodeReconcileExecutor(dependentResourceNode));
       actualExecutions.put(dependentResourceNode, nodeFuture);
       log.debug("Submitted to reconcile: {}", dependentResourceNode);
     }
@@ -113,9 +109,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
-    Future<?> nodeFuture =
-        workflow.getExecutorService()
-            .submit(new NodeDeleteExecutor(dependentResourceNode));
+    Future<?> nodeFuture = workflow.getExecutorService()
+        .submit(new NodeDeleteExecutor(dependentResourceNode));
     actualExecutions.put(dependentResourceNode, nodeFuture);
     log.debug("Submitted to delete: {}", dependentResourceNode);
   }
