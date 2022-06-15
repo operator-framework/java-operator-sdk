@@ -25,7 +25,6 @@ import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -54,8 +53,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         ExecutorServiceManager.instance().executorService(),
         eventSourceManager.getController().getConfiguration().getName(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
-        GenericRetry.fromConfiguration(
-            eventSourceManager.getController().getConfiguration().getRetryConfiguration()),
+        eventSourceManager.getController().getConfiguration().getRetry(),
         ConfigurationServiceProvider.instance().getMetrics(),
         eventSourceManager);
   }

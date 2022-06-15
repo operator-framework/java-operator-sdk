@@ -4,14 +4,16 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import static io.javaoperatorsdk.operator.processing.retry.GenericRetry.DEFAULT_INITIAL_INTERVAL;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GenericRetryExecutionTest {
 
   @Test
   public void forFirstBackOffAlwaysReturnsInitialInterval() {
-    assertThat(getDefaultRetryExecution().nextDelay().get()).isEqualTo(DEFAULT_INITIAL_INTERVAL);
+    assertThat(getDefaultRetryExecution().nextDelay().get())
+        .isEqualTo(RetryConfiguration.DEFAULT_INITIAL_INTERVAL);
   }
 
   @Test
@@ -19,18 +21,19 @@ public class GenericRetryExecutionTest {
     RetryExecution retryExecution = getDefaultRetryExecution();
 
     Optional<Long> res = callNextDelayNTimes(retryExecution, 1);
-    assertThat(res.get()).isEqualTo(DEFAULT_INITIAL_INTERVAL);
+    assertThat(res.get()).isEqualTo(RetryConfiguration.DEFAULT_INITIAL_INTERVAL);
 
     res = retryExecution.nextDelay();
     assertThat(res.get())
-        .isEqualTo((long) (DEFAULT_INITIAL_INTERVAL * GenericRetry.DEFAULT_MULTIPLIER));
+        .isEqualTo((long) (RetryConfiguration.DEFAULT_INITIAL_INTERVAL
+            * RetryConfiguration.DEFAULT_MULTIPLIER));
 
     res = retryExecution.nextDelay();
     assertThat(res.get())
         .isEqualTo(
-            (long) (DEFAULT_INITIAL_INTERVAL
-                * GenericRetry.DEFAULT_MULTIPLIER
-                * GenericRetry.DEFAULT_MULTIPLIER));
+            (long) (RetryConfiguration.DEFAULT_INITIAL_INTERVAL
+                * RetryConfiguration.DEFAULT_MULTIPLIER
+                * RetryConfiguration.DEFAULT_MULTIPLIER));
   }
 
   @Test

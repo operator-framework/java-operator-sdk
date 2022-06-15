@@ -10,6 +10,8 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
@@ -27,8 +29,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   String getAssociatedReconcilerClassName();
 
-  default RetryConfiguration getRetryConfiguration() {
-    return RetryConfiguration.DEFAULT;
+  default Retry getRetry() {
+    return new GenericRetry();
   }
 
   /**
