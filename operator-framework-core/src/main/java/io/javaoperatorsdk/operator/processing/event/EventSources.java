@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
-class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> {
+class EventSources<R extends HasMetadata> {
 
   public static final String CONTROLLER_RESOURCE_EVENT_SOURCE_NAME =
       "ControllerResourceEventSource";
@@ -40,24 +40,27 @@ class EventSources<R extends HasMetadata> implements Iterable<NamedEventSource> 
     return retryAndRescheduleTimerEventSource;
   }
 
-  @Override
-  public Iterator<NamedEventSource> iterator() {
+  public Stream<NamedEventSource> additionalNamedEventSources() {
     return Stream.concat(Stream.of(
-        new NamedEventSource(controllerResourceEventSource, CONTROLLER_RESOURCE_EVENT_SOURCE_NAME),
         new NamedEventSource(retryAndRescheduleTimerEventSource,
             RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
-        flatMappedSources()).iterator();
+        flatMappedSources());
+  }
+
+  Stream<EventSource> additionalEventSources() {
+    return Stream.concat(
+        Stream.of(retryEventSource()).filter(Objects::nonNull),
+        sources.values().stream().flatMap(c -> c.values().stream()));
+  }
+
+  NamedEventSource namedControllerResourceEventSource() {
+    return new NamedEventSource(controllerResourceEventSource,
+        CONTROLLER_RESOURCE_EVENT_SOURCE_NAME);
   }
 
   Stream<NamedEventSource> flatMappedSources() {
     return sources.values().stream().flatMap(c -> c.entrySet().stream()
         .map(esEntry -> new NamedEventSource(esEntry.getValue(), esEntry.getKey())));
-  }
-
-  Stream<EventSource> eventSources() {
-    return Stream.concat(
-        Stream.of(controllerResourceEventSource(), retryEventSource()).filter(Objects::nonNull),
-        sources.values().stream().flatMap(c -> c.values().stream()));
   }
 
   public void clear() {
