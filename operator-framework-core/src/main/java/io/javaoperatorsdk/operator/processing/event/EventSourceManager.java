@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -62,18 +59,20 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
    */
   @Override
   public synchronized void start() {
-    for (var eventSource : eventSources) {
-      try {
-        logEventSourceEvent(eventSource, "Starting");
-        eventSource.start();
-        logEventSourceEvent(eventSource, "Started");
-      } catch (MissingCRDException e) {
-        throw e; // leave untouched
-      } catch (Exception e) {
-        throw new OperatorException("Couldn't start source " + eventSource.name(), e);
-      }
-    }
+    startEventSource(eventSources.namedControllerResourceEventSource());
+    eventSources.additionalNamedEventSources().parallel().forEach(this::startEventSource);
     eventProcessor.start();
+  }
+
+  @SuppressWarnings("rawtypes")
+
+
+  @Override
+  public synchronized void stop() {
+    stopEventSource(eventSources.namedControllerResourceEventSource());
+    eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource);
+    eventSources.clear();
+    eventProcessor.stop();
   }
 
   @SuppressWarnings("rawtypes")
@@ -89,19 +88,26 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     }
   }
 
-  @Override
-  public synchronized void stop() {
-    for (var eventSource : eventSources) {
-      try {
-        logEventSourceEvent(eventSource, "Stopping");
-        eventSource.stop();
-        logEventSourceEvent(eventSource, "Stopped");
-      } catch (Exception e) {
-        log.warn("Error closing {} -> {}", eventSource.name(), e);
-      }
+  private void startEventSource(NamedEventSource eventSource) {
+    try {
+      logEventSourceEvent(eventSource, "Starting");
+      eventSource.start();
+      logEventSourceEvent(eventSource, "Started");
+    } catch (MissingCRDException e) {
+      throw e; // leave untouched
+    } catch (Exception e) {
+      throw new OperatorException("Couldn't start source " + eventSource.name(), e);
     }
-    eventSources.clear();
-    eventProcessor.stop();
+  }
+
+  private void stopEventSource(NamedEventSource eventSource) {
+    try {
+      logEventSourceEvent(eventSource, "Stopping");
+      eventSource.stop();
+      logEventSourceEvent(eventSource, "Stopped");
+    } catch (Exception e) {
+      log.warn("Error closing {} -> {}", eventSource.name(), e);
+    }
   }
 
   public final void registerEventSource(EventSource eventSource) throws OperatorException {
@@ -127,7 +133,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
 
   @SuppressWarnings("unchecked")
   public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
-    for (var eventSource : eventSources) {
+    eventSources.additionalNamedEventSources().forEach(eventSource -> {
       if (eventSource instanceof ResourceEventAware) {
         var lifecycleAwareES = ((ResourceEventAware<R>) eventSource);
         switch (action) {
@@ -142,16 +148,19 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
             break;
         }
       }
-    }
+    });
   }
 
   public void changeNamespaces(Set<String> namespaces) {
     eventProcessor.stop();
+    eventSources.controllerResourceEventSource()
+        .changeNamespaces(namespaces);
     eventSources
-        .eventSources()
+        .additionalEventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)
         .filter(NamespaceChangeable::allowsNamespaceChanges)
+        .parallel()
         .forEach(ies -> ies.changeNamespaces(namespaces));
     eventProcessor.start();
   }
