@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
@@ -19,7 +21,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String finalizer;
   private boolean generationAware;
   private Set<String> namespaces;
-  private RetryConfiguration retry;
+  private Retry retry;
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
@@ -30,7 +32,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     finalizer = original.getFinalizerName();
     generationAware = original.isGenerationAware();
     namespaces = new HashSet<>(original.getNamespaces());
-    retry = original.getRetryConfiguration();
+    retry = original.getRetry();
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
@@ -90,8 +92,14 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
+  public ControllerConfigurationOverrider<R> withRetry(Retry retry) {
     this.retry = retry;
+    return this;
+  }
+
+  @Deprecated
+  public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
+    this.retry = GenericRetry.fromConfiguration(retry);
     return this;
   }
 
