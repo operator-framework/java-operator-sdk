@@ -34,7 +34,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   }
 
   /**
-   * getRetry instead.
+   * Use getRetry instead.
    *
    * @return configuration for retry.
    */
