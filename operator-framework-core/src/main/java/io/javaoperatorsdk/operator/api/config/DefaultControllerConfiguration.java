@@ -9,6 +9,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @SuppressWarnings("rawtypes")
 public class DefaultControllerConfiguration<R extends HasMetadata>
@@ -20,7 +21,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final RetryConfiguration retryConfiguration;
+  private final Retry retry;
   private final ResourceEventFilter<R> resourceEventFilter;
   private final List<DependentResourceSpec> dependents;
   private final Duration reconciliationMaxInterval;
@@ -33,7 +34,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String finalizer,
       boolean generationAware,
       Set<String> namespaces,
-      RetryConfiguration retryConfiguration,
+      Retry retry,
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
@@ -46,10 +47,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.finalizer = finalizer;
     this.generationAware = generationAware;
     this.reconciliationMaxInterval = reconciliationMaxInterval;
-    this.retryConfiguration =
-        retryConfiguration == null
-            ? ControllerConfiguration.super.getRetryConfiguration()
-            : retryConfiguration;
+    this.retry =
+        retry == null
+            ? ControllerConfiguration.super.getRetry()
+            : retry;
     this.resourceEventFilter = resourceEventFilter;
 
     this.dependents = dependents != null ? dependents : Collections.emptyList();
@@ -81,8 +82,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public RetryConfiguration getRetryConfiguration() {
-    return retryConfiguration;
+  public Retry getRetry() {
+    return retry;
   }
 
   @Override
