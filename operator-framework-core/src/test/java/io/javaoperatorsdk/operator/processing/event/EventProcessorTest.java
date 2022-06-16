@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
@@ -56,11 +57,11 @@ class EventProcessorTest {
         .thenReturn(controllerResourceEventSourceMock);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
-            null));
+            new PeriodRateLimiter(), null));
     eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
-            GenericRetry.defaultLimitedExponentialRetry(), null));
+            GenericRetry.defaultLimitedExponentialRetry(), new PeriodRateLimiter(), null));
     eventProcessorWithRetry.start();
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
@@ -243,6 +244,7 @@ class EventProcessorTest {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
+            new PeriodRateLimiter(),
             metricsMock));
     when(controllerResourceEventSourceMock.get(eq(crID)))
         .thenReturn(Optional.of(testCustomResource()));

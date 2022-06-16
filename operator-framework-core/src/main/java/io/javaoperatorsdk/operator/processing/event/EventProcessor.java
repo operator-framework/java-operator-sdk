@@ -34,6 +34,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
+  private static final long MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION = 50;
 
   private final Set<ResourceID> underProcessing = new HashSet<>();
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
@@ -56,6 +57,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
         eventSourceManager.getController().getConfiguration().getRetry(),
         ConfigurationServiceProvider.instance().getMetrics(),
+        eventSourceManager.getController().getConfiguration().getRateLimiter(),
         eventSourceManager);
   }
 
@@ -64,6 +66,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       EventSourceManager<R> eventSourceManager,
       String relatedControllerName,
       Retry retry,
+      RateLimiter rateLimiter,
       Metrics metrics) {
     this(
         eventSourceManager.getControllerResourceEventSource(),
@@ -72,6 +75,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         reconciliationDispatcher,
         retry,
         metrics,
+        rateLimiter,
         eventSourceManager);
   }
 
@@ -82,6 +86,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       ReconciliationDispatcher<R> reconciliationDispatcher,
       Retry retry,
       Metrics metrics,
+      RateLimiter rateLimiter,
       EventSourceManager<R> eventSourceManager) {
     this.running = false;
     this.executor =
@@ -95,8 +100,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.cache = cache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
-    // todo configure
-    this.rateLimiter = new RateLimiter(Duration.ofSeconds(1), 5);
+    this.rateLimiter = rateLimiter;
   }
 
   @Override
@@ -207,7 +211,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     var minimalDurationMillis = minimalDuration.toMillis();
     log.debug("Rate limited resource: {}, rescheduled in {} millis", resourceID,
         minimalDurationMillis);
-    retryEventSource().scheduleOnce(resourceID, minimalDurationMillis);
+    retryEventSource().scheduleOnce(resourceID,
+        Math.max(minimalDurationMillis, MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION));
   }
 
   private RetryInfo retryInfo(ResourceID resourceID) {
@@ -331,6 +336,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void cleanupForDeletedEvent(ResourceID resourceID) {
     log.debug("Cleaning up for delete event for: {}", resourceID);
     eventMarker.cleanup(resourceID);
+    rateLimiter.clear(resourceID);
     metrics.cleanupDoneFor(resourceID);
   }
 

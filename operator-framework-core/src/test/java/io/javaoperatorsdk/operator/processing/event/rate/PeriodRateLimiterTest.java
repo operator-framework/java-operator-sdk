@@ -8,16 +8,15 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
-class RateLimiterTest {
+class PeriodRateLimiterTest {
 
   public static final Duration REFRESH_PERIOD = Duration.ofMillis(300);
   ResourceID resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
   @Test
   void acquirePermissionForNewResource() {
-    var rl = new RateLimiter(REFRESH_PERIOD, 2);
+    var rl = new PeriodRateLimiter(REFRESH_PERIOD, 2);
     var res = rl.acquirePermission(resourceID);
     assertThat(res).isEmpty();
     res = rl.acquirePermission(resourceID);
@@ -29,7 +28,7 @@ class RateLimiterTest {
 
   @Test
   void returnsMinimalDurationToAcquirePermission() {
-    var rl = new RateLimiter(REFRESH_PERIOD, 1);
+    var rl = new PeriodRateLimiter(REFRESH_PERIOD, 1);
     var res = rl.acquirePermission(resourceID);
     assertThat(res).isEmpty();
 
@@ -41,7 +40,7 @@ class RateLimiterTest {
 
   @Test
   void resetsPeriodAfterLimit() throws InterruptedException {
-    var rl = new RateLimiter(REFRESH_PERIOD, 1);
+    var rl = new PeriodRateLimiter(REFRESH_PERIOD, 1);
     var res = rl.acquirePermission(resourceID);
     assertThat(res).isEmpty();
     res = rl.acquirePermission(resourceID);
@@ -51,6 +50,15 @@ class RateLimiterTest {
     Thread.sleep(REFRESH_PERIOD.toMillis() + REFRESH_PERIOD.toMillis() / 3);
 
     res = rl.acquirePermission(resourceID);
+    assertThat(res).isEmpty();
+  }
+
+  @Test
+  void rateLimitCanBeTurnedOff() {
+    var rl = new PeriodRateLimiter(REFRESH_PERIOD, PeriodRateLimiter.NO_LIMIT_PERIOD);
+
+    var res = rl.acquirePermission(resourceID);
+
     assertThat(res).isEmpty();
   }
 

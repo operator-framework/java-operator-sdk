@@ -8,6 +8,8 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -41,6 +43,10 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   @Deprecated
   default RetryConfiguration getRetryConfiguration() {
     return RetryConfiguration.DEFAULT;
+  }
+
+  default RateLimiter getRateLimiter() {
+    return new PeriodRateLimiter();
   }
 
   /**
