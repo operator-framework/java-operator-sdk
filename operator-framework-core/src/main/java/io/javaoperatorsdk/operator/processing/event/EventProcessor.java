@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -20,6 +21,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
@@ -44,6 +46,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker = new EventMarker();
+  private final RateLimiter rateLimiter;
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
@@ -92,6 +95,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     this.cache = cache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
+    // todo configure
+    this.rateLimiter = new RateLimiter(Duration.ofSeconds(1), 5);
   }
 
   @Override
@@ -128,6 +133,11 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       Optional<R> latest = cache.get(resourceID);
       latest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && latest.isPresent()) {
+        var rateLimiterPermission = rateLimiter.acquirePermission(resourceID);
+        if (rateLimiterPermission.isPresent()) {
+          handleRateLimitedSubmission(resourceID, rateLimiterPermission.get());
+          return;
+        }
         setUnderExecutionProcessing(resourceID);
         final var retryInfo = retryInfo(resourceID);
         ExecutionScope<R> executionScope = new ExecutionScope<>(latest.get(), retryInfo);
@@ -193,6 +203,13 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     return resourceEvent.getResource().map(HasMetadata::isMarkedForDeletion).orElse(false);
   }
 
+  private void handleRateLimitedSubmission(ResourceID resourceID, Duration minimalDuration) {
+    var minimalDurationMillis = minimalDuration.toMillis();
+    log.debug("Rate limited resource: {}, rescheduled in {} millis", resourceID,
+        minimalDurationMillis);
+    retryEventSource().scheduleOnce(resourceID, minimalDurationMillis);
+  }
+
   private RetryInfo retryInfo(ResourceID resourceID) {
     return retryState.get(resourceID);
   }
@@ -251,11 +268,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     postExecutionControl
         .getReScheduleDelay()
         .ifPresent(delay -> {
-          if (log.isDebugEnabled()) {
-            log.debug("ReScheduling event for resource: {} with delay: {}",
-                ResourceID.fromResource(customResource), delay);
-          }
-          retryEventSource().scheduleOnce(customResource, delay);
+          var resourceID = ResourceID.fromResource(customResource);
+          log.debug("ReScheduling event for resource: {} with delay: {}",
+              resourceID, delay);
+          retryEventSource().scheduleOnce(resourceID, delay);
         });
   }
 
@@ -289,7 +305,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
               delay,
               resourceID);
           metrics.failedReconciliation(resourceID, exception);
-          retryEventSource().scheduleOnce(executionScope.getResource(), delay);
+          retryEventSource().scheduleOnce(resourceID, delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
   }

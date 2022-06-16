@@ -105,7 +105,8 @@ class EventProcessorTest {
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
     verify(retryTimerEventSourceMock, times(1))
-        .scheduleOnce(eq(customResource), eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
+        .scheduleOnce(eq(ResourceID.fromResource(customResource)),
+            eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
   }
 
   @Test
@@ -136,7 +137,8 @@ class EventProcessorTest {
     List<ExecutionScope> allValues = executionScopeArgumentCaptor.getAllValues();
     assertThat(allValues).hasSize(2);
     verify(retryTimerEventSourceMock, never())
-        .scheduleOnce(eq(customResource), eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
+        .scheduleOnce(eq(ResourceID.fromResource(customResource)),
+            eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
   }
 
   @Test
