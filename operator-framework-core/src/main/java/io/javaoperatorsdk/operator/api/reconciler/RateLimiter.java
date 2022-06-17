@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface RateLimit {
+public @interface RateLimiter {
 
   int limitForPeriod();
 

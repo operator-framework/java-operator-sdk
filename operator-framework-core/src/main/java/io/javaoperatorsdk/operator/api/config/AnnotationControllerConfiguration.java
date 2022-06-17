@@ -27,6 +27,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
@@ -151,15 +153,26 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
+  public RateLimiter getRateLimiter() {
+    if (annotation.rateLimiter() != null) {
+      return new PeriodRateLimiter(Duration.of(annotation.rateLimiter().refreshPeriod(),
+          annotation.rateLimiter().refreshPeriodTimeUnit().toChronoUnit()),
+          annotation.rateLimiter().limitForPeriod());
+    } else {
+      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.getRateLimiter();
+    }
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public Optional<Predicate<P>> onAddFilter() {
     return (Optional<Predicate<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
-        annotation.getClass().getSimpleName());
+            annotation.getClass().getSimpleName());
   }
 
   private enum FilterType {
     onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
-        VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
+            VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
 
     final Class<?> defaultValue;
 
@@ -176,11 +189,11 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         var instance = (T) filter.getDeclaredConstructor().newInstance();
         return Optional.of(instance);
       } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-          | NoSuchMethodException e) {
+               | NoSuchMethodException e) {
         throw new OperatorException(
-            "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
-                + origin + " for reconciler " + getName(),
-            e);
+                "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
+                        + origin + " for reconciler " + getName(),
+                e);
       }
     }
   }
