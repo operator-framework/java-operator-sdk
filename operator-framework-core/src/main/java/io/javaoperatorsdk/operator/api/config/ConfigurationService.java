@@ -80,7 +80,7 @@ public interface ConfigurationService {
     return false;
   }
 
-  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 5;
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
    * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
