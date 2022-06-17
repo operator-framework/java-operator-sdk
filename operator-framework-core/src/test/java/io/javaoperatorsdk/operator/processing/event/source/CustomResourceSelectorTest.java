@@ -52,7 +52,10 @@ class CustomResourceSelectorTest {
     configurationService = spy(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
+    // make sure not the same config instance is used for the controller, so rate limiter is not
+    // shared
     when(configurationService.getConfigurationFor(any(MyController.class)))
+        .thenReturn(new MyConfiguration())
         .thenReturn(new MyConfiguration());
   }
 
@@ -138,8 +141,7 @@ class CustomResourceSelectorTest {
     }
   }
 
-  @ControllerConfiguration(namespaces = NAMESPACE,
-      rateLimiter = @RateLimiter(limitForPeriod = PeriodRateLimiter.DEFAULT_LIMIT_FOR_PERIOD))
+  @ControllerConfiguration(namespaces = NAMESPACE)
   public static class MyController implements Reconciler<TestCustomResource> {
 
     private final Consumer<TestCustomResource> consumer;

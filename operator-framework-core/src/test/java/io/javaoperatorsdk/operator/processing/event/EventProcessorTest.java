@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
@@ -50,6 +51,7 @@ class EventProcessorTest {
   private Metrics metricsMock = mock(Metrics.class);
   private EventProcessor eventProcessor;
   private EventProcessor eventProcessorWithRetry;
+  private RateLimiter rateLimiterMock = mock(RateLimiter.class);
 
   @BeforeEach
   void setup() {
@@ -57,14 +59,15 @@ class EventProcessorTest {
         .thenReturn(controllerResourceEventSourceMock);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
-            new PeriodRateLimiter(), null));
+            rateLimiterMock, null));
     eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test",
-            GenericRetry.defaultLimitedExponentialRetry(), new PeriodRateLimiter(), null));
+            GenericRetry.defaultLimitedExponentialRetry(), rateLimiterMock, null));
     eventProcessorWithRetry.start();
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+    when(rateLimiterMock.acquirePermission(any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -329,6 +332,25 @@ class EventProcessorTest {
     eventProcessorWithRetry.handleEvent(prepareCREvent(newResource));
 
     verify(reconciliationDispatcherMock, timeout(50).times(1)).handleExecution(any());
+  }
+
+  @Test
+  void rateLimitsReconciliationSubmission() throws InterruptedException {
+    // the refresh period value does not matter here
+    var refreshPeriod = Duration.ofMillis(100);
+    var event = prepareCREvent();
+
+    when(rateLimiterMock.acquirePermission(event.getRelatedCustomResourceID()))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(refreshPeriod));
+
+    eventProcessor.handleEvent(event);
+    verify(reconciliationDispatcherMock, after(FAKE_CONTROLLER_EXECUTION_DURATION).times(1))
+        .handleExecution(any());
+    verify(retryTimerEventSourceMock, times(0)).scheduleOnce(any(), anyLong());
+
+    eventProcessor.handleEvent(event);
+    verify(retryTimerEventSourceMock, times(1)).scheduleOnce(any(), anyLong());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {
