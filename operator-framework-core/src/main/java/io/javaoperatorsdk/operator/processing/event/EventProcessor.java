@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final Map<ResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
   private final String controllerName;
-  private final ReentrantLock lock = new ReentrantLock();
   private final Metrics metrics;
   private volatile boolean running;
   private final Cache<R> cache;
@@ -97,8 +95,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   @Override
-  public void handleEvent(Event event) {
-    lock.lock();
+  public synchronized void handleEvent(Event event) {
     try {
       log.debug("Received event: {}", event);
 
@@ -113,7 +110,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       }
       handleMarkedEventForResource(resourceID);
     } finally {
-      lock.unlock();
       MDCUtils.removeResourceIDInfo();
     }
   }
@@ -201,57 +197,53 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     return retryState.get(resourceID);
   }
 
-  void eventProcessingFinished(
+  synchronized void eventProcessingFinished(
       ExecutionScope<R> executionScope, PostExecutionControl<R> postExecutionControl) {
-    lock.lock();
-    try {
-      if (!running) {
-        return;
-      }
-      ResourceID resourceID = executionScope.getResourceID();
-      log.debug(
-          "Event processing finished. Scope: {}, PostExecutionControl: {}",
-          executionScope,
-          postExecutionControl);
-      unsetUnderExecution(resourceID);
-
-      // If a delete event present at this phase, it was received during reconciliation.
-      // So we either removed the finalizer during reconciliation or we don't use finalizers.
-      // Either way we don't want to retry.
-      if (isRetryConfigured()
-          && postExecutionControl.exceptionDuringExecution()
-          && !eventMarker.deleteEventPresent(resourceID)) {
-        handleRetryOnException(
-            executionScope, postExecutionControl.getRuntimeException().orElseThrow());
-        return;
-      }
-      cleanupOnSuccessfulExecution(executionScope);
-      metrics.finishedReconciliation(resourceID);
-      if (eventMarker.deleteEventPresent(resourceID)) {
-        cleanupForDeletedEvent(executionScope.getResourceID());
-      } else if (postExecutionControl.isFinalizerRemoved()) {
-        eventMarker.markProcessedMarkForDeletion(resourceID);
-      } else {
-        postExecutionControl
-            .getUpdatedCustomResource()
-            .ifPresent(
-                r -> {
-                  if (!postExecutionControl.updateIsStatusPatch()) {
-                    eventSourceManager
-                        .getControllerResourceEventSource()
-                        .handleRecentResourceUpdate(
-                            ResourceID.fromResource(r), r, executionScope.getResource());
-                  }
-                });
-        if (eventMarker.eventPresent(resourceID)) {
-          submitReconciliationExecution(resourceID);
-        } else {
-          reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
-        }
-      }
-    } finally {
-      lock.unlock();
+    if (!running) {
+      return;
     }
+    ResourceID resourceID = executionScope.getResourceID();
+    log.debug(
+        "Event processing finished. Scope: {}, PostExecutionControl: {}",
+        executionScope,
+        postExecutionControl);
+    unsetUnderExecution(resourceID);
+
+    // If a delete event present at this phase, it was received during reconciliation.
+    // So we either removed the finalizer during reconciliation or we don't use finalizers.
+    // Either way we don't want to retry.
+    if (isRetryConfigured()
+        && postExecutionControl.exceptionDuringExecution()
+        && !eventMarker.deleteEventPresent(resourceID)) {
+      handleRetryOnException(
+          executionScope, postExecutionControl.getRuntimeException().orElseThrow());
+      return;
+    }
+    cleanupOnSuccessfulExecution(executionScope);
+    metrics.finishedReconciliation(resourceID);
+    if (eventMarker.deleteEventPresent(resourceID)) {
+      cleanupForDeletedEvent(executionScope.getResourceID());
+    } else if (postExecutionControl.isFinalizerRemoved()) {
+      eventMarker.markProcessedMarkForDeletion(resourceID);
+    } else {
+      postExecutionControl
+          .getUpdatedCustomResource()
+          .ifPresent(
+              r -> {
+                if (!postExecutionControl.updateIsStatusPatch()) {
+                  eventSourceManager
+                      .getControllerResourceEventSource()
+                      .handleRecentResourceUpdate(
+                          ResourceID.fromResource(r), r, executionScope.getResource());
+                }
+              });
+      if (eventMarker.eventPresent(resourceID)) {
+        submitReconciliationExecution(resourceID);
+      } else {
+        reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
+      }
+    }
+
   }
 
   private void reScheduleExecutionIfInstructed(
@@ -343,24 +335,14 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   @Override
-  public void stop() {
-    lock.lock();
-    try {
-      this.running = false;
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void stop() {
+    this.running = false;
   }
 
   @Override
   public void start() throws OperatorException {
-    lock.lock();
-    try {
-      this.running = true;
-      handleAlreadyMarkedEvents();
-    } finally {
-      lock.unlock();
-    }
+    this.running = true;
+    handleAlreadyMarkedEvents();
   }
 
   private void handleAlreadyMarkedEvents() {
