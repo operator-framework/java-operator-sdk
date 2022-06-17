@@ -20,11 +20,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -142,7 +138,8 @@ class CustomResourceSelectorTest {
     }
   }
 
-  @ControllerConfiguration(namespaces = NAMESPACE)
+  @ControllerConfiguration(namespaces = NAMESPACE,
+      rateLimiter = @RateLimiter(limitForPeriod = PeriodRateLimiter.DEFAULT_LIMIT_FOR_PERIOD))
   public static class MyController implements Reconciler<TestCustomResource> {
 
     private final Consumer<TestCustomResource> consumer;
