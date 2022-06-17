@@ -9,7 +9,6 @@ import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
@@ -93,8 +92,7 @@ public @interface ControllerConfiguration {
       interval = 10);
 
 
-  RateLimiter rateLimiter() default @RateLimiter(limitForPeriod = PeriodRateLimiter.NO_LIMIT_PERIOD,
-      refreshPeriod = 1);
+  RateLimiter rateLimiter() default @RateLimiter;
 
   /**
    * Optional list of {@link Dependent} configurations which associate a resource type to a

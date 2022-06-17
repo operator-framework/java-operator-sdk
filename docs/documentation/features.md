@@ -324,6 +324,9 @@ intersections:
    will still happen, but won't reset the retry, will be still marked as the last attempt in the retry info. The point
    (1) still holds, but in case of an error, no retry will happen.
 
+## Rate Limiting Reconciliation
+
+
 ## Handling Related Events with Event Sources
 
 See also this [blog post](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b).
