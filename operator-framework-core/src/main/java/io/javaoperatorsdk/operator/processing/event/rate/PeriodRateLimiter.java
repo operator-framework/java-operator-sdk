@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class PeriodRateLimiter implements RateLimiter {
 
-  public static final Duration DEFAULT_REFRESH_PERIOD = Duration.ofSeconds(3);
+  public static final Duration DEFAULT_REFRESH_PERIOD = Duration.ofSeconds(2);
   public static final int DEFAULT_LIMIT_FOR_PERIOD = 3;
   /** To turn off rate limiting set limit fod period to a non-positive number */
   public static final int NO_LIMIT_PERIOD = -1;
