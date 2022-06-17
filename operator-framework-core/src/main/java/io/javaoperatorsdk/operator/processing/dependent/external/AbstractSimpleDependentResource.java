@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.DesiredEqualsMatcher;
@@ -13,6 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ConcurrentHashMapCach
 import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 /** A base class for external dependent resources that don't have an event source. */
+@Ignore
 public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
     extends AbstractDependentResource<R, P> {
 
