@@ -35,11 +35,6 @@ public class PeriodRateLimiter implements RateLimiter {
     this.limitForPeriod = limitForPeriod;
   }
 
-  /**
-   * @param resourceID id of the resource
-   * @return empty if permission acquired or minimal duration until a permission could be acquired
-   *         again
-   */
   @Override
   public Optional<Duration> acquirePermission(ResourceID resourceID) {
     if (limitForPeriod <= 0) {

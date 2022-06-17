@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 @Target({ElementType.TYPE})
 public @interface RateLimiter {
 
-  int limitForPeriod() default PeriodRateLimiter.DEFAULT_LIMIT_FOR_PERIOD;
+  int limitForPeriod() default PeriodRateLimiter.NO_LIMIT_PERIOD;
 
   int refreshPeriod() default PeriodRateLimiter.DEFAULT_REFRESH_PERIOD_SECONDS;
 
