@@ -154,10 +154,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @Override
   public RateLimiter getRateLimiter() {
-    if (annotation.rateLimiter() != null) {
-      return new PeriodRateLimiter(Duration.of(annotation.rateLimiter().refreshPeriod(),
-          annotation.rateLimiter().refreshPeriodTimeUnit().toChronoUnit()),
-          annotation.rateLimiter().limitForPeriod());
+    if (annotation.rateLimit() != null) {
+      return new PeriodRateLimiter(Duration.of(annotation.rateLimit().refreshPeriod(),
+          annotation.rateLimit().refreshPeriodTimeUnit().toChronoUnit()),
+          annotation.rateLimit().limitForPeriod());
     } else {
       return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.getRateLimiter();
     }

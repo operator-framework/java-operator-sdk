@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface RateLimiter {
+public @interface RateLimit {
 
   int limitForPeriod() default PeriodRateLimiter.NO_LIMIT_PERIOD;
 

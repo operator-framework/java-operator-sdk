@@ -14,6 +14,9 @@ public interface RateLimiter {
    */
   Optional<Duration> acquirePermission(ResourceID resourceID);
 
+  /**
+   * Cleanup state. Called when resource is deleted.
+   */
   void clear(ResourceID resourceID);
 
 }

@@ -324,7 +324,30 @@ intersections:
    will still happen, but won't reset the retry, will be still marked as the last attempt in the retry info. The point
    (1) still holds, but in case of an error, no retry will happen.
 
-## Rate Limiting Reconciliation
+## Rate Limiting
+
+It is possible to rate limit reconciliation for a resource. Thus rate limiting is per resource, 
+and it takes precedence over retry and re-schedule configurations. So for example event a retry is scheduled in
+1 seconds but this does not meet the rate limit, the next reconciliation will be postponed according rate limiting rules;
+however never cancelled, just executed as early as possible according rate limit configuration.
+
+Rate limiting is by default turned off, since correct configuration depends on the reconciler implementation, and 
+how long an execution takes. 
+(The parallelism of reconciliation itself can be limited  [`ConfigurationService`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L120-L120)
+by setting appropriate ExecutorService.)
+
+A default implementation of rate limiter is provided, see: [`PeriodRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/PeriodRateLimiter.java#L14-L14). 
+Users can override it with a custom implementation of 
+[`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
+interface.
+
+To configure the default rate limiter use `@ControllerConfiguration` annotation. The following configuration limits
+the reconciliation to 2 in 3 seconds: 
+
+`@ControllerConfiguration(rateLimit = @RateLimit(limitForPeriod = 2,refreshPeriod = 3,refreshPeriodTimeUnit = TimeUnit.SECONDS))`.
+
+That means if the reconciler executed twice in one second, it will wait at least additional two seconds before it is
+reconciled again.
 
 
 ## Handling Related Events with Event Sources

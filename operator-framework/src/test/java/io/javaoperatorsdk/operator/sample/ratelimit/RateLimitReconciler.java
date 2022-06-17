@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 
-@ControllerConfiguration(rateLimiter = @RateLimiter(limitForPeriod = 1,
+@ControllerConfiguration(rateLimit = @RateLimit(limitForPeriod = 1,
     refreshPeriod = RateLimitReconciler.REFRESH_PERIOD,
     refreshPeriodTimeUnit = TimeUnit.MILLISECONDS))
 public class RateLimitReconciler
