@@ -1,8 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 
+@Ignore
 public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
     extends AbstractCachingDependentResource<R, P> implements CacheKeyMapper<R> {
 
