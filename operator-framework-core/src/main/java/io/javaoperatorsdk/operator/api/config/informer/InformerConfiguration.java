@@ -2,13 +2,14 @@ package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -24,33 +25,53 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
-    private final EventFilter<R> eventFilter;
+    private final Predicate<R> onAddFilter;
+    private final BiPredicate<R, R> onUpdateFilter;
+    private final BiPredicate<R, Boolean> onDeleteFilter;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        EventFilter<R> eventFilter,
-        Set<String> namespaces, boolean followControllerNamespaceChanges) {
+        Set<String> namespaces, boolean followControllerNamespaceChanges,
+        Predicate<R> onAddFilter,
+        BiPredicate<R, R> onUpdateFilter,
+        BiPredicate<R, Boolean> onDeleteFilter) {
       super(labelSelector, resourceClass, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
+
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
-      this.eventFilter = eventFilter;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
+      this.onAddFilter = onAddFilter;
+      this.onUpdateFilter = onUpdateFilter;
+      this.onDeleteFilter = onDeleteFilter;
     }
 
+    @Override
     public boolean followControllerNamespaceChanges() {
       return followControllerNamespaceChanges;
     }
 
+    @Override
     public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
       return secondaryToPrimaryMapper;
     }
 
-    public EventFilter<R> getEventFilter() {
-      return eventFilter;
+    @Override
+    public Predicate<R> getOnAddFilter() {
+      return onAddFilter;
+    }
+
+    @Override
+    public BiPredicate<R, R> getOnUpdateFilter() {
+      return onUpdateFilter;
+    }
+
+    @Override
+    public BiPredicate<R, Boolean> getOnDeleteFilter() {
+      return onDeleteFilter;
     }
     @Override
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
@@ -68,7 +89,11 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  EventFilter<R> getEventFilter();
+  Predicate<R> getOnAddFilter();
+
+  BiPredicate<R, R> getOnUpdateFilter();
+
+  BiPredicate<R, Boolean> getOnDeleteFilter();
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
@@ -79,8 +104,10 @@ public interface InformerConfiguration<R extends HasMetadata>
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private Set<String> namespaces;
     private String labelSelector;
-    private EventFilter<R> eventFilter;
     private final Class<R> resourceClass;
+    private Predicate<R> onAddFilter;
+    private BiPredicate<R, R> onUpdateFilter;
+    private BiPredicate<R, Boolean> onDeleteFilter;
     private boolean inheritControllerNamespacesOnChange = false;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
@@ -161,16 +188,28 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withEventFilter(EventFilter<R> eventFilter) {
-      this.eventFilter = eventFilter;
+    public InformerConfigurationBuilder<R> withOnAddFilter(Predicate<R> onAddFilter) {
+      this.onAddFilter = onAddFilter;
+      return this;
+    }
+
+    public InformerConfigurationBuilder<R> withOnUpdateFilter(BiPredicate<R, R> onUpdateFilter) {
+      this.onUpdateFilter = onUpdateFilter;
+      return this;
+    }
+
+    public InformerConfigurationBuilder<R> withOnDeleteFilter(
+        BiPredicate<R, Boolean> onDeleteFilter) {
+      this.onDeleteFilter = onDeleteFilter;
       return this;
     }
 
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
-          secondaryToPrimaryMapper,eventFilter,
-          namespaces, inheritControllerNamespacesOnChange);
+          secondaryToPrimaryMapper,
+          namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
+              onDeleteFilter);
     }
   }
 

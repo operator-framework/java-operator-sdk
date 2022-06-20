@@ -2,6 +2,8 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -76,8 +78,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
+
   private final EventFilter<R> eventFilter;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
+
+  protected final Predicate<R> onAddFilter;
+  protected final BiPredicate<R, R> onUpdateFilter;
+  protected final BiPredicate<R, Boolean> onDeleteFilter;
+
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
@@ -95,6 +103,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
     this.eventFilter = configuration.getEventFilter();
+    onAddFilter = configuration.getOnAddFilter();
+    onUpdateFilter = configuration.getOnUpdateFilter();
+    onDeleteFilter = configuration.getOnDeleteFilter();
   }
 
   @Override
@@ -130,7 +141,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
-    if (eventFilter == null || eventFilter.acceptDelete(resource, b)) {
+    if (onDeleteFilter == null || onDeleteFilter.test(resource, b)) {
       propagateEvent(resource);
     }
   }
@@ -305,12 +316,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
 
   private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
-    if (eventFilter == null) {
-      return true;
-    } else if (operation == Operation.ADD) {
-      return eventFilter.acceptAdd(newObject);
+    if (operation == Operation.ADD) {
+      return onAddFilter == null || onAddFilter.test(newObject);
     } else {
-      return eventFilter.acceptUpdate(newObject, oldObject);
+      return onUpdateFilter == null || onUpdateFilter.test(newObject, oldObject);
     }
   }
 
