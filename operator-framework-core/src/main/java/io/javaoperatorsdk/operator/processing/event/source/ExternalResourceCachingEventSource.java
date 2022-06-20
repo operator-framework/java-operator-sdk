@@ -164,7 +164,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return true;
     }
 
-    return false;
+    throw new IllegalStateException("Should not end up here. Cached map: " + cachedResourceMap +
+        ", new resource map: " + newResourcesMap);
   }
 
   @Override
