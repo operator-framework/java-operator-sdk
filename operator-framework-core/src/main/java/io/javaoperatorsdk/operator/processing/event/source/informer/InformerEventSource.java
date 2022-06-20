@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -78,9 +76,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
-
-  private final EventFilter<R> eventFilter;
-  private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
   protected final Predicate<R> onAddFilter;
   protected final BiPredicate<R, R> onUpdateFilter;

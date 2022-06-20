@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -39,8 +41,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
+      Predicate<R> onAddFilter,
+      BiPredicate<R, R> onUpdateFilter,
       List<DependentResourceSpec> dependents) {
-    super(labelSelector, resourceClass, namespaces);
+    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;

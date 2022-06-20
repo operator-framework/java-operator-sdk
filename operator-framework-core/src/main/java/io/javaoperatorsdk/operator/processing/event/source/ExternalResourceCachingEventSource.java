@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,10 +40,6 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   protected final CacheKeyMapper<R> cacheKeyMapper;
 
   protected Map<ResourceID, Map<String, R>> cache = new ConcurrentHashMap<>();
-
-  protected Predicate<R> onAddFilter;
-  protected BiPredicate<R, R> onUpdateFilter;
-  protected BiPredicate<R, Boolean> onDeleteFilter;
 
   protected ExternalResourceCachingEventSource(Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
@@ -232,22 +226,5 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     // fine-tuned for
     // other event sources. (For now just by overriding this method.)
     return res.stream().anyMatch(r -> onDeleteFilter.test(r, false));
-  }
-
-  public ExternalResourceCachingEventSource<R, P> setOnAddFilter(Predicate<R> onAddFilter) {
-    this.onAddFilter = onAddFilter;
-    return this;
-  }
-
-  public ExternalResourceCachingEventSource<R, P> setOnUpdateFilter(
-      BiPredicate<R, R> onUpdateFilter) {
-    this.onUpdateFilter = onUpdateFilter;
-    return this;
-  }
-
-  public ExternalResourceCachingEventSource<R, P> setOnDeleteFilter(
-      BiPredicate<R, Boolean> onDeleteFilter) {
-    this.onDeleteFilter = onDeleteFilter;
-    return this;
   }
 }

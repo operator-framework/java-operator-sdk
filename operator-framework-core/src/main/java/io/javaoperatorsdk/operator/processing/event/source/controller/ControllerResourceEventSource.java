@@ -27,7 +27,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
-  private final ResourceEventFilter<T> filter;
+  private final ResourceEventFilter<T> legacyFilters;
 
   @SuppressWarnings("unchecked")
   public ControllerResourceEventSource(Controller<T> controller) {
@@ -39,9 +39,10 @@ public class ControllerResourceEventSource<T extends HasMetadata>
         ResourceEventFilters.generationAware(),
     };
     if (controller.getConfiguration().getEventFilter() != null) {
-      filter = controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
+      legacyFilters =
+          controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
     } else {
-      filter = ResourceEventFilters.or(filters);
+      legacyFilters = ResourceEventFilters.or(filters);
     }
   }
 
@@ -60,7 +61,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       log.debug("Event received for resource: {}", getName(resource));
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (filter.acceptChange(controller, oldResource, resource)) {
+      if (legacyFilters.acceptChange(controller, oldResource, resource)
+          && acceptFilters(action, resource, oldResource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
@@ -70,6 +72,17 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     } finally {
       MDCUtils.removeResourceInfo();
     }
+  }
+
+  private boolean acceptFilters(ResourceAction action, T resource, T oldResource) {
+    // delete event not filtered, there is no reconciliation for delete anyways
+    switch (action) {
+      case ADDED:
+        return onAddFilter == null || onAddFilter.test(resource);
+      case UPDATED:
+        return onUpdateFilter == null || onUpdateFilter.test(resource, oldResource);
+    }
+    return true;
   }
 
   @Override

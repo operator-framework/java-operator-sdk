@@ -4,9 +4,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -51,6 +56,8 @@ public @interface ControllerConfiguration {
   String labelSelector() default Constants.NO_VALUE_SET;
 
   /**
+   * Use onAddFilter, onUpdateFilter, onDeleteFilter instead.
+   *
    * <p>
    * Resource event filters only applies on events of the main custom resource. Not on events from
    * other event sources nor the periodic events.
@@ -58,7 +65,13 @@ public @interface ControllerConfiguration {
    *
    * @return the list of event filters.
    */
+  @Deprecated
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
+
+  // todo document missing delete filter
+  Class<? extends Predicate<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
+
+  Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request

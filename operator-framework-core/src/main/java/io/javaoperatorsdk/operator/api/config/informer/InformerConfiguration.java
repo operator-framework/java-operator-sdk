@@ -25,8 +25,6 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
-    private final Predicate<R> onAddFilter;
-    private final BiPredicate<R, R> onUpdateFilter;
     private final BiPredicate<R, Boolean> onDeleteFilter;
 
     protected DefaultInformerConfiguration(String labelSelector,
@@ -37,15 +35,13 @@ public interface InformerConfiguration<R extends HasMetadata>
         Predicate<R> onAddFilter,
         BiPredicate<R, R> onUpdateFilter,
         BiPredicate<R, Boolean> onDeleteFilter) {
-      super(labelSelector, resourceClass, namespaces);
+      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
-      this.onAddFilter = onAddFilter;
-      this.onUpdateFilter = onUpdateFilter;
       this.onDeleteFilter = onDeleteFilter;
     }
 
@@ -59,18 +55,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       return secondaryToPrimaryMapper;
     }
 
-    @Override
-    public Predicate<R> getOnAddFilter() {
-      return onAddFilter;
-    }
-
-    @Override
-    public BiPredicate<R, R> getOnUpdateFilter() {
-      return onUpdateFilter;
-    }
-
-    @Override
-    public BiPredicate<R, Boolean> getOnDeleteFilter() {
+    public BiPredicate<R, Boolean> onDeleteFilter() {
       return onDeleteFilter;
     }
     @Override
@@ -89,11 +74,11 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  Predicate<R> getOnAddFilter();
+  Predicate<R> onAddFilter();
 
-  BiPredicate<R, R> getOnUpdateFilter();
+  BiPredicate<R, R> onUpdateFilter();
 
-  BiPredicate<R, Boolean> getOnDeleteFilter();
+  BiPredicate<R, Boolean> onDeleteFilter();
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
