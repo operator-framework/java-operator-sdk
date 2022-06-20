@@ -35,10 +35,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceException;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
