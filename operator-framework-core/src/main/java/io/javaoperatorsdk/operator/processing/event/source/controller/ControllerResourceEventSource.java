@@ -44,6 +44,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     } else {
       legacyFilters = ResourceEventFilters.or(filters);
     }
+    controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
+    controller.getConfiguration().onUpdateFilter().ifPresent(this::setOnUpdateFilter);
   }
 
   @Override
