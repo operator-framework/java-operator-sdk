@@ -81,7 +81,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   protected final BiPredicate<R, R> onUpdateFilter;
   protected final BiPredicate<R, Boolean> onDeleteFilter;
 
-
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
     this(configuration, context.getClient());
@@ -90,6 +89,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+    primaryToSecondaryIndex =
+        new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
+    onAddFilter = configuration.onAddFilter().orElse(null);
+    onUpdateFilter = configuration.onUpdateFilter().orElse(null);
+    onDeleteFilter = configuration.onDeleteFilter().orElse(null);
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
       primaryToSecondaryIndex =
@@ -97,10 +101,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } else {
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
-    this.eventFilter = configuration.getEventFilter();
-    onAddFilter = configuration.getOnAddFilter();
-    onUpdateFilter = configuration.getOnUpdateFilter();
-    onDeleteFilter = configuration.getOnDeleteFilter();
   }
 
   @Override

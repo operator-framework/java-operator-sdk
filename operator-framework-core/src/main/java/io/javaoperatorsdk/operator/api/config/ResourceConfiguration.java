@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -19,12 +20,12 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
-  default Predicate<R> onAddFilter() {
-    return null;
+  default Optional<Predicate<R>> onAddFilter() {
+    return Optional.empty();
   }
 
-  default BiPredicate<R, R> onUpdateFilter() {
-    return null;
+  default Optional<BiPredicate<R, R>> onUpdateFilter() {
+    return Optional.empty();
   }
 
   /**

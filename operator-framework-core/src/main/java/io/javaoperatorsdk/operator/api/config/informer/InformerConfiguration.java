@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -55,8 +56,8 @@ public interface InformerConfiguration<R extends HasMetadata>
       return secondaryToPrimaryMapper;
     }
 
-    public BiPredicate<R, Boolean> onDeleteFilter() {
-      return onDeleteFilter;
+    public Optional<BiPredicate<R, Boolean>> onDeleteFilter() {
+      return Optional.ofNullable(onDeleteFilter);
     }
     @Override
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
@@ -74,11 +75,11 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  Predicate<R> onAddFilter();
+  Optional<Predicate<R>> onAddFilter();
 
-  BiPredicate<R, R> onUpdateFilter();
+  Optional<BiPredicate<R, R>> onUpdateFilter();
 
-  BiPredicate<R, Boolean> onDeleteFilter();
+  Optional<BiPredicate<R, Boolean>> onDeleteFilter();
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 

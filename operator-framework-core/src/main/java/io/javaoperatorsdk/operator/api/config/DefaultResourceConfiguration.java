@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -58,12 +59,12 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Predicate<R> onAddFilter() {
-    return onAddFilter;
+  public Optional<Predicate<R>> onAddFilter() {
+    return Optional.ofNullable(onAddFilter);
   }
 
   @Override
-  public BiPredicate<R, R> onUpdateFilter() {
-    return onUpdateFilter;
+  public Optional<BiPredicate<R, R>> onUpdateFilter() {
+    return Optional.ofNullable(onUpdateFilter);
   }
 }

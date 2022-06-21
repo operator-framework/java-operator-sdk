@@ -42,8 +42,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     // make the original specs modifiable
     final var dependentResources = original.getDependentResources();
     namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
-    this.onAddFilter = original.onAddFilter();
-    this.onUpdateFilter = original.onUpdateFilter();
+    this.onAddFilter = original.onAddFilter().orElse(null);
+    this.onUpdateFilter = original.onUpdateFilter().orElse(null);
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
   }

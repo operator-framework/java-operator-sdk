@@ -8,7 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -27,6 +29,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
@@ -144,14 +148,37 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     }
   }
 
-  public static <T> T valueOrDefault(
-      ControllerConfiguration controllerConfiguration,
-      Function<ControllerConfiguration, T> mapper,
-      T defaultValue) {
-    if (controllerConfiguration == null) {
-      return defaultValue;
+  @Override
+  @SuppressWarnings("unchecked")
+  public Optional<Predicate<R>> onAddFilter() {
+    var onAddFilter = annotation.onAddFilter();
+    if (onAddFilter.equals(VoidOnAddFilter.class)) {
+      return Optional.empty();
     } else {
-      return mapper.apply(controllerConfiguration);
+      try {
+        var instance = (Predicate<R>) onAddFilter.getDeclaredConstructor().newInstance();
+        return Optional.of(instance);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+          | NoSuchMethodException e) {
+        throw new OperatorException(e);
+      }
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Optional<BiPredicate<R, R>> onUpdateFilter() {
+    var onUpdateFilter = annotation.onUpdateFilter();
+    if (onUpdateFilter.equals(VoidOnUpdateFilter.class)) {
+      return Optional.empty();
+    } else {
+      try {
+        var instance = (BiPredicate<R, R>) onUpdateFilter.getDeclaredConstructor().newInstance();
+        return Optional.of(instance);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+          | NoSuchMethodException e) {
+        throw new OperatorException(e);
+      }
     }
   }
 
@@ -245,4 +272,16 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
     return config;
   }
+
+  public static <T> T valueOrDefault(
+      ControllerConfiguration controllerConfiguration,
+      Function<ControllerConfiguration, T> mapper,
+      T defaultValue) {
+    if (controllerConfiguration == null) {
+      return defaultValue;
+    } else {
+      return mapper.apply(controllerConfiguration);
+    }
+  }
+
 }
