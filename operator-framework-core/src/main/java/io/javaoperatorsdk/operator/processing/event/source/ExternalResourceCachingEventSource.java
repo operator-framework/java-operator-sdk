@@ -68,10 +68,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return;
     }
     var cachedValues = cache.get(primaryID);
-    var removedResources = resourceIDs.stream()
-        .flatMap(id -> Stream.ofNullable(cachedValues.remove(id))).collect(Collectors.toList());
+    List<R> removedResources = cachedValues == null ? Collections.emptyList()
+        : resourceIDs.stream()
+            .flatMap(id -> Stream.ofNullable(cachedValues.remove(id))).collect(Collectors.toList());
 
-    if (cachedValues.isEmpty()) {
+    if (cachedValues != null && cachedValues.isEmpty()) {
       cache.remove(primaryID);
     }
     if (!removedResources.isEmpty() && deleteAcceptedByFilter(removedResources)) {
@@ -158,8 +159,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return true;
     }
 
-    throw new IllegalStateException("Should not end up here. Cached map: " + cachedResourceMap +
-        ", new resource map: " + newResourcesMap);
+    return false;
   }
 
   @Override
