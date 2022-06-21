@@ -159,8 +159,14 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     if (kubernetesDependentResourceConfig != null) {
+      // sets the filters for the dependent resource, which are applied by parent class
+      setOnAddFilter(kubernetesDependentResourceConfig.onAddFilter());
+      setOnUpdateFilter(kubernetesDependentResourceConfig.onUpdateFilter());
+      setOnDeleteFilter(kubernetesDependentResourceConfig.onDeleteFilter());
+
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
           !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);

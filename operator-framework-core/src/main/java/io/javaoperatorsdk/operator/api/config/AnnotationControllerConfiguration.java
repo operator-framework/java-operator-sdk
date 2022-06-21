@@ -251,6 +251,7 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   }
 
   private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
+
     Object config;
     final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
 
@@ -267,9 +268,30 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
     }
+    Predicate<? extends HasMetadata> onAddFilter = null;
+    BiPredicate<? extends HasMetadata, ? extends HasMetadata> onUpdateFilter = null;
+    BiPredicate<? extends HasMetadata, Boolean> onDeleteFilter = null;
+    if (kubeDependent != null) {
+      try {
+        onAddFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
+            ? kubeDependent.onAddFilter().getConstructor().newInstance()
+            : null;
+        onUpdateFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
+            ? kubeDependent.onUpdateFilter().getConstructor().newInstance()
+            : null;
+        onDeleteFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
+            ? kubeDependent.onDeleteFilter().getConstructor().newInstance()
+            : null;
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+          | NoSuchMethodException e) {
+        throw new IllegalStateException(e);
+      }
+    }
 
     config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
+            onUpdateFilter, onDeleteFilter);
+
     return config;
   }
 
