@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,5 +114,11 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public Set<T> getSecondaryResources(T primary) {
     throw new IllegalStateException("This method should not be called here. Primary: " + primary);
+  }
+
+  @Override
+  public void setOnDeleteFilter(BiPredicate<T, Boolean> onDeleteFilter) {
+    throw new IllegalStateException(
+        "onAddFilter is not supported for controller resource event source");
   }
 }
