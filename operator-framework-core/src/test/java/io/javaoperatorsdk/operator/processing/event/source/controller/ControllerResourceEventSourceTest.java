@@ -2,12 +2,16 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -16,10 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTe
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class ControllerResourceEventSourceTest extends
     AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
@@ -90,7 +91,7 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void eventWithNoGenerationProcessedIfNoFinalizer() {
+  void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
     source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
@@ -99,7 +100,7 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
-  public void callsBroadcastsOnResourceEvents() {
+  void callsBroadcastsOnResourceEvents() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
     source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
@@ -109,14 +110,45 @@ class ControllerResourceEventSourceTest extends
             eq(customResource1));
   }
 
+  @Test
+  void filtersOutEventsOnAddAndUpdate() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+
+    Predicate<TestCustomResource> onAddPredicate = (res) -> false;
+    BiPredicate<TestCustomResource, TestCustomResource> onUpdatePredicate = (res, res2) -> false;
+    source =
+        new ControllerResourceEventSource<>(new TestController(onAddPredicate, onUpdatePredicate));
+    setUpSource(source);
+
+    source.eventReceived(ResourceAction.ADDED, cr, null);
+    source.eventReceived(ResourceAction.UPDATED, cr, cr);
+
+    verify(eventHandler, never()).handleEvent(any());
+  }
+
+  private ControllerConfiguration mockConfiguration() {
+    var mockConfig = mock(ControllerConfiguration.class);
+    when(mockConfig.isGenerationAware()).thenReturn(true);
+    when(mockConfig.getFinalizerName()).thenReturn(FINALIZER);
+    when(mockConfig.getResourceClass()).thenReturn(TestCustomResource.class);
+    when(mockConfig.getNamespaces()).thenReturn(Set.of("namespace"));
+    return mockConfig;
+  }
+
   @SuppressWarnings("unchecked")
   private static class TestController extends Controller<TestCustomResource> {
 
     private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);
 
+    public TestController(Predicate<TestCustomResource> onAddFilter,
+        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter) {
+      super(null, new TestConfiguration(true, onAddFilter, onUpdateFilter),
+          MockKubernetesClient.client(TestCustomResource.class));
+    }
+
     public TestController(boolean generationAware) {
-      super(null, new TestConfiguration(generationAware),
+      super(null, new TestConfiguration(generationAware, null, null),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
@@ -134,7 +166,8 @@ class ControllerResourceEventSourceTest extends
   private static class TestConfiguration extends
       DefaultControllerConfiguration<TestCustomResource> {
 
-    public TestConfiguration(boolean generationAware) {
+    public TestConfiguration(boolean generationAware, Predicate<TestCustomResource> onAddFilter,
+        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter) {
       super(
           null,
           null,
@@ -147,7 +180,7 @@ class ControllerResourceEventSourceTest extends
           null,
           TestCustomResource.class,
           null,
-          null, null, null);
+          onAddFilter, onUpdateFilter, null);
     }
   }
 }
