@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -124,15 +122,6 @@ class ControllerResourceEventSourceTest extends
     source.eventReceived(ResourceAction.UPDATED, cr, cr);
 
     verify(eventHandler, never()).handleEvent(any());
-  }
-
-  private ControllerConfiguration mockConfiguration() {
-    var mockConfig = mock(ControllerConfiguration.class);
-    when(mockConfig.isGenerationAware()).thenReturn(true);
-    when(mockConfig.getFinalizerName()).thenReturn(FINALIZER);
-    when(mockConfig.getResourceClass()).thenReturn(TestCustomResource.class);
-    when(mockConfig.getNamespaces()).thenReturn(Set.of("namespace"));
-    return mockConfig;
   }
 
   @SuppressWarnings("unchecked")
