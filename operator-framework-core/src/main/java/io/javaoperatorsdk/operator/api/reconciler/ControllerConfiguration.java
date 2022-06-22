@@ -68,8 +68,14 @@ public @interface ControllerConfiguration {
   @Deprecated
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
 
+  /**
+   * Filter of onAdd events of resources. (Note that onDelete is missing, delete events don't
+   * trigger reconciliation - since if finalizer used there the event is an update that triggers the
+   * cleanup. If not used the resources are cleaned up by garbage collector.)
+   **/
   Class<? extends Predicate<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
 
+  /** Filter of onUpdate events of resources. */
   Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
 
   /**
