@@ -157,12 +157,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       superOnOp.run();
     } else {
       superOnOp.run();
-      log.debug(
-          "Propagating event for {}, resource with same version not result of a reconciliation. Resource ID: {}",
-          operation,
-          resourceID);
       if (eventAcceptedByFilter(operation, newObject, oldObject)) {
+        log.debug(
+            "Propagating event for {}, resource with same version not result of a reconciliation. Resource ID: {}",
+            operation,
+            resourceID);
         propagateEvent(newObject);
+      } else {
+        log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
       }
     }
   }

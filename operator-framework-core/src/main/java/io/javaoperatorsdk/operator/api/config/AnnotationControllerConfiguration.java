@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -276,10 +277,10 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
         onAddFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
             ? kubeDependent.onAddFilter().getConstructor().newInstance()
             : null;
-        onUpdateFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
+        onUpdateFilter = kubeDependent.onUpdateFilter() != VoidOnUpdateFilter.class
             ? kubeDependent.onUpdateFilter().getConstructor().newInstance()
             : null;
-        onDeleteFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
+        onDeleteFilter = kubeDependent.onDeleteFilter() != VoidOnDeleteFilter.class
             ? kubeDependent.onDeleteFilter().getConstructor().newInstance()
             : null;
       } catch (InstantiationException | IllegalAccessException | InvocationTargetException

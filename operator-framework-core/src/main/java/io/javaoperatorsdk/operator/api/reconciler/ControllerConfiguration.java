@@ -68,7 +68,6 @@ public @interface ControllerConfiguration {
   @Deprecated
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
 
-  // todo document missing delete filter
   Class<? extends Predicate<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
 
   Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
