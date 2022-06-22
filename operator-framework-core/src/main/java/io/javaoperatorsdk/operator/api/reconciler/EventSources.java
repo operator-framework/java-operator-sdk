@@ -9,7 +9,15 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface EventSources {
 
-    Informer[] informers() default {};
+  /**
+   *
+   * @return declarations of
+   *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}
+   */
+  Informer[] informers() default {};
 
-    EventSource[] otherEventSources() default {};
+  /**
+   * @return non informer based (external resource) event sources
+   */
+  EventSource[] others() default {};
 }

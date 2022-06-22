@@ -8,4 +8,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface EventSource {
+
+  Class<? extends io.javaoperatorsdk.operator.processing.event.source.EventSource> type();
+
+  // todo add filters
 }
