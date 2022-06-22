@@ -91,6 +91,8 @@ public @interface ControllerConfiguration {
   ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
       interval = 10);
 
+  EventSources eventSources() default @EventSources;
+
 
   RateLimit rateLimit() default @RateLimit;
 
