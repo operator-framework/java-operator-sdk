@@ -9,9 +9,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.OwnerReferenceSecondaryToPrimaryMapper;
 
+import static io.javaoperatorsdk.operator.api.reconciler.EventSource.GENERATED_EVENT_SOURCE_NAME;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface Informer {
+
+  String name() default GENERATED_EVENT_SOURCE_NAME;
 
   Class<? extends HasMetadata> resourceType();
 
@@ -23,5 +27,6 @@ public @interface Informer {
 
   Class<? extends SecondaryToPrimaryMapper> secondaryToPrimaryMapper() default OwnerReferenceSecondaryToPrimaryMapper.class;
 
+  // todo support indexes?
   // todo add filters
 }

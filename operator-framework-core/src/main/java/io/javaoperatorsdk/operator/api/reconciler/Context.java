@@ -22,4 +22,6 @@ public interface Context<P extends HasMetadata> {
   ControllerConfiguration<P> getControllerConfiguration();
 
   ManagedDependentResourceContext managedDependentResourceContext();
+
+  // todo access event sources from context
 }

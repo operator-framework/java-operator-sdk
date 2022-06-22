@@ -6,5 +6,5 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @FunctionalInterface
 public interface SecondaryToPrimaryMapper<R> {
-  Set<ResourceID> toPrimaryResourceIDs(R dependentResource);
+  Set<ResourceID> toPrimaryResourceIDs(R secondaryResource);
 }

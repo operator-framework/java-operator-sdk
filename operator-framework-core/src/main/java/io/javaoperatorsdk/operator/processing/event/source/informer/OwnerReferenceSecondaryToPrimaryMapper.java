@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 public class OwnerReferenceSecondaryToPrimaryMapper<R extends HasMetadata>
     implements SecondaryToPrimaryMapper<R> {
   @Override
-  public Set<ResourceID> toPrimaryResourceIDs(R dependentResource) {
-    return Mappers.fromOwnerReference().toPrimaryResourceIDs(dependentResource);
+  public Set<ResourceID> toPrimaryResourceIDs(R secondaryResource) {
+    return Mappers.fromOwnerReference().toPrimaryResourceIDs(secondaryResource);
   }
 }

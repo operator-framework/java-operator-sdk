@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.eventsource.EventSourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -33,6 +34,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
   private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
+  private final List<EventSourceSpec> eventSourceSpecs;
   private Predicate<R> onAddFilter;
   private BiPredicate<R, R> onUpdateFilter;
   private Predicate<R> genericFilter;
@@ -46,6 +48,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
+    this.eventSourceSpecs = original.getEventSources();
     // make the original specs modifiable
     final var dependentResources = original.getDependentResources();
     namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
@@ -205,6 +208,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
+        eventSourceSpecs,
         newDependentSpecs);
   }
 

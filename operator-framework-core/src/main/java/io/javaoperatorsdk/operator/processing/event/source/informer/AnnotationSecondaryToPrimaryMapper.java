@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 public class AnnotationSecondaryToPrimaryMapper<R extends HasMetadata>
     implements SecondaryToPrimaryMapper<R> {
   @Override
-  public Set<ResourceID> toPrimaryResourceIDs(R dependentResource) {
-    return Mappers.fromDefaultAnnotations().toPrimaryResourceIDs(dependentResource);
+  public Set<ResourceID> toPrimaryResourceIDs(R secondaryResource) {
+    return Mappers.fromDefaultAnnotations().toPrimaryResourceIDs(secondaryResource);
   }
 }

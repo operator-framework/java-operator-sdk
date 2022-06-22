@@ -9,6 +9,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface EventSource {
 
+  String GENERATED_EVENT_SOURCE_NAME = "JOSDK_GENERATED_NAME";
+
+  String name() default GENERATED_EVENT_SOURCE_NAME;
+
   Class<? extends io.javaoperatorsdk.operator.processing.event.source.EventSource> type();
 
   // todo add filters

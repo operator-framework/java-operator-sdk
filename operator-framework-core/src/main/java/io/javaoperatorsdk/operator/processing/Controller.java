@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -19,6 +20,8 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.eventsource.EventSourceSpec;
+import io.javaoperatorsdk.operator.api.config.eventsource.InformerEventSourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -36,6 +39,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManag
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -175,6 +180,15 @@ public class Controller<P extends HasMetadata>
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
+    configuration.getEventSources().stream().map(es -> initEventSource(es, context))
+        .forEach(nes -> eventSourceManager.registerEventSource(nes.name(), nes.original()));
+
+    // add manually defined event sources
+    if (reconciler instanceof EventSourceInitializer) {
+      final var provider = (EventSourceInitializer<P>) this.reconciler;
+      final var ownSources = provider.prepareEventSources(context);
+      ownSources.forEach(eventSourceManager::registerEventSource);
+    }
     managedWorkflow
         .getDependentResourcesByName().entrySet().stream()
         .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
@@ -183,13 +197,33 @@ public class Controller<P extends HasMetadata>
           final var source = provider.initEventSource(context);
           eventSourceManager.registerEventSource(drEntry.getKey(), source);
         });
+  }
 
-    // add manually defined event sources
-    if (reconciler instanceof EventSourceInitializer) {
-      final var provider = (EventSourceInitializer<P>) this.reconciler;
-      final var ownSources = provider.prepareEventSources(context);
-      ownSources.forEach(eventSourceManager::registerEventSource);
+  private NamedEventSource initEventSource(EventSourceSpec esSpec, EventSourceContext<P> context) {
+    try {
+      if (esSpec instanceof InformerEventSourceSpec) {
+        // InformerEventSourceSpec iess = (InformerEventSourceSpec) esSpec;
+        // var configBuilder
+        // = InformerConfiguration.from(iess.);
+        //
+        // InformerEventSource informerEventSource = new
+        // InformerEventSource(configBuilder.build(),context);
+        // return new NamedEventSource(informerEventSource,finalEventSourceName(esSpec.getName()));
+        // todo
+        return null;
+      } else {
+        EventSource es = (EventSource) esSpec.getEventSourceClass().getConstructor().newInstance();
+        return new NamedEventSource(es, finalEventSourceName(esSpec.getName()));
+      }
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new IllegalStateException(e);
     }
+  }
+
+  private String finalEventSourceName(String name) {
+    // todo
+    return null;
   }
 
   @Override

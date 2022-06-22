@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.util.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -12,14 +13,16 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.config.eventsource.EventSourceSpec;
+import io.javaoperatorsdk.operator.api.config.eventsource.InformerEventSourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.VoidCondition;
@@ -29,6 +32,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
@@ -210,6 +214,36 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Optional<Predicate<P>> genericFilter() {
     return (Optional<Predicate<P>>) createFilter(annotation.genericFilter(),
         FilterType.generic, annotation.getClass().getSimpleName());
+  }
+
+  @Override
+  public List<EventSourceSpec> getEventSources() {
+    var informerSpecs = Arrays
+        .stream(annotation.eventSources().informers()).map(this::toInformerEventSourceSpec);
+    var otherEventSources = Arrays
+        .stream(annotation.eventSources().others()).map(this::toEventSourceSpec);
+    return Stream.concat(informerSpecs, otherEventSources).collect(Collectors.toList());
+  }
+
+  @SuppressWarnings("unchecked")
+  private EventSourceSpec toEventSourceSpec(EventSource eventSource) {
+    return new EventSourceSpec(eventSource.name(), eventSource.type());
+  }
+
+  @SuppressWarnings("unchecked")
+  private InformerEventSourceSpec toInformerEventSourceSpec(Informer informer) {
+    try {
+      Set<String> namespaces = new HashSet<>();
+      Collections.addAll(namespaces, informer.namespaces());
+      SecondaryToPrimaryMapper<R> mapper =
+          informer.secondaryToPrimaryMapper().getConstructor().newInstance();
+      return new InformerEventSourceSpec(informer.name(), informer.resourceType(),
+          informer.labelSelector(), namespaces,
+          informer.followNamespaceChanges(), mapper);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
