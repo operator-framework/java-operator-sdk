@@ -55,6 +55,7 @@
         <awaitility.version>4.2.0</awaitility.version>
         <spring-boot.version>2.7.1</spring-boot.version>
         <micrometer-core.version>1.9.1</micrometer-core.version>
+        <guava.version>31.1-jre</guava.version>
 
         <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
@@ -169,6 +170,11 @@
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>operator-framework</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
