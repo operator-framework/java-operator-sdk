@@ -15,8 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
@@ -32,15 +34,17 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
 
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
-  private final List<PortFowardSpec> portForwards;
+  private final List<PortForwardSpec> portForwards;
   private final List<LocalPortForward> localPortForwards;
+  private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
 
   private LocalOperatorExtension(
       ConfigurationService configurationService,
       List<ReconcilerSpec> reconcilers,
       List<HasMetadata> infrastructure,
-      List<PortFowardSpec> portForwards,
+      List<PortForwardSpec> portForwards,
+      List<Class<? extends CustomResource>> additionalCustomResourceDefinitions,
       Duration infrastructureTimeout,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
@@ -55,6 +59,7 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
     this.reconcilers = reconcilers;
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
+    this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
     this.operator = new Operator(getKubernetesClient(), this.configurationService);
     this.registeredControllers = new HashMap<>();
   }
@@ -114,10 +119,12 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
           .withName(podName).portForward(ref.getPort(), ref.getLocalPort()));
     }
 
+    additionalCustomResourceDefinitions
+        .forEach(cr -> applyCrd(ReconcilerUtils.getResourceTypeName(cr)));
+
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
       final var oconfig = override(config).settingNamespace(namespace);
-      final var path = "/META-INF/fabric8/" + config.getResourceTypeName() + "-v1.yml";
 
       if (ref.retry != null) {
         oconfig.withRetry(ref.retry);
@@ -126,17 +133,7 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
-      try (InputStream is = getClass().getResourceAsStream(path)) {
-        final var crd = kubernetesClient.load(is);
-        crd.createOrReplace();
-        Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
-        LOGGER.debug("Applied CRD with name: {}", config.getResourceTypeName());
-      } catch (InterruptedException ex) {
-        LOGGER.error("Interrupted.", ex);
-        Thread.currentThread().interrupt();
-      } catch (Exception ex) {
-        throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
-      }
+      applyCrd(config.getResourceTypeName());
 
       if (ref.reconciler instanceof KubernetesClientAware) {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
@@ -148,6 +145,21 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
+  }
+
+  private void applyCrd(String resourceTypeName) {
+    String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
+    try (InputStream is = getClass().getResourceAsStream(path)) {
+      final var crd = getKubernetesClient().load(is);
+      crd.createOrReplace();
+      Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
+      LOGGER.debug("Applied CRD with path: {}", path);
+    } catch (InterruptedException ex) {
+      LOGGER.error("Interrupted.", ex);
+      Thread.currentThread().interrupt();
+    } catch (Exception ex) {
+      throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
+    }
   }
 
   protected void after(ExtensionContext context) {
@@ -172,12 +184,14 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
   @SuppressWarnings("rawtypes")
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<ReconcilerSpec> reconcilers;
-    private final List<PortFowardSpec> portForwards;
+    private final List<PortForwardSpec> portForwards;
+    private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
 
     protected Builder() {
       super();
       this.reconcilers = new ArrayList<>();
       this.portForwards = new ArrayList<>();
+      this.additionalCustomResourceDefinitions = new ArrayList<>();
     }
 
     public Builder withReconciler(
@@ -217,9 +231,16 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
 
     public Builder withPortForward(String namespace, String labelKey, String labelValue, int port,
         int localPort) {
-      portForwards.add(new PortFowardSpec(namespace, labelKey, labelValue, port, localPort));
+      portForwards.add(new PortForwardSpec(namespace, labelKey, labelValue, port, localPort));
       return this;
     }
+
+    public Builder withAdditionalCustomResourceDefinition(
+        Class<? extends CustomResource> customResource) {
+      additionalCustomResourceDefinitions.add(customResource);
+      return this;
+    }
+
 
     public LocalOperatorExtension build() {
       return new LocalOperatorExtension(
@@ -227,6 +248,7 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
           reconcilers,
           infrastructure,
           portForwards,
+          additionalCustomResourceDefinitions,
           infrastructureTimeout,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
@@ -234,14 +256,14 @@ public class LocalOperatorExtension extends AbstractOperatorExtension {
     }
   }
 
-  private static class PortFowardSpec {
+  private static class PortForwardSpec {
     final String namespace;
     final String labelKey;
     final String labelValue;
     final int port;
     final int localPort;
 
-    public PortFowardSpec(String namespace, String labelKey, String labelValue, int port,
+    public PortForwardSpec(String namespace, String labelKey, String labelValue, int port,
         int localPort) {
       this.namespace = namespace;
       this.labelKey = labelKey;

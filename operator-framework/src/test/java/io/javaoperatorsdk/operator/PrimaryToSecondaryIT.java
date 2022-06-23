@@ -22,11 +22,10 @@ class PrimaryToSecondaryIT {
   @RegisterExtension
   LocalOperatorExtension operator =
       LocalOperatorExtension.builder()
-
+          .withAdditionalCustomResourceDefinition(Cluster.class)
           .withReconciler(new JobReconciler())
           .build();
 
-  // todo load other CRD
   @Test
   void readsSecondaryInManyToOneCases() throws InterruptedException {
     operator.create(Cluster.class, cluster());
