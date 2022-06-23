@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEvent
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.InformerPrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 /**
  * <p>
@@ -75,7 +75,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
-  private final InformerPrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
+  private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {

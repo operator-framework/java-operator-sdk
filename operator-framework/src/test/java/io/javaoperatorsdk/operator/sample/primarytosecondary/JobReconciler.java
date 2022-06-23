@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.InformerPrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration()
@@ -43,7 +43,7 @@ public class JobReconciler
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
             .withPrimaryToSecondaryMapper(
-                (InformerPrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
+                (PrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
                     primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())))
             .withNamespacesInheritedFromController(context)
             .build();
