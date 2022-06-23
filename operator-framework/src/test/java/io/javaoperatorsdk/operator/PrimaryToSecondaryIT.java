@@ -19,6 +19,7 @@ class PrimaryToSecondaryIT {
 
   public static final String CLUSTER_NAME = "cluster1";
   public static final int MIN_DELAY = 150;
+
   @RegisterExtension
   LocalOperatorExtension operator =
       LocalOperatorExtension.builder()
@@ -32,7 +33,7 @@ class PrimaryToSecondaryIT {
     Thread.sleep(MIN_DELAY);
     operator.create(Job.class, job());
 
-    await().pollDelay(Duration.ofMillis(400)).untilAsserted(
+    await().pollDelay(Duration.ofMillis(300)).untilAsserted(
         () -> assertThat(operator.getReconcilerOfType(JobReconciler.class).getNumberOfExecutions())
             .isEqualTo(1));
   }
