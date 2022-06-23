@@ -8,6 +8,7 @@ import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.processing.event.source.InformerPrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -19,15 +20,18 @@ public interface InformerConfiguration<R extends HasMetadata>
   class DefaultInformerConfiguration<R extends HasMetadata> extends
       DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
+    private final InformerPrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
+        InformerPrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         Set<String> namespaces, boolean followControllerNamespaceChanges) {
       super(labelSelector, resourceClass, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
+      this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
@@ -41,6 +45,10 @@ public interface InformerConfiguration<R extends HasMetadata>
       return secondaryToPrimaryMapper;
     }
 
+    @Override
+    public <P extends HasMetadata> InformerPrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
+      return (InformerPrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
+    }
   }
 
   /**
@@ -53,9 +61,12 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
+  <P extends HasMetadata> InformerPrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
+
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata> {
 
+    private InformerPrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private Set<String> namespaces;
     private String labelSelector;
@@ -64,6 +75,12 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
+    }
+
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> withPrimaryToSecondaryMapper(
+        InformerPrimaryToSecondaryMapper<P> primaryToSecondaryMapper) {
+      this.primaryToSecondaryMapper = primaryToSecondaryMapper;
+      return this;
     }
 
     public InformerConfigurationBuilder<R> withSecondaryToPrimaryMapper(
@@ -136,6 +153,7 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
+          primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange);
     }
