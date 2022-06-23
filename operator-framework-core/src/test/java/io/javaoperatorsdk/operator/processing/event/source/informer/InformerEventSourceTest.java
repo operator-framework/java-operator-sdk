@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -22,7 +21,11 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class InformerEventSourceTest {
@@ -32,7 +35,6 @@ class InformerEventSourceTest {
   private static final String NEXT_RESOURCE_VERSION = "2";
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
-  private final KubernetesClient clientMock = mock(KubernetesClient.class);
   private final TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
@@ -47,7 +49,6 @@ class InformerEventSourceTest {
 
   @BeforeEach
   void setup() {
-    when(clientMock.resources(any())).thenReturn(crClientMock);
     when(crClientMock.inAnyNamespace()).thenReturn(specificResourceClientMock);
     when(specificResourceClientMock.withLabelSelector((String) null))
         .thenReturn(labeledResourceClientMock);
@@ -60,7 +61,7 @@ class InformerEventSourceTest {
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
     when(informerConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
-    informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
+    informerEventSource = new InformerEventSource<>(informerConfiguration, crClientMock);
     informerEventSource.setTemporalResourceCache(temporaryResourceCacheMock);
     informerEventSource.setEventHandler(eventHandlerMock);
 

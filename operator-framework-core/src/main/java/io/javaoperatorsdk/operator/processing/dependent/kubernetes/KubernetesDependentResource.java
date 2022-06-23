@@ -60,7 +60,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.kubernetesDependentResourceConfig = config;
   }
 
-  @SuppressWarnings("unchecked")
   private void configureWith(String labelSelector, Set<String> namespaces,
       boolean inheritNamespacesOnChange, EventSourceContext<P> context) {
 
@@ -74,7 +73,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
-    configureWith(new InformerEventSource<>(ic, client));
+    configureWith(new InformerEventSource<>(ic, context));
   }
 
   @SuppressWarnings("unchecked")

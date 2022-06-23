@@ -8,7 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -86,8 +88,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     this(configuration, context.getClient());
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
-    super(client.resources(configuration.getResourceClass()), configuration);
+  public InformerEventSource(InformerConfiguration<R> configuration,
+      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
+    super(client, configuration);
     this.configuration = configuration;
     primaryToSecondaryIndex =
         new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());

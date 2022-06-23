@@ -1,7 +1,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -125,14 +129,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withOnAddFilter(
-      Predicate<R> onAddFilter) {
+  public ControllerConfigurationOverrider<R> withOnAddFilter(Predicate<R> onAddFilter) {
     this.onAddFilter = onAddFilter;
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withOnUpdateFilter(
-      BiPredicate<R, R> onUpdateFilter) {
+  public ControllerConfigurationOverrider<R> withOnUpdateFilter(BiPredicate<R, R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
     return this;
   }
