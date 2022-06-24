@@ -56,7 +56,7 @@ public @interface ControllerConfiguration {
   String labelSelector() default Constants.NO_VALUE_SET;
 
   /**
-   * Use onAddFilter, onUpdateFilter, onDeleteFilter instead.
+   * Use onAddFilter, onUpdateFilter instead.
    *
    * <p>
    * Resource event filters only applies on events of the main custom resource. Not on events from
