@@ -9,7 +9,7 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata>
     implements PrimaryToSecondaryIndex<R> {
 
   @SuppressWarnings("rawtypes")
-  private final static NOOPPrimaryToSecondaryIndex instance = new NOOPPrimaryToSecondaryIndex();
+  private static final NOOPPrimaryToSecondaryIndex instance = new NOOPPrimaryToSecondaryIndex();
 
   public static <T extends HasMetadata> NOOPPrimaryToSecondaryIndex<T> getInstance() {
     return instance;
@@ -18,13 +18,17 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata>
   private NOOPPrimaryToSecondaryIndex() {}
 
   @Override
-  public void onAddOrUpdate(R resource) {}
+  public void onAddOrUpdate(R resource) {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
-  public void onDelete(R resource) {}
+  public void onDelete(R resource) {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
   public Set<ResourceID> getSecondaryResources(ResourceID primary) {
-    throw new IllegalStateException("Should not be called");
+    throw new UnsupportedOperationException();
   }
 }
