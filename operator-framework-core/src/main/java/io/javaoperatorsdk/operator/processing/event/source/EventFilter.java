@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
+@Deprecated
 public interface EventFilter<T> {
 
   default boolean acceptAdd(T newResource) {

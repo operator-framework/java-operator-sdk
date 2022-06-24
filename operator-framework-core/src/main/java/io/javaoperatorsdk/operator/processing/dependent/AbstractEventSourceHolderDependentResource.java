@@ -28,7 +28,9 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
     // before this method is called in the managed case, so only create the event source if it
     // hasn't already been set.
-    // The filters are applied automatically only if event source is created automatically.
+    // The filters are applied automatically only if event source is created automatically. So if an
+    // event source
+    // is shared between dependent resources this does not override the existing filters.
     if (eventSource == null) {
       eventSource = createEventSource(context);
       applyFilters();
