@@ -377,22 +377,12 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
 
     @Override
     public List<EventSource> prepareEventSources(EventSourceContext<Tomcat> context) {
-        SharedIndexInformer<Deployment> deploymentInformer =
-                kubernetesClient.apps()
-                        .deployments()
-                        .inAnyNamespace()
-                        .withLabel("app.kubernetes.io/managed-by", "tomcat-operator")
-                        .runnableInformer(0);
-
-        return List.of(
-                new InformerEventSource<>(deploymentInformer, d -> {
-                    var ownerReferences = d.getMetadata().getOwnerReferences();
-                    if (!ownerReferences.isEmpty()) {
-                        return Set.of(new ResourceID(ownerReferences.get(0).getName(), d.getMetadata().getNamespace()));
-                    } else {
-                        return EMPTY_SET;
-                    }
-                }));
+        var configMapEventSource =
+                new InformerEventSource<>(InformerConfiguration.from(Deployment.class, context)
+                        .withLabelSelector(SELECTOR)
+                        .withSecondaryToPrimaryMapper(Mappers.fromAnnotation(ANNOTATION_NAME,ANNOTATION_NAMESPACE)
+                        .build(), context));
+        return EventSourceInitializer.nameEventSources(configMapEventSource);
     }
   ...
 }
@@ -401,20 +391,37 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
 In the example above an `InformerEventSource` is registered (more on this specific eventsource later). Multiple things
 are going on here:
 
-1. An `SharedIndexInformer` (class from fabric8 Kubernetes client) is created. This will watch and produce events for
+1. In the background `SharedIndexInformer` (class from fabric8 Kubernetes client) is created. This will watch and produce events for
    `Deployments` in every namespace, but will filter them based on label. So `Deployments` which are not managed by
    `tomcat-operator` (the label is not present on them) will not trigger a reconciliation.
 2. In the next step
    an [InformerEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
-   is created, which wraps the `SharedIndexInformer`. In addition to that a mapping functions is provided, **this maps
-   the event of the watched resource (in this case `Deployment`) to the custom resources to reconcile**. Not that in
-   this case this is a simple task, since `Deployment` is already created with an owner reference. Therefore,
-   the `ResourceID`
-   what identifies the custom resource to reconcile is created from the owner reference. 
+   is created, which wraps the `SharedIndexInformer`. In addition to that a mapping functions is provided,
+   with `withSecondaryToPrimaryMapper`, this maps  the event of the watched resource (in this case `Deployment`) to the
+   custom resources to reconcile. Note that usually this is covered by a default mapper , when `Deployment` 
+   is created with an owner reference, the default mapper gets the mapping information from there. Thus,
+   the `ResourceID` what identifies the custom resource to reconcile is created from the owner reference. 
+   For sake of the example a mapper is added that maps secondary to primary resource based on annotations. 
 
 Note that a set of `ResourceID` is returned, this is usually just a set with one element. The possibility to specify
 multiple values are there to cover some rare corner cases. If an irrelevant resource is observed, an empty set can 
 be returned to not reconcile any custom resource.
+
+### Managing Relation between Primary and Secondary Resources
+
+As already touched in previous section, a `SecondaryToPrimaryMapper` is required to map events to trigger reconciliation
+of the primary resource. By default, this is handled with a mapper that utilizes owner references. If an owner reference
+cannot be used (for example resources are in different namespace), other mapper can be provided, typically an annotation
+based on is provided.
+
+Adding a `SecondaryToPrimaryMapper` is typically sufficient when there is a one-to-many relationship between primary and
+secondary resources. The secondary resources can be mapped to its primary owner, and this is enough information to also
+get the resource using the API from the context in reconciler: `context.getSecondaryResources(...)`. There are however
+cases when to map the other way around this mapper is not enough, a `PrimaryToSecondaryMapper` is required. 
+This is typically when there is a many-to-one or many-to-many relationship between resources, thus the primary resource 
+is referencing a secondary resources. In these cases the mentioned reverse mapper is required to work properly. 
+See [PrimaryToSecondaryIT](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/PrimaryToSecondaryIT.java)
+integration test for a sample.
 
 ### Built-in EventSources
 

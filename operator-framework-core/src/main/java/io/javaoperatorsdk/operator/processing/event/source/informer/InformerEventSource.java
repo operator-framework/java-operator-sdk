@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEvent
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 /**
  * <p>
@@ -74,20 +75,23 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
+  private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    super(context.getClient().resources(configuration.getResourceClass()), configuration);
-    this.configuration = configuration;
-    primaryToSecondaryIndex =
-        new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
+    this(configuration, context.getClient());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
-    primaryToSecondaryIndex =
-        new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
+    primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
+    if (primaryToSecondaryMapper == null) {
+      primaryToSecondaryIndex =
+          new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
+    } else {
+      primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
+    }
   }
 
   @Override
@@ -177,8 +181,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public Set<R> getSecondaryResources(P primary) {
-    var secondaryIDs =
-        primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
+    Set<ResourceID> secondaryIDs;
+    if (useSecondaryToPrimaryIndex()) {
+      secondaryIDs =
+          primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
+    } else {
+      secondaryIDs = primaryToSecondaryMapper.toSecondaryResourceIDs(primary);
+    }
     return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
         .collect(Collectors.toSet());
   }
@@ -245,6 +254,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } finally {
       eventRecorder.stopEventRecording(resourceID);
     }
+  }
+
+  private boolean useSecondaryToPrimaryIndex() {
+    return this.primaryToSecondaryMapper == null;
   }
 
   @Override
