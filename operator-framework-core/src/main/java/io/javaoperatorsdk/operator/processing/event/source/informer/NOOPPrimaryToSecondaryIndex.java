@@ -19,10 +19,12 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata>
 
   @Override
   public void onAddOrUpdate(R resource) {
+    // empty method because of noop implementation
   }
 
   @Override
   public void onDelete(R resource) {
+    // empty method because of noop implementation
   }
 
   @Override
