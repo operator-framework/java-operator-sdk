@@ -56,22 +56,20 @@ public @interface ControllerConfiguration {
   String labelSelector() default Constants.NO_VALUE_SET;
 
   /**
-   * Use onAddFilter, onUpdateFilter instead.
+   * @deprecated Use onAddFilter, onUpdateFilter instead.
    *
-   * <p>
-   * Resource event filters only applies on events of the main custom resource. Not on events from
-   * other event sources nor the periodic events.
-   * </p>
+   *             <p>
+   *             Resource event filters only applies on events of the main custom resource. Not on
+   *             events from other event sources nor the periodic events.
+   *             </p>
    *
    * @return the list of event filters.
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   Class<? extends ResourceEventFilter>[] eventFilters() default {};
 
   /**
-   * Filter of onAdd events of resources. (Note that onDelete is missing, delete events don't
-   * trigger reconciliation - since if finalizer used there the event is an update that triggers the
-   * cleanup. If not used the resources are cleaned up by garbage collector.)
+   * Filter of onAdd events of resources.
    **/
   Class<? extends Predicate<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
 
