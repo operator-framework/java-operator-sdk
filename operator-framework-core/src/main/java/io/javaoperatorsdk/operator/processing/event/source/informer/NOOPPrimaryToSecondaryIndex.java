@@ -19,12 +19,10 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata>
 
   @Override
   public void onAddOrUpdate(R resource) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
   public void onDelete(R resource) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
