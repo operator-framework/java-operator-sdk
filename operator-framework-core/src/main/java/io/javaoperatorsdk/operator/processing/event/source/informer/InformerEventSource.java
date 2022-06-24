@@ -88,9 +88,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
       primaryToSecondaryIndex =
-          new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
+          new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
     } else {
-      primaryToSecondaryIndex = null;
+      primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
   }
 
@@ -99,9 +99,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug("On add event received for resource id: {}", ResourceID.fromResource(resource));
     }
-    if (useSecondaryToPrimaryIndex()) {
-      primaryToSecondaryIndex.onAddOrUpdate(resource);
-    }
+    primaryToSecondaryIndex.onAddOrUpdate(resource);
     onAddOrUpdate("add", resource, () -> InformerEventSource.super.onAdd(resource));
   }
 
@@ -110,9 +108,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug("On update event received for resource id: {}", ResourceID.fromResource(newObject));
     }
-    if (useSecondaryToPrimaryIndex()) {
-      primaryToSecondaryIndex.onAddOrUpdate(newObject);
-    }
+    primaryToSecondaryIndex.onAddOrUpdate(newObject);
     onAddOrUpdate("update", newObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
@@ -122,9 +118,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug("On delete event received for resource id: {}", ResourceID.fromResource(resource));
     }
-    if (useSecondaryToPrimaryIndex()) {
-      primaryToSecondaryIndex.onDelete(resource);
-    }
+    primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
     propagateEvent(resource);
   }
@@ -216,9 +210,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private void handleRecentCreateOrUpdate(R resource, Runnable runnable) {
-    if (useSecondaryToPrimaryIndex()) {
-      primaryToSecondaryIndex.onAddOrUpdate(resource);
-    }
+    primaryToSecondaryIndex.onAddOrUpdate(resource);
     if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
       handleRecentResourceOperationAndStopEventRecording(resource);
     } else {
