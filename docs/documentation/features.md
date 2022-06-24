@@ -520,6 +520,10 @@ for this feature.
 
 ## Monitoring with Micrometer
 
+## Managing Relation between Primary and Secondary Resources
+
+
+
 ## Automatic Generation of CRDs
 
 Note that this is feature of [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client) not the JOSDK.
