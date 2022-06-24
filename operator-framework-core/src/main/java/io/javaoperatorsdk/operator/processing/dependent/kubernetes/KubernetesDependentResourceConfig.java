@@ -15,11 +15,11 @@ public class KubernetesDependentResourceConfig {
   private boolean namespacesWereConfigured = false;
 
   @SuppressWarnings("rawtypes")
-  protected Predicate onAddFilter;
+  private Predicate onAddFilter;
   @SuppressWarnings("rawtypes")
-  protected BiPredicate onUpdateFilter;
+  private BiPredicate onUpdateFilter;
   @SuppressWarnings("rawtypes")
-  protected BiPredicate onDeleteFilter;
+  private BiPredicate onDeleteFilter;
 
   public KubernetesDependentResourceConfig() {}
 

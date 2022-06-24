@@ -152,35 +152,43 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
   @Override
   @SuppressWarnings("unchecked")
   public Optional<Predicate<R>> onAddFilter() {
-    var onAddFilter = annotation.onAddFilter();
-    if (onAddFilter.equals(VoidOnAddFilter.class)) {
+    return (Optional<Predicate<R>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
+        annotation.getClass().getSimpleName());
+  }
+
+  private enum FilterType {
+    onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
+        VoidOnDeleteFilter.class);
+
+    final Class<?> defaultValue;
+
+    FilterType(Class<?> defaultValue) {
+      this.defaultValue = defaultValue;
+    }
+  }
+
+  private <T> Optional<T> createFilter(Class<T> filter, FilterType filterType, String origin) {
+    if (filterType.defaultValue.equals(filter)) {
       return Optional.empty();
     } else {
       try {
-        var instance = (Predicate<R>) onAddFilter.getDeclaredConstructor().newInstance();
+        var instance = (T) filter.getDeclaredConstructor().newInstance();
         return Optional.of(instance);
       } catch (InstantiationException | IllegalAccessException | InvocationTargetException
           | NoSuchMethodException e) {
-        throw new OperatorException(e);
+        throw new OperatorException(
+            "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
+                + origin + " for reconciler " + getName(),
+            e);
       }
     }
   }
 
-  @Override
   @SuppressWarnings("unchecked")
+  @Override
   public Optional<BiPredicate<R, R>> onUpdateFilter() {
-    var onUpdateFilter = annotation.onUpdateFilter();
-    if (onUpdateFilter.equals(VoidOnUpdateFilter.class)) {
-      return Optional.empty();
-    } else {
-      try {
-        var instance = (BiPredicate<R, R>) onUpdateFilter.getDeclaredConstructor().newInstance();
-        return Optional.of(instance);
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-          | NoSuchMethodException e) {
-        throw new OperatorException(e);
-      }
-    }
+    return (Optional<BiPredicate<R, R>>) createFilter(annotation.onUpdateFilter(),
+        FilterType.onUpdate, annotation.getClass().getSimpleName());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -258,36 +266,31 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
     var namespaces = getNamespaces();
     var configuredNS = false;
-    if (kubeDependent != null && !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
-        kubeDependent.namespaces())) {
-      namespaces = Set.of(kubeDependent.namespaces());
-      configuredNS = true;
-    }
-
     String labelSelector = null;
-    if (kubeDependent != null) {
-      final var fromAnnotation = kubeDependent.labelSelector();
-      labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
-    }
     Predicate<? extends HasMetadata> onAddFilter = null;
     BiPredicate<? extends HasMetadata, ? extends HasMetadata> onUpdateFilter = null;
     BiPredicate<? extends HasMetadata, Boolean> onDeleteFilter = null;
     if (kubeDependent != null) {
-      try {
-        onAddFilter = kubeDependent.onAddFilter() != VoidOnAddFilter.class
-            ? kubeDependent.onAddFilter().getConstructor().newInstance()
-            : null;
-        onUpdateFilter = kubeDependent.onUpdateFilter() != VoidOnUpdateFilter.class
-            ? kubeDependent.onUpdateFilter().getConstructor().newInstance()
-            : null;
-        onDeleteFilter = kubeDependent.onDeleteFilter() != VoidOnDeleteFilter.class
-            ? kubeDependent.onDeleteFilter().getConstructor().newInstance()
-            : null;
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-          | NoSuchMethodException e) {
-        throw new IllegalStateException(e);
+      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
+          kubeDependent.namespaces())) {
+        namespaces = Set.of(kubeDependent.namespaces());
+        configuredNS = true;
       }
+
+      final var fromAnnotation = kubeDependent.labelSelector();
+      labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
+
+      final var kubeDependentName = KubernetesDependent.class.getSimpleName();
+      onAddFilter = createFilter(kubeDependent.onAddFilter(), FilterType.onAdd, kubeDependentName)
+          .orElse(null);
+      onUpdateFilter =
+          createFilter(kubeDependent.onUpdateFilter(), FilterType.onUpdate, kubeDependentName)
+              .orElse(null);
+      onDeleteFilter =
+          createFilter(kubeDependent.onDeleteFilter(), FilterType.onDelete, kubeDependentName)
+              .orElse(null);
     }
+
 
     config =
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
