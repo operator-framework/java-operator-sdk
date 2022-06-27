@@ -79,6 +79,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
 
+  private final PrimaryToSecondaryMapper primaryToSecondaryMapper;
+
   protected final Predicate<R> onAddFilter;
   protected final BiPredicate<R, R> onUpdateFilter;
   protected final BiPredicate<R, Boolean> onDeleteFilter;
@@ -92,11 +94,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
     super(client, configuration);
     this.configuration = configuration;
-    primaryToSecondaryIndex =
-        new PrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
-    onAddFilter = configuration.onAddFilter().orElse(null);
-    onUpdateFilter = configuration.onUpdateFilter().orElse(null);
-    onDeleteFilter = configuration.onDeleteFilter().orElse(null);
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
       primaryToSecondaryIndex =
@@ -104,6 +101,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } else {
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
+    onAddFilter = configuration.onAddFilter().orElse(null);
+    onUpdateFilter = configuration.onUpdateFilter().orElse(null);
+    onDeleteFilter = configuration.onDeleteFilter().orElse(null);
+    genericFilter = configuration.genericFilter().orElse(null);
   }
 
   @Override
@@ -139,7 +140,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
-    if (onDeleteFilter == null || onDeleteFilter.test(resource, b)) {
+    if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }
   }
@@ -316,6 +317,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
 
   private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
+    if (genericFilter != null && !genericFilter.test(newObject)) {
+      return false;
+    }
     if (operation == Operation.ADD) {
       return onAddFilter == null || onAddFilter.test(newObject);
     } else {
@@ -325,5 +329,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private enum Operation {
     ADD, UPDATE
+  }
+
+  private boolean acceptedByDeleteFilters(R resource, boolean b) {
+    return (onDeleteFilter == null || onDeleteFilter.test(resource, b)) &&
+        (genericFilter == null || genericFilter.test(resource));
   }
 }

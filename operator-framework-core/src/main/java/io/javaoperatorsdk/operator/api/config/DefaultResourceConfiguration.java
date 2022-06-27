@@ -17,22 +17,24 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final Class<R> resourceClass;
   private final Predicate<R> onAddFilter;
   private final BiPredicate<R, R> onUpdateFilter;
+  private final Predicate<R> genericFilter;
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       Predicate<R> onAddFilter,
-      BiPredicate<R, R> onUpdateFilter, String... namespaces) {
-    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter,
+      BiPredicate<R, R> onUpdateFilter, Predicate<R> genericFilter, String... namespaces) {
+    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter,
         namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES_SET
             : Set.of(namespaces));
   }
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       Predicate<R> onAddFilter,
-      BiPredicate<R, R> onUpdateFilter, Set<String> namespaces) {
+      BiPredicate<R, R> onUpdateFilter, Predicate<R> genericFilter, Set<String> namespaces) {
     this.labelSelector = labelSelector;
     this.resourceClass = resourceClass;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
+    this.genericFilter = genericFilter;
     this.namespaces =
         namespaces == null || namespaces.isEmpty() ? DEFAULT_NAMESPACES_SET
             : namespaces;
@@ -66,5 +68,9 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   @Override
   public Optional<BiPredicate<R, R>> onUpdateFilter() {
     return Optional.ofNullable(onUpdateFilter);
+  }
+
+  public Optional<Predicate<R>> genericFilter() {
+    return Optional.ofNullable(genericFilter);
   }
 }

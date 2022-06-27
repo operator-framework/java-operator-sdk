@@ -7,6 +7,8 @@ import io.javaoperatorsdk.operator.processing.Controller;
 
 public class InternalEventFilters {
 
+  // todo unit tests
+
   static <T extends HasMetadata> BiPredicate<T, T> onUpdateMarkedForDeletion() {
     return (newResource, oldResource) -> newResource.isMarkedForDeletion();
   }

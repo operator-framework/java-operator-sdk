@@ -13,6 +13,7 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
   protected Predicate<R> onAddFilter;
   protected BiPredicate<R, R> onUpdateFilter;
   protected BiPredicate<R, Boolean> onDeleteFilter;
+  protected Predicate<R> genericFilter;
 
   protected AbstractResourceEventSource(Class<R> resourceClass) {
     this.resourceClass = resourceClass;
@@ -35,5 +36,9 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
   public void setOnDeleteFilter(
       BiPredicate<R, Boolean> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
+  }
+
+  public void setGenericFilter(Predicate<R> genericFilter) {
+    this.genericFilter = genericFilter;
   }
 }

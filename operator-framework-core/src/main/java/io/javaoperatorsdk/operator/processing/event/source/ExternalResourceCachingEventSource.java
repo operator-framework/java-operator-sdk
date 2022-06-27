@@ -121,7 +121,9 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var addedResources = new HashMap<>(newResourcesMap);
     addedResources.keySet().removeAll(cachedResourceMap.keySet());
     if (onAddFilter != null) {
-      var anyAddAccepted = addedResources.values().stream().anyMatch(onAddFilter::test);
+      var anyAddAccepted =
+          addedResources.values().stream().anyMatch(r -> acceptedByGenericFiler(r) &&
+              onAddFilter.test(r));
       if (anyAddAccepted) {
         return true;
       }
@@ -133,7 +135,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     deletedResource.keySet().removeAll(newResourcesMap.keySet());
     if (onDeleteFilter != null) {
       var anyDeleteAccepted =
-          deletedResource.values().stream().anyMatch(r -> onDeleteFilter.test(r, false));
+          deletedResource.values().stream()
+              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.test(r, false));
       if (anyDeleteAccepted) {
         return true;
       }
@@ -151,7 +154,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onUpdateFilter != null) {
       var anyUpdated = possibleUpdatedResources.entrySet().stream()
           .anyMatch(
-              entry -> onUpdateFilter.test(newResourcesMap.get(entry.getKey()), entry.getValue()));
+              entry -> {
+                var newResource = newResourcesMap.get(entry.getKey());
+                return acceptedByGenericFiler(newResourcesMap.get(entry.getKey())) &&
+                    onUpdateFilter.test(newResourcesMap.get(entry.getKey()), entry.getValue());
+              });
       if (anyUpdated) {
         return true;
       }
@@ -160,6 +167,10 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
 
     return false;
+  }
+
+  private boolean acceptedByGenericFiler(R resource) {
+    return genericFilter == null || genericFilter.test(resource);
   }
 
   @Override

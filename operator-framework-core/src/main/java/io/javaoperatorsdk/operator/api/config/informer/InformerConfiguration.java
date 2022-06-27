@@ -35,8 +35,9 @@ public interface InformerConfiguration<R extends HasMetadata>
         Set<String> namespaces, boolean followControllerNamespaceChanges,
         Predicate<R> onAddFilter,
         BiPredicate<R, R> onUpdateFilter,
-        BiPredicate<R, Boolean> onDeleteFilter) {
-      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, namespaces);
+        BiPredicate<R, Boolean> onDeleteFilter,
+        Predicate<R> genericFilter) {
+      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -81,6 +82,8 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   Optional<BiPredicate<R, Boolean>> onDeleteFilter();
 
+  Optional<Predicate<R>> genericFilter();
+
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
   @SuppressWarnings("unused")
@@ -94,6 +97,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private Predicate<R> onAddFilter;
     private BiPredicate<R, R> onUpdateFilter;
     private BiPredicate<R, Boolean> onDeleteFilter;
+    private Predicate<R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
@@ -190,12 +194,17 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public InformerConfigurationBuilder<R> withGenericFilter(Predicate<R> genericFilter) {
+      this.genericFilter = genericFilter;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-              onDeleteFilter);
+          onDeleteFilter, genericFilter);
     }
   }
 

@@ -29,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
@@ -158,7 +159,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   private enum FilterType {
     onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
-        VoidOnDeleteFilter.class);
+        VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
 
     final Class<?> defaultValue;
 
@@ -189,6 +190,13 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Optional<BiPredicate<P, P>> onUpdateFilter() {
     return (Optional<BiPredicate<P, P>>) createFilter(annotation.onUpdateFilter(),
         FilterType.onUpdate, annotation.getClass().getSimpleName());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Optional<Predicate<P>> genericFilter() {
+    return (Optional<Predicate<P>>) createFilter(annotation.genericFilter(),
+        FilterType.generic, annotation.getClass().getSimpleName());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

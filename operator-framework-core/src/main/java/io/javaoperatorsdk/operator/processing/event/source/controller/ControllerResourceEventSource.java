@@ -80,7 +80,10 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   private boolean acceptFilters(ResourceAction action, T resource, T oldResource) {
-    // delete event not filtered, there is no reconciliation for delete anyways
+    // delete event is filtered for generic filter only.
+    if (genericFilter != null && !genericFilter.test(resource)) {
+      return false;
+    }
     switch (action) {
       case ADDED:
         return onAddFilter == null || onAddFilter.test(resource);

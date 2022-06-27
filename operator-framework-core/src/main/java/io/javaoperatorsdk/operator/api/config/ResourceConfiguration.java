@@ -28,6 +28,10 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return Optional.empty();
   }
 
+  default Optional<Predicate<R>> genericFilter() {
+    return Optional.empty();
+  }
+
   /**
    * Retrieves the label selector that is used to filter which resources are actually watched by the
    * associated event source. See the official documentation on the

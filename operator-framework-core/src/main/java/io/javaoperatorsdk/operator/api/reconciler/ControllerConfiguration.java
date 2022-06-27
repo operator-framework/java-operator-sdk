@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 
@@ -75,6 +76,11 @@ public @interface ControllerConfiguration {
 
   /** Filter of onUpdate events of resources. */
   Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
+
+  /**
+   * Filter applied to all operations (add, update, delete). Used to ignore some resources.
+   **/
+  Class<? extends Predicate<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request

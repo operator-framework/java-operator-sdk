@@ -43,8 +43,9 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       Duration reconciliationMaxInterval,
       Predicate<R> onAddFilter,
       BiPredicate<R, R> onUpdateFilter,
+      Predicate<R> genericFilter,
       List<DependentResourceSpec> dependents) {
-    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, namespaces);
+    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;

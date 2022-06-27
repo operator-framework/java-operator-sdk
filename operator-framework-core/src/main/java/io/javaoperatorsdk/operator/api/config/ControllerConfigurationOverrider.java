@@ -34,6 +34,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
   private Predicate<R> onAddFilter;
   private BiPredicate<R, R> onUpdateFilter;
+  private Predicate<R> genericFilter;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -48,6 +49,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
     this.onAddFilter = original.onAddFilter().orElse(null);
     this.onUpdateFilter = original.onUpdateFilter().orElse(null);
+    this.genericFilter = original.genericFilter().orElse(null);
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
   }
@@ -139,6 +141,10 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withGenericFilter(Predicate<R> genericFilter) {
+    this.genericFilter = genericFilter;
+    return this;
+  }
 
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
@@ -189,6 +195,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         reconciliationMaxInterval,
         onAddFilter,
         onUpdateFilter,
+        genericFilter,
         newDependentSpecs);
   }
 

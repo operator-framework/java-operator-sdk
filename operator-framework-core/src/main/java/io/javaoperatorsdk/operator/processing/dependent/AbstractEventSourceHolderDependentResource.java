@@ -22,6 +22,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected Predicate<R> onAddFilter;
   protected BiPredicate<R, R> onUpdateFilter;
   protected BiPredicate<R, Boolean> onDeleteFilter;
+  protected Predicate<R> genericFilter;
 
 
   public EventSource initEventSource(EventSourceContext<P> context) {
@@ -50,6 +51,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.eventSource.setOnAddFilter(onAddFilter);
     this.eventSource.setOnUpdateFilter(onUpdateFilter);
     this.eventSource.setOnDeleteFilter(onDeleteFilter);
+    this.eventSource.setGenericFilter(genericFilter);
   }
 
   protected T eventSource() {
