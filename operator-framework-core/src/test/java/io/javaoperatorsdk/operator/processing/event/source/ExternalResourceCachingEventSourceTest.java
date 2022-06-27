@@ -138,7 +138,7 @@ class ExternalResourceCachingEventSourceTest extends
   }
 
   @Test
-  void filtersAddOnAddEvents() {
+  void filtersAddEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
     delFilteringEventSource.setOnAddFilter((res) -> false);
     setUpSource(delFilteringEventSource);
@@ -151,7 +151,7 @@ class ExternalResourceCachingEventSourceTest extends
   }
 
   @Test
-  void filtersAddOnUpdateEvents() {
+  void filtersUpdateEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
     delFilteringEventSource.setOnUpdateFilter((res, res2) -> false);
     setUpSource(delFilteringEventSource);
@@ -176,6 +176,22 @@ class ExternalResourceCachingEventSourceTest extends
 
     source.handleResources(primaryID1(), Set.of(testResource1()));
     verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void genericFilteringEvents() {
+    TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
+    delFilteringEventSource.setGenericFilter(res -> false);
+    setUpSource(delFilteringEventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    verify(eventHandler, times(0)).handleEvent(any());
+
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    verify(eventHandler, times(0)).handleEvent(any());
+
+    source.handleResources(primaryID1(), Set.of(testResource2()));
+    verify(eventHandler, times(0)).handleEvent(any());
   }
 
   public static class TestExternalCachingEventSource

@@ -207,6 +207,52 @@ class InformerEventSourceTest {
     verify(temporaryResourceCacheMock, times(1)).unconditionallyCacheResource(any());
   }
 
+  @Test
+  void genericFilterForEvents() {
+    informerEventSource.setGenericFilter(r -> false);
+    when(temporaryResourceCacheMock.getResourceFromCache(any()))
+        .thenReturn(Optional.empty());
+
+    informerEventSource.onAdd(testDeployment());
+    informerEventSource.onUpdate(testDeployment(), testDeployment());
+    informerEventSource.onDelete(testDeployment(), true);
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void filtersOnAddEvents() {
+    informerEventSource.setOnAddFilter(r -> false);
+    when(temporaryResourceCacheMock.getResourceFromCache(any()))
+        .thenReturn(Optional.empty());
+
+    informerEventSource.onAdd(testDeployment());
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void filtersOnUpdateEvents() {
+    informerEventSource.setOnUpdateFilter((r1, r2) -> false);
+    when(temporaryResourceCacheMock.getResourceFromCache(any()))
+        .thenReturn(Optional.empty());
+
+    informerEventSource.onUpdate(testDeployment(), testDeployment());
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void filtersOnDeleteEvents() {
+    informerEventSource.setOnDeleteFilter((r, b) -> false);
+    when(temporaryResourceCacheMock.getResourceFromCache(any()))
+        .thenReturn(Optional.empty());
+
+    informerEventSource.onDelete(testDeployment(), true);
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
   Deployment testDeployment() {
     Deployment deployment = new Deployment();
     deployment.setMetadata(new ObjectMeta());
