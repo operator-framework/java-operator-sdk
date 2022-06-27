@@ -238,7 +238,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     public Builder withAdditionalCustomResourceDefinition(
-            Class<? extends CustomResource> customResource) {
+        Class<? extends CustomResource> customResource) {
       additionalCustomResourceDefinitions.add(customResource);
       return this;
     }
