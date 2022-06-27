@@ -44,10 +44,10 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
     // by default the on add should be processed in all cases regarding internal filters
     controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-
     controller.getConfiguration().onUpdateFilter()
         .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
             () -> setOnUpdateFilter(internalOnUpdateFilter));
+    controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
   }
 
   @Override

@@ -115,11 +115,27 @@ class ControllerResourceEventSourceTest extends
     Predicate<TestCustomResource> onAddPredicate = (res) -> false;
     BiPredicate<TestCustomResource, TestCustomResource> onUpdatePredicate = (res, res2) -> false;
     source =
-        new ControllerResourceEventSource<>(new TestController(onAddPredicate, onUpdatePredicate));
+        new ControllerResourceEventSource<>(
+            new TestController(onAddPredicate, onUpdatePredicate, null));
     setUpSource(source);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
     source.eventReceived(ResourceAction.UPDATED, cr, cr);
+
+    verify(eventHandler, never()).handleEvent(any());
+  }
+
+  @Test
+  void genericFilterFiltersOutAddUpdateAndDeleteEvents() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+
+    source =
+        new ControllerResourceEventSource<>(new TestController(null, null, res -> false));
+    setUpSource(source);
+
+    source.eventReceived(ResourceAction.ADDED, cr, null);
+    source.eventReceived(ResourceAction.UPDATED, cr, cr);
+    source.eventReceived(ResourceAction.DELETED, cr, cr);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -131,13 +147,14 @@ class ControllerResourceEventSourceTest extends
         mock(EventSourceManager.class);
 
     public TestController(Predicate<TestCustomResource> onAddFilter,
-        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter) {
-      super(null, new TestConfiguration(true, onAddFilter, onUpdateFilter),
+        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter,
+        Predicate<TestCustomResource> genericFilter) {
+      super(null, new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
     public TestController(boolean generationAware) {
-      super(null, new TestConfiguration(generationAware, null, null),
+      super(null, new TestConfiguration(generationAware, null, null, null),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
@@ -156,7 +173,8 @@ class ControllerResourceEventSourceTest extends
       DefaultControllerConfiguration<TestCustomResource> {
 
     public TestConfiguration(boolean generationAware, Predicate<TestCustomResource> onAddFilter,
-        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter) {
+        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter,
+        Predicate<TestCustomResource> genericFilter) {
       super(
           null,
           null,
@@ -169,7 +187,7 @@ class ControllerResourceEventSourceTest extends
           null,
           TestCustomResource.class,
           null,
-          onAddFilter, onUpdateFilter, null, null);
+          onAddFilter, onUpdateFilter, genericFilter, null);
     }
   }
 }
