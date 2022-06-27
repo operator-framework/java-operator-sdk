@@ -20,6 +20,7 @@ import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClient
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
@@ -34,19 +35,19 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
-    var filters = new ResourceEventFilter[] {
-        ResourceEventFilters.finalizerNeededAndApplied(),
-        ResourceEventFilters.markedForDeletion(),
-        ResourceEventFilters.generationAware(),
-    };
-    if (controller.getConfiguration().getEventFilter() != null) {
-      legacyFilters =
-          controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
-    } else {
-      legacyFilters = ResourceEventFilters.or(filters);
-    }
+
+    BiPredicate<T, T> internalOnUpdateFilter = onUpdateFinalizerNeededAndApplied(controller)
+        .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
+        .or(onUpdateMarkedForDeletion());
+
+    legacyFilters = controller.getConfiguration().getEventFilter();
+
+    // by default the on add should be processed in all cases regarding internal filters
     controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-    controller.getConfiguration().onUpdateFilter().ifPresent(this::setOnUpdateFilter);
+
+    controller.getConfiguration().onUpdateFilter()
+        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
+            () -> setOnUpdateFilter(internalOnUpdateFilter));
   }
 
   @Override
@@ -64,7 +65,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       log.debug("Event received for resource: {}", getName(resource));
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (legacyFilters.acceptChange(controller, oldResource, resource)
+      if ((legacyFilters == null ||
+          legacyFilters.acceptChange(controller, oldResource, resource))
           && acceptFilters(action, resource, oldResource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
@@ -83,7 +85,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       case ADDED:
         return onAddFilter == null || onAddFilter.test(resource);
       case UPDATED:
-        return onUpdateFilter == null || onUpdateFilter.test(resource, oldResource);
+        return onUpdateFilter.test(resource, oldResource);
     }
     return true;
   }
