@@ -60,6 +60,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     public Optional<BiPredicate<R, Boolean>> onDeleteFilter() {
       return Optional.ofNullable(onDeleteFilter);
     }
+
     @Override
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;

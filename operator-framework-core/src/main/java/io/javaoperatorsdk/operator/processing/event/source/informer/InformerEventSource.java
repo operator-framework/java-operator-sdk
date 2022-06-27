@@ -8,9 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -18,7 +16,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEvent
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 /**
@@ -78,21 +75,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
-
-  private final PrimaryToSecondaryMapper primaryToSecondaryMapper;
-
-  protected final Predicate<R> onAddFilter;
-  protected final BiPredicate<R, R> onUpdateFilter;
-  protected final BiPredicate<R, Boolean> onDeleteFilter;
+  private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
     this(configuration, context.getClient());
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration,
-      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client) {
-    super(client, configuration);
+  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
+    super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
