@@ -36,9 +36,11 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
-    BiPredicate<T, T> internalOnUpdateFilter = onUpdateFinalizerNeededAndApplied(controller)
-        .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
-        .or(onUpdateMarkedForDeletion());
+    BiPredicate<T, T> internalOnUpdateFilter =
+        (BiPredicate<T, T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
+            controller.getConfiguration().getFinalizerName())
+            .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
+            .or(onUpdateMarkedForDeletion());
 
     legacyFilters = controller.getConfiguration().getEventFilter();
 

@@ -49,8 +49,9 @@ public class TestUtils {
     return resource;
   }
 
-  public static void markForDeletion(HasMetadata customResource) {
+  public static <T extends HasMetadata> T markForDeletion(T customResource) {
     customResource.getMetadata().setDeletionTimestamp("2019-8-10");
+    return customResource;
   }
 
 }

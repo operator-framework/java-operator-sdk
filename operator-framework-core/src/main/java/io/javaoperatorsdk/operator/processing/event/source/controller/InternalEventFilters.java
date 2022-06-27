@@ -3,11 +3,10 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 import java.util.function.BiPredicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.Controller;
 
 public class InternalEventFilters {
 
-  // todo unit tests
+  private InternalEventFilters() {}
 
   static <T extends HasMetadata> BiPredicate<T, T> onUpdateMarkedForDeletion() {
     return (newResource, oldResource) -> newResource.isMarkedForDeletion();
@@ -26,12 +25,12 @@ public class InternalEventFilters {
   }
 
   static <T extends HasMetadata> BiPredicate<T, T> onUpdateFinalizerNeededAndApplied(
-      Controller<T> controller) {
+      boolean useFinalizer,
+      String finalizerName) {
     return (newResource, oldResource) -> {
-      if (controller.useFinalizer()) {
-        final var finalizer = controller.getConfiguration().getFinalizerName();
-        boolean oldFinalizer = oldResource.hasFinalizer(finalizer);
-        boolean newFinalizer = newResource.hasFinalizer(finalizer);
+      if (useFinalizer) {
+        boolean oldFinalizer = oldResource.hasFinalizer(finalizerName);
+        boolean newFinalizer = newResource.hasFinalizer(finalizerName);
         // accepts event if old did not have finalizer, since it was just added, so the event needs
         // to
         // be published.
@@ -41,5 +40,4 @@ public class InternalEventFilters {
       }
     };
   }
-
 }
