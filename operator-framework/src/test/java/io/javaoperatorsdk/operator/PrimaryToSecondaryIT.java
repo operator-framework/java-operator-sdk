@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.junit.LocalOperatorExtension;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.Cluster;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.Job;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.JobReconciler;
@@ -21,8 +21,8 @@ class PrimaryToSecondaryIT {
   public static final int MIN_DELAY = 150;
 
   @RegisterExtension
-  LocalOperatorExtension operator =
-      LocalOperatorExtension.builder()
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
           .withAdditionalCustomResourceDefinition(Cluster.class)
           .withReconciler(new JobReconciler())
           .build();
