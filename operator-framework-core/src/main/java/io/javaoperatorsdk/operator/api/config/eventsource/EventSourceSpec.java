@@ -1,18 +1,11 @@
 package io.javaoperatorsdk.operator.api.config.eventsource;
 
-public class EventSourceSpec<R> {
+public abstract class EventSourceSpec {
 
   private final String name;
 
-  private final Class<R> eventSourceClass;
-
-  public EventSourceSpec(String name, Class<R> eventSourceClass) {
+  public EventSourceSpec(String name) {
     this.name = name;
-    this.eventSourceClass = eventSourceClass;
-  }
-
-  public Class<R> getEventSourceClass() {
-    return eventSourceClass;
   }
 
   public String getName() {

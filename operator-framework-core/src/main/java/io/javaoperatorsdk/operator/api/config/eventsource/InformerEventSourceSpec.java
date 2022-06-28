@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.api.config.eventsource;
 
+import java.util.Optional;
 import java.util.Set;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
-public class InformerEventSourceSpec<R extends HasMetadata> extends EventSourceSpec<R> {
+@SuppressWarnings("rawtypes")
+public class InformerEventSourceSpec extends EventSourceSpec {
 
   private final String labelSelector;
 
@@ -13,17 +15,23 @@ public class InformerEventSourceSpec<R extends HasMetadata> extends EventSourceS
 
   private final boolean followNamespaceChanges;
 
-  private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
+  private final SecondaryToPrimaryMapper secondaryToPrimaryMapper;
 
+  private PrimaryToSecondaryMapper primaryToSecondaryMapper;
 
-  public InformerEventSourceSpec(String name, Class<R> resourceType, String labelSelector,
+  private Class resourceType;
+
+  public InformerEventSourceSpec(String name, Class resourceType, String labelSelector,
       Set<String> namespaces,
-      boolean followNamespaceChanges, SecondaryToPrimaryMapper secondaryToPrimaryMapper) {
-    super(name, resourceType);
+      boolean followNamespaceChanges, SecondaryToPrimaryMapper secondaryToPrimaryMapper,
+      PrimaryToSecondaryMapper primaryToSecondaryMapper) {
+    super(name);
     this.labelSelector = labelSelector;
     this.namespaces = namespaces;
     this.followNamespaceChanges = followNamespaceChanges;
     this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
+    this.primaryToSecondaryMapper = primaryToSecondaryMapper;
+    this.resourceType = resourceType;
   }
 
   public String getLabelSelector() {
@@ -38,7 +46,15 @@ public class InformerEventSourceSpec<R extends HasMetadata> extends EventSourceS
     return followNamespaceChanges;
   }
 
-  public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
+  public SecondaryToPrimaryMapper getSecondaryToPrimaryMapper() {
     return secondaryToPrimaryMapper;
+  }
+
+  public Optional<PrimaryToSecondaryMapper> getPrimaryToSecondaryMapper() {
+    return Optional.ofNullable(primaryToSecondaryMapper);
+  }
+
+  public Class getResourceType() {
+    return resourceType;
   }
 }

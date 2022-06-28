@@ -21,7 +21,9 @@ import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.eventsource.EventSourceSpec;
+import io.javaoperatorsdk.operator.api.config.eventsource.GenericEventSourceSpec;
 import io.javaoperatorsdk.operator.api.config.eventsource.InformerEventSourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -41,6 +43,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.NamedEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -202,17 +205,21 @@ public class Controller<P extends HasMetadata>
   private NamedEventSource initEventSource(EventSourceSpec esSpec, EventSourceContext<P> context) {
     try {
       if (esSpec instanceof InformerEventSourceSpec) {
-        // InformerEventSourceSpec iess = (InformerEventSourceSpec) esSpec;
-        // var configBuilder
-        // = InformerConfiguration.from(iess.);
-        //
-        // InformerEventSource informerEventSource = new
-        // InformerEventSource(configBuilder.build(),context);
-        // return new NamedEventSource(informerEventSource,finalEventSourceName(esSpec.getName()));
-        // todo
-        return null;
+        InformerEventSourceSpec spec = (InformerEventSourceSpec) esSpec;
+        var config =
+            InformerConfiguration.from(spec.getResourceType(), context);
+
+        config.withSecondaryToPrimaryMapper(spec.getSecondaryToPrimaryMapper());
+        spec.getPrimaryToSecondaryMapper().ifPresent(config::withPrimaryToSecondaryMapper);
+        config.withLabelSelector(spec.getLabelSelector());
+        config.withNamespaces(spec.getNamespaces());
+        config.followNamespaceChanges(spec.isFollowNamespaceChanges());
+
+        return new NamedEventSource(new InformerEventSource(config.build(), context),
+            finalEventSourceName(esSpec.getName()));
       } else {
-        EventSource es = (EventSource) esSpec.getEventSourceClass().getConstructor().newInstance();
+        GenericEventSourceSpec spec = (GenericEventSourceSpec) esSpec;
+        EventSource es = (EventSource) spec.getEventSourceClass().getConstructor().newInstance();
         return new NamedEventSource(es, finalEventSourceName(esSpec.getName()));
       }
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
