@@ -38,13 +38,14 @@ public class TestCustomReconciler
   @Override
   public DeleteControl cleanup(
       TestCustomResource resource, Context<TestCustomResource> context) {
-    Boolean delete =
+    var deletedResources =
         kubernetesClient
             .configMaps()
             .inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getSpec().getConfigMapName())
             .delete();
-    if (delete) {
+    // todo check if this is correct (probably not)
+    if (deletedResources.size() == 1) {
       log.info(
           "Deleted ConfigMap {} for resource: {}",
           resource.getSpec().getConfigMapName(),

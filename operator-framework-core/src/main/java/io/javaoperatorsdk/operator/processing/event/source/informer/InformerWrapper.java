@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -74,18 +73,12 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public T remove(ResourceID key) {
-    return cache.remove(cache.getByKey(getKey(key)));
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public void put(ResourceID key, T resource) {
-    // check that key matches the resource
-    final var fromResource = ResourceID.fromResource(resource);
-    if (!Objects.equals(key, fromResource)) {
-      throw new IllegalArgumentException(
-          "Key and resource don't match. Key: " + key + ", resource: " + fromResource);
-    }
-    cache.put(resource);
+    throw new UnsupportedOperationException();
   }
 
   public void addEventHandler(ResourceEventHandler<T> eventHandler) {

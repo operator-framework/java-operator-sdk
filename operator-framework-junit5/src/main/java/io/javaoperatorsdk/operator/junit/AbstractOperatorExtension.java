@@ -110,7 +110,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
   @SuppressWarnings("unchecked")
   public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
-    return kubernetesClient.resources(type).inNamespace(namespace).delete(resource);
+    // todo check
+    kubernetesClient.resource(resource).inNamespace(namespace).delete();
+    return true;
   }
 
   protected void beforeAllImpl(ExtensionContext context) {
