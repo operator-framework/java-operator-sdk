@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -215,13 +214,13 @@ public class Controller<P extends HasMetadata>
         config.withLabelSelector(spec.getLabelSelector());
         config.withNamespaces(spec.getNamespaces());
         config.followNamespaceChanges(spec.isFollowNamespaceChanges());
-
-        return new NamedEventSource(new InformerEventSource(config.build(), context),
-            finalEventSourceName(esSpec.getName()));
+        var es = new InformerEventSource(config.build(), context);
+        return new NamedEventSource(es,
+            finalEventSourceName(esSpec.getName(), es));
       } else {
         GenericEventSourceSpec spec = (GenericEventSourceSpec) esSpec;
         EventSource es = (EventSource) spec.getEventSourceClass().getConstructor().newInstance();
-        return new NamedEventSource(es, finalEventSourceName(esSpec.getName()));
+        return new NamedEventSource(es, finalEventSourceName(esSpec.getName(), es));
       }
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
         | NoSuchMethodException e) {
@@ -229,9 +228,12 @@ public class Controller<P extends HasMetadata>
     }
   }
 
-  private String finalEventSourceName(String name) {
-    // todo
-    return null;
+  private String finalEventSourceName(String name, EventSource es) {
+    if (Constants.GENERATED_EVENT_SOURCE_NAME.equals(name)) {
+      return EventSourceInitializer.generateNameFor(es);
+    } else {
+      return name;
+    }
   }
 
   @Override

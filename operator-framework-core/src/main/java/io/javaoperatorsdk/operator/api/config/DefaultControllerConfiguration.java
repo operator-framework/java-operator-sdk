@@ -114,6 +114,14 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
+  public List<EventSourceSpec> getEventSources() {
+    if (eventSourceSpecs == null) {
+      return Collections.emptyList();
+    }
+    return eventSourceSpecs;
+  }
+
+  @Override
   public RateLimiter getRateLimiter() {
     return rateLimiter;
   }

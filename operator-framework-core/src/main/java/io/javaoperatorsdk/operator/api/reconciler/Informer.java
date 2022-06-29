@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.OwnerReferenceSecondaryToPrimaryMapper;
 
-import static io.javaoperatorsdk.operator.api.reconciler.EventSource.GENERATED_EVENT_SOURCE_NAME;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.GENERATED_EVENT_SOURCE_NAME;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

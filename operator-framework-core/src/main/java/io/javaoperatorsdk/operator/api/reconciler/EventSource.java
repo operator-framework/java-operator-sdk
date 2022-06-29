@@ -5,11 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.GENERATED_EVENT_SOURCE_NAME;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface EventSource {
-
-  String GENERATED_EVENT_SOURCE_NAME = "JOSDK_GENERATED_NAME";
 
   String name() default GENERATED_EVENT_SOURCE_NAME;
 

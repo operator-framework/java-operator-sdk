@@ -21,5 +21,7 @@ public final class Constants {
   public static final String SAME_AS_CONTROLLER = "JOSDK_SAME_AS_CONTROLLER";
   public static final String DEFAULT_NAMESPACE = WATCH_ALL_NAMESPACES;
 
+  public static final String GENERATED_EVENT_SOURCE_NAME = "JOSDK_GENERATED_NAME";
+
   private Constants() {}
 }
