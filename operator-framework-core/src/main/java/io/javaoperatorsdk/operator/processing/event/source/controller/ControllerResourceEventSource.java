@@ -128,6 +128,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public void setOnDeleteFilter(BiPredicate<T, Boolean> onDeleteFilter) {
     throw new IllegalStateException(
-        "onAddFilter is not supported for controller resource event source");
+        "onDeleteFilter is not supported for controller resource event source");
   }
 }
