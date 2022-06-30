@@ -20,7 +20,9 @@ import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClient
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateFinalizerNeededAndApplied;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateGenerationAware;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateMarkedForDeletion;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
@@ -69,7 +71,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if ((legacyFilters == null ||
           legacyFilters.acceptChange(controller, oldResource, resource))
-          && acceptFilters(action, resource, oldResource)) {
+          && isAcceptedByFilters(action, resource, oldResource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
@@ -81,7 +83,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     }
   }
 
-  private boolean acceptFilters(ResourceAction action, T resource, T oldResource) {
+  private boolean isAcceptedByFilters(ResourceAction action, T resource, T oldResource) {
     // delete event is filtered for generic filter only.
     if (genericFilter != null && !genericFilter.test(resource)) {
       return false;
