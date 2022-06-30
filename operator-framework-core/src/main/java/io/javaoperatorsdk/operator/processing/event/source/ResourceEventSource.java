@@ -31,5 +31,5 @@ public interface ResourceEventSource<R, P extends HasMetadata> extends EventSour
 
   void setOnDeleteFilter(BiPredicate<R, Boolean> onDeleteFilter);
 
-  void setGenericFilter(Predicate<R> onUpdateFilter);
+  void setGenericFilter(Predicate<R> genericFilter);
 }
