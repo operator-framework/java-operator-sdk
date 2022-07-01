@@ -71,7 +71,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if ((legacyFilters == null ||
           legacyFilters.acceptChange(controller, oldResource, resource))
-          && isAcceptedByFilters(action, resource, oldResource)) {
+          && eventAcceptedByFilters(action, resource, oldResource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
@@ -81,20 +81,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     } finally {
       MDCUtils.removeResourceInfo();
     }
-  }
-
-  private boolean isAcceptedByFilters(ResourceAction action, T resource, T oldResource) {
-    // delete event is filtered for generic filter only.
-    if (genericFilter != null && !genericFilter.test(resource)) {
-      return false;
-    }
-    switch (action) {
-      case ADDED:
-        return onAddFilter == null || onAddFilter.test(resource);
-      case UPDATED:
-        return onUpdateFilter.test(resource, oldResource);
-    }
-    return true;
   }
 
   @Override

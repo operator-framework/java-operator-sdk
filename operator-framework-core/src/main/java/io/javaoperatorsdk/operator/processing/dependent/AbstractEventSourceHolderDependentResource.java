@@ -48,10 +48,12 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   }
 
   protected void applyFilters() {
-    this.eventSource.setOnAddFilter(onAddFilter);
-    this.eventSource.setOnUpdateFilter(onUpdateFilter);
-    this.eventSource.setOnDeleteFilter(onDeleteFilter);
-    this.eventSource.setGenericFilter(genericFilter);
+    /*
+     * this.eventSource.setOnAddFilter(onAddFilter);
+     * this.eventSource.setOnUpdateFilter(onUpdateFilter);
+     * this.eventSource.setOnDeleteFilter(onDeleteFilter);
+     * this.eventSource.setGenericFilter(genericFilter);
+     */
   }
 
   protected T eventSource() {

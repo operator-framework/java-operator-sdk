@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 
 /**
  * <p>
@@ -92,10 +93,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } else {
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
-    onAddFilter = configuration.onAddFilter().orElse(null);
-    onUpdateFilter = configuration.onUpdateFilter().orElse(null);
-    onDeleteFilter = configuration.onDeleteFilter().orElse(null);
-    genericFilter = configuration.genericFilter().orElse(null);
+    /*
+     * onAddFilter = configuration.onAddFilter().orElse(null); onUpdateFilter =
+     * configuration.onUpdateFilter().orElse(null); onDeleteFilter =
+     * configuration.onDeleteFilter().orElse(null); genericFilter =
+     * configuration.genericFilter().orElse(null);
+     */
   }
 
   @Override
@@ -106,7 +109,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    onAddOrUpdate(Operation.ADD, newResource, null,
+    onAddOrUpdate(ResourceAction.ADDED, newResource, null,
         () -> InformerEventSource.super.onAdd(newResource));
   }
 
@@ -118,7 +121,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
-    onAddOrUpdate(Operation.UPDATE, newObject, oldObject,
+    onAddOrUpdate(ResourceAction.UPDATED, newObject, oldObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
 
@@ -131,12 +134,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
-    if (acceptedByDeleteFilters(resource, b)) {
+    if (eventAcceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }
   }
 
-  private synchronized void onAddOrUpdate(Operation operation, R newObject, R oldObject,
+  private synchronized void onAddOrUpdate(ResourceAction operation, R newObject, R oldObject,
       Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
     if (eventRecorder.isRecordingFor(resourceID)) {
@@ -152,7 +155,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       superOnOp.run();
     } else {
       superOnOp.run();
-      if (eventAcceptedByFilter(operation, newObject, oldObject)) {
+      if (eventAcceptedByFilters(operation, newObject, oldObject)) {
         log.debug(
             "Propagating event for {}, resource with same version not result of a reconciliation. Resource ID: {}",
             operation,
@@ -217,17 +220,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource,
+    handleRecentCreateOrUpdate(ResourceAction.UPDATED, resource, previousVersionOfResource,
         () -> super.handleRecentResourceUpdate(resourceID, resource, previousVersionOfResource));
   }
 
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(Operation.ADD, resource, null,
+    handleRecentCreateOrUpdate(ResourceAction.ADDED, resource, null,
         () -> super.handleRecentResourceCreate(resourceID, resource));
   }
 
-  private void handleRecentCreateOrUpdate(Operation operation, R resource, R oldResource,
+  private void handleRecentCreateOrUpdate(ResourceAction operation, R resource, R oldResource,
       Runnable runnable) {
     primaryToSecondaryIndex.onAddOrUpdate(resource);
     if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
@@ -254,7 +257,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    *
    * @param newResource just created or updated resource
    */
-  private void handleRecentResourceOperationAndStopEventRecording(Operation operation,
+  private void handleRecentResourceOperationAndStopEventRecording(ResourceAction operation,
       R newResource, R oldResource) {
     ResourceID resourceID = ResourceID.fromResource(newResource);
     try {
@@ -269,7 +272,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         log.debug(
             "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
             resourceID);
-        if (eventAcceptedByFilter(operation, newResource, oldResource)) {
+        if (eventAcceptedByFilters(operation, newResource, oldResource)) {
           propagateEvent(lastEvent);
         }
       }
@@ -304,26 +307,5 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public boolean allowsNamespaceChanges() {
     return getConfiguration().followControllerNamespaceChanges();
-  }
-
-
-  private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
-    if (genericFilter != null && !genericFilter.test(newObject)) {
-      return false;
-    }
-    if (operation == Operation.ADD) {
-      return onAddFilter == null || onAddFilter.test(newObject);
-    } else {
-      return onUpdateFilter == null || onUpdateFilter.test(newObject, oldObject);
-    }
-  }
-
-  private enum Operation {
-    ADD, UPDATE
-  }
-
-  private boolean acceptedByDeleteFilters(R resource, boolean b) {
-    return (onDeleteFilter == null || onDeleteFilter.test(resource, b)) &&
-        (genericFilter == null || genericFilter.test(resource));
   }
 }
