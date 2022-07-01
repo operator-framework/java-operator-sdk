@@ -93,12 +93,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } else {
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
-    /*
-     * onAddFilter = configuration.onAddFilter().orElse(null); onUpdateFilter =
-     * configuration.onUpdateFilter().orElse(null); onDeleteFilter =
-     * configuration.onDeleteFilter().orElse(null); genericFilter =
-     * configuration.genericFilter().orElse(null);
-     */
+    initFilters(configuration.onAddFilter().orElse(null),
+        configuration.onUpdateFilter().orElse(null),
+        configuration.onDeleteFilter().orElse(null),
+        configuration.genericFilter().orElse(null));
   }
 
   @Override

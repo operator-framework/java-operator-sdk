@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
+    DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -42,7 +41,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final ResourceUpdatePreProcessor<R> processor;
   private final Class<R> resourceType;
   private final boolean garbageCollected = this instanceof GarbageCollected;
-  private KubernetesDependentResourceConfig kubernetesDependentResourceConfig;
+  private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -56,21 +55,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public void configureWith(KubernetesDependentResourceConfig config) {
+  public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
   }
 
-  private void configureWith(String labelSelector, Set<String> namespaces,
-      boolean inheritNamespacesOnChange, EventSourceContext<P> context) {
+  private void configureWith(KubernetesDependentResourceConfig<R> config,
+      EventSourceContext<P> context) {
 
+    var namespaces = config.namespaces();
     if (namespaces.equals(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET)) {
       namespaces = context.getControllerConfiguration().getNamespaces();
     }
 
     var ic = InformerConfiguration.from(resourceType())
-        .withLabelSelector(labelSelector)
+        .withLabelSelector(config.labelSelector())
         .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
-        .withNamespaces(namespaces, inheritNamespacesOnChange)
+        .withNamespaces(namespaces, !config.wereNamespacesConfigured())
+        .withOnAddFilter(config.onAddFilter())
+        .withOnUpdateFilter(config.onUpdateFilter())
+        .withOnDeleteFilter(config.onDeleteFilter())
         .build();
 
     configureWith(new InformerEventSource<>(ic, context));
@@ -161,17 +164,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unchecked")
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     if (kubernetesDependentResourceConfig != null) {
-      // sets the filters for the dependent resource, which are applied by parent class
-      onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
-      onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
-      onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
-
-      configureWith(kubernetesDependentResourceConfig.labelSelector(),
-          kubernetesDependentResourceConfig.namespaces(),
-          !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);
+      configureWith(kubernetesDependentResourceConfig, context);
     } else {
-      configureWith(null, context.getControllerConfiguration().getNamespaces(),
-          true, context);
+      configureWith(KubernetesDependentResourceConfig
+          .defaultFor(context.getControllerConfiguration().getNamespaces()), context);
       log.warn(
           "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
           resourceType().getSimpleName());

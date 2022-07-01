@@ -9,9 +9,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
-import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.primaryID1;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.testResource1;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.testResource2;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class ExternalResourceCachingEventSourceTest extends
     AbstractEventSourceTestBase<ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
@@ -123,7 +127,7 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void canFilterOnDeleteEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnDeleteFilter((res, b) -> false);
+    delFilteringEventSource.initFilters(null, null, (res, b) -> false, null);
     setUpSource(delFilteringEventSource);
     // try without any resources added
     source.handleDeletes(primaryID1(), Set.of(testResource1(), testResource2()));
@@ -140,7 +144,8 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void filtersAddEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnAddFilter((res) -> false);
+    // todo: filters should actually come from configuration
+    delFilteringEventSource.initFilters((res) -> false, null, null, null);
     setUpSource(delFilteringEventSource);
 
     source.handleResources(primaryID1(), Set.of(testResource1()));
@@ -153,7 +158,8 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void filtersUpdateEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnUpdateFilter((res, res2) -> false);
+    // todo: filters should actually come from configuration
+    delFilteringEventSource.initFilters(null, (res, res2) -> false, null, null);
     setUpSource(delFilteringEventSource);
     source.handleResources(primaryID1(), Set.of(testResource1()));
     verify(eventHandler, times(1)).handleEvent(any());
@@ -168,7 +174,8 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void filtersImplicitDeleteEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnDeleteFilter((res, b) -> false);
+    // todo: filters should actually come from configuration
+    delFilteringEventSource.initFilters(null, null, (res, b) -> false, null);
     setUpSource(delFilteringEventSource);
 
     source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
@@ -181,7 +188,8 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void genericFilteringEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setGenericFilter(res -> false);
+    // todo: filters should actually come from configuration
+    delFilteringEventSource.initFilters(null, null, null, res -> false);
     setUpSource(delFilteringEventSource);
 
     source.handleResources(primaryID1(), Set.of(testResource1()));
@@ -197,7 +205,7 @@ class ExternalResourceCachingEventSourceTest extends
   public static class TestExternalCachingEventSource
       extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata> {
     public TestExternalCachingEventSource() {
-      super(SampleExternalResource.class, (r) -> r.getName());
+      super(SampleExternalResource.class, SampleExternalResource::getName);
     }
   }
 

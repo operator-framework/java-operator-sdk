@@ -21,9 +21,14 @@ public class KubernetesDependentResourceConfig<R> {
 
   private BiPredicate<R, Boolean> onDeleteFilter;
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static KubernetesDependentResourceConfig defaultFor(Set<String> namespaces) {
+    // by default, we make it so that we inherit the namespaces on changes
+    return new KubernetesDependentResourceConfig(namespaces, null, false, null, null, null);
+  }
+
   public KubernetesDependentResourceConfig() {}
 
-  @SuppressWarnings("rawtypes")
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
       boolean configuredNS, Predicate<R> onAddFilter,
       BiPredicate<R, R> onUpdateFilter,
@@ -63,18 +68,16 @@ public class KubernetesDependentResourceConfig<R> {
     return namespacesWereConfigured;
   }
 
-  @SuppressWarnings("rawtypes")
-  public Predicate onAddFilter() {
+  public Predicate<R> onAddFilter() {
     return onAddFilter;
   }
 
-  @SuppressWarnings("rawtypes")
-  public BiPredicate onUpdateFilter() {
+  public BiPredicate<R, R> onUpdateFilter() {
     return onUpdateFilter;
   }
 
-  @SuppressWarnings("rawtypes")
-  public BiPredicate onDeleteFilter() {
+
+  public BiPredicate<R, Boolean> onDeleteFilter() {
     return onDeleteFilter;
   }
 }

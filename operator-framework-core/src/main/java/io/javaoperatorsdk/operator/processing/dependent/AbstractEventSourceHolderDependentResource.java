@@ -19,10 +19,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   private T eventSource;
   private boolean isCacheFillerEventSource;
-  protected Predicate<R> onAddFilter;
-  protected BiPredicate<R, R> onUpdateFilter;
-  protected BiPredicate<R, Boolean> onDeleteFilter;
-  protected Predicate<R> genericFilter;
 
 
   public EventSource initEventSource(EventSourceContext<P> context) {
@@ -34,7 +30,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     // is shared between dependent resources this does not override the existing filters.
     if (eventSource == null) {
       eventSource = createEventSource(context);
-      applyFilters();
     }
 
     isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
@@ -47,14 +42,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.eventSource = eventSource;
   }
 
-  protected void applyFilters() {
-    /*
-     * this.eventSource.setOnAddFilter(onAddFilter);
-     * this.eventSource.setOnUpdateFilter(onUpdateFilter);
-     * this.eventSource.setOnDeleteFilter(onDeleteFilter);
-     * this.eventSource.setGenericFilter(genericFilter);
-     */
-  }
 
   protected T eventSource() {
     return eventSource;
@@ -77,15 +64,9 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     return (RecentOperationCacheFiller<R>) eventSource;
   }
 
-  public void setOnAddFilter(Predicate<R> onAddFilter) {
-    this.onAddFilter = onAddFilter;
-  }
-
-  public void setOnUpdateFilter(BiPredicate<R, R> onUpdateFilter) {
-    this.onUpdateFilter = onUpdateFilter;
-  }
-
-  public void setOnDeleteFilter(BiPredicate<R, Boolean> onDeleteFilter) {
-    this.onDeleteFilter = onDeleteFilter;
+  public void initFilters(Predicate<R> onAddFilter, BiPredicate<R, R> onUpdateFilter,
+      BiPredicate<R, Boolean> onDeleteFilter,
+      Predicate<R> genericFilter) {
+    eventSource.initFilters(onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }

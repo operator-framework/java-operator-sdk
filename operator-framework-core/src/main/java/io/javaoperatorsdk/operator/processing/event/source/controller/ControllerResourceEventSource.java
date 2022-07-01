@@ -38,20 +38,21 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
+    final var configuration = controller.getConfiguration();
     BiPredicate<T, T> internalOnUpdateFilter =
         (BiPredicate<T, T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
-            controller.getConfiguration().getFinalizerName())
-            .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
+            configuration.getFinalizerName())
+                .or(onUpdateGenerationAware(configuration.isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
 
-    legacyFilters = controller.getConfiguration().getEventFilter();
+    legacyFilters = configuration.getEventFilter();
 
     // by default the on add should be processed in all cases regarding internal filters
-    controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-    controller.getConfiguration().onUpdateFilter()
-        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
-            () -> setOnUpdateFilter(internalOnUpdateFilter));
-    controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
+    initFilters(configuration.onAddFilter().orElse(null),
+        configuration.onUpdateFilter().map(f -> f.and(internalOnUpdateFilter))
+            .orElse(internalOnUpdateFilter),
+        null,
+        configuration.genericFilter().orElse(null));
   }
 
   @Override
@@ -109,11 +110,5 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public Set<T> getSecondaryResources(T primary) {
     throw new IllegalStateException("This method should not be called here. Primary: " + primary);
-  }
-
-  @Override
-  public void setOnDeleteFilter(BiPredicate<T, Boolean> onDeleteFilter) {
-    throw new IllegalStateException(
-        "onDeleteFilter is not supported for controller resource event source");
   }
 }

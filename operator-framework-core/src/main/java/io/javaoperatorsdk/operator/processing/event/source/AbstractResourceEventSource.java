@@ -25,21 +25,12 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
     return resourceClass;
   }
 
-  public void setOnAddFilter(Predicate<R> onAddFilter) {
+  public void initFilters(Predicate<R> onAddFilter, BiPredicate<R, R> onUpdateFilter,
+      BiPredicate<R, Boolean> onDeleteFilter,
+      Predicate<R> genericFilter) {
     this.onAddFilter = onAddFilter;
-  }
-
-  public void setOnUpdateFilter(
-      BiPredicate<R, R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
-  }
-
-  public void setOnDeleteFilter(
-      BiPredicate<R, Boolean> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
-  }
-
-  public void setGenericFilter(Predicate<R> genericFilter) {
     this.genericFilter = genericFilter;
   }
 

@@ -22,7 +22,11 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class InformerEventSourceTest {
@@ -208,7 +212,8 @@ class InformerEventSourceTest {
 
   @Test
   void genericFilterForEvents() {
-    informerEventSource.setGenericFilter(r -> false);
+    // todo: filters should actually come from configuration
+    informerEventSource.initFilters(null, null, null, r -> false);
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
@@ -221,7 +226,8 @@ class InformerEventSourceTest {
 
   @Test
   void filtersOnAddEvents() {
-    informerEventSource.setOnAddFilter(r -> false);
+    // todo: filters should actually come from configuration
+    informerEventSource.initFilters(r -> false, null, null, null);
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
@@ -232,7 +238,8 @@ class InformerEventSourceTest {
 
   @Test
   void filtersOnUpdateEvents() {
-    informerEventSource.setOnUpdateFilter((r1, r2) -> false);
+    // todo: filters should actually come from configuration
+    informerEventSource.initFilters(null, (r1, r2) -> false, null, null);
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
@@ -243,7 +250,8 @@ class InformerEventSourceTest {
 
   @Test
   void filtersOnDeleteEvents() {
-    informerEventSource.setOnDeleteFilter((r, b) -> false);
+    // todo: filters should actually come from configuration
+    informerEventSource.initFilters(null, null, (r, b) -> false, null);
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
