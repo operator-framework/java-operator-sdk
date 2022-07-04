@@ -37,9 +37,9 @@ class TimerEventSourceTest
 
   @Test
   public void schedulesOnce() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
+    var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
-    source.scheduleOnce(customResource, PERIOD);
+    source.scheduleOnce(resourceID, PERIOD);
 
     untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
     untilAsserted(PERIOD * 2, 0, () -> assertThat(eventHandler.events).hasSize(1));
@@ -47,20 +47,20 @@ class TimerEventSourceTest
 
   @Test
   public void canCancelOnce() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
+    var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
-    source.scheduleOnce(customResource, PERIOD);
-    source.cancelOnceSchedule(ResourceID.fromResource(customResource));
+    source.scheduleOnce(resourceID, PERIOD);
+    source.cancelOnceSchedule(resourceID);
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
   }
 
   @Test
   public void canRescheduleOnceEvent() {
-    TestCustomResource customResource = TestUtils.testCustomResource();
+    var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
-    source.scheduleOnce(customResource, PERIOD);
-    source.scheduleOnce(customResource, 2 * PERIOD);
+    source.scheduleOnce(resourceID, PERIOD);
+    source.scheduleOnce(resourceID, 2 * PERIOD);
 
     untilAsserted(PERIOD * 2, PERIOD, () -> assertThat(eventHandler.events).hasSize(1));
   }
@@ -69,7 +69,7 @@ class TimerEventSourceTest
   public void deRegistersOnceEventSources() {
     TestCustomResource customResource = TestUtils.testCustomResource();
 
-    source.scheduleOnce(customResource, PERIOD);
+    source.scheduleOnce(ResourceID.fromResource(customResource), PERIOD);
     source.onResourceDeleted(customResource);
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
@@ -77,16 +77,16 @@ class TimerEventSourceTest
 
   @Test
   public void eventNotRegisteredIfStopped() throws IOException {
-    TestCustomResource customResource = TestUtils.testCustomResource();
+    var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
     source.stop();
     assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
-        () -> source.scheduleOnce(customResource, PERIOD));
+        () -> source.scheduleOnce(resourceID, PERIOD));
   }
 
   @Test
   public void eventNotFiredIfStopped() throws IOException {
-    source.scheduleOnce(TestUtils.testCustomResource(), PERIOD);
+    source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
     source.stop();
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());

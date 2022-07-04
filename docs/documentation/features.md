@@ -324,6 +324,41 @@ intersections:
    will still happen, but won't reset the retry, will be still marked as the last attempt in the retry info. The point
    (1) still holds, but in case of an error, no retry will happen.
 
+## Rate Limiting
+
+It is possible to rate limit reconciliation on a per-resource basis. The rate limit also takes
+precedence over retry/re-schedule configurations: for example, even if a retry was scheduled for
+the next second but this request would make the resource go over its rate limit, the next
+reconciliation will be postponed according to the rate limiting rules. Note that the
+reconciliation is never cancelled, it will just be executed as early as possible based on rate
+limitations.
+
+Rate limiting is by default turned **off**, since correct configuration depends on the reconciler
+implementation, in particular, on how long a typical reconciliation takes.
+(The parallelism of reconciliation itself can be
+limited  [`ConfigurationService`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L120-L120)
+by configuring the `ExecutorService` appropriately.)
+
+A default rate limiter implementation is provided, see:
+[`PeriodRateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/PeriodRateLimiter.java#L14-L14)
+.
+Users can override it by implementing their own
+[`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
+.
+
+To configure the default rate limiter use `@ControllerConfiguration` annotation. The following
+configuration limits
+each resource to reconcile at most twice within a 3 second interval:
+
+`@ControllerConfiguration(rateLimit = @RateLimit(limitForPeriod = 2,refreshPeriod = 3,refreshPeriodTimeUnit = TimeUnit.SECONDS))`
+.
+
+Thus, if a given resource was reconciled twice in one second, no further reconciliation for this
+resource will happen before two seconds have elapsed. Note that, since rate is limited on a
+per-resource basis, other resources can still be reconciled at the same time, as long, of course,
+that they stay within their own rate limits.
+
+
 ## Handling Related Events with Event Sources
 
 See also this [blog post](https://csviri.medium.com/java-operator-sdk-introduction-to-event-sources-a1aab5af4b7b).

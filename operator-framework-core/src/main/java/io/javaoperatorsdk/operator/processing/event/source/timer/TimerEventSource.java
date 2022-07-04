@@ -24,17 +24,20 @@ public class TimerEventSource<R extends HasMetadata>
   private final AtomicBoolean running = new AtomicBoolean();
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
-
   public void scheduleOnce(R resource, long delay) {
+    scheduleOnce(ResourceID.fromResource(resource), delay);
+  }
+
+  public void scheduleOnce(ResourceID resourceID, long delay) {
     if (!running.get()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
-    ResourceID resourceUid = ResourceID.fromResource(resource);
-    if (onceTasks.containsKey(resourceUid)) {
-      cancelOnceSchedule(resourceUid);
+
+    if (onceTasks.containsKey(resourceID)) {
+      cancelOnceSchedule(resourceID);
     }
-    EventProducerTimeTask task = new EventProducerTimeTask(resourceUid);
-    onceTasks.put(resourceUid, task);
+    EventProducerTimeTask task = new EventProducerTimeTask(resourceID);
+    onceTasks.put(resourceID, task);
     timer.schedule(task, delay);
   }
 
