@@ -211,13 +211,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private DependentResourceSpec<?, ?> updateSpec(String name, DependentResourceSpec spec,
       KubernetesDependentResourceConfig c) {
-    var res = new DependentResourceSpec(spec.getDependentResourceClass(),
-        c.setNamespaces(namespaces), name);
-    res.setReadyPostcondition(spec.getReadyCondition());
-    res.setReconcilePrecondition(spec.getReconcileCondition());
-    res.setDeletePostCondition(spec.getDeletePostCondition());
-    res.setDependsOn(spec.getDependsOn());
-    return res;
+    return new DependentResourceSpec(spec.getDependentResourceClass(),
+        c.setNamespaces(namespaces), name, spec.getDependsOn(), spec.getReadyCondition(),
+        spec.getReconcileCondition(), spec.getDeletePostCondition());
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
