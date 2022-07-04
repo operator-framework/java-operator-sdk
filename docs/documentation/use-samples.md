@@ -54,7 +54,7 @@ public class Runner {
 
     public static void main(String[] args) {
         Operator operator = new Operator(DefaultConfigurationService.instance());
-        operator.register(new WebServerController());
+        operator.register(new WebPageReconciler());
         operator.start();
     }
 }
@@ -210,6 +210,28 @@ public class Application {
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
+    }
+}
+```
+
+You will also need a `@Configuration` to make sure that your reconciler is registered: 
+
+```java
+
+@Configuration
+public class Config {
+
+    @Bean
+    public WebPageReconciler customServiceController() {
+        return new WebPageReconciler();
+    }
+
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    @SuppressWarnings("rawtypes")
+    public Operator operator(List<Reconciler> controllers) {
+        Operator operator = new Operator();
+        controllers.forEach(operator::register);
+        return operator;
     }
 }
 ```
