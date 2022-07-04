@@ -17,6 +17,8 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
+  RateLimiter DEFAULT_RATE_LIMITER = new PeriodRateLimiter();
+
   default String getName() {
     return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
   }
@@ -46,7 +48,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   }
 
   default RateLimiter getRateLimiter() {
-    return new PeriodRateLimiter();
+    return DEFAULT_RATE_LIMITER;
   }
 
   /**
