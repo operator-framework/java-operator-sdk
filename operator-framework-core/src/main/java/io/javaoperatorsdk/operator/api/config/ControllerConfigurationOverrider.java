@@ -1,7 +1,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -27,6 +32,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
   private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
+  private Predicate<R> onAddFilter;
+  private BiPredicate<R, R> onUpdateFilter;
+  private Predicate<R> genericFilter;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -39,6 +47,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     // make the original specs modifiable
     final var dependentResources = original.getDependentResources();
     namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
+    this.onAddFilter = original.onAddFilter().orElse(null);
+    this.onUpdateFilter = original.onUpdateFilter().orElse(null);
+    this.genericFilter = original.genericFilter().orElse(null);
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
   }
@@ -120,6 +131,21 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withOnAddFilter(Predicate<R> onAddFilter) {
+    this.onAddFilter = onAddFilter;
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> withOnUpdateFilter(BiPredicate<R, R> onUpdateFilter) {
+    this.onUpdateFilter = onUpdateFilter;
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> withGenericFilter(Predicate<R> genericFilter) {
+    this.genericFilter = genericFilter;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -167,6 +193,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
+        onAddFilter,
+        onUpdateFilter,
+        genericFilter,
         newDependentSpecs);
   }
 

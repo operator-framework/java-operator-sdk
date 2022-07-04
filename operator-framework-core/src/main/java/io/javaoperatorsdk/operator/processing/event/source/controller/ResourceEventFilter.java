@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
  *
  * @param <P> the type of custom resources handled by this filter
  */
+@Deprecated(forRemoval = true)
 @FunctionalInterface
 public interface ResourceEventFilter<P extends HasMetadata> {
 

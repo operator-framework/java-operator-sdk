@@ -15,11 +15,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class DefaultPrimaryToSecondaryIndexTest {
+class PrimaryToSecondaryIndexTest {
 
   private SecondaryToPrimaryMapper<ConfigMap> secondaryToPrimaryMapperMock =
       mock(SecondaryToPrimaryMapper.class);
-  private DefaultPrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
+  private PrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
       new DefaultPrimaryToSecondaryIndex<>(secondaryToPrimaryMapperMock);
 
   private ResourceID primaryID1 = new ResourceID("id1", "default");

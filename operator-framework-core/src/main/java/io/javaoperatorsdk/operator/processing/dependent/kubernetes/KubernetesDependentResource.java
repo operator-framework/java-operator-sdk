@@ -60,7 +60,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.kubernetesDependentResourceConfig = config;
   }
 
-  @SuppressWarnings("unchecked")
   private void configureWith(String labelSelector, Set<String> namespaces,
       boolean inheritNamespacesOnChange, EventSourceContext<P> context) {
 
@@ -74,7 +73,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
-    configureWith(new InformerEventSource<>(ic, client));
+    configureWith(new InformerEventSource<>(ic, context));
   }
 
   @SuppressWarnings("unchecked")
@@ -159,8 +158,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     if (kubernetesDependentResourceConfig != null) {
+      // sets the filters for the dependent resource, which are applied by parent class
+      onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
+      onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
+      onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
+      genericFilter = kubernetesDependentResourceConfig.genericFilter();
+
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
           !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);

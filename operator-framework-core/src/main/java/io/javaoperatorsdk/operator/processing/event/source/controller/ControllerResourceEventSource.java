@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,9 @@ import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClient
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateFinalizerNeededAndApplied;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateGenerationAware;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateMarkedForDeletion;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
@@ -27,22 +31,27 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
-  private final ResourceEventFilter<T> filter;
+  private final ResourceEventFilter<T> legacyFilters;
 
   @SuppressWarnings("unchecked")
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
-    var filters = new ResourceEventFilter[] {
-        ResourceEventFilters.finalizerNeededAndApplied(),
-        ResourceEventFilters.markedForDeletion(),
-        ResourceEventFilters.generationAware(),
-    };
-    if (controller.getConfiguration().getEventFilter() != null) {
-      filter = controller.getConfiguration().getEventFilter().and(ResourceEventFilters.or(filters));
-    } else {
-      filter = ResourceEventFilters.or(filters);
-    }
+
+    BiPredicate<T, T> internalOnUpdateFilter =
+        (BiPredicate<T, T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
+            controller.getConfiguration().getFinalizerName())
+            .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
+            .or(onUpdateMarkedForDeletion());
+
+    legacyFilters = controller.getConfiguration().getEventFilter();
+
+    // by default the on add should be processed in all cases regarding internal filters
+    controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
+    controller.getConfiguration().onUpdateFilter()
+        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
+            () -> setOnUpdateFilter(internalOnUpdateFilter));
+    controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
   }
 
   @Override
@@ -60,7 +69,9 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       log.debug("Event received for resource: {}", getName(resource));
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (filter.acceptChange(controller, oldResource, resource)) {
+      if ((legacyFilters == null ||
+          legacyFilters.acceptChange(controller, oldResource, resource))
+          && isAcceptedByFilters(action, resource, oldResource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
@@ -70,6 +81,20 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     } finally {
       MDCUtils.removeResourceInfo();
     }
+  }
+
+  private boolean isAcceptedByFilters(ResourceAction action, T resource, T oldResource) {
+    // delete event is filtered for generic filter only.
+    if (genericFilter != null && !genericFilter.test(resource)) {
+      return false;
+    }
+    switch (action) {
+      case ADDED:
+        return onAddFilter == null || onAddFilter.test(resource);
+      case UPDATED:
+        return onUpdateFilter.test(resource, oldResource);
+    }
+    return true;
   }
 
   @Override
@@ -98,5 +123,11 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public Set<T> getSecondaryResources(T primary) {
     throw new IllegalStateException("This method should not be called here. Primary: " + primary);
+  }
+
+  @Override
+  public void setOnDeleteFilter(BiPredicate<T, Boolean> onDeleteFilter) {
+    throw new IllegalStateException(
+        "onDeleteFilter is not supported for controller resource event source");
   }
 }

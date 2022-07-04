@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.source;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected synchronized void handleDelete(ResourceID primaryID) {
     var res = cache.remove(primaryID);
-    if (res != null) {
+    if (res != null && deleteAcceptedByFilter(res.values())) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }
@@ -62,18 +63,19 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     handleDelete(primaryID, Set.of(cacheKeyMapper.keyFor(resource)));
   }
 
-  protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceID) {
+  protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceIDs) {
     if (!isRunning()) {
       return;
     }
     var cachedValues = cache.get(primaryID);
-    var sizeBeforeRemove = cachedValues.size();
-    resourceID.forEach(cachedValues::remove);
+    List<R> removedResources = cachedValues == null ? Collections.emptyList()
+        : resourceIDs.stream()
+            .flatMap(id -> Stream.ofNullable(cachedValues.remove(id))).collect(Collectors.toList());
 
-    if (cachedValues.isEmpty()) {
+    if (cachedValues != null && cachedValues.isEmpty()) {
       cache.remove(primaryID);
     }
-    if (sizeBeforeRemove > cachedValues.size()) {
+    if (!removedResources.isEmpty() && deleteAcceptedByFilter(removedResources)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }
@@ -90,7 +92,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k))
         .collect(Collectors.toList());
     toDelete.forEach(this::handleDelete);
-    allNewResources.forEach((primaryID, resources) -> handleResources(primaryID, resources));
+    allNewResources.forEach(this::handleResources);
   }
 
   protected synchronized void handleResources(ResourceID primaryID, Set<R> newResources,
@@ -101,12 +103,74 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return;
     }
     var cachedResources = cache.get(primaryID);
+    if (cachedResources == null) {
+      cachedResources = Collections.emptyMap();
+    }
     var newResourcesMap =
         newResources.stream().collect(Collectors.toMap(cacheKeyMapper::keyFor, r -> r));
     cache.put(primaryID, newResourcesMap);
-    if (propagateEvent && !newResourcesMap.equals(cachedResources)) {
+    if (propagateEvent && !newResourcesMap.equals(cachedResources)
+        && acceptedByFiler(cachedResources, newResourcesMap)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
+  }
+
+  private boolean acceptedByFiler(Map<String, R> cachedResourceMap,
+      Map<String, R> newResourcesMap) {
+
+    var addedResources = new HashMap<>(newResourcesMap);
+    addedResources.keySet().removeAll(cachedResourceMap.keySet());
+    if (onAddFilter != null || genericFilter != null) {
+      var anyAddAccepted =
+          addedResources.values().stream().anyMatch(r -> acceptedByGenericFiler(r) &&
+              onAddFilter.test(r));
+      if (anyAddAccepted) {
+        return true;
+      }
+    } else if (!addedResources.isEmpty()) {
+      return true;
+    }
+
+    var deletedResource = new HashMap<>(cachedResourceMap);
+    deletedResource.keySet().removeAll(newResourcesMap.keySet());
+    if (onDeleteFilter != null || genericFilter != null) {
+      var anyDeleteAccepted =
+          deletedResource.values().stream()
+              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.test(r, false));
+      if (anyDeleteAccepted) {
+        return true;
+      }
+    } else if (!deletedResource.isEmpty()) {
+      return true;
+    }
+
+    Map<String, R> possibleUpdatedResources = new HashMap<>(cachedResourceMap);
+    possibleUpdatedResources.keySet().retainAll(newResourcesMap.keySet());
+    possibleUpdatedResources = possibleUpdatedResources.entrySet().stream()
+        .filter(entry -> !newResourcesMap
+            .get(entry.getKey()).equals(entry.getValue()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    if (onUpdateFilter != null || genericFilter != null) {
+      var anyUpdated = possibleUpdatedResources.entrySet().stream()
+          .anyMatch(
+              entry -> {
+                var newResource = newResourcesMap.get(entry.getKey());
+                return acceptedByGenericFiler(newResource) &&
+                    onUpdateFilter.test(newResource, entry.getValue());
+              });
+      if (anyUpdated) {
+        return true;
+      }
+    } else if (!possibleUpdatedResources.isEmpty()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private boolean acceptedByGenericFiler(R resource) {
+    return genericFilter == null || genericFilter.test(resource);
   }
 
   @Override
@@ -162,5 +226,16 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   public Map<ResourceID, Map<String, R>> getCache() {
     return Collections.unmodifiableMap(cache);
+  }
+
+  protected boolean deleteAcceptedByFilter(Collection<R> res) {
+    if (onDeleteFilter == null) {
+      return true;
+    }
+    // it is enough if at least one event is accepted
+    // Cannot be sure about the final state in general, mainly for polled resources. This might be
+    // fine-tuned for
+    // other event sources. (For now just by overriding this method.)
+    return res.stream().anyMatch(r -> onDeleteFilter.test(r, false));
   }
 }

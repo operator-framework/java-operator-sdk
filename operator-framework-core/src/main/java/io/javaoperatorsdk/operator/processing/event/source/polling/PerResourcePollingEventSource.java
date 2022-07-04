@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
-import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
@@ -22,7 +21,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * if there is no registerPredicate provided. If register predicate provided it is evaluated on
  * resource create and/or update to register polling for the event source.
  * <p>
- * For other behavior see {@link CachingEventSource}
+ * For other behavior see {@link ExternalResourceCachingEventSource}
  *
  * @param <R> the resource polled by the event source
  * @param <P> related custom resource
