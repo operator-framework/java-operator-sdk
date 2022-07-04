@@ -24,6 +24,9 @@ public class TimerEventSource<R extends HasMetadata>
   private final AtomicBoolean running = new AtomicBoolean();
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
+  public void scheduleOnce(R resource, long delay) {
+    scheduleOnce(ResourceID.fromResource(resource), delay);
+  }
 
   public void scheduleOnce(ResourceID resourceID, long delay) {
     if (!running.get()) {
