@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -15,6 +18,18 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   default String getResourceTypeName() {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
+  }
+
+  default Optional<Predicate<R>> onAddFilter() {
+    return Optional.empty();
+  }
+
+  default Optional<BiPredicate<R, R>> onUpdateFilter() {
+    return Optional.empty();
+  }
+
+  default Optional<Predicate<R>> genericFilter() {
+    return Optional.empty();
   }
 
   /**

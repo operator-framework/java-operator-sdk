@@ -11,10 +11,10 @@ import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -79,7 +79,7 @@ class EventSourceManagerTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> manager.getResourceEventSourceFor(HasMetadata.class, "unknown_name"));
 
-    CachingEventSource eventSource = mock(CachingEventSource.class);
+    ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(String.class);
     manager.registerEventSource(eventSource);
 
@@ -93,11 +93,11 @@ class EventSourceManagerTest {
     EventSourceManager manager = initManager();
     final var name = "name1";
 
-    CachingEventSource eventSource = mock(CachingEventSource.class);
+    ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource(name, eventSource);
 
-    eventSource = mock(CachingEventSource.class);
+    eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
     final var source = eventSource;
 
@@ -114,11 +114,11 @@ class EventSourceManagerTest {
   void retrievingAnEventSourceWhenMultipleAreRegisteredForATypeShouldRequireAQualifier() {
     EventSourceManager manager = initManager();
 
-    CachingEventSource eventSource = mock(CachingEventSource.class);
+    ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource("name1", eventSource);
 
-    CachingEventSource eventSource2 = mock(CachingEventSource.class);
+    ManagedInformerEventSource eventSource2 = mock(ManagedInformerEventSource.class);
     when(eventSource2.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource("name2", eventSource2);
 

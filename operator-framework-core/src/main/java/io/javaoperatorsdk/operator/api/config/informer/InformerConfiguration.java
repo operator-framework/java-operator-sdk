@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
@@ -23,26 +26,39 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
+    private final BiPredicate<R, Boolean> onDeleteFilter;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        Set<String> namespaces, boolean followControllerNamespaceChanges) {
-      super(labelSelector, resourceClass, namespaces);
+        Set<String> namespaces, boolean followControllerNamespaceChanges,
+        Predicate<R> onAddFilter,
+        BiPredicate<R, R> onUpdateFilter,
+        BiPredicate<R, Boolean> onDeleteFilter,
+        Predicate<R> genericFilter) {
+      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
+
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
+      this.onDeleteFilter = onDeleteFilter;
     }
 
+    @Override
     public boolean followControllerNamespaceChanges() {
       return followControllerNamespaceChanges;
     }
 
+    @Override
     public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
       return secondaryToPrimaryMapper;
+    }
+
+    public Optional<BiPredicate<R, Boolean>> onDeleteFilter() {
+      return Optional.ofNullable(onDeleteFilter);
     }
 
     @Override
@@ -61,6 +77,14 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
+  Optional<Predicate<R>> onAddFilter();
+
+  Optional<BiPredicate<R, R>> onUpdateFilter();
+
+  Optional<BiPredicate<R, Boolean>> onDeleteFilter();
+
+  Optional<Predicate<R>> genericFilter();
+
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
   @SuppressWarnings("unused")
@@ -71,6 +95,10 @@ public interface InformerConfiguration<R extends HasMetadata>
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
+    private Predicate<R> onAddFilter;
+    private BiPredicate<R, R> onUpdateFilter;
+    private BiPredicate<R, Boolean> onDeleteFilter;
+    private Predicate<R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
@@ -151,11 +179,33 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public InformerConfigurationBuilder<R> withOnAddFilter(Predicate<R> onAddFilter) {
+      this.onAddFilter = onAddFilter;
+      return this;
+    }
+
+    public InformerConfigurationBuilder<R> withOnUpdateFilter(BiPredicate<R, R> onUpdateFilter) {
+      this.onUpdateFilter = onUpdateFilter;
+      return this;
+    }
+
+    public InformerConfigurationBuilder<R> withOnDeleteFilter(
+        BiPredicate<R, Boolean> onDeleteFilter) {
+      this.onDeleteFilter = onDeleteFilter;
+      return this;
+    }
+
+    public InformerConfigurationBuilder<R> withGenericFilter(Predicate<R> genericFilter) {
+      this.genericFilter = genericFilter;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
-          namespaces, inheritControllerNamespacesOnChange);
+          namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
+          onDeleteFilter, genericFilter);
     }
   }
 

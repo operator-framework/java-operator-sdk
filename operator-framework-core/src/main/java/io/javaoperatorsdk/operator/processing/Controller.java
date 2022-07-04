@@ -64,10 +64,10 @@ public class Controller<P extends HasMetadata>
     this.metrics = Optional.ofNullable(ConfigurationServiceProvider.instance().getMetrics())
         .orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
-    eventSourceManager = new EventSourceManager<>(this);
     isCleaner = reconciler instanceof Cleaner;
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
+    eventSourceManager = new EventSourceManager<>(this);
   }
 
   @Override
