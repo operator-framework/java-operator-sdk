@@ -231,7 +231,7 @@ class EventProcessorTest {
 
     verify(retryTimerEventSourceMock,
         after((long) (FAKE_CONTROLLER_EXECUTION_DURATION * 1.5)).times(0))
-            .scheduleOnce((ResourceID) any(), eq(testDelay));
+        .scheduleOnce((ResourceID) any(), eq(testDelay));
   }
 
   @Test
