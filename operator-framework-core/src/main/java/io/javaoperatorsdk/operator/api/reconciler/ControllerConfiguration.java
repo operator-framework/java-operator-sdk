@@ -91,6 +91,9 @@ public @interface ControllerConfiguration {
   ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
       interval = 10);
 
+
+  RateLimit rateLimit() default @RateLimit;
+
   /**
    * Optional list of {@link Dependent} configurations which associate a resource type to a
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
