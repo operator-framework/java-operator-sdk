@@ -27,6 +27,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
@@ -147,6 +149,17 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
               annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
     } else {
       return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
+    }
+  }
+
+  @Override
+  public RateLimiter getRateLimiter() {
+    if (annotation.rateLimit() != null) {
+      return new PeriodRateLimiter(Duration.of(annotation.rateLimit().refreshPeriod(),
+          annotation.rateLimit().refreshPeriodTimeUnit().toChronoUnit()),
+          annotation.rateLimit().limitForPeriod());
+    } else {
+      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.getRateLimiter();
     }
   }
 

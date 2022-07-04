@@ -20,11 +20,8 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,7 +52,10 @@ class CustomResourceSelectorTest {
     configurationService = spy(ConfigurationService.class);
     when(configurationService.checkCRDAndValidateLocalModel()).thenReturn(false);
     when(configurationService.getVersion()).thenReturn(new Version("1", "1", new Date()));
+    // make sure not the same config instance is used for the controller, so rate limiter is not
+    // shared
     when(configurationService.getConfigurationFor(any(MyController.class)))
+        .thenReturn(new MyConfiguration())
         .thenReturn(new MyConfiguration());
   }
 
@@ -136,8 +136,8 @@ class CustomResourceSelectorTest {
     public MyConfiguration() {
       super(MyController.class.getCanonicalName(), "mycontroller", null, Constants.NO_VALUE_SET,
           false, null,
-          null, null, null, TestCustomResource.class, null,
-          null, null, null, null);
+          null, null, null, TestCustomResource.class, null, null, null, null,
+          new PeriodRateLimiter(), null);
     }
   }
 
