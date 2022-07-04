@@ -215,7 +215,7 @@ class EventProcessorTest {
     eventProcessor.handleEvent(prepareCREvent());
 
     verify(retryTimerEventSourceMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(1))
-        .scheduleOnce((HasMetadata) any(), eq(testDelay));
+        .scheduleOnce((ResourceID) any(), eq(testDelay));
   }
 
   @Test
@@ -231,7 +231,7 @@ class EventProcessorTest {
 
     verify(retryTimerEventSourceMock,
         after((long) (FAKE_CONTROLLER_EXECUTION_DURATION * 1.5)).times(0))
-            .scheduleOnce((HasMetadata) any(), eq(testDelay));
+            .scheduleOnce((ResourceID) any(), eq(testDelay));
   }
 
   @Test
@@ -358,10 +358,10 @@ class EventProcessorTest {
     eventProcessor.handleEvent(event);
     verify(reconciliationDispatcherMock, after(FAKE_CONTROLLER_EXECUTION_DURATION).times(1))
         .handleExecution(any());
-    verify(retryTimerEventSourceMock, times(0)).scheduleOnce((HasMetadata) any(), anyLong());
+    verify(retryTimerEventSourceMock, times(0)).scheduleOnce((ResourceID) any(), anyLong());
 
     eventProcessor.handleEvent(event);
-    verify(retryTimerEventSourceMock, times(1)).scheduleOnce((HasMetadata) any(), anyLong());
+    verify(retryTimerEventSourceMock, times(1)).scheduleOnce((ResourceID) any(), anyLong());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {
