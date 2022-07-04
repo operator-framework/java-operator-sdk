@@ -21,23 +21,26 @@ public class KubernetesDependentResourceConfig<R> {
 
   private BiPredicate<R, Boolean> onDeleteFilter;
 
+  private Predicate<R> genericFilter;
+
   public KubernetesDependentResourceConfig() {}
 
   @SuppressWarnings("rawtypes")
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
       boolean configuredNS, Predicate<R> onAddFilter,
       BiPredicate<R, R> onUpdateFilter,
-      BiPredicate<R, Boolean> onDeleteFilter) {
+      BiPredicate<R, Boolean> onDeleteFilter, Predicate<R> genericFilter) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.namespacesWereConfigured = configuredNS;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
     this.onDeleteFilter = onDeleteFilter;
+    this.genericFilter = genericFilter;
   }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
-    this(namespaces, labelSelector, true, null, null, null);
+    this(namespaces, labelSelector, true, null, null, null, null);
   }
 
   public KubernetesDependentResourceConfig<R> setNamespaces(Set<String> namespaces) {
@@ -76,5 +79,9 @@ public class KubernetesDependentResourceConfig<R> {
   @SuppressWarnings("rawtypes")
   public BiPredicate onDeleteFilter() {
     return onDeleteFilter;
+  }
+
+  public Predicate<R> genericFilter() {
+    return genericFilter;
   }
 }

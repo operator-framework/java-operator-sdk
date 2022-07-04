@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
@@ -44,4 +45,6 @@ public @interface KubernetesDependent {
   Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
 
   Class<? extends BiPredicate<? extends HasMetadata, Boolean>> onDeleteFilter() default VoidOnDeleteFilter.class;
+
+  Class<? extends Predicate<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
 }

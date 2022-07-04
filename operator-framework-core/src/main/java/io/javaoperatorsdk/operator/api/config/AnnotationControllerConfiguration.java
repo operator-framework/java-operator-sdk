@@ -279,6 +279,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     Predicate<? extends HasMetadata> onAddFilter = null;
     BiPredicate<? extends HasMetadata, ? extends HasMetadata> onUpdateFilter = null;
     BiPredicate<? extends HasMetadata, Boolean> onDeleteFilter = null;
+    Predicate<? extends HasMetadata> genericFilter = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -298,11 +299,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       onDeleteFilter =
           createFilter(kubeDependent.onDeleteFilter(), FilterType.onDelete, kubeDependentName)
               .orElse(null);
+      genericFilter =
+          createFilter(kubeDependent.genericFilter(), FilterType.generic, kubeDependentName)
+              .orElse(null);
     }
 
     config =
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
-            onUpdateFilter, onDeleteFilter);
+            onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
   }

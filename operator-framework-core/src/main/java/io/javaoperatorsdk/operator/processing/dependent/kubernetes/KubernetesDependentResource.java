@@ -165,6 +165,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
+      genericFilter = kubernetesDependentResourceConfig.genericFilter();
 
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
