@@ -167,12 +167,12 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @SuppressWarnings("unchecked")
   public Optional<Predicate<P>> onAddFilter() {
     return (Optional<Predicate<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
-            annotation.getClass().getSimpleName());
+        annotation.getClass().getSimpleName());
   }
 
   private enum FilterType {
     onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
-            VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
+        VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
 
     final Class<?> defaultValue;
 
@@ -189,11 +189,11 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         var instance = (T) filter.getDeclaredConstructor().newInstance();
         return Optional.of(instance);
       } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-               | NoSuchMethodException e) {
+          | NoSuchMethodException e) {
         throw new OperatorException(
-                "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
-                        + origin + " for reconciler " + getName(),
-                e);
+            "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
+                + origin + " for reconciler " + getName(),
+            e);
       }
     }
   }
