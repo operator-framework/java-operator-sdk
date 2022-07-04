@@ -8,7 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -27,19 +29,23 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 @SuppressWarnings("rawtypes")
-public class AnnotationControllerConfiguration<R extends HasMetadata>
-    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<R> {
+public class AnnotationControllerConfiguration<P extends HasMetadata>
+    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
-  protected final Reconciler<R> reconciler;
+  protected final Reconciler<P> reconciler;
   private final ControllerConfiguration annotation;
   private List<DependentResourceSpec> specs;
-  private Class<R> resourceClass;
+  private Class<P> resourceClass;
 
-  public AnnotationControllerConfiguration(Reconciler<R> reconciler) {
+  public AnnotationControllerConfiguration(Reconciler<P> reconciler) {
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
     if (annotation == null) {
@@ -84,10 +90,10 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @Override
   @SuppressWarnings("unchecked")
-  public Class<R> getResourceClass() {
+  public Class<P> getResourceClass() {
     if (resourceClass == null) {
       resourceClass =
-          (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(reconciler.getClass(),
+          (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(reconciler.getClass(),
               Reconciler.class);
     }
     return resourceClass;
@@ -105,16 +111,16 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   @Override
-  public ResourceEventFilter<R> getEventFilter() {
-    ResourceEventFilter<R> answer = null;
+  public ResourceEventFilter<P> getEventFilter() {
+    ResourceEventFilter<P> answer = null;
 
-    Class<ResourceEventFilter<R>>[] filterTypes =
-        (Class<ResourceEventFilter<R>>[]) valueOrDefault(annotation,
+    Class<ResourceEventFilter<P>>[] filterTypes =
+        (Class<ResourceEventFilter<P>>[]) valueOrDefault(annotation,
             ControllerConfiguration::eventFilters, new Object[] {});
     if (filterTypes.length > 0) {
       for (var filterType : filterTypes) {
         try {
-          ResourceEventFilter<R> filter = filterType.getConstructor().newInstance();
+          ResourceEventFilter<P> filter = filterType.getConstructor().newInstance();
 
           if (answer == null) {
             answer = filter;
@@ -144,15 +150,53 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     }
   }
 
-  public static <T> T valueOrDefault(
-      ControllerConfiguration controllerConfiguration,
-      Function<ControllerConfiguration, T> mapper,
-      T defaultValue) {
-    if (controllerConfiguration == null) {
-      return defaultValue;
-    } else {
-      return mapper.apply(controllerConfiguration);
+  @Override
+  @SuppressWarnings("unchecked")
+  public Optional<Predicate<P>> onAddFilter() {
+    return (Optional<Predicate<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
+        annotation.getClass().getSimpleName());
+  }
+
+  private enum FilterType {
+    onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
+        VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
+
+    final Class<?> defaultValue;
+
+    FilterType(Class<?> defaultValue) {
+      this.defaultValue = defaultValue;
     }
+  }
+
+  private <T> Optional<T> createFilter(Class<T> filter, FilterType filterType, String origin) {
+    if (filterType.defaultValue.equals(filter)) {
+      return Optional.empty();
+    } else {
+      try {
+        var instance = (T) filter.getDeclaredConstructor().newInstance();
+        return Optional.of(instance);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+          | NoSuchMethodException e) {
+        throw new OperatorException(
+            "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
+                + origin + " for reconciler " + getName(),
+            e);
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Optional<BiPredicate<P, P>> onUpdateFilter() {
+    return (Optional<BiPredicate<P, P>>) createFilter(annotation.onUpdateFilter(),
+        FilterType.onUpdate, annotation.getClass().getSimpleName());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Optional<Predicate<P>> genericFilter() {
+    return (Optional<Predicate<P>>) createFilter(annotation.genericFilter(),
+        FilterType.generic, annotation.getClass().getSimpleName());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -223,26 +267,59 @@ public class AnnotationControllerConfiguration<R extends HasMetadata>
     return name;
   }
 
+  @SuppressWarnings("rawtypes")
   private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
+
     Object config;
     final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
 
     var namespaces = getNamespaces();
     var configuredNS = false;
-    if (kubeDependent != null && !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
-        kubeDependent.namespaces())) {
-      namespaces = Set.of(kubeDependent.namespaces());
-      configuredNS = true;
-    }
-
     String labelSelector = null;
+    Predicate<? extends HasMetadata> onAddFilter = null;
+    BiPredicate<? extends HasMetadata, ? extends HasMetadata> onUpdateFilter = null;
+    BiPredicate<? extends HasMetadata, Boolean> onDeleteFilter = null;
+    Predicate<? extends HasMetadata> genericFilter = null;
     if (kubeDependent != null) {
+      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
+          kubeDependent.namespaces())) {
+        namespaces = Set.of(kubeDependent.namespaces());
+        configuredNS = true;
+      }
+
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
+
+      final var kubeDependentName = KubernetesDependent.class.getSimpleName();
+      onAddFilter = createFilter(kubeDependent.onAddFilter(), FilterType.onAdd, kubeDependentName)
+          .orElse(null);
+      onUpdateFilter =
+          createFilter(kubeDependent.onUpdateFilter(), FilterType.onUpdate, kubeDependentName)
+              .orElse(null);
+      onDeleteFilter =
+          createFilter(kubeDependent.onDeleteFilter(), FilterType.onDelete, kubeDependentName)
+              .orElse(null);
+      genericFilter =
+          createFilter(kubeDependent.genericFilter(), FilterType.generic, kubeDependentName)
+              .orElse(null);
     }
 
     config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS);
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
+            onUpdateFilter, onDeleteFilter, genericFilter);
+
     return config;
   }
+
+  public static <T> T valueOrDefault(
+      ControllerConfiguration controllerConfiguration,
+      Function<ControllerConfiguration, T> mapper,
+      T defaultValue) {
+    if (controllerConfiguration == null) {
+      return defaultValue;
+    } else {
+      return mapper.apply(controllerConfiguration);
+    }
+  }
+
 }

@@ -20,18 +20,18 @@ import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
+import io.javaoperatorsdk.operator.processing.event.source.*;
 
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
-    extends CachingEventSource<R, P>
-    implements ResourceEventHandler<R>, IndexerResourceCache<R>, RecentOperationCacheFiller<R>,
+    extends AbstractResourceEventSource<R, P>
+    implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
+    RecentOperationCacheFiller<R>,
     NamespaceChangeable {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
   protected TemporaryResourceCache<R> temporaryResourceCache = new TemporaryResourceCache<>(this);
+  protected InformerManager<R, C> cache = new InformerManager<>();
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
@@ -54,13 +54,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     temporaryResourceCache.removeResourceFromCache(obj);
   }
 
-  @Override
-  protected UpdatableCache<R> initCache() {
-    return new InformerManager<>();
-  }
-
   protected InformerManager<R, C> manager() {
-    return (InformerManager<R, C>) cache;
+    return cache;
   }
 
   @Override
@@ -103,11 +98,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     } else {
       log.debug("Resource not found in temporal cache reading it from informer cache," +
           " for Resource ID: {}", resourceID);
-      return super.get(resourceID);
+      return cache.get(resourceID);
     }
   }
 
-  @Override
   public Optional<R> getCachedValue(ResourceID resourceID) {
     return get(resourceID);
   }
@@ -128,4 +122,15 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   public List<R> byIndex(String indexName, String indexKey) {
     return manager().byIndex(indexName, indexKey);
   }
+
+  @Override
+  public Stream<ResourceID> keys() {
+    return cache.keys();
+  }
+
+  @Override
+  public Stream<R> list(Predicate<R> predicate) {
+    return cache.list(predicate);
+  }
+
 }

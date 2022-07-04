@@ -120,10 +120,84 @@ class ExternalResourceCachingEventSourceTest extends
     assertThat(source.getSecondaryResources(primaryID1())).isEmpty();
   }
 
+  @Test
+  void canFilterOnDeleteEvents() {
+    TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
+    delFilteringEventSource.setOnDeleteFilter((res, b) -> false);
+    setUpSource(delFilteringEventSource);
+    // try without any resources added
+    source.handleDeletes(primaryID1(), Set.of(testResource1(), testResource2()));
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    // handling the add event
+    verify(eventHandler, times(1)).handleEvent(any());
+
+    source.handleDeletes(primaryID1(), Set.of(testResource1(), testResource2()));
+
+    // no more invocation
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void filtersAddEvents() {
+    TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
+    delFilteringEventSource.setOnAddFilter((res) -> false);
+    setUpSource(delFilteringEventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    verify(eventHandler, times(0)).handleEvent(any());
+
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    verify(eventHandler, times(0)).handleEvent(any());
+  }
+
+  @Test
+  void filtersUpdateEvents() {
+    TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
+    delFilteringEventSource.setOnUpdateFilter((res, res2) -> false);
+    setUpSource(delFilteringEventSource);
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    verify(eventHandler, times(1)).handleEvent(any());
+
+    var resource = testResource1();
+    resource.setValue("changed value");
+    source.handleResources(primaryID1(), Set.of(resource));
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void filtersImplicitDeleteEvents() {
+    TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
+    delFilteringEventSource.setOnDeleteFilter((res, b) -> false);
+    setUpSource(delFilteringEventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    verify(eventHandler, times(1)).handleEvent(any());
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void genericFilteringEvents() {
+    TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
+    delFilteringEventSource.setGenericFilter(res -> false);
+    setUpSource(delFilteringEventSource);
+
+    source.handleResources(primaryID1(), Set.of(testResource1()));
+    verify(eventHandler, times(0)).handleEvent(any());
+
+    source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
+    verify(eventHandler, times(0)).handleEvent(any());
+
+    source.handleResources(primaryID1(), Set.of(testResource2()));
+    verify(eventHandler, times(0)).handleEvent(any());
+  }
+
   public static class TestExternalCachingEventSource
       extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata> {
     public TestExternalCachingEventSource() {
-      super(SampleExternalResource.class, (r) -> r.getName() + "#" + r.getValue());
+      super(SampleExternalResource.class, (r) -> r.getName());
     }
   }
 
