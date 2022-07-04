@@ -36,6 +36,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
   private static final long MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION = 50;
 
+  private volatile boolean running;
   private final Set<ResourceID> underProcessing = new HashSet<>();
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
@@ -43,7 +44,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final ExecutorService executor;
   private final String controllerName;
   private final Metrics metrics;
-  private volatile boolean running;
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker = new EventMarker();
