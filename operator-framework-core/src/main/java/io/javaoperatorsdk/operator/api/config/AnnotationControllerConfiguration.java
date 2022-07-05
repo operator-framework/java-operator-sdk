@@ -237,9 +237,11 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           throw new IllegalArgumentException(
               "A DependentResource named: " + name + " already exists: " + spec);
         }
-        spec = new DependentResourceSpec(dependentType, config, name);
-        spec.setDependsOn(Set.of(dependent.dependsOn()));
-        addConditions(spec, dependent);
+        spec = new DependentResourceSpec(dependentType, config, name,
+            Set.of(dependent.dependsOn()),
+            instantiateConditionIfNotVoid(dependent.readyPostcondition()),
+            instantiateConditionIfNotVoid(dependent.reconcilePrecondition()),
+            instantiateConditionIfNotVoid(dependent.deletePostcondition()));
         specsMap.put(name, spec);
       }
 
@@ -248,28 +250,18 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
-  @SuppressWarnings("unchecked")
-  private void addConditions(DependentResourceSpec spec, Dependent dependent) {
-    if (dependent.deletePostcondition() != VoidCondition.class) {
-      spec.setDeletePostCondition(instantiateCondition(dependent.deletePostcondition()));
+  private Condition<?, ?> instantiateConditionIfNotVoid(Class<? extends Condition> condition) {
+    if (condition != VoidCondition.class) {
+      try {
+        return condition.getDeclaredConstructor().newInstance();
+      } catch (InstantiationException
+          | IllegalAccessException
+          | InvocationTargetException
+          | NoSuchMethodException e) {
+        throw new OperatorException(e);
+      }
     }
-    if (dependent.readyPostcondition() != VoidCondition.class) {
-      spec.setReadyPostcondition(instantiateCondition(dependent.readyPostcondition()));
-    }
-    if (dependent.reconcilePrecondition() != VoidCondition.class) {
-      spec.setReconcilePrecondition(instantiateCondition(dependent.reconcilePrecondition()));
-    }
-  }
-
-  private Condition<?, ?> instantiateCondition(Class<? extends Condition> condition) {
-    try {
-      return condition.getDeclaredConstructor().newInstance();
-    } catch (InstantiationException
-        | IllegalAccessException
-        | InvocationTargetException
-        | NoSuchMethodException e) {
-      throw new OperatorException(e);
-    }
+    return null;
   }
 
   private String getName(Dependent dependent, Class<? extends DependentResource> dependentType) {
@@ -280,7 +272,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return name;
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
 
     Object config;
