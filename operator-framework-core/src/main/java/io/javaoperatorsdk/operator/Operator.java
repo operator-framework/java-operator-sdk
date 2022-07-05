@@ -68,7 +68,7 @@ public class Operator implements LifecycleAware {
     ConfigurationServiceProvider.set(configurationService);
   }
 
-  /** Adds a shutdown hook that automatically calls {@link #stop()} ()} when the app shuts down. */
+  /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
   public void installShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
   }
