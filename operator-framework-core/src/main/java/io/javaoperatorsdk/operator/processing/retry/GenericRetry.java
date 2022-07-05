@@ -8,6 +8,8 @@ public class GenericRetry implements Retry {
   private double intervalMultiplier = RetryConfiguration.DEFAULT_MULTIPLIER;
   private long maxInterval = -1;
 
+  public static final Retry DEFAULT = fromConfiguration(RetryConfiguration.DEFAULT);
+
   public static GenericRetry defaultLimitedExponentialRetry() {
     return new GenericRetry();
   }
