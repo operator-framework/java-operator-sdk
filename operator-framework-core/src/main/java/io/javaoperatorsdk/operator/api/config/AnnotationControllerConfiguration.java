@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -27,7 +28,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -35,6 +35,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFil
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
@@ -154,12 +155,33 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @Override
   public RateLimiter getRateLimiter() {
-    if (annotation.rateLimit() != null) {
-      return new PeriodRateLimiter(Duration.of(annotation.rateLimit().refreshPeriod(),
-          annotation.rateLimit().refreshPeriodTimeUnit().toChronoUnit()),
-          annotation.rateLimit().limitForPeriod());
-    } else {
-      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.getRateLimiter();
+    final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
+    return instantiateAndConfigureIfNeeded(rateLimiterClass);
+  }
+
+  @Override
+  public Retry getRetry() {
+    final Class<? extends Retry> retryClass = annotation.retry();
+    return instantiateAndConfigureIfNeeded(retryClass);
+  }
+
+  private <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass) {
+    try {
+      final var instance = targetClass.getConstructor().newInstance();
+      if (instance instanceof AnnotationConfigurable) {
+        AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
+        final Class<? extends Annotation> configurationClass =
+            (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
+                targetClass, AnnotationConfigurable.class);
+        final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
+        if (configAnnotation != null) {
+          configurable.initFrom(configAnnotation);
+        }
+      }
+      return instance;
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new RuntimeException(e);
     }
   }
 

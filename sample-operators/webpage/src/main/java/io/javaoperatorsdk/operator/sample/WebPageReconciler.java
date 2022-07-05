@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -19,16 +18,32 @@ import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.RateLimit;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
+import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
+import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.Utils.handleError;
+import static io.javaoperatorsdk.operator.sample.Utils.isValidHtml;
+import static io.javaoperatorsdk.operator.sample.Utils.makeDesiredIngress;
+import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
+import static io.javaoperatorsdk.operator.sample.Utils.setInvalidHtmlErrorMessage;
+import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 /** Shows how to implement reconciler using the low level api directly. */
-@ControllerConfiguration(rateLimit = @RateLimit(limitForPeriod = 2, refreshPeriod = 3,
-    refreshPeriodTimeUnit = TimeUnit.SECONDS))
+@RateLimit(limitForPeriod = 2, refreshPeriod = 3)
+@ControllerConfiguration
 public class WebPageReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 

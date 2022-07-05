@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
+import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
-public class GenericRetry implements Retry {
+public class GenericRetry implements Retry, AnnotationConfigurable<RetryConfiguration> {
   private int maxAttempts = RetryConfiguration.DEFAULT_MAX_ATTEMPTS;
   private long initialInterval = RetryConfiguration.DEFAULT_INITIAL_INTERVAL;
   private double intervalMultiplier = RetryConfiguration.DEFAULT_MULTIPLIER;
   private long maxInterval = -1;
-
-  public static final Retry DEFAULT = fromConfiguration(RetryConfiguration.DEFAULT);
 
   public static GenericRetry defaultLimitedExponentialRetry() {
     return new GenericRetry();
@@ -20,15 +19,6 @@ public class GenericRetry implements Retry {
 
   public static GenericRetry every10second10TimesRetry() {
     return new GenericRetry().withLinearRetry().setMaxAttempts(10).setInitialInterval(10000);
-  }
-
-  public static Retry fromConfiguration(RetryConfiguration configuration) {
-    return configuration == null ? defaultLimitedExponentialRetry()
-        : new GenericRetry()
-            .setInitialInterval(configuration.getInitialInterval())
-            .setMaxAttempts(configuration.getMaxAttempts())
-            .setIntervalMultiplier(configuration.getIntervalMultiplier())
-            .setMaxInterval(configuration.getMaxInterval());
   }
 
   @Override
@@ -84,5 +74,15 @@ public class GenericRetry implements Retry {
   public GenericRetry withLinearRetry() {
     this.intervalMultiplier = 1;
     return this;
+  }
+
+  @Override
+  public void initFrom(RetryConfiguration configuration) {
+    this.initialInterval = configuration.initialInterval();
+    this.maxAttempts = configuration.maxAttempts();
+    this.intervalMultiplier = configuration.intervalMultiplier();
+    this.maxInterval = configuration.maxInterval() < 0
+        ? (long) (initialInterval * Math.pow(intervalMultiplier, maxAttempts))
+        : configuration.maxInterval();
   }
 }

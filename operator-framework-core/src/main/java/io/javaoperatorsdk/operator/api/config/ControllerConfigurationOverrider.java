@@ -15,7 +15,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -108,12 +107,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   public ControllerConfigurationOverrider<R> withRetry(Retry retry) {
     this.retry = retry;
-    return this;
-  }
-
-  @Deprecated
-  public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
-    this.retry = GenericRetry.fromConfiguration(retry);
     return this;
   }
 

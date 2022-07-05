@@ -3,11 +3,16 @@ package io.javaoperatorsdk.operator.sample.ratelimit;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.RateLimit;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(rateLimit = @RateLimit(limitForPeriod = 1,
+@RateLimit(limitForPeriod = 1,
     refreshPeriod = RateLimitReconciler.REFRESH_PERIOD,
-    refreshPeriodTimeUnit = TimeUnit.MILLISECONDS))
+    refreshPeriodTimeUnit = TimeUnit.MILLISECONDS)
+@ControllerConfiguration
 public class RateLimitReconciler
     implements Reconciler<RateLimitCustomResource> {
 

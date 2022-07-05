@@ -6,12 +6,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
+import io.javaoperatorsdk.operator.api.reconciler.RateLimit;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
  * A Simple rate limiter that limits the number of permission for a time interval.
  */
-public class PeriodRateLimiter implements RateLimiter {
+public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<RateLimit> {
 
   public static final int DEFAULT_REFRESH_PERIOD_SECONDS = 10;
   public static final int DEFAULT_LIMIT_FOR_PERIOD = 3;
@@ -22,9 +24,9 @@ public class PeriodRateLimiter implements RateLimiter {
   public static final int NO_LIMIT_PERIOD = -1;
 
   private Duration refreshPeriod;
-  private int limitForPeriod;
+  protected int limitForPeriod;
 
-  private Map<ResourceID, RateState> limitData = new HashMap<>();
+  private final Map<ResourceID, RateState> limitData = new HashMap<>();
 
   public PeriodRateLimiter() {
     this(DEFAULT_REFRESH_PERIOD, DEFAULT_LIMIT_FOR_PERIOD);
@@ -57,5 +59,12 @@ public class PeriodRateLimiter implements RateLimiter {
   @Override
   public void clear(ResourceID resourceID) {
     limitData.remove(resourceID);
+  }
+
+  @Override
+  public void initFrom(RateLimit configuration) {
+    this.refreshPeriod = Duration.of(configuration.refreshPeriod(),
+        configuration.refreshPeriodTimeUnit().toChronoUnit());
+    this.limitForPeriod = configuration.limitForPeriod();
   }
 }
