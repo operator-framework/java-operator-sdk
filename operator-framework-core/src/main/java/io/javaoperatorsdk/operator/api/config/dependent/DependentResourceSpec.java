@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.api.config.dependent;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -16,19 +16,30 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
 
   private final String name;
 
-  private Set<String> dependsOn;
+  private final Set<String> dependsOn;
 
-  private Condition<?, ?> readyCondition;
+  private final Condition<?, ?> readyCondition;
 
-  private Condition<?, ?> reconcileCondition;
+  private final Condition<?, ?> reconcileCondition;
 
-  private Condition<?, ?> deletePostCondition;
+  private final Condition<?, ?> deletePostCondition;
 
   public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
       String name) {
+    this(dependentResourceClass, dependentResourceConfig, name, Collections.emptySet(), null, null,
+        null);
+  }
+
+  public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
+      String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
+      Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition) {
     this.dependentResourceClass = dependentResourceClass;
     this.dependentResourceConfig = dependentResourceConfig;
     this.name = name;
+    this.dependsOn = dependsOn;
+    this.readyCondition = readyCondition;
+    this.reconcileCondition = reconcileCondition;
+    this.deletePostCondition = deletePostCondition;
   }
 
   public Class<T> getDependentResourceClass() {
@@ -68,15 +79,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   }
 
   public Set<String> getDependsOn() {
-    if (dependsOn == null) {
-      dependsOn = new HashSet<>(0);
-    }
     return dependsOn;
-  }
-
-  public DependentResourceSpec<T, C> setDependsOn(Set<String> dependsOn) {
-    this.dependsOn = dependsOn;
-    return this;
   }
 
   @SuppressWarnings("rawtypes")
@@ -84,28 +87,13 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return readyCondition;
   }
 
-  public DependentResourceSpec<T, C> setReadyPostcondition(Condition<?, ?> readyCondition) {
-    this.readyCondition = readyCondition;
-    return this;
-  }
-
   @SuppressWarnings("rawtypes")
   public Condition getReconcileCondition() {
     return reconcileCondition;
   }
 
-  public DependentResourceSpec<T, C> setReconcilePrecondition(Condition<?, ?> reconcileCondition) {
-    this.reconcileCondition = reconcileCondition;
-    return this;
-  }
-
   @SuppressWarnings("rawtypes")
   public Condition getDeletePostCondition() {
     return deletePostCondition;
-  }
-
-  public DependentResourceSpec<T, C> setDeletePostCondition(Condition<?, ?> deletePostCondition) {
-    this.deletePostCondition = deletePostCondition;
-    return this;
   }
 }
