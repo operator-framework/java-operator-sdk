@@ -137,7 +137,7 @@ See the full source code [here](https://github.com/java-operator-sdk/java-operat
 
 ## Managed Dependent Resources
 
-As mentioned previously, one goal of this implementation is to make it possible to semi-declaratively create and wire
+As mentioned previously, one goal of this implementation is to make it possible to declaratively create and wire
 dependent resources. You can annotate your reconciler with
 `@Dependent` annotations that specify which `DependentResource` implementation it depends upon. JOSDK will take the
 appropriate steps to wire everything together and call your
@@ -145,8 +145,7 @@ appropriate steps to wire everything together and call your
 most use cases where the logic associated with the primary resource is usually limited to status handling based on the
 state of the secondary resources and the resources are not dependent on each other. 
 
-Note that all dependents will be reconciled in order. If an exception happens in one or more reconciliations, the
-followup resources will be reconciled.
+See [Workflows](https://javaoperatorsdk.io/docs/dependent-resources) how/ in what order the resources are reconciled. 
 
 This behavior and automated handling is referred to as "managed" because the `DependentResource` instances 
 are managed by JOSDK.
@@ -186,15 +185,16 @@ sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/s
 
 ## Standalone Dependent Resources
 
-To use dependent resources in more complex workflows, when there are some resources needs to be created only in certain 
-conditions the standalone mode is available or the dependent resources are not independent of each other.
-For example if calling an API needs to happen if a service is already up and running 
-(think configuring a running DB instance).
+In case just some or sub-set of the resources are desired to be managed by dependent resources use standalone mode.
 In practice this means that the developer is responsible to initializing and managing and
-calling `reconcile` method. However, this gives possibility for developers to fully customize the workflow for
+calling `reconcile` method. However, this gives possibility for developers to fully customize the process for
 reconciliation. Use standalone dependent resources for cases when managed does not fit.
 
-The sample is similar to one above it just performs additional checks, and conditionally creates an `Ingress`: 
+Note that [Workflows](https://javaoperatorsdk.io/docs/dependent-resources) support also standalone mode using
+standalone resources.
+
+The sample is similar to one above it just performs additional checks, and conditionally creates an `Ingress`:
+(Note that now this condition creation is also possible with Workflows)
 
 ```java
 

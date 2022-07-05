@@ -11,6 +11,8 @@
     url: /docs/features
   - title: Dependent Resource Feature
     url: /docs/dependent-resources
+  - title: Workflows
+    url: /docs/workflows
   - title: Patterns and Best Practices
     url: /docs/patterns-best-practices
   - title: FAQ
