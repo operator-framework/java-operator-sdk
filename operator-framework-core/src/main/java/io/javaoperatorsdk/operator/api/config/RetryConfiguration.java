@@ -1,28 +1,33 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+/**
+ * @deprecated specify your own {@link io.javaoperatorsdk.operator.processing.retry.Retry}
+ *             implementation or use
+ *             {@link io.javaoperatorsdk.operator.processing.retry.RetryingGradually} annotation
+ *             instead
+ */
+@Deprecated(forRemoval = true)
+public interface RetryConfiguration {
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface RetryConfiguration {
+  RetryConfiguration DEFAULT = new DefaultRetryConfiguration();
 
   int DEFAULT_MAX_ATTEMPTS = 5;
   long DEFAULT_INITIAL_INTERVAL = 2000L;
   double DEFAULT_MULTIPLIER = 1.5D;
 
-  long DEFAULT_MAX_INTERVAL = (long) (RetryConfiguration.DEFAULT_INITIAL_INTERVAL * Math.pow(
-      RetryConfiguration.DEFAULT_MULTIPLIER, RetryConfiguration.DEFAULT_MAX_ATTEMPTS));
+  default int getMaxAttempts() {
+    return DEFAULT_MAX_ATTEMPTS;
+  }
 
-  long UNSET_VALUE = Long.MAX_VALUE;
+  default long getInitialInterval() {
+    return DEFAULT_INITIAL_INTERVAL;
+  }
 
-  int maxAttempts() default DEFAULT_MAX_ATTEMPTS;
+  default double getIntervalMultiplier() {
+    return DEFAULT_MULTIPLIER;
+  }
 
-  long initialInterval() default DEFAULT_INITIAL_INTERVAL;
-
-  double intervalMultiplier() default DEFAULT_MULTIPLIER;
-
-  long maxInterval() default UNSET_VALUE;
+  default long getMaxInterval() {
+    return (long) (DEFAULT_INITIAL_INTERVAL * Math.pow(DEFAULT_MULTIPLIER, DEFAULT_MAX_ATTEMPTS));
+  }
 }

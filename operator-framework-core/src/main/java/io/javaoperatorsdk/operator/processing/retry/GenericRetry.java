@@ -3,11 +3,13 @@ package io.javaoperatorsdk.operator.processing.retry;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
-public class GenericRetry implements Retry, AnnotationConfigurable<RetryConfiguration> {
-  private int maxAttempts = RetryConfiguration.DEFAULT_MAX_ATTEMPTS;
-  private long initialInterval = RetryConfiguration.DEFAULT_INITIAL_INTERVAL;
-  private double intervalMultiplier = RetryConfiguration.DEFAULT_MULTIPLIER;
-  private long maxInterval = RetryConfiguration.DEFAULT_MAX_INTERVAL;
+public class GenericRetry implements Retry, AnnotationConfigurable<RetryingGradually> {
+  private int maxAttempts = RetryingGradually.DEFAULT_MAX_ATTEMPTS;
+  private long initialInterval = RetryingGradually.DEFAULT_INITIAL_INTERVAL;
+  private double intervalMultiplier = RetryingGradually.DEFAULT_MULTIPLIER;
+  private long maxInterval = RetryingGradually.DEFAULT_MAX_INTERVAL;
+
+  public static final Retry DEFAULT = fromConfiguration(RetryConfiguration.DEFAULT);
 
   public static GenericRetry defaultLimitedExponentialRetry() {
     return new GenericRetry();
@@ -16,6 +18,20 @@ public class GenericRetry implements Retry, AnnotationConfigurable<RetryConfigur
   public static GenericRetry noRetry() {
     return new GenericRetry().setMaxAttempts(0);
   }
+
+  /**
+   * @deprecated Use the {@link RetryingGradually} annotation instead
+   */
+  @Deprecated(forRemoval = true)
+  public static Retry fromConfiguration(RetryConfiguration configuration) {
+    return configuration == null ? defaultLimitedExponentialRetry()
+        : new GenericRetry()
+            .setInitialInterval(configuration.getInitialInterval())
+            .setMaxAttempts(configuration.getMaxAttempts())
+            .setIntervalMultiplier(configuration.getIntervalMultiplier())
+            .setMaxInterval(configuration.getMaxInterval());
+  }
+
 
   public static GenericRetry every10second10TimesRetry() {
     return new GenericRetry().withLinearRetry().setMaxAttempts(10).setInitialInterval(10000);
@@ -77,12 +93,12 @@ public class GenericRetry implements Retry, AnnotationConfigurable<RetryConfigur
   }
 
   @Override
-  public void initFrom(RetryConfiguration configuration) {
+  public void initFrom(RetryingGradually configuration) {
     this.initialInterval = configuration.initialInterval();
     this.maxAttempts = configuration.maxAttempts();
     this.intervalMultiplier = configuration.intervalMultiplier();
-    this.maxInterval = configuration.maxInterval() == RetryConfiguration.UNSET_VALUE
-        ? RetryConfiguration.DEFAULT_MAX_INTERVAL
+    this.maxInterval = configuration.maxInterval() == RetryingGradually.UNSET_VALUE
+        ? RetryingGradually.DEFAULT_MAX_INTERVAL
         : configuration.maxInterval();
   }
 }

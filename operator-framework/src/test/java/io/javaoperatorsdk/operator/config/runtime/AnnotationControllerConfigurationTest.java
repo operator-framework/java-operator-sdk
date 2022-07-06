@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -30,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.javaoperatorsdk.operator.processing.retry.RetryingGradually;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -132,10 +132,10 @@ class AnnotationControllerConfigurationTest {
   void checkDefaultRateAndRetryConfigurations() {
     var config = new AnnotationControllerConfiguration<>(new NoDepReconciler());
     final var retry = assertInstanceOf(GenericRetry.class, config.getRetry());
-    assertEquals(RetryConfiguration.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
-    assertEquals(RetryConfiguration.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
-    assertEquals(RetryConfiguration.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
-    assertEquals(RetryConfiguration.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
+    assertEquals(RetryingGradually.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
+    assertEquals(RetryingGradually.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
+    assertEquals(RetryingGradually.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
+    assertEquals(RetryingGradually.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
 
     final var limiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
     assertFalse(limiter.isActivated());
