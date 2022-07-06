@@ -156,6 +156,19 @@ class AnnotationControllerConfigurationTest {
     assertEquals(Duration.ofSeconds(3), rateLimiter.getRefreshPeriod());
   }
 
+  @Test
+  void checkingRetryingGraduallyWorks() {
+    var config = new AnnotationControllerConfiguration<>(new CheckRetryingGraduallyConfiguration());
+    final var retry = config.getRetry();
+    final var genericRetry = assertInstanceOf(GenericRetry.class, retry);
+    assertEquals(CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
+        genericRetry.getInitialInterval());
+    assertEquals(CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS, genericRetry.getMaxAttempts());
+    assertEquals(CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
+        genericRetry.getIntervalMultiplier());
+    assertEquals(CheckRetryingGraduallyConfiguration.MAX_INTERVAL, genericRetry.getMaxInterval());
+  }
+
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
       dependents = @Dependent(type = ReadOnlyDependent.class))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
@@ -275,6 +288,26 @@ class AnnotationControllerConfigurationTest {
   @LimitingRateOverPeriod(maxReconciliations = 7, within = 3)
   @ControllerConfiguration(retry = TestRetry.class)
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return UpdateControl.noUpdate();
+    }
+  }
+
+  @RetryingGradually(
+      maxAttempts = CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS,
+      initialInterval = CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
+      intervalMultiplier = CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
+      maxInterval = CheckRetryingGraduallyConfiguration.MAX_INTERVAL)
+  @ControllerConfiguration
+  private static class CheckRetryingGraduallyConfiguration implements Reconciler<ConfigMap> {
+
+    public static final int MAX_ATTEMPTS = 7;
+    public static final int INITIAL_INTERVAL = 1000;
+    public static final int INTERVAL_MULTIPLIER = 2;
+    public static final int MAX_INTERVAL = 60000;
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
