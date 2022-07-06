@@ -1,12 +1,10 @@
-package io.javaoperatorsdk.operator.api.reconciler;
+package io.javaoperatorsdk.operator.processing.event.rate;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
-
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

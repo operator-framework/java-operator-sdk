@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
-import io.javaoperatorsdk.operator.api.reconciler.RateLimit;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
