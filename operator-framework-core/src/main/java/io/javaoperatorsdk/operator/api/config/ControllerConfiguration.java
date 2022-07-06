@@ -17,8 +17,8 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
-  RateLimiter DEFAULT_RATE_LIMITER = new PeriodRateLimiter();
-  Retry DEFAULT_RETRY = new GenericRetry();
+  RateLimiter DEFAULT_RATE_LIMITER = PeriodRateLimiter.deactivatedRateLimiter();
+  Retry DEFAULT_RETRY = GenericRetry.defaultLimitedExponentialRetry();
 
   default String getName() {
     return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());

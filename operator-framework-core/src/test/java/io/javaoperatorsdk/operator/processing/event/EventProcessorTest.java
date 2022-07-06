@@ -258,7 +258,7 @@ class EventProcessorTest {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
         spy(new EventProcessor(reconciliationDispatcherMock, eventSourceManagerMock, "Test", null,
-            new PeriodRateLimiter(),
+            PeriodRateLimiter.deactivatedRateLimiter(),
             metricsMock));
     when(controllerResourceEventSourceMock.get(eq(crID)))
         .thenReturn(Optional.of(testCustomResource()));

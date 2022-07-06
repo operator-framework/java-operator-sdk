@@ -24,12 +24,16 @@ public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<Ra
   public static final int NO_LIMIT_PERIOD = -1;
 
   private Duration refreshPeriod;
-  protected int limitForPeriod;
+  private int limitForPeriod;
 
   private final Map<ResourceID, RateState> limitData = new HashMap<>();
 
-  public PeriodRateLimiter() {
-    this(DEFAULT_REFRESH_PERIOD, DEFAULT_LIMIT_FOR_PERIOD);
+  public static PeriodRateLimiter deactivatedRateLimiter() {
+    return new PeriodRateLimiter();
+  }
+
+  PeriodRateLimiter() {
+    this(DEFAULT_REFRESH_PERIOD, NO_LIMIT_PERIOD);
   }
 
   public PeriodRateLimiter(Duration refreshPeriod, int limitForPeriod) {
@@ -39,7 +43,7 @@ public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<Ra
 
   @Override
   public Optional<Duration> acquirePermission(ResourceID resourceID) {
-    if (limitForPeriod <= 0) {
+    if (!isActivated()) {
       return Optional.empty();
     }
     var actualState = limitData.computeIfAbsent(resourceID, r -> RateState.initialState());
@@ -66,5 +70,17 @@ public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<Ra
     this.refreshPeriod = Duration.of(configuration.refreshPeriod(),
         configuration.refreshPeriodTimeUnit().toChronoUnit());
     this.limitForPeriod = configuration.limitForPeriod();
+  }
+
+  public boolean isActivated() {
+    return limitForPeriod > 0;
+  }
+
+  public int getLimitForPeriod() {
+    return limitForPeriod;
+  }
+
+  public Duration getRefreshPeriod() {
+    return refreshPeriod;
   }
 }

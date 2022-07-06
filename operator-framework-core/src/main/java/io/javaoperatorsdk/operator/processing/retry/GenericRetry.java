@@ -7,7 +7,7 @@ public class GenericRetry implements Retry, AnnotationConfigurable<RetryConfigur
   private int maxAttempts = RetryConfiguration.DEFAULT_MAX_ATTEMPTS;
   private long initialInterval = RetryConfiguration.DEFAULT_INITIAL_INTERVAL;
   private double intervalMultiplier = RetryConfiguration.DEFAULT_MULTIPLIER;
-  private long maxInterval = -1;
+  private long maxInterval = RetryConfiguration.DEFAULT_MAX_INTERVAL;
 
   public static GenericRetry defaultLimitedExponentialRetry() {
     return new GenericRetry();
@@ -81,8 +81,8 @@ public class GenericRetry implements Retry, AnnotationConfigurable<RetryConfigur
     this.initialInterval = configuration.initialInterval();
     this.maxAttempts = configuration.maxAttempts();
     this.intervalMultiplier = configuration.intervalMultiplier();
-    this.maxInterval = configuration.maxInterval() < 0
-        ? (long) (initialInterval * Math.pow(intervalMultiplier, maxAttempts))
+    this.maxInterval = configuration.maxInterval() == RetryConfiguration.UNSET_VALUE
+        ? RetryConfiguration.DEFAULT_MAX_INTERVAL
         : configuration.maxInterval();
   }
 }

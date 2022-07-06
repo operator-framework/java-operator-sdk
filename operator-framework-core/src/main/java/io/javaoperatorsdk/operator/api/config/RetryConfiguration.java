@@ -13,11 +13,16 @@ public @interface RetryConfiguration {
   long DEFAULT_INITIAL_INTERVAL = 2000L;
   double DEFAULT_MULTIPLIER = 1.5D;
 
+  long DEFAULT_MAX_INTERVAL = (long) (RetryConfiguration.DEFAULT_INITIAL_INTERVAL * Math.pow(
+      RetryConfiguration.DEFAULT_MULTIPLIER, RetryConfiguration.DEFAULT_MAX_ATTEMPTS));
+
+  long UNSET_VALUE = Long.MAX_VALUE;
+
   int maxAttempts() default DEFAULT_MAX_ATTEMPTS;
 
   long initialInterval() default DEFAULT_INITIAL_INTERVAL;
 
   double intervalMultiplier() default DEFAULT_MULTIPLIER;
 
-  long maxInterval() default -1;
+  long maxInterval() default UNSET_VALUE;
 }

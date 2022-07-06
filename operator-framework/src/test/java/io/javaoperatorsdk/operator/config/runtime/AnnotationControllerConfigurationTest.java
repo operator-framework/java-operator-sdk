@@ -135,8 +135,10 @@ class AnnotationControllerConfigurationTest {
     assertEquals(RetryConfiguration.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
     assertEquals(RetryConfiguration.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
     assertEquals(RetryConfiguration.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
+    assertEquals(RetryConfiguration.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
 
-    assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
+    final var limiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
+    assertFalse(limiter.isActivated());
   }
 
   @Test
@@ -147,7 +149,7 @@ class AnnotationControllerConfigurationTest {
     final var testRetry = assertInstanceOf(TestRetry.class, retry);
     assertEquals(12, testRetry.getValue());
 
-    final var rateLimiter = assertInstanceOf(TestRateLimiter.class, config.getRateLimiter());
+    final var rateLimiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
     assertEquals(7, rateLimiter.getLimitForPeriod());
   }
 
@@ -266,15 +268,9 @@ class AnnotationControllerConfigurationTest {
     int value() default 42;
   }
 
-  public static class TestRateLimiter extends PeriodRateLimiter {
-    int getLimitForPeriod() {
-      return limitForPeriod;
-    }
-  }
-
   @TestRetryConfiguration(12)
   @RateLimit(limitForPeriod = 7)
-  @ControllerConfiguration(retry = TestRetry.class, rateLimiter = TestRateLimiter.class)
+  @ControllerConfiguration(retry = TestRetry.class)
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
 
     @Override

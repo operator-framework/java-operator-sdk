@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -167,7 +168,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   private <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass) {
     try {
-      final var instance = targetClass.getConstructor().newInstance();
+      final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      final var instance = constructor.newInstance();
       if (instance instanceof AnnotationConfigurable) {
         AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
         final Class<? extends Annotation> configurationClass =
