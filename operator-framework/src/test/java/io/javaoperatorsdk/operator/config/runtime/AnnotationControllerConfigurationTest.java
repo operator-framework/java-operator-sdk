@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,8 +25,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.event.rate.LimitingRateOverPeriod;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
-import io.javaoperatorsdk.operator.processing.event.rate.RateLimit;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -60,6 +61,7 @@ class AnnotationControllerConfigurationTest {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void getDependentResources() {
     var configuration = new AnnotationControllerConfiguration<>(new NoDepReconciler());
     var dependents = configuration.getDependentResources();
@@ -151,6 +153,7 @@ class AnnotationControllerConfigurationTest {
 
     final var rateLimiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
     assertEquals(7, rateLimiter.getLimitForPeriod());
+    assertEquals(Duration.ofSeconds(3), rateLimiter.getRefreshPeriod());
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
@@ -269,7 +272,7 @@ class AnnotationControllerConfigurationTest {
   }
 
   @TestRetryConfiguration(12)
-  @RateLimit(limitForPeriod = 7)
+  @LimitingRateOverPeriod(maxReconciliations = 7, within = 3)
   @ControllerConfiguration(retry = TestRetry.class)
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
 

@@ -8,14 +8,14 @@ import java.util.concurrent.TimeUnit;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface RateLimit {
+public @interface LimitingRateOverPeriod {
 
-  int limitForPeriod() default PeriodRateLimiter.NO_LIMIT_PERIOD;
+  int maxReconciliations();
 
-  int refreshPeriod() default PeriodRateLimiter.DEFAULT_REFRESH_PERIOD_SECONDS;
+  int within();
 
   /**
    * @return time unit for max delay between reconciliations
    */
-  TimeUnit refreshPeriodTimeUnit() default TimeUnit.SECONDS;
+  TimeUnit unit() default TimeUnit.SECONDS;
 }
