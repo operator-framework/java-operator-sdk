@@ -8,10 +8,15 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 
-import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.primaryID1;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.testResource1;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.testResource2;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class ExternalResourceCachingEventSourceTest extends
     AbstractEventSourceTestBase<ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
@@ -123,7 +128,12 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void canFilterOnDeleteEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnDeleteFilter((res, b) -> false);
+    delFilteringEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean acceptsDeleting(SampleExternalResource resource) {
+        return false;
+      }
+    });
     setUpSource(delFilteringEventSource);
     // try without any resources added
     source.handleDeletes(primaryID1(), Set.of(testResource1(), testResource2()));
@@ -140,7 +150,12 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void filtersAddEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnAddFilter((res) -> false);
+    delFilteringEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean acceptsAdding(SampleExternalResource resource) {
+        return false;
+      }
+    });
     setUpSource(delFilteringEventSource);
 
     source.handleResources(primaryID1(), Set.of(testResource1()));
@@ -153,7 +168,12 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void filtersUpdateEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnUpdateFilter((res, res2) -> false);
+    delFilteringEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean acceptsUpdating(SampleExternalResource from, SampleExternalResource to) {
+        return false;
+      }
+    });
     setUpSource(delFilteringEventSource);
     source.handleResources(primaryID1(), Set.of(testResource1()));
     verify(eventHandler, times(1)).handleEvent(any());
@@ -168,7 +188,12 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void filtersImplicitDeleteEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setOnDeleteFilter((res, b) -> false);
+    delFilteringEventSource.setFilter(new EventFilter<SampleExternalResource>() {
+      @Override
+      public boolean acceptsDeleting(SampleExternalResource resource) {
+        return false;
+      }
+    });
     setUpSource(delFilteringEventSource);
 
     source.handleResources(primaryID1(), Set.of(testResource1(), testResource2()));
@@ -181,7 +206,12 @@ class ExternalResourceCachingEventSourceTest extends
   @Test
   void genericFilteringEvents() {
     TestExternalCachingEventSource delFilteringEventSource = new TestExternalCachingEventSource();
-    delFilteringEventSource.setGenericFilter(res -> false);
+    delFilteringEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean rejects(SampleExternalResource resource) {
+        return true;
+      }
+    });
     setUpSource(delFilteringEventSource);
 
     source.handleResources(primaryID1(), Set.of(testResource1()));

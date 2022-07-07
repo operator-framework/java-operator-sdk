@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.TestUtils;
 
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class InternalEventFiltersTest {
 
@@ -17,7 +16,7 @@ class InternalEventFiltersTest {
   @Test
   void onUpdateMarkedForDeletion() {
     var res = markForDeletion(TestUtils.testCustomResource());
-    assertThat(InternalEventFilters.onUpdateMarkedForDeletion().test(res, res)).isTrue();
+    assertThat(InternalEventFilters.onUpdateMarkedForDeletion(res, res)).isTrue();
   }
 
   @Test
@@ -26,21 +25,21 @@ class InternalEventFiltersTest {
     var res2 = TestUtils.testCustomResource1();
     res2.getMetadata().setGeneration(2L);
 
-    assertThat(InternalEventFilters.onUpdateGenerationAware(true).test(res2, res)).isTrue();
-    assertThat(InternalEventFilters.onUpdateGenerationAware(true).test(res, res)).isFalse();
-    assertThat(InternalEventFilters.onUpdateGenerationAware(false).test(res, res)).isTrue();
+    assertThat(InternalEventFilters.onUpdateGenerationAware(true, res, res2)).isTrue();
+    assertThat(InternalEventFilters.onUpdateGenerationAware(true, res, res)).isFalse();
+    assertThat(InternalEventFilters.onUpdateGenerationAware(false, res, res)).isTrue();
   }
 
   @Test
   void finalizerCheckedIfConfigured() {
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .test(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isTrue();
+    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER,
+        TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isTrue();
 
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .test(res, res)).isFalse();
+    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER, res, res))
+        .isFalse();
   }
 
   @Test
@@ -48,13 +47,13 @@ class InternalEventFiltersTest {
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer")
-        .test(res, TestUtils.testCustomResource1())).isTrue();
+    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer", res,
+        TestUtils.testCustomResource1())).isTrue();
   }
 
   @Test
   void dontAcceptIfFinalizerNotUsed() {
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(false, FINALIZER)
-        .test(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isFalse();
+    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(false, FINALIZER,
+        TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isFalse();
   }
 }

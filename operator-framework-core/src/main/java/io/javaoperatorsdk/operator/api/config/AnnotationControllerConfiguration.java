@@ -10,9 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -32,10 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -166,6 +161,13 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return instantiateAndConfigureIfNeeded(retryClass, Retry.class);
   }
 
+  @Override
+  public EventFilter<P> getFilter() {
+    final Class<? extends EventFilter> filter = annotation.filter();
+    return EventFilter.class.equals(filter) ? EventFilter.ACCEPTS_ALL
+        : instantiateAndConfigureIfNeeded(filter, EventFilter.class);
+  }
+
   @SuppressWarnings("unchecked")
   private <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
       Class<T> expectedType) {
@@ -190,55 +192,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           + targetClass.getName() + "' for '" + getName()
           + "' reconciler. You need to provide an accessible no-arg constructor.", e);
     }
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Optional<Predicate<P>> onAddFilter() {
-    return (Optional<Predicate<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
-        annotation.getClass().getSimpleName());
-  }
-
-  private enum FilterType {
-    onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
-        VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
-
-    final Class<?> defaultValue;
-
-    FilterType(Class<?> defaultValue) {
-      this.defaultValue = defaultValue;
-    }
-  }
-
-  private <T> Optional<T> createFilter(Class<T> filter, FilterType filterType, String origin) {
-    if (filterType.defaultValue.equals(filter)) {
-      return Optional.empty();
-    } else {
-      try {
-        var instance = (T) filter.getDeclaredConstructor().newInstance();
-        return Optional.of(instance);
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-          | NoSuchMethodException e) {
-        throw new OperatorException(
-            "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
-                + origin + " for reconciler " + getName(),
-            e);
-      }
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public Optional<BiPredicate<P, P>> onUpdateFilter() {
-    return (Optional<BiPredicate<P, P>>) createFilter(annotation.onUpdateFilter(),
-        FilterType.onUpdate, annotation.getClass().getSimpleName());
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public Optional<Predicate<P>> genericFilter() {
-    return (Optional<Predicate<P>>) createFilter(annotation.genericFilter(),
-        FilterType.generic, annotation.getClass().getSimpleName());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -318,10 +271,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     var namespaces = getNamespaces();
     var configuredNS = false;
     String labelSelector = null;
-    Predicate<? extends HasMetadata> onAddFilter = null;
-    BiPredicate<? extends HasMetadata, ? extends HasMetadata> onUpdateFilter = null;
-    BiPredicate<? extends HasMetadata, Boolean> onDeleteFilter = null;
-    Predicate<? extends HasMetadata> genericFilter = null;
+    EventFilter filter = EventFilter.ACCEPTS_ALL;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -333,22 +283,13 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
       final var kubeDependentName = KubernetesDependent.class.getSimpleName();
-      onAddFilter = createFilter(kubeDependent.onAddFilter(), FilterType.onAdd, kubeDependentName)
-          .orElse(null);
-      onUpdateFilter =
-          createFilter(kubeDependent.onUpdateFilter(), FilterType.onUpdate, kubeDependentName)
-              .orElse(null);
-      onDeleteFilter =
-          createFilter(kubeDependent.onDeleteFilter(), FilterType.onDelete, kubeDependentName)
-              .orElse(null);
-      genericFilter =
-          createFilter(kubeDependent.genericFilter(), FilterType.generic, kubeDependentName)
-              .orElse(null);
+      final Class<? extends EventFilter> filterClass = kubeDependent.filter();
+      if (!EventFilter.class.equals(filterClass)) {
+        filter = instantiateAndConfigureIfNeeded(filterClass, EventFilter.class);
+      }
     }
 
-    config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
-            onUpdateFilter, onDeleteFilter, genericFilter);
+    config = new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, filter);
 
     return config;
   }

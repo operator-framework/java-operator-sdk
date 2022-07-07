@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.filter.CompositeFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
@@ -38,20 +38,27 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
-    BiPredicate<T, T> internalOnUpdateFilter =
-        (BiPredicate<T, T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
-            controller.getConfiguration().getFinalizerName())
-            .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
-            .or(onUpdateMarkedForDeletion());
+    final var configuration = controller.getConfiguration();
 
-    legacyFilters = controller.getConfiguration().getEventFilter();
+    legacyFilters = configuration.getEventFilter();
 
     // by default the on add should be processed in all cases regarding internal filters
-    controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-    controller.getConfiguration().onUpdateFilter()
-        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
-            () -> setOnUpdateFilter(internalOnUpdateFilter));
-    controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
+    final var configured = configuration.getFilter();
+    setFilter(new CompositeFilter<>(configured) {
+      @Override
+      public boolean acceptsUpdating(T from, T to) {
+        return configured.acceptsUpdating(from, to)
+            && (onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
+                configuration.getFinalizerName(), from, to)
+                || onUpdateGenerationAware(configuration.isGenerationAware(), from, to)
+                || onUpdateMarkedForDeletion(from, to));
+      }
+
+      @Override
+      public boolean acceptsDeleting(T resource) {
+        throw new IllegalStateException("Filtering delete events is not supported by default");
+      }
+    });
   }
 
   @Override
@@ -85,14 +92,14 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   private boolean isAcceptedByFilters(ResourceAction action, T resource, T oldResource) {
     // delete event is filtered for generic filter only.
-    if (genericFilter != null && !genericFilter.test(resource)) {
+    if (filter.rejects(resource)) {
       return false;
     }
     switch (action) {
       case ADDED:
-        return onAddFilter == null || onAddFilter.test(resource);
+        return filter.acceptsAdding(resource);
       case UPDATED:
-        return onUpdateFilter.test(resource, oldResource);
+        return filter.acceptsUpdating(oldResource, resource);
     }
     return true;
   }
@@ -123,11 +130,5 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public Set<T> getSecondaryResources(T primary) {
     throw new IllegalStateException("This method should not be called here. Primary: " + primary);
-  }
-
-  @Override
-  public void setOnDeleteFilter(BiPredicate<T, Boolean> onDeleteFilter) {
-    throw new IllegalStateException(
-        "onDeleteFilter is not supported for controller resource event source");
   }
 }

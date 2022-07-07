@@ -92,10 +92,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } else {
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
-    onAddFilter = configuration.onAddFilter().orElse(null);
-    onUpdateFilter = configuration.onUpdateFilter().orElse(null);
-    onDeleteFilter = configuration.onDeleteFilter().orElse(null);
-    genericFilter = configuration.genericFilter().orElse(null);
+    setFilter(configuration.getFilter());
   }
 
   @Override
@@ -308,13 +305,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
 
   private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
-    if (genericFilter != null && !genericFilter.test(newObject)) {
+    if (filter.rejects(newObject)) {
       return false;
     }
     if (operation == Operation.ADD) {
-      return onAddFilter == null || onAddFilter.test(newObject);
+      return filter.acceptsAdding(newObject);
     } else {
-      return onUpdateFilter == null || onUpdateFilter.test(newObject, oldObject);
+      return filter.acceptsUpdating(oldObject, newObject);
     }
   }
 
@@ -323,7 +320,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
-    return (onDeleteFilter == null || onDeleteFilter.test(resource, b)) &&
-        (genericFilter == null || genericFilter.test(resource));
+    return !filter.rejects(resource) && filter.acceptsDeleting(resource);
   }
 }

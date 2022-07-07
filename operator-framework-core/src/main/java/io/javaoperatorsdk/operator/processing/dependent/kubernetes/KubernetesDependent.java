@@ -4,15 +4,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -40,11 +34,5 @@ public @interface KubernetesDependent {
    */
   String labelSelector() default NO_VALUE_SET;
 
-  Class<? extends Predicate<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
-
-  Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
-
-  Class<? extends BiPredicate<? extends HasMetadata, Boolean>> onDeleteFilter() default VoidOnDeleteFilter.class;
-
-  Class<? extends Predicate<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
+  Class<? extends EventFilter> filter() default EventFilter.class;
 }

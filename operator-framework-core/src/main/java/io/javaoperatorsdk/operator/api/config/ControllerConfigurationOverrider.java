@@ -15,6 +15,8 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.CompositeFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -35,6 +37,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Predicate<R> onAddFilter;
   private BiPredicate<R, R> onUpdateFilter;
   private Predicate<R> genericFilter;
+  private final EventFilter<R> filter;
   private RateLimiter rateLimiter;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -48,9 +51,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     // make the original specs modifiable
     final var dependentResources = original.getDependentResources();
     namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
-    this.onAddFilter = original.onAddFilter().orElse(null);
-    this.onUpdateFilter = original.onUpdateFilter().orElse(null);
-    this.genericFilter = original.genericFilter().orElse(null);
+    this.filter = original.getFilter();
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
@@ -194,9 +195,23 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         customResourcePredicate,
         original.getResourceClass(),
         reconciliationMaxInterval,
-        onAddFilter,
-        onUpdateFilter,
-        genericFilter,
+        new CompositeFilter<>(filter) {
+          @Override
+          public boolean acceptsAdding(R resource) {
+            return onAddFilter != null ? onAddFilter.test(resource) : super.acceptsAdding(resource);
+          }
+
+          @Override
+          public boolean acceptsUpdating(R from, R to) {
+            return onUpdateFilter != null ? onUpdateFilter.test(from, to)
+                : super.acceptsUpdating(from, to);
+          }
+
+          @Override
+          public boolean rejects(R resource) {
+            return genericFilter != null ? genericFilter.test(resource) : super.rejects(resource);
+          }
+        },
         rateLimiter,
         newDependentSpecs);
   }

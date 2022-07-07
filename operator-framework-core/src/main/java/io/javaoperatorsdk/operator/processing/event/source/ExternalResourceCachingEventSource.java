@@ -1,6 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -110,37 +117,29 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
         newResources.stream().collect(Collectors.toMap(cacheKeyMapper::keyFor, r -> r));
     cache.put(primaryID, newResourcesMap);
     if (propagateEvent && !newResourcesMap.equals(cachedResources)
-        && acceptedByFiler(cachedResources, newResourcesMap)) {
+        && acceptedByFilter(cachedResources, newResourcesMap)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }
 
-  private boolean acceptedByFiler(Map<String, R> cachedResourceMap,
+  private boolean acceptedByFilter(Map<String, R> cachedResourceMap,
       Map<String, R> newResourcesMap) {
 
     var addedResources = new HashMap<>(newResourcesMap);
     addedResources.keySet().removeAll(cachedResourceMap.keySet());
-    if (onAddFilter != null || genericFilter != null) {
-      var anyAddAccepted =
-          addedResources.values().stream().anyMatch(r -> acceptedByGenericFiler(r) &&
-              onAddFilter.test(r));
-      if (anyAddAccepted) {
-        return true;
-      }
-    } else if (!addedResources.isEmpty()) {
+    var anyAddAccepted =
+        addedResources.values().stream().anyMatch(r -> !filter.rejects(r) &&
+            filter.acceptsAdding(r));
+    if (anyAddAccepted) {
       return true;
     }
 
     var deletedResource = new HashMap<>(cachedResourceMap);
     deletedResource.keySet().removeAll(newResourcesMap.keySet());
-    if (onDeleteFilter != null || genericFilter != null) {
-      var anyDeleteAccepted =
-          deletedResource.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.test(r, false));
-      if (anyDeleteAccepted) {
-        return true;
-      }
-    } else if (!deletedResource.isEmpty()) {
+    var anyDeleteAccepted =
+        deletedResource.values().stream()
+            .anyMatch(r -> !filter.rejects(r) && filter.acceptsDeleting(r));
+    if (anyDeleteAccepted) {
       return true;
     }
 
@@ -151,26 +150,13 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
             .get(entry.getKey()).equals(entry.getValue()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    if (onUpdateFilter != null || genericFilter != null) {
-      var anyUpdated = possibleUpdatedResources.entrySet().stream()
-          .anyMatch(
-              entry -> {
-                var newResource = newResourcesMap.get(entry.getKey());
-                return acceptedByGenericFiler(newResource) &&
-                    onUpdateFilter.test(newResource, entry.getValue());
-              });
-      if (anyUpdated) {
-        return true;
-      }
-    } else if (!possibleUpdatedResources.isEmpty()) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private boolean acceptedByGenericFiler(R resource) {
-    return genericFilter == null || genericFilter.test(resource);
+    return possibleUpdatedResources.entrySet().stream()
+        .anyMatch(
+            entry -> {
+              var newResource = newResourcesMap.get(entry.getKey());
+              return !filter.rejects(newResource) &&
+                  filter.acceptsUpdating(newResource, entry.getValue());
+            });
   }
 
   @Override
@@ -229,13 +215,10 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected boolean deleteAcceptedByFilter(Collection<R> res) {
-    if (onDeleteFilter == null) {
-      return true;
-    }
     // it is enough if at least one event is accepted
     // Cannot be sure about the final state in general, mainly for polled resources. This might be
     // fine-tuned for
     // other event sources. (For now just by overriding this method.)
-    return res.stream().anyMatch(r -> onDeleteFilter.test(r, false));
+    return res.stream().anyMatch(r -> filter.acceptsDeleting(r));
   }
 }

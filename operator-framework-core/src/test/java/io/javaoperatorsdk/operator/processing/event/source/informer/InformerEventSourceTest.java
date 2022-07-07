@@ -18,11 +18,16 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class InformerEventSourceTest {
@@ -208,7 +213,12 @@ class InformerEventSourceTest {
 
   @Test
   void genericFilterForEvents() {
-    informerEventSource.setGenericFilter(r -> false);
+    informerEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean rejects(Deployment resource) {
+        return true;
+      }
+    });
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
@@ -221,7 +231,12 @@ class InformerEventSourceTest {
 
   @Test
   void filtersOnAddEvents() {
-    informerEventSource.setOnAddFilter(r -> false);
+    informerEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean acceptsAdding(Deployment resource) {
+        return false;
+      }
+    });
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
@@ -232,7 +247,12 @@ class InformerEventSourceTest {
 
   @Test
   void filtersOnUpdateEvents() {
-    informerEventSource.setOnUpdateFilter((r1, r2) -> false);
+    informerEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean acceptsUpdating(Deployment from, Deployment to) {
+        return false;
+      }
+    });
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 
@@ -243,7 +263,12 @@ class InformerEventSourceTest {
 
   @Test
   void filtersOnDeleteEvents() {
-    informerEventSource.setOnDeleteFilter((r, b) -> false);
+    informerEventSource.setFilter(new EventFilter<>() {
+      @Override
+      public boolean acceptsDeleting(Deployment resource) {
+        return false;
+      }
+    });
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.empty());
 

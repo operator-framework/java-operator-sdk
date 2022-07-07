@@ -1,15 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Collections;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
@@ -20,16 +18,9 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
-  default Optional<Predicate<R>> onAddFilter() {
-    return Optional.empty();
-  }
-
-  default Optional<BiPredicate<R, R>> onUpdateFilter() {
-    return Optional.empty();
-  }
-
-  default Optional<Predicate<R>> genericFilter() {
-    return Optional.empty();
+  @SuppressWarnings("unchecked")
+  default EventFilter<R> getFilter() {
+    return EventFilter.ACCEPTS_ALL;
   }
 
   /**

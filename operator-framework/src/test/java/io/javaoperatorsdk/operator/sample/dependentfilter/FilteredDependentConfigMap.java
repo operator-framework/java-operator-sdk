@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 import static io.javaoperatorsdk.operator.sample.dependentfilter.DependentFilterTestReconciler.CM_VALUE_KEY;
 
-@KubernetesDependent(onUpdateFilter = UpdateFilter.class)
+@KubernetesDependent(filter = UpdateFilter.class)
 public class FilteredDependentConfigMap
     extends CRUDKubernetesDependentResource<ConfigMap, DependentFilterTestCustomResource> {
 

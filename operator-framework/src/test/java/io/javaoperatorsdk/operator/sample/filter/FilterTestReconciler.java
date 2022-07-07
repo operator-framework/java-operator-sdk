@@ -7,12 +7,18 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.filter.EventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
+@ControllerConfiguration(filter = UpdateFilter.class)
 public class FilterTestReconciler
     implements Reconciler<FilterTestCustomResource>,
     EventSourceInitializer<FilterTestCustomResource>,
@@ -58,9 +64,12 @@ public class FilterTestReconciler
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
         new InformerEventSource<>(InformerConfiguration
             .from(ConfigMap.class, context)
-            .withOnUpdateFilter((newCM, oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
-                .equals(CONFIG_MAP_FILTER_VALUE))
-            .build(), context);
+            .withEventFilter(new EventFilter<>() {
+              @Override
+              public boolean acceptsUpdating(ConfigMap from, ConfigMap to) {
+                return !to.getData().get(CM_VALUE_KEY).equals(CONFIG_MAP_FILTER_VALUE);
+              }
+            }).build(), context);
 
     return EventSourceInitializer.nameEventSources(configMapES);
   }
