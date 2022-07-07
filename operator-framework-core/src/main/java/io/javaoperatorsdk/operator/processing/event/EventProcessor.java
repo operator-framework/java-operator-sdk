@@ -40,7 +40,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final Metrics metrics;
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
-  // private final EventMarker eventMarker = new EventMarker();
   private final RateLimiter<? extends RateLimitState> rateLimiter;
 
   private final ResourceStateManager resourceStateManager = new ResourceStateManager();
