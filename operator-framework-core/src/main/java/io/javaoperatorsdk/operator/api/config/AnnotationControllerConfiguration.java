@@ -157,16 +157,18 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @Override
   public RateLimiter getRateLimiter() {
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
-    return instantiateAndConfigureIfNeeded(rateLimiterClass);
+    return instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class);
   }
 
   @Override
   public Retry getRetry() {
     final Class<? extends Retry> retryClass = annotation.retry();
-    return instantiateAndConfigureIfNeeded(retryClass);
+    return instantiateAndConfigureIfNeeded(retryClass, Retry.class);
   }
 
-  private <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass) {
+  @SuppressWarnings("unchecked")
+  private <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
+      Class<T> expectedType) {
     try {
       final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
       constructor.setAccessible(true);
@@ -184,7 +186,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       return instance;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
         | NoSuchMethodException e) {
-      throw new RuntimeException(e);
+      throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
+          + targetClass.getName() + "' for '" + getName()
+          + "' reconciler. You need to provide an accessible no-arg constructor.", e);
     }
   }
 
@@ -305,7 +309,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return name;
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
 
     Object config;
