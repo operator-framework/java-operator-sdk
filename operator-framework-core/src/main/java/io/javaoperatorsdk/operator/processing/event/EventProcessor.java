@@ -1,11 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -22,6 +18,7 @@ import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
@@ -37,17 +34,17 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private static final long MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION = 50;
 
   private volatile boolean running;
-  private final Set<ResourceID> underProcessing = new HashSet<>();
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
-  private final Map<ResourceID, RetryExecution> retryState = new HashMap<>();
   private final ExecutorService executor;
   private final String controllerName;
   private final Metrics metrics;
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
   private final EventMarker eventMarker = new EventMarker();
-  private final RateLimiter rateLimiter;
+  private final RateLimiter<? extends RateLimitState> rateLimiter;
+
+  private final ResourceStateManager resourceStateManager = new ResourceStateManager();
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
@@ -61,6 +58,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         eventSourceManager);
   }
 
+  @SuppressWarnings("rawtypes")
   EventProcessor(
       ReconciliationDispatcher<R> reconciliationDispatcher,
       EventSourceManager<R> eventSourceManager,
@@ -79,6 +77,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         eventSourceManager);
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private EventProcessor(
       Cache<R> cache,
       ExecutorService executor,
@@ -137,7 +136,13 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       Optional<R> latest = cache.get(resourceID);
       latest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && latest.isPresent()) {
-        var rateLimiterPermission = rateLimiter.acquirePermission(resourceID);
+        final var resourceState = resourceStateManager.getOrCreate(resourceID);
+        var rateLimit = resourceState.getRateLimit();
+        if (rateLimit == null) {
+          rateLimit = rateLimiter.initState();
+          resourceState.setRateLimit(rateLimit);
+        }
+        var rateLimiterPermission = rateLimiter.isLimited(rateLimit);
         if (rateLimiterPermission.isPresent()) {
           handleRateLimitedSubmission(resourceID, rateLimiterPermission.get());
           return;
@@ -216,7 +221,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   private RetryInfo retryInfo(ResourceID resourceID) {
-    return retryState.get(resourceID);
+    return resourceStateManager.getOrCreate(resourceID).getRetry();
   }
 
   synchronized void eventProcessingFinished(
@@ -319,16 +324,17 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
     log.debug(
         "Cleanup for successful execution for resource: {}", getName(executionScope.getResource()));
     if (isRetryConfigured()) {
-      retryState.remove(executionScope.getResourceID());
+      resourceStateManager.getOrCreate(executionScope.getResourceID()).setRetry(null);
     }
     retryEventSource().cancelOnceSchedule(executionScope.getResourceID());
   }
 
   private RetryExecution getOrInitRetryExecution(ExecutionScope<R> executionScope) {
-    RetryExecution retryExecution = retryState.get(executionScope.getResourceID());
+    final var state = resourceStateManager.getOrCreate(executionScope.getResourceID());
+    RetryExecution retryExecution = state.getRetry();
     if (retryExecution == null) {
       retryExecution = retry.initExecution();
-      retryState.put(executionScope.getResourceID(), retryExecution);
+      state.setRetry(retryExecution);
     }
     return retryExecution;
   }
@@ -336,20 +342,20 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void cleanupForDeletedEvent(ResourceID resourceID) {
     log.debug("Cleaning up for delete event for: {}", resourceID);
     eventMarker.cleanup(resourceID);
-    rateLimiter.clear(resourceID);
+    resourceStateManager.remove(resourceID);
     metrics.cleanupDoneFor(resourceID);
   }
 
   private boolean isControllerUnderExecution(ResourceID resourceID) {
-    return underProcessing.contains(resourceID);
+    return resourceStateManager.getOrCreate(resourceID).isUnderProcessing();
   }
 
   private void setUnderExecutionProcessing(ResourceID resourceID) {
-    underProcessing.add(resourceID);
+    resourceStateManager.getOrCreate(resourceID).setUnderProcessing(true);
   }
 
   private void unsetUnderExecution(ResourceID resourceID) {
-    underProcessing.remove(resourceID);
+    resourceStateManager.getOrCreate(resourceID).setUnderProcessing(false);
   }
 
   private boolean isRetryConfigured() {
@@ -405,6 +411,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   }
 
   public synchronized boolean isUnderProcessing(ResourceID resourceID) {
-    return underProcessing.contains(resourceID);
+    return isControllerUnderExecution(resourceID);
   }
 }

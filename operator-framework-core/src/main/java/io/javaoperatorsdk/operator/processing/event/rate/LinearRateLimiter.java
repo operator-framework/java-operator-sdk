@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.rate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
@@ -13,21 +11,26 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * A simple rate limiter that limits the number of permission for a time interval.
  */
 public class LinearRateLimiter
-    implements RateLimiter, AnnotationConfigurable<RateLimited> {
+    implements RateLimiter<RateState>, AnnotationConfigurable<RateLimited> {
 
   /** To turn off rate limiting set limit for period to a non-positive number */
   public static final int NO_LIMIT_PERIOD = -1;
+  public static final int DEFAULT_REFRESH_PERIOD_SECONDS = 10;
+  public static final int DEFAULT_LIMIT_FOR_PERIOD = 3;
+  public static final Duration DEFAULT_REFRESH_PERIOD =
+      Duration.ofSeconds(DEFAULT_REFRESH_PERIOD_SECONDS);
+
 
   private Duration refreshPeriod;
   private int limitForPeriod = NO_LIMIT_PERIOD;
-
-  private final Map<ResourceID, RateState> limitData = new HashMap<>();
 
   public static LinearRateLimiter deactivatedRateLimiter() {
     return new LinearRateLimiter();
   }
 
-  LinearRateLimiter() {}
+  public LinearRateLimiter() {
+    this(DEFAULT_REFRESH_PERIOD, DEFAULT_LIMIT_FOR_PERIOD);
+  }
 
   public LinearRateLimiter(Duration refreshPeriod, int limitForPeriod) {
     this.refreshPeriod = refreshPeriod;
@@ -35,11 +38,12 @@ public class LinearRateLimiter
   }
 
   @Override
-  public Optional<Duration> acquirePermission(ResourceID resourceID) {
-    if (!isActivated()) {
+  public Optional<Duration> isLimited(RateLimitState rateLimitState) {
+    if (!isActivated() || !(rateLimitState instanceof RateState)) {
       return Optional.empty();
     }
-    var actualState = limitData.computeIfAbsent(resourceID, r -> RateState.initialState());
+
+    var actualState = (RateState) rateLimitState;
     if (actualState.getCount() < limitForPeriod) {
       actualState.increaseCount();
       return Optional.empty();
@@ -54,8 +58,8 @@ public class LinearRateLimiter
   }
 
   @Override
-  public void clear(ResourceID resourceID) {
-    limitData.remove(resourceID);
+  public RateState initState() {
+    return RateState.initialState();
   }
 
   @Override
