@@ -126,6 +126,9 @@ public class WebPageReconciler
       existingIngress.ifPresent(
           ingress -> kubernetesClient.resource(ingress).delete());
 
+    // not that this is not necessary, eventually mounted config map would be updated, just this way
+    // is much faster; what is handy for demo purposes.
+    // https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
     if (previousConfigMap != null && !StringUtils.equals(
         previousConfigMap.getData().get(INDEX_HTML),
         desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
