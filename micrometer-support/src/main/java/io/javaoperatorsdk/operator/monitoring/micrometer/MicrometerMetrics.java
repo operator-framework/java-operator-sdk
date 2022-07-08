@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,19 +56,22 @@ public class MicrometerMetrics implements Metrics {
   }
 
   public void receivedEvent(Event event) {
-    incrementCounter(event.getRelatedCustomResourceID(), "events.received", "event",
-        event.getClass().getSimpleName());
+    incrementCounter(event.getRelatedCustomResourceID(), "events.received",
+        Collections.emptyMap(),
+        "event", event.getClass().getSimpleName());
   }
 
   @Override
-  public void cleanupDoneFor(ResourceID resourceID) {
-    incrementCounter(resourceID, "events.delete");
+  public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
+    incrementCounter(resourceID, "events.delete", metadata);
   }
 
   @Override
-  public void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfoNullable) {
+  public void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfoNullable,
+      Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
     incrementCounter(resourceID, RECONCILIATIONS + "started",
+        metadata,
         RECONCILIATIONS + "retries.number",
         "" + retryInfo.map(RetryInfo::getAttemptCount).orElse(0),
         RECONCILIATIONS + "retries.last",
@@ -76,18 +79,19 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(ResourceID resourceID) {
-    incrementCounter(resourceID, RECONCILIATIONS + "success");
+  public void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {
+    incrementCounter(resourceID, RECONCILIATIONS + "success", metadata);
   }
 
-  public void failedReconciliation(ResourceID resourceID, Exception exception) {
+  public void failedReconciliation(ResourceID resourceID, Exception exception,
+      Map<String, Object> metadata) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;
     } else if (cause instanceof RuntimeException) {
       cause = cause.getCause() != null ? cause.getCause() : cause;
     }
-    incrementCounter(resourceID, RECONCILIATIONS + "failed", "exception",
+    incrementCounter(resourceID, RECONCILIATIONS + "failed", metadata, "exception",
         cause.getClass().getSimpleName());
   }
 
@@ -95,15 +99,37 @@ public class MicrometerMetrics implements Metrics {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
 
-  private void incrementCounter(ResourceID id, String counterName, String... additionalTags) {
-    var tags = List.of(
+  private void incrementCounter(ResourceID id, String counterName, Map<String, Object> metadata,
+      String... additionalTags) {
+    final var additionalTagsNb =
+        additionalTags != null && additionalTags.length > 0 ? additionalTags.length : 0;
+    final var metadataNb = metadata != null ? metadata.size() : 0;
+    final var tags = new ArrayList<String>(6 + additionalTagsNb + metadataNb);
+    tags.addAll(List.of(
         "name", id.getName(),
-        "name", id.getName(), "namespace", id.getNamespace().orElse(""),
-        "scope", id.getNamespace().isPresent() ? "namespace" : "cluster");
-    if (additionalTags != null && additionalTags.length > 0) {
-      tags = new LinkedList<>(tags);
+        "namespace", id.getNamespace().orElse(""),
+        "scope", id.getNamespace().isPresent() ? "namespace" : "cluster"));
+    if (additionalTagsNb > 0) {
       tags.addAll(List.of(additionalTags));
     }
+    if (metadataNb > 0) {
+      addReservedMetadataToTags(metadata, tags, "group", Metrics.RESOURCE_GROUP_KEY);
+      addReservedMetadataToTags(metadata, tags, "version", Metrics.RESOURCE_VERSION_KEY);
+      addReservedMetadataToTags(metadata, tags, "kind", Metrics.RESOURCE_KIND_KEY);
+      metadata.forEach((k, v) -> {
+        tags.add(k);
+        tags.add(v.toString());
+      });
+    }
     registry.counter(PREFIX + counterName, tags.toArray(new String[0])).increment();
+  }
+
+  private static void addReservedMetadataToTags(Map<String, Object> metadata, List<String> tags,
+      String tagKey, String reservedKey) {
+    if (metadata.containsKey(reservedKey)) {
+      tags.add(tagKey);
+      tags.add(metadata.get(reservedKey).toString());
+      metadata.remove(reservedKey);
+    }
   }
 }

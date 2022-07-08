@@ -132,9 +132,9 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void submitReconciliationExecution(ResourceState state) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(state);
-      Optional<R> latest = cache.get(state.getId());
-      latest.ifPresent(MDCUtils::addResourceInfo);
-      if (!controllerUnderExecution && latest.isPresent()) {
+      Optional<R> maybeLatest = cache.get(state.getId());
+      maybeLatest.ifPresent(MDCUtils::addResourceInfo);
+      if (!controllerUnderExecution && maybeLatest.isPresent()) {
         var rateLimit = state.getRateLimit();
         if (rateLimit == null) {
           rateLimit = rateLimiter.initState();
@@ -146,10 +146,12 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
           return;
         }
         state.setUnderProcessing(true);
+        final var latest = maybeLatest.get();
+        state.addMetadata(latest);
         final var retryInfo = state.getRetry();
-        ExecutionScope<R> executionScope = new ExecutionScope<>(latest.get(), retryInfo);
+        ExecutionScope<R> executionScope = new ExecutionScope<>(latest, retryInfo);
         state.unMarkEventReceived();
-        metrics.reconcileCustomResource(state.getId(), retryInfo);
+        metrics.reconcileCustomResource(state.getId(), retryInfo, state.getMetadata());
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ControllerExecution(executionScope));
       } else {
@@ -157,8 +159,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
             "Skipping executing controller for resource id: {}. Controller in execution: {}. Latest Resource present: {}",
             state,
             controllerUnderExecution,
-            latest.isPresent());
-        if (latest.isEmpty()) {
+            maybeLatest.isPresent());
+        if (maybeLatest.isEmpty()) {
           log.debug("no custom resource found in cache for ResourceID: {}", state);
         }
       }
@@ -240,7 +242,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.finishedReconciliation(resourceID);
+    metrics.finishedReconciliation(resourceID, state.getMetadata());
     if (state.deleteEventPresent()) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
@@ -307,7 +309,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
               resourceID);
-          metrics.failedReconciliation(resourceID, exception);
+          metrics.failedReconciliation(resourceID, exception, state.getMetadata());
           retryEventSource().scheduleOnce(resourceID, delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
@@ -334,8 +336,8 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
 
   private void cleanupForDeletedEvent(ResourceID resourceID) {
     log.debug("Cleaning up for delete event for: {}", resourceID);
-    resourceStateManager.remove(resourceID);
-    metrics.cleanupDoneFor(resourceID);
+    final var state = resourceStateManager.remove(resourceID);
+    metrics.cleanupDoneFor(resourceID, state.getMetadata());
   }
 
   private boolean isControllerUnderExecution(ResourceState state) {

@@ -1,5 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -32,6 +37,8 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+
+  private final Map<String, Object> metadata = new HashMap<>();
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -107,5 +114,16 @@ class ResourceState {
       case DELETE_EVENT_PRESENT:
         throw new IllegalStateException("Cannot unmark delete event.");
     }
+  }
+
+  public Map<String, Object> getMetadata() {
+    return metadata;
+  }
+
+  public void addMetadata(HasMetadata resource) {
+    final Class<? extends HasMetadata> resourceClass = resource.getClass();
+    metadata.put(Metrics.RESOURCE_GROUP_KEY, HasMetadata.getGroup(resourceClass));
+    metadata.put(Metrics.RESOURCE_KIND_KEY, resource.getKind());
+    metadata.put(Metrics.RESOURCE_VERSION_KEY, HasMetadata.getVersion(resourceClass));
   }
 }
