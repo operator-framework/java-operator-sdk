@@ -51,6 +51,9 @@ public class ConfigMapDependentResource extends CRUKubernetesDependentResource<C
     var ns = actual.getMetadata().getNamespace();
     log.info("Restarting pods because HTML has changed in {}",
         ns);
+    // not that this is not necessary, eventually mounted config map would be updated, just this way
+    // is much faster; what is handy for demo purposes.
+    // https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
     getKubernetesClient()
         .pods()
         .inNamespace(ns)
