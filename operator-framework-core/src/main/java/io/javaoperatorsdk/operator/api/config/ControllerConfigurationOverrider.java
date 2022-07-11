@@ -117,6 +117,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  @Deprecated
+  public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
+    this.retry = GenericRetry.fromConfiguration(retry);
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> withRateLimiter(RateLimiter rateLimiter) {
     this.rateLimiter = rateLimiter;
     return this;
