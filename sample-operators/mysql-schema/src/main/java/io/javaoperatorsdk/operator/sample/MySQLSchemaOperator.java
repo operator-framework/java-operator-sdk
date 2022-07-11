@@ -35,7 +35,7 @@ public class MySQLSchemaOperator {
 
     // override the default configuration
     operator.register(schemaReconciler,
-        configOverrider -> configOverrider.replacingNamedDependentResourceConfig(
+        configOverrider -> configOverrider.replaceNamedDependentResourceConfig(
             SchemaDependentResource.NAME,
             new ResourcePollerConfig(300, MySQLDbConfig.loadFromEnvironmentVars())));
     operator.installShutdownHook();

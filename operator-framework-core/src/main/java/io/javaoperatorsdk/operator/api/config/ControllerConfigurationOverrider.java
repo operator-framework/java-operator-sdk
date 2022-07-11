@@ -72,11 +72,26 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> addNamespaces(String... namespaces) {
+    this.namespaces.addAll(List.of(namespaces));
+    return this;
+  }
+
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> addingNamespaces(String... namespaces) {
     this.namespaces.addAll(List.of(namespaces));
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> removeNamespaces(String... namespaces) {
+    List.of(namespaces).forEach(this.namespaces::remove);
+    if (this.namespaces.isEmpty()) {
+      this.namespaces = DEFAULT_NAMESPACES_SET;
+    }
+    return this;
+  }
+
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> removingNamespaces(String... namespaces) {
     List.of(namespaces).forEach(this.namespaces::remove);
     if (this.namespaces.isEmpty()) {
@@ -85,22 +100,47 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withNamespaces(Set<String> newNamespaces) {
+    this.namespaces.clear();
+    this.namespaces.addAll(newNamespaces);
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> withNamespaces(String... newNamespaces) {
+    return withNamespaces(Set.of(newNamespaces));
+  }
+
+  public ControllerConfigurationOverrider<R> withNamespace(String namespace) {
+    this.namespaces.clear();
+    this.namespaces.add(namespace);
+    return this;
+  }
+
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> settingNamespaces(Set<String> newNamespaces) {
     this.namespaces.clear();
     this.namespaces.addAll(newNamespaces);
     return this;
   }
 
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> settingNamespaces(String... newNamespaces) {
-    return settingNamespaces(Set.of(newNamespaces));
+    return withNamespaces(Set.of(newNamespaces));
   }
 
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> settingNamespace(String namespace) {
     this.namespaces.clear();
     this.namespaces.add(namespace);
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> watchAllNamespaces() {
+    this.namespaces = DEFAULT_NAMESPACES_SET;
+    return this;
+  }
+
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> watchingAllNamespaces() {
     this.namespaces = DEFAULT_NAMESPACES_SET;
     return this;
@@ -111,7 +151,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
     this.retry = GenericRetry.fromConfiguration(retry);
     return this;
@@ -127,6 +167,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> withCustomResourcePredicate(
       ResourceEventFilter<R> customResourcePredicate) {
     this.customResourcePredicate = customResourcePredicate;
@@ -154,15 +195,20 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
+  public ControllerConfigurationOverrider<R> replaceNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
-
     var current = namedDependentResourceSpecs.get(name);
     if (current == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
     replaceConfig(name, dependentResourceConfig, current);
     return this;
+  }
+
+  @Deprecated(forRemoval = true)
+  public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
+      Object dependentResourceConfig) {
+    return replaceNamedDependentResourceConfig(name, dependentResourceConfig);
   }
 
   private void replaceConfig(String name, Object newConfig, DependentResourceSpec<?, ?> current) {

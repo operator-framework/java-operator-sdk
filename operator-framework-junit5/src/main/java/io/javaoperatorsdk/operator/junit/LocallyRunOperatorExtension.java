@@ -125,7 +125,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
-      final var oconfig = override(config).settingNamespace(namespace);
+      final var oconfig = override(config).withNamespace(namespace);
 
       if (ref.retry != null) {
         oconfig.withRetry(ref.retry);

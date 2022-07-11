@@ -82,7 +82,7 @@ class CustomResourceSelectorTest {
                   c1err.incrementAndGet();
                 }
               }),
-          (overrider) -> overrider.settingNamespace(NAMESPACE).withLabelSelector("app=foo"));
+          (overrider) -> overrider.withNamespace(NAMESPACE).withLabelSelector("app=foo"));
       o1.start();
       o2.register(
           new MyController(
@@ -94,7 +94,7 @@ class CustomResourceSelectorTest {
                   c2err.incrementAndGet();
                 }
               }),
-          (overrider) -> overrider.settingNamespace(NAMESPACE).withLabelSelector("app=bar"));
+          (overrider) -> overrider.withNamespace(NAMESPACE).withLabelSelector("app=bar"));
       o2.start();
 
       client.resources(TestCustomResource.class).inNamespace(NAMESPACE).create(newMyResource("foo",

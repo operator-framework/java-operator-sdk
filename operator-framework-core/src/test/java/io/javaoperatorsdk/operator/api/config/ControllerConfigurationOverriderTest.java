@@ -39,8 +39,8 @@ class ControllerConfigurationOverriderTest {
         DependentResource.defaultNameFor(NamedDependentReconciler.ExternalDependentResource.class);
     final var stringConfig = "some String configuration";
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .settingNamespace(namespace)
-        .replacingNamedDependentResourceConfig(externalDRName, stringConfig)
+        .withNamespace(namespace)
+        .replaceNamedDependentResourceConfig(externalDRName, stringConfig)
         .build();
     assertEquals(Set.of(namespace), configuration.getNamespaces());
 
@@ -126,27 +126,27 @@ class ControllerConfigurationOverriderTest {
     assertFalse(configuration.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .addingNamespaces("foo", "bar")
+        .addNamespaces("foo", "bar")
         .build();
     assertEquals(Set.of("foo", "bar"), configuration.getNamespaces());
     assertFalse(configuration.watchAllNamespaces());
     assertFalse(configuration.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .removingNamespaces("bar")
+        .removeNamespaces("bar")
         .build();
     assertEquals(Set.of("foo"), configuration.getNamespaces());
     assertFalse(configuration.watchAllNamespaces());
     assertFalse(configuration.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .removingNamespaces("foo")
+        .removeNamespaces("foo")
         .build();
     assertTrue(configuration.watchAllNamespaces());
     assertFalse(configuration.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .settingNamespace("foo")
+        .withNamespace("foo")
         .build();
     assertFalse(configuration.watchAllNamespaces());
     assertFalse(configuration.watchCurrentNamespace());
@@ -159,7 +159,7 @@ class ControllerConfigurationOverriderTest {
     assertTrue(configuration.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .watchingAllNamespaces()
+        .watchAllNamespaces()
         .build();
     assertTrue(configuration.watchAllNamespaces());
     assertFalse(configuration.watchCurrentNamespace());
@@ -173,7 +173,7 @@ class ControllerConfigurationOverriderTest {
 
     // override the parent NS to match the dependent's
     configuration = ControllerConfigurationOverrider.override(configuration)
-        .settingNamespace(OverriddenNSDependent.DEP_NS).build();
+        .withNamespace(OverriddenNSDependent.DEP_NS).build();
     assertEquals(Set.of(OverriddenNSDependent.DEP_NS), configuration.getNamespaces());
 
     // check that the DependentResource inherits has its own configured NS
@@ -183,7 +183,7 @@ class ControllerConfigurationOverriderTest {
     // override the parent's NS
     final var newNS = "bar";
     configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+        ControllerConfigurationOverrider.override(configuration).withNamespace(newNS).build();
 
     // check that dependent config is still using its own NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
@@ -203,7 +203,7 @@ class ControllerConfigurationOverriderTest {
     // override the NS
     final var newNS = "bar";
     configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+        ControllerConfigurationOverrider.override(configuration).withNamespace(newNS).build();
 
     // check that dependent config is using the overridden namespace
     config = extractFirstDependentKubernetesResourceConfig(configuration);
@@ -223,7 +223,7 @@ class ControllerConfigurationOverriderTest {
     // override the NS
     final var newNS = "bar";
     configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+        ControllerConfigurationOverrider.override(configuration).withNamespace(newNS).build();
 
     // check that dependent config is still configured to watch all NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
@@ -243,7 +243,7 @@ class ControllerConfigurationOverriderTest {
     // override the NS
     final var newNS = "bar";
     configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+        ControllerConfigurationOverrider.override(configuration).withNamespace(newNS).build();
 
     // check that dependent config is using the overridden namespace
     config = extractFirstDependentKubernetesResourceConfig(configuration);
@@ -264,7 +264,7 @@ class ControllerConfigurationOverriderTest {
     // override the NS
     final var newNS = "bar";
     configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
+        ControllerConfigurationOverrider.override(configuration).withNamespace(newNS).build();
 
     // check that dependent config is still using its own NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
@@ -300,7 +300,7 @@ class ControllerConfigurationOverriderTest {
     final var overriddenNS = "newNS";
     final var labelSelector = "foo=bar";
     final var overridden = ControllerConfigurationOverrider.override(configuration)
-        .replacingNamedDependentResourceConfig(
+        .replaceNamedDependentResourceConfig(
             DependentResource.defaultNameFor(ReadOnlyDependent.class),
             new KubernetesDependentResourceConfig(Set.of(overriddenNS), labelSelector))
         .build();
