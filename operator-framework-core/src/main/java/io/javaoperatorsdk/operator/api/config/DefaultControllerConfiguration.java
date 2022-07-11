@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -60,7 +61,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
             ? ControllerConfiguration.super.getRetry()
             : retry;
     this.resourceEventFilter = resourceEventFilter;
-    this.rateLimiter = rateLimiter;
+    this.rateLimiter =
+        rateLimiter != null ? rateLimiter : LinearRateLimiter.deactivatedRateLimiter();
     this.dependents = dependents != null ? dependents : Collections.emptyList();
   }
 

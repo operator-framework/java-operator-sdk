@@ -9,10 +9,14 @@ import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -92,8 +96,6 @@ public @interface ControllerConfiguration {
       interval = 10);
 
 
-  RateLimit rateLimit() default @RateLimit;
-
   /**
    * Optional list of {@link Dependent} configurations which associate a resource type to a
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
@@ -101,4 +103,20 @@ public @interface ControllerConfiguration {
    * @return the list of {@link Dependent} configurations
    */
   Dependent[] dependents() default {};
+
+  /**
+   * Optional {@link Retry} implementation for the associated controller to use.
+   *
+   * @return the class providing the {@link Retry} implementation to use, needs to provide an
+   *         accessible no-arg constructor.
+   */
+  Class<? extends Retry> retry() default GenericRetry.class;
+
+  /**
+   * Optional {@link RateLimiter} implementation for the associated controller to use.
+   *
+   * @return the class providing the {@link RateLimiter} implementation to use, needs to provide an
+   *         accessible no-arg constructor.
+   */
+  Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 }

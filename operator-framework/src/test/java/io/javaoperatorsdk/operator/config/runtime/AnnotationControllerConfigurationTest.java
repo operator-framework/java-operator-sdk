@@ -1,5 +1,10 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -9,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -19,10 +25,17 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,6 +52,7 @@ class AnnotationControllerConfigurationTest {
     assertNull(unannotated.labelSelector());
   }
 
+  @SuppressWarnings("rawtypes")
   private KubernetesDependentResourceConfig extractDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
     return (KubernetesDependentResourceConfig) configuration.getDependentResources().get(index)
@@ -47,6 +61,7 @@ class AnnotationControllerConfigurationTest {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void getDependentResources() {
     var configuration = new AnnotationControllerConfiguration<>(new NoDepReconciler());
     var dependents = configuration.getDependentResources();
@@ -112,6 +127,46 @@ class AnnotationControllerConfigurationTest {
     assertTrue(findByNameOptional(dependents, NamedDuplicatedDepReconciler.NAME).isPresent()
         && findByNameOptional(dependents, DependentResource.defaultNameFor(ReadOnlyDependent.class))
             .isPresent());
+  }
+
+
+  @Test
+  void checkDefaultRateAndRetryConfigurations() {
+    var config = new AnnotationControllerConfiguration<>(new NoDepReconciler());
+    final var retry = assertInstanceOf(GenericRetry.class, config.getRetry());
+    assertEquals(GradualRetry.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
+    assertEquals(GradualRetry.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
+    assertEquals(GradualRetry.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
+    assertEquals(GradualRetry.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
+
+    final var limiter = assertInstanceOf(LinearRateLimiter.class, config.getRateLimiter());
+    assertFalse(limiter.isActivated());
+  }
+
+  @Test
+  void configuringRateAndRetryViaAnnotationsShouldWork() {
+    var config =
+        new AnnotationControllerConfiguration<>(new ConfigurableRateLimitAndRetryReconciler());
+    final var retry = config.getRetry();
+    final var testRetry = assertInstanceOf(TestRetry.class, retry);
+    assertEquals(12, testRetry.getValue());
+
+    final var rateLimiter = assertInstanceOf(LinearRateLimiter.class, config.getRateLimiter());
+    assertEquals(7, rateLimiter.getLimitForPeriod());
+    assertEquals(Duration.ofSeconds(3), rateLimiter.getRefreshPeriod());
+  }
+
+  @Test
+  void checkingRetryingGraduallyWorks() {
+    var config = new AnnotationControllerConfiguration<>(new CheckRetryingGraduallyConfiguration());
+    final var retry = config.getRetry();
+    final var genericRetry = assertInstanceOf(GenericRetry.class, retry);
+    assertEquals(CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
+        genericRetry.getInitialInterval());
+    assertEquals(CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS, genericRetry.getMaxAttempts());
+    assertEquals(CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
+        genericRetry.getIntervalMultiplier());
+    assertEquals(CheckRetryingGraduallyConfiguration.MAX_INTERVAL, genericRetry.getMaxInterval());
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
@@ -200,6 +255,64 @@ class AnnotationControllerConfigurationTest {
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
+    }
+  }
+
+  public static class TestRetry implements Retry, AnnotationConfigurable<TestRetryConfiguration> {
+    private int value;
+
+    public TestRetry() {}
+
+    @Override
+    public RetryExecution initExecution() {
+      return null;
+    }
+
+    public int getValue() {
+      return value;
+    }
+
+    @Override
+    public void initFrom(TestRetryConfiguration configuration) {
+      value = configuration.value();
+    }
+  }
+
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  private @interface TestRetryConfiguration {
+    int value() default 42;
+  }
+
+  @TestRetryConfiguration(12)
+  @RateLimited(maxReconciliations = 7, within = 3)
+  @ControllerConfiguration(retry = TestRetry.class)
+  private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return UpdateControl.noUpdate();
+    }
+  }
+
+  @GradualRetry(
+      maxAttempts = CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS,
+      initialInterval = CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
+      intervalMultiplier = CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
+      maxInterval = CheckRetryingGraduallyConfiguration.MAX_INTERVAL)
+  @ControllerConfiguration
+  private static class CheckRetryingGraduallyConfiguration implements Reconciler<ConfigMap> {
+
+    public static final int MAX_ATTEMPTS = 7;
+    public static final int INITIAL_INTERVAL = 1000;
+    public static final int INTERVAL_MULTIPLIER = 2;
+    public static final int MAX_INTERVAL = 60000;
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return UpdateControl.noUpdate();
     }
   }
 }

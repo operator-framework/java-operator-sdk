@@ -8,16 +8,17 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
-  RateLimiter DEFAULT_RATE_LIMITER = new PeriodRateLimiter();
+  RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
 
   default String getName() {
     return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
@@ -34,15 +35,20 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   String getAssociatedReconcilerClassName();
 
   default Retry getRetry() {
-    return GenericRetry.fromConfiguration(getRetryConfiguration()); // NOSONAR
+    final var configuration = getRetryConfiguration();
+    return !RetryConfiguration.DEFAULT.equals(configuration)
+        ? GenericRetry.fromConfiguration(configuration)
+        : GenericRetry.DEFAULT; // NOSONAR
   }
 
   /**
-   * Use getRetry instead.
+   * Use {@link #getRetry()} instead.
    *
    * @return configuration for retry.
+   * @deprecated provide your own {@link Retry} implementation or use the {@link GradualRetry}
+   *             annotation instead
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   default RetryConfiguration getRetryConfiguration() {
     return RetryConfiguration.DEFAULT;
   }
