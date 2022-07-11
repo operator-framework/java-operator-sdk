@@ -7,24 +7,19 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
-import io.javaoperatorsdk.operator.api.reconciler.RateLimit;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
  * A Simple rate limiter that limits the number of permission for a time interval.
  */
-public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<RateLimit> {
+public class PeriodRateLimiter
+    implements RateLimiter, AnnotationConfigurable<LimitingRateOverPeriod> {
 
-  public static final int DEFAULT_REFRESH_PERIOD_SECONDS = 10;
-  public static final int DEFAULT_LIMIT_FOR_PERIOD = 3;
-  public static final Duration DEFAULT_REFRESH_PERIOD =
-      Duration.ofSeconds(DEFAULT_REFRESH_PERIOD_SECONDS);
-
-  /** To turn off rate limiting set limit fod period to a non-positive number */
+  /** To turn off rate limiting set limit for period to a non-positive number */
   public static final int NO_LIMIT_PERIOD = -1;
 
   private Duration refreshPeriod;
-  private int limitForPeriod;
+  private int limitForPeriod = NO_LIMIT_PERIOD;
 
   private final Map<ResourceID, RateState> limitData = new HashMap<>();
 
@@ -32,9 +27,7 @@ public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<Ra
     return new PeriodRateLimiter();
   }
 
-  PeriodRateLimiter() {
-    this(DEFAULT_REFRESH_PERIOD, NO_LIMIT_PERIOD);
-  }
+  PeriodRateLimiter() {}
 
   public PeriodRateLimiter(Duration refreshPeriod, int limitForPeriod) {
     this.refreshPeriod = refreshPeriod;
@@ -66,10 +59,10 @@ public class PeriodRateLimiter implements RateLimiter, AnnotationConfigurable<Ra
   }
 
   @Override
-  public void initFrom(RateLimit configuration) {
-    this.refreshPeriod = Duration.of(configuration.refreshPeriod(),
-        configuration.refreshPeriodTimeUnit().toChronoUnit());
-    this.limitForPeriod = configuration.limitForPeriod();
+  public void initFrom(LimitingRateOverPeriod configuration) {
+    this.refreshPeriod = Duration.of(configuration.within(),
+        configuration.unit().toChronoUnit());
+    this.limitForPeriod = configuration.maxReconciliations();
   }
 
   public boolean isActivated() {

@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -17,7 +18,6 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.RateLimit;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.event.rate.LimitingRateOverPeriod;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -60,6 +61,7 @@ class AnnotationControllerConfigurationTest {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void getDependentResources() {
     var configuration = new AnnotationControllerConfiguration<>(new NoDepReconciler());
     var dependents = configuration.getDependentResources();
@@ -151,6 +153,20 @@ class AnnotationControllerConfigurationTest {
 
     final var rateLimiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
     assertEquals(7, rateLimiter.getLimitForPeriod());
+    assertEquals(Duration.ofSeconds(3), rateLimiter.getRefreshPeriod());
+  }
+
+  @Test
+  void checkingRetryingGraduallyWorks() {
+    var config = new AnnotationControllerConfiguration<>(new CheckRetryingGraduallyConfiguration());
+    final var retry = config.getRetry();
+    final var genericRetry = assertInstanceOf(GenericRetry.class, retry);
+    assertEquals(CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
+        genericRetry.getInitialInterval());
+    assertEquals(CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS, genericRetry.getMaxAttempts());
+    assertEquals(CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
+        genericRetry.getIntervalMultiplier());
+    assertEquals(CheckRetryingGraduallyConfiguration.MAX_INTERVAL, genericRetry.getMaxInterval());
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
@@ -269,9 +285,29 @@ class AnnotationControllerConfigurationTest {
   }
 
   @TestRetryConfiguration(12)
-  @RateLimit(limitForPeriod = 7)
+  @LimitingRateOverPeriod(maxReconciliations = 7, within = 3)
   @ControllerConfiguration(retry = TestRetry.class)
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return UpdateControl.noUpdate();
+    }
+  }
+
+  @RetryingGradually(
+      maxAttempts = CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS,
+      initialInterval = CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
+      intervalMultiplier = CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
+      maxInterval = CheckRetryingGraduallyConfiguration.MAX_INTERVAL)
+  @ControllerConfiguration
+  private static class CheckRetryingGraduallyConfiguration implements Reconciler<ConfigMap> {
+
+    public static final int MAX_ATTEMPTS = 7;
+    public static final int INITIAL_INTERVAL = 1000;
+    public static final int INTERVAL_MULTIPLIER = 2;
+    public static final int MAX_INTERVAL = 60000;
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)

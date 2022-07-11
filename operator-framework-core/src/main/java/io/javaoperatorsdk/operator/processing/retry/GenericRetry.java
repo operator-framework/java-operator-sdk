@@ -9,10 +9,10 @@ public class GenericRetry implements Retry, AnnotationConfigurable<RetryingGradu
   private double intervalMultiplier = RetryingGradually.DEFAULT_MULTIPLIER;
   private long maxInterval = RetryingGradually.DEFAULT_MAX_INTERVAL;
 
-  public static final Retry DEFAULT = fromConfiguration(RetryConfiguration.DEFAULT);
+  public static final Retry DEFAULT = new GenericRetry();
 
   public static GenericRetry defaultLimitedExponentialRetry() {
-    return new GenericRetry();
+    return (GenericRetry) DEFAULT;
   }
 
   public static GenericRetry noRetry() {

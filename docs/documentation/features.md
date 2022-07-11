@@ -346,12 +346,18 @@ Users can override it by implementing their own
 [`RateLimiter`](https://github.com/java-operator-sdk/java-operator-sdk/blob/ce4d996ee073ebef5715737995fc3d33f4751275/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/rate/RateLimiter.java)
 .
 
-To configure the default rate limiter use `@ControllerConfiguration` annotation. The following
-configuration limits
-each resource to reconcile at most twice within a 3 second interval:
+To configure the default rate limiter use the `@LimitingRateOverPeriod` annotation on your
+`Reconciler` class. The following configuration limits each resource to reconcile at most twice
+within a 3 second interval:
 
-`@ControllerConfiguration(rateLimit = @RateLimit(limitForPeriod = 2,refreshPeriod = 3,refreshPeriodTimeUnit = TimeUnit.SECONDS))`
-.
+```java
+
+@LimitingRateOverPeriod(maxReconciliations = 2, within = 3, unit = TimeUnit.SECONDS)
+@ControllerConfiguration
+public class MyReconciler implements Reconciler<MyCR> {
+
+}
+```
 
 Thus, if a given resource was reconciled twice in one second, no further reconciliation for this
 resource will happen before two seconds have elapsed. Note that, since rate is limited on a
