@@ -23,5 +23,4 @@ public interface Context<P extends HasMetadata> {
 
   ManagedDependentResourceContext managedDependentResourceContext();
 
-  // todo access event sources from context
 }
