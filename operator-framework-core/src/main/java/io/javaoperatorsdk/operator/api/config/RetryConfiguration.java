@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
+
 /**
  * @deprecated specify your own {@link io.javaoperatorsdk.operator.processing.retry.Retry}
- *             implementation or use
- *             {@link io.javaoperatorsdk.operator.processing.retry.RetryingGradually} annotation
- *             instead
+ *             implementation or use {@link GradualRetry} annotation instead
  */
 @Deprecated(forRemoval = true)
 public interface RetryConfiguration {

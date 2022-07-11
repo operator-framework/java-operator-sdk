@@ -28,9 +28,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
-import io.javaoperatorsdk.operator.processing.retry.RetryingGradually;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -134,10 +134,10 @@ class AnnotationControllerConfigurationTest {
   void checkDefaultRateAndRetryConfigurations() {
     var config = new AnnotationControllerConfiguration<>(new NoDepReconciler());
     final var retry = assertInstanceOf(GenericRetry.class, config.getRetry());
-    assertEquals(RetryingGradually.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
-    assertEquals(RetryingGradually.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
-    assertEquals(RetryingGradually.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
-    assertEquals(RetryingGradually.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
+    assertEquals(GradualRetry.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
+    assertEquals(GradualRetry.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
+    assertEquals(GradualRetry.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
+    assertEquals(GradualRetry.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
 
     final var limiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
     assertFalse(limiter.isActivated());
@@ -296,7 +296,7 @@ class AnnotationControllerConfigurationTest {
     }
   }
 
-  @RetryingGradually(
+  @GradualRetry(
       maxAttempts = CheckRetryingGraduallyConfiguration.MAX_ATTEMPTS,
       initialInterval = CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
       intervalMultiplier = CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,

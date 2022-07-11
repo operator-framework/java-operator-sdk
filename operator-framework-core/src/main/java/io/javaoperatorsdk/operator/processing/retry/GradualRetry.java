@@ -7,14 +7,14 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface RetryingGradually {
+public @interface GradualRetry {
 
   int DEFAULT_MAX_ATTEMPTS = 5;
   long DEFAULT_INITIAL_INTERVAL = 2000L;
   double DEFAULT_MULTIPLIER = 1.5D;
 
-  long DEFAULT_MAX_INTERVAL = (long) (RetryingGradually.DEFAULT_INITIAL_INTERVAL * Math.pow(
-      RetryingGradually.DEFAULT_MULTIPLIER, RetryingGradually.DEFAULT_MAX_ATTEMPTS));
+  long DEFAULT_MAX_INTERVAL = (long) (GradualRetry.DEFAULT_INITIAL_INTERVAL * Math.pow(
+      GradualRetry.DEFAULT_MULTIPLIER, GradualRetry.DEFAULT_MAX_ATTEMPTS));
 
   long UNSET_VALUE = Long.MAX_VALUE;
 

@@ -13,6 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
@@ -44,9 +45,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
    * Use {@link #getRetry()} instead.
    *
    * @return configuration for retry.
-   * @deprecated provide your own {@link Retry} implementation or use the
-   *             {@link io.javaoperatorsdk.operator.processing.retry.RetryingGradually} annotation
-   *             instead
+   * @deprecated provide your own {@link Retry} implementation or use the {@link GradualRetry}
+   *             annotation instead
    */
   @Deprecated(forRemoval = true)
   default RetryConfiguration getRetryConfiguration() {
