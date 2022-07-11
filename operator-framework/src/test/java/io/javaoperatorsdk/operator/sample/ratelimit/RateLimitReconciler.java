@@ -7,9 +7,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.rate.LimitingRateOverPeriod;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 
-@LimitingRateOverPeriod(maxReconciliations = 1,
+@RateLimited(maxReconciliations = 1,
     within = RateLimitReconciler.REFRESH_PERIOD,
     unit = TimeUnit.MILLISECONDS)
 @ControllerConfiguration

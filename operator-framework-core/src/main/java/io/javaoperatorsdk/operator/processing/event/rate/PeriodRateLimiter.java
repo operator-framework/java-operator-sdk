@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * A Simple rate limiter that limits the number of permission for a time interval.
  */
 public class PeriodRateLimiter
-    implements RateLimiter, AnnotationConfigurable<LimitingRateOverPeriod> {
+    implements RateLimiter, AnnotationConfigurable<RateLimited> {
 
   /** To turn off rate limiting set limit for period to a non-positive number */
   public static final int NO_LIMIT_PERIOD = -1;
@@ -59,7 +59,7 @@ public class PeriodRateLimiter
   }
 
   @Override
-  public void initFrom(LimitingRateOverPeriod configuration) {
+  public void initFrom(RateLimited configuration) {
     this.refreshPeriod = Duration.of(configuration.within(),
         configuration.unit().toChronoUnit());
     this.limitForPeriod = configuration.maxReconciliations();

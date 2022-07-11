@@ -25,8 +25,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.event.rate.LimitingRateOverPeriod;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
@@ -285,7 +285,7 @@ class AnnotationControllerConfigurationTest {
   }
 
   @TestRetryConfiguration(12)
-  @LimitingRateOverPeriod(maxReconciliations = 7, within = 3)
+  @RateLimited(maxReconciliations = 7, within = 3)
   @ControllerConfiguration(retry = TestRetry.class)
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
 

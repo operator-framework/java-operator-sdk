@@ -26,7 +26,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.rate.LimitingRateOverPeriod;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
@@ -42,7 +42,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 /** Shows how to implement reconciler using the low level api directly. */
-@LimitingRateOverPeriod(maxReconciliations = 2, within = 3)
+@RateLimited(maxReconciliations = 2, within = 3)
 @ControllerConfiguration
 public class WebPageReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
