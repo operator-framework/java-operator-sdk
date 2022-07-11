@@ -106,6 +106,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  /**
+   * @deprecated Use {@link #withRetry(Retry)} instead
+   */
   @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
     this.retry = GenericRetry.fromConfiguration(retry);
@@ -114,12 +117,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   public ControllerConfigurationOverrider<R> withRetry(Retry retry) {
     this.retry = retry;
-    return this;
-  }
-
-  @Deprecated
-  public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
-    this.retry = GenericRetry.fromConfiguration(retry);
     return this;
   }
 
