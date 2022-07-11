@@ -25,7 +25,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
@@ -139,7 +139,7 @@ class AnnotationControllerConfigurationTest {
     assertEquals(GradualRetry.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
     assertEquals(GradualRetry.DEFAULT_MAX_INTERVAL, retry.getMaxInterval());
 
-    final var limiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
+    final var limiter = assertInstanceOf(LinearRateLimiter.class, config.getRateLimiter());
     assertFalse(limiter.isActivated());
   }
 
@@ -151,7 +151,7 @@ class AnnotationControllerConfigurationTest {
     final var testRetry = assertInstanceOf(TestRetry.class, retry);
     assertEquals(12, testRetry.getValue());
 
-    final var rateLimiter = assertInstanceOf(PeriodRateLimiter.class, config.getRateLimiter());
+    final var rateLimiter = assertInstanceOf(LinearRateLimiter.class, config.getRateLimiter());
     assertEquals(7, rateLimiter.getLimitForPeriod());
     assertEquals(Duration.ofSeconds(3), rateLimiter.getRefreshPeriod());
   }

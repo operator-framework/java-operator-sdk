@@ -8,7 +8,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
-  RateLimiter DEFAULT_RATE_LIMITER = PeriodRateLimiter.deactivatedRateLimiter();
+  RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
 
   default String getName() {
     return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());

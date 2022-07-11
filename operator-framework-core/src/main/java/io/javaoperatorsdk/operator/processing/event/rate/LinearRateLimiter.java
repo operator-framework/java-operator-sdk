@@ -10,9 +10,9 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
- * A Simple rate limiter that limits the number of permission for a time interval.
+ * A simple rate limiter that limits the number of permission for a time interval.
  */
-public class PeriodRateLimiter
+public class LinearRateLimiter
     implements RateLimiter, AnnotationConfigurable<RateLimited> {
 
   /** To turn off rate limiting set limit for period to a non-positive number */
@@ -23,13 +23,13 @@ public class PeriodRateLimiter
 
   private final Map<ResourceID, RateState> limitData = new HashMap<>();
 
-  public static PeriodRateLimiter deactivatedRateLimiter() {
-    return new PeriodRateLimiter();
+  public static LinearRateLimiter deactivatedRateLimiter() {
+    return new LinearRateLimiter();
   }
 
-  PeriodRateLimiter() {}
+  LinearRateLimiter() {}
 
-  public PeriodRateLimiter(Duration refreshPeriod, int limitForPeriod) {
+  public LinearRateLimiter(Duration refreshPeriod, int limitForPeriod) {
     this.refreshPeriod = refreshPeriod;
     this.limitForPeriod = limitForPeriod;
   }

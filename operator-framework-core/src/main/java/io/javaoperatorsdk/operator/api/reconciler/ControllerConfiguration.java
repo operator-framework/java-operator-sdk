@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
@@ -106,7 +106,7 @@ public @interface ControllerConfiguration {
 
   /**
    * Optional {@link Retry} implementation for the associated controller to use.
-   * 
+   *
    * @return the class providing the {@link Retry} implementation to use, needs to provide an
    *         accessible no-arg constructor.
    */
@@ -118,5 +118,5 @@ public @interface ControllerConfiguration {
    * @return the class providing the {@link RateLimiter} implementation to use, needs to provide an
    *         accessible no-arg constructor.
    */
-  Class<? extends RateLimiter> rateLimiter() default PeriodRateLimiter.class;
+  Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 }
