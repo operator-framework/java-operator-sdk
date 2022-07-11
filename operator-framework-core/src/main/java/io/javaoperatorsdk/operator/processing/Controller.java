@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,6 +37,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManag
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -97,6 +99,16 @@ public class Controller<P extends HasMetadata>
           }
 
           @Override
+          public ResourceID resourceID() {
+            return context.currentlyReconciledResourceID();
+          }
+
+          @Override
+          public Map<String, Object> metadata() {
+            return context.metadata();
+          }
+
+          @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             if (!managedWorkflow.isEmptyWorkflow()) {
@@ -128,6 +140,16 @@ public class Controller<P extends HasMetadata>
             @Override
             public String successTypeName(DeleteControl deleteControl) {
               return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+            }
+
+            @Override
+            public ResourceID resourceID() {
+              return context.currentlyReconciledResourceID();
+            }
+
+            @Override
+            public Map<String, Object> metadata() {
+              return context.metadata();
             }
 
             @Override

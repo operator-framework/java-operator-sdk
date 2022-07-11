@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -27,9 +28,18 @@ public class MicrometerMetrics implements Metrics {
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var execName = PREFIX + "controllers.execution." + execution.name();
+    final var resourceID = execution.resourceID();
+    final var metadata = execution.metadata();
     final var timer =
         Timer.builder(execName)
-            .tags("controller", name)
+            .tags(
+                "controller", name,
+                "resource.name", resourceID.getName(),
+                "resource.namespace", resourceID.getNamespace().orElse(""),
+                "resource.scope", resourceID.getNamespace().isPresent() ? "namespace" : "cluster",
+                "resource.group", metadata.get(Constants.RESOURCE_GROUP_KEY).toString(),
+                "resource.version", metadata.get(Constants.RESOURCE_VERSION_KEY).toString(),
+                "resource.kind", metadata.get(Constants.RESOURCE_KIND_KEY).toString())
             .publishPercentiles(0.3, 0.5, 0.95)
             .publishPercentileHistogram()
             .register(registry);
@@ -113,9 +123,9 @@ public class MicrometerMetrics implements Metrics {
       tags.addAll(List.of(additionalTags));
     }
     if (metadataNb > 0) {
-      addReservedMetadataToTags(metadata, tags, "group", Metrics.RESOURCE_GROUP_KEY);
-      addReservedMetadataToTags(metadata, tags, "version", Metrics.RESOURCE_VERSION_KEY);
-      addReservedMetadataToTags(metadata, tags, "kind", Metrics.RESOURCE_KIND_KEY);
+      addReservedMetadataToTags(metadata, tags, "group", Constants.RESOURCE_GROUP_KEY);
+      addReservedMetadataToTags(metadata, tags, "version", Constants.RESOURCE_VERSION_KEY);
+      addReservedMetadataToTags(metadata, tags, "kind", Constants.RESOURCE_KIND_KEY);
       metadata.forEach((k, v) -> {
         tags.add(k);
         tags.add(v.toString());

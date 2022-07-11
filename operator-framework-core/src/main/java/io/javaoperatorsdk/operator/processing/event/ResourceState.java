@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -116,14 +115,11 @@ class ResourceState {
     }
   }
 
-  public Map<String, Object> getMetadata() {
+  Map<String, Object> mutableMetadata() {
     return metadata;
   }
 
-  public void addMetadata(HasMetadata resource) {
-    final Class<? extends HasMetadata> resourceClass = resource.getClass();
-    metadata.put(Metrics.RESOURCE_GROUP_KEY, HasMetadata.getGroup(resourceClass));
-    metadata.put(Metrics.RESOURCE_KIND_KEY, resource.getKind());
-    metadata.put(Metrics.RESOURCE_VERSION_KEY, HasMetadata.getVersion(resourceClass));
+  public Map<String, Object> immutableMetadata() {
+    return Collections.unmodifiableMap(metadata);
   }
 }

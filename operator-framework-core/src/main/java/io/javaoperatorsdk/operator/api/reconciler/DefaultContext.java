@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -17,13 +19,16 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
   private final DefaultManagedDependentResourceContext defaultManagedDependentResourceContext;
+  private final Map<String, Object> metadata;
 
-  public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
+  public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource,
+      Map<String, Object> metadata) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
     this.defaultManagedDependentResourceContext = new DefaultManagedDependentResourceContext();
+    this.metadata = metadata;
   }
 
   @Override
@@ -32,7 +37,6 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
@@ -56,6 +60,16 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public ManagedDependentResourceContext managedDependentResourceContext() {
     return defaultManagedDependentResourceContext;
+  }
+
+  @Override
+  public ResourceID currentlyReconciledResourceID() {
+    return ResourceID.fromResource(primaryResource);
+  }
+
+  @Override
+  public Map<String, Object> metadata() {
+    return metadata;
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {

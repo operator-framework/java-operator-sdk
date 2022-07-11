@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -41,7 +42,6 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
   private final RateLimiter<? extends RateLimitState> rateLimiter;
-
   private final ResourceStateManager resourceStateManager = new ResourceStateManager();
 
   EventProcessor(EventSourceManager<R> eventSourceManager) {
@@ -147,11 +147,10 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
         }
         state.setUnderProcessing(true);
         final var latest = maybeLatest.get();
-        state.addMetadata(latest);
-        final var retryInfo = state.getRetry();
-        ExecutionScope<R> executionScope = new ExecutionScope<>(latest, retryInfo);
+        Context.fillMetadataFor(latest, state.mutableMetadata());
+        ExecutionScope<R> executionScope = new ExecutionScope<>(latest, state.getRetry());
         state.unMarkEventReceived();
-        metrics.reconcileCustomResource(state.getId(), retryInfo, state.getMetadata());
+        metrics.reconcileCustomResource(state.getId(), state.getRetry(), state.immutableMetadata());
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ControllerExecution(executionScope));
       } else {
@@ -242,7 +241,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.finishedReconciliation(resourceID, state.getMetadata());
+    metrics.finishedReconciliation(resourceID, state.immutableMetadata());
     if (state.deleteEventPresent()) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
@@ -309,7 +308,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
               "Scheduling timer event for retry with delay:{} for resource: {}",
               delay,
               resourceID);
-          metrics.failedReconciliation(resourceID, exception, state.getMetadata());
+          metrics.failedReconciliation(resourceID, exception, state.immutableMetadata());
           retryEventSource().scheduleOnce(resourceID, delay);
         },
         () -> log.error("Exhausted retries for {}", executionScope));
@@ -337,7 +336,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private void cleanupForDeletedEvent(ResourceID resourceID) {
     log.debug("Cleaning up for delete event for: {}", resourceID);
     final var state = resourceStateManager.remove(resourceID);
-    metrics.cleanupDoneFor(resourceID, state.getMetadata());
+    metrics.cleanupDoneFor(resourceID, state.immutableMetadata());
   }
 
   private boolean isControllerUnderExecution(ResourceState state) {

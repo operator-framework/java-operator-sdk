@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 
 class ExecutionScope<R extends HasMetadata> {
@@ -9,7 +12,7 @@ class ExecutionScope<R extends HasMetadata> {
   private final R resource;
   private final RetryInfo retryInfo;
 
-  public ExecutionScope(R resource, RetryInfo retryInfo) {
+  ExecutionScope(R resource, RetryInfo retryInfo) {
     this.resource = resource;
     this.retryInfo = retryInfo;
   }
@@ -34,5 +37,9 @@ class ExecutionScope<R extends HasMetadata> {
 
   public RetryInfo getRetryInfo() {
     return retryInfo;
+  }
+
+  public Map<String, Object> resourceMetadata() {
+    return Context.metadataFor(resource);
   }
 }

@@ -10,10 +10,6 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public interface Metrics {
   Metrics NOOP = new Metrics() {};
 
-  String RESOURCE_GROUP_KEY = "josdk.resource.group";
-  String RESOURCE_VERSION_KEY = "josdk.resource.version";
-  String RESOURCE_KIND_KEY = "josdk.resource.kind";
-
   default void receivedEvent(Event event) {}
 
   /**
@@ -71,6 +67,10 @@ public interface Metrics {
     String controllerName();
 
     String successTypeName(T result);
+
+    ResourceID resourceID();
+
+    Map<String, Object> metadata();
 
     T execute() throws Exception;
   }
