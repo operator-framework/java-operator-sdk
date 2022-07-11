@@ -9,14 +9,14 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PeriodRateLimiterTest {
+class LinearRateLimiterTest {
 
   public static final Duration REFRESH_PERIOD = Duration.ofMillis(300);
   ResourceID resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
   @Test
   void acquirePermissionForNewResource() {
-    var rl = new PeriodRateLimiter(REFRESH_PERIOD, 2);
+    var rl = new LinearRateLimiter(REFRESH_PERIOD, 2);
     var res = rl.acquirePermission(resourceID);
     assertThat(res).isEmpty();
     res = rl.acquirePermission(resourceID);
@@ -28,7 +28,7 @@ class PeriodRateLimiterTest {
 
   @Test
   void returnsMinimalDurationToAcquirePermission() {
-    var rl = new PeriodRateLimiter(REFRESH_PERIOD, 1);
+    var rl = new LinearRateLimiter(REFRESH_PERIOD, 1);
     var res = rl.acquirePermission(resourceID);
     assertThat(res).isEmpty();
 
@@ -40,7 +40,7 @@ class PeriodRateLimiterTest {
 
   @Test
   void resetsPeriodAfterLimit() throws InterruptedException {
-    var rl = new PeriodRateLimiter(REFRESH_PERIOD, 1);
+    var rl = new LinearRateLimiter(REFRESH_PERIOD, 1);
     var res = rl.acquirePermission(resourceID);
     assertThat(res).isEmpty();
     res = rl.acquirePermission(resourceID);
@@ -55,7 +55,7 @@ class PeriodRateLimiterTest {
 
   @Test
   void rateLimitCanBeTurnedOff() {
-    var rl = new PeriodRateLimiter(REFRESH_PERIOD, PeriodRateLimiter.NO_LIMIT_PERIOD);
+    var rl = new LinearRateLimiter(REFRESH_PERIOD, LinearRateLimiter.NO_LIMIT_PERIOD);
 
     var res = rl.acquirePermission(resourceID);
 
