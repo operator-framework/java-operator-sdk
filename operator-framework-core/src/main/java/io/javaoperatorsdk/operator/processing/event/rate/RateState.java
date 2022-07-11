@@ -2,7 +2,9 @@ package io.javaoperatorsdk.operator.processing.event.rate;
 
 import java.time.LocalDateTime;
 
-class RateState {
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
+
+class RateState implements RateLimitState {
 
   private LocalDateTime lastRefreshTime;
   private int count;

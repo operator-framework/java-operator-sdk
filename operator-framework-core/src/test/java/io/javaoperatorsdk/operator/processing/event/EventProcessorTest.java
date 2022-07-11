@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
@@ -78,7 +79,7 @@ class EventProcessorTest {
     eventProcessorWithRetry.start();
     when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
-    when(rateLimiterMock.acquirePermission(any())).thenReturn(Optional.empty());
+    when(rateLimiterMock.isLimited(any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -351,7 +352,9 @@ class EventProcessorTest {
     var refreshPeriod = Duration.ofMillis(100);
     var event = prepareCREvent();
 
-    when(rateLimiterMock.acquirePermission(event.getRelatedCustomResourceID()))
+    final var rateLimit = new RateLimitState() {};
+    when(rateLimiterMock.initState()).thenReturn(rateLimit);
+    when(rateLimiterMock.isLimited(rateLimit))
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(refreshPeriod));
 
