@@ -108,7 +108,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
       final var resourceID = event.getRelatedCustomResourceID();
       final var state = resourceStateManager.getOrCreate(event.getRelatedCustomResourceID());
       MDCUtils.addResourceIDInfo(resourceID);
-      metrics.receivedEvent(event);
+      metrics.receivedEvent(event, state.immutableMetadata());
       handleEventMarking(event, state);
       if (!this.running) {
         // events are received and marked, but will be processed when started, see start() method.

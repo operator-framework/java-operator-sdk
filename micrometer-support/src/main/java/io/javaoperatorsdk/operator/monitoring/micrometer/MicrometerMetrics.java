@@ -30,16 +30,18 @@ public class MicrometerMetrics implements Metrics {
     final var execName = PREFIX + "controllers.execution." + execution.name();
     final var resourceID = execution.resourceID();
     final var metadata = execution.metadata();
+    final var tags = new ArrayList<String>(metadata.size() + 4);
+    tags.addAll(List.of(
+        "controller", name,
+        "resource.name", resourceID.getName(),
+        "resource.namespace", resourceID.getNamespace().orElse(""),
+        "resource.scope", resourceID.getNamespace().isPresent() ? "namespace" : "cluster"));
+    addReservedMetadataToTags(metadata, tags, "resource.group", Constants.RESOURCE_GROUP_KEY);
+    addReservedMetadataToTags(metadata, tags, "resource.version", Constants.RESOURCE_VERSION_KEY);
+    addReservedMetadataToTags(metadata, tags, "resource.kind", Constants.RESOURCE_KIND_KEY);
     final var timer =
         Timer.builder(execName)
-            .tags(
-                "controller", name,
-                "resource.name", resourceID.getName(),
-                "resource.namespace", resourceID.getNamespace().orElse(""),
-                "resource.scope", resourceID.getNamespace().isPresent() ? "namespace" : "cluster",
-                "resource.group", metadata.get(Constants.RESOURCE_GROUP_KEY).toString(),
-                "resource.version", metadata.get(Constants.RESOURCE_VERSION_KEY).toString(),
-                "resource.kind", metadata.get(Constants.RESOURCE_KIND_KEY).toString())
+            .tags(tags.toArray(new String[0]))
             .publishPercentiles(0.3, 0.5, 0.95)
             .publishPercentileHistogram()
             .register(registry);
@@ -65,9 +67,9 @@ public class MicrometerMetrics implements Metrics {
     }
   }
 
-  public void receivedEvent(Event event) {
+  public void receivedEvent(Event event, Map<String, Object> metadata) {
     incrementCounter(event.getRelatedCustomResourceID(), "events.received",
-        Collections.emptyMap(),
+        metadata,
         "event", event.getClass().getSimpleName());
   }
 

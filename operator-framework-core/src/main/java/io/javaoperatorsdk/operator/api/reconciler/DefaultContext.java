@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +29,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
     this.defaultManagedDependentResourceContext = new DefaultManagedDependentResourceContext();
-    this.metadata = metadata;
+    this.metadata = metadata != null ? metadata : Collections.emptyMap();
   }
 
   @Override
