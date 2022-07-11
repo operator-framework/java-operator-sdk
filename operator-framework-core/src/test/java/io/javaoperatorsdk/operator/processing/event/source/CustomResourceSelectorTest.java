@@ -137,7 +137,7 @@ class CustomResourceSelectorTest {
       super(MyController.class.getCanonicalName(), "mycontroller", null, Constants.NO_VALUE_SET,
           false, null,
           null, null, null, TestCustomResource.class, null, null, null, null,
-          new PeriodRateLimiter(), null,null);
+          new PeriodRateLimiter(), null, null);
     }
   }
 

@@ -31,9 +31,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.rate.PeriodRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -237,7 +237,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     try {
       Set<String> namespaces = new HashSet<>();
       Collections.addAll(namespaces, informer.namespaces());
-      SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper =
+      SecondaryToPrimaryMapper secondaryToPrimaryMapper =
           informer.secondaryToPrimaryMapper().getConstructor().newInstance();
       PrimaryToSecondaryMapper primaryToSecondaryMapper = null;
       // todo unit test
@@ -318,7 +318,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
 
     Object config;
-    final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
+    final var kubeDependent = dependentType.getAnnotation(
+        io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent.class);
 
     var namespaces = getNamespaces();
     var configuredNS = false;

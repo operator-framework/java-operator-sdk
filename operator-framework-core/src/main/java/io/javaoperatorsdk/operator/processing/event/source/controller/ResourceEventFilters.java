@@ -5,7 +5,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 /**
  * Convenience implementations of, and utility methods for, {@link ResourceEventFilter}.
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public final class ResourceEventFilters {
 
   private static final ResourceEventFilter<HasMetadata> PASSTHROUGH =
