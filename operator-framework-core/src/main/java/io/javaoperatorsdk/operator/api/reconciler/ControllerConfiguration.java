@@ -104,7 +104,19 @@ public @interface ControllerConfiguration {
    */
   Dependent[] dependents() default {};
 
+  /**
+   * Optional {@link Retry} implementation for the associated controller to use.
+   * 
+   * @return the class providing the {@link Retry} implementation to use, needs to provide an
+   *         accessible no-arg constructor.
+   */
   Class<? extends Retry> retry() default GenericRetry.class;
 
+  /**
+   * Optional {@link RateLimiter} implementation for the associated controller to use.
+   *
+   * @return the class providing the {@link RateLimiter} implementation to use, needs to provide an
+   *         accessible no-arg constructor.
+   */
   Class<? extends RateLimiter> rateLimiter() default PeriodRateLimiter.class;
 }
