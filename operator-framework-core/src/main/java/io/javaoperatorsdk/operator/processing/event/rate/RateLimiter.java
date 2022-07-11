@@ -3,20 +3,17 @@ package io.javaoperatorsdk.operator.processing.event.rate;
 import java.time.Duration;
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 
-public interface RateLimiter {
+public interface RateLimiter<S extends RateLimitState> {
+  interface RateLimitState {
+  }
 
   /**
-   * @param resourceID id of the resource
    * @return empty if permission acquired or minimal duration until a permission could be acquired
    *         again
    */
-  Optional<Duration> acquirePermission(ResourceID resourceID);
+  Optional<Duration> isLimited(RateLimitState rateLimitState);
 
-  /**
-   * Cleanup state. Called when resource is deleted.
-   */
-  void clear(ResourceID resourceID);
-
+  S initState();
 }
