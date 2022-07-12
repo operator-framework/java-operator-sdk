@@ -27,12 +27,6 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.auto.service</groupId>
-      <artifactId>auto-service</artifactId>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
       <groupId>com.squareup</groupId>
       <artifactId>javapoet</artifactId>
       <scope>compile</scope>
@@ -86,5 +80,30 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <executions>
+          <!-- During compilation we need to disable annotation processors (at least the ControllerConfigurationAnnotationProcessor).
+               However, this is needed to compile the tests so let's disable apt just for the compile phase -->
+          <execution>
+            <id>default-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <compilerArgs>
+                    <arg>-proc:none</arg>
+                </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

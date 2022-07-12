@@ -4,7 +4,6 @@ import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -21,14 +20,12 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
-import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeName;
 
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
-@AutoService(Processor.class)
 public class ControllerConfigurationAnnotationProcessor extends AbstractProcessor {
 
   private static final Logger log =
