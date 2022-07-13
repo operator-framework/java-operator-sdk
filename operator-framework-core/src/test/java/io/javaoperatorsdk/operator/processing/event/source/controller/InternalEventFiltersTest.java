@@ -17,7 +17,7 @@ class InternalEventFiltersTest {
   @Test
   void onUpdateMarkedForDeletion() {
     var res = markForDeletion(TestUtils.testCustomResource());
-    assertThat(InternalEventFilters.onUpdateMarkedForDeletion().test(res, res)).isTrue();
+    assertThat(InternalEventFilters.onUpdateMarkedForDeletion().accept(res, res)).isTrue();
   }
 
   @Test
@@ -26,21 +26,21 @@ class InternalEventFiltersTest {
     var res2 = TestUtils.testCustomResource1();
     res2.getMetadata().setGeneration(2L);
 
-    assertThat(InternalEventFilters.onUpdateGenerationAware(true).test(res2, res)).isTrue();
-    assertThat(InternalEventFilters.onUpdateGenerationAware(true).test(res, res)).isFalse();
-    assertThat(InternalEventFilters.onUpdateGenerationAware(false).test(res, res)).isTrue();
+    assertThat(InternalEventFilters.onUpdateGenerationAware(true).accept(res2, res)).isTrue();
+    assertThat(InternalEventFilters.onUpdateGenerationAware(true).accept(res, res)).isFalse();
+    assertThat(InternalEventFilters.onUpdateGenerationAware(false).accept(res, res)).isTrue();
   }
 
   @Test
   void finalizerCheckedIfConfigured() {
     assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .test(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isTrue();
+        .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isTrue();
 
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
     assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .test(res, res)).isFalse();
+        .accept(res, res)).isFalse();
   }
 
   @Test
@@ -49,12 +49,12 @@ class InternalEventFiltersTest {
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
     assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer")
-        .test(res, TestUtils.testCustomResource1())).isTrue();
+        .accept(res, TestUtils.testCustomResource1())).isTrue();
   }
 
   @Test
   void dontAcceptIfFinalizerNotUsed() {
     assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(false, FINALIZER)
-        .test(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isFalse();
+        .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isFalse();
   }
 }

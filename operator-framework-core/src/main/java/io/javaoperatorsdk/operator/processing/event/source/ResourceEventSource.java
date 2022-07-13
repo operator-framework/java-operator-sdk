@@ -2,11 +2,13 @@ package io.javaoperatorsdk.operator.processing.event.source;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.ResourceOwner;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 public interface ResourceEventSource<R, P extends HasMetadata> extends EventSource,
     ResourceOwner<R, P> {
@@ -25,11 +27,11 @@ public interface ResourceEventSource<R, P extends HasMetadata> extends EventSour
 
   Set<R> getSecondaryResources(P primary);
 
-  void setOnAddFilter(Predicate<R> onAddFilter);
+  void setOnAddFilter(OnAddFilter<R> onAddFilter);
 
-  void setOnUpdateFilter(BiPredicate<R, R> onUpdateFilter);
+  void setOnUpdateFilter(OnUpdateFilter<R> onUpdateFilter);
 
-  void setOnDeleteFilter(BiPredicate<R, Boolean> onDeleteFilter);
+  void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter);
 
-  void setGenericFilter(Predicate<R> genericFilter);
+  void setGenericFilter(GenericFilter<R> genericFilter);
 }

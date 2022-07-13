@@ -123,7 +123,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onAddFilter != null || genericFilter != null) {
       var anyAddAccepted =
           addedResources.values().stream().anyMatch(r -> acceptedByGenericFiler(r) &&
-              onAddFilter.test(r));
+              onAddFilter.accept(r));
       if (anyAddAccepted) {
         return true;
       }
@@ -136,7 +136,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (onDeleteFilter != null || genericFilter != null) {
       var anyDeleteAccepted =
           deletedResource.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.test(r, false));
+              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.accept(r, false));
       if (anyDeleteAccepted) {
         return true;
       }
@@ -157,7 +157,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
               entry -> {
                 var newResource = newResourcesMap.get(entry.getKey());
                 return acceptedByGenericFiler(newResource) &&
-                    onUpdateFilter.test(newResource, entry.getValue());
+                    onUpdateFilter.accept(newResource, entry.getValue());
               });
       if (anyUpdated) {
         return true;
@@ -170,7 +170,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   private boolean acceptedByGenericFiler(R resource) {
-    return genericFilter == null || genericFilter.test(resource);
+    return genericFilter == null || genericFilter.accept(resource);
   }
 
   @Override
@@ -236,6 +236,6 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     // Cannot be sure about the final state in general, mainly for polled resources. This might be
     // fine-tuned for
     // other event sources. (For now just by overriding this method.)
-    return res.stream().anyMatch(r -> onDeleteFilter.test(r, false));
+    return res.stream().anyMatch(r -> onDeleteFilter.accept(r, false));
   }
 }

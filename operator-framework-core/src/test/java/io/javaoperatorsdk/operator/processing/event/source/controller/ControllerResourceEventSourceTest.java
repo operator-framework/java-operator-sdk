@@ -2,8 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +13,9 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -112,11 +113,11 @@ class ControllerResourceEventSourceTest extends
   void filtersOutEventsOnAddAndUpdate() {
     TestCustomResource cr = TestUtils.testCustomResource();
 
-    Predicate<TestCustomResource> onAddPredicate = (res) -> false;
-    BiPredicate<TestCustomResource, TestCustomResource> onUpdatePredicate = (res, res2) -> false;
+    OnAddFilter<TestCustomResource> onAddFilter = (res) -> false;
+    OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
     source =
         new ControllerResourceEventSource<>(
-            new TestController(onAddPredicate, onUpdatePredicate, null));
+            new TestController(onAddFilter, onUpdatePredicate, null));
     setUpSource(source);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
@@ -146,9 +147,9 @@ class ControllerResourceEventSourceTest extends
     private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);
 
-    public TestController(Predicate<TestCustomResource> onAddFilter,
-        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter,
-        Predicate<TestCustomResource> genericFilter) {
+    public TestController(OnAddFilter<TestCustomResource> onAddFilter,
+        OnUpdateFilter<TestCustomResource> onUpdateFilter,
+        GenericFilter<TestCustomResource> genericFilter) {
       super(null, new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
     }
@@ -172,9 +173,9 @@ class ControllerResourceEventSourceTest extends
   private static class TestConfiguration extends
       DefaultControllerConfiguration<TestCustomResource> {
 
-    public TestConfiguration(boolean generationAware, Predicate<TestCustomResource> onAddFilter,
-        BiPredicate<TestCustomResource, TestCustomResource> onUpdateFilter,
-        Predicate<TestCustomResource> genericFilter) {
+    public TestConfiguration(boolean generationAware, OnAddFilter<TestCustomResource> onAddFilter,
+        OnUpdateFilter<TestCustomResource> onUpdateFilter,
+        GenericFilter<TestCustomResource> genericFilter) {
       super(
           null,
           null,

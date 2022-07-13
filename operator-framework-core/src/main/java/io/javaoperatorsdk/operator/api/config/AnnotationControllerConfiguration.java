@@ -10,9 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -32,10 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.*;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -194,8 +189,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @Override
   @SuppressWarnings("unchecked")
-  public Optional<Predicate<P>> onAddFilter() {
-    return (Optional<Predicate<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
+  public Optional<OnAddFilter<P>> onAddFilter() {
+    return (Optional<OnAddFilter<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
         annotation.getClass().getSimpleName());
   }
 
@@ -229,15 +224,15 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   @Override
-  public Optional<BiPredicate<P, P>> onUpdateFilter() {
-    return (Optional<BiPredicate<P, P>>) createFilter(annotation.onUpdateFilter(),
+  public Optional<OnUpdateFilter<P>> onUpdateFilter() {
+    return (Optional<OnUpdateFilter<P>>) createFilter(annotation.onUpdateFilter(),
         FilterType.onUpdate, annotation.getClass().getSimpleName());
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public Optional<Predicate<P>> genericFilter() {
-    return (Optional<Predicate<P>>) createFilter(annotation.genericFilter(),
+  public Optional<GenericFilter<P>> genericFilter() {
+    return (Optional<GenericFilter<P>>) createFilter(annotation.genericFilter(),
         FilterType.generic, annotation.getClass().getSimpleName());
   }
 
@@ -310,10 +305,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     var namespaces = getNamespaces();
     var configuredNS = false;
     String labelSelector = null;
-    Predicate<? extends HasMetadata> onAddFilter = null;
-    BiPredicate<? extends HasMetadata, ? extends HasMetadata> onUpdateFilter = null;
-    BiPredicate<? extends HasMetadata, Boolean> onDeleteFilter = null;
-    Predicate<? extends HasMetadata> genericFilter = null;
+    OnAddFilter<? extends HasMetadata> onAddFilter = null;
+    OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
+    OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
+    GenericFilter<? extends HasMetadata> genericFilter = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {

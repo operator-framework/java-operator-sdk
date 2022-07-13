@@ -308,13 +308,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
 
   private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
-    if (genericFilter != null && !genericFilter.test(newObject)) {
+    if (genericFilter != null && !genericFilter.accept(newObject)) {
       return false;
     }
     if (operation == Operation.ADD) {
-      return onAddFilter == null || onAddFilter.test(newObject);
+      return onAddFilter == null || onAddFilter.accept(newObject);
     } else {
-      return onUpdateFilter == null || onUpdateFilter.test(newObject, oldObject);
+      return onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
     }
   }
 
@@ -323,7 +323,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
-    return (onDeleteFilter == null || onDeleteFilter.test(resource, b)) &&
-        (genericFilter == null || genericFilter.test(resource));
+    return (onDeleteFilter == null || onDeleteFilter.accept(resource, b)) &&
+        (genericFilter == null || genericFilter.accept(resource));
   }
 }

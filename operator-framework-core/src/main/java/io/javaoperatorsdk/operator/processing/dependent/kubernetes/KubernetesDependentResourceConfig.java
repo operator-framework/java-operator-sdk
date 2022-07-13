@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -15,21 +17,21 @@ public class KubernetesDependentResourceConfig<R> {
   private boolean namespacesWereConfigured = false;
 
 
-  private Predicate<R> onAddFilter;
+  private OnAddFilter<R> onAddFilter;
 
-  private BiPredicate<R, R> onUpdateFilter;
+  private OnUpdateFilter<R> onUpdateFilter;
 
-  private BiPredicate<R, Boolean> onDeleteFilter;
+  private OnDeleteFilter<R> onDeleteFilter;
 
-  private Predicate<R> genericFilter;
+  private GenericFilter<R> genericFilter;
 
   public KubernetesDependentResourceConfig() {}
 
   @SuppressWarnings("rawtypes")
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
-      boolean configuredNS, Predicate<R> onAddFilter,
-      BiPredicate<R, R> onUpdateFilter,
-      BiPredicate<R, Boolean> onDeleteFilter, Predicate<R> genericFilter) {
+      boolean configuredNS, OnAddFilter<R> onAddFilter,
+      OnUpdateFilter<R> onUpdateFilter,
+      OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.namespacesWereConfigured = configuredNS;
@@ -67,21 +69,21 @@ public class KubernetesDependentResourceConfig<R> {
   }
 
   @SuppressWarnings("rawtypes")
-  public Predicate onAddFilter() {
+  public OnAddFilter onAddFilter() {
     return onAddFilter;
   }
 
   @SuppressWarnings("rawtypes")
-  public BiPredicate onUpdateFilter() {
+  public OnUpdateFilter onUpdateFilter() {
     return onUpdateFilter;
   }
 
   @SuppressWarnings("rawtypes")
-  public BiPredicate onDeleteFilter() {
+  public OnDeleteFilter onDeleteFilter() {
     return onDeleteFilter;
   }
 
-  public Predicate<R> genericFilter() {
+  public GenericFilter<R> genericFilter() {
     return genericFilter;
   }
 }

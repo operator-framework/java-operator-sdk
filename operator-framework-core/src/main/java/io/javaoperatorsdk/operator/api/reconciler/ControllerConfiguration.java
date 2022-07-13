@@ -4,17 +4,13 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.*;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -76,15 +72,15 @@ public @interface ControllerConfiguration {
   /**
    * Filter of onAdd events of resources.
    **/
-  Class<? extends Predicate<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
+  Class<? extends OnAddFilter<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
 
   /** Filter of onUpdate events of resources. */
-  Class<? extends BiPredicate<? extends HasMetadata, ? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
+  Class<? extends OnUpdateFilter<? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
 
   /**
    * Filter applied to all operations (add, update, delete). Used to ignore some resources.
    **/
-  Class<? extends Predicate<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
+  Class<? extends GenericFilter<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request

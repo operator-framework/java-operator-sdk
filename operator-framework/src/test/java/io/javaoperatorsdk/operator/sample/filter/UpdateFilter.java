@@ -1,13 +1,13 @@
 package io.javaoperatorsdk.operator.sample.filter;
 
-import java.util.function.BiPredicate;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.sample.filter.FilterTestReconciler.CUSTOM_RESOURCE_FILTER_VALUE;
 
 public class UpdateFilter
-    implements BiPredicate<FilterTestCustomResource, FilterTestCustomResource> {
+    implements OnUpdateFilter<FilterTestCustomResource> {
   @Override
-  public boolean test(FilterTestCustomResource resource, FilterTestCustomResource oldResource) {
+  public boolean accept(FilterTestCustomResource resource, FilterTestCustomResource oldResource) {
     return !resource.getSpec().getValue().equals(CUSTOM_RESOURCE_FILTER_VALUE);
   }
 }
