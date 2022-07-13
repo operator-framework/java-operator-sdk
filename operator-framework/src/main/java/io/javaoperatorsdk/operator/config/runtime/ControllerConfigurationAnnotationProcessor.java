@@ -6,7 +6,6 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -25,7 +24,6 @@ import com.squareup.javapoet.TypeName;
 import static io.javaoperatorsdk.operator.config.runtime.RuntimeControllerMetadata.RECONCILERS_RESOURCE_PATH;
 
 @SupportedAnnotationTypes("io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class ControllerConfigurationAnnotationProcessor extends AbstractProcessor {
 
   private static final Logger log =
@@ -33,6 +31,11 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
 
   private AccumulativeMappingWriter controllersResourceWriter;
   private TypeParameterResolver typeParameterResolver;
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latest();
+  }
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
