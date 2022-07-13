@@ -7,9 +7,11 @@ permalink: /docs/glossary
 
 # Glossary
 
-- **Primary Resource** - the resource that represents the desired state that the controller is working
-  to achieve. While this is often a Custom Resource, it can be also be a Kubernetes native resource (Deployment,
-  ConfigMape,...).
+- **Primary Resource** - the resource that represents the desired state that the controller is
+  working
+  to achieve. While this is often a Custom Resource, it can be also be a Kubernetes native
+  resource (Deployment,
+  ConfigMap,...).
 - **Secondary Resource** - any resource that the controller needs to manage the reach the desired state
   represented by the primary resource. These resources can be created, updated, deleted or simply
   read depending on the use case. For example, the `Deployment` controller manages `ReplicatSet`

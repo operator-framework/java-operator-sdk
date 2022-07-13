@@ -7,79 +7,101 @@ permalink: /docs/patterns-best-practices
 
 # Patterns and Best Practices
 
-This document describes patterns and best practices, to build and run operators, and how to implement them in terms of
-Java Operator SDK.
+This document describes patterns and best practices, to build and run operators, and how to
+implement them in terms of the Java Operator SDK (JOSDK).
 
-See also best practices in [Operator SDK](https://sdk.operatorframework.io/docs/best-practices/best-practices/).
+See also best practices
+in [Operator SDK](https://sdk.operatorframework.io/docs/best-practices/best-practices/).
 
 ## Implementing a Reconciler
 
 ### Reconcile All The Resources All the Time
 
-The reconciliation can be triggered by events from multiple sources. It could be tempting to check the events and
-reconcile just the related resource or subset of resources that the controller manages. However, this is **considered as
-an anti-pattern** in operators. If triggered, all resources should be reconciled. Usually this means only comparing the
-target state with the current state in the cache for most of the resource. The reason behind this is events not reliable
-In general, this means events can be lost. In addition to that the operator can crash and while down will miss events.
+The reconciliation can be triggered by events from multiple sources. It could be tempting to check
+the events and reconcile just the related resource or subset of resources that the controller
+manages. However, this is **considered an anti-pattern** for operators because the distributed
+nature of Kubernetes makes it difficult to ensure that all events are always received. If, for
+some reason, your operator doesn't receive some events, if you do not reconcile the whole state,
+you might be operating with improper assumptions about the state of the cluster. This is why it
+is important to always reconcile all the resources, no matter how tempting it might be to only
+consider a subset. Luckily, JOSDK tries to make it as easy and efficient as possible by
+providing smart caches to avoid unduly accessing the Kubernetes API server and by making sure
+your reconciler is only triggered when needed.
 
-In addition to that such approach might even complicate implementation logic in the `Reconciler`, since parallel
-execution of the reconciler is not allowed for the same custom resource, there can be multiple events received for the
-same resource or dependent resource during an ongoing execution, ordering those events could be also challenging.
-
-Since there is a consensus regarding this in the industry, from v2 the events are not even accessible for
-the `Reconciler`.
+Since there is a consensus regarding this topic in the industry, JOSDK does not provide
+event access from `Reconciler` implementations anymore starting with version 2 of the framework.
 
 ### EventSources and Caching
 
-As mentioned above during a reconciliation best practice is to reconcile all the dependent resources managed by the
-controller. This means that we want to compare a target state with the actual state of the cluster. Reading the actual
-state of a resource from the Kubernetes API Server directly all the time would mean a significant load. Therefore, it's
-a common practice to instead create a watch for the dependent resources and cache their latest state. This is done
-following the Informer pattern. In Java Operator SDK, informer is wrapped into an EventSource, to integrate it with the
-eventing system of the framework, resulting in `InformerEventSource`.
+As mentioned above during a reconciliation best practice is to reconcile all the dependent resources
+managed by the controller. This means that we want to compare a desired state with the actual
+state of the cluster. Reading the actual state of a resource from the Kubernetes API Server
+directly all the time would mean a significant load. Therefore, it's a common practice to
+instead create a watch for the dependent resources and cache their latest state. This is done
+following the Informer pattern. In Java Operator SDK, informers are wrapped into an `EventSource`,
+to integrate it with the eventing system of the framework. This is implemented by the
+`InformerEventSource` class.
 
-A new event that triggers the reconciliation is propagated when the actual resource is already in cache. So in
-reconciler what should be just done is to compare the target calculated state of a dependent resource of the actual
-state from the cache of the event source. If it is changed or not in the cache it needs to be created, respectively
-updated.
+A new event that triggers the reconciliation is only propagated to the `Reconciler` when the actual
+resource is already in cache. `Reconciler` implementations therefore only need to compare the
+desired state with the observed one provided by the cached resource. If the resource cannot be
+found in the cache, it therefore needs to be created. If the actual state doesn't match the
+desired state, the resource needs to be updated.
 
 ### Idempotency
 
-Since all the resources are reconciled during an execution and an execution can be triggered quite often, also retries
-of a reconciliation can happen naturally in operators, the implementation of a `Reconciler`
-needs to be idempotent. Luckily, since operators are usually managing already declarative resources, this is trivial to
-do in most cases.
+Since all resources should be reconciled when your `Reconciler` is triggered and reconciliations
+can be triggered multiple times for any given resource, especially when retry policies are in
+place, it is especially important that `Reconciler` implementations be idempotent, meaning that
+the same observed state should result in exactly the same outcome. This also means that
+operators should generally operate in stateless fashion. Luckily, since operators are usually
+managing declarative resources, ensuring idempotency is usually not difficult.
 
 ### Sync or Async Way of Resource Handling
 
-In an implementation of reconciliation there can be a point when reconciler needs to wait a non-insignificant amount of
-time while a resource gets up and running. For example, reconciler would do some additional step only if a Pod is ready
-to receive requests. This problem can be approached in two ways synchronously or asynchronously.
+Depending on your use case, it's possible that your reconciliation logic needs to wait a
+non-insignificant amount of time while the operator waits for resources to reach their desired
+state. For example, you `Reconciler` might need to wait for a `Pod` to get ready before
+performing additional actions. This problem can be approached either synchronously or
+asynchronously.
 
-The async way is just return from the reconciler, if there are informers properly in place for the target resource,
-reconciliation will be triggered on change. During the reconciliation the pod can be read from the cache of the informer
-and a check on it's state can be conducted again. The benefit of this approach is that it will free up the thread, so it
-can be used to reconcile other resources.
+The asynchronous way is to just exit the reconciliation logic as soon as the `Reconciler`
+determines that it cannot complete its full logic at this point in time. This frees resources to
+process other primary resource events. However, this requires that adequate event sources are
+put in place to monitor state changes of all the resources the operator waits for. When this is
+done properly, any state change will trigger the `Reconciler` again and it will get the
+opportunity to finish its processing
 
-The sync way would be to periodically poll the cache of the informer for the pod's state, until the target state is
-reached. This would block the thread until the state is reached, which in some cases could take quite long.
+The synchronous way would be to periodically poll the resources' state until they reach their
+desired state. If this is done in the context of the `reconcile` method of your `Reconciler`
+implementation, this would block the current thread for possibly a long time. It's therefore
+usually recommended to use the asynchronous processing fashion.
 
-## Why to Have Automated Retries?
+## Why have Automatic Retries?
 
-Automatic retries are in place by default, it can be fine-tuned, but in general it's not advised to turn of automatic
-retries. One of the reasons is that issues like network error naturally happen and are usually solved by a retry.
-Another typical situation is for example when a dependent resource or the custom resource is updated, during the update
-usually there is optimistic version control in place. So if someone updated the resource during reconciliation, maybe
-using `kubectl` or another process, the update would fail on a conflict. A retry solves this problem simply by executing
-the reconciliation again.
+Automatic retries are in place by default and can be configured to your needs. It is also
+possible to completely deactivate the feature, though we advise against it. The main reason
+configure automatic retries for your `Reconciler` is due to the fact that errors occur quite
+often due to the distributed nature of Kubernetes: transient network errors can be easily dealt
+with by automatic retries. Similarly, resources can be modified by different actors at the same
+time so it's not unheard of to get conflicts when working with Kubernetes resources. Such
+conflicts can usually be quite naturally resolved by reconciling the resource again. If it's
+done automatically, the whole process can be completely transparent.
 
 ## Managing State
 
-When managing only kubernetes resources an explicit state is not necessary about the resources. The state can be
-read/watched, also filtered using labels. Or just following some naming convention. However, when managing external
-resources, there can be a situation for example when the created resource can only be addressed by an ID generated when
-the resource was created. This ID needs to be stored, so on next reconciliation it could be used to addressing the
-resource. One place where it could go is the status sub-resource. On the other hand by definition status should be just
-the result of a reconciliation. Therefore, it's advised in general, to put such state into a separate resource usually a
-Kubernetes Secret or ConfigMap or a dedicated CustomResource, where the structure can be also validated.
+Thanks to the declarative nature of Kubernetes resources, operators that deal only with
+Kubernetes resources can operator in a stateless fashion, i.e. they do not need to maintain
+information about the state of these resources, as it should be possible to completely rebuild
+the resource state from its representation (that's what declarative means, after all).
+However, this usually doesn't hold true anymore when dealing with external resources and it
+might be necessary for the operator to keep track of this external state so that it is available
+when another reconciliation occurs. While such state could be put in the primary resource's
+status sub-resource, this could become quickly difficult to manage if a lot of state needs to be
+tracked. It also goes against the best practice that a resource's status should represent the
+actual resource state, when its spec represents the desired state. Putting state that doesn't
+striclty represent the resource's actual state is therefore discouraged. Instead, it's
+advised to put such state into a separate resource meant for this purpose such as a
+Kubernetes Secret or ConfigMap or even a dedicated Custom Resource, which structure can be more
+easily validated.
 
