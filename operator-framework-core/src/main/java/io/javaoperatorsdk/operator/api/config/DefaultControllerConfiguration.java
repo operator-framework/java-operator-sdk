@@ -5,14 +5,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @SuppressWarnings("rawtypes")
@@ -44,9 +45,9 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
       Duration reconciliationMaxInterval,
-      Predicate<R> onAddFilter,
-      BiPredicate<R, R> onUpdateFilter,
-      Predicate<R> genericFilter,
+      OnAddFilter<R> onAddFilter,
+      OnUpdateFilter<R> onUpdateFilter,
+      GenericFilter<R> genericFilter,
       RateLimiter rateLimiter,
       List<DependentResourceSpec> dependents) {
     super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);

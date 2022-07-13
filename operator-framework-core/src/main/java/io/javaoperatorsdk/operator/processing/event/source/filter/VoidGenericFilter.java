@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.filter;
 
-import java.util.function.Predicate;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class VoidGenericFilter implements Predicate<HasMetadata> {
+public class VoidGenericFilter implements GenericFilter<HasMetadata> {
   @Override
-  public boolean test(HasMetadata hasMetadata) {
+  public boolean accept(HasMetadata hasMetadata) {
     return true;
   }
 }

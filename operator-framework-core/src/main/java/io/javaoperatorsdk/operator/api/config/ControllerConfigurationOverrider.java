@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -15,6 +14,9 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -33,9 +35,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
   private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
-  private Predicate<R> onAddFilter;
-  private BiPredicate<R, R> onUpdateFilter;
-  private Predicate<R> genericFilter;
+  private OnAddFilter<R> onAddFilter;
+  private OnUpdateFilter<R> onUpdateFilter;
+  private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -142,17 +144,17 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withOnAddFilter(Predicate<R> onAddFilter) {
+  public ControllerConfigurationOverrider<R> withOnAddFilter(OnAddFilter<R> onAddFilter) {
     this.onAddFilter = onAddFilter;
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withOnUpdateFilter(BiPredicate<R, R> onUpdateFilter) {
+  public ControllerConfigurationOverrider<R> withOnUpdateFilter(OnUpdateFilter<R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withGenericFilter(Predicate<R> genericFilter) {
+  public ControllerConfigurationOverrider<R> withGenericFilter(GenericFilter<R> genericFilter) {
     this.genericFilter = genericFilter;
     return this;
   }

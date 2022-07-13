@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,8 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
@@ -38,8 +39,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
-    BiPredicate<T, T> internalOnUpdateFilter =
-        (BiPredicate<T, T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
+    OnUpdateFilter<T> internalOnUpdateFilter =
+        (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
             controller.getConfiguration().getFinalizerName())
             .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
@@ -85,14 +86,14 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   private boolean isAcceptedByFilters(ResourceAction action, T resource, T oldResource) {
     // delete event is filtered for generic filter only.
-    if (genericFilter != null && !genericFilter.test(resource)) {
+    if (genericFilter != null && !genericFilter.accept(resource)) {
       return false;
     }
     switch (action) {
       case ADDED:
-        return onAddFilter == null || onAddFilter.test(resource);
+        return onAddFilter == null || onAddFilter.accept(resource);
       case UPDATED:
-        return onUpdateFilter.test(resource, oldResource);
+        return onUpdateFilter.accept(resource, oldResource);
     }
     return true;
   }
@@ -126,7 +127,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void setOnDeleteFilter(BiPredicate<T, Boolean> onDeleteFilter) {
+  public void setOnDeleteFilter(OnDeleteFilter<T> onDeleteFilter) {
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
   }

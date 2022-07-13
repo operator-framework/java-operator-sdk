@@ -1,18 +1,17 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.function.BiPredicate;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 public class InternalEventFilters {
 
   private InternalEventFilters() {}
 
-  static <T extends HasMetadata> BiPredicate<T, T> onUpdateMarkedForDeletion() {
+  static <T extends HasMetadata> OnUpdateFilter<T> onUpdateMarkedForDeletion() {
     return (newResource, oldResource) -> newResource.isMarkedForDeletion();
   }
 
-  static <T extends HasMetadata> BiPredicate<T, T> onUpdateGenerationAware(
+  static <T extends HasMetadata> OnUpdateFilter<T> onUpdateGenerationAware(
       boolean generationAware) {
 
     return (newResource, oldResource) -> {
@@ -24,7 +23,7 @@ public class InternalEventFilters {
     };
   }
 
-  static <T extends HasMetadata> BiPredicate<T, T> onUpdateFinalizerNeededAndApplied(
+  static <T extends HasMetadata> OnUpdateFilter<T> onUpdateFinalizerNeededAndApplied(
       boolean useFinalizer,
       String finalizerName) {
     return (newResource, oldResource) -> {
