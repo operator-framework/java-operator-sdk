@@ -59,23 +59,6 @@ public class Controller<P extends HasMetadata>
 
   private final GroupVersionKind associatedGVK;
 
-  public static class GroupVersionKind {
-    public final String group;
-    public final String version;
-    public final String kind;
-
-    private GroupVersionKind(String group, String version, String kind) {
-      this.group = group;
-      this.version = version;
-      this.kind = kind;
-    }
-
-    public static GroupVersionKind gvkFor(Class<? extends HasMetadata> resourceClass) {
-      return new GroupVersionKind(HasMetadata.getGroup(resourceClass),
-          HasMetadata.getVersion(resourceClass), HasMetadata.getKind(resourceClass));
-    }
-  }
-
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
@@ -92,10 +75,6 @@ public class Controller<P extends HasMetadata>
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
     eventSourceManager = new EventSourceManager<>(this);
-  }
-
-  public GroupVersionKind getAssociatedGroupVersionKind() {
-    return associatedGVK;
   }
 
   @Override
@@ -375,5 +354,9 @@ public class Controller<P extends HasMetadata>
 
   public boolean useFinalizer() {
     return isCleaner || managedWorkflow.isCleaner();
+  }
+
+  public GroupVersionKind getAssociatedGroupVersionKind() {
+    return associatedGVK;
   }
 }

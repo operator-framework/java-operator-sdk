@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,7 +37,7 @@ public class MicrometerMetrics implements Metrics {
         "resource.name", resourceID.getName(),
         "resource.namespace", resourceID.getNamespace().orElse(""),
         "resource.scope", resourceID.getNamespace().isPresent() ? "namespace" : "cluster"));
-    final var gvk = (Controller.GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+    final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
     if (gvk != null) {
       tags.addAll(List.of(
           "resource.group", gvk.group,
@@ -130,7 +130,7 @@ public class MicrometerMetrics implements Metrics {
       tags.addAll(List.of(additionalTags));
     }
     if (metadataNb > 0) {
-      final var gvk = (Controller.GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+      final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
       tags.addAll(List.of(
           "group", gvk.group,
           "version", gvk.version,
