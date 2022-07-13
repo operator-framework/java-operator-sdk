@@ -32,7 +32,6 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))

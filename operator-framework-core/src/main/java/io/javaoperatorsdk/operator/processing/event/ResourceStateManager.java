@@ -16,8 +16,8 @@ class ResourceStateManager {
     return states.computeIfAbsent(resourceID, ResourceState::new);
   }
 
-  public void remove(ResourceID resourceID) {
-    states.remove(resourceID);
+  public ResourceState remove(ResourceID resourceID) {
+    return states.remove(resourceID);
   }
 
   public boolean contains(ResourceID resourceID) {

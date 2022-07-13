@@ -9,7 +9,7 @@ class ExecutionScope<R extends HasMetadata> {
   private final R resource;
   private final RetryInfo retryInfo;
 
-  public ExecutionScope(R resource, RetryInfo retryInfo) {
+  ExecutionScope(R resource, RetryInfo retryInfo) {
     this.resource = resource;
     this.retryInfo = retryInfo;
   }

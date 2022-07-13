@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,6 +37,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManag
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -55,9 +57,14 @@ public class Controller<P extends HasMetadata>
   private final Metrics metrics;
   private final ManagedWorkflow<P> managedWorkflow;
 
+  private final GroupVersionKind associatedGVK;
+
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
+    // needs to be initialized early since it's used in other downstream classes
+    associatedGVK = GroupVersionKind.gvkFor(configuration.getResourceClass());
+
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
@@ -97,6 +104,16 @@ public class Controller<P extends HasMetadata>
           }
 
           @Override
+          public ResourceID resourceID() {
+            return ResourceID.fromResource(resource);
+          }
+
+          @Override
+          public Map<String, Object> metadata() {
+            return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
+          }
+
+          @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             if (!managedWorkflow.isEmptyWorkflow()) {
@@ -128,6 +145,16 @@ public class Controller<P extends HasMetadata>
             @Override
             public String successTypeName(DeleteControl deleteControl) {
               return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+            }
+
+            @Override
+            public ResourceID resourceID() {
+              return ResourceID.fromResource(resource);
+            }
+
+            @Override
+            public Map<String, Object> metadata() {
+              return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
             }
 
             @Override
@@ -327,5 +354,9 @@ public class Controller<P extends HasMetadata>
 
   public boolean useFinalizer() {
     return isCleaner || managedWorkflow.isCleaner();
+  }
+
+  public GroupVersionKind getAssociatedGroupVersionKind() {
+    return associatedGVK;
   }
 }
