@@ -19,9 +19,7 @@ public final class Constants {
   public static final long NO_RECONCILIATION_MAX_INTERVAL = -1L;
   public static final String SAME_AS_CONTROLLER = "JOSDK_SAME_AS_CONTROLLER";
 
-  public static final String RESOURCE_GROUP_KEY = "josdk.resource.group";
-  public static final String RESOURCE_VERSION_KEY = "josdk.resource.version";
-  public static final String RESOURCE_KIND_KEY = "josdk.resource.kind";
+  public static final String RESOURCE_GVK_KEY = "josdk.resource.gvk";
 
   private Constants() {}
 }

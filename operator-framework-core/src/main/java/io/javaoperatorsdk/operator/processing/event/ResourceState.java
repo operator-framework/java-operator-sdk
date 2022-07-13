@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -36,8 +32,6 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
-
-  private final Map<String, Object> metadata = new HashMap<>();
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -113,13 +107,5 @@ class ResourceState {
       case DELETE_EVENT_PRESENT:
         throw new IllegalStateException("Cannot unmark delete event.");
     }
-  }
-
-  Map<String, Object> mutableMetadata() {
-    return metadata;
-  }
-
-  public Map<String, Object> immutableMetadata() {
-    return Collections.unmodifiableMap(metadata);
   }
 }

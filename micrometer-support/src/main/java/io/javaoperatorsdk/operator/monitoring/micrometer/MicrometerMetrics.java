@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,9 +37,13 @@ public class MicrometerMetrics implements Metrics {
         "resource.name", resourceID.getName(),
         "resource.namespace", resourceID.getNamespace().orElse(""),
         "resource.scope", resourceID.getNamespace().isPresent() ? "namespace" : "cluster"));
-    addReservedMetadataToTags(metadata, tags, "resource.group", Constants.RESOURCE_GROUP_KEY);
-    addReservedMetadataToTags(metadata, tags, "resource.version", Constants.RESOURCE_VERSION_KEY);
-    addReservedMetadataToTags(metadata, tags, "resource.kind", Constants.RESOURCE_KIND_KEY);
+    final var gvk = (Controller.GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+    if (gvk != null) {
+      tags.addAll(List.of(
+          "resource.group", gvk.group,
+          "resource.version", gvk.version,
+          "resource.kind", gvk.kind));
+    }
     final var timer =
         Timer.builder(execName)
             .tags(tags.toArray(new String[0]))
@@ -125,23 +130,12 @@ public class MicrometerMetrics implements Metrics {
       tags.addAll(List.of(additionalTags));
     }
     if (metadataNb > 0) {
-      addReservedMetadataToTags(metadata, tags, "group", Constants.RESOURCE_GROUP_KEY);
-      addReservedMetadataToTags(metadata, tags, "version", Constants.RESOURCE_VERSION_KEY);
-      addReservedMetadataToTags(metadata, tags, "kind", Constants.RESOURCE_KIND_KEY);
-      metadata.forEach((k, v) -> {
-        tags.add(k);
-        tags.add(v.toString());
-      });
+      final var gvk = (Controller.GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+      tags.addAll(List.of(
+          "group", gvk.group,
+          "version", gvk.version,
+          "kind", gvk.kind));
     }
     registry.counter(PREFIX + counterName, tags.toArray(new String[0])).increment();
-  }
-
-  private static void addReservedMetadataToTags(Map<String, Object> metadata, List<String> tags,
-      String tagKey, String reservedKey) {
-    if (metadata.containsKey(reservedKey)) {
-      tags.add(tagKey);
-      tags.add(metadata.get(reservedKey).toString());
-      metadata.remove(reservedKey);
-    }
   }
 }

@@ -57,9 +57,31 @@ public class Controller<P extends HasMetadata>
   private final Metrics metrics;
   private final ManagedWorkflow<P> managedWorkflow;
 
+  private final GroupVersionKind associatedGVK;
+
+  public static class GroupVersionKind {
+    public final String group;
+    public final String version;
+    public final String kind;
+
+    private GroupVersionKind(String group, String version, String kind) {
+      this.group = group;
+      this.version = version;
+      this.kind = kind;
+    }
+
+    public static GroupVersionKind gvkFor(Class<? extends HasMetadata> resourceClass) {
+      return new GroupVersionKind(HasMetadata.getGroup(resourceClass),
+          HasMetadata.getVersion(resourceClass), HasMetadata.getKind(resourceClass));
+    }
+  }
+
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
+    // needs to be initialized early since it's used in other downstream classes
+    associatedGVK = GroupVersionKind.gvkFor(configuration.getResourceClass());
+
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
@@ -70,6 +92,10 @@ public class Controller<P extends HasMetadata>
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
     eventSourceManager = new EventSourceManager<>(this);
+  }
+
+  public GroupVersionKind getAssociatedGroupVersionKind() {
+    return associatedGVK;
   }
 
   @Override
@@ -100,12 +126,12 @@ public class Controller<P extends HasMetadata>
 
           @Override
           public ResourceID resourceID() {
-            return context.currentlyReconciledResourceID();
+            return ResourceID.fromResource(resource);
           }
 
           @Override
           public Map<String, Object> metadata() {
-            return context.metadata();
+            return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
           }
 
           @Override
@@ -144,12 +170,12 @@ public class Controller<P extends HasMetadata>
 
             @Override
             public ResourceID resourceID() {
-              return context.currentlyReconciledResourceID();
+              return ResourceID.fromResource(resource);
             }
 
             @Override
             public Map<String, Object> metadata() {
-              return context.metadata();
+              return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
             }
 
             @Override

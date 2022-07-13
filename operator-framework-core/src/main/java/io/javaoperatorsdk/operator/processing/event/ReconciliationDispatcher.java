@@ -79,8 +79,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
 
     Context<R> context =
-        new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource,
-            executionScope.resourceMetadata());
+        new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource);
     if (markedForDeletion) {
       return handleCleanup(resourceForExecution, context);
     } else {

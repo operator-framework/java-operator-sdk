@@ -26,7 +26,6 @@ public interface Metrics {
    *
    * @param event the event
    * @param metadata metadata associated with the resource being processed
-   * @see io.javaoperatorsdk.operator.api.reconciler.Context#metadataFor(HasMetadata)
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
@@ -55,7 +54,6 @@ public interface Metrics {
    * @param resourceID the {@link ResourceID} associated with the resource
    * @param retryInfo the current retry state information for the reconciliation request
    * @param metadata metadata associated with the resource being processed
-   * @see io.javaoperatorsdk.operator.api.reconciler.Context#metadataFor(HasMetadata)
    */
   default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo,
       Map<String, Object> metadata) {}
@@ -78,7 +76,6 @@ public interface Metrics {
    * @param resourceID the {@link ResourceID} associated with the resource being processed
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
-   * @see io.javaoperatorsdk.operator.api.reconciler.Context#metadataFor(HasMetadata)
    */
   default void failedReconciliation(ResourceID resourceID, Exception exception,
       Map<String, Object> metadata) {}
@@ -98,7 +95,6 @@ public interface Metrics {
    *
    * @param resourceID the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
-   * @see io.javaoperatorsdk.operator.api.reconciler.Context#metadataFor(HasMetadata)
    */
   default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
 
@@ -119,7 +115,6 @@ public interface Metrics {
    *
    * @param resourceID the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
-   * @see io.javaoperatorsdk.operator.api.reconciler.Context#metadataFor(HasMetadata)
    */
   default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
 
