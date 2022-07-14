@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @Ignore
+@SuppressWarnings("rawtypes")
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
@@ -74,20 +75,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .build();
 
     configureWith(new InformerEventSource<>(ic, context));
-  }
-
-  @SuppressWarnings("unchecked")
-  private SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
-    if (this instanceof SecondaryToPrimaryMapper) {
-      return (SecondaryToPrimaryMapper<R>) this;
-    } else if (garbageCollected) {
-      return Mappers.fromOwnerReference();
-    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
-      return Mappers.fromDefaultAnnotations();
-    } else {
-      throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
-          "this resource with the primary resource. DependentResource: " + getClass().getName());
-    }
   }
 
   @SuppressWarnings("unchecked")
