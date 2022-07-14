@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.fabric8.kubernetes.api.builder.Builder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -114,6 +115,10 @@ public class ReconcilerUtils {
 
   public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
     try (InputStream is = loader.getResourceAsStream(yaml)) {
+      if (Builder.class.isAssignableFrom(clazz)) {
+        return BuilderUtils.newBuilder(clazz,
+            Serialization.unmarshal(is, BuilderUtils.builderTargetType(clazz)));
+      }
       return Serialization.unmarshal(is, clazz);
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot find yaml on classpath: " + yaml);

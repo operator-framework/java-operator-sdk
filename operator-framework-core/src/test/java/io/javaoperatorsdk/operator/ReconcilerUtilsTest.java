@@ -2,12 +2,14 @@ package io.javaoperatorsdk.operator;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -86,6 +88,16 @@ class ReconcilerUtilsTest {
     ReconcilerUtils.setSpec(deployment, newSpec);
 
     assertThat(deployment.getSpec().getReplicas()).isEqualTo(1);
+  }
+
+  @Test
+  void loadYamlAsBuilder() {
+    DeploymentBuilder builder =
+        ReconcilerUtils.loadYaml(DeploymentBuilder.class, getClass(), "deployment.yaml");
+    builder.accept(ContainerBuilder.class, c -> c.withImage("my-image"));
+
+    Deployment deployment = builder.editMetadata().withName("my-deployment").and().build();
+    assertThat(deployment.getMetadata().getName()).isEqualTo("my-deployment");
   }
 
   private Deployment createTestDeployment() {
