@@ -8,14 +8,23 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
+import static io.javaoperatorsdk.operator.sample.Utils.handleError;
+import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.
@@ -32,16 +41,15 @@ public class WebPageDependentsWorkflowReconciler
   private KubernetesDependentResource<Service, WebPage> serviceDR;
   private KubernetesDependentResource<Ingress, WebPage> ingressDR;
 
-  private Workflow<WebPage> workflow;
+  private final Workflow<WebPage> workflow;
 
   public WebPageDependentsWorkflowReconciler(KubernetesClient kubernetesClient) {
     initDependentResources(kubernetesClient);
     workflow = new WorkflowBuilder<WebPage>()
-        .addDependentResource(configMapDR).build()
-        .addDependentResource(deploymentDR).build()
-        .addDependentResource(serviceDR).build()
+        .addDependentResource(configMapDR)
+        .addDependentResource(deploymentDR)
+        .addDependentResource(serviceDR)
         .addDependentResource(ingressDR).withReconcilePrecondition(new ExposedIngressCondition())
-        .build()
         .build();
   }
 
@@ -71,6 +79,7 @@ public class WebPageDependentsWorkflowReconciler
     return handleError(resource, e);
   }
 
+  @SuppressWarnings("rawtypes")
   private void initDependentResources(KubernetesClient client) {
     this.configMapDR = new ConfigMapDependentResource();
     this.deploymentDR = new DeploymentDependentResource();
