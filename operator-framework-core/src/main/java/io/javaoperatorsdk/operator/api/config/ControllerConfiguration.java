@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -18,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
+  @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
 
   default String getName() {
@@ -53,6 +55,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return RetryConfiguration.DEFAULT;
   }
 
+  @SuppressWarnings("rawtypes")
   default RateLimiter getRateLimiter() {
     return DEFAULT_RATE_LIMITER;
   }
@@ -77,8 +80,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return Collections.emptyList();
   }
 
-  default Optional<Duration> reconciliationMaxInterval() {
-    return Optional.of(Duration.ofHours(10L));
+  default Optional<Duration> maxReconciliationInterval() {
+    return Optional.of(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
   }
 
   @SuppressWarnings("unused")

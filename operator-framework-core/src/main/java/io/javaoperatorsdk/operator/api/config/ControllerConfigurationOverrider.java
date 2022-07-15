@@ -47,7 +47,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     retry = original.getRetry();
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
-    reconciliationMaxInterval = original.reconciliationMaxInterval().orElse(null);
+    reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
     // make the original specs modifiable
     final var dependentResources = original.getDependentResources();
     namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());

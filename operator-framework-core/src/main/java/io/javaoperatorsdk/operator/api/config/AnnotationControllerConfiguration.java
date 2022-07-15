@@ -30,7 +30,14 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.filter.*;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -135,18 +142,12 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public Optional<Duration> reconciliationMaxInterval() {
-    if (annotation.reconciliationMaxInterval() != null) {
-      if (annotation.reconciliationMaxInterval().interval() <= 0) {
-        return Optional.empty();
-      }
-      return Optional.of(
-          Duration.of(
-              annotation.reconciliationMaxInterval().interval(),
-              annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
-    } else {
-      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
+  public Optional<Duration> maxReconciliationInterval() {
+    final var newConfig = annotation.maxReconciliationInterval();
+    if (newConfig != null && newConfig.interval() > 0) {
+      return Optional.of(Duration.of(newConfig.interval(), newConfig.timeUnit().toChronoUnit()));
     }
+    return Optional.empty();
   }
 
   @Override

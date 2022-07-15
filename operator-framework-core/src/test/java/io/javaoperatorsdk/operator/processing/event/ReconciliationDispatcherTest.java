@@ -111,7 +111,7 @@ class ReconciliationDispatcherTest {
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn(resourceClass);
     when(configuration.getRetry()).thenReturn(new GenericRetry());
-    when(configuration.reconciliationMaxInterval())
+    when(configuration.maxReconciliationInterval())
         .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
 
     Controller<R> controller = new Controller<>(reconciler, configuration,
@@ -618,7 +618,7 @@ class ReconciliationDispatcherTest {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(reconciliationDispatcher.configuration().reconciliationMaxInterval())
+    when(reconciliationDispatcher.configuration().maxReconciliationInterval())
         .thenReturn(Optional.empty());
 
     PostExecutionControl control =

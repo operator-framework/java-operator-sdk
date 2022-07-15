@@ -7,6 +7,11 @@ permalink: /docs/v3-1-migration
 
 # Migrating from v3 to v3.1
 
+## ReconciliationMaxInterval Annotation has been renamed to MaxReconciliationInterval
+
+Associated methods on both the `ControllerConfiguration` class and annotation have also been
+renamed accordingly.
+
 ## Workflows Impact on Managed Dependent Resources Behavior
 
 Version 3.1 comes with a workflow engine that replaces the previous behavior of managed dependent

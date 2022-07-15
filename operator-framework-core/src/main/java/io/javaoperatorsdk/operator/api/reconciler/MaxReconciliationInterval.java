@@ -8,7 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface ReconciliationMaxInterval {
+public @interface MaxReconciliationInterval {
+
   long DEFAULT_INTERVAL = 10;
 
   /**
@@ -23,7 +24,7 @@ public @interface ReconciliationMaxInterval {
    * This is a fail-safe feature, in the sense that if informers are in place and the reconciler
    * implementation is correct, this feature can be turned off.
    * <p>
-   * Use NO_RECONCILIATION_MAX_INTERVAL in {@link Constants} to turn off this feature.
+   * Use {@link Constants#NO_MAX_RECONCILIATION_INTERVAL} to turn off this feature.
    *
    * @return max delay between reconciliations
    **/

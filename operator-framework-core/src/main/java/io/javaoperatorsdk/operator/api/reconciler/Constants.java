@@ -16,7 +16,8 @@ public final class Constants {
   public static final String NO_VALUE_SET = "";
   public static final String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";
   public static final String WATCH_ALL_NAMESPACES = "JOSDK_ALL_NAMESPACES";
-  public static final long NO_RECONCILIATION_MAX_INTERVAL = -1L;
+
+  public static final long NO_MAX_RECONCILIATION_INTERVAL = -1L;
   public static final String SAME_AS_CONTROLLER = "JOSDK_SAME_AS_CONTROLLER";
 
   public static final String RESOURCE_GVK_KEY = "josdk.resource.gvk";

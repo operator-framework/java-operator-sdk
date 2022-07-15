@@ -108,7 +108,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Optional<Duration> reconciliationMaxInterval() {
+  public Optional<Duration> maxReconciliationInterval() {
     return Optional.ofNullable(reconciliationMaxInterval);
   }
 

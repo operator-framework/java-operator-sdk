@@ -270,7 +270,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       PostExecutionControl<R> postExecutionControl,
       BaseControl<?> baseControl) {
     baseControl.getScheduleDelay().ifPresentOrElse(postExecutionControl::withReSchedule,
-        () -> controller.getConfiguration().reconciliationMaxInterval()
+        () -> controller.getConfiguration().maxReconciliationInterval()
             .ifPresent(m -> postExecutionControl.withReSchedule(m.toMillis())));
   }
 
