@@ -193,7 +193,15 @@ demonstrated using examples:
    might define is `true`.
 3. If a DR's reconcile pre-condition is not met, this DR is deleted. All of the DRs that depend
    on the dependent resource being considered are also recursively deleted. This implies that
-   DRs are deleted in reverse order compared the one in which they are reconciled.
+   DRs are deleted in reverse order compared the one in which they are reconciled. The reason
+   for this behavior is (Will make a more detailed blog post about the design decision, much deeper
+   than the reference documentation)
+   The reasoning behind this behavior is as follows: a DR with a reconcile pre-condition is only
+   reconciled if the condition holds `true`. This means that if the condition is `false` and the
+   resource didn't exist already, then the associated resource would not be created. To ensure
+   idempotency (i.e. with the same input state, we should have the same output state), from this
+   follows that if the condition doesn't hold `true` anymore, the associated resource needs to
+   be deleted because the resource shouldn't exist/have been created.
 4. For a DR to be deleted by a workflow, it needs to implement the `Deleter` interface, in which
    case its `delete` method will be called, unless it also implements the `GarbageCollected`
    interface. If a DR doesn't implement `Deleter` it is considered as automatically deleted. If
