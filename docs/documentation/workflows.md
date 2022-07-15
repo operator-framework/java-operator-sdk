@@ -7,49 +7,59 @@ permalink: /docs/workflows
 
 ## Overview
 
-Kubernetes (k8s) does not have notion of a resource "depends on" on another k8s resource,
-in terms of in what order a set of resources should be reconciled. However, Kubernetes operators are used to manage also
-external (non k8s) resources. Typically, when an operator manages a service, after the service is first deployed 
-some additional API calls are required to configure it. In this case the configuration step depends
-on the service and related resources, in other words the configuration needs to be reconciled after the service is 
-up and running. 
+Kubernetes (k8s) does not have the notion of a resource "depending on" on another k8s resource,
+at least not in terms of the order in which these resources should be reconciled. Kubernetes
+operators typically need to reconcile resources in order because these resources' state often
+depends on the state of other resources or cannot be processed until these other resources reach
+a given state or some condition holds true for them. Dealing with such scenarios are therefore
+rather common for operators and the purpose of the workflow feature of the Java Operator SDK
+(JOSDK) is to simplify supporting such cases in a declarative way. Workflows build on top of the
+[dependent resources](https://javaoperatorsdk.io/docs/dependent-resources) feature.
+While dependent resources focus on how a given secondary resource should be reconciled,
+workflows focus on orchestrating how these dependent resources should be reconciled.
 
-The intention behind workflows is to make it easy to describe more complex, almost arbitrary scenarios in a declarative
-way. While [dependent resources](https://javaoperatorsdk.io/docs/dependent-resources) describes a logic how a single
-resources should be reconciled, workflows describes the process how a set of target resources should be reconciled.
+Workflows describe how as a set of
+[dependent resources](https://javaoperatorsdk.io/docs/dependent-resources) (DR) depend on one
+another, along with the conditions that need to hold true at certain stages of the
+reconciliation process.
 
-Workflows are defined as a set of [dependent resources](https://javaoperatorsdk.io/docs/dependent-resources) (DR) 
-and dependencies between them, along with some conditions that mainly helps define optional resources and 
-pre- and post-conditions to describe expected states of a resource at a certain point in the workflow.    
+## Elements of Workflow
 
-## Elements of Workflow 
-
-- **Dependent resource** (DR) - are the resources which are managed in reconcile logic.
-- **Depends-on relation** - if a DR `B` depends on another DR `A`, means that `B` will be reconciled after `A`.
-- **Reconcile precondition** - is a condition that needs to be fulfilled before the DR is reconciled. This allows also
-  to define optional resources, that for example only created if a flag in a custom resource `.spec` has some 
-  specific value.
-- **Ready postcondition** - checks if a resource could be considered "ready", typically if pods of a deployment are up
-  and running.
-- **Delete postcondition** - during the cleanup phase it can be used to check if the resources is successfully deleted,
-   so the next resource on which the target resources depends can be deleted as next step.  
+- **Dependent resource** (DR) - are the resources being managed in a given reconciliation logic.
+- **Depends-on relation** - a `B` DR depends on another `A` DR if `B` needs to be reconciled
+  after `A`.
+- **Reconcile precondition** - is a condition on a given DR that needs to be become true before the
+  DR is reconciled. This also allows to define optional resources that would, for example, only be
+  created if a flag in a custom resource `.spec` has some specific value.
+- **Ready postcondition** - is a condition on a given DR to prevent the workflow from
+  proceeding until the condition checking whether the DR is ready holds true
+- **Delete postcondition** - is a condition on a given DR to check if the reconciliation of
+  dependents can proceed after the DR is supposed to have been deleted
 
 ## Defining Workflows
 
-Similarly to dependent resources, there are two ways to define workflows, in managed and standalone manner.
+Similarly to dependent resources, there are two ways to define workflows, in managed and standalone
+manner.
 
 ### Managed
 
-Annotations can be used to declaratively define a workflow for the reconciler. In this case the workflow is executed
-before the `reconcile` method is called. The result of the reconciliation is accessed through the `context` object.
+Annotations can be used to declaratively define a workflow for a `Reconciler`. Similarly to how
+things are done for dependent resources, managed workflows execute before the `reconcile` method
+is called. The result of the reconciliation can be accessed via the `Context` object that is
+passed to the `reconcile` method.
 
-Following sample shows a hypothetical sample to showcase all the elements, where there are two resources a Deployment and 
-a ConfigMap, where the ConfigMap depends on the deployment. Deployment has a ready condition so, the config map is only 
-reconciled after the Deployment and only if it is ready (see ready-postcondition). The ConfigMap has attached reconcile 
-precondition, therefore it is only reconciled if that condition holds. In addition to that has a delete-postCondition, 
-thus only considered to be deleted if that condition holds.
+The following sample shows a hypothetical use case to showcase all the elements: the primary
+`TestCustomResource` resource handled by our `Reconciler` defines two dependent resources, a
+`Deployment` and a `ConfigMap`. The `ConfigMap` depends on the `Deployment` so will be
+reconciled after it. Moreover, the `Deployment` dependent resource defines a ready
+post-condition, meaning that the `ConfigMap` will not be reconciled until the condition defined
+by the `Deployment` becomes `true`. Additionally, the `ConfigMap` dependent also defines a
+reconcile pre-condition, so it also won't be reconciled until that condition becomes `true`. The
+`ConfigMap` also defines a delete post-condition, which means that the workflow implementation
+will only consider the `ConfigMap` deleted until that post-condition becomes `true`.
 
 ```java
+
 @ControllerConfiguration(dependents = {
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
         readyPostcondition = DeploymentReadyCondition.class),
@@ -60,14 +70,14 @@ thus only considered to be deleted if that condition holds.
 })
 public class SampleWorkflowReconciler implements Reconciler<TestCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {
-    
-  public static final String DEPLOYMENT_NAME = "deployment";  
-    
+
+  public static final String DEPLOYMENT_NAME = "deployment";
+
   @Override
   public UpdateControl<WorkflowAllFeatureCustomResource> reconcile(
       WorkflowAllFeatureCustomResource resource,
-      Context<WorkflowAllFeatureCustomResource> context) {    
-      
+      Context<WorkflowAllFeatureCustomResource> context) {
+
     resource.getStatus()
         .setReady(
             context.managedDependentResourceContext()  // accessing workflow reconciliation results
@@ -80,19 +90,22 @@ public class SampleWorkflowReconciler implements Reconciler<TestCustomResource>,
   public DeleteControl cleanup(WorkflowAllFeatureCustomResource resource,
       Context<WorkflowAllFeatureCustomResource> context) {
     // emitted code
-      
+
     return DeleteControl.defaultDelete();
-  }   
+  }
 }
 
 ```
 
-### Standalone 
+### Standalone
 
-In this mode workflow is built manually using [standalone dependent resources](https://javaoperatorsdk.io/docs/dependent-resources#standalone-dependent-resources)
-. The workflow is created using a builder, that is explicitly called in the reconciler (from web page sample): 
+In this mode workflow is built manually
+using [standalone dependent resources](https://javaoperatorsdk.io/docs/dependent-resources#standalone-dependent-resources)
+. The workflow is created using a builder, that is explicitly called in the reconciler (from web
+page sample):
 
 ```java
+
 @ControllerConfiguration(
     labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 public class WebPageDependentsWorkflowReconciler
@@ -112,11 +125,11 @@ public class WebPageDependentsWorkflowReconciler
   public WebPageDependentsWorkflowReconciler(KubernetesClient kubernetesClient) {
     initDependentResources(kubernetesClient);
     workflow = new WorkflowBuilder<WebPage>()
-            .addDependent(configMapDR).build()
-            .addDependent(deploymentDR).build()
-            .addDependent(serviceDR).build()
-            .addDependent(ingressDR).withReconcileCondition(new IngressCondition()).build()
-            .build();
+        .addDependentResource(configMapDR)
+        .addDependentResource(deploymentDR)
+        .addDependentResource(serviceDR)
+        .addDependentResource(ingressDR).withReconcilePrecondition(new ExposedIngressCondition())
+        .build();
   }
 
   @Override
@@ -136,52 +149,70 @@ public class WebPageDependentsWorkflowReconciler
     webPage.setStatus(createStatus(result));
     return UpdateControl.patchStatus(webPage);
   }
-  // emitted code
+  // omitted code
 }
 
 ```
 
-## Workflow Execution 
+## Workflow Execution
 
-This section describes how a workflow is executed in details, how is the ordering determined and how condition and
-errors affect the behavior. The workflow execution as also its API denotes, can be divided to into two parts, 
-the reconciliation and cleanup. [Cleanup](https://javaoperatorsdk.io/docs/features#the-reconcile-and-cleanup) is 
+This section describes how a workflow is executed in details, how the ordering is determined and
+how conditions and errors affect the behavior. The workflow execution is divided in two parts
+similarly to how `Reconciler` and `Cleaner` behavior are separated.
+[Cleanup](https://javaoperatorsdk.io/docs/features#the-reconcile-and-cleanup) is
 executed if a resource is marked for deletion.
-
 
 ## Common Principles
 
-- **As complete as possible execution** - when a workflow is reconciled, it tries to reconcile as many resources as  
-  possible. Thus is an error happens or a ready condition is not met for a resources, all the other independent resources  
-  will be still reconciled. This is the opposite to fail-fast approach. The assumption is that eventually in this way the 
-  overall desired state is achieved faster than with a fail fast approach.
-- **Concurrent reconciliation of independent resources** - the resources which are not dependent on each are processed 
-  concurrently. The level of concurrency is customizable, could be set to one if required. By default, workflows use  
-  the executor service from [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/6f2a252952d3a91f6b0c3c38e5e6cc28f7c0f7b3/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L120-L120) 
+- **As complete as possible execution** - when a workflow is reconciled, it tries to reconcile as
+  many resources as possible. Thus if an error happens or a ready condition is not met for a
+  resources, all the other independent resources will be still reconciled. This is the opposite
+  to a fail-fast approach. The assumption is that eventually in this way the overall state will
+  converge faster towards the desired state than would be the case if the reconciliation was
+  aborted as soon as an error occurred.
+- **Concurrent reconciliation of independent resources** - the resources which doesn't depend on
+  others are processed concurrently. The level of concurrency is customizable, could be set to
+  one if required. By default, workflows use the executor service
+  from [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/6f2a252952d3a91f6b0c3c38e5e6cc28f7c0f7b3/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L120-L120)
 
 ## Reconciliation
 
-This section describes how a workflow is executed, first the rules are defined, then are explained on samples:
+This section describes how a workflow is executed, considering first which rules apply, then
+demonstrated using examples:
 
 ### Rules
 
-  1. DR is reconciled if it does not depend on another DR, or ALL the DRs it depends on are ready. In case it
-     has a reconcile-precondition that condition must be met too. (So here ready means that it is successfully
-     reconciled - without any error - and if it has a ready condition that condition is met).
-  2. If a reconcile-precondition of a DR is not met, it is deleted. If there are dependent resources which depends on it   
-     are deleted too as first - this applies recursively. That means that DRs are always deleted in revers order compared    
-     how are reconciled.
-  3. Delete is called on a dependent resource if as described in point 2. it (possibly transitively) depends on a DR which 
-     did not meet it's reconcile condition, and has no DRs depends on it, or if the DR-s which depends on it are already 
-     successfully deleted (within actual execution). "Delete is called" means, that the dependent resource is checked 
-     if it implements `Deleter` interface, if implements it but do not implement `GarbageCollected` interface, 
-     the `Deleter.delete` method called. If a DR does not implement `Deleter` interface, it is considered as deleted 
-     automatically. Successfully deleted means, that it is deleted and if a delete-postcondition is present it is met. 
-  
+1. A workflow is a Directed Acyclic Graph (DAG) build from the DRs and their associated
+   `depends-on` relations.
+2. Root nodes, i.e. nodes in the graph that do not depend on other nodes are reconciled first,
+   in a parallel manner.
+2. A DR is reconciled if it does not depend on any other DRs, or *ALL* the DRs it depends on are
+   reconciled and ready. If a DR defines a reconcile pre-condition, then this condition must
+   become `true` before the DR is reconciled.
+2. A DR is considered *ready* if it got successfully reconciled and any ready post-condition it
+   might define is `true`.
+3. If a DR's reconcile pre-condition is not met, this DR is deleted. All of the DRs that depend
+   on the dependent resource being considered are also recursively deleted. This implies that
+   DRs are deleted in reverse order compared the one in which they are reconciled. The reason
+   for this behavior is (Will make a more detailed blog post about the design decision, much deeper
+   than the reference documentation)
+   The reasoning behind this behavior is as follows: a DR with a reconcile pre-condition is only
+   reconciled if the condition holds `true`. This means that if the condition is `false` and the
+   resource didn't exist already, then the associated resource would not be created. To ensure
+   idempotency (i.e. with the same input state, we should have the same output state), from this
+   follows that if the condition doesn't hold `true` anymore, the associated resource needs to
+   be deleted because the resource shouldn't exist/have been created.
+4. For a DR to be deleted by a workflow, it needs to implement the `Deleter` interface, in which
+   case its `delete` method will be called, unless it also implements the `GarbageCollected`
+   interface. If a DR doesn't implement `Deleter` it is considered as automatically deleted. If
+   a delete post-condition exists for this DR, it needs to become `true` for the workflow to
+   consider the DR as successfully deleted.
+
 ### Samples
 
-Notation: The arrows depicts reconciliation ordering, or in depends-on relation in reverse direction: 
-`1 --> 2` mean `DR 2` depends-on `DR 1`.   
+Notation: The arrows depicts reconciliation ordering, thus following the reverse direction of the  
+`depends-on` relation:
+`1 --> 2` mean `DR 2` depends-on `DR 1`.
 
 #### Reconcile Sample
 
@@ -195,13 +226,15 @@ stateDiagram-v2
 
 </div>
 
-- At the workflow the reconciliation of the nodes would happen in the following way. DR with index `1` is reconciled.
-  After that DR `2` and `3` is reconciled concurrently, if both finished their reconciliation, node `4` is reconciled too. 
-- In case for example `2` would have a ready condition, that would be evaluated as "not met", `4` would not be reconciled.
-  However `1`,`2` and `3` would be reconciled. 
-- In case `1` would have a ready condition that is not met, neither `2`,`3` or `4` would be reconciled.
-- If there would be an error during the reconciliation of `2`, `4` would not be reconciled, but `3` would be 
-  (also `1` of course).
+- Root nodes (i.e. nodes that don't depend on any others) are reconciled first. In this example,
+  DR `1` is reconciled first since it doesn't depend on others.
+  After that both DR `2` and `3` are reconciled concurrently, then DR `4` once both are
+  reconciled sucessfully.
+- If DR `2` had a ready condition and if it evaluated to as `false`, DR `4` would not be reconciled.
+  However `1`,`2` and `3` would be.
+- If `1` had a `false` ready condition, neither `2`,`3` or `4` would be reconciled.
+- If `2`'s reconciliation resulted in an error, `4` would not be reconciled, but `3`
+  would be (and `1` as well, of course).
 
 #### Sample with Reconcile Precondition
 
@@ -215,25 +248,27 @@ stateDiagram-v2
 
 </div>
 
-- Considering this sample for case `3` has reconcile-precondition, what is not met. In that case DR `1` and `2` would be
-  reconciled. However, DR `3`,`4`,`5` would be deleted in the following way. DR `4` and `5` would be deleted concurrently.
-  DR `3` would be deleted if `4` and `5` is deleted successfully, thus no error happened during deletion and all 
-  delete-postconditions are met. 
-  - If delete-postcondition for `5` would not be met `3` would not be deleted; `4` would be.
-  - Similarly, in there would be an error for `5`, `3` would not be deleted, `4` would be. 
+- If `3` has a reconcile pre-condition that is not met, `1` and `2` would be reconciled. However,
+  DR `3`,`4`,`5` would be deleted: `4` and `5` would be deleted concurrently but `3` would only
+  be deleted if `4` and `5` were deleted successfully (i.e. without error) and all existing
+  delete post-conditions were met.
+- If `5` had a delete post-condition that was `false`, `3` would not be deleted but `4`
+  would still be because they don't depend on one another.
+- Similarly, if `5`'s deletion resulted in an error, `3` would not be deleted but `4` would be.
 
 ## Cleanup
 
-Cleanup works identically as delete for resources in reconciliation in case reconcile-precondition is not met, just for
-the whole workflow.
+Cleanup works identically as delete for resources in reconciliation in case reconcile pre-condition
+is not met, just for the whole workflow.
 
-The rule is relatively simple:
+### Rules
 
-Delete is called on a DR if there is no DR that depends on it, or if the DR-s which depends on it are
-already deleted successfully (withing this execution of workflow). Successfully deleted means, that it is deleted and 
-if a delete-postcondition is present it is met. "Delete is called" means, that the dependent resource is checked if it 
-implements `Deleter` interface, if implements it but do not implement `GarbageCollected` interface, the `Deleter.delete`
-method called. If a DR does not implement `Deleter` interface, it is considered as deleted automatically. 
+1. Delete is called on a DR if there is no DR that depends on it
+2. If a DR has DRs that depend on it, it will only be deleted if all these DRs are successfully
+   deleted without error and any delete post-condition is `true`.
+3. A DR is "manually" deleted (i.e. it's `Deleter.delete` method is called) if it implements the
+   `Deleter` interface but does not implement `GarbageCollected`. If a DR does not implement
+   `Deleter` interface, it is considered as deleted automatically.
 
 ### Sample
 
@@ -247,30 +282,37 @@ stateDiagram-v2
 
 </div>
 
-- The DRs are deleted in the following order: `4` is deleted, after `2` and `3` are deleted concurrently, after both
-  succeeded `1` is deleted.
-- If delete-postcondition would not be met for `2`, node `1` would not be deleted. DR `4` and `3` would be deleted.
-- If `2` would be errored, DR `1` would not be deleted. DR `4` and `3` would be deleted.
-- if `4` would be errored, no other DR would be deleted.
+- The DRs are deleted in the following order: `4` is deleted first, then `2` and `3` are deleted
+  concurrently, and, only after both are successfully deleted,  `1` is deleted.
+- If `2` had a delete post-condition that was `false`, `1` would not be deleted. `4` and `3`
+  would be deleted.
+- If `2` was in error, DR `1` would not be deleted. DR `4` and `3` would be deleted.
+- if `4` was in error, no other DR would be deleted.
 
 ## Error Handling
 
-As mentioned before if an error happens during a reconciliation, the reconciliation of other dependent resources will
-still happen. There might a case that multiple DRs are errored, therefore workflows throws an
-['AggregatedOperatorException'](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/AggregatedOperatorException.java) 
-that will contain all the related exceptions. 
+As mentioned before if an error happens during a reconciliation, the reconciliation of other
+dependent resources will still happen, assuming they don't depend on the one that failed. If
+case multiple DRs fail, the workflow would throw an
+['AggregatedOperatorException'](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/AggregatedOperatorException.java)
+containing all the related exceptions.
 
-The exceptions can be handled by [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/AggregatedOperatorException.java)
+The exceptions can be handled
+by [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/14620657fcacc8254bb96b4293eded84c20ba685/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java)
 
 ## Notes and Caveats
 
-- Delete is almost always called on every resource during the cleanup. However, it might be the case that the resources
-  was already deleted in a previous run, or not even created. This should not be a problem, since dependent resources
-  usually cache the state of the resource, so are already aware that the resource not exists, thus basically doing nothing
-  if delete is called on an already not existing resource.
-- If a resource has owner references, it will be automatically deleted by Kubernetes garbage collector if 
-  the owner resource is marked for deletion. This might not be desirable, to make sure that delete is handled by the
-  workflow don't use garbage collected kubernetes dependent resource, use for example [`CRUDNoGCKubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/CRUDNoGCKubernetesDependentResource.java).
-- After a workflow executed no state is persisted regarding the workflow execution. On every reconciliation
-  all the resources are reconciled again, in other words the whole workflow is evaluated again.
+- Delete is almost always called on every resource during the cleanup. However, it might be the case
+  that the resources were already deleted in a previous run, or not even created. This should
+  not be a problem, since dependent resources usually cache the state of the resource, so are
+  already aware that the resource does not exist and that nothing needs to be done if delete is
+  called.
+- If a resource has owner references, it will be automatically deleted by the Kubernetes garbage
+  collector if the owner resource is marked for deletion. This might not be desirable, to make
+  sure that delete is handled by the workflow don't use garbage collected kubernetes dependent
+  resource, use for
+  example [`CRUDNoGCKubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/86e5121d56ed4ecb3644f2bc8327166f4f7add72/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/CRUDNoGCKubernetesDependentResource.java)
+  .
+- No state is persisted regarding the workflow execution. Every reconciliation causes all the
+  resources to be reconciled again, in other words the whole workflow is again evaluated.
 
