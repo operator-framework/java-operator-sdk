@@ -9,9 +9,11 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean updateStatus;
   private final boolean updateResource;
   private final boolean patch;
+  private final boolean onlyOnChange;
 
   private UpdateControl(
-      P resource, boolean updateStatus, boolean updateResource, boolean patch) {
+          P resource, boolean updateStatus, boolean updateResource, boolean patch, boolean onlyOnChange) {
+    this.onlyOnChange = onlyOnChange;
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -31,7 +33,11 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return initialized update control
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
-    return new UpdateControl<>(customResource, false, true, false);
+    return new UpdateControl<>(customResource, false, true, false, false);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceIfChanged(T customResource) {
+    return new UpdateControl<>(customResource, false, true, false, true);
   }
 
   /**
@@ -50,7 +56,11 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return UpdateControl instance
    */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
-    return new UpdateControl<>(customResource, true, false, true);
+    return new UpdateControl<>(customResource, true, false, true, false);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> patchStatusIfChanged(T customResource) {
+    return new UpdateControl<>(customResource, true, false, true, true);
   }
 
   /**
@@ -66,7 +76,11 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return UpdateControl instance
    */
   public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
-    return new UpdateControl<>(customResource, true, false, false);
+    return new UpdateControl<>(customResource, true, false, false, false);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> updateStatusIfChanged(T customResource) {
+    return new UpdateControl<>(customResource, true, false, false, false);
   }
 
   /**
@@ -79,17 +93,22 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatus(
       T customResource) {
-    return new UpdateControl<>(customResource, true, true, false);
+    return new UpdateControl<>(customResource, true, true, false, false);
+  }
+
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatusIfChanged(
+          T customResource) {
+    return new UpdateControl<>(customResource, true, true, false, true);
   }
 
   public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(
       T customResource) {
-    return new UpdateControl<>(customResource, true, true, true);
+    return new UpdateControl<>(customResource, true, true, true, false);
   }
 
 
   public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
-    return new UpdateControl<>(null, false, false, false);
+    return new UpdateControl<>(null, false, false, false, false);
   }
 
   public P getResource() {
@@ -114,5 +133,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
 
   public boolean isUpdateResourceAndStatus() {
     return updateResource && updateStatus;
+  }
+
+  public boolean isOnlyOnChange() {
+    return onlyOnChange;
   }
 }
