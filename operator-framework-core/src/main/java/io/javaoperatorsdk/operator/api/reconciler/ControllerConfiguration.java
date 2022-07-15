@@ -10,7 +10,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.*;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -89,7 +94,7 @@ public @interface ControllerConfiguration {
    * @return the maximal interval configuration
    */
   ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
-      interval = 10);
+      interval = ReconciliationMaxInterval.DEFAULT_INTERVAL);
 
 
   /**
