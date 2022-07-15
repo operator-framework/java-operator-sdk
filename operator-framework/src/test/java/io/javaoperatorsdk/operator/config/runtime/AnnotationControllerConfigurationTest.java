@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,9 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.ReconciliationMaxInterval;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -129,6 +132,11 @@ class AnnotationControllerConfigurationTest {
             .isPresent());
   }
 
+  @Test
+  void newMaxIntervalShouldTakePrecedence() {
+    var config = new AnnotationControllerConfiguration<>(new MaxIntervalReconciler());
+    assertEquals(50, config.maxReconciliationInterval().map(Duration::getSeconds).orElseThrow());
+  }
 
   @Test
   void checkDefaultRateAndRetryConfigurations() {
@@ -167,6 +175,20 @@ class AnnotationControllerConfigurationTest {
     assertEquals(CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
         genericRetry.getIntervalMultiplier());
     assertEquals(CheckRetryingGraduallyConfiguration.MAX_INTERVAL, genericRetry.getMaxInterval());
+  }
+
+  @ControllerConfiguration(
+      maxReconciliationInterval = @MaxReconciliationInterval(interval = 50,
+          timeUnit = TimeUnit.SECONDS),
+      reconciliationMaxInterval = @ReconciliationMaxInterval(interval = 20,
+          timeUnit = TimeUnit.SECONDS))
+  private static class MaxIntervalReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return null;
+    }
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,

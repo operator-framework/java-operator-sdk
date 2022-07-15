@@ -77,6 +77,15 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return Collections.emptyList();
   }
 
+  default Optional<Duration> maxReconciliationInterval() {
+    return Optional.of(Duration.ofHours(10L));
+  }
+
+  /**
+   *
+   * @deprecated use {@link #maxReconciliationInterval()} instead
+   */
+  @Deprecated(forRemoval = true)
   default Optional<Duration> reconciliationMaxInterval() {
     return Optional.of(Duration.ofHours(10L));
   }

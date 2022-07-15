@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -30,7 +33,14 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.filter.*;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -38,6 +48,9 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 @SuppressWarnings("rawtypes")
 public class AnnotationControllerConfiguration<P extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
+
+  private static final Logger log =
+      LoggerFactory.getLogger(AnnotationControllerConfiguration.class);
 
   protected final Reconciler<P> reconciler;
   private final ControllerConfiguration annotation;
@@ -136,17 +149,32 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @Override
   public Optional<Duration> reconciliationMaxInterval() {
-    if (annotation.reconciliationMaxInterval() != null) {
-      if (annotation.reconciliationMaxInterval().interval() <= 0) {
-        return Optional.empty();
-      }
-      return Optional.of(
-          Duration.of(
-              annotation.reconciliationMaxInterval().interval(),
-              annotation.reconciliationMaxInterval().timeUnit().toChronoUnit()));
-    } else {
-      return io.javaoperatorsdk.operator.api.config.ControllerConfiguration.super.reconciliationMaxInterval();
+    return maxReconciliationInterval();
+  }
+
+  @Override
+  public Optional<Duration> maxReconciliationInterval() {
+    Duration oldStyle = null;
+    final var oldConfig = annotation.reconciliationMaxInterval();
+    if (oldConfig != null && oldConfig.interval() > 0) {
+      oldStyle = Duration.of(oldConfig.interval(), oldConfig.timeUnit().toChronoUnit());
     }
+
+    Duration duration = null;
+    final var newConfig = annotation.maxReconciliationInterval();
+    if (newConfig != null && newConfig.interval() > 0) {
+      duration = Duration.of(newConfig.interval(), newConfig.timeUnit().toChronoUnit());
+    }
+
+    if (duration != null && oldStyle != null) {
+      log.debug(
+          "Both maxReconciliationInterval ({}) and deprecated reconciliationMaxInterval ({}) are used, keeping the non-deprecated value: {}",
+          duration, oldStyle, duration);
+    }
+    if (duration == null && oldStyle != null) {
+      return Optional.of(oldStyle);
+    }
+    return Optional.ofNullable(duration);
   }
 
   @Override

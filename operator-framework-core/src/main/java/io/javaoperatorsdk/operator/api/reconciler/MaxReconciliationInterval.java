@@ -6,14 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @deprecated use {@link MaxReconciliationInterval} instead
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@Deprecated(forRemoval = true)
-public @interface ReconciliationMaxInterval {
-  long DEFAULT_INTERVAL = 10;
+public @interface MaxReconciliationInterval {
 
   /**
    * A max delay between two reconciliations. Having this value larger than zero, will ensure that a
