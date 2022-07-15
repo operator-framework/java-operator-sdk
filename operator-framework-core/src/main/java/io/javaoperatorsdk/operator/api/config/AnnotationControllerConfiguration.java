@@ -148,33 +148,12 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public Optional<Duration> reconciliationMaxInterval() {
-    return maxReconciliationInterval();
-  }
-
-  @Override
   public Optional<Duration> maxReconciliationInterval() {
-    Duration oldStyle = null;
-    final var oldConfig = annotation.reconciliationMaxInterval();
-    if (oldConfig != null && oldConfig.interval() > 0) {
-      oldStyle = Duration.of(oldConfig.interval(), oldConfig.timeUnit().toChronoUnit());
-    }
-
-    Duration duration = null;
     final var newConfig = annotation.maxReconciliationInterval();
     if (newConfig != null && newConfig.interval() > 0) {
-      duration = Duration.of(newConfig.interval(), newConfig.timeUnit().toChronoUnit());
+      return Optional.of(Duration.of(newConfig.interval(), newConfig.timeUnit().toChronoUnit()));
     }
-
-    if (duration != null && oldStyle != null) {
-      log.debug(
-          "Both maxReconciliationInterval ({}) and deprecated reconciliationMaxInterval ({}) are used, keeping the non-deprecated value: {}",
-          duration, oldStyle, duration);
-    }
-    if (duration == null && oldStyle != null) {
-      return Optional.of(oldStyle);
-    }
-    return Optional.ofNullable(duration);
+    return Optional.empty();
   }
 
   @Override

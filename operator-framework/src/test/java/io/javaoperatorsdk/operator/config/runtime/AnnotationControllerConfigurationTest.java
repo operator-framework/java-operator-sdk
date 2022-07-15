@@ -21,7 +21,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.ReconciliationMaxInterval;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -133,7 +132,7 @@ class AnnotationControllerConfigurationTest {
   }
 
   @Test
-  void newMaxIntervalShouldTakePrecedence() {
+  void maxIntervalCanBeConfigured() {
     var config = new AnnotationControllerConfiguration<>(new MaxIntervalReconciler());
     assertEquals(50, config.maxReconciliationInterval().map(Duration::getSeconds).orElseThrow());
   }
@@ -179,8 +178,6 @@ class AnnotationControllerConfigurationTest {
 
   @ControllerConfiguration(
       maxReconciliationInterval = @MaxReconciliationInterval(interval = 50,
-          timeUnit = TimeUnit.SECONDS),
-      reconciliationMaxInterval = @ReconciliationMaxInterval(interval = 20,
           timeUnit = TimeUnit.SECONDS))
   private static class MaxIntervalReconciler implements Reconciler<ConfigMap> {
 

@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
 
+  @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
 
   default String getName() {
@@ -80,15 +81,6 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   }
 
   default Optional<Duration> maxReconciliationInterval() {
-    return Optional.of(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
-  }
-
-  /**
-   *
-   * @deprecated use {@link #maxReconciliationInterval()} instead
-   */
-  @Deprecated(forRemoval = true)
-  default Optional<Duration> reconciliationMaxInterval() {
     return Optional.of(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
   }
 
