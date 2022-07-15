@@ -8,10 +8,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  * {@link io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource}
  * to express that the resource deletion is handled by the controller during "reconcile". So in a
  * workflow during "reconcile" (not during cleanup) when a "reconcilePrecondition" is not met for
- * the resource or a resource on which the actual resource depends on is not ready
- * (readyPostCondition not met) delete is called. During the cleanup however rather than calling
- * explicitly delete Kubernetes garbage collector should clean up the resource (using owner
- * references).
+ * the resource delete is called. During the cleanup however rather than calling explicitly delete
+ * Kubernetes garbage collector should clean up the resource (using owner references).
  * </p>
  * <p>
  * If a dependent resource implement this interface an owner reference is automatically added to the
