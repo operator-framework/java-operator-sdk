@@ -28,7 +28,7 @@ See also the javadoc how does this impacts the behavior adding owner references.
 Note that `GarbageCollected` interface extends `Deleter`, so the dependent resource becomes the deleter automatically by
 implementing this interface.
 
-In addition to that the supporting classes were updated. Instead
+The supporting classes were also updated. Instead
 of [`CRUKubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/d99f65a736e9180e3f6de9a4239f80e47fc653fc/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/CRUKubernetesDependentResource.java)
 there are two:
 
