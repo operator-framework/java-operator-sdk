@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 @Target({ElementType.TYPE})
 public @interface MaxReconciliationInterval {
 
+  long DEFAULT_INTERVAL = 10;
+
   /**
    * A max delay between two reconciliations. Having this value larger than zero, will ensure that a
    * reconciliation is scheduled with a target interval after the last reconciliation. Note that

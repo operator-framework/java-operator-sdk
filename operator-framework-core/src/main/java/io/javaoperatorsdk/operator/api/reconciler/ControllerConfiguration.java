@@ -96,7 +96,7 @@ public @interface ControllerConfiguration {
    */
   @Deprecated(forRemoval = true)
   ReconciliationMaxInterval reconciliationMaxInterval() default @ReconciliationMaxInterval(
-      interval = ReconciliationMaxInterval.DEFAULT_INTERVAL);
+      interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request
@@ -105,7 +105,7 @@ public @interface ControllerConfiguration {
    * @return the maximal reconciliation interval configuration
    */
   MaxReconciliationInterval maxReconciliationInterval() default @MaxReconciliationInterval(
-      interval = 10);
+      interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
 
 
   /**
