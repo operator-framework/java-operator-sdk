@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface ReconciliationMaxInterval {
+  long DEFAULT_INTERVAL = 10;
 
   /**
    * A max delay between two reconciliations. Having this value larger than zero, will ensure that a
