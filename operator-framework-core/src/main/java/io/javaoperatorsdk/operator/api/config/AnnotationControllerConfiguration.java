@@ -13,9 +13,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -48,9 +45,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 @SuppressWarnings("rawtypes")
 public class AnnotationControllerConfiguration<P extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
-
-  private static final Logger log =
-      LoggerFactory.getLogger(AnnotationControllerConfiguration.class);
 
   protected final Reconciler<P> reconciler;
   private final ControllerConfiguration annotation;
