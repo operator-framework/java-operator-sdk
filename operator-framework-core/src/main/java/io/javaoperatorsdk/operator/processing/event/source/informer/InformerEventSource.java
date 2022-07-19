@@ -86,7 +86,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
-    if (primaryToSecondaryMapper == null) {
+    if (primaryToSecondaryMapper != null) {
       primaryToSecondaryIndex =
           new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
     } else {
