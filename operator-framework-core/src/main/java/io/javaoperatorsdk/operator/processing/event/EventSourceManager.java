@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -64,9 +67,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     eventProcessor.start();
   }
 
-  @SuppressWarnings("rawtypes")
-
-
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
@@ -127,7 +127,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
       throw e; // leave untouched
     } catch (Exception e) {
       throw new OperatorException("Couldn't register event source: " + name + " for "
-          + controller.getConfiguration().getName() + " controller`", e);
+          + controller.getConfiguration().getName() + " controller", e);
     }
   }
 
