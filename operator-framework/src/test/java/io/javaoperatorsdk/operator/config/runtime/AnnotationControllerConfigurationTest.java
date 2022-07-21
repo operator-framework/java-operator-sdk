@@ -38,6 +38,7 @@ import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -174,6 +175,12 @@ class AnnotationControllerConfigurationTest {
     assertEquals(CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
         genericRetry.getIntervalMultiplier());
     assertEquals(CheckRetryingGraduallyConfiguration.MAX_INTERVAL, genericRetry.getMaxInterval());
+  }
+
+  @Test
+  void controllerConfigurationOnSuperClassShouldWork() {
+    var config = new AnnotationControllerConfiguration<>(new ControllerConfigurationOnSuperClass());
+    assertNotNull(config.getName());
   }
 
   @ControllerConfiguration(
@@ -332,6 +339,18 @@ class AnnotationControllerConfigurationTest {
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
         throws Exception {
       return UpdateControl.noUpdate();
+    }
+  }
+
+  private static class ControllerConfigurationOnSuperClass extends BaseClass {
+  }
+
+  @ControllerConfiguration
+  private static class BaseClass implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
     }
   }
 }
