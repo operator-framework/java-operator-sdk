@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -21,6 +22,7 @@ public class ConfigurationServiceOverrider {
   private boolean closeClientOnStop;
   private ObjectMapper objectMapper;
   private ExecutorService executorService = null;
+  private LeaderElectionConfiguration leaderElectionConfiguration;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -80,6 +82,11 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public LeaderElectionConfiguration withLeaderElectionConfiguration(
+      LeaderElectionConfiguration leaderElectionConfiguration) {
+    return leaderElectionConfiguration;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner) {
       @Override
@@ -129,6 +136,11 @@ public class ConfigurationServiceOverrider {
       @Override
       public ObjectMapper getObjectMapper() {
         return objectMapper;
+      }
+
+      @Override
+      public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
+        return Optional.ofNullable(leaderElectionConfiguration);
       }
     };
   }

@@ -36,6 +36,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
+import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -44,7 +45,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, Cleaner<P>, LifecycleAware, RegisteredController<P> {
+    implements Reconciler<P>, Cleaner<P>, LifecycleAware,
+    RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
@@ -58,6 +60,8 @@ public class Controller<P extends HasMetadata>
   private final ManagedWorkflow<P> managedWorkflow;
 
   private final GroupVersionKind associatedGVK;
+  private final EventProcessor<P> eventProcessor;
+
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -75,6 +79,8 @@ public class Controller<P extends HasMetadata>
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
     eventSourceManager = new EventSourceManager<>(this);
+    eventProcessor = new EventProcessor<>(eventSourceManager);
+    eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
   }
 
   @Override
@@ -284,6 +290,7 @@ public class Controller<P extends HasMetadata>
 
       initAndRegisterEventSources(context);
       eventSourceManager.start();
+      eventProcessor.start();
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       stop();
@@ -311,7 +318,17 @@ public class Controller<P extends HasMetadata>
         || namespaces.contains(WATCH_CURRENT_NAMESPACE)) {
       throw new OperatorException("Unexpected value in target namespaces: " + namespaces);
     }
+    eventProcessor.stop();
     eventSourceManager.changeNamespaces(namespaces);
+    eventProcessor.start();
+  }
+
+  public void startEventProcessing() {
+    eventProcessor.start();
+  }
+
+  public void stopEventProcessing() {
+    eventProcessor.stop();
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
@@ -350,6 +367,9 @@ public class Controller<P extends HasMetadata>
     if (eventSourceManager != null) {
       eventSourceManager.stop();
     }
+    if (eventProcessor != null) {
+      eventProcessor.stop();
+    }
   }
 
   public boolean useFinalizer() {
@@ -358,5 +378,9 @@ public class Controller<P extends HasMetadata>
 
   public GroupVersionKind getAssociatedGroupVersionKind() {
     return associatedGVK;
+  }
+
+  public EventProcessor<P> getEventProcessor() {
+    return eventProcessor;
   }
 }
