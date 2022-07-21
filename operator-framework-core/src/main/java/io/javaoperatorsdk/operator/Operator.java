@@ -11,13 +11,14 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
+import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
+import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.Lock;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -27,6 +28,7 @@ public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
   private final ControllerManager controllers = new ControllerManager();
+  private LeaderElector leaderElector;
 
   public Operator() {
     this(new DefaultKubernetesClient(), ConfigurationServiceProvider.instance());
@@ -49,8 +51,9 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(client);
+    this.kubernetesClient = client;
     ConfigurationServiceProvider.overrideCurrent(overrider);
+
   }
 
   /**
@@ -81,6 +84,7 @@ public class Operator implements LifecycleAware {
    */
   public void start() {
     try {
+
       controllers.shouldStart();
 
       final var version = ConfigurationServiceProvider.instance().getVersion();
@@ -197,6 +201,28 @@ public class Operator implements LifecycleAware {
 
   public int getRegisteredControllersNumber() {
     return controllers.size();
+  }
+
+  private void initLeaderElector(KubernetesClient client) {
+
+    var leaderElectionConfig =
+        ConfigurationServiceProvider.instance().getLeaderElectionConfiguration();
+    if (leaderElectionConfig.isEmpty()) {
+      return;
+    }
+    var conf = leaderElectionConfig.get();
+
+    // todo discuss openshift client not a NamespacedKubernetesClient?
+    // name of the pod
+    // todo configurable
+    String identity = System.getenv("HOSTNAME");
+
+    Lock lock = new LeaseLock(conf.getLeaseNamespace(), conf.getLeaseName(), identity);
+    // todo check release on cancel
+    leaderElector = new LeaderElectorBuilder<>((NamespacedKubernetesClient) client)
+        .withConfig(new LeaderElectionConfig(lock, conf.getLeaseDuration(), conf.getRenewDeadline(),
+            conf.getRetryPeriod(), null, true, conf.getLeaseName()))
+        .build();
   }
 
 }
