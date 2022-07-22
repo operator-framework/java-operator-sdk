@@ -12,8 +12,8 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 
 /**
- * Not confuse with controller manager form go operators. The high level aggregate is Operator in
- * JOSDK.
+ * Not confuse with controller manager form go operators. The highest level aggregate is
+ * {@link Operator} in JOSDK.
  */
 class ControllerManager implements LifecycleAware {
 

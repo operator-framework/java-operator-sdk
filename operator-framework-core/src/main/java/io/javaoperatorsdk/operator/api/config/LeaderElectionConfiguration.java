@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.Optional;
 
-// todo discuss leader election with lease vs for life, other options:
-// see: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager#Options
 public class LeaderElectionConfiguration {
 
   public static final Duration LEASE_DURATION_DEFAULT_VALUE = Duration.ofSeconds(15);
@@ -15,6 +14,7 @@ public class LeaderElectionConfiguration {
 
   private final String leaseName;
   private final String leaseNamespace;
+  private final String identity;
 
   private final Duration leaseDuration;
   private final Duration renewDeadline;
@@ -26,7 +26,7 @@ public class LeaderElectionConfiguration {
         leaseNamespace,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE);
+        RETRY_PERIOD_DEFAULT_VALUE, null);
   }
 
   public LeaderElectionConfiguration(
@@ -35,11 +35,22 @@ public class LeaderElectionConfiguration {
       Duration leaseDuration,
       Duration renewDeadline,
       Duration retryPeriod) {
+    this(leaseName, leaseNamespace, leaseDuration, renewDeadline, retryPeriod, null);
+  }
+
+  public LeaderElectionConfiguration(
+      String leaseName,
+      String leaseNamespace,
+      Duration leaseDuration,
+      Duration renewDeadline,
+      Duration retryPeriod,
+      String identity) {
     this.leaseName = leaseName;
     this.leaseNamespace = leaseNamespace;
     this.leaseDuration = leaseDuration;
     this.renewDeadline = renewDeadline;
     this.retryPeriod = retryPeriod;
+    this.identity = identity;
   }
 
   public String getLeaseNamespace() {
@@ -60,5 +71,9 @@ public class LeaderElectionConfiguration {
 
   public Duration getRetryPeriod() {
     return retryPeriod;
+  }
+
+  public Optional<String> getIdentity() {
+    return Optional.ofNullable(identity);
   }
 }
