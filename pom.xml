@@ -71,6 +71,7 @@
         <formatter-maven-plugin.version>2.19.0</formatter-maven-plugin.version>
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.7.0</impsort-maven-plugin.version>
+        <okhttp.version>4.10.0</okhttp.version>
     </properties>
 
     <modules>
@@ -167,6 +168,16 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
+                <version>4.10.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>logging-interceptor</artifactId>
+                <version>4.10.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
                 <version>4.10.0</version>
             </dependency>
         </dependencies>
