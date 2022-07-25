@@ -29,9 +29,9 @@ class PrimaryToSecondaryIT {
 
   @Test
   void readsSecondaryInManyToOneCases() throws InterruptedException {
-    operator.create(Cluster.class, cluster());
+    operator.create(cluster());
     Thread.sleep(MIN_DELAY);
-    operator.create(Job.class, job());
+    operator.create(job());
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(
         () -> assertThat(operator.getReconcilerOfType(JobReconciler.class).getNumberOfExecutions())

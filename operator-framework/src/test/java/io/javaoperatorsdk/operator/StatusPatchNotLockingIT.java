@@ -28,10 +28,10 @@ class StatusPatchNotLockingIT {
 
   @Test
   void noOptimisticLockingDoneOnStatusUpdate() throws InterruptedException {
-    var resource = operator.create(StatusPatchLockingCustomResource.class, createResource());
+    var resource = operator.create(createResource());
     Thread.sleep(WAIT_TIME / 2);
     resource.getMetadata().setAnnotations(Map.of("key", "value"));
-    operator.replace(StatusPatchLockingCustomResource.class, resource);
+    operator.replace(resource);
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
       assertThat(
@@ -49,7 +49,7 @@ class StatusPatchNotLockingIT {
   // see https://github.com/fabric8io/kubernetes-client/issues/4158
   @Test
   void valuesAreDeletedIfSetToNull() {
-    var resource = operator.create(StatusPatchLockingCustomResource.class, createResource());
+    var resource = operator.create(createResource());
 
     await().untilAsserted(() -> {
       var actual = operator.get(StatusPatchLockingCustomResource.class,
@@ -59,7 +59,7 @@ class StatusPatchNotLockingIT {
     });
 
     resource.getSpec().setMessageInStatus(false);
-    operator.replace(StatusPatchLockingCustomResource.class, resource);
+    operator.replace(resource);
 
     await().untilAsserted(() -> {
       var actual = operator.get(StatusPatchLockingCustomResource.class,

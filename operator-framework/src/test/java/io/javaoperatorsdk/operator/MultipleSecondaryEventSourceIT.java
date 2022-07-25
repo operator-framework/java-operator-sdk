@@ -26,7 +26,7 @@ class MultipleSecondaryEventSourceIT {
   void receivingPeriodicEvents() {
     MultipleSecondaryEventSourceCustomResource resource = createTestCustomResource();
 
-    operator.create(MultipleSecondaryEventSourceCustomResource.class, resource);
+    operator.create(resource);
 
     var reconciler = operator.getReconcilerOfType(MultipleSecondaryEventSourceReconciler.class);
 
@@ -51,7 +51,7 @@ class MultipleSecondaryEventSourceIT {
         number == 1 ? MultipleSecondaryEventSourceReconciler.getName1(resource)
             : MultipleSecondaryEventSourceReconciler.getName2(resource));
     map1.getData().put("value2", "value2");
-    operator.replace(ConfigMap.class, map1);
+    operator.replace(map1);
   }
 
   public MultipleSecondaryEventSourceCustomResource createTestCustomResource() {

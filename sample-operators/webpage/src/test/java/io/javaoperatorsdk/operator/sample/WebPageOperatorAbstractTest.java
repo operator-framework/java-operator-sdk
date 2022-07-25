@@ -47,7 +47,7 @@ public abstract class WebPageOperatorAbstractTest {
   void testAddingWebPage() {
 
     var webPage = createWebPage(TITLE1);
-    operator().create(WebPage.class, webPage);
+    operator().create(webPage);
 
     await()
         .atMost(Duration.ofSeconds(WAIT_SECONDS))
@@ -64,7 +64,7 @@ public abstract class WebPageOperatorAbstractTest {
     assertThat(httpGetForWebPage(webPage)).contains(TITLE1);
 
     // update part: changing title
-    operator().replace(WebPage.class, createWebPage(TITLE2));
+    operator().replace(createWebPage(TITLE2));
 
     await().atMost(Duration.ofSeconds(WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
@@ -74,7 +74,7 @@ public abstract class WebPageOperatorAbstractTest {
         });
 
     // delete part: deleting webpage
-    operator().delete(WebPage.class, createWebPage(TITLE2));
+    operator().delete(createWebPage(TITLE2));
 
     await().atMost(Duration.ofSeconds(WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)

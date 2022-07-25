@@ -25,7 +25,7 @@ class ObservedGenerationHandlingIT {
     resource.setMetadata(new ObjectMeta());
     resource.getMetadata().setName("observed-gen1");
 
-    var createdResource = operator.create(ObservedGenerationTestCustomResource.class, resource);
+    var createdResource = operator.create(resource);
 
     await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
       var d = operator.get(ObservedGenerationTestCustomResource.class,

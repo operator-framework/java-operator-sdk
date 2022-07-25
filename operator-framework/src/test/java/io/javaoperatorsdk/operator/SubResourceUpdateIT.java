@@ -30,7 +30,7 @@ class SubResourceUpdateIT {
   @Test
   void updatesSubResourceStatus() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
-    operator.create(SubResourceTestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
@@ -45,7 +45,7 @@ class SubResourceUpdateIT {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().setFinalizers(Collections.emptyList());
 
-    operator.create(SubResourceTestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
@@ -60,7 +60,7 @@ class SubResourceUpdateIT {
   void ifNoFinalizerPresentFirstAddsTheFinalizerThenExecutesControllerAgain() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
     resource.getMetadata().getFinalizers().clear();
-    operator.create(SubResourceTestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
@@ -77,7 +77,7 @@ class SubResourceUpdateIT {
   @Test
   void updateCustomResourceAfterSubResourceChange() {
     SubResourceTestCustomResource resource = createTestCustomResource("1");
-    resource = operator.create(SubResourceTestCustomResource.class, resource);
+    resource = operator.create(resource);
 
     // waits for the resource to start processing
     waitXms(EVENT_RECEIVE_WAIT);

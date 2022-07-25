@@ -24,12 +24,12 @@ class CleanerForReconcilerIT {
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
     var testResource = createTestResource();
-    operator.create(CleanerForReconcilerCustomResource.class, testResource);
+    operator.create(testResource);
 
     await().until(() -> !operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME)
         .getMetadata().getFinalizers().isEmpty());
 
-    operator.delete(CleanerForReconcilerCustomResource.class, testResource);
+    operator.delete(testResource);
 
     await().until(
         () -> operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
