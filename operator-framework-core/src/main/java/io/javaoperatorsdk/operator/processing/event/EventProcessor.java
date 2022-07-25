@@ -390,7 +390,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
       final var name = thread.getName();
       try {
         MDCUtils.addResourceInfo(executionScope.getResource());
-        thread.setName("ReconcilerExecutor-" + controllerName+"-"+thread.getId());
+        thread.setName("ReconcilerExecutor-" + controllerName + "-" + thread.getId());
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
