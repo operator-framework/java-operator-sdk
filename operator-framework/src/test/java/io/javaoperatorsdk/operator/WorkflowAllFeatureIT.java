@@ -30,7 +30,7 @@ public class WorkflowAllFeatureIT {
 
   @Test
   void configMapNotReconciledUntilDeploymentReady() {
-    operator.create(WorkflowAllFeatureCustomResource.class, customResource(true));
+    operator.create(customResource(true));
     await().untilAsserted(
         () -> {
           assertThat(operator
@@ -57,7 +57,7 @@ public class WorkflowAllFeatureIT {
 
   @Test
   void configMapNotReconciledIfReconcileConditionNotMet() {
-    var resource = operator.create(WorkflowAllFeatureCustomResource.class, customResource(false));
+    var resource = operator.create(customResource(false));
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
@@ -66,7 +66,7 @@ public class WorkflowAllFeatureIT {
     });
 
     resource.getSpec().setCreateConfigMap(true);
-    operator.replace(WorkflowAllFeatureCustomResource.class, resource);
+    operator.replace(resource);
 
     await().untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
@@ -78,7 +78,7 @@ public class WorkflowAllFeatureIT {
 
   @Test
   void configMapNotDeletedUntilNotMarked() {
-    var resource = operator.create(WorkflowAllFeatureCustomResource.class, customResource(true));
+    var resource = operator.create(customResource(true));
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
       assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME).getStatus())
@@ -88,7 +88,7 @@ public class WorkflowAllFeatureIT {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
     });
 
-    operator.delete(WorkflowAllFeatureCustomResource.class, resource);
+    operator.delete(resource);
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
@@ -109,7 +109,7 @@ public class WorkflowAllFeatureIT {
       cm.getMetadata().setAnnotations(new HashMap<>());
     }
     cm.getMetadata().getAnnotations().put(READY_TO_DELETE_ANNOTATION, "true");
-    operator.replace(ConfigMap.class, cm);
+    operator.replace(cm);
   }
 
   private WorkflowAllFeatureCustomResource customResource(boolean createConfigMap) {

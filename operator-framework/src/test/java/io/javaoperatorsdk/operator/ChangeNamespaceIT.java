@@ -35,8 +35,7 @@ class ChangeNamespaceIT {
   void addNewAndRemoveOldNamespaceTest() {
     try {
       var reconciler = operator.getReconcilerOfType(ChangeNamespaceTestReconciler.class);
-      var defaultNamespaceResource = operator.create(ChangeNamespaceTestCustomResource.class,
-          customResource(TEST_RESOURCE_NAME_1));
+      var defaultNamespaceResource = operator.create(customResource(TEST_RESOURCE_NAME_1));
 
       await().pollDelay(Duration.ofMillis(100)).untilAsserted(() -> assertThat(
           reconciler.numberOfResourceReconciliations(defaultNamespaceResource)).isEqualTo(2));
@@ -63,8 +62,7 @@ class ChangeNamespaceIT {
       // removing a namespace
       registeredController.changeNamespaces(Set.of(ADDITIONAL_TEST_NAMESPACE));
 
-      var newResourceInDefaultNamespace = operator.create(ChangeNamespaceTestCustomResource.class,
-          customResource(TEST_RESOURCE_NAME_3));
+      var newResourceInDefaultNamespace = operator.create(customResource(TEST_RESOURCE_NAME_3));
       await().pollDelay(Duration.ofMillis(200))
           .untilAsserted(() -> assertThat(
               reconciler.numberOfResourceReconciliations(newResourceInDefaultNamespace)).isZero());
@@ -72,7 +70,7 @@ class ChangeNamespaceIT {
 
       ConfigMap firstMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME_1);
       firstMap.setData(Map.of("data", "newdata"));
-      operator.replace(ConfigMap.class, firstMap);
+      operator.replace(firstMap);
 
       await().untilAsserted(() -> assertThat(
           reconciler.numberOfResourceReconciliations(defaultNamespaceResource)).isEqualTo(2));

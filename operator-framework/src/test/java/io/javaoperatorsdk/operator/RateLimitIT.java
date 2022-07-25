@@ -30,12 +30,12 @@ class RateLimitIT {
 
   @Test
   void rateLimitsExecution() {
-    var res = operator.create(RateLimitCustomResource.class, createResource());
+    var res = operator.create(createResource());
     IntStream.rangeClosed(1, 5).forEach(i -> {
       log.debug("replacing resource version: {}", i);
       var resource = createResource();
       resource.getSpec().setNumber(i);
-      operator.replace(RateLimitCustomResource.class, resource);
+      operator.replace(resource);
     });
     await().pollInterval(Duration.ofMillis(100))
         .pollDelay(Duration.ofMillis(REFRESH_PERIOD / 2))

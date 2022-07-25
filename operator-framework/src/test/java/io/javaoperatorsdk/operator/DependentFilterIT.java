@@ -30,7 +30,7 @@ class DependentFilterIT {
   @Test
   void filtersUpdateOnConfigMap() {
     var resource = createResource();
-    operator.create(DependentFilterTestCustomResource.class, resource);
+    operator.create(resource);
 
     await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
       assertThat(operator.getReconcilerOfType(DependentFilterTestReconciler.class)
@@ -39,7 +39,7 @@ class DependentFilterIT {
 
     var configMap = operator.get(ConfigMap.class, RESOURCE_NAME);
     configMap.setData(Map.of(CM_VALUE_KEY, CONFIG_MAP_FILTER_VALUE));
-    operator.replace(ConfigMap.class, configMap);
+    operator.replace(configMap);
 
     await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
       assertThat(operator.getReconcilerOfType(DependentFilterTestReconciler.class)

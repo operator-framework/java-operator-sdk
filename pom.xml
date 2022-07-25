@@ -43,7 +43,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <junit.version>5.8.2</junit.version>
-        <fabric8-client.version>5.12.2</fabric8-client.version>
+        <fabric8-client.version>6.0.0</fabric8-client.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.18.0</log4j.version>
         <mokito.version>4.6.1</mokito.version>
@@ -87,6 +87,13 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client-bom</artifactId>
                 <version>${fabric8-client.version}</version>
@@ -94,13 +101,16 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${junit.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-server-mock</artifactId>
+                <version>${fabric8-client.version}</version>
+                <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>${fabric8-client.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
@@ -116,7 +126,6 @@
                 <artifactId>micrometer-core</artifactId>
                 <version>${micrometer-core.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.squareup</groupId>
                 <artifactId>javapoet</artifactId>

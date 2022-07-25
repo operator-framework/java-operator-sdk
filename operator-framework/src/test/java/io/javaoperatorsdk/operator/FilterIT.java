@@ -27,14 +27,14 @@ class FilterIT {
 
   @Test
   void filtersControllerResourceUpdate() {
-    var res = operator.create(FilterTestCustomResource.class, createResource());
+    var res = operator.create(createResource());
     // One for CR create event other for ConfigMap event
     await().pollDelay(Duration.ofMillis(POLL_DELAY))
         .untilAsserted(() -> assertThat(operator.getReconcilerOfType(FilterTestReconciler.class)
             .getNumberOfExecutions()).isEqualTo(2));
 
     res.getSpec().setValue(FilterTestReconciler.CUSTOM_RESOURCE_FILTER_VALUE);
-    operator.replace(FilterTestCustomResource.class, res);
+    operator.replace(res);
 
     // not more reconciliation with the filtered value
     await().pollDelay(Duration.ofMillis(POLL_DELAY))
@@ -44,14 +44,14 @@ class FilterIT {
 
   @Test
   void filtersSecondaryResourceUpdate() {
-    var res = operator.create(FilterTestCustomResource.class, createResource());
+    var res = operator.create(createResource());
     // One for CR create event other for ConfigMap event
     await().pollDelay(Duration.ofMillis(POLL_DELAY))
         .untilAsserted(() -> assertThat(operator.getReconcilerOfType(FilterTestReconciler.class)
             .getNumberOfExecutions()).isEqualTo(2));
 
     res.getSpec().setValue(CONFIG_MAP_FILTER_VALUE);
-    operator.replace(FilterTestCustomResource.class, res);
+    operator.replace(res);
 
     // the CM event filtered out
     await().pollDelay(Duration.ofMillis(POLL_DELAY))

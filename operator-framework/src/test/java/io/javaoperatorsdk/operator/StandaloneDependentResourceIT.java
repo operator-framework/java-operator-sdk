@@ -33,7 +33,7 @@ public class StandaloneDependentResourceIT {
     customResource.setMetadata(new ObjectMeta());
     customResource.getMetadata().setName(DEPENDENT_TEST_NAME);
 
-    operator.create(StandaloneDependentTestCustomResource.class, customResource);
+    operator.create(customResource);
 
     awaitForDeploymentReadyReplicas(1);
     assertThat(
@@ -48,13 +48,13 @@ public class StandaloneDependentResourceIT {
     customResource.setSpec(new StandaloneDependentTestCustomResourceSpec());
     customResource.setMetadata(new ObjectMeta());
     customResource.getMetadata().setName(DEPENDENT_TEST_NAME);
-    var createdCR = operator.create(StandaloneDependentTestCustomResource.class, customResource);
+    var createdCR = operator.create(customResource);
 
     awaitForDeploymentReadyReplicas(1);
 
     var clonedCr = ConfigurationService.DEFAULT_CLONER.clone(createdCR);
     clonedCr.getSpec().setReplicaCount(2);
-    operator.replace(StandaloneDependentTestCustomResource.class, clonedCr);
+    operator.replace(clonedCr);
 
     awaitForDeploymentReadyReplicas(2);
     assertThat(

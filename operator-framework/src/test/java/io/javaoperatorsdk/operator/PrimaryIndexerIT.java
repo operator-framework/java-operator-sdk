@@ -33,8 +33,8 @@ class PrimaryIndexerIT {
   @Test
   void changesToSecondaryResourcesCorrectlyTriggerReconciler() {
     var reconciler = (AbstractPrimaryIndexerTestReconciler) operator.getFirstReconciler();
-    operator.create(PrimaryIndexerTestCustomResource.class, createTestResource(RESOURCE_NAME1));
-    operator.create(PrimaryIndexerTestCustomResource.class, createTestResource(RESOURCE_NAME2));
+    operator.create(createTestResource(RESOURCE_NAME1));
+    operator.create(createTestResource(RESOURCE_NAME2));
 
     await()
         .pollDelay(Duration.ofMillis(500))
@@ -44,7 +44,7 @@ class PrimaryIndexerIT {
               assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME2).get()).isEqualTo(1);
             });
 
-    operator.create(ConfigMap.class, configMap());
+    operator.create(configMap());
 
     await()
         .pollDelay(Duration.ofMillis(500))
