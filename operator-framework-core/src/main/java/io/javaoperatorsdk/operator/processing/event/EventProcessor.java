@@ -160,7 +160,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
         state.unMarkEventReceived();
         metrics.reconcileCustomResource(state.getId(), state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
-        executor.execute(new ControllerExecution(executionScope));
+        executor.execute(new ReconcilerExecutor(executionScope));
       } else {
         log.debug(
             "Skipping executing controller for resource id: {}. Controller in execution: {}. Latest Resource present: {}",
@@ -376,10 +376,10 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
     }
   }
 
-  private class ControllerExecution implements Runnable {
+  private class ReconcilerExecutor implements Runnable {
     private final ExecutionScope<R> executionScope;
 
-    private ControllerExecution(ExecutionScope<R> executionScope) {
+    private ReconcilerExecutor(ExecutionScope<R> executionScope) {
       this.executionScope = executionScope;
     }
 
@@ -390,13 +390,13 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
       final var name = thread.getName();
       try {
         MDCUtils.addResourceInfo(executionScope.getResource());
-//        thread.setName("EventHandler-" + controllerName);
+        thread.setName("ReconcilerExecutor-" + controllerName+"-"+thread.getId());
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
         // restore original name
-//        thread.setName(name);
+        thread.setName(name);
         MDCUtils.removeResourceInfo();
       }
     }
