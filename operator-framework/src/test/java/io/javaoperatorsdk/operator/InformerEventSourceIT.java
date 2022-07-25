@@ -34,13 +34,13 @@ class InformerEventSourceIT {
   @Test
   void testUsingInformerToWatchChangesOfConfigMap() {
     var customResource = initialCustomResource();
-    customResource = operator.create(InformerEventSourceTestCustomResource.class, customResource);
+    customResource = operator.create(customResource);
     ConfigMap configMap =
-        operator.create(ConfigMap.class, relatedConfigMap(customResource.getMetadata().getName()));
+        operator.create(relatedConfigMap(customResource.getMetadata().getName()));
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
     configMap.getData().put(TARGET_CONFIG_MAP_KEY, UPDATE_STATUS_MESSAGE);
-    operator.replace(ConfigMap.class, configMap);
+    operator.replace(configMap);
 
     waitForCRStatusValue(UPDATE_STATUS_MESSAGE);
   }
@@ -48,13 +48,13 @@ class InformerEventSourceIT {
   @Test
   void deletingSecondaryResource() {
     var customResource = initialCustomResource();
-    customResource = operator.create(InformerEventSourceTestCustomResource.class, customResource);
+    customResource = operator.create(customResource);
     waitForCRStatusValue(MISSING_CONFIG_MAP);
     ConfigMap configMap =
-        operator.create(ConfigMap.class, relatedConfigMap(customResource.getMetadata().getName()));
+        operator.create(relatedConfigMap(customResource.getMetadata().getName()));
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
-    boolean res = operator.delete(ConfigMap.class, configMap);
+    boolean res = operator.delete(configMap);
     if (!res) {
       fail("Unable to delete configmap");
     }

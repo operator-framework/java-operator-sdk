@@ -25,7 +25,7 @@ class EventSourceIT {
   void receivingPeriodicEvents() {
     EventSourceTestCustomResource resource = createTestCustomResource("1");
 
-    operator.create(EventSourceTestCustomResource.class, resource);
+    operator.create(resource);
 
     await()
         .atMost(5, TimeUnit.SECONDS)

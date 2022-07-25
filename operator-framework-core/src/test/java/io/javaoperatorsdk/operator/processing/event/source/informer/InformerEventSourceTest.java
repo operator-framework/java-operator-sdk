@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
+import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
@@ -37,10 +36,10 @@ class InformerEventSourceTest {
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
   private final MixedOperation crClientMock = mock(MixedOperation.class);
-  private final FilterWatchListMultiDeletable specificResourceClientMock =
-      mock(FilterWatchListMultiDeletable.class);
-  private final FilterWatchListDeletable labeledResourceClientMock =
-      mock(FilterWatchListDeletable.class);
+  private final AnyNamespaceOperation specificResourceClientMock =
+      mock(AnyNamespaceOperation.class);
+  private final AnyNamespaceOperation labeledResourceClientMock =
+      mock(AnyNamespaceOperation.class);
   private final SharedIndexInformer informer = mock(SharedIndexInformer.class);
   private final InformerConfiguration<Deployment> informerConfiguration =
       mock(InformerConfiguration.class);

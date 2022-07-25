@@ -28,7 +28,7 @@ class DependentAnnotationSecondaryMapperIT {
 
   @Test
   void mapsSecondaryByAnnotation() {
-    operator.create(DependentAnnotationSecondaryMapperResource.class, testResource());
+    operator.create(testResource());
 
     var reconciler =
         operator.getReconcilerOfType(DependentAnnotationSecondaryMapperReconciler.class);
@@ -46,7 +46,7 @@ class DependentAnnotationSecondaryMapperIT {
     assertThat(configMap.getMetadata().getOwnerReferences()).isEmpty();
 
     configMap.getData().put("additional_data", "data");
-    operator.replace(ConfigMap.class, configMap);
+    operator.replace(configMap);
 
     await().pollDelay(Duration.ofMillis(150))
         .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2));

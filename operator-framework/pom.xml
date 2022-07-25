@@ -62,6 +62,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>crd-generator-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
       <scope>test</scope>
