@@ -66,23 +66,24 @@ public class TestReconciler
   public DeleteControl cleanup(
       TestCustomResource resource, Context<TestCustomResource> context) {
     numberOfCleanupExecutions.incrementAndGet();
-    Boolean delete =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .delete();
-    if (delete) {
-      log.info(
-          "Deleted ConfigMap {} for resource: {}",
-          resource.getSpec().getConfigMapName(),
-          resource.getMetadata().getName());
-    } else {
-      log.error(
-          "Failed to delete ConfigMap {} for resource: {}",
-          resource.getSpec().getConfigMapName(),
-          resource.getMetadata().getName());
-    }
+
+    var statusDetail = kubernetesClient
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
+        .withName(resource.getSpec().getConfigMapName())
+        .delete();
+    // todo
+    // if (delete) {
+    log.info(
+        "Deleted ConfigMap {} for resource: {}",
+        resource.getSpec().getConfigMapName(),
+        resource.getMetadata().getName());
+    // } else {
+    // log.error(
+    // "Failed to delete ConfigMap {} for resource: {}",
+    // resource.getSpec().getConfigMapName(),
+    // resource.getMetadata().getName());
+    // }
     return DeleteControl.defaultDelete();
   }
 
