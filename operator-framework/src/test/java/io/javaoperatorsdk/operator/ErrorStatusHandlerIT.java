@@ -29,7 +29,7 @@ class ErrorStatusHandlerIT {
   @Test
   void testErrorMessageSetEventually() {
     ErrorStatusHandlerTestCustomResource resource =
-        operator.create(ErrorStatusHandlerTestCustomResource.class, createCustomResource());
+        operator.create(createCustomResource());
 
     await()
         .atMost(10, TimeUnit.SECONDS)

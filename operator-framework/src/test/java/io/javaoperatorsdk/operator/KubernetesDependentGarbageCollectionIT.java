@@ -29,7 +29,7 @@ class KubernetesDependentGarbageCollectionIT {
   void resourceSecondaryResourceIsGarbageCollected() {
     var resource = customResource();
     var createdResources =
-        operator.create(DependentGarbageCollectionTestCustomResource.class, resource);
+        operator.create(resource);
 
     await().untilAsserted(() -> {
       ConfigMap configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -41,7 +41,7 @@ class KubernetesDependentGarbageCollectionIT {
     assertThat(configMap.getMetadata().getOwnerReferences().get(0).getName())
         .isEqualTo(TEST_RESOURCE_NAME);
 
-    operator.delete(DependentGarbageCollectionTestCustomResource.class, createdResources);
+    operator.delete(createdResources);
 
     await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
       ConfigMap cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -53,7 +53,7 @@ class KubernetesDependentGarbageCollectionIT {
   void deletesSecondaryResource() {
     var resource = customResource();
     var createdResources =
-        operator.create(DependentGarbageCollectionTestCustomResource.class, resource);
+        operator.create(resource);
 
     await().untilAsserted(() -> {
       ConfigMap configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -61,7 +61,7 @@ class KubernetesDependentGarbageCollectionIT {
     });
 
     createdResources.getSpec().setCreateConfigMap(false);
-    operator.replace(DependentGarbageCollectionTestCustomResource.class, createdResources);
+    operator.replace(createdResources);
 
     await().untilAsserted(() -> {
       ConfigMap cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
