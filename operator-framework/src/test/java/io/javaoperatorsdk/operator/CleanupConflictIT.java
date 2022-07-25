@@ -28,18 +28,18 @@ class CleanupConflictIT {
   void cleanupRemovesFinalizerWithoutConflict() throws InterruptedException {
     var testResource = createTestResource();
     testResource.addFinalizer(ADDITIONAL_FINALIZER);
-    testResource = operator.create(CleanupConflictCustomResource.class, testResource);
+    testResource = operator.create(testResource);
 
     await().untilAsserted(
         () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
             .getNumberReconcileExecutions()).isEqualTo(1));
 
-    operator.delete(CleanupConflictCustomResource.class, testResource);
+    operator.delete(testResource);
     Thread.sleep(WAIT_TIME / 2);
     testResource = operator.get(CleanupConflictCustomResource.class, TEST_RESOURCE_NAME);
     testResource.getMetadata().getFinalizers().remove(ADDITIONAL_FINALIZER);
     testResource.getMetadata().setResourceVersion(null);
-    operator.replace(CleanupConflictCustomResource.class, testResource);
+    operator.replace(testResource);
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME * 2)).untilAsserted(
         () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)

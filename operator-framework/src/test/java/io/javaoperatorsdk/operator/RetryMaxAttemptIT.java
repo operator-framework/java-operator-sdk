@@ -32,7 +32,7 @@ class RetryMaxAttemptIT {
   void retryFailedExecution() throws InterruptedException {
     RetryTestCustomResource resource = createTestCustomResource("max-retry");
 
-    operator.create(RetryTestCustomResource.class, resource);
+    operator.create(resource);
 
     Thread.sleep((MAX_RETRY_ATTEMPTS + 2) * RETRY_INTERVAL);
     assertThat(reconciler.getNumberOfExecutions()).isEqualTo(4);

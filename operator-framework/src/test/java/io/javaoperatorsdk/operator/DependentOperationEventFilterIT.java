@@ -31,7 +31,7 @@ class DependentOperationEventFilterIT {
   @Test
   void reconcileNotTriggeredWithDependentResourceCreateOrUpdate() {
     var resource =
-        operator.create(DependentOperationEventFilterCustomResource.class, createTestResource());
+        operator.create(createTestResource());
 
     await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
         .until(
@@ -42,7 +42,7 @@ class DependentOperationEventFilterIT {
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_1);
 
     resource.getSpec().setValue(SPEC_VAL_2);
-    operator.replace(DependentOperationEventFilterCustomResource.class, resource);
+    operator.replace(resource);
 
     await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
         .until(

@@ -25,7 +25,7 @@ class UpdatingResAndSubResIT {
   @Test
   void updatesSubResourceStatus() {
     DoubleUpdateTestCustomResource resource = createTestCustomResource("1");
-    operator.create(DoubleUpdateTestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitStatusUpdated(resource.getMetadata().getName());
     // wait for sure, there are no more events
