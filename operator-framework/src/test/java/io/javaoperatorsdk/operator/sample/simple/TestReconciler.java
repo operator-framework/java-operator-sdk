@@ -66,13 +66,14 @@ public class TestReconciler
   public DeleteControl cleanup(
       TestCustomResource resource, Context<TestCustomResource> context) {
     numberOfCleanupExecutions.incrementAndGet();
-    Boolean delete =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .delete();
-    if (delete) {
+
+    var statusDetail = kubernetesClient
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
+        .withName(resource.getSpec().getConfigMapName())
+        .delete();
+
+    if (statusDetail.size() == 1 && statusDetail.get(0).getCauses().isEmpty()) {
       log.info(
           "Deleted ConfigMap {} for resource: {}",
           resource.getSpec().getConfigMapName(),

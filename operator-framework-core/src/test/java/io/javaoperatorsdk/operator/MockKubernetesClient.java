@@ -4,12 +4,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.*;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 
@@ -28,9 +23,9 @@ public class MockKubernetesClient {
         mock(MixedOperation.class);
     NonNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> nonNamespaceOperation =
         mock(NonNamespaceOperation.class);
-    FilterWatchListMultiDeletable<T, KubernetesResourceList<T>> inAnyNamespace = mock(
-        FilterWatchListMultiDeletable.class);
-    FilterWatchListDeletable<T, KubernetesResourceList<T>> filterable =
+    AnyNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> inAnyNamespace = mock(
+        AnyNamespaceOperation.class);
+    FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filterable =
         mock(FilterWatchListDeletable.class);
     when(resources.inNamespace(anyString())).thenReturn(nonNamespaceOperation);
     when(nonNamespaceOperation.withLabelSelector(nullable(String.class))).thenReturn(filterable);

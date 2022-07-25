@@ -37,7 +37,7 @@ class RetryIT {
   void retryFailedExecution() {
     RetryTestCustomResource resource = createTestCustomResource("1");
 
-    operator.create(RetryTestCustomResource.class, resource);
+    operator.create(resource);
 
     await("cr status updated")
         .pollDelay(
