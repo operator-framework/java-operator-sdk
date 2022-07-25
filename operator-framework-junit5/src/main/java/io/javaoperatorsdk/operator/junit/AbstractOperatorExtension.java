@@ -16,8 +16,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
@@ -52,7 +52,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion) {
 
-    this.kubernetesClient = new DefaultKubernetesClient();
+    this.kubernetesClient = new KubernetesClientBuilder().build();
     this.configurationService = configurationService;
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
@@ -100,17 +100,33 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     return kubernetesClient.resources(type).inNamespace(namespace).withName(name).get();
   }
 
+  public <T extends HasMetadata> T create(T resource) {
+    return kubernetesClient.resource(resource).inNamespace(namespace).create();
+  }
+
+  @Deprecated(forRemoval = true)
   public <T extends HasMetadata> T create(Class<T> type, T resource) {
-    return kubernetesClient.resources(type).inNamespace(namespace).create(resource);
+    return create(resource);
   }
 
+  public <T extends HasMetadata> T replace(T resource) {
+    return kubernetesClient.resource(resource).inNamespace(namespace).replace();
+  }
+
+  @Deprecated(forRemoval = true)
   public <T extends HasMetadata> T replace(Class<T> type, T resource) {
-    return kubernetesClient.resources(type).inNamespace(namespace).replace(resource);
+    return replace(resource);
   }
 
+  public <T extends HasMetadata> boolean delete(T resource) {
+    var res = kubernetesClient.resource(resource).inNamespace(namespace).delete();
+    return res.size() == 1 && res.get(0).getCauses().isEmpty();
+  }
+
+  @Deprecated(forRemoval = true)
   @SuppressWarnings("unchecked")
   public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
-    return kubernetesClient.resources(type).inNamespace(namespace).delete(resource);
+    return delete(resource);
   }
 
   protected void beforeAllImpl(ExtensionContext context) {
@@ -144,7 +160,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
     kubernetesClient
         .namespaces()
-        .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+        .resource(
+            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+        .create();
 
     kubernetesClient
         .resourceList(infrastructure)

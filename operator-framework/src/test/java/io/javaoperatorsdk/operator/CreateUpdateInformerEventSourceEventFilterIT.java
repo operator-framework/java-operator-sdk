@@ -28,7 +28,7 @@ class CreateUpdateInformerEventSourceEventFilterIT {
   void updateEventNotReceivedAfterCreateOrUpdate() {
     CreateUpdateEventFilterTestCustomResource resource = prepareTestResource();
     var createdResource =
-        operator.create(CreateUpdateEventFilterTestCustomResource.class, resource);
+        operator.create(resource);
 
     await()
         .atMost(Duration.ofSeconds(1))
@@ -53,7 +53,7 @@ class CreateUpdateInformerEventSourceEventFilterIT {
         operator.get(CreateUpdateEventFilterTestCustomResource.class,
             resource.getMetadata().getName());
     actualCreatedResource.getSpec().setValue("2");
-    operator.replace(CreateUpdateEventFilterTestCustomResource.class, actualCreatedResource);
+    operator.replace(actualCreatedResource);
 
 
     await().atMost(Duration.ofSeconds(1))

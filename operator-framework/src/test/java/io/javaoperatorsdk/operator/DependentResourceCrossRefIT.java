@@ -29,7 +29,7 @@ class DependentResourceCrossRefIT {
   @Test
   void dependentResourceCanReferenceEachOther() {
     for (int i = 0; i < EXECUTION_NUMBER; i++) {
-      operator.create(DependentResourceCrossRefResource.class, testResource(i));
+      operator.create(testResource(i));
     }
     await()
         .pollDelay(Duration.ofMillis(150))

@@ -29,7 +29,7 @@ class MultipleDependentResourceIT {
   @Test
   void twoConfigMapsHaveBeenCreated() {
     MultipleDependentResourceCustomResource customResource = createTestCustomResource();
-    operator.create(MultipleDependentResourceCustomResource.class, customResource);
+    operator.create(customResource);
 
     var reconciler = operator.getReconcilerOfType(MultipleDependentResourceReconciler.class);
 

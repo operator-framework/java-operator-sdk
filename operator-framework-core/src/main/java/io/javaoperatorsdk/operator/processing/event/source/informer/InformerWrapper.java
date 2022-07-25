@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -17,10 +16,9 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, IndexerResourceCache<T>, UpdatableCache<T> {
+    implements LifecycleAware, IndexerResourceCache<T> {
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
@@ -70,22 +68,6 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public Stream<ResourceID> keys() {
     return cache.listKeys().stream().map(Mappers::fromString);
-  }
-
-  @Override
-  public T remove(ResourceID key) {
-    return cache.remove(cache.getByKey(getKey(key)));
-  }
-
-  @Override
-  public void put(ResourceID key, T resource) {
-    // check that key matches the resource
-    final var fromResource = ResourceID.fromResource(resource);
-    if (!Objects.equals(key, fromResource)) {
-      throw new IllegalArgumentException(
-          "Key and resource don't match. Key: " + key + ", resource: " + fromResource);
-    }
-    cache.put(resource);
   }
 
   public void addEventHandler(ResourceEventHandler<T> eventHandler) {

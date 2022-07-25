@@ -32,8 +32,8 @@ class MultiVersionCRDIT {
 
   @Test
   void multipleCRDVersions() {
-    operator.create(MultiVersionCRDTestCustomResource1.class, createTestResourceV1WithoutLabel());
-    operator.create(MultiVersionCRDTestCustomResource2.class, createTestResourceV2WithLabel());
+    operator.create(createTestResourceV1WithoutLabel());
+    operator.create(createTestResourceV2WithLabel());
 
     await()
         .atMost(Duration.ofSeconds(2))
@@ -55,9 +55,9 @@ class MultiVersionCRDIT {
   void invalidEventsDoesNotBreakEventHandling() {
     var v2res = createTestResourceV2WithLabel();
     v2res.getMetadata().getLabels().clear();
-    operator.create(MultiVersionCRDTestCustomResource2.class, v2res);
+    operator.create(v2res);
     var v1res = createTestResourceV1WithoutLabel();
-    operator.create(MultiVersionCRDTestCustomResource1.class, v1res);
+    operator.create(v1res);
 
     await()
         .atMost(Duration.ofSeconds(2))

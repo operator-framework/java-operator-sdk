@@ -26,10 +26,10 @@ class StatusUpdateLockingIT {
 
   @Test
   void optimisticLockingDoneOnStatusUpdate() throws InterruptedException {
-    var resource = operator.create(StatusUpdateLockingCustomResource.class, createResource());
+    var resource = operator.create(createResource());
     Thread.sleep(WAIT_TIME / 2);
     resource.getMetadata().setAnnotations(Map.of("key", "value"));
-    operator.replace(StatusUpdateLockingCustomResource.class, resource);
+    operator.replace(resource);
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
       assertThat(
