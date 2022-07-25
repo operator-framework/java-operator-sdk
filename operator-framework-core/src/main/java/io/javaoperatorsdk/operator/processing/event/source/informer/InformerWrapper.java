@@ -16,10 +16,9 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.UpdatableCache;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, IndexerResourceCache<T>, UpdatableCache<T> {
+    implements LifecycleAware, IndexerResourceCache<T> {
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
@@ -69,16 +68,6 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public Stream<ResourceID> keys() {
     return cache.listKeys().stream().map(Mappers::fromString);
-  }
-
-  @Override
-  public T remove(ResourceID key) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void put(ResourceID key, T resource) {
-    throw new UnsupportedOperationException();
   }
 
   public void addEventHandler(ResourceEventHandler<T> eventHandler) {
