@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -77,7 +76,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   public Workflow<P> build() {
     return new Workflow(
-        dependentResourceNodes, ExecutorServiceManager.instance().executorService(), throwExceptionAutomatically);
+        dependentResourceNodes, ExecutorServiceManager.instance().executorService(),
+        throwExceptionAutomatically);
   }
 
   public Workflow<P> build(int parallelism) {
