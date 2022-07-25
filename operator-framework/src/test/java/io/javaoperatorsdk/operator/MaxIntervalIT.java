@@ -22,7 +22,7 @@ class MaxIntervalIT {
   void reconciliationTriggeredBasedOnMaxInterval() {
     MaxIntervalTestCustomResource cr = createTestResource();
 
-    operator.create(MaxIntervalTestCustomResource.class, cr);
+    operator.create(cr);
 
     await()
         .pollInterval(50, TimeUnit.MILLISECONDS)

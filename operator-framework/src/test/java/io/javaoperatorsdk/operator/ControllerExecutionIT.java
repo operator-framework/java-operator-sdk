@@ -26,7 +26,7 @@ class ControllerExecutionIT {
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    operator.create(TestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitResourcesCreatedOrUpdated();
     awaitStatusUpdated();
@@ -39,7 +39,7 @@ class ControllerExecutionIT {
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    operator.create(TestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitStatusUpdated();
   }
@@ -49,7 +49,7 @@ class ControllerExecutionIT {
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(false);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    operator.create(TestCustomResource.class, resource);
+    operator.create(resource);
 
     awaitResourcesCreatedOrUpdated();
     assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
@@ -60,11 +60,11 @@ class ControllerExecutionIT {
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    resource = operator.create(TestCustomResource.class, resource);
+    resource = operator.create(resource);
 
     awaitResourcesCreatedOrUpdated();
     awaitStatusUpdated();
-    operator.delete(TestCustomResource.class, resource);
+    operator.delete(resource);
 
     await().atMost(Duration.ofSeconds(1))
         .until(() -> ((TestReconciler) operator.getFirstReconciler())

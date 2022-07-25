@@ -32,7 +32,7 @@ class KubernetesResourceStatusUpdateIT {
 
   @Test
   void testReconciliationOfNonCustomResourceAndStatusUpdate() {
-    var deployment = operator.create(Deployment.class, testDeployment());
+    var deployment = operator.create(testDeployment());
     await().atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
       var d = operator.get(Deployment.class, deployment.getMetadata().getName());
       assertThat(d.getStatus()).isNotNull();

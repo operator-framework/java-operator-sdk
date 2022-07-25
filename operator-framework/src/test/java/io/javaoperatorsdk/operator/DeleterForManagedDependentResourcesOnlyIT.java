@@ -26,13 +26,13 @@ class DeleterForManagedDependentResourcesOnlyIT {
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
     var testResource = createTestResource();
-    operator.create(CleanerForManagedDependentCustomResource.class, testResource);
+    operator.create(testResource);
 
     await().until(
         () -> !operator.get(CleanerForManagedDependentCustomResource.class, TEST_RESOURCE_NAME)
             .getMetadata().getFinalizers().isEmpty());
 
-    operator.delete(CleanerForManagedDependentCustomResource.class, testResource);
+    operator.delete(testResource);
 
     await().until(
         () -> operator.get(CleanerForManagedDependentCustomResource.class,

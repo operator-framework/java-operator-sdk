@@ -23,9 +23,9 @@ class CustomResourceFilterIT {
     var filtered1 = createTestResource("filtered1", true, false);
     var filtered2 = createTestResource("filtered2", false, true);
     var notFiltered = createTestResource("notfiltered", true, true);
-    operator.create(CustomFilteringTestResource.class, filtered1);
-    operator.create(CustomFilteringTestResource.class, filtered2);
-    operator.create(CustomFilteringTestResource.class, notFiltered);
+    operator.create(filtered1);
+    operator.create(filtered2);
+    operator.create(notFiltered);
 
     Thread.sleep(300);
 
