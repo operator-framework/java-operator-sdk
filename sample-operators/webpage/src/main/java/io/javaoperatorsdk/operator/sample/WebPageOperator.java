@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;

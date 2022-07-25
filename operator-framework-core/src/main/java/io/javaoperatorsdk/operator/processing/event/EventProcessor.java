@@ -390,13 +390,13 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
       final var name = thread.getName();
       try {
         MDCUtils.addResourceInfo(executionScope.getResource());
-        thread.setName("EventHandler-" + controllerName);
+//        thread.setName("EventHandler-" + controllerName);
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
         // restore original name
-        thread.setName(name);
+//        thread.setName(name);
         MDCUtils.removeResourceInfo();
       }
     }
