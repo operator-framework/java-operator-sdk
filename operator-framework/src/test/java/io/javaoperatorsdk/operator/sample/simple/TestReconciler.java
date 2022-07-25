@@ -72,18 +72,18 @@ public class TestReconciler
         .inNamespace(resource.getMetadata().getNamespace())
         .withName(resource.getSpec().getConfigMapName())
         .delete();
-    // todo
-    // if (delete) {
-    log.info(
-        "Deleted ConfigMap {} for resource: {}",
-        resource.getSpec().getConfigMapName(),
-        resource.getMetadata().getName());
-    // } else {
-    // log.error(
-    // "Failed to delete ConfigMap {} for resource: {}",
-    // resource.getSpec().getConfigMapName(),
-    // resource.getMetadata().getName());
-    // }
+
+    if (statusDetail.size() == 1 && statusDetail.get(0).getCauses().isEmpty()) {
+      log.info(
+          "Deleted ConfigMap {} for resource: {}",
+          resource.getSpec().getConfigMapName(),
+          resource.getMetadata().getName());
+    } else {
+      log.error(
+          "Failed to delete ConfigMap {} for resource: {}",
+          resource.getSpec().getConfigMapName(),
+          resource.getMetadata().getName());
+    }
     return DeleteControl.defaultDelete();
   }
 

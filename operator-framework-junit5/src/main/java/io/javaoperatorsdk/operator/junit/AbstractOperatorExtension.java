@@ -119,16 +119,14 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   }
 
   public <T extends HasMetadata> boolean delete(T resource) {
-    kubernetesClient.resource(resource).inNamespace(namespace).delete();
-    return true;
+    var res = kubernetesClient.resource(resource).inNamespace(namespace).delete();
+    return res.size() == 1 && res.get(0).getCauses().isEmpty();
   }
 
   @Deprecated(forRemoval = true)
   @SuppressWarnings("unchecked")
   public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
-    // todo check
-    kubernetesClient.resource(resource).inNamespace(namespace).delete();
-    return true;
+    return delete(resource);
   }
 
   protected void beforeAllImpl(ExtensionContext context) {
@@ -162,7 +160,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
     kubernetesClient
         .namespaces()
-        .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+        .resource(
+            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+        .create();
 
     kubernetesClient
         .resourceList(infrastructure)
