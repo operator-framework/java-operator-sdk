@@ -12,7 +12,8 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean onlyOnChange;
 
   private UpdateControl(
-          P resource, boolean updateStatus, boolean updateResource, boolean patch, boolean onlyOnChange) {
+      P resource, boolean updateStatus, boolean updateResource, boolean patch,
+      boolean onlyOnChange) {
     this.onlyOnChange = onlyOnChange;
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
@@ -97,7 +98,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatusIfChanged(
-          T customResource) {
+      T customResource) {
     return new UpdateControl<>(customResource, true, true, false, true);
   }
 
