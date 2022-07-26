@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,35 +129,39 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         executionScope);
 
     UpdateControl<R> updateControl = controller.reconcile(resourceForExecution, context);
-    R updatedCustomResource = null;
+    Optional<R> updatedCustomResource = Optional.empty();
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource());
-      updateControl
+          updateCustomResource(updateControl.getResource(), originalResource,
+              updateControl.onlyOnChange());
+      updatedCustomResource.ifPresent(cr -> updateControl
           .getResource()
           .getMetadata()
-          .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
+          .setResourceVersion(cr.getMetadata().getResourceVersion()));
       updatedCustomResource =
           updateStatusGenerationAware(updateControl.getResource(), originalResource,
-              updateControl.isPatch());
+              updateControl.isPatch(), updateControl.onlyOnChange());
     } else if (updateControl.isUpdateStatus()) {
       updatedCustomResource =
           updateStatusGenerationAware(updateControl.getResource(), originalResource,
-              updateControl.isPatch());
+              updateControl.isPatch(), updateControl.onlyOnChange());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource());
-      if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
+          updateCustomResource(updateControl.getResource(), originalResource,
+              updateControl.onlyOnChange());
+      if (shouldUpdateObservedGenerationAutomatically(
+          updatedCustomResource.orElse(updateControl.getResource()))) {
         updatedCustomResource =
             updateStatusGenerationAware(updateControl.getResource(), originalResource,
-                updateControl.isPatch());
+                updateControl.isPatch(), updateControl.onlyOnChange());
       }
     } else if (updateControl.isNoUpdate()
         && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
       updatedCustomResource =
-          updateStatusGenerationAware(originalResource, originalResource, updateControl.isPatch());
+          updateStatusGenerationAware(originalResource, originalResource, updateControl.isPatch(),
+              updateControl.onlyOnChange());
     }
-    return createPostExecutionControl(updatedCustomResource, updateControl);
+    return createPostExecutionControl(updatedCustomResource.orElse(null), updateControl);
   }
 
   @SuppressWarnings("unchecked")
@@ -207,12 +212,17 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private R updateStatusGenerationAware(R resource, R originalResource, boolean patch) {
+  private Optional<R> updateStatusGenerationAware(R resource, R originalResource, boolean patch,
+      boolean onlyIfChanged) {
     updateStatusObservedGenerationIfRequired(resource);
+    // todo unit test order
+    if (onlyIfChanged && statusEqual(resource, originalResource)) {
+      return Optional.empty();
+    }
     if (patch) {
-      return customResourceFacade.patchStatus(resource, originalResource);
+      return Optional.of(customResourceFacade.patchStatus(resource, originalResource));
     } else {
-      return customResourceFacade.updateStatus(resource);
+      return Optional.of(customResourceFacade.updateStatus(resource));
     }
   }
 
@@ -305,10 +315,14 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private R updateCustomResource(R resource) {
+  private Optional<R> updateCustomResource(R resource, R originalResource, boolean onlyOnChange) {
+    if (onlyOnChange && !specAndMetaEqual(resource, originalResource)) {
+      return Optional.empty();
+    }
+
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
-    return customResourceFacade.replaceResourceWithLock(resource);
+    return Optional.of(customResourceFacade.replaceResourceWithLock(resource));
   }
 
   ControllerConfiguration<R> configuration() {
@@ -344,6 +358,25 @@ class ReconciliationDispatcher<R extends HasMetadata> {
             resource.getMetadata().getName());
       }
     }
+  }
+
+  @SuppressWarnings("rawtypes")
+  private boolean statusEqual(R resource, R originalResource) {
+    if (!(resource instanceof CustomResource)) {
+      return false;
+    }
+    return ((CustomResource) resource).getStatus()
+        .equals(((CustomResource) originalResource).getStatus());
+  }
+
+  @SuppressWarnings("rawtypes")
+  private boolean specAndMetaEqual(R resource, R originalResource) {
+    if (!(resource instanceof CustomResource)) {
+      return false;
+    }
+    return ((CustomResource) resource).getSpec()
+        .equals(((CustomResource) originalResource).getSpec()) &&
+        resource.getMetadata().equals(originalResource.getMetadata());
   }
 
   // created to support unit testing

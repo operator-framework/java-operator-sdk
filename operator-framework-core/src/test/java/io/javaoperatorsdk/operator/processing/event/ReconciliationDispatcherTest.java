@@ -396,12 +396,14 @@ class ReconciliationDispatcherTest {
   @Test
   void setReScheduleToPostExecutionControlFromUpdateControl() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    when(customResourceFacade.patchStatus(any(), any())).thenReturn(testCustomResource);
 
     reconciler.reconcile =
         (r, c) -> UpdateControl.patchStatus(testCustomResource).rescheduleAfter(1000L);
 
     PostExecutionControl control =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
 
     assertThat(control.getReScheduleDelay().orElseGet(() -> fail("Missing optional")))
         .isEqualTo(1000L);

@@ -53,13 +53,21 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * "https://github.com/fabric8io/kubernetes-client/issues/4158">https://github.com/fabric8io/kubernetes-client/issues/4158</a>
    *
    * @param <T> resource type
-   * @param customResource the custom resource with target status
+   * @param customResource the resource with target status
    * @return UpdateControl instance
    */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
     return new UpdateControl<>(customResource, true, false, true, false);
   }
 
+  /**
+   * Patches status only if it not equals to original status. It uses equals method to compare the
+   * two. Only for custom resources.
+   *
+   * @param customResource the resource with target status
+   * @param <T> resource type
+   * @return UpdateControl instance
+   */
   public static <T extends HasMetadata> UpdateControl<T> patchStatusIfChanged(T customResource) {
     return new UpdateControl<>(customResource, true, false, true, true);
   }
@@ -80,8 +88,16 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, true, false, false, false);
   }
 
+  /**
+   * Updates status only if it not equals to original status. It uses equals method to compare the
+   * two. Only for custom resources.
+   *
+   * @param <T> resource type
+   * @param customResource the custom resource with target status
+   * @return UpdateControl instance
+   */
   public static <T extends HasMetadata> UpdateControl<T> updateStatusIfChanged(T customResource) {
-    return new UpdateControl<>(customResource, true, false, false, false);
+    return new UpdateControl<>(customResource, true, false, false, true);
   }
 
   /**
@@ -97,16 +113,58 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, true, true, false, false);
   }
 
+  /**
+   * Same as updateResourceAndStatus, only does the update requests if resource are changed.
+   * Resources are compared using equals method. Only for custom resources.
+   *
+   * @param <T> resource type
+   * @param customResource - custom resource to use in both API calls
+   * @return UpdateControl instance
+   */
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatusIfChanged(
       T customResource) {
     return new UpdateControl<>(customResource, true, true, false, true);
   }
 
+  /**
+   * As a results of this there will be two call to K8S API. First the custom resource will be
+   * updated then the status sub-resource patched. The patch does not use optimistic locking.
+   *
+   * @param <T> resource type
+   * @param customResource - custom resource to use in both API calls
+   * @return UpdateControl instance
+   */
+  @Deprecated(forRemoval = true)
   public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, true, true, false);
   }
 
+  /**
+   * As a results of this there will be two call to K8S API. First the custom resource will be
+   * patched then the status sub-resource. The patch does not use optimistic locking.
+   *
+   * @param <T> resource type
+   * @param customResource - custom resource to use in both API calls
+   * @return UpdateControl instance
+   */
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceAndPatchStatus(
+      T customResource) {
+    return new UpdateControl<>(customResource, true, true, true, false);
+  }
+
+  /**
+   * Same as patchResourceAndStatus, only does the update requests if resource are changed.
+   * Resources are compared using equals method. Only for custom resources.
+   *
+   * @param <T> resource type
+   * @param customResource - custom resource to use in both API calls
+   * @return UpdateControl instance
+   */
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceAndPatchStatusIfChanged(
+      T customResource) {
+    return new UpdateControl<>(customResource, true, true, true, true);
+  }
 
   public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
     return new UpdateControl<>(null, false, false, false, false);
@@ -136,7 +194,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return updateResource && updateStatus;
   }
 
-  public boolean isOnlyOnChange() {
+  public boolean onlyOnChange() {
     return onlyOnChange;
   }
 }
