@@ -8223,7 +8223,6 @@
 
     };
 
-    // TODO improve isToggled handling
     function isToggled(target, cls) {
         return cls
             ? hasClass(target, cls.split(' ')[0])

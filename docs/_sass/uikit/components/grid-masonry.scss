@@ -61,7 +61,6 @@ $grid-gap-large:                                 $global-large-gutter !default;
 /* Item Span
  ========================================================================== */
 
-// TODO Fix implicit tracks if span is too large
 .uk-grid-item-span-2 { grid-column-start: span 2; }
 .uk-grid-item-span-3 { grid-column-start: span 3; }
 .uk-grid-item-span-4 { grid-column-start: span 4; }
