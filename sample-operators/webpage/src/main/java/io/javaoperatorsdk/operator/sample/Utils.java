@@ -31,7 +31,7 @@ public class Utils {
 
   static ErrorStatusUpdateControl<WebPage> handleError(WebPage resource, Exception e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-    return ErrorStatusUpdateControl.updateStatus(resource);
+    return ErrorStatusUpdateControl.updateStatusIfChanged(resource);
   }
 
   static void simulateErrorIfRequested(WebPage webPage) throws ErrorSimulationException {
