@@ -71,7 +71,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .build();
 
     configureWith(new InformerEventSource<>(ic, context));
-
   }
 
   @SuppressWarnings("unchecked")

@@ -32,6 +32,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     updater = updatable ? (Updater<R, P>) this : null;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     Optional<R> maybeActual = getSecondaryResource(primary, context);
