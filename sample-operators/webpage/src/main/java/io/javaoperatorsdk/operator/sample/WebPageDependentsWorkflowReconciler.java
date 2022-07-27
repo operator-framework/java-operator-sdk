@@ -70,7 +70,7 @@ public class WebPageDependentsWorkflowReconciler
     webPage.setStatus(
         createStatus(
             configMapDR.getSecondaryResource(webPage).orElseThrow().getMetadata().getName()));
-    return UpdateControl.patchStatus(webPage);
+    return UpdateControl.patchStatusIfChanged(webPage);
   }
 
   @Override

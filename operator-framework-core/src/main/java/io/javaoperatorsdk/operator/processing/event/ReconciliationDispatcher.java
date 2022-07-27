@@ -215,7 +215,6 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   private Optional<R> updateStatusGenerationAware(R resource, R originalResource, boolean patch,
       boolean onlyIfChanged) {
     updateStatusObservedGenerationIfRequired(resource);
-    // todo unit test order
     if (onlyIfChanged && statusEqual(resource, originalResource)) {
       return Optional.empty();
     }
@@ -312,17 +311,17 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.replaceResourceWithLock(resource);
+    return customResourceFacade.updateResource(resource);
   }
 
   private Optional<R> updateCustomResource(R resource, R originalResource, boolean onlyOnChange) {
-    if (onlyOnChange && !specAndMetaEqual(resource, originalResource)) {
+    if (onlyOnChange && specAndMetaEqual(resource, originalResource)) {
       return Optional.empty();
     }
 
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
-    return Optional.of(customResourceFacade.replaceResourceWithLock(resource));
+    return Optional.of(customResourceFacade.updateResource(resource));
   }
 
   ControllerConfiguration<R> configuration() {
@@ -340,7 +339,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         if (!removed) {
           return resource;
         }
-        return customResourceFacade.replaceResourceWithLock(resource);
+        return customResourceFacade.updateResource(resource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during finalizer removal for resource: {}", resource);
         retryIndex++;
@@ -393,7 +392,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return resourceOperation.inNamespace(namespace).withName(name).get();
     }
 
-    public R replaceResourceWithLock(R resource) {
+    public R updateResource(R resource) {
       log.debug(
           "Trying to replace resource {}, version: {}",
           getName(resource),
