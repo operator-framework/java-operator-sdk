@@ -137,7 +137,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    var resource = context.getSecondaryResource(primary.getClass());
+    var resource = context.getSecondaryResource(resourceType());
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
