@@ -11,14 +11,17 @@ public interface Context<P extends HasMetadata> {
 
   Optional<RetryInfo> getRetryInfo();
 
-  default <T> Optional<T> getSecondaryResource(Class<T> expectedType) {
-    return getSecondaryResource(expectedType, null);
+  default <R> Optional<R> getSecondaryResource(Class<R> expectedType) {
+    return getSecondaryResource(expectedType, (String) null);
   }
 
-  <T> Set<T> getSecondaryResources(Class<T> expectedType);
+  <R> Set<R> getSecondaryResources(Class<R> expectedType);
 
   @Deprecated(forRemoval = true)
-  <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName);
+  <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
+
+  <R> Optional<R> getSecondaryResource(Class<R> expectedType,
+      ResourceDiscriminator<R, P> discriminator);
 
   ControllerConfiguration<P> getControllerConfiguration();
 
