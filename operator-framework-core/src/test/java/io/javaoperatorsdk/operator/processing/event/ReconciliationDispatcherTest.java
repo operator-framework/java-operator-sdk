@@ -541,6 +541,7 @@ class ReconciliationDispatcherTest {
   @Test
   void errorHandlerCanInstructNoRetryWithUpdate() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    when(customResourceFacade.updateStatus(any())).thenReturn(testCustomResource);
     reconciler.reconcile = (r, c) -> {
       throw new IllegalStateException("Error Status Test");
     };
@@ -595,6 +596,34 @@ class ReconciliationDispatcherTest {
             testCustomResource, null));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
+    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+        any(), any());
+  }
+
+  @Test
+  void errorStatusHandlerConditionallyUpdatesStatus() {
+    extracted((r, ri, e) -> ErrorStatusUpdateControl.updateStatusIfChanged(testCustomResource));
+  }
+
+  @Test
+  void errorStatusHandlerConditionallyPatchesStatus() {
+    extracted((r, ri, e) -> ErrorStatusUpdateControl.patchStatusIfChanged(testCustomResource));
+  }
+
+  private void extracted(ErrorStatusHandler<TestCustomResource> errorHandler) {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+
+    reconciler.errorHandler = errorHandler;
+
+    reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+
+    verify(customResourceFacade, never()).updateStatus(eq(testCustomResource));
+    verify(customResourceFacade, never()).patchStatus(eq(testCustomResource), any());
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
   }

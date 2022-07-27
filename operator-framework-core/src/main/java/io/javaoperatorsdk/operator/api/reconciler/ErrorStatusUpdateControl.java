@@ -9,23 +9,34 @@ public class ErrorStatusUpdateControl<P extends HasMetadata> {
   private final P resource;
   private final boolean patch;
   private boolean noRetry = false;
-
+  private final boolean onlyOnChange;
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource, true);
+    return new ErrorStatusUpdateControl<>(resource, true, false);
   }
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> updateStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource, false);
+    return new ErrorStatusUpdateControl<>(resource, false, false);
+  }
+
+  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatusIfChanged(
+      T resource) {
+    return new ErrorStatusUpdateControl<>(resource, true, true);
+  }
+
+  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> updateStatusIfChanged(
+      T resource) {
+    return new ErrorStatusUpdateControl<>(resource, false, true);
   }
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> noStatusUpdate() {
-    return new ErrorStatusUpdateControl<>(null, true);
+    return new ErrorStatusUpdateControl<>(null, true, false);
   }
 
-  private ErrorStatusUpdateControl(P resource, boolean patch) {
+  private ErrorStatusUpdateControl(P resource, boolean patch, boolean onlyOnChange) {
     this.resource = resource;
     this.patch = patch;
+    this.onlyOnChange = onlyOnChange;
   }
 
   /**
@@ -48,5 +59,9 @@ public class ErrorStatusUpdateControl<P extends HasMetadata> {
 
   public boolean isPatch() {
     return patch;
+  }
+
+  public boolean isOnlyOnChange() {
+    return onlyOnChange;
   }
 }

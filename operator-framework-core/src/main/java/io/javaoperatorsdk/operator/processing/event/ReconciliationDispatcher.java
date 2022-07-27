@@ -15,13 +15,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
@@ -185,27 +179,32 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         var errorStatusUpdateControl = ((ErrorStatusHandler<R>) controller.getReconciler())
             .updateErrorStatus(resource, context, e);
 
-        R updatedResource = null;
-        if (errorStatusUpdateControl.getResource().isPresent()) {
-          updatedResource = errorStatusUpdateControl.isPatch() ? customResourceFacade
-              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource)
-              : customResourceFacade
-                  .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
-        }
+        Optional<R> updatedResource = errorStatusUpdateControl.getResource()
+            .flatMap(r -> updateForErrorHandling(originalResource, r,
+                errorStatusUpdateControl));
         if (errorStatusUpdateControl.isNoRetry()) {
-          if (updatedResource != null) {
-            return errorStatusUpdateControl.isPatch()
-                ? PostExecutionControl.customResourceStatusPatched(updatedResource)
-                : PostExecutionControl.customResourceUpdated(updatedResource);
-          } else {
-            return PostExecutionControl.defaultDispatch();
-          }
+          return updatedResource.map(r -> errorStatusUpdateControl.isPatch()
+              ? PostExecutionControl.customResourceStatusPatched(r)
+              : PostExecutionControl.customResourceUpdated(r))
+              .orElseGet(PostExecutionControl::defaultDispatch);
         }
       } catch (RuntimeException ex) {
         log.error("Error during error status handling.", ex);
       }
     }
     throw e;
+  }
+
+  private Optional<R> updateForErrorHandling(R originalResource, R updatedResource,
+      ErrorStatusUpdateControl<R> errorStatusUpdateControl) {
+    if (errorStatusUpdateControl.isOnlyOnChange()
+        && statusEqual(originalResource, updatedResource)) {
+      return Optional.empty();
+    }
+    return Optional.of(errorStatusUpdateControl.isPatch() ? customResourceFacade
+        .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource)
+        : customResourceFacade
+            .updateStatus(errorStatusUpdateControl.getResource().orElseThrow()));
   }
 
   private boolean isErrorStatusHandlerPresent() {

@@ -57,7 +57,7 @@ public class MySQLSchemaReconciler
     status.setSecretName(null);
     status.setStatus("ERROR: " + e.getMessage());
     schema.setStatus(status);
-    return ErrorStatusUpdateControl.patchStatus(schema);
+    return ErrorStatusUpdateControl.patchStatusIfChanged(schema);
   }
 
 
