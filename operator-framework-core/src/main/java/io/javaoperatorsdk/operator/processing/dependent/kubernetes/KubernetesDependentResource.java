@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -138,7 +137,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    var resource = getSecondaryResource(primary);
+    var resource = context.getSecondaryResource(primary.getClass());
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
@@ -208,10 +207,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return resourceType;
   }
 
-  @Override
-  public Optional<R> getSecondaryResource(P primaryResource) {
-    return eventSource().getSecondaryResource(primaryResource);
-  }
+
 
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
