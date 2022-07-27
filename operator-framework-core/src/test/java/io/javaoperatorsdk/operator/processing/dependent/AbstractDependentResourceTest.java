@@ -16,7 +16,6 @@ import static org.mockito.Mockito.when;
 
 class AbstractDependentResourceTest {
 
-
   @Test
   void throwsExceptionIfDesiredIsNullOnCreate() {
     TestDependentResource testDependentResource = new TestDependentResource();
@@ -80,7 +79,8 @@ class AbstractDependentResourceTest {
     }
 
     @Override
-    public Optional<ConfigMap> getSecondaryResource(TestCustomResource primary) {
+    protected Optional<ConfigMap> getSecondaryResource(TestCustomResource primary,
+        Context<TestCustomResource> context) {
       return Optional.ofNullable(secondary);
     }
 

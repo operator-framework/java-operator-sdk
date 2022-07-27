@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +29,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     updater = updatable ? (Updater<R, P>) this : null;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var maybeActual = getSecondaryResource(primary);
+    Optional<R> maybeActual = getSecondaryResource(primary, context);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
@@ -60,6 +63,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           getClass().getSimpleName());
     }
     return ReconcileResult.noOperation(maybeActual.orElse(null));
+  }
+
+  protected Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return context.getSecondaryResource(resourceType());
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {

@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.ResourceOwner;
  * @param <R> the dependent resource type
  * @param <P> the associated primary resource type
  */
-public interface DependentResource<R, P extends HasMetadata> extends ResourceOwner<R, P> {
+public interface DependentResource<R, P extends HasMetadata> {
 
   /**
    * Reconciles the dependent resource given the desired primary state
@@ -20,6 +20,13 @@ public interface DependentResource<R, P extends HasMetadata> extends ResourceOwn
    * @return a {@link ReconcileResult} providing information about the reconciliation result
    */
   ReconcileResult<R> reconcile(P primary, Context<P> context);
+
+  /**
+   * Retrieves the resource type associated with this ResourceOwner
+   *
+   * @return the resource type associated with this ResourceOwner
+   */
+  Class<R> resourceType();
 
   /**
    * Computes a default name for the specified DependentResource class
