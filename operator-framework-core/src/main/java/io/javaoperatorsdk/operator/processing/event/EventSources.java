@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.ResourceOwner;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
@@ -86,8 +85,8 @@ class EventSources<R extends HasMetadata> {
 
   @SuppressWarnings("rawtypes")
   private Class<?> getResourceType(EventSource source) {
-    return source instanceof ResourceOwner
-        ? ((ResourceOwner) source).resourceType()
+    return source instanceof ResourceEventSource
+        ? ((ResourceEventSource) source).resourceType()
         : source.getClass();
   }
 

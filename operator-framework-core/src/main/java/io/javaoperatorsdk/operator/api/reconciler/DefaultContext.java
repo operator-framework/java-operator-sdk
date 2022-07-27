@@ -47,6 +47,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
         .getSecondaryResource(primaryResource);
   }
 
+  // todo implement
+  @Override
+  public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
+      ResourceDiscriminator<R, P> discriminator) {
+    return Optional.empty();
+  }
+
   @Override
   public ControllerConfiguration<P> getControllerConfiguration() {
     return controllerConfiguration;

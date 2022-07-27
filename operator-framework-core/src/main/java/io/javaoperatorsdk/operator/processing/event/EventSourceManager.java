@@ -23,7 +23,8 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
-public class EventSourceManager<P extends HasMetadata> implements LifecycleAware {
+public class EventSourceManager<P extends HasMetadata>
+    implements LifecycleAware, EventSourceRetriever<P> {
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
@@ -171,17 +172,24 @@ public class EventSourceManager<P extends HasMetadata> implements LifecycleAware
     return eventSources.controllerResourceEventSource();
   }
 
-  <S> ResourceEventSource<S, P> getResourceEventSourceFor(
-      Class<S> dependentType) {
+  @Override
+  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(
+      Class<R> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
   }
 
-  public <S> List<ResourceEventSource<S, P>> getEventSourcesFor(Class<S> dependentType) {
+  public <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType) {
     return eventSources.getEventSources(dependentType);
   }
 
-  public <S> ResourceEventSource<S, P> getResourceEventSourceFor(
-      Class<S> dependentType, String qualifier) {
+  @Deprecated
+  public <R> List<ResourceEventSource<R, P>> getEventSourcesFor(Class<R> dependentType) {
+    return eventSources.getEventSources(dependentType);
+  }
+
+  @Override
+  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(
+      Class<R> dependentType, String qualifier) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
     return eventSources.get(dependentType, qualifier);
   }
