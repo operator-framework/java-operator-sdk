@@ -45,14 +45,14 @@ class AbstractSimpleDependentResourceTest {
     simpleDependentResource.reconcile(TestUtils.testCustomResource1(), null);
 
     verify(supplierMock, times(1)).get();
-    assertThat(simpleDependentResource.getSecondaryResource(TestUtils.testCustomResource1()))
+    assertThat(simpleDependentResource.getSecondaryResource(TestUtils.testCustomResource1(), null))
         .isPresent()
         .isEqualTo(Optional.of(SampleExternalResource.testResource1()));
   }
 
   @Test
   void getResourceReadsTheResourceFromCache() {
-    simpleDependentResource.getSecondaryResource(TestUtils.testCustomResource1());
+    simpleDependentResource.getSecondaryResource(TestUtils.testCustomResource1(), null);
 
     verify(supplierMock, times(0)).get();
     verify(updatableCacheMock, times(1)).get(any());
