@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.util.Objects;
+
 import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 
 public class WebPageStatus extends ObservedGenerationAwareStatus {
@@ -42,5 +44,22 @@ public class WebPageStatus extends ObservedGenerationAwareStatus {
         ", areWeGood='" + areWeGood + '\'' +
         ", errorMessage='" + errorMessage + '\'' +
         '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    WebPageStatus that = (WebPageStatus) o;
+    return Objects.equals(htmlConfigMap, that.htmlConfigMap)
+        && Objects.equals(areWeGood, that.areWeGood)
+        && Objects.equals(errorMessage, that.errorMessage);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(htmlConfigMap, areWeGood, errorMessage);
   }
 }

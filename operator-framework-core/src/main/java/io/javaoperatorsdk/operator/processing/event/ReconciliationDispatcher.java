@@ -214,7 +214,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   private R updateStatusGenerationAware(R resource, R originalResource, boolean patch) {
     updateStatusObservedGenerationIfRequired(resource);
-    // todo unit test order
     if (onlyIfChanged && statusEqual(resource, originalResource)) {
       return Optional.empty();
     }
@@ -315,7 +314,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private Optional<P> updateCustomResource(P resource, P originalResource, boolean onlyOnChange) {
-    if (onlyOnChange && !specAndMetaEqual(resource, originalResource)) {
+    if (onlyOnChange && specAndMetaEqual(resource, originalResource)) {
       return Optional.empty();
     }
 

@@ -21,10 +21,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.Cloner;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -627,6 +624,48 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(control.getReScheduleDelay()).isNotPresent();
+  }
+
+  @Test
+  void noRequestOnConditionalUpdates() {
+    checkConditionalUpdate((r, c) -> UpdateControl.patchStatusIfChanged(testCustomResource));
+    checkConditionalUpdate(
+        (r, c) -> UpdateControl.updateResourceAndPatchStatusIfChanged(testCustomResource));
+    checkConditionalUpdate((r, c) -> UpdateControl.updateResourceIfChanged(testCustomResource));
+    checkConditionalUpdate(
+        (r, c) -> UpdateControl.updateResourceAndStatusIfChanged(testCustomResource));
+  }
+
+
+  @Test
+  void conditionalUpdateSpecChangedNoStatus() {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    when(customResourceFacade.updateResource(any())).thenAnswer(a -> a.getArguments()[0]);
+
+    reconciler.reconcile = (r, c) -> {
+      // in this test the cloning is turned off for easier verification, but required here
+      r = ConfigurationService.DEFAULT_CLONER.clone(r);
+      r.getSpec().setValue("otherValue");
+      return UpdateControl.updateResourceAndPatchStatusIfChanged(r);
+    };
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, never()).patchStatus(any(), any());
+    verify(customResourceFacade, times(1)).updateResource(any());
+  }
+
+  private void checkConditionalUpdate(
+      BiFunction<TestCustomResource, Context, UpdateControl<TestCustomResource>> r) {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+
+    reconciler.reconcile = r;
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, never()).patchStatus(any(), any());
+    verify(customResourceFacade, never()).updateResource(any());
+    verify(customResourceFacade, never()).updateStatus(any());
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {

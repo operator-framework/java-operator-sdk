@@ -146,7 +146,7 @@ public class WebPageReconciler
       kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
-    return UpdateControl.updateStatus(webPage);
+    return UpdateControl.patchStatusIfChanged(webPage);
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {
