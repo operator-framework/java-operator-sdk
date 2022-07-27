@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
@@ -47,11 +46,6 @@ public class AbstractWorkflowExecutorTest {
     @Override
     public Class<String> resourceType() {
       return String.class;
-    }
-
-    @Override
-    public Optional<String> getSecondaryResource(TestCustomResource primary) {
-      return Optional.of(VALUE);
     }
 
     @Override
@@ -111,11 +105,6 @@ public class AbstractWorkflowExecutorTest {
     @Override
     public Class<String> resourceType() {
       return String.class;
-    }
-
-    @Override
-    public Optional<String> getSecondaryResource(TestCustomResource primary) {
-      return Optional.of(VALUE);
     }
 
     @Override
