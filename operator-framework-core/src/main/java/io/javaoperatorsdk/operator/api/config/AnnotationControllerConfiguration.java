@@ -17,15 +17,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -287,6 +285,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
+    ResourceDiscriminator<?, ? extends HasMetadata> resourceDiscriminator = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -311,10 +310,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       genericFilter =
           createFilter(kubeDependent.genericFilter(), GenericFilter.class, context)
               .orElse(null);
+
+      resourceDiscriminator = instantiateIfNotVoid(kubeDependent.resourceDiscriminator(),
+          VoidResourceDiscriminator.class);
     }
 
     config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+            resourceDiscriminator, onAddFilter,
             onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
