@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
@@ -15,7 +16,7 @@ public class KubernetesDependentResourceConfig<R> {
   private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector = NO_VALUE_SET;
   private boolean namespacesWereConfigured = false;
-
+  private ResourceDiscriminator<R, ?> resourceDiscriminator;
 
   private OnAddFilter<R> onAddFilter;
 
@@ -29,7 +30,8 @@ public class KubernetesDependentResourceConfig<R> {
 
   @SuppressWarnings("rawtypes")
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
-      boolean configuredNS, OnAddFilter<R> onAddFilter,
+      boolean configuredNS, ResourceDiscriminator<R, ?> resourceDiscriminator,
+      OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
       OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
     this.namespaces = namespaces;
@@ -42,7 +44,7 @@ public class KubernetesDependentResourceConfig<R> {
   }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
-    this(namespaces, labelSelector, true, null, null, null, null);
+    this(namespaces, labelSelector, true, null, null, null, null, null);
   }
 
   public KubernetesDependentResourceConfig<R> setNamespaces(Set<String> namespaces) {
@@ -73,17 +75,22 @@ public class KubernetesDependentResourceConfig<R> {
     return onAddFilter;
   }
 
-  @SuppressWarnings("rawtypes")
-  public OnUpdateFilter onUpdateFilter() {
+
+  public OnUpdateFilter<R> onUpdateFilter() {
     return onUpdateFilter;
   }
 
   @SuppressWarnings("rawtypes")
-  public OnDeleteFilter onDeleteFilter() {
+  public OnDeleteFilter<R> onDeleteFilter() {
     return onDeleteFilter;
   }
 
   public GenericFilter<R> genericFilter() {
     return genericFilter;
+  }
+
+  @SuppressWarnings("rawtypes")
+  public ResourceDiscriminator getResourceDiscriminator() {
+    return resourceDiscriminator;
   }
 }
