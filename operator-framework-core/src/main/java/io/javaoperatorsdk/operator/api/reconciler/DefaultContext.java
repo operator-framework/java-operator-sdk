@@ -47,11 +47,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
         .getSecondaryResource(primaryResource);
   }
 
-  // todo implement
   @Override
   public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
       ResourceDiscriminator<R, P> discriminator) {
-    return Optional.empty();
+    return discriminator.distinguish(expectedType, primaryResource, this,
+        controller.getEventSourceManager());
   }
 
   @Override
