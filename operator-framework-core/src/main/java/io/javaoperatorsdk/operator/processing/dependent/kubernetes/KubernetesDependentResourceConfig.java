@@ -75,7 +75,6 @@ public class KubernetesDependentResourceConfig<R> {
     return onAddFilter;
   }
 
-
   public OnUpdateFilter<R> onUpdateFilter() {
     return onUpdateFilter;
   }
