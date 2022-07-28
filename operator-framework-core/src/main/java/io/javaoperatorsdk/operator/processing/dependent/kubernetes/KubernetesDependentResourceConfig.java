@@ -41,6 +41,7 @@ public class KubernetesDependentResourceConfig<R> {
     this.onUpdateFilter = onUpdateFilter;
     this.onDeleteFilter = onDeleteFilter;
     this.genericFilter = genericFilter;
+    this.resourceDiscriminator = resourceDiscriminator;
   }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {

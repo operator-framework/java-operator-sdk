@@ -2,15 +2,19 @@ package io.javaoperatorsdk.operator.sample.orderedmanageddependent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceListDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = "dependent = cm1")
+@KubernetesDependent(labelSelector = "dependent = cm1",
+    resourceDiscriminator = ConfigMapDependentResource1.CM1ResourceDiscriminator.class)
 public class ConfigMapDependentResource1 extends
     CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
@@ -40,6 +44,16 @@ public class ConfigMapDependentResource1 extends
     data.put("key1", "val1");
     configMap.setData(data);
     return configMap;
+  }
+
+  public static class CM1ResourceDiscriminator
+      extends ResourceListDiscriminator<ConfigMap, OrderedManagedDependentCustomResource> {
+    @Override
+    protected Optional<ConfigMap> distinguish(OrderedManagedDependentCustomResource primary,
+        Set<ConfigMap> resourceList) {
+      return resourceList.stream().filter(cm -> cm.getMetadata().getName()
+          .equals(primary.getMetadata().getName() + "1")).findFirst();
+    }
   }
 
 }
