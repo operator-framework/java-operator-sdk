@@ -9,6 +9,6 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 public interface ResourceDiscriminator<R, P extends HasMetadata> {
 
   Optional<R> distinguish(Class<R> resource, P primary, Context<P> context,
-      EventSourceRetriever<P> eventSourceManager);
+      EventSourceRetriever<P> eventSourceRetriever);
 
 }

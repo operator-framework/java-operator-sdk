@@ -20,7 +20,6 @@ public class MultipleDependentResourceReconciler
 
   public static final int FIRST_CONFIG_MAP_ID = 1;
   public static final int SECOND_CONFIG_MAP_ID = 2;
-  public static final String LABEL = "multipledependentresource";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private final MultipleDependentResourceConfigMap firstDependentResourceConfigMap;
@@ -34,7 +33,6 @@ public class MultipleDependentResourceReconciler
 
     firstDependentResourceConfigMap.configureWith(
         new KubernetesDependentResourceConfig()
-            .setLabelSelector(getLabelSelector(FIRST_CONFIG_MAP_ID))
             .setResourceDiscriminator(
                 new ResourceIDMatcherDiscriminator<ConfigMap, MultipleDependentResourceCustomResource>(
                     p -> new ResourceID(p.getConfigMapName(FIRST_CONFIG_MAP_ID),
@@ -42,15 +40,10 @@ public class MultipleDependentResourceReconciler
 
     secondDependentResourceConfigMap.configureWith(
         new KubernetesDependentResourceConfig()
-            .setLabelSelector(getLabelSelector(SECOND_CONFIG_MAP_ID))
             .setResourceDiscriminator(
                 new ResourceIDMatcherDiscriminator<ConfigMap, MultipleDependentResourceCustomResource>(
                     p -> new ResourceID(p.getConfigMapName(SECOND_CONFIG_MAP_ID),
                         p.getMetadata().getNamespace()))));
-  }
-
-  private String getLabelSelector(int resourceId) {
-    return LABEL + "=" + resourceId;
   }
 
   @Override

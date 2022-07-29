@@ -18,7 +18,7 @@ public class ResourceIDMatcherDiscriminator<R extends HasMetadata, P extends Has
 
   @Override
   public Optional<R> distinguish(Class<R> resource, P primary, Context<P> context,
-      EventSourceRetriever<P> eventSourceManager) {
+      EventSourceRetriever<P> eventSourceRetriever) {
     var resourceID = mapper.apply(primary);
     return context.getSecondaryResources(resource).stream()
         .filter(r -> r.getMetadata().getName()
