@@ -5,11 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
@@ -31,19 +32,16 @@ public class MultipleDependentResourceReconciler
 
     secondDependentResourceConfigMap = new MultipleDependentResourceConfigMap(SECOND_CONFIG_MAP_ID);
 
-    firstDependentResourceConfigMap.configureWith(
-        new KubernetesDependentResourceConfig()
-            .setResourceDiscriminator(
-                new ResourceIDMatcherDiscriminator<ConfigMap, MultipleDependentResourceCustomResource>(
-                    p -> new ResourceID(p.getConfigMapName(FIRST_CONFIG_MAP_ID),
-                        p.getMetadata().getNamespace()))));
-
-    secondDependentResourceConfigMap.configureWith(
-        new KubernetesDependentResourceConfig()
-            .setResourceDiscriminator(
-                new ResourceIDMatcherDiscriminator<ConfigMap, MultipleDependentResourceCustomResource>(
-                    p -> new ResourceID(p.getConfigMapName(SECOND_CONFIG_MAP_ID),
-                        p.getMetadata().getNamespace()))));
+    firstDependentResourceConfigMap
+        .setResourceDiscriminator(
+            new ResourceIDMatcherDiscriminator<>(
+                p -> new ResourceID(p.getConfigMapName(FIRST_CONFIG_MAP_ID),
+                    p.getMetadata().getNamespace())));
+    secondDependentResourceConfigMap
+        .setResourceDiscriminator(
+            new ResourceIDMatcherDiscriminator<>(
+                p -> new ResourceID(p.getConfigMapName(SECOND_CONFIG_MAP_ID),
+                    p.getMetadata().getNamespace())));
   }
 
   @Override
@@ -64,9 +62,13 @@ public class MultipleDependentResourceReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResource> context) {
-    return EventSourceInitializer.nameEventSources(
-        firstDependentResourceConfigMap.initEventSource(context),
-        secondDependentResourceConfigMap.initEventSource(context));
+    InformerEventSource<ConfigMap, MultipleDependentResourceCustomResource> eventSource =
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+            .build(), context);
+    firstDependentResourceConfigMap.configureWith(eventSource);
+    secondDependentResourceConfigMap.configureWith(eventSource);
+
+    return EventSourceInitializer.nameEventSources(eventSource);
   }
 
   @Override
