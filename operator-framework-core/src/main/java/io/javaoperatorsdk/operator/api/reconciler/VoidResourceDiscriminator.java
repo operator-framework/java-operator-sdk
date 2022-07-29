@@ -10,7 +10,7 @@ public class VoidResourceDiscriminator<R, P extends HasMetadata>
 
   @Override
   public Optional<R> distinguish(Class<R> resource, P primary, Context<P> context,
-      EventSourceRetriever<P> eventSourceManager) {
+      EventSourceRetriever<P> eventSourceRetriever) {
     throw new UnsupportedOperationException();
   }
 }

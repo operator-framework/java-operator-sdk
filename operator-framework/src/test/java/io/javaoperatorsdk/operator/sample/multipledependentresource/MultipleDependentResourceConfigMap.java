@@ -31,7 +31,6 @@ public class MultipleDependentResourceConfigMap
         .withNewMetadata()
         .withName(primary.getConfigMapName(value))
         .withNamespace(primary.getMetadata().getNamespace())
-        .withLabels(Map.of(MultipleDependentResourceReconciler.LABEL, String.valueOf(value)))
         .endMetadata()
         .withData(data)
         .build();
