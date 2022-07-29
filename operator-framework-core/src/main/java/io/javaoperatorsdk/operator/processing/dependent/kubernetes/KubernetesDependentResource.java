@@ -67,13 +67,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       namespaces = context.getControllerConfiguration().getNamespaces();
     }
 
-    var ic = InformerConfiguration.from(resourceType())
-        .withLabelSelector(labelSelector)
-        .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
-        .withNamespaces(namespaces, inheritNamespacesOnChange)
-        .build();
+    if (eventSource() == null) {
+      var ic = InformerConfiguration.from(resourceType())
+          .withLabelSelector(labelSelector)
+          .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
+          .withNamespaces(namespaces, inheritNamespacesOnChange)
+          .build();
 
-    configureWith(new InformerEventSource<>(ic, context));
+      configureWith(new InformerEventSource<>(ic, context));
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -137,7 +139,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    var resource = context.getSecondaryResource(resourceType());
+    var resource = getSecondaryResource(primary, context);
     resource.ifPresent(r -> client.resource(r).delete());
   }
 

@@ -134,11 +134,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         "desired method must be implemented if this DependentResource can be created and/or updated");
   }
 
-  protected ResourceDiscriminator<R, P> getResourceDiscriminator() {
+  // todo review & refactor configuration to cover all cases
+  public ResourceDiscriminator<R, P> getResourceDiscriminator() {
     return resourceDiscriminator;
   }
 
-  protected AbstractDependentResource<R, P> setResourceDiscriminator(
+  public AbstractDependentResource<R, P> setResourceDiscriminator(
       ResourceDiscriminator<R, P> resourceDiscriminator) {
     this.resourceDiscriminator = resourceDiscriminator;
     return this;
