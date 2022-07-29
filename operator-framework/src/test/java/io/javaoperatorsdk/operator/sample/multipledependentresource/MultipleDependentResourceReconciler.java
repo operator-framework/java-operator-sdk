@@ -3,15 +3,12 @@ package io.javaoperatorsdk.operator.sample.multipledependentresource;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
@@ -32,14 +29,24 @@ public class MultipleDependentResourceReconciler
 
   public MultipleDependentResourceReconciler() {
     firstDependentResourceConfigMap = new MultipleDependentResourceConfigMap(FIRST_CONFIG_MAP_ID);
+
     secondDependentResourceConfigMap = new MultipleDependentResourceConfigMap(SECOND_CONFIG_MAP_ID);
 
     firstDependentResourceConfigMap.configureWith(
         new KubernetesDependentResourceConfig()
-            .setLabelSelector(getLabelSelector(FIRST_CONFIG_MAP_ID)));
+            .setLabelSelector(getLabelSelector(FIRST_CONFIG_MAP_ID))
+            .setResourceDiscriminator(
+                new ResourceIDMatcherDiscriminator<ConfigMap, MultipleDependentResourceCustomResource>(
+                    p -> new ResourceID(p.getConfigMapName(FIRST_CONFIG_MAP_ID),
+                        p.getMetadata().getNamespace()))));
+
     secondDependentResourceConfigMap.configureWith(
         new KubernetesDependentResourceConfig()
-            .setLabelSelector(getLabelSelector(SECOND_CONFIG_MAP_ID)));
+            .setLabelSelector(getLabelSelector(SECOND_CONFIG_MAP_ID))
+            .setResourceDiscriminator(
+                new ResourceIDMatcherDiscriminator<ConfigMap, MultipleDependentResourceCustomResource>(
+                    p -> new ResourceID(p.getConfigMapName(SECOND_CONFIG_MAP_ID),
+                        p.getMetadata().getNamespace()))));
   }
 
   private String getLabelSelector(int resourceId) {
