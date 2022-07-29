@@ -64,13 +64,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       namespaces = context.getControllerConfiguration().getNamespaces();
     }
 
-    var ic = InformerConfiguration.from(resourceType())
-        .withLabelSelector(labelSelector)
-        .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
-        .withNamespaces(namespaces, inheritNamespacesOnChange)
-        .build();
+    if (eventSource() == null) {
+      var ic = InformerConfiguration.from(resourceType())
+          .withLabelSelector(labelSelector)
+          .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
+          .withNamespaces(namespaces, inheritNamespacesOnChange)
+          .build();
 
-    configureWith(new InformerEventSource<>(ic, context));
+      configureWith(new InformerEventSource<>(ic, context));
+    }
   }
 
   @SuppressWarnings("unchecked")
