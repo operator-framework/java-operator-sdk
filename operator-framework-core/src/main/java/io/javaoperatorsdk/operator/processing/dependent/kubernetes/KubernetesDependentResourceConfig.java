@@ -91,4 +91,10 @@ public class KubernetesDependentResourceConfig<R> {
   public ResourceDiscriminator getResourceDiscriminator() {
     return resourceDiscriminator;
   }
+
+  public <P> KubernetesDependentResourceConfig<R> setResourceDiscriminator(
+      ResourceDiscriminator<R, ?> resourceDiscriminator) {
+    this.resourceDiscriminator = resourceDiscriminator;
+    return this;
+  }
 }
