@@ -5,17 +5,17 @@ import java.util.List;
 
 public class LeaderElectionTestCustomResourceStatus {
 
-    private List<String> reconciledBy;
+  private List<String> reconciledBy;
 
-    public List<String> getReconciledBy() {
-        if (reconciledBy == null) {
-            reconciledBy = new ArrayList<>();
-        }
-        return reconciledBy;
+  public List<String> getReconciledBy() {
+    if (reconciledBy == null) {
+      reconciledBy = new ArrayList<>();
     }
+    return reconciledBy;
+  }
 
-    public LeaderElectionTestCustomResourceStatus setReconciledBy(List<String> reconciledBy) {
-        this.reconciledBy = reconciledBy;
-        return this;
-    }
+  public LeaderElectionTestCustomResourceStatus setReconciledBy(List<String> reconciledBy) {
+    this.reconciledBy = reconciledBy;
+    return this;
+  }
 }

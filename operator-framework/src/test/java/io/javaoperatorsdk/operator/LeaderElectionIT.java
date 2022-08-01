@@ -4,9 +4,9 @@ import org.junit.jupiter.api.Test;
 
 class LeaderElectionIT {
 
-    @Test
-    void leaderElection() {
+  @Test
+  void leaderElection() {
 
-    }
+  }
 
 }

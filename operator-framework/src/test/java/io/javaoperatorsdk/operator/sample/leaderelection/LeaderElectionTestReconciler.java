@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.sample.leaderelection;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
-
 import java.time.Duration;
+
+import io.javaoperatorsdk.operator.api.reconciler.*;
 
 @ControllerConfiguration()
 public class LeaderElectionTestReconciler
@@ -16,7 +16,8 @@ public class LeaderElectionTestReconciler
 
   @Override
   public UpdateControl<LeaderElectionTestCustomResource> reconcile(
-          LeaderElectionTestCustomResource resource, Context<LeaderElectionTestCustomResource> context) {
+      LeaderElectionTestCustomResource resource,
+      Context<LeaderElectionTestCustomResource> context) {
 
     if (resource.getStatus() == null) {
       resource.setStatus(new LeaderElectionTestCustomResourceStatus());
