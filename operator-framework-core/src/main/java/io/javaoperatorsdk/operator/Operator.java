@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -24,9 +25,10 @@ public class Operator implements LifecycleAware {
   private final ControllerManager controllerManager = new ControllerManager();
   private final LeaderElectionManager leaderElectionManager =
       new LeaderElectionManager(controllerManager);
+  private volatile boolean started = false;
 
   public Operator() {
-    this(new DefaultKubernetesClient(), ConfigurationServiceProvider.instance());
+    this(new KubernetesClientBuilder().build(), ConfigurationServiceProvider.instance());
   }
 
   public Operator(KubernetesClient kubernetesClient) {
@@ -42,7 +44,7 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(new DefaultKubernetesClient(), overrider);
+    this(new KubernetesClientBuilder().build(), overrider);
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
@@ -82,9 +84,11 @@ public class Operator implements LifecycleAware {
    */
   public void start() {
     try {
-
+      if (started) {
+        return;
+      }
+      started = true;
       controllerManager.shouldStart();
-
       final var version = ConfigurationServiceProvider.instance().getVersion();
       log.info(
           "Operator SDK {} (commit: {}) built on {} starting...",
@@ -94,9 +98,9 @@ public class Operator implements LifecycleAware {
 
       final var clientVersion = Version.clientVersion();
       log.info("Client version: {}", clientVersion);
-
       ExecutorServiceManager.init();
-      controllerManager.start();
+      controllerManager.start(!leaderElectionManager.isLeaderElectionOn());
+      leaderElectionManager.start();
     } catch (Exception e) {
       log.error("Error starting operator", e);
       stop();
@@ -111,8 +115,8 @@ public class Operator implements LifecycleAware {
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
     controllerManager.stop();
-
     ExecutorServiceManager.stop();
+    leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
@@ -148,6 +152,9 @@ public class Operator implements LifecycleAware {
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration)
       throws OperatorException {
+    if (started) {
+      throw new OperatorException("Operator already started. Register all the controllers before.");
+    }
 
     if (configuration == null) {
       throw new OperatorException(

@@ -9,16 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.LifecycleAware;
 
 /**
  * Not confuse with controller manager form go operators. The highest level aggregate is
  * {@link Operator} in JOSDK.
  */
-class ControllerManager implements LifecycleAware {
+class ControllerManager {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerManager.class);
 
+  @SuppressWarnings("rawtypes")
   private final Map<String, Controller> controllers = new HashMap<>();
   private boolean started = false;
 
@@ -31,8 +31,8 @@ class ControllerManager implements LifecycleAware {
     }
   }
 
-  public synchronized void start() {
-    controllers().parallelStream().forEach(Controller::start);
+  public synchronized void start(boolean startEventProcessor) {
+    controllers().parallelStream().forEach(c -> c.start(startEventProcessor));
     started = true;
   }
 
@@ -41,8 +41,11 @@ class ControllerManager implements LifecycleAware {
       log.debug("closing {}", closeable);
       closeable.stop();
     });
-
     started = false;
+  }
+
+  public synchronized void startEventProcessing() {
+    controllers().parallelStream().forEach(Controller::startEventProcessing);
   }
 
   @SuppressWarnings("unchecked")
@@ -57,17 +60,16 @@ class ControllerManager implements LifecycleAware {
           + "' is already registered for resource '" + resourceTypeName + "'");
     }
     controllers.put(resourceTypeName, controller);
-    if (started) {
-      controller.start();
-    }
   }
 
+  @SuppressWarnings("rawtypes")
   synchronized Optional<Controller> get(String name) {
     return controllers().stream()
         .filter(c -> name.equals(c.getConfiguration().getName()))
         .findFirst();
   }
 
+  @SuppressWarnings("rawtypes")
   synchronized Collection<Controller> controllers() {
     return controllers.values();
   }

@@ -121,7 +121,7 @@ class ReconciliationDispatcherTest {
         return useFinalizer;
       }
     };
-    controller.start();
+    controller.start(true);
 
     return new ReconciliationDispatcher<>(controller, customResourceFacade);
   }

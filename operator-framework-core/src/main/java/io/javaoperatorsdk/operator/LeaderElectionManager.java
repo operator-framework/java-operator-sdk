@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +21,18 @@ public class LeaderElectionManager {
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionManager.class);
 
   private LeaderElector leaderElector = null;
-  private ControllerManager controllerManager;
+  private final ControllerManager controllerManager;
+  private String identity;
+  private CompletableFuture<?> leaderElectionFuture;
 
   public LeaderElectionManager(ControllerManager controllerManager) {
     this.controllerManager = controllerManager;
   }
 
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
-    Lock lock = new LeaseLock(config.getLeaseNamespace(), config.getLeaseName(), identity(config));
-    // todo releaseOnCancel
-    // todo use this executor service?
+    this.identity = identity(config);
+    Lock lock = new LeaseLock(config.getLeaseNamespace(), config.getLeaseName(), identity);
+    // releaseOnCancel is not used in the underlying implementation
     leaderElector = new LeaderElectorBuilder(client,
         ConfigurationServiceProvider.instance().getExecutorService())
         .withConfig(
@@ -37,7 +40,6 @@ public class LeaderElectionManager {
                 config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
         .build();
   }
-
 
   public boolean isLeaderElectionOn() {
     return leaderElector != null;
@@ -50,11 +52,15 @@ public class LeaderElectionManager {
   }
 
   private void startLeading() {
-
+    controllerManager.startEventProcessing();
   }
 
   private void stopLeading() {
-
+    log.info("Stopped leading for identity: {}. Exiting.", identity);
+    // When leader stops leading the process ends immediately to prevent multiple reconciliations
+    // running parallel.
+    // Note that some reconciliations might run a very long time.
+    System.exit(1);
   }
 
   private String identity(LeaderElectionConfiguration config) {
@@ -65,4 +71,15 @@ public class LeaderElectionManager {
     return identity;
   }
 
+  public void start() {
+    if (isLeaderElectionOn()) {
+      leaderElectionFuture = leaderElector.start();
+    }
+  }
+
+  public void stop() {
+    if (leaderElectionFuture != null) {
+      leaderElectionFuture.cancel(false);
+    }
+  }
 }

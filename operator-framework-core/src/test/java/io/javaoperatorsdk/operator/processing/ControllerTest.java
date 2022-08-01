@@ -24,7 +24,7 @@ class ControllerTest {
     final var configuration = MockControllerConfiguration.forResource(Secret.class);
 
     final var controller = new Controller<Secret>(reconciler, configuration, client);
-    controller.start();
+    controller.start(true);
     verify(client, never()).apiextensions();
   }
 
@@ -36,7 +36,7 @@ class ControllerTest {
     try {
       ConfigurationServiceProvider.overrideCurrent(o -> o.checkingCRDAndValidateLocalModel(false));
       final var controller = new Controller<TestCustomResource>(reconciler, configuration, client);
-      controller.start();
+      controller.start(true);
       verify(client, never()).apiextensions();
     } finally {
       ConfigurationServiceProvider.reset();

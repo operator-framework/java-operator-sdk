@@ -45,7 +45,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, Cleaner<P>, LifecycleAware,
+    implements Reconciler<P>, Cleaner<P>,
     RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
@@ -61,7 +61,6 @@ public class Controller<P extends HasMetadata>
 
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
-
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -272,7 +271,7 @@ public class Controller<P extends HasMetadata>
    *
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public void start() throws OperatorException {
+  public synchronized void start(boolean startEventProcessor) throws OperatorException {
     final Class<P> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
     final var crdName = configuration.getResourceTypeName();
@@ -290,13 +289,16 @@ public class Controller<P extends HasMetadata>
 
       initAndRegisterEventSources(context);
       eventSourceManager.start();
-      eventProcessor.start();
+      if (startEventProcessor) {
+        eventProcessor.start();
+      }
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
   }
+
 
   private void validateCRDWithLocalModelIfRequired(Class<P> resClass, String controllerName,
       String crdName, String specVersion) {
@@ -323,12 +325,9 @@ public class Controller<P extends HasMetadata>
     eventProcessor.start();
   }
 
-  public void startEventProcessing() {
+  public synchronized void startEventProcessing() {
+    log.info("Started event processing for controller: {}", configuration.getName());
     eventProcessor.start();
-  }
-
-  public void stopEventProcessing() {
-    eventProcessor.stop();
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
@@ -363,12 +362,12 @@ public class Controller<P extends HasMetadata>
     return eventSourceManager;
   }
 
-  public void stop() {
-    if (eventSourceManager != null) {
-      eventSourceManager.stop();
-    }
+  public synchronized void stop() {
     if (eventProcessor != null) {
       eventProcessor.stop();
+    }
+    if (eventSourceManager != null) {
+      eventSourceManager.stop();
     }
   }
 
