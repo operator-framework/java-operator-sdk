@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.net.URI;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -13,6 +15,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.http.HttpRequest;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
@@ -28,8 +31,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ReconcilerUtilsTest {
+
+  public static final String RESOURCE_URI =
+      "https://kubernetes.docker.internal:6443/apis/tomcatoperator.io/v1/tomcats";
 
   @Test
   void defaultReconcilerNameShouldWork() {
@@ -113,10 +121,13 @@ class ReconcilerUtilsTest {
 
   @Test
   void handleKubernetesExceptionShouldThrowMissingCRDExceptionWhenAppropriate() {
+    var request = mock(HttpRequest.class);
+    when(request.uri()).thenReturn(URI
+        .create(RESOURCE_URI));
     assertThrows(MissingCRDException.class, () -> handleKubernetesClientException(
         new KubernetesClientException(
-            "Failure executing: GET at: https://kubernetes.docker.internal:6443/apis/tomcatoperator.io/v1/tomcats. Message: Not Found.",
-            404, null),
+            "Failure executing: GET at: " + RESOURCE_URI + ". Message: Not Found.",
+            null, 404, null, request),
         HasMetadata.getFullResourceName(Tomcat.class)));
   }
 
