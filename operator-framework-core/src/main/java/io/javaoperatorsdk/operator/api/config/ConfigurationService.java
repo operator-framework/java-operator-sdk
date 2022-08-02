@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
@@ -126,7 +127,7 @@ public interface ConfigurationService {
   }
 
   default ObjectMapper getObjectMapper() {
-    return OBJECT_MAPPER;
+    return Serialization.jsonMapper();
   }
 
   default DependentResourceFactory dependentResourceFactory() {
