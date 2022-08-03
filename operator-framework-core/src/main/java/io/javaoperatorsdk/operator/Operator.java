@@ -99,6 +99,8 @@ public class Operator implements LifecycleAware {
       final var clientVersion = Version.clientVersion();
       log.info("Client version: {}", clientVersion);
       ExecutorServiceManager.init();
+      // first start the controller manager before leader election,
+      // the leader election would start subsequently the processor if on
       controllerManager.start(!leaderElectionManager.isLeaderElectionOn());
       leaderElectionManager.start();
     } catch (Exception e) {

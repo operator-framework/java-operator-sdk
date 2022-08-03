@@ -13,7 +13,6 @@ public class LeaderElectionTestOperator {
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionTestOperator.class);
 
   public static void main(String[] args) {
-    System.out.println("Starting...");
     String identity = System.getenv("POD_NAME");
     String namespace = System.getenv("POD_NAMESPACE");
 

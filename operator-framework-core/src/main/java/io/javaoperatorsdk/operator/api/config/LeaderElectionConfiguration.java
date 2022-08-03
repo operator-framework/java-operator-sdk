@@ -9,9 +9,6 @@ public class LeaderElectionConfiguration {
   public static final Duration RENEW_DEADLINE_DEFAULT_VALUE = Duration.ofSeconds(10);
   public static final Duration RETRY_PERIOD_DEFAULT_VALUE = Duration.ofSeconds(2);
 
-  // todo discuss
-  // private boolean syncEventSources;
-
   private final String leaseName;
   private final String leaseNamespace;
   private final String identity;
