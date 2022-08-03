@@ -128,6 +128,8 @@ class LeaderElectionE2E {
     applyResources("k8s/operator.yaml");
     await().atMost(Duration.ofSeconds(POD_STARTUP_TIMEOUT)).untilAsserted(() -> {
       var pod = client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).get();
+      log.info("Operator 1: {}",pod);
+      
       assertThat(pod.getStatus().getContainerStatuses().get(0).getReady()).isTrue();
     });
 
