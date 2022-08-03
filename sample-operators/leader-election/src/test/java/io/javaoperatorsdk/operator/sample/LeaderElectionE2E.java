@@ -32,7 +32,7 @@ import static org.awaitility.Awaitility.await;
 class LeaderElectionE2E {
 
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionE2E.class);
-  public static final int POD_STARTUP_TIMEOUT = 20;
+  public static final int POD_STARTUP_TIMEOUT = 60;
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final int MINIMAL_SECONDS_FOR_RENEWAL = 3;
