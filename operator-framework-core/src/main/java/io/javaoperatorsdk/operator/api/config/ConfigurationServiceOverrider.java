@@ -84,6 +84,7 @@ public class ConfigurationServiceOverrider {
 
   public LeaderElectionConfiguration withLeaderElectionConfiguration(
       LeaderElectionConfiguration leaderElectionConfiguration) {
+    this.leaderElectionConfiguration = leaderElectionConfiguration;
     return leaderElectionConfiguration;
   }
 

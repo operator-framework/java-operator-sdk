@@ -11,8 +11,9 @@ public final class LeaderElectionConfigurationBuilder {
   private Duration leaseDuration = LEASE_DURATION_DEFAULT_VALUE;
   private Duration renewDeadline = RENEW_DEADLINE_DEFAULT_VALUE;
   private Duration retryPeriod = RETRY_PERIOD_DEFAULT_VALUE;
+  private String identity;
 
-  private LeaderElectionConfigurationBuilder() {}
+  public LeaderElectionConfigurationBuilder() {}
 
   public static LeaderElectionConfigurationBuilder aLeaderElectionConfiguration() {
     return new LeaderElectionConfigurationBuilder();
@@ -43,8 +44,13 @@ public final class LeaderElectionConfigurationBuilder {
     return this;
   }
 
+  public LeaderElectionConfigurationBuilder withIdentity(String identity) {
+    this.identity = identity;
+    return this;
+  }
+
   public LeaderElectionConfiguration build() {
     return new LeaderElectionConfiguration(leaseName, leaseNamespace, leaseDuration, renewDeadline,
-        retryPeriod);
+        retryPeriod, identity);
   }
 }

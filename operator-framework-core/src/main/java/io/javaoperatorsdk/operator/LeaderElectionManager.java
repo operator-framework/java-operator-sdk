@@ -64,11 +64,11 @@ public class LeaderElectionManager {
   }
 
   private String identity(LeaderElectionConfiguration config) {
-    String identity = config.getIdentity().orElse(System.getenv("HOSTNAME"));
-    if (identity == null || identity.isBlank()) {
-      identity = UUID.randomUUID().toString();
+    String id = config.getIdentity().orElse(System.getenv("HOSTNAME"));
+    if (id == null || id.isBlank()) {
+      id = UUID.randomUUID().toString();
     }
-    return identity;
+    return id;
   }
 
   public void start() {

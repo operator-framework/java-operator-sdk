@@ -1,9 +1,9 @@
-package io.javaoperatorsdk.operator.sample.leaderelection;
+package io.javaoperatorsdk.operator.sample;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LeaderElectionTestCustomResourceStatus {
+public class LeaderElectionTestStatus {
 
   private List<String> reconciledBy;
 
@@ -14,7 +14,7 @@ public class LeaderElectionTestCustomResourceStatus {
     return reconciledBy;
   }
 
-  public LeaderElectionTestCustomResourceStatus setReconciledBy(List<String> reconciledBy) {
+  public LeaderElectionTestStatus setReconciledBy(List<String> reconciledBy) {
     this.reconciledBy = reconciledBy;
     return this;
   }
