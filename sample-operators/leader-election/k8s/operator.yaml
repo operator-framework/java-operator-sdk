@@ -52,8 +52,8 @@ rules:
   - apiGroups:
       - "sample.javaoperatorsdk"
     resources:
-      - leaderelectiontests
-      - leaderelectiontests/status
+      - leaderelectiontestcustomresources
+      - leaderelectiontestcustomresources/status
     verbs:
       - '*'
   - apiGroups:

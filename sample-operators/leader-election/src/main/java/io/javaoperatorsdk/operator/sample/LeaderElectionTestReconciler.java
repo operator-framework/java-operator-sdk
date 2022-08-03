@@ -9,8 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration()
 public class LeaderElectionTestReconciler
-    implements Reconciler<LeaderElectionTest> {
-
+    implements Reconciler<LeaderElectionTestCustomResource> {
 
   private final String reconcilerName;
 
@@ -19,9 +18,9 @@ public class LeaderElectionTestReconciler
   }
 
   @Override
-  public UpdateControl<LeaderElectionTest> reconcile(
-      LeaderElectionTest resource,
-      Context<LeaderElectionTest> context) {
+  public UpdateControl<LeaderElectionTestCustomResource> reconcile(
+      LeaderElectionTestCustomResource resource,
+      Context<LeaderElectionTestCustomResource> context) {
 
     if (resource.getStatus() == null) {
       resource.setStatus(new LeaderElectionTestStatus());

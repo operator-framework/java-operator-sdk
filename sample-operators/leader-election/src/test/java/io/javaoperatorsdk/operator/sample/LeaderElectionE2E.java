@@ -36,7 +36,7 @@ class LeaderElectionE2E {
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final int MINIMAL_SECONDS_FOR_RENEWAL = 3;
-  public static final int MAX_WAIT_SECONDS = 10;
+  public static final int MAX_WAIT_SECONDS = 30;
 
   private static final String OPERATOR_1_POD_NAME = "leader-election-operator-1";
   private static final String OPERATOR_2_POD_NAME = "leader-election-operator-2";
@@ -55,7 +55,7 @@ class LeaderElectionE2E {
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
         .atMost(Duration.ofSeconds(MAX_WAIT_SECONDS))
         .untilAsserted(() -> {
-          var actualStatus = client.resources(LeaderElectionTest.class)
+          var actualStatus = client.resources(LeaderElectionTestCustomResource.class)
               .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
@@ -64,22 +64,23 @@ class LeaderElectionE2E {
 
     client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).delete();
 
-    var actualListSize = client.resources(LeaderElectionTest.class)
+    var actualListSize = client.resources(LeaderElectionTestCustomResource.class)
         .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy()
         .size();
 
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
         .atMost(Duration.ofSeconds(240))
         .untilAsserted(() -> {
-          var actualStatus = client.resources(LeaderElectionTest.class)
+          var actualStatus = client.resources(LeaderElectionTestCustomResource.class)
               .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
           assertThat(actualStatus.getReconciledBy()).hasSizeGreaterThan(actualListSize + 2);
         });
 
-    assertReconciliations(client.resources(LeaderElectionTest.class).inNamespace(namespace)
-        .withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy());
+    assertReconciliations(
+        client.resources(LeaderElectionTestCustomResource.class).inNamespace(namespace)
+            .withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy());
   }
 
   private void assertReconciliations(List<String> reconciledBy) {
@@ -95,7 +96,7 @@ class LeaderElectionE2E {
   }
 
   private void applyCustomResource() {
-    var res = new LeaderElectionTest();
+    var res = new LeaderElectionTestCustomResource();
     res.setMetadata(new ObjectMetaBuilder()
         .withName(TEST_RESOURCE_NAME)
         .withNamespace(namespace)
@@ -119,7 +120,7 @@ class LeaderElectionE2E {
     client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
         .endMetadata().build()).delete();
     await()
-        .atMost(Duration.ofSeconds(15))
+        .atMost(Duration.ofSeconds(60))
         .untilAsserted(() -> assertThat(client.namespaces().withName(namespace).get()).isNull());
   }
 
@@ -139,7 +140,7 @@ class LeaderElectionE2E {
 
   void applyCRD() {
     String path =
-        "./target/classes/META-INF/fabric8/leaderelectiontests.sample.javaoperatorsdk-v1.yml";
+        "./target/classes/META-INF/fabric8/leaderelectiontestcustomresources.sample.javaoperatorsdk-v1.yml";
     try (InputStream is = new FileInputStream(path)) {
       final var crd = client.load(is);
       crd.createOrReplace();

@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("le")
-public class LeaderElectionTest
+public class LeaderElectionTestCustomResource
     extends CustomResource<Void, LeaderElectionTestStatus>
     implements Namespaced {
 }
