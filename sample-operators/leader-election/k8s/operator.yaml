@@ -13,7 +13,7 @@ spec:
   containers:
     - name: operator
       image: leader-election-operator
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Never
       env:
         - name: POD_NAMESPACE
           valueFrom:

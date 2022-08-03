@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,8 @@ class LeaderElectionE2E {
   private KubernetesClient client;
 
   @Test
+  // not for local mode by design
+  @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   void otherInstancesTakesOverWhenSteppingDown() {
     log.info("Deploying operator");
     deployOperatorsInOrder();
@@ -128,8 +131,6 @@ class LeaderElectionE2E {
     applyResources("k8s/operator.yaml");
     await().atMost(Duration.ofSeconds(POD_STARTUP_TIMEOUT)).untilAsserted(() -> {
       var pod = client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).get();
-      log.info("Operator 1: {}", pod);
-
       assertThat(pod.getStatus().getContainerStatuses().get(0).getReady()).isTrue();
     });
 
