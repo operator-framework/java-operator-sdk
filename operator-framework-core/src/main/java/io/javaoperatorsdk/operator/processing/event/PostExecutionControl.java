@@ -8,7 +8,7 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   private final boolean finalizerRemoved;
   private final R updatedCustomResource;
-  private final boolean updateIsStatusPatch;
+  private final boolean updateWithOptimisticLocking;
   private final Exception runtimeException;
 
   private Long reScheduleDelay = null;
@@ -16,40 +16,40 @@ final class PostExecutionControl<R extends HasMetadata> {
   private PostExecutionControl(
       boolean finalizerRemoved,
       R updatedCustomResource,
-      boolean updateIsStatusPatch, Exception runtimeException) {
+      boolean updateWithOptimisticLocking, Exception runtimeException) {
     this.finalizerRemoved = finalizerRemoved;
     this.updatedCustomResource = updatedCustomResource;
-    this.updateIsStatusPatch = updateIsStatusPatch;
+    this.updateWithOptimisticLocking = updateWithOptimisticLocking;
     this.runtimeException = runtimeException;
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, true, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> defaultDispatch() {
-    return new PostExecutionControl<>(false, null, false, null);
+    return new PostExecutionControl<>(false, null, true, null);
   }
 
-  public static <R extends HasMetadata> PostExecutionControl<R> customResourceStatusPatched(
+  public static <R extends HasMetadata> PostExecutionControl<R> customResourcePatched(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, true, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceUpdated(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, true, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceFinalizerRemoved(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(true, updatedCustomResource, false, null);
+    return new PostExecutionControl<>(true, updatedCustomResource, true, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
       Exception exception) {
-    return new PostExecutionControl<>(false, null, false, exception);
+    return new PostExecutionControl<>(false, null, true, exception);
   }
 
   public Optional<R> getUpdatedCustomResource() {
@@ -73,8 +73,8 @@ final class PostExecutionControl<R extends HasMetadata> {
     return Optional.ofNullable(reScheduleDelay);
   }
 
-  public boolean updateIsStatusPatch() {
-    return updateIsStatusPatch;
+  public boolean updateWithOptimisticLocking() {
+    return updateWithOptimisticLocking;
   }
 
   @Override

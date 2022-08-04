@@ -337,7 +337,7 @@ class ReconciliationDispatcherTest {
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
     verify(customResourceFacade, times(1)).replaceResourceWithLock(any());
-    assertThat(postExecControl.updateIsStatusPatch()).isFalse();
+    assertThat(postExecControl.updateWithOptimisticLocking()).isTrue();
     assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
 

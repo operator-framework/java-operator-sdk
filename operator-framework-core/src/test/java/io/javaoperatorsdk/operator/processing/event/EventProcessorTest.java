@@ -292,7 +292,7 @@ class EventProcessorTest {
     TestCustomResource customResource = testCustomResource();
     ExecutionScope executionScope = new ExecutionScope(customResource, null);
     PostExecutionControl postExecutionControl =
-        PostExecutionControl.customResourceStatusPatched(customResource);
+        PostExecutionControl.customResourcePatched(customResource);
 
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 

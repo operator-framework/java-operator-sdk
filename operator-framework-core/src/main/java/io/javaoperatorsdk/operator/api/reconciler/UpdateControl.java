@@ -51,6 +51,15 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
 
+  /**
+   * Primary purpose of this method is to support server side apply on the resource.
+   * Please refer to fabric8 client documentation and kubernetes documentation for further details.
+   * @param customResource the updated custom resource
+   * @param patchContext context to specify details for patch
+   * @return initialized update control
+   * @param <T> custom resource type
+   */
+
   public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource,
       PatchContext patchContext) {
     return new UpdateControl<>(customResource, false, true, true, false, patchContext);

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
@@ -128,7 +129,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource =
           updateCustomResource(updateControl.getResource(), originalResource,
-              updateControl.onlyOnChange());
+              updateControl.onlyOnChange(), updateControl.getPatchContext());
       updatedCustomResource.ifPresent(cr -> updateControl
           .getResource()
           .getMetadata()
@@ -143,7 +144,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
           updateCustomResource(updateControl.getResource(), originalResource,
-              updateControl.onlyOnChange());
+              updateControl.onlyOnChange(), updateControl.getPatchContext());
       if (shouldUpdateObservedGenerationAutomatically(
           updatedCustomResource.orElse(updateControl.getResource()))) {
         updatedCustomResource =
@@ -185,7 +186,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
                 errorStatusUpdateControl));
         if (errorStatusUpdateControl.isNoRetry()) {
           return updatedResource.map(r -> errorStatusUpdateControl.isPatch()
-              ? PostExecutionControl.customResourceStatusPatched(r)
+              ? PostExecutionControl.customResourcePatched(r)
               : PostExecutionControl.customResourceUpdated(r))
               .orElseGet(PostExecutionControl::defaultDispatch);
         }
@@ -257,9 +258,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       UpdateControl<R> updateControl) {
     PostExecutionControl<R> postExecutionControl;
     if (updatedCustomResource != null) {
-      if (updateControl.isUpdateStatus() && updateControl.isPatch()) {
+      if (updateControl.isPatch()) {
         postExecutionControl =
-            PostExecutionControl.customResourceStatusPatched(updatedCustomResource);
+            PostExecutionControl.customResourcePatched(updatedCustomResource);
       } else {
         postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
       }
@@ -314,14 +315,25 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return customResourceFacade.replaceResourceWithLock(resource);
   }
 
-  private Optional<R> updateCustomResource(R resource, R originalResource, boolean onlyOnChange) {
+  private Optional<R> updateCustomResource(R resource, R originalResource, boolean onlyOnChange,
+      PatchContext patchContext) {
     if (onlyOnChange && specAndMetaEqual(resource, originalResource)) {
       return Optional.empty();
     }
-
-    log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
-    return Optional.of(customResourceFacade.replaceResourceWithLock(resource));
+    if (patchContext != null) {
+      if (log.isDebugEnabled()) {
+        log.debug("Patching resource: {}", ResourceID.fromResource(resource));
+      }
+      return Optional
+          .of(customResourceFacade.patchResource(resource, originalResource, patchContext));
+    } else {
+      if (log.isDebugEnabled()) {
+        log.debug("Patching resource: {} with version: {}", ResourceID.fromResource(resource),
+            getVersion(resource));
+      }
+      return Optional.of(customResourceFacade.replaceResourceWithLock(resource));
+    }
   }
 
   ControllerConfiguration<R> configuration() {
@@ -390,6 +402,24 @@ class ReconciliationDispatcher<R extends HasMetadata> {
 
     public R getResource(String namespace, String name) {
       return resourceOperation.inNamespace(namespace).withName(name).get();
+    }
+
+    public R patchResource(R resource, R originalResource, PatchContext patchContext) {
+      log.trace("Patching resource: {}", resource);
+      String resourceVersion = resource.getMetadata().getResourceVersion();
+      // todo verify this (don't do optimistic locking on patch)
+      originalResource.getMetadata().setResourceVersion(null);
+      resource.getMetadata().setResourceVersion(null);
+      try {
+        return resourceOperation
+            .inNamespace(resource.getMetadata().getNamespace())
+            .resource(originalResource)
+            .patch(patchContext, resource);
+      } finally {
+        // restore initial resource version
+        originalResource.getMetadata().setResourceVersion(resourceVersion);
+        resource.getMetadata().setResourceVersion(resourceVersion);
+      }
     }
 
     public R replaceResourceWithLock(R resource) {

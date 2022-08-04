@@ -259,7 +259,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
           .getUpdatedCustomResource()
           .ifPresent(
               r -> {
-                if (!postExecutionControl.updateIsStatusPatch()) {
+                if (postExecutionControl.updateWithOptimisticLocking()) {
                   eventSourceManager
                       .getControllerResourceEventSource()
                       .handleRecentResourceUpdate(
