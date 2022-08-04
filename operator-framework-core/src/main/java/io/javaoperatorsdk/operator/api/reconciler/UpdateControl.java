@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 
 public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateControl<P>> {
 
@@ -10,11 +11,15 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean updateResource;
   private final boolean patch;
   private final boolean onlyOnChange;
+  private final PatchContext patchContext;
+
+  private UpdateControl(P resource, boolean updateStatus, boolean updateResource, boolean patch,boolean onlyOnChange) {
+    this(resource,updateStatus,updateResource,patch,onlyOnChange,null);
+  }
 
   private UpdateControl(
-      P resource, boolean updateStatus, boolean updateResource, boolean patch,
-      boolean onlyOnChange) {
-    this.onlyOnChange = onlyOnChange;
+          P resource, boolean updateStatus, boolean updateResource, boolean patch, boolean onlyOnChange, PatchContext patchContext) {
+
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -22,6 +27,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     this.updateStatus = updateStatus;
     this.updateResource = updateResource;
     this.patch = patch;
+    this.onlyOnChange = onlyOnChange;
+    this.patchContext = patchContext;
+    
   }
 
   /**
@@ -39,6 +47,11 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
 
   public static <T extends HasMetadata> UpdateControl<T> updateResourceIfChanged(T customResource) {
     return new UpdateControl<>(customResource, false, true, false, true);
+  }
+
+
+  public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource, PatchContext patchContext) {
+    return new UpdateControl<>(customResource, false, true, true, patchContext);
   }
 
   /**
@@ -192,6 +205,10 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
 
   public boolean isUpdateResourceAndStatus() {
     return updateResource && updateStatus;
+  }
+
+  public PatchContext getPatchContext() {
+    return patchContext;
   }
 
   public boolean onlyOnChange() {
