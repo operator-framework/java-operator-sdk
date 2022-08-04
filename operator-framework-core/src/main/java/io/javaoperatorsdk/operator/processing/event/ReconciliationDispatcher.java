@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -372,9 +367,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
           resource.getMetadata().getResourceVersion());
       return resourceOperation
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource))
+          .resource(resource)
           .lockResourceVersion(resource.getMetadata().getResourceVersion())
-          .replace(resource);
+          .replace();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -393,15 +388,11 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       // don't do optimistic locking on patch
       originalResource.getMetadata().setResourceVersion(null);
       resource.getMetadata().setResourceVersion(null);
-      try (var bis = new ByteArrayInputStream(
-          Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
+      try {
         return resourceOperation
             .inNamespace(resource.getMetadata().getNamespace())
-            // will be simplified in fabric8 v6
-            .load(bis)
+            .resource(originalResource)
             .editStatus(r -> resource);
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
       } finally {
         // restore initial resource version
         originalResource.getMetadata().setResourceVersion(resourceVersion);
