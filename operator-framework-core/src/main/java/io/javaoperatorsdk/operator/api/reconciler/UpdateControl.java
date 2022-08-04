@@ -13,12 +13,14 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean onlyOnChange;
   private final PatchContext patchContext;
 
-  private UpdateControl(P resource, boolean updateStatus, boolean updateResource, boolean patch,boolean onlyOnChange) {
-    this(resource,updateStatus,updateResource,patch,onlyOnChange,null);
+  private UpdateControl(P resource, boolean updateStatus, boolean updateResource, boolean patch,
+      boolean onlyOnChange) {
+    this(resource, updateStatus, updateResource, patch, onlyOnChange, null);
   }
 
   private UpdateControl(
-          P resource, boolean updateStatus, boolean updateResource, boolean patch, boolean onlyOnChange, PatchContext patchContext) {
+      P resource, boolean updateStatus, boolean updateResource, boolean patch, boolean onlyOnChange,
+      PatchContext patchContext) {
 
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
@@ -29,7 +31,6 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     this.patch = patch;
     this.onlyOnChange = onlyOnChange;
     this.patchContext = patchContext;
-    
   }
 
   /**
@@ -50,8 +51,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
 
-  public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource, PatchContext patchContext) {
-    return new UpdateControl<>(customResource, false, true, true, patchContext);
+  public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource,
+      PatchContext patchContext) {
+    return new UpdateControl<>(customResource, false, true, true, false, patchContext);
   }
 
   /**
