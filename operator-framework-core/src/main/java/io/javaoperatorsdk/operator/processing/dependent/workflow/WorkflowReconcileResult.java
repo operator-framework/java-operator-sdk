@@ -11,49 +11,36 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 @SuppressWarnings("rawtypes")
 public class WorkflowReconcileResult {
 
-  private List<DependentResource> reconciledDependents;
-  private List<DependentResource> notReadyDependents;
-  private Map<DependentResource, Exception> erroredDependents;
-  private Map<DependentResource, ReconcileResult> reconcileResults;
+  private final List<DependentResource> reconciledDependents;
+  private final List<DependentResource> notReadyDependents;
+  private final Map<DependentResource, Exception> erroredDependents;
+  private final Map<DependentResource, ReconcileResult> reconcileResults;
+
+  public WorkflowReconcileResult(List<DependentResource> reconciledDependents,
+      List<DependentResource> notReadyDependents,
+      Map<DependentResource, Exception> erroredDependents,
+      Map<DependentResource, ReconcileResult> reconcileResults) {
+    this.reconciledDependents = reconciledDependents;
+    this.notReadyDependents = notReadyDependents;
+    this.erroredDependents = erroredDependents;
+    this.reconcileResults = reconcileResults;
+  }
 
   public Map<DependentResource, Exception> getErroredDependents() {
     return erroredDependents;
-  }
-
-  public WorkflowReconcileResult setErroredDependents(
-      Map<DependentResource, Exception> erroredDependents) {
-    this.erroredDependents = erroredDependents;
-    return this;
   }
 
   public List<DependentResource> getReconciledDependents() {
     return reconciledDependents;
   }
 
-  public WorkflowReconcileResult setReconciledDependents(
-      List<DependentResource> reconciledDependents) {
-    this.reconciledDependents = reconciledDependents;
-    return this;
-  }
-
   public List<DependentResource> getNotReadyDependents() {
     return notReadyDependents;
   }
 
-  public WorkflowReconcileResult setNotReadyDependents(
-      List<DependentResource> notReadyDependents) {
-    this.notReadyDependents = notReadyDependents;
-    return this;
-  }
-
+  @SuppressWarnings("unused")
   public Map<DependentResource, ReconcileResult> getReconcileResults() {
     return reconcileResults;
-  }
-
-  public WorkflowReconcileResult setReconcileResults(
-      Map<DependentResource, ReconcileResult> reconcileResults) {
-    this.reconcileResults = reconcileResults;
-    return this;
   }
 
   public void throwAggregateExceptionIfErrorsPresent() {
@@ -79,6 +66,7 @@ public class WorkflowReconcileResult {
     return !erroredDependents.isEmpty();
   }
 
+  @SuppressWarnings("unused")
   public boolean erroredDependentsExist() {
     return !erroredDependents.isEmpty();
   }

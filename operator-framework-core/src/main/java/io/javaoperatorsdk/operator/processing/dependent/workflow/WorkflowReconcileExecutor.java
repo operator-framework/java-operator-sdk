@@ -282,17 +282,16 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   }
 
   private WorkflowReconcileResult createReconcileResult() {
-    WorkflowReconcileResult workflowReconcileResult = new WorkflowReconcileResult();
-    workflowReconcileResult.setErroredDependents(exceptionsDuringExecution
-        .entrySet().stream()
-        .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)));
-    workflowReconcileResult.setNotReadyDependents(notReady.stream()
-        .map(DependentResourceNode::getDependentResource)
-        .collect(Collectors.toList()));
-    workflowReconcileResult.setReconciledDependents(reconciled.stream()
-        .map(DependentResourceNode::getDependentResource).collect(Collectors.toList()));
-    workflowReconcileResult.setReconcileResults(reconcileResults);
-    return workflowReconcileResult;
+    return new WorkflowReconcileResult(
+        reconciled.stream()
+            .map(DependentResourceNode::getDependentResource).collect(Collectors.toList()),
+        notReady.stream()
+            .map(DependentResourceNode::getDependentResource)
+            .collect(Collectors.toList()),
+        exceptionsDuringExecution
+            .entrySet().stream()
+            .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)),
+        reconcileResults);
   }
 
 }
