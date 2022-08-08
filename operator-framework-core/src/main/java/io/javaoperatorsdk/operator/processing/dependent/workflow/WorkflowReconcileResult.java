@@ -71,9 +71,15 @@ public class WorkflowReconcileResult {
     return notReadyDependents.isEmpty();
   }
 
+  /**
+   * @deprecated Use {@link #erroredDependentsExist()} instead
+   */
+  @Deprecated(forRemoval = true)
   public boolean erroredDependentsExists() {
     return !erroredDependents.isEmpty();
   }
 
-
+  public boolean erroredDependentsExist() {
+    return !erroredDependents.isEmpty();
+  }
 }
