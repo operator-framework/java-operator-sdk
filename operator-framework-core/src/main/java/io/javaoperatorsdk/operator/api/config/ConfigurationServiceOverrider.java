@@ -7,6 +7,8 @@ import java.util.function.Consumer;
 import io.fabric8.kubernetes.client.Config;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @SuppressWarnings("unused")
 public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
@@ -17,6 +19,7 @@ public class ConfigurationServiceOverrider {
   private Cloner cloner;
   private int timeoutSeconds;
   private boolean closeClientOnStop;
+  private ObjectMapper objectMapper;
   private ExecutorService executorService = null;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -28,6 +31,7 @@ public class ConfigurationServiceOverrider {
     this.timeoutSeconds = original.getTerminationTimeoutSeconds();
     this.metrics = original.getMetrics();
     this.closeClientOnStop = original.closeClientOnStop();
+    this.objectMapper = original.getObjectMapper();
   }
 
 
@@ -68,6 +72,11 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withExecutorService(ExecutorService executorService) {
     this.executorService = executorService;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withObjectMapper(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
     return this;
   }
 
@@ -120,6 +129,11 @@ public class ConfigurationServiceOverrider {
         } else {
           return super.getExecutorService();
         }
+      }
+
+      @Override
+      public ObjectMapper getObjectMapper() {
+        return objectMapper;
       }
     };
   }
