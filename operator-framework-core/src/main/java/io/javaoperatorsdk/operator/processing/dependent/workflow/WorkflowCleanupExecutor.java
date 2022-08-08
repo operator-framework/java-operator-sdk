@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -75,17 +77,16 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     }
 
     Future<?> nodeFuture =
-        workflow.getExecutorService().submit(
-            new NodeExecutor(dependentResourceNode));
+        workflow.getExecutorService().submit(new NodeExecutor(dependentResourceNode));
     actualExecutions.put(dependentResourceNode, nodeFuture);
     log.debug("Submitted for cleanup: {}", dependentResourceNode);
   }
 
   private class NodeExecutor implements Runnable {
 
-    private final DependentResourceNode<?, P> dependentResourceNode;
+    private final DependentResourceNode dependentResourceNode;
 
-    private NodeExecutor(DependentResourceNode<?, P> dependentResourceNode) {
+    private NodeExecutor(DependentResourceNode dependentResourceNode) {
       this.dependentResourceNode = dependentResourceNode;
     }
 
@@ -94,7 +95,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     public void run() {
       try {
         var dependentResource = dependentResourceNode.getDependentResource();
-        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
+        Optional<Condition> deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
@@ -103,7 +104,9 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         }
         alreadyVisited.add(dependentResourceNode);
         boolean deletePostConditionMet =
-            deletePostCondition.map(c -> c.isMet(dependentResource, primary, context)).orElse(true);
+            deletePostCondition.map(c -> c.isMet(primary,
+                dependentResourceNode.getDependentResource().getSecondaryResource(primary),
+                context)).orElse(true);
         if (deletePostConditionMet) {
           handleDependentCleaned(dependentResourceNode);
         } else {
@@ -147,22 +150,21 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     return actualExecutions.containsKey(dependentResourceNode);
   }
 
-  private boolean alreadyVisited(
-      DependentResourceNode<?, ?> dependentResourceNode) {
+  private boolean alreadyVisited(DependentResourceNode dependentResourceNode) {
     return alreadyVisited.contains(dependentResourceNode);
   }
 
-  private boolean allDependentsCleaned(
-      DependentResourceNode<?, P> dependentResourceNode) {
-    var parents = dependentResourceNode.getParents();
+  @SuppressWarnings("unchecked")
+  private boolean allDependentsCleaned(DependentResourceNode dependentResourceNode) {
+    List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
         || parents.stream()
             .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
   }
 
-  private boolean hasErroredDependent(
-      DependentResourceNode<?, P> dependentResourceNode) {
-    var parents = dependentResourceNode.getParents();
+  @SuppressWarnings("unchecked")
+  private boolean hasErroredDependent(DependentResourceNode dependentResourceNode) {
+    List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return !parents.isEmpty()
         && parents.stream().anyMatch(exceptionsDuringExecution::containsKey);
   }

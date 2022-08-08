@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.VoidCondition;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -276,7 +275,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   }
 
   private Condition<?, ?> instantiateConditionIfNotVoid(Class<? extends Condition> condition) {
-    if (condition != VoidCondition.class) {
+    if (condition != Condition.class) {
       return instantiateAndConfigureIfNeeded(condition, Condition.class);
     }
     return null;

@@ -21,17 +21,17 @@ public class AbstractWorkflowExecutorTest {
   protected TestErrorDependent drError = new TestErrorDependent("ERROR_1");
   protected TestErrorDeleterDependent errorDD = new TestErrorDeleterDependent("ERROR_DELETER");
 
-  protected final Condition noMetDeletePostCondition =
-      (dependentResource, primary, context) -> false;
-  protected final Condition metDeletePostCondition =
-      (dependentResource, primary, context) -> true;
+  @SuppressWarnings("rawtypes")
+  protected final Condition noMetDeletePostCondition = (primary, secondary, context) -> false;
+  @SuppressWarnings("rawtypes")
+  protected final Condition metDeletePostCondition = (primary, secondary, context) -> true;
 
   protected List<ReconcileRecord> executionHistory =
       Collections.synchronizedList(new ArrayList<>());
 
   public class TestDependent implements DependentResource<String, TestCustomResource> {
 
-    private String name;
+    private final String name;
 
     public TestDependent(String name) {
       this.name = name;
@@ -95,7 +95,7 @@ public class AbstractWorkflowExecutorTest {
   }
 
   public class TestErrorDependent implements DependentResource<String, TestCustomResource> {
-    private String name;
+    private final String name;
 
     public TestErrorDependent(String name) {
       this.name = name;
