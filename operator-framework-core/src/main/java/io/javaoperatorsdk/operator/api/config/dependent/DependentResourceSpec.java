@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config.dependent;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -23,12 +22,6 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   private final Condition<?, ?> reconcileCondition;
 
   private final Condition<?, ?> deletePostCondition;
-
-  public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
-      String name) {
-    this(dependentResourceClass, dependentResourceConfig, name, Collections.emptySet(), null, null,
-        null);
-  }
 
   public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,

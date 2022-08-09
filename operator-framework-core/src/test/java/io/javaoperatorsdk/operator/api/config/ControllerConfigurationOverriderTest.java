@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -91,6 +92,7 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
+  @SuppressWarnings("rawtypes")
   private KubernetesDependentResourceConfig extractFirstDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration) {
     return (KubernetesDependentResourceConfig) extractDependentKubernetesResourceConfig(
@@ -191,6 +193,7 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void dependentShouldWatchAllNamespacesIfParentDoesAsWell() {
     var configuration = createConfiguration(new WatchAllNamespacesReconciler());
@@ -211,6 +214,7 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(newNS), config.namespaces());
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void shouldBePossibleToForceDependentToWatchAllNamespaces() {
     var configuration = createConfiguration(new DependentWatchesAllNSReconciler());
@@ -272,6 +276,7 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Test
   void replaceNamedDependentResourceConfigShouldWork() {
     var configuration = createConfiguration(new OneDepReconciler());
@@ -284,7 +289,7 @@ class ControllerConfigurationOverriderTest {
 
     var dependentSpec = dependents.stream()
         .filter(dr -> dr.getName().equals(dependentResourceName))
-        .findFirst().get();
+        .findFirst().orElseThrow();
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
     var maybeConfig = dependentSpec.getDependentResourceConfiguration();
     assertTrue(maybeConfig.isPresent());
@@ -306,12 +311,14 @@ class ControllerConfigurationOverriderTest {
         .build();
     dependents = overridden.getDependentResources();
     dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
-        .findFirst().get();
+        .findFirst().orElseThrow();
     config = (KubernetesDependentResourceConfig) dependentSpec.getDependentResourceConfiguration()
         .orElseThrow();
     assertEquals(1, config.namespaces().size());
     assertEquals(labelSelector, config.labelSelector());
     assertEquals(Set.of(overriddenNS), config.namespaces());
+    // check that we still have the proper workflow configuration
+    assertTrue(dependentSpec.getReadyCondition() instanceof TestCondition);
   }
 
   @ControllerConfiguration(dependents = @Dependent(type = ReadOnlyDependent.class))
@@ -332,8 +339,18 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
+  private static class TestCondition implements Condition<ConfigMap, ConfigMap> {
+
+    @Override
+    public boolean isMet(DependentResource<ConfigMap, ConfigMap> dependentResource,
+        ConfigMap primary, Context<ConfigMap> context) {
+      return true;
+    }
+  }
+
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
-      dependents = @Dependent(type = ReadOnlyDependent.class))
+      dependents = @Dependent(type = ReadOnlyDependent.class,
+          readyPostcondition = TestCondition.class))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";

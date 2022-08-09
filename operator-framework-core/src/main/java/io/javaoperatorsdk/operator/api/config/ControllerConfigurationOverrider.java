@@ -172,7 +172,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private void replaceConfig(String name, Object newConfig, DependentResourceSpec<?, ?> current) {
     namedDependentResourceSpecs.put(name,
-        new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name));
+        new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name,
+            current.getDependsOn(), current.getReadyCondition(), current.getReconcileCondition(),
+            current.getDeletePostCondition()));
   }
 
   @SuppressWarnings("unchecked")
