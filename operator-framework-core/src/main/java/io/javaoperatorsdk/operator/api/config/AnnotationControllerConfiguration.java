@@ -277,14 +277,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   private Condition<?, ?> instantiateConditionIfNotVoid(Class<? extends Condition> condition) {
     if (condition != VoidCondition.class) {
-      try {
-        return condition.getDeclaredConstructor().newInstance();
-      } catch (InstantiationException
-          | IllegalAccessException
-          | InvocationTargetException
-          | NoSuchMethodException e) {
-        throw new OperatorException(e);
-      }
+      return instantiateAndConfigureIfNeeded(condition, Condition.class);
     }
     return null;
   }
