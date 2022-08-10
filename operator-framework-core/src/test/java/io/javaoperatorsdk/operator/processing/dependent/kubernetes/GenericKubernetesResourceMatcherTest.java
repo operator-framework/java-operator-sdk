@@ -31,21 +31,9 @@ class GenericKubernetesResourceMatcherTest {
   void checksIfDesiredValuesAreTheSame() {
     var actual = createDeployment();
     final var desired = createDeployment();
-    final var matcher = GenericKubernetesResourceMatcher.matcherFor(Deployment.class,
-        new KubernetesDependentResource<>(Deployment.class) {
-          @Override
-          protected Deployment desired(HasMetadata primary, Context context) {
-            final var currentCase = Optional.ofNullable(primary)
-                .map(p -> p.getMetadata().getLabels().get("case"))
-                .orElse(null);
-            var d = desired;
-            if ("removed".equals(currentCase)) {
-              d = createDeployment();
-              d.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
-            }
-            return d;
-          }
-        });
+    final var dependentResource = new TestDependentResource(desired);
+    final var matcher =
+        GenericKubernetesResourceMatcher.matcherFor(Deployment.class, dependentResource);
     assertThat(matcher.match(actual, null, context).matched()).isTrue();
     assertThat(matcher.match(actual, null, context).computedDesired().isPresent()).isTrue();
     assertThat(matcher.match(actual, null, context).computedDesired().get()).isEqualTo(desired);
@@ -65,6 +53,21 @@ class GenericKubernetesResourceMatcherTest {
     assertThat(matcher.match(actual, null, context).matched())
         .withFailMessage("Changed values are not ok")
         .isFalse();
+
+    actual = new DeploymentBuilder(createDeployment())
+        .editOrNewMetadata()
+        .addToAnnotations("test", "value")
+        .endMetadata()
+        .build();
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, false).matched())
+            .withFailMessage("Annotations shouldn't matter when metadata is not considered")
+            .isTrue();
+
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, true).matched())
+            .withFailMessage("Annotations should matter when metadata is not considered")
+            .isFalse();
   }
 
   Deployment createDeployment() {
@@ -78,5 +81,28 @@ class GenericKubernetesResourceMatcherTest {
         .addToLabels("case", caseName)
         .endMetadata()
         .build();
+  }
+
+  private class TestDependentResource extends KubernetesDependentResource<Deployment, HasMetadata> {
+
+    private final Deployment desired;
+
+    public TestDependentResource(Deployment desired) {
+      super(Deployment.class);
+      this.desired = desired;
+    }
+
+    @Override
+    protected Deployment desired(HasMetadata primary, Context context) {
+      final var currentCase = Optional.ofNullable(primary)
+          .map(p -> p.getMetadata().getLabels().get("case"))
+          .orElse(null);
+      var d = desired;
+      if ("removed".equals(currentCase)) {
+        d = createDeployment();
+        d.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
+      }
+      return d;
+    }
   }
 }

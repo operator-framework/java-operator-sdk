@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -41,8 +43,25 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    final var objectMapper = ConfigurationServiceProvider.instance().getObjectMapper();
+    return match(dependentResource, actualResource, primary, context, false);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerMetadata) {
     final var desired = dependentResource.desired(primary, context);
+    if (considerMetadata) {
+      final var desiredMetadata = desired.getMetadata();
+      final var actualMetadata = actualResource.getMetadata();
+      final var matched =
+          Objects.equals(desiredMetadata.getAnnotations(), actualMetadata.getAnnotations()) &&
+              Objects.equals(desiredMetadata.getLabels(), actualMetadata.getLabels());
+      if (!matched) {
+        return Result.computed(false, desired);
+      }
+    }
+
+    final var objectMapper = ConfigurationServiceProvider.instance().getObjectMapper();
 
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816
