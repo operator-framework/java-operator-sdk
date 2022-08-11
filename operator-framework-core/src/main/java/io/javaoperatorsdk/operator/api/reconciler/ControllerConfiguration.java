@@ -6,7 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -14,9 +13,6 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -79,15 +75,15 @@ public @interface ControllerConfiguration {
   /**
    * Filter of onAdd events of resources.
    **/
-  Class<? extends OnAddFilter<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
+  Class<? extends OnAddFilter> onAddFilter() default OnAddFilter.class;
 
   /** Filter of onUpdate events of resources. */
-  Class<? extends OnUpdateFilter<? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
+  Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
 
   /**
    * Filter applied to all operations (add, update, delete). Used to ignore some resources.
    **/
-  Class<? extends GenericFilter<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
+  Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request

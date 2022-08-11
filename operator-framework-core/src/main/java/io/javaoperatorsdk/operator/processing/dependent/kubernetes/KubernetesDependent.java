@@ -5,9 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.processing.event.source.filter.*;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -35,11 +37,11 @@ public @interface KubernetesDependent {
    */
   String labelSelector() default NO_VALUE_SET;
 
-  Class<? extends OnAddFilter<? extends HasMetadata>> onAddFilter() default VoidOnAddFilter.class;
+  Class<? extends OnAddFilter> onAddFilter() default OnAddFilter.class;
 
-  Class<? extends OnUpdateFilter<? extends HasMetadata>> onUpdateFilter() default VoidOnUpdateFilter.class;
+  Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
 
-  Class<? extends OnDeleteFilter<? extends HasMetadata>> onDeleteFilter() default VoidOnDeleteFilter.class;
+  Class<? extends OnDeleteFilter> onDeleteFilter() default OnDeleteFilter.class;
 
-  Class<? extends GenericFilter<? extends HasMetadata>> genericFilter() default VoidGenericFilter.class;
+  Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 }

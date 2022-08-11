@@ -33,10 +33,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -44,6 +40,10 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 @SuppressWarnings("rawtypes")
 public class AnnotationControllerConfiguration<P extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
+
+  private static final String CONTROLLER_CONFIG_ANNOTATION =
+      ControllerConfiguration.class.getSimpleName();
+  private static final String KUBE_DEPENDENT_NAME = KubernetesDependent.class.getSimpleName();
 
   protected final Reconciler<P> reconciler;
   private final ControllerConfiguration annotation;
@@ -152,18 +152,19 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @Override
   public RateLimiter getRateLimiter() {
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
-    return instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class);
+    return instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class,
+        CONTROLLER_CONFIG_ANNOTATION);
   }
 
   @Override
   public Retry getRetry() {
     final Class<? extends Retry> retryClass = annotation.retry();
-    return instantiateAndConfigureIfNeeded(retryClass, Retry.class);
+    return instantiateAndConfigureIfNeeded(retryClass, Retry.class, CONTROLLER_CONFIG_ANNOTATION);
   }
 
   @SuppressWarnings("unchecked")
-  private <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
-      Class<T> expectedType) {
+  protected <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
+      Class<T> expectedType, String context) {
     try {
       final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
       constructor.setAccessible(true);
@@ -183,42 +184,24 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         | NoSuchMethodException e) {
       throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
           + targetClass.getName() + "' for '" + getName()
-          + "' reconciler. You need to provide an accessible no-arg constructor.", e);
+          + "' reconciler in " + context
+          + ". You need to provide an accessible no-arg constructor.", e);
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Optional<OnAddFilter<P>> onAddFilter() {
-    return (Optional<OnAddFilter<P>>) createFilter(annotation.onAddFilter(), FilterType.onAdd,
-        annotation.getClass().getSimpleName());
+    return (Optional<OnAddFilter<P>>) createFilter(annotation.onAddFilter(), OnAddFilter.class,
+        CONTROLLER_CONFIG_ANNOTATION);
   }
 
-  private enum FilterType {
-    onAdd(VoidOnAddFilter.class), onUpdate(VoidOnUpdateFilter.class), onDelete(
-        VoidOnDeleteFilter.class), generic(VoidGenericFilter.class);
-
-    final Class<?> defaultValue;
-
-    FilterType(Class<?> defaultValue) {
-      this.defaultValue = defaultValue;
-    }
-  }
-
-  private <T> Optional<T> createFilter(Class<T> filter, FilterType filterType, String origin) {
-    if (filterType.defaultValue.equals(filter)) {
+  protected <T> Optional<? extends T> createFilter(Class<? extends T> filter, Class<T> defaultValue,
+      String origin) {
+    if (defaultValue.equals(filter)) {
       return Optional.empty();
     } else {
-      try {
-        var instance = (T) filter.getDeclaredConstructor().newInstance();
-        return Optional.of(instance);
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-          | NoSuchMethodException e) {
-        throw new OperatorException(
-            "Couldn't create " + filterType + " filter from " + filter.getName() + " class in "
-                + origin + " for reconciler " + getName(),
-            e);
-      }
+      return Optional.of(instantiateAndConfigureIfNeeded(filter, defaultValue, origin));
     }
   }
 
@@ -226,14 +209,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @Override
   public Optional<OnUpdateFilter<P>> onUpdateFilter() {
     return (Optional<OnUpdateFilter<P>>) createFilter(annotation.onUpdateFilter(),
-        FilterType.onUpdate, annotation.getClass().getSimpleName());
+        OnUpdateFilter.class, CONTROLLER_CONFIG_ANNOTATION);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public Optional<GenericFilter<P>> genericFilter() {
     return (Optional<GenericFilter<P>>) createFilter(annotation.genericFilter(),
-        FilterType.generic, annotation.getClass().getSimpleName());
+        GenericFilter.class, CONTROLLER_CONFIG_ANNOTATION);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -259,13 +242,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         var spec = specsMap.get(name);
         if (spec != null) {
           throw new IllegalArgumentException(
-              "A DependentResource named: " + name + " already exists: " + spec);
+              "A DependentResource named '" + name + "' already exists: " + spec);
         }
+        final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
-            instantiateConditionIfNotVoid(dependent.readyPostcondition()),
-            instantiateConditionIfNotVoid(dependent.reconcilePrecondition()),
-            instantiateConditionIfNotVoid(dependent.deletePostcondition()));
+            instantiateConditionIfNotDefault(dependent.readyPostcondition(), context),
+            instantiateConditionIfNotDefault(dependent.reconcilePrecondition(), context),
+            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context));
         specsMap.put(name, spec);
       }
 
@@ -274,9 +258,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
-  private Condition<?, ?> instantiateConditionIfNotVoid(Class<? extends Condition> condition) {
+  protected Condition<?, ?> instantiateConditionIfNotDefault(Class<? extends Condition> condition,
+      String context) {
     if (condition != Condition.class) {
-      return instantiateAndConfigureIfNeeded(condition, Condition.class);
+      return instantiateAndConfigureIfNeeded(condition, Condition.class, context);
     }
     return null;
   }
@@ -312,17 +297,19 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
-      final var kubeDependentName = KubernetesDependent.class.getSimpleName();
-      onAddFilter = createFilter(kubeDependent.onAddFilter(), FilterType.onAdd, kubeDependentName)
+
+      final var context =
+          KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName() + " DependentResource";
+      onAddFilter = createFilter(kubeDependent.onAddFilter(), OnAddFilter.class, context)
           .orElse(null);
       onUpdateFilter =
-          createFilter(kubeDependent.onUpdateFilter(), FilterType.onUpdate, kubeDependentName)
+          createFilter(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context)
               .orElse(null);
       onDeleteFilter =
-          createFilter(kubeDependent.onDeleteFilter(), FilterType.onDelete, kubeDependentName)
+          createFilter(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context)
               .orElse(null);
       genericFilter =
-          createFilter(kubeDependent.genericFilter(), FilterType.generic, kubeDependentName)
+          createFilter(kubeDependent.genericFilter(), GenericFilter.class, context)
               .orElse(null);
     }
 
