@@ -93,11 +93,6 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
   }
 
   @Override
-  public boolean enabled() {
-    return this.maxAttempts > 0;
-  }
-
-  @Override
   public void initFrom(GradualRetry configuration) {
     this.initialInterval = configuration.initialInterval();
     this.maxAttempts = configuration.maxAttempts();

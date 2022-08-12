@@ -165,19 +165,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       Exception e) throws Exception {
     if (isErrorStatusHandlerPresent()) {
       try {
-        RetryInfo retryInfo = context.getRetryInfo().orElseGet(() -> new RetryInfo() {
-          @Override
-          public int getAttemptCount() {
-            return 0;
-          }
-
-          @Override
-          public boolean isLastAttempt() {
-            // on first try, we can only rely on the configured behavior
-            // if enabled, will at least produce one RetryExecution
-            return !controller.getConfiguration().getRetry().enabled();
-          }
-        });
+        RetryInfo retryInfo =
+            context.getRetryInfo().orElse(controller.getConfiguration().getRetry().initExecution());
         ((DefaultContext<P>) context).setRetryInfo(retryInfo);
         var errorStatusUpdateControl = ((ErrorStatusHandler<P>) controller.getReconciler())
             .updateErrorStatus(resource, context, e);
