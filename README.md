@@ -46,3 +46,14 @@ Quarkus Extension: https://github.com/quarkiverse/quarkus-operator-sdk
 
 Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
 
+## Projects using JOSDK
+
+While we know of multiple projects using JOSDK in production, we don't want to presume these 
+projects want to advertise that fact here. For this reason, we ask that if you'd like your project 
+to be featured in this section, please open a PR, adding a link to and short description of your 
+project, as shown below:
+
+- [ExposedApp operator](https://github.com/halkyonio/exposedapp-rhdblog): a sample operator 
+  written to illustrate JOSDK concepts and its Quarkus extension in the ["Write Kubernetes 
+  Operators in Java with the Java Operator SDK" blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk#).
+- 
