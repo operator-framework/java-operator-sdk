@@ -75,6 +75,7 @@
     </properties>
 
     <modules>
+        <module>operator-framework-bom</module>
         <module>operator-framework-core</module>
         <module>operator-framework-junit5</module>
         <module>operator-framework</module>
