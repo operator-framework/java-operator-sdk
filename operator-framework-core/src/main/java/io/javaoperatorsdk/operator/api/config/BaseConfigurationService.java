@@ -15,6 +15,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     super(version);
   }
 
+  public BaseConfigurationService(Version version, Cloner cloner) {
+    super(version, cloner);
+  }
+
   public BaseConfigurationService() {
     this(Utils.loadFromProperties());
   }
