@@ -72,7 +72,7 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationService build() {
-    return new BaseConfigurationService(original.getVersion()) {
+    return new BaseConfigurationService(original.getVersion(), cloner) {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
@@ -91,11 +91,6 @@ public class ConfigurationServiceOverrider {
       @Override
       public int concurrentReconciliationThreads() {
         return threadNumber;
-      }
-
-      @Override
-      public Cloner getResourceCloner() {
-        return cloner;
       }
 
       @Override

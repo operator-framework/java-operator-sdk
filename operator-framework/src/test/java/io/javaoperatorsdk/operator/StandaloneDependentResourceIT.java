@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResource;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResourceSpec;
@@ -52,7 +52,7 @@ public class StandaloneDependentResourceIT {
 
     awaitForDeploymentReadyReplicas(1);
 
-    var clonedCr = ConfigurationService.DEFAULT_CLONER.clone(createdCR);
+    var clonedCr = ConfigurationServiceProvider.instance().getResourceCloner().clone(createdCR);
     clonedCr.getSpec().setReplicaCount(2);
     operator.replace(clonedCr);
 
