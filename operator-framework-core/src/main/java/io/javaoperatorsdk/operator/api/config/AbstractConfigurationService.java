@@ -13,9 +13,16 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 public class AbstractConfigurationService implements ConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
+  private final Cloner cloner;
 
   public AbstractConfigurationService(Version version) {
     this.version = version;
+    this.cloner = ConfigurationService.super.getResourceCloner();
+  }
+
+  public AbstractConfigurationService(Version version, Cloner cloner) {
+    this.version = version;
+    this.cloner = cloner;
   }
 
   protected <R extends HasMetadata> void register(ControllerConfiguration<R> config) {
@@ -77,10 +84,12 @@ public class AbstractConfigurationService implements ConfigurationService {
     return ReconcilerUtils.getNameFor(reconciler);
   }
 
+  @SuppressWarnings("unused")
   protected ControllerConfiguration getFor(String reconcilerName) {
     return configurations.get(reconcilerName);
   }
 
+  @SuppressWarnings("unused")
   protected Stream<ControllerConfiguration> controllerConfigurations() {
     return configurations.values().stream();
   }
@@ -93,5 +102,10 @@ public class AbstractConfigurationService implements ConfigurationService {
   @Override
   public Version getVersion() {
     return version;
+  }
+
+  @Override
+  public Cloner getResourceCloner() {
+    return cloner;
   }
 }
