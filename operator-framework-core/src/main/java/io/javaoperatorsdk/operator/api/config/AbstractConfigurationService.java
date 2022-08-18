@@ -36,7 +36,7 @@ public class AbstractConfigurationService implements ConfigurationService {
    * {@link ObjectMapper} associated with this ConfigurationService implementation. This is useful
    * in situations where the cloner depends on a mapper that might require additional configuration
    * steps before it's ready to be used.
-   * 
+   *
    * @param cloner the {@link Cloner} instance to be used
    * @param mapper the {@link ObjectMapper} instance to be used
    */
