@@ -81,7 +81,7 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationService build() {
-    return new BaseConfigurationService(original.getVersion(), cloner) {
+    return new BaseConfigurationService(original.getVersion(), cloner, objectMapper) {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
@@ -124,11 +124,6 @@ public class ConfigurationServiceOverrider {
         } else {
           return super.getExecutorService();
         }
-      }
-
-      @Override
-      public ObjectMapper getObjectMapper() {
-        return objectMapper;
       }
     };
   }
