@@ -52,7 +52,7 @@
         <javapoet.version>1.13.0</javapoet.version>
         <assertj.version>3.23.1</assertj.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <spring-boot.version>2.7.2</spring-boot.version>
+        <spring-boot.version>2.7.3</spring-boot.version>
         <micrometer-core.version>1.9.3</micrometer-core.version>
 
         <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
