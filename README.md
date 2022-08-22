@@ -60,4 +60,4 @@ project, as shown below:
   Keycloak operator, built with Quarkus and JOSDK.
 - [Apache Flink Kubernetes operator](https://github.com/apache/flink-kubernetes-operator) is the market lead among Flink operators.
 - [Strimzi Access operator](https://github.com/strimzi/kafka-access-operator). While the core Strimzi operator development predates  
-  JOSDK but, new components like the access operator is using the framework.
+  JOSDK, but new components like the Access operator is using the framework.
