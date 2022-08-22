@@ -685,12 +685,13 @@ for this feature.
 
 ## Leader Election
 
-In general operators are deployed with single instance running, or a single active instance running. That means 
-if multiple instances are deployed only one of the should process the events. This is achieved by configuring leader
-election. Leader election will make sure only one instance of the operator is processing events, other instances will
-start event sources, where those will populate the caches - this is beneficial for the case the instance becomes the 
-leader it will start reconcile immediately, and don't have to wait until the event sources are started and 
-caches are populated.
+Operators are generally deployed with a single running or active instance. However, it is 
+possible to deploy multiple instances in such a way that only one, called the "leader", processes the 
+events. This is achieved via a mechanism called "leader election". While all the instances are 
+running, and even start their event sources to populate the caches, only the leader will process 
+the events. This means that should the leader change for any reason, for example because it 
+crashed, the other instances are already warmed up and ready to pick up where the previous 
+leader left off should one of them become elected leader.
 
 See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/144947d89323f1c65de6e86bd8b9a6a8ffe714ff/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L26-L30)
 .
