@@ -20,10 +20,12 @@ class PollingEventSourceTest
     extends
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
+  public static final int DEFAULT_WAIT_PERIOD = 100;
+
   private PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(resourceFetcher, 50L, SampleExternalResource.class,
+      new PollingEventSource<>(resourceFetcher, 30L, SampleExternalResource.class,
           (SampleExternalResource er) -> er.getName() + "#" + er.getValue());
 
   @BeforeEach
@@ -35,7 +37,7 @@ class PollingEventSourceTest
   void pollsAndProcessesEvents() throws InterruptedException {
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
-    Thread.sleep(100);
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
 
     verify(eventHandler, times(2)).handleEvent(any());
   }
@@ -45,7 +47,7 @@ class PollingEventSourceTest
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
-    Thread.sleep(150);
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
 
     verify(eventHandler, times(3)).handleEvent(any());
   }
@@ -54,9 +56,27 @@ class PollingEventSourceTest
   void doesNotPropagateEventIfResourceNotChanged() throws InterruptedException {
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues());
     pollingEventSource.start();
-    Thread.sleep(250);
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
 
     verify(eventHandler, times(2)).handleEvent(any());
+  }
+
+  @Test
+  void propagatesEventOnNewResourceForPrimary() throws InterruptedException {
+    when(resourceFetcher.fetchResources())
+        .thenReturn(testResponseWithOneValue())
+        .thenReturn(testResponseWithTwoValueForSameId());
+
+    pollingEventSource.start();
+    Thread.sleep(DEFAULT_WAIT_PERIOD);
+
+    verify(eventHandler, times(2)).handleEvent(any());
+  }
+
+  private Map<ResourceID, Set<SampleExternalResource>> testResponseWithTwoValueForSameId() {
+    Map<ResourceID, Set<SampleExternalResource>> res = new HashMap<>();
+    res.put(primaryID1(), Set.of(testResource1(), testResource2()));
+    return res;
   }
 
   private Map<ResourceID, Set<SampleExternalResource>> testResponseWithOneValue() {
