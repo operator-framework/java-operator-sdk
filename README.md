@@ -56,4 +56,5 @@ project, as shown below:
 - [ExposedApp operator](https://github.com/halkyonio/exposedapp-rhdblog): a sample operator 
   written to illustrate JOSDK concepts and its Quarkus extension in the ["Write Kubernetes 
   Operators in Java with the Java Operator SDK" blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk#).
-- 
+- [Keycloak operator](https://github.com/keycloak/keycloak/tree/main/operator): the official
+  Keycloak operator, built with Quarkus and JOSDK.
