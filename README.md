@@ -58,6 +58,6 @@ project, as shown below:
   Operators in Java with the Java Operator SDK" blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk#).
 - [Keycloak operator](https://github.com/keycloak/keycloak/tree/main/operator): the official
   Keycloak operator, built with Quarkus and JOSDK.
-- [Flink Operator](https://github.com/apache/flink-kubernetes-operator) is the market lead among Flink operators.
+- [Apache Flink Kubernetes Operator](https://github.com/apache/flink-kubernetes-operator) is the market lead among Flink operators.
 - [Strimzi Access operator](https://github.com/strimzi/kafka-access-operator). While the core Strimzi operator development predates  
   JOSDK but, new components like the access operator is using the framework.
