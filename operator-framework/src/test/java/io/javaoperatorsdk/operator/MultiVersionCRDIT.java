@@ -62,10 +62,10 @@ class MultiVersionCRDIT {
     await()
         .atMost(Duration.ofSeconds(2))
         .pollInterval(Duration.ofMillis(50))
-        .until(() -> {
+        .untilAsserted(() -> {
           var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
-          return crV1Now.getStatus().getReconciledBy()
-              .contains(MultiVersionCRDTestReconciler1.class.getSimpleName());
+          assertThat(crV1Now.getStatus().getReconciledBy())
+              .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
         });
     assertThat(
         operator
