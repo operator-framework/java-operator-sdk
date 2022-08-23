@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
@@ -16,7 +15,7 @@ import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.Lock;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
-public class LeaderElectionManager {
+class LeaderElectionManager {
 
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionManager.class);
 
@@ -30,15 +29,15 @@ public class LeaderElectionManager {
   }
 
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
-    this.identity = identity(config);
+    this.identity = config.getIdentity();
     Lock lock = new LeaseLock(config.getLeaseNamespace(), config.getLeaseName(), identity);
     // releaseOnCancel is not used in the underlying implementation
     leaderElector = new LeaderElectorBuilder(client,
         ConfigurationServiceProvider.instance().getExecutorService())
-        .withConfig(
-            new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
-                config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
-        .build();
+            .withConfig(
+                new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
+                    config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
+            .build();
   }
 
   public boolean isLeaderElectionOn() {
@@ -46,9 +45,8 @@ public class LeaderElectionManager {
   }
 
   private LeaderCallbacks leaderCallbacks() {
-    return new LeaderCallbacks(this::startLeading, this::stopLeading, leader -> {
-      log.info("New leader with identity: {}", leader);
-    });
+    return new LeaderCallbacks(this::startLeading, this::stopLeading,
+        leader -> log.info("New leader with identity: {}", leader));
   }
 
   private void startLeading() {
@@ -61,14 +59,6 @@ public class LeaderElectionManager {
     // running parallel.
     // Note that some reconciliations might run a very long time.
     System.exit(1);
-  }
-
-  private String identity(LeaderElectionConfiguration config) {
-    String id = config.getIdentity().orElse(System.getenv("HOSTNAME"));
-    if (id == null || id.isBlank()) {
-      id = UUID.randomUUID().toString();
-    }
-    return id;
   }
 
   public void start() {
