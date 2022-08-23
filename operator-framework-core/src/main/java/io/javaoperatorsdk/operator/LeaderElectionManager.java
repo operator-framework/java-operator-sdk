@@ -34,10 +34,10 @@ class LeaderElectionManager {
     // releaseOnCancel is not used in the underlying implementation
     leaderElector = new LeaderElectorBuilder(client,
         ConfigurationServiceProvider.instance().getExecutorService())
-            .withConfig(
-                new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
-                    config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
-            .build();
+        .withConfig(
+            new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
+                config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
+        .build();
   }
 
   public boolean isLeaderElectionEnabled() {
