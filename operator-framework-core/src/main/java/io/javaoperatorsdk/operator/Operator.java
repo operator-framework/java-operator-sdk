@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
@@ -28,7 +27,7 @@ public class Operator implements LifecycleAware {
   private volatile boolean started = false;
 
   public Operator() {
-    this(new KubernetesClientBuilder().build(), ConfigurationServiceProvider.instance());
+    this((KubernetesClient) null);
   }
 
   public Operator(KubernetesClient kubernetesClient) {
@@ -40,18 +39,16 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated
   public Operator(ConfigurationService configurationService) {
-    this(new DefaultKubernetesClient(), configurationService);
+    this(null, configurationService);
   }
 
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(new KubernetesClientBuilder().build(), overrider);
+    this(null, overrider);
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this.kubernetesClient = client;
+    this(client);
     ConfigurationServiceProvider.overrideCurrent(overrider);
-    ConfigurationServiceProvider.instance().getLeaderElectionConfiguration()
-        .ifPresent(c -> leaderElectionManager.init(c, kubernetesClient));
   }
 
   /**
@@ -62,10 +59,11 @@ public class Operator implements LifecycleAware {
    * @param configurationService provides configuration
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
-    this.kubernetesClient = kubernetesClient;
+    this.kubernetesClient =
+        kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
     ConfigurationServiceProvider.set(configurationService);
     configurationService.getLeaderElectionConfiguration()
-        .ifPresent(c -> leaderElectionManager.init(c, kubernetesClient));
+        .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
