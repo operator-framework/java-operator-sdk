@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCus
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler1;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler2;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static com.google.common.truth.Truth.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
@@ -38,16 +38,16 @@ class MultiVersionCRDIT {
     await()
         .atMost(Duration.ofSeconds(2))
         .pollInterval(Duration.ofMillis(50))
-        .until(
+        .untilAsserted(
             () -> {
               var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
               var crV2Now = operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME);
-              return crV1Now.getStatus().getReconciledBy().size() == 1
-                  && crV1Now.getStatus().getReconciledBy()
-                      .contains(MultiVersionCRDTestReconciler1.class.getSimpleName())
-                  && crV2Now.getStatus().getReconciledBy().size() == 1
-                  && crV2Now.getStatus().getReconciledBy()
-                      .contains(MultiVersionCRDTestReconciler2.class.getSimpleName());
+              assertThat(crV1Now.getStatus()).isNotNull();
+              assertThat(crV2Now.getStatus()).isNotNull();
+              assertThat(crV1Now.getStatus().getReconciledBy())
+                  .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
+              assertThat(crV2Now.getStatus().getReconciledBy())
+                  .containsExactly(MultiVersionCRDTestReconciler2.class.getSimpleName());
             });
   }
 
@@ -62,10 +62,11 @@ class MultiVersionCRDIT {
     await()
         .atMost(Duration.ofSeconds(2))
         .pollInterval(Duration.ofMillis(50))
-        .until(() -> {
+        .untilAsserted(() -> {
           var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
-          return crV1Now.getStatus().getReconciledBy()
-              .contains(MultiVersionCRDTestReconciler1.class.getSimpleName());
+          assertThat(crV1Now.getStatus()).isNotNull();
+          assertThat(crV1Now.getStatus().getReconciledBy())
+              .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
         });
     assertThat(
         operator
