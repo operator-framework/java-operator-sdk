@@ -673,7 +673,7 @@ class ReconciliationDispatcherTest {
 
     reconciler.reconcile = (r, c) -> {
       // in this test the cloning is turned off for easier verification, but required here
-      r = ConfigurationService.DEFAULT_CLONER.clone(r);
+      r = new BaseConfigurationService().getResourceCloner().clone(r);
       r.getSpec().setValue("otherValue");
       return UpdateControl.updateResourceAndPatchStatusIfChanged(r);
     };

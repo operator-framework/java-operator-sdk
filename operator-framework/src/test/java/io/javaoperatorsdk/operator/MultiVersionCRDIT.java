@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCus
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler1;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler2;
 
-import static com.google.common.truth.Truth.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {

@@ -81,7 +81,7 @@ class MySQLSchemaOperatorE2E {
   public MySQLSchemaOperatorE2E() throws FileNotFoundException {}
 
   @Test
-  void test() {
+  void test() throws InterruptedException {
 
     MySQLSchema testSchema = new MySQLSchema();
     testSchema.setMetadata(
