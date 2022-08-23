@@ -134,8 +134,8 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   @SuppressWarnings("unchecked")
   public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
     eventSources.additionalNamedEventSources().forEach(eventSource -> {
-      if (eventSource instanceof ResourceEventAware) {
-        var lifecycleAwareES = ((ResourceEventAware<R>) eventSource);
+      if (eventSource.original() instanceof ResourceEventAware) {
+        var lifecycleAwareES = ((ResourceEventAware<R>) eventSource.original());
         switch (action) {
           case ADDED:
             lifecycleAwareES.onResourceCreated(resource);
