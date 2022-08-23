@@ -82,10 +82,10 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public LeaderElectionConfiguration withLeaderElectionConfiguration(
+  public ConfigurationServiceOverrider withLeaderElectionConfiguration(
       LeaderElectionConfiguration leaderElectionConfiguration) {
     this.leaderElectionConfiguration = leaderElectionConfiguration;
-    return leaderElectionConfiguration;
+    return this;
   }
 
   public ConfigurationService build() {
