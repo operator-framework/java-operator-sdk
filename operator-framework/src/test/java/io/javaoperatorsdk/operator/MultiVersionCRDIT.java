@@ -64,6 +64,7 @@ class MultiVersionCRDIT {
         .pollInterval(Duration.ofMillis(50))
         .untilAsserted(() -> {
           var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
+          assertThat(crV1Now.getStatus()).isNotNull();
           assertThat(crV1Now.getStatus().getReconciledBy())
               .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
         });
