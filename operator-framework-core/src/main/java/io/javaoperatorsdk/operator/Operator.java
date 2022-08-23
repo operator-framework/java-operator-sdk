@@ -99,7 +99,7 @@ public class Operator implements LifecycleAware {
       ExecutorServiceManager.init();
       // first start the controller manager before leader election,
       // the leader election would start subsequently the processor if on
-      controllerManager.start(!leaderElectionManager.isLeaderElectionOn());
+      controllerManager.start(!leaderElectionManager.isLeaderElectionEnabled());
       leaderElectionManager.start();
     } catch (Exception e) {
       log.error("Error starting operator", e);

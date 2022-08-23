@@ -40,7 +40,7 @@ class LeaderElectionManager {
             .build();
   }
 
-  public boolean isLeaderElectionOn() {
+  public boolean isLeaderElectionEnabled() {
     return leaderElector != null;
   }
 
@@ -57,12 +57,12 @@ class LeaderElectionManager {
     log.info("Stopped leading for identity: {}. Exiting.", identity);
     // When leader stops leading the process ends immediately to prevent multiple reconciliations
     // running parallel.
-    // Note that some reconciliations might run a very long time.
+    // Note that some reconciliations might run for a very long time.
     System.exit(1);
   }
 
   public void start() {
-    if (isLeaderElectionOn()) {
+    if (isLeaderElectionEnabled()) {
       leaderElectionFuture = leaderElector.start();
     }
   }
