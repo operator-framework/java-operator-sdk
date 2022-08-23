@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 /**
- * Not confuse with controller manager form go operators. The highest level aggregate is
- * {@link Operator} in JOSDK.
+ * Not to be confused with the controller manager concept from Go's controller-runtime project. In
+ * JOSDK, the equivalent concept is {@link Operator}.
  */
 class ControllerManager {
 
@@ -48,7 +48,7 @@ class ControllerManager {
     controllers().parallelStream().forEach(Controller::startEventProcessing);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   synchronized void add(Controller controller) {
     final var configuration = controller.getConfiguration();
     final var resourceTypeName = ReconcilerUtils
