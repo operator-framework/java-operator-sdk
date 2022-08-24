@@ -31,7 +31,7 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, ConfigurationServiceProvider.instance());
+    this(kubernetesClient, ConfigurationServiceProvider.instance(), null);
   }
 
   /**
@@ -39,7 +39,7 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated
   public Operator(ConfigurationService configurationService) {
-    this(null, configurationService);
+    this(null, configurationService, null);
   }
 
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
@@ -47,8 +47,7 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(client);
-    ConfigurationServiceProvider.overrideCurrent(overrider);
+    this(client, ConfigurationServiceProvider.instance(), overrider);
   }
 
   /**
@@ -59,10 +58,18 @@ public class Operator implements LifecycleAware {
    * @param configurationService provides configuration
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
+    this(kubernetesClient, configurationService, null);
+  }
+
+  private Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService,
+      Consumer<ConfigurationServiceOverrider> overrider) {
     this.kubernetesClient =
         kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
     ConfigurationServiceProvider.set(configurationService);
-    configurationService.getLeaderElectionConfiguration()
+    if (overrider != null) {
+      ConfigurationServiceProvider.overrideCurrent(overrider);
+    }
+    ConfigurationServiceProvider.instance().getLeaderElectionConfiguration()
         .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
   }
 
