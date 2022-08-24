@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.LeaderElectionConfigurationBuilder;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 public class LeaderElectionTestOperator {
 
@@ -23,11 +23,9 @@ public class LeaderElectionTestOperator {
         .build()).build();
 
     Operator operator = new Operator(client,
-        c -> c.withLeaderElectionConfiguration(new LeaderElectionConfigurationBuilder()
-            .withLeaseName("leader-election-test")
-            .withLeaseNamespace(namespace)
-            .withIdentity(identity)
-            .build()));
+        c -> c.withLeaderElectionConfiguration(
+            new LeaderElectionConfiguration("leader-election-test", namespace, identity)));
+
     operator.register(new LeaderElectionTestReconciler(identity));
     operator.installShutdownHook();
     operator.start();

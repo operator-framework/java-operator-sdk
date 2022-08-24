@@ -17,6 +17,15 @@ public class LeaderElectionConfiguration {
   private final Duration renewDeadline;
   private final Duration retryPeriod;
 
+  public LeaderElectionConfiguration(String leaseName, String leaseNamespace, String identity) {
+    this(
+        leaseName,
+        leaseNamespace,
+        LEASE_DURATION_DEFAULT_VALUE,
+        RENEW_DEADLINE_DEFAULT_VALUE,
+        RETRY_PERIOD_DEFAULT_VALUE, identity);
+  }
+
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace) {
     this(
         leaseName,
