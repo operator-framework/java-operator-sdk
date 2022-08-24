@@ -46,6 +46,25 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     return match(dependentResource, actualResource, primary, context, false);
   }
 
+  /**
+   * Determines whether the specified actual resource matches the desired state defined by the
+   * specified {@link KubernetesDependentResource} based on the observed state of the associated
+   * specified primary resource.
+   *
+   * @param dependentResource the {@link KubernetesDependentResource} implementation used to
+   *        computed the desired state associated with the specified primary resource
+   * @param actualResource the observed dependent resource for which we want to determine whether it
+   *        matches the desired state or not
+   * @param primary the primary resource from which we want to compute the desired state
+   * @param context the {@link Context} instance within which this method is called
+   * @param considerMetadata {@code true} to consider the metadata of the actual resource when
+   *        determining if it matches the desired state, {@code false} if matching should occur only
+   *        considering the spec of the resources
+   * @return a {@link io.javaoperatorsdk.operator.processing.dependent.Matcher.Result} object
+   * @param <R> the type of resource we want to determine whether they match or not
+   * @param <P> the type of primary resources associated with the secondary resources we want to
+   *        match
+   */
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerMetadata) {
