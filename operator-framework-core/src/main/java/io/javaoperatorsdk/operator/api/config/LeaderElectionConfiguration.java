@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.UUID;
-
-import io.fabric8.zjsonpatch.internal.guava.Strings;
+import java.util.Optional;
 
 public class LeaderElectionConfiguration {
 
@@ -13,7 +11,7 @@ public class LeaderElectionConfiguration {
 
   private final String leaseName;
   private final String leaseNamespace;
-  private String identity;
+  private final String identity;
 
   private final Duration leaseDuration;
   private final Duration renewDeadline;
@@ -72,18 +70,7 @@ public class LeaderElectionConfiguration {
     return retryPeriod;
   }
 
-  public String getIdentity() {
-    if (identity == null) {
-      identity = System.getenv("HOSTNAME");
-      if (Strings.isNullOrEmpty(identity)) {
-        identity = UUID.randomUUID().toString();
-      } else {
-        identity = identity.trim();
-        if (identity.isBlank()) {
-          identity = UUID.randomUUID().toString();
-        }
-      }
-    }
-    return identity;
+  public Optional<String> getIdentity() {
+    return Optional.ofNullable(identity);
   }
 }
