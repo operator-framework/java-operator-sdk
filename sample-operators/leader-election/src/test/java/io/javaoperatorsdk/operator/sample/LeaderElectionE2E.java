@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ class LeaderElectionE2E {
 
   @Test
   // not for local mode by design
-  // @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
+  @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   void otherInstancesTakesOverWhenSteppingDown() {
     log.info("Deploying operator");
     deployOperatorsInOrder();
