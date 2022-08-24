@@ -65,6 +65,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     return actualExecutions.isEmpty();
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private synchronized void handleCleanup(DependentResourceNode dependentResourceNode) {
     log.debug("Submitting for cleanup: {}", dependentResourceNode);
 
@@ -82,11 +83,11 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     log.debug("Submitted for cleanup: {}", dependentResourceNode);
   }
 
-  private class NodeExecutor implements Runnable {
+  private class NodeExecutor<R> implements Runnable {
 
-    private final DependentResourceNode dependentResourceNode;
+    private final DependentResourceNode<R, P> dependentResourceNode;
 
-    private NodeExecutor(DependentResourceNode dependentResourceNode) {
+    private NodeExecutor(DependentResourceNode<R, P> dependentResourceNode) {
       this.dependentResourceNode = dependentResourceNode;
     }
 
@@ -95,7 +96,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     public void run() {
       try {
         var dependentResource = dependentResourceNode.getDependentResource();
-        Optional<Condition> deletePostCondition = dependentResourceNode.getDeletePostcondition();
+        Optional<Condition<R, P>> deletePostCondition =
+            dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
@@ -105,7 +107,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         alreadyVisited.add(dependentResourceNode);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary),
+                dependentResourceNode.getDependentResource().getSecondaryResource(primary)
+                    .orElse(null),
                 context)).orElse(true);
         if (deletePostConditionMet) {
           handleDependentCleaned(dependentResourceNode);

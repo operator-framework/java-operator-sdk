@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.sample.workflowallfeature;
 
-import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,9 +14,9 @@ public class ConfigMapDeletePostCondition
 
   @Override
   public boolean isMet(
-      WorkflowAllFeatureCustomResource primary, Optional<ConfigMap> secondary,
+      WorkflowAllFeatureCustomResource primary, ConfigMap secondary,
       Context<WorkflowAllFeatureCustomResource> context) {
-    var configMapDeleted = secondary.isEmpty();
+    var configMapDeleted = secondary == null;
     log.debug("Config Map Deleted: {}", configMapDeleted);
     return configMapDeleted;
   }
