@@ -47,7 +47,7 @@ class LeaderElectionE2E {
 
   @Test
   // not for local mode by design
-  @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
+//  @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   void otherInstancesTakesOverWhenSteppingDown() {
     log.info("Deploying operator");
     deployOperatorsInOrder();
