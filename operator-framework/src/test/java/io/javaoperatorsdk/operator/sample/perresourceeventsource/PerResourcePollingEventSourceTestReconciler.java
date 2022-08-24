@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.sample.perresourceeventsource;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -18,8 +18,8 @@ public class PerResourcePollingEventSourceTestReconciler
     KubernetesClientAware {
 
   public static final int POLL_PERIOD = 100;
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private final AtomicInteger numberOfFetchExecutions = new AtomicInteger(0);
+  private final Map<String, Integer> numberOfExecutions = new ConcurrentHashMap<>();
+  private final Map<String, Integer> numberOfFetchExecutions = new ConcurrentHashMap<>();
 
   private KubernetesClient client;
   private PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource;
@@ -28,7 +28,8 @@ public class PerResourcePollingEventSourceTestReconciler
   public UpdateControl<PerResourceEventSourceCustomResource> reconcile(
       PerResourceEventSourceCustomResource resource,
       Context<PerResourceEventSourceCustomResource> context) throws Exception {
-    numberOfExecutions.addAndGet(1);
+    numberOfExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
+    numberOfExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);
     return UpdateControl.noUpdate();
   }
 
@@ -36,8 +37,9 @@ public class PerResourcePollingEventSourceTestReconciler
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
     this.eventSource =
-        new PerResourcePollingEventSource<>(primaryResource -> {
-          numberOfFetchExecutions.addAndGet(1);
+        new PerResourcePollingEventSource<>(resource -> {
+          numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
+          numberOfFetchExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);
           return Set.of(UUID.randomUUID().toString());
         },
             context.getPrimaryCache(), POLL_PERIOD, String.class);
@@ -54,12 +56,12 @@ public class PerResourcePollingEventSourceTestReconciler
     this.client = kubernetesClient;
   }
 
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
+  public int getNumberOfExecutions(String name) {
+    return numberOfExecutions.get(name);
   }
 
-  public int getNumberOfFetchExecution() {
-    return numberOfFetchExecutions.get();
+  public int getNumberOfFetchExecution(String name) {
+    return numberOfFetchExecutions.get(name);
   }
 
 }
