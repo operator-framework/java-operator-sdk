@@ -302,13 +302,13 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.replaceResourceWithLock(resource);
+    return customResourceFacade.updateResource(resource);
   }
 
   private R updateCustomResource(R resource) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
-    return customResourceFacade.replaceResourceWithLock(resource);
+    return customResourceFacade.updateResource(resource);
   }
 
   ControllerConfiguration<R> configuration() {
@@ -326,7 +326,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         if (!removed) {
           return resource;
         }
-        return customResourceFacade.replaceResourceWithLock(resource);
+        return customResourceFacade.updateResource(resource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during finalizer removal for resource: {}", resource);
         retryIndex++;
@@ -360,7 +360,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return resourceOperation.inNamespace(namespace).withName(name).get();
     }
 
-    public R replaceResourceWithLock(R resource) {
+    public R updateResource(R resource) {
       log.debug(
           "Trying to replace resource {}, version: {}",
           getName(resource),
