@@ -41,6 +41,7 @@ class LeaderElectionE2E {
 
   private static final String OPERATOR_1_POD_NAME = "leader-election-operator-1";
   private static final String OPERATOR_2_POD_NAME = "leader-election-operator-2";
+  public static final int MINIMAL_EXPECTED_RECONCILIATION = 2;
 
   private String namespace;
   private KubernetesClient client;
@@ -62,7 +63,8 @@ class LeaderElectionE2E {
               .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
-          assertThat(actualStatus.getReconciledBy()).hasSizeGreaterThan(2);
+          assertThat(actualStatus.getReconciledBy())
+              .hasSizeGreaterThan(MINIMAL_EXPECTED_RECONCILIATION);
         });
 
     client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).delete();
@@ -78,7 +80,8 @@ class LeaderElectionE2E {
               .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
-          assertThat(actualStatus.getReconciledBy()).hasSizeGreaterThan(actualListSize + 2);
+          assertThat(actualStatus.getReconciledBy())
+              .hasSizeGreaterThan(actualListSize + MINIMAL_EXPECTED_RECONCILIATION);
         });
 
     assertReconciliations(
