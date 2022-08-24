@@ -45,12 +45,14 @@ public class ConfigurationServiceProvider {
     ConfigurationServiceProvider.instance = instance;
   }
 
-  public synchronized static void overrideCurrent(
+  public synchronized static ConfigurationService overrideCurrent(
       Consumer<ConfigurationServiceOverrider> overrider) {
-    final var toOverride =
-        new ConfigurationServiceOverrider(ConfigurationServiceProvider.instance());
-    overrider.accept(toOverride);
-    ConfigurationServiceProvider.set(toOverride.build(), true);
+    if (overrider != null) {
+      final var toOverride = new ConfigurationServiceOverrider(instance());
+      overrider.accept(toOverride);
+      set(toOverride.build(), true);
+    }
+    return instance();
   }
 
   public synchronized static void setDefault(ConfigurationService defaultConfigurationService) {
