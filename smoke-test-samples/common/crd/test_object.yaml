@@ -1,7 +1,0 @@
-apiVersion: "sample.javaoperatorsdk/v1"
-kind: CustomService
-metadata:
-  name: custom-service1
-spec:
-  name: testservice1
-  label: testlabel

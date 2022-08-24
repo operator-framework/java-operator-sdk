@@ -79,7 +79,6 @@
         <module>operator-framework-core</module>
         <module>operator-framework-junit5</module>
         <module>operator-framework</module>
-        <module>smoke-test-samples</module>
         <module>micrometer-support</module>
         <module>sample-operators</module>
     </modules>
