@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -132,4 +133,9 @@ public interface ConfigurationService {
   default DependentResourceFactory dependentResourceFactory() {
     return new DependentResourceFactory() {};
   }
+
+  default Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
+    return Optional.empty();
+  }
+
 }

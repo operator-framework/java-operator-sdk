@@ -23,31 +23,30 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
-public class EventSourceManager<R extends HasMetadata> implements LifecycleAware {
+public class EventSourceManager<P extends HasMetadata> implements LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventSourceManager.class);
 
-  private final EventSources<R> eventSources;
-  private final EventProcessor<R> eventProcessor;
-  private final Controller<R> controller;
+  private final EventSources<P> eventSources;
+  private final Controller<P> controller;
 
-  public EventSourceManager(Controller<R> controller) {
+  public EventSourceManager(Controller<P> controller) {
     this(controller, new EventSources<>());
   }
 
-  EventSourceManager(Controller<R> controller, EventSources<R> eventSources) {
+  EventSourceManager(Controller<P> controller, EventSources<P> eventSources) {
     this.eventSources = eventSources;
     this.controller = controller;
     // controller event source needs to be available before we create the event processor
     eventSources.initControllerEventSource(controller);
-    this.eventProcessor = new EventProcessor<>(this);
 
-    postProcessDefaultEventSources();
+
+    postProcessDefaultEventSourcesAfterProcessorInitializer();
   }
 
-  private void postProcessDefaultEventSources() {
-    eventSources.controllerResourceEventSource().setEventHandler(eventProcessor);
-    eventSources.retryEventSource().setEventHandler(eventProcessor);
+  public void postProcessDefaultEventSourcesAfterProcessorInitializer() {
+    eventSources.controllerResourceEventSource().setEventHandler(controller.getEventProcessor());
+    eventSources.retryEventSource().setEventHandler(controller.getEventProcessor());
   }
 
   /**
@@ -64,7 +63,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
     eventSources.additionalNamedEventSources().parallel().forEach(this::startEventSource);
-    eventProcessor.start();
   }
 
   @Override
@@ -72,7 +70,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
     stopEventSource(eventSources.namedControllerResourceEventSource());
     eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource);
     eventSources.clear();
-    eventProcessor.stop();
+
   }
 
   @SuppressWarnings("rawtypes")
@@ -122,7 +120,7 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
         name = EventSourceInitializer.generateNameFor(eventSource);
       }
       eventSources.add(name, eventSource);
-      eventSource.setEventHandler(eventProcessor);
+      eventSource.setEventHandler(controller.getEventProcessor());
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
@@ -132,10 +130,10 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   @SuppressWarnings("unchecked")
-  public void broadcastOnResourceEvent(ResourceAction action, R resource, R oldResource) {
+  public void broadcastOnResourceEvent(ResourceAction action, P resource, P oldResource) {
     eventSources.additionalNamedEventSources().forEach(eventSource -> {
       if (eventSource.original() instanceof ResourceEventAware) {
-        var lifecycleAwareES = ((ResourceEventAware<R>) eventSource.original());
+        var lifecycleAwareES = ((ResourceEventAware<P>) eventSource.original());
         switch (action) {
           case ADDED:
             lifecycleAwareES.onResourceCreated(resource);
@@ -152,7 +150,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    eventProcessor.stop();
     eventSources.controllerResourceEventSource()
         .changeNamespaces(namespaces);
     eventSources
@@ -162,11 +159,6 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
         .filter(NamespaceChangeable::allowsNamespaceChanges)
         .parallel()
         .forEach(ies -> ies.changeNamespaces(namespaces));
-    eventProcessor.start();
-  }
-
-  EventHandler getEventHandler() {
-    return eventProcessor;
   }
 
   public Set<EventSource> getRegisteredEventSources() {
@@ -175,30 +167,30 @@ public class EventSourceManager<R extends HasMetadata> implements LifecycleAware
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
-  public ControllerResourceEventSource<R> getControllerResourceEventSource() {
+  public ControllerResourceEventSource<P> getControllerResourceEventSource() {
     return eventSources.controllerResourceEventSource();
   }
 
-  <S> ResourceEventSource<S, R> getResourceEventSourceFor(
+  <S> ResourceEventSource<S, P> getResourceEventSourceFor(
       Class<S> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
   }
 
-  public <S> List<ResourceEventSource<S, R>> getEventSourcesFor(Class<S> dependentType) {
+  public <S> List<ResourceEventSource<S, P>> getEventSourcesFor(Class<S> dependentType) {
     return eventSources.getEventSources(dependentType);
   }
 
-  public <S> ResourceEventSource<S, R> getResourceEventSourceFor(
+  public <S> ResourceEventSource<S, P> getResourceEventSourceFor(
       Class<S> dependentType, String qualifier) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
     return eventSources.get(dependentType, qualifier);
   }
 
-  TimerEventSource<R> retryEventSource() {
+  TimerEventSource<P> retryEventSource() {
     return eventSources.retryEventSource();
   }
 
-  Controller<R> getController() {
+  Controller<P> getController() {
     return controller;
   }
 }
