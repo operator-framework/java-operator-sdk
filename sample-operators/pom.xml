@@ -22,5 +22,6 @@
         <module>tomcat-operator</module>
         <module>webpage</module>
         <module>mysql-schema</module>
+        <module>leader-election</module>
     </modules>
 </project>

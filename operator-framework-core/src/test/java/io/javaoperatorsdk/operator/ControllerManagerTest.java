@@ -4,15 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.Operator.ControllerManager;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.sample.simple.DuplicateCRController;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomReconcilerOtherV1;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceOtherV1;
+import io.javaoperatorsdk.operator.sample.simple.*;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
