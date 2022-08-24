@@ -30,26 +30,26 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
 /**
  * Handles calls and results of a Reconciler and finalizer related logic
  */
-class ReconciliationDispatcher<R extends HasMetadata> {
+class ReconciliationDispatcher<P extends HasMetadata> {
 
   public static final int MAX_FINALIZER_REMOVAL_RETRY = 10;
 
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
-  private final Controller<R> controller;
-  private final CustomResourceFacade<R> customResourceFacade;
+  private final Controller<P> controller;
+  private final CustomResourceFacade<P> customResourceFacade;
 
-  ReconciliationDispatcher(Controller<R> controller,
-      CustomResourceFacade<R> customResourceFacade) {
+  ReconciliationDispatcher(Controller<P> controller,
+      CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
   }
 
-  public ReconciliationDispatcher(Controller<R> controller) {
+  public ReconciliationDispatcher(Controller<P> controller) {
     this(controller, new CustomResourceFacade<>(controller.getCRClient()));
   }
 
-  public PostExecutionControl<R> handleExecution(ExecutionScope<R> executionScope) {
+  public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
     try {
       return handleDispatch(executionScope);
     } catch (Exception e) {
@@ -58,9 +58,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private PostExecutionControl<R> handleDispatch(ExecutionScope<R> executionScope)
+  private PostExecutionControl<P> handleDispatch(ExecutionScope<P> executionScope)
       throws Exception {
-    R originalResource = executionScope.getResource();
+    P originalResource = executionScope.getResource();
     var resourceForExecution = cloneResource(originalResource);
     log.debug("Handling dispatch for resource {}", getName(originalResource));
 
@@ -73,7 +73,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       return PostExecutionControl.defaultDispatch();
     }
 
-    Context<R> context =
+    Context<P> context =
         new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource);
     if (markedForDeletion) {
       return handleCleanup(resourceForExecution, context);
@@ -82,7 +82,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private boolean shouldNotDispatchToCleanupWhenMarkedForDeletion(R resource) {
+  private boolean shouldNotDispatchToCleanupWhenMarkedForDeletion(P resource) {
     var alreadyRemovedFinalizer = controller.useFinalizer()
         && !resource.hasFinalizer(configuration().getFinalizerName());
     if (alreadyRemovedFinalizer) {
@@ -92,9 +92,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return !controller.useFinalizer() || alreadyRemovedFinalizer;
   }
 
-  private PostExecutionControl<R> handleReconcile(
-      ExecutionScope<R> executionScope, R resourceForExecution, R originalResource,
-      Context<R> context) throws Exception {
+  private PostExecutionControl<P> handleReconcile(
+      ExecutionScope<P> executionScope, P resourceForExecution, P originalResource,
+      Context<P> context) throws Exception {
     if (controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
@@ -114,21 +114,21 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private R cloneResource(R resource) {
+  private P cloneResource(P resource) {
     final var cloner = ConfigurationServiceProvider.instance().getResourceCloner();
     return cloner.clone(resource);
   }
 
-  private PostExecutionControl<R> reconcileExecution(ExecutionScope<R> executionScope,
-      R resourceForExecution, R originalResource, Context<R> context) throws Exception {
+  private PostExecutionControl<P> reconcileExecution(ExecutionScope<P> executionScope,
+      P resourceForExecution, P originalResource, Context<P> context) throws Exception {
     log.debug(
         "Reconciling resource {} with version: {} with execution scope: {}",
         getName(resourceForExecution),
         getVersion(resourceForExecution),
         executionScope);
 
-    UpdateControl<R> updateControl = controller.reconcile(resourceForExecution, context);
-    R updatedCustomResource = null;
+    UpdateControl<P> updateControl = controller.reconcile(resourceForExecution, context);
+    P updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource =
           updateCustomResource(updateControl.getResource());
@@ -160,8 +160,8 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  private PostExecutionControl<R> handleErrorStatusHandler(R resource, R originalResource,
-      Context<R> context,
+  private PostExecutionControl<P> handleErrorStatusHandler(P resource, P originalResource,
+      Context<P> context,
       Exception e) throws Exception {
     if (isErrorStatusHandlerPresent()) {
       try {
@@ -176,11 +176,11 @@ class ReconciliationDispatcher<R extends HasMetadata> {
             return controller.getConfiguration().getRetry() == null;
           }
         });
-        ((DefaultContext<R>) context).setRetryInfo(retryInfo);
-        var errorStatusUpdateControl = ((ErrorStatusHandler<R>) controller.getReconciler())
+        ((DefaultContext<P>) context).setRetryInfo(retryInfo);
+        var errorStatusUpdateControl = ((ErrorStatusHandler<P>) controller.getReconciler())
             .updateErrorStatus(resource, context, e);
 
-        R updatedResource = null;
+        P updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
           updatedResource = errorStatusUpdateControl.isPatch() ? customResourceFacade
               .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource)
@@ -207,7 +207,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private R updateStatusGenerationAware(R resource, R originalResource, boolean patch) {
+  private P updateStatusGenerationAware(P resource, P originalResource, boolean patch) {
     updateStatusObservedGenerationIfRequired(resource);
     if (patch) {
       return customResourceFacade.patchStatus(resource, originalResource);
@@ -217,7 +217,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  private boolean shouldUpdateObservedGenerationAutomatically(R resource) {
+  private boolean shouldUpdateObservedGenerationAutomatically(P resource) {
     if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
@@ -232,7 +232,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  private void updateStatusObservedGenerationIfRequired(R resource) {
+  private void updateStatusObservedGenerationIfRequired(P resource) {
     if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
       var customResource = (CustomResource) resource;
       var status = customResource.getStatus();
@@ -244,9 +244,9 @@ class ReconciliationDispatcher<R extends HasMetadata> {
     }
   }
 
-  private PostExecutionControl<R> createPostExecutionControl(R updatedCustomResource,
-      UpdateControl<R> updateControl) {
-    PostExecutionControl<R> postExecutionControl;
+  private PostExecutionControl<P> createPostExecutionControl(P updatedCustomResource,
+      UpdateControl<P> updateControl) {
+    PostExecutionControl<P> postExecutionControl;
     if (updatedCustomResource != null) {
       if (updateControl.isUpdateStatus() && updateControl.isPatch()) {
         postExecutionControl =
@@ -262,7 +262,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
   private void updatePostExecutionControlWithReschedule(
-      PostExecutionControl<R> postExecutionControl,
+      PostExecutionControl<P> postExecutionControl,
       BaseControl<?> baseControl) {
     baseControl.getScheduleDelay().ifPresentOrElse(postExecutionControl::withReSchedule,
         () -> controller.getConfiguration().maxReconciliationInterval()
@@ -270,7 +270,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
   }
 
 
-  private PostExecutionControl<R> handleCleanup(R resource, Context<R> context) {
+  private PostExecutionControl<P> handleCleanup(P resource, Context<P> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),
@@ -283,7 +283,7 @@ class ReconciliationDispatcher<R extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        R customResource = removeFinalizer(resource, finalizerName);
+        P customResource = removeFinalizer(resource, finalizerName);
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -293,29 +293,29 @@ class ReconciliationDispatcher<R extends HasMetadata> {
         getVersion(resource),
         deleteControl,
         useFinalizer);
-    PostExecutionControl<R> postExecutionControl = PostExecutionControl.defaultDispatch();
+    PostExecutionControl<P> postExecutionControl = PostExecutionControl.defaultDispatch();
     updatePostExecutionControlWithReschedule(postExecutionControl, deleteControl);
     return postExecutionControl;
   }
 
-  private R updateCustomResourceWithFinalizer(R resource) {
+  private P updateCustomResourceWithFinalizer(P resource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
     resource.addFinalizer(configuration().getFinalizerName());
     return customResourceFacade.updateResource(resource);
   }
 
-  private R updateCustomResource(R resource) {
+  private P updateCustomResource(P resource) {
     log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
     log.trace("Resource before update: {}", resource);
     return customResourceFacade.updateResource(resource);
   }
 
-  ControllerConfiguration<R> configuration() {
+  ControllerConfiguration<P> configuration() {
     return controller.getConfiguration();
   }
 
-  public R removeFinalizer(R resource, String finalizer) {
+  public P removeFinalizer(P resource, String finalizer) {
     if (log.isDebugEnabled()) {
       log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
     }

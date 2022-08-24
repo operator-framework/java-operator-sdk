@@ -36,6 +36,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
+import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -44,7 +45,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, Cleaner<P>, LifecycleAware, RegisteredController<P> {
+    implements Reconciler<P>, LifecycleAware, Cleaner<P>,
+    RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
@@ -58,6 +60,7 @@ public class Controller<P extends HasMetadata>
   private final ManagedWorkflow<P> managedWorkflow;
 
   private final GroupVersionKind associatedGVK;
+  private final EventProcessor<P> eventProcessor;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -75,6 +78,8 @@ public class Controller<P extends HasMetadata>
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
     eventSourceManager = new EventSourceManager<>(this);
+    eventProcessor = new EventProcessor<>(eventSourceManager);
+    eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
   }
 
   @Override
@@ -258,6 +263,10 @@ public class Controller<P extends HasMetadata>
     return kubernetesClient.resources(configuration.getResourceClass());
   }
 
+  public void start() throws OperatorException {
+    start(true);
+  }
+
   /**
    * Registers the specified controller with this operator, overriding its default configuration by
    * the specified one (usually created via
@@ -266,7 +275,7 @@ public class Controller<P extends HasMetadata>
    *
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public void start() throws OperatorException {
+  public synchronized void start(boolean startEventProcessor) throws OperatorException {
     final Class<P> resClass = configuration.getResourceClass();
     final String controllerName = configuration.getName();
     final var crdName = configuration.getResourceTypeName();
@@ -284,12 +293,16 @@ public class Controller<P extends HasMetadata>
 
       initAndRegisterEventSources(context);
       eventSourceManager.start();
+      if (startEventProcessor) {
+        eventProcessor.start();
+      }
       log.info("'{}' controller started, pending event sources initialization", controllerName);
     } catch (MissingCRDException e) {
       stop();
       throwMissingCRDException(crdName, specVersion, controllerName);
     }
   }
+
 
   private void validateCRDWithLocalModelIfRequired(Class<P> resClass, String controllerName,
       String crdName, String specVersion) {
@@ -311,7 +324,14 @@ public class Controller<P extends HasMetadata>
         || namespaces.contains(WATCH_CURRENT_NAMESPACE)) {
       throw new OperatorException("Unexpected value in target namespaces: " + namespaces);
     }
+    eventProcessor.stop();
     eventSourceManager.changeNamespaces(namespaces);
+    eventProcessor.start();
+  }
+
+  public synchronized void startEventProcessing() {
+    log.info("Started event processing for controller: {}", configuration.getName());
+    eventProcessor.start();
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
@@ -346,7 +366,10 @@ public class Controller<P extends HasMetadata>
     return eventSourceManager;
   }
 
-  public void stop() {
+  public synchronized void stop() {
+    if (eventProcessor != null) {
+      eventProcessor.stop();
+    }
     if (eventSourceManager != null) {
       eventSourceManager.stop();
     }
@@ -358,5 +381,9 @@ public class Controller<P extends HasMetadata>
 
   public GroupVersionKind getAssociatedGroupVersionKind() {
     return associatedGVK;
+  }
+
+  public EventProcessor<P> getEventProcessor() {
+    return eventProcessor;
   }
 }

@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -12,15 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -29,14 +21,17 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private final KubernetesClient kubernetesClient;
-  private final ControllerManager controllers = new ControllerManager();
+  private final ControllerManager controllerManager = new ControllerManager();
+  private final LeaderElectionManager leaderElectionManager =
+      new LeaderElectionManager(controllerManager);
+  private volatile boolean started = false;
 
   public Operator() {
-    this(new DefaultKubernetesClient(), ConfigurationServiceProvider.instance());
+    this((KubernetesClient) null);
   }
 
   public Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, ConfigurationServiceProvider.instance());
+    this(kubernetesClient, ConfigurationServiceProvider.instance(), null);
   }
 
   /**
@@ -44,16 +39,15 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated
   public Operator(ConfigurationService configurationService) {
-    this(new DefaultKubernetesClient(), configurationService);
+    this(null, configurationService, null);
   }
 
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(new DefaultKubernetesClient(), overrider);
+    this(null, overrider);
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(client);
-    ConfigurationServiceProvider.overrideCurrent(overrider);
+    this(client, ConfigurationServiceProvider.instance(), overrider);
   }
 
   /**
@@ -64,8 +58,19 @@ public class Operator implements LifecycleAware {
    * @param configurationService provides configuration
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
-    this.kubernetesClient = kubernetesClient;
+    this(kubernetesClient, configurationService, null);
+  }
+
+  private Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService,
+      Consumer<ConfigurationServiceOverrider> overrider) {
+    this.kubernetesClient =
+        kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
     ConfigurationServiceProvider.set(configurationService);
+    if (overrider != null) {
+      ConfigurationServiceProvider.overrideCurrent(overrider);
+    }
+    ConfigurationServiceProvider.instance().getLeaderElectionConfiguration()
+        .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
@@ -84,8 +89,11 @@ public class Operator implements LifecycleAware {
    */
   public void start() {
     try {
-      controllers.shouldStart();
-
+      if (started) {
+        return;
+      }
+      started = true;
+      controllerManager.shouldStart();
       final var version = ConfigurationServiceProvider.instance().getVersion();
       log.info(
           "Operator SDK {} (commit: {}) built on {} starting...",
@@ -95,9 +103,11 @@ public class Operator implements LifecycleAware {
 
       final var clientVersion = Version.clientVersion();
       log.info("Client version: {}", clientVersion);
-
       ExecutorServiceManager.init();
-      controllers.start();
+      // first start the controller manager before leader election,
+      // the leader election would start subsequently the processor if on
+      controllerManager.start(!leaderElectionManager.isLeaderElectionEnabled());
+      leaderElectionManager.start();
     } catch (Exception e) {
       log.error("Error starting operator", e);
       stop();
@@ -111,9 +121,9 @@ public class Operator implements LifecycleAware {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
 
-    controllers.stop();
-
+    controllerManager.stop();
     ExecutorServiceManager.stop();
+    leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
@@ -149,6 +159,9 @@ public class Operator implements LifecycleAware {
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration)
       throws OperatorException {
+    if (started) {
+      throw new OperatorException("Operator already started. Register all the controllers before.");
+    }
 
     if (configuration == null) {
       throw new OperatorException(
@@ -161,7 +174,7 @@ public class Operator implements LifecycleAware {
 
     final var controller = new Controller<>(reconciler, configuration, kubernetesClient);
 
-    controllers.add(controller);
+    controllerManager.add(controller);
 
     final var watchedNS = configuration.watchAllNamespaces() ? "[all namespaces]"
         : configuration.getEffectiveNamespaces();
@@ -191,73 +204,15 @@ public class Operator implements LifecycleAware {
   }
 
   public Optional<RegisteredController> getRegisteredController(String name) {
-    return controllers.get(name).map(RegisteredController.class::cast);
+    return controllerManager.get(name).map(RegisteredController.class::cast);
   }
 
   public Set<RegisteredController> getRegisteredControllers() {
-    return new HashSet<>(controllers.controllers());
+    return new HashSet<>(controllerManager.controllers());
   }
 
   public int getRegisteredControllersNumber() {
-    return controllers.size();
+    return controllerManager.size();
   }
 
-  static class ControllerManager implements LifecycleAware {
-    private final Map<String, Controller> controllers = new HashMap<>();
-    private boolean started = false;
-
-    public synchronized void shouldStart() {
-      if (started) {
-        return;
-      }
-      if (controllers.isEmpty()) {
-        throw new OperatorException("No Controller exists. Exiting!");
-      }
-    }
-
-    public synchronized void start() {
-      controllers().parallelStream().forEach(Controller::start);
-      started = true;
-    }
-
-    public synchronized void stop() {
-      controllers().parallelStream().forEach(closeable -> {
-        log.debug("closing {}", closeable);
-        closeable.stop();
-      });
-
-      started = false;
-    }
-
-    @SuppressWarnings("unchecked")
-    synchronized void add(Controller controller) {
-      final var configuration = controller.getConfiguration();
-      final var resourceTypeName = ReconcilerUtils
-          .getResourceTypeNameWithVersion(configuration.getResourceClass());
-      final var existing = controllers.get(resourceTypeName);
-      if (existing != null) {
-        throw new OperatorException("Cannot register controller '" + configuration.getName()
-            + "': another controller named '" + existing.getConfiguration().getName()
-            + "' is already registered for resource '" + resourceTypeName + "'");
-      }
-      controllers.put(resourceTypeName, controller);
-      if (started) {
-        controller.start();
-      }
-    }
-
-    synchronized Optional<Controller> get(String name) {
-      return controllers().stream()
-          .filter(c -> name.equals(c.getConfiguration().getName()))
-          .findFirst();
-    }
-
-    synchronized Collection<Controller> controllers() {
-      return controllers.values();
-    }
-
-    synchronized int size() {
-      return controllers.size();
-    }
-  }
 }

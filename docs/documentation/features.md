@@ -683,6 +683,19 @@ See also
 the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/changenamespace/ChangeNamespaceTestReconciler.java)
 for this feature.
 
+## Leader Election
+
+Operators are generally deployed with a single running or active instance. However, it is 
+possible to deploy multiple instances in such a way that only one, called the "leader", processes the 
+events. This is achieved via a mechanism called "leader election". While all the instances are 
+running, and even start their event sources to populate the caches, only the leader will process 
+the events. This means that should the leader change for any reason, for example because it 
+crashed, the other instances are already warmed up and ready to pick up where the previous 
+leader left off should one of them become elected leader.
+
+See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/144947d89323f1c65de6e86bd8b9a6a8ffe714ff/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L26-L30)
+.
+
 ## Monitoring with Micrometer
 
 ## Automatic Generation of CRDs
