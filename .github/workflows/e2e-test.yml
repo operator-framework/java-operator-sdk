@@ -21,6 +21,7 @@ jobs:
           - "sample-operators/mysql-schema"
           - "sample-operators/tomcat-operator"
           - "sample-operators/webpage"
+          - "sample-operators/leader-election"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

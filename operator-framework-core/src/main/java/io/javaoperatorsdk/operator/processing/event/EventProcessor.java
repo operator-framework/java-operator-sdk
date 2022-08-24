@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 
-class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAware {
+public class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAware {
 
   private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
   private static final long MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION = 50;
@@ -48,7 +48,7 @@ class EventProcessor<R extends HasMetadata> implements EventHandler, LifecycleAw
   private final ResourceStateManager resourceStateManager = new ResourceStateManager();
   private final Map<String, Object> metricsMetadata;
 
-  EventProcessor(EventSourceManager<R> eventSourceManager) {
+  public EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
         eventSourceManager.getControllerResourceEventSource(),
         ExecutorServiceManager.instance().executorService(),
