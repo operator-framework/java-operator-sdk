@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
@@ -18,10 +17,7 @@ public class LeaderElectionTestOperator {
 
     log.info("Starting operator with identity: {}", identity);
 
-    var client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
-        .withNamespace(namespace)
-        .build()).build();
-
+    var client = new KubernetesClientBuilder().build();
     Operator operator = new Operator(client,
         c -> c.withLeaderElectionConfiguration(
             new LeaderElectionConfiguration("leader-election-test", namespace, identity)));
