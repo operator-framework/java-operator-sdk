@@ -196,8 +196,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     throw e;
   }
 
-  private Optional<R> updateForErrorHandling(R originalResource, R updatedResource,
-      ErrorStatusUpdateControl<R> errorStatusUpdateControl) {
+  private Optional<P> updateForErrorHandling(P originalResource, P updatedResource,
+      ErrorStatusUpdateControl<P> errorStatusUpdateControl) {
     if (errorStatusUpdateControl.isOnlyOnChange()
         && statusEqual(originalResource, updatedResource)) {
       return Optional.empty();
@@ -212,7 +212,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private R updateStatusGenerationAware(R resource, R originalResource, boolean patch) {
+  private Optional<P> updateStatusGenerationAware(P resource, P originalResource, boolean patch,
+      boolean onlyIfChanged) {
     updateStatusObservedGenerationIfRequired(resource);
     if (onlyIfChanged && statusEqual(resource, originalResource)) {
       return Optional.empty();
@@ -359,7 +360,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  private boolean statusEqual(R resource, R originalResource) {
+  private boolean statusEqual(P resource, P originalResource) {
     if (!(resource instanceof CustomResource)) {
       return false;
     }
@@ -368,7 +369,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  private boolean specAndMetaEqual(R resource, R originalResource) {
+  private boolean specAndMetaEqual(P resource, P originalResource) {
     if (!(resource instanceof CustomResource)) {
       return false;
     }
