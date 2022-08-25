@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class BaseConfigurationService extends AbstractConfigurationService {
 
   private static final String LOGGER_NAME = "Default ConfigurationService implementation";
@@ -13,6 +15,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   public BaseConfigurationService(Version version) {
     super(version);
+  }
+
+  public BaseConfigurationService(Version version, Cloner cloner, ObjectMapper mapper) {
+    super(version, cloner, mapper);
   }
 
   public BaseConfigurationService() {

@@ -9,13 +9,40 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @SuppressWarnings("rawtypes")
 public class AbstractConfigurationService implements ConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
+  private Cloner cloner;
+  private ObjectMapper mapper;
 
   public AbstractConfigurationService(Version version) {
+    this(version, null, null);
+  }
+
+  public AbstractConfigurationService(Version version, Cloner cloner) {
+    this(version, cloner, null);
+  }
+
+  public AbstractConfigurationService(Version version, Cloner cloner, ObjectMapper mapper) {
     this.version = version;
+    init(cloner, mapper);
+  }
+
+  /**
+   * Subclasses can call this method to more easily initialize the {@link Cloner} and
+   * {@link ObjectMapper} associated with this ConfigurationService implementation. This is useful
+   * in situations where the cloner depends on a mapper that might require additional configuration
+   * steps before it's ready to be used.
+   *
+   * @param cloner the {@link Cloner} instance to be used
+   * @param mapper the {@link ObjectMapper} instance to be used
+   */
+  protected void init(Cloner cloner, ObjectMapper mapper) {
+    this.cloner = cloner != null ? cloner : ConfigurationService.super.getResourceCloner();
+    this.mapper = mapper != null ? mapper : ConfigurationService.super.getObjectMapper();
   }
 
   protected <R extends HasMetadata> void register(ControllerConfiguration<R> config) {
@@ -77,10 +104,12 @@ public class AbstractConfigurationService implements ConfigurationService {
     return ReconcilerUtils.getNameFor(reconciler);
   }
 
+  @SuppressWarnings("unused")
   protected ControllerConfiguration getFor(String reconcilerName) {
     return configurations.get(reconcilerName);
   }
 
+  @SuppressWarnings("unused")
   protected Stream<ControllerConfiguration> controllerConfigurations() {
     return configurations.values().stream();
   }
@@ -93,5 +122,15 @@ public class AbstractConfigurationService implements ConfigurationService {
   @Override
   public Version getVersion() {
     return version;
+  }
+
+  @Override
+  public Cloner getResourceCloner() {
+    return cloner;
+  }
+
+  @Override
+  public ObjectMapper getObjectMapper() {
+    return mapper;
   }
 }

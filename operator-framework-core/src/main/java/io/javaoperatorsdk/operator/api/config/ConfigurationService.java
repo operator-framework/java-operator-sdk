@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
@@ -16,20 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
-
-  ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-  Cloner DEFAULT_CLONER = new Cloner() {
-    @SuppressWarnings("unchecked")
-    @Override
-    public HasMetadata clone(HasMetadata object) {
-      try {
-        return OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(object), object.getClass());
-      } catch (JsonProcessingException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-  };
 
   /**
    * Retrieves the configuration associated with the specified reconciler
@@ -93,12 +80,25 @@ public interface ConfigurationService {
   }
 
   /**
-   * Used to clone custom resources.
+   * Used to clone custom resources. It is strongly suggested that implementors override this method
+   * since the default implementation creates a new {@link Cloner} instance each time this method is
+   * called.
    *
-   * @return the ObjectMapper to use
+   * @return the configured {@link Cloner}
    */
   default Cloner getResourceCloner() {
-    return DEFAULT_CLONER;
+    return new Cloner() {
+      @SuppressWarnings("unchecked")
+      @Override
+      public HasMetadata clone(HasMetadata object) {
+        try {
+          final var mapper = getObjectMapper();
+          return mapper.readValue(mapper.writeValueAsString(object), object.getClass());
+        } catch (JsonProcessingException e) {
+          throw new IllegalStateException(e);
+        }
+      }
+    };
   }
 
   int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;
@@ -126,7 +126,7 @@ public interface ConfigurationService {
   }
 
   default ObjectMapper getObjectMapper() {
-    return OBJECT_MAPPER;
+    return Serialization.jsonMapper();
   }
 
   default DependentResourceFactory dependentResourceFactory() {
