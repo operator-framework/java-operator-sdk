@@ -66,7 +66,7 @@ class GenericKubernetesResourceMatcherTest {
 
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, true).matched())
-        .withFailMessage("Annotations should matter when metadata is not considered")
+        .withFailMessage("Annotations should matter when metadata is considered")
         .isFalse();
   }
 
