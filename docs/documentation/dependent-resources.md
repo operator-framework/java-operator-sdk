@@ -86,6 +86,35 @@ possible to not implement any of these traits and therefore create read-only dep
 that will trigger your reconciler whenever a user interacts with them but that are never
 modified by your reconciler itself.
 
+[`AbstractSimpleDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/external/AbstractSimpleDependentResource.java)
+and [`KubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
+sub-classes can also implement
+the [`Matcher`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/Matcher.java)
+interface to customize how the SDK decides whether or not the actual state of the dependent
+matches the desired state. This makes it convenient to use these abstract base classes for your
+implementation, only customizing the matching logic. Note that in many cases, there is no need
+to customize that logic as the SDK already provides convenient default implementations in the
+form
+of [`DesiredEqualsMatcher`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/DesiredEqualsMatcher.java)
+and
+[`GenericKubernetesResourceMatcher`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesResourceMatcher.java)
+implementations, respectively. If you want to provide custom logic, you only need your
+`DependentResource` implementation to implement the `Matcher` interface as below, which shows
+how to customize the default matching logic for Kubernetes resource to also consider annotations
+and labels, which are ignored by default:
+
+```java
+public class MyDependentResource extends KubernetesDependentResource<MyDependent, MyPrimary>
+    implements Matcher<MyDependent, MyPrimary> {
+  // your implementation
+
+  public Result<MyDependent> match(MyDependent actualResource, MyPrimary primary,
+      Context<MyPrimary> context) {
+    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, true);
+  }
+}
+```
+
 ### Batteries included: convenient DependentResource implementations!
 
 JOSDK also offers several other convenient implementations building on top of
@@ -116,7 +145,7 @@ Deleted (or set to be garbage collected). The following example shows how to cre
 @KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
 class DeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
-   public DeploymentDependentResource() {
+  public DeploymentDependentResource() {
     super(Deployment.class);
   }
 
@@ -169,26 +198,26 @@ instances are managed by JOSDK, an example of which can be seen below:
 ```java
 
 @ControllerConfiguration(
-        labelSelector = SELECTOR,
-        dependents = {
-                @Dependent(type = ConfigMapDependentResource.class),
-                @Dependent(type = DeploymentDependentResource.class),
-                @Dependent(type = ServiceDependentResource.class)
-        })
+    labelSelector = SELECTOR,
+    dependents = {
+        @Dependent(type = ConfigMapDependentResource.class),
+        @Dependent(type = DeploymentDependentResource.class),
+        @Dependent(type = ServiceDependentResource.class)
+    })
 public class WebPageManagedDependentsReconciler
-        implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
-   // omitted code
+  // omitted code
 
-   @Override
-   public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
-           throws Exception {
+  @Override
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
+      throws Exception {
 
-      final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
-              .getMetadata().getName();
-      webPage.setStatus(createStatus(name));
-      return UpdateControl.patchStatus(webPage);
-   }
+    final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
+        .getMetadata().getName();
+    webPage.setStatus(createStatus(name));
+    return UpdateControl.patchStatus(webPage);
+  }
 
 }
 ```
@@ -215,69 +244,69 @@ an `Ingress`:
 
 @ControllerConfiguration
 public class WebPageStandaloneDependentsReconciler
-        implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>,
-        EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>,
+    EventSourceInitializer<WebPage> {
 
-   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
-   private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
-   private KubernetesDependentResource<Service, WebPage> serviceDR;
-   private KubernetesDependentResource<Service, WebPage> ingressDR;
+  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
+  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
+  private KubernetesDependentResource<Service, WebPage> serviceDR;
+  private KubernetesDependentResource<Service, WebPage> ingressDR;
 
-   public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
-      // 1.
-      createDependentResources(kubernetesClient);
-   }
+  public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
+    // 1.
+    createDependentResources(kubernetesClient);
+  }
 
-   @Override
-   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-      // 2.  
-      return List.of(
-              configMapDR.initEventSource(context),
-              deploymentDR.initEventSource(context),
-              serviceDR.initEventSource(context));
-   }
+  @Override
+  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    // 2.  
+    return List.of(
+        configMapDR.initEventSource(context),
+        deploymentDR.initEventSource(context),
+        serviceDR.initEventSource(context));
+  }
 
-   @Override
-   public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
-           throws Exception {
+  @Override
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context)
+      throws Exception {
 
-      // 3.
-      if (!isValidHtml(webPage.getHtml())) {
-         return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
-      }
+    // 3.
+    if (!isValidHtml(webPage.getHtml())) {
+      return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
+    }
 
-      // 4.  
-      configMapDR.reconcile(webPage, context);
-      deploymentDR.reconcile(webPage, context);
-      serviceDR.reconcile(webPage, context);
+    // 4.  
+    configMapDR.reconcile(webPage, context);
+    deploymentDR.reconcile(webPage, context);
+    serviceDR.reconcile(webPage, context);
 
-      // 5.
-      if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
-         ingressDR.reconcile(webPage, context);
-      } else {
-         ingressDR.delete(webPage, context);
-      }
+    // 5.
+    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
+      ingressDR.reconcile(webPage, context);
+    } else {
+      ingressDR.delete(webPage, context);
+    }
 
-      // 6.
-      webPage.setStatus(
-              createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
-      return UpdateControl.patchStatus(webPage);
-   }
+    // 6.
+    webPage.setStatus(
+        createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
+    return UpdateControl.patchStatus(webPage);
+  }
 
-   private void createDependentResources(KubernetesClient client) {
-      this.configMapDR = new ConfigMapDependentResource();
-      this.deploymentDR = new DeploymentDependentResource();
-      this.serviceDR = new ServiceDependentResource();
-      this.ingressDR = new IngressDependentResource();
+  private void createDependentResources(KubernetesClient client) {
+    this.configMapDR = new ConfigMapDependentResource();
+    this.deploymentDR = new DeploymentDependentResource();
+    this.serviceDR = new ServiceDependentResource();
+    this.ingressDR = new IngressDependentResource();
 
-      Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
-         dr.setKubernetesClient(client);
-         dr.configureWith(new KubernetesDependentResourceConfig()
-                 .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-      });
-   }
+    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
+      dr.setKubernetesClient(client);
+      dr.configureWith(new KubernetesDependentResourceConfig()
+          .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+    });
+  }
 
-   // omitted code
+  // omitted code
 }
 ```
 
