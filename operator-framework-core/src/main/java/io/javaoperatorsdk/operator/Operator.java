@@ -60,9 +60,9 @@ public class Operator implements LifecycleAware {
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
     this.kubernetesClient =
         kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
-    ConfigurationServiceProvider.set(configurationService);
-    ConfigurationServiceProvider.instance().getLeaderElectionConfiguration()
+    configurationService.getLeaderElectionConfiguration()
         .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
+    ConfigurationServiceProvider.set(configurationService);
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
