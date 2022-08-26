@@ -76,7 +76,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   public Workflow<P> build() {
     return new Workflow(
-        dependentResourceNodes, ExecutorServiceManager.instance().executorService(),
+        dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
         throwExceptionAutomatically);
   }
 

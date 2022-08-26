@@ -17,6 +17,7 @@ public class ExecutorServiceManager {
   private static ExecutorServiceManager instance;
 
   private final ExecutorService executor;
+  private ExecutorService workflowExecutor;
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(InstrumentedExecutorService executor,
@@ -60,11 +61,26 @@ public class ExecutorServiceManager {
     return executor;
   }
 
+  // needs to be synchronized since only called when a workflow is initialized, but that happens in
+  // controllers which are started in parallel
+  public synchronized ExecutorService workflowExecutorService() {
+    if (workflowExecutor == null) {
+      workflowExecutor =
+          new InstrumentedExecutorService(
+              ConfigurationServiceProvider.instance().getWorkflowExecutorService());
+    }
+    return workflowExecutor;
+  }
+
   private void doStop() {
     try {
       log.debug("Closing executor");
       executor.shutdown();
+      workflowExecutor.shutdown();
       if (!executor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
+        executor.shutdownNow(); // if we timed out, waiting, cancel everything
+      }
+      if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
         executor.shutdownNow(); // if we timed out, waiting, cancel everything
       }
     } catch (InterruptedException e) {

@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -30,7 +30,7 @@ public class Workflow<P extends HasMetadata> {
   private ExecutorService executorService;
 
   public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
-    this.executorService = ConfigurationServiceProvider.instance().getExecutorService();
+    this.executorService = ExecutorServiceManager.instance().workflowExecutorService();
     this.dependentResourceNodes = dependentResourceNodes;
     this.throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
     preprocessForReconcile();
