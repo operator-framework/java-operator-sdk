@@ -22,6 +22,7 @@ public class ConfigurationServiceOverrider {
   private Boolean closeClientOnStop;
   private ObjectMapper objectMapper;
   private ExecutorService executorService;
+  private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -65,6 +66,12 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withExecutorService(ExecutorService executorService) {
     this.executorService = executorService;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withWorkflowExecutorService(
+      ExecutorService workflowExecutorService) {
+    this.workflowExecutorService = workflowExecutorService;
     return this;
   }
 
@@ -119,6 +126,12 @@ public class ConfigurationServiceOverrider {
       @Override
       public ExecutorService getExecutorService() {
         return executorService != null ? executorService : original.getExecutorService();
+      }
+
+      @Override
+      public ExecutorService getWorkflowExecutorService() {
+        return workflowExecutorService != null ? workflowExecutorService
+            : original.getWorkflowExecutorService();
       }
 
       @Override
