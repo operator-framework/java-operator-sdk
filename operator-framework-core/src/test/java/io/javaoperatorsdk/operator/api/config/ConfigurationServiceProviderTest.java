@@ -34,17 +34,23 @@ class ConfigurationServiceProviderTest {
 
   @Test
   void shouldBePossibleToOverrideConfigOnce() {
-    final var config = new AbstractConfigurationService(null);
+    final var config = new ConfigurationServiceOverrider(new AbstractConfigurationService(null))
+        .withLeaderElectionConfiguration(new LeaderElectionConfiguration("bar", "barNS"))
+        .build();
     assertFalse(config.checkCRDAndValidateLocalModel());
+    assertEquals("bar", config.getLeaderElectionConfiguration().orElseThrow().getLeaseName());
 
     ConfigurationServiceProvider.set(config);
     var instance = ConfigurationServiceProvider.instance();
     assertEquals(config, instance);
 
-    ConfigurationServiceProvider.overrideCurrent(o -> o.checkingCRDAndValidateLocalModel(true));
+    final ConfigurationService overridden = ConfigurationServiceProvider.overrideCurrent(
+        o -> o.checkingCRDAndValidateLocalModel(true));
     instance = ConfigurationServiceProvider.instance();
+    assertEquals(overridden, instance);
     assertNotEquals(config, instance);
     assertTrue(instance.checkCRDAndValidateLocalModel());
+    assertEquals("bar", instance.getLeaderElectionConfiguration().orElseThrow().getLeaseName());
 
     assertThrows(IllegalStateException.class,
         () -> ConfigurationServiceProvider.overrideCurrent(o -> o.withCloseClientOnStop(false)));
