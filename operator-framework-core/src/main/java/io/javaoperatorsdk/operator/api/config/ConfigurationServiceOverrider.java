@@ -15,27 +15,18 @@ public class ConfigurationServiceOverrider {
   private final ConfigurationService original;
   private Metrics metrics;
   private Config clientConfig;
-  private boolean checkCR;
-  private int threadNumber;
+  private Boolean checkCR;
+  private Integer threadNumber;
   private Cloner cloner;
-  private int timeoutSeconds;
-  private boolean closeClientOnStop;
+  private Integer timeoutSeconds;
+  private Boolean closeClientOnStop;
   private ObjectMapper objectMapper;
-  private ExecutorService executorService = null;
+  private ExecutorService executorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
-    this.clientConfig = original.getClientConfiguration();
-    this.checkCR = original.checkCRDAndValidateLocalModel();
-    this.threadNumber = original.concurrentReconciliationThreads();
-    this.cloner = original.getResourceCloner();
-    this.timeoutSeconds = original.getTerminationTimeoutSeconds();
-    this.metrics = original.getMetrics();
-    this.closeClientOnStop = original.closeClientOnStop();
-    this.objectMapper = original.getObjectMapper();
   }
-
 
   public ConfigurationServiceOverrider withClientConfiguration(Config configuration) {
     this.clientConfig = configuration;
@@ -97,51 +88,48 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public Config getClientConfiguration() {
-        return clientConfig;
+        return clientConfig != null ? clientConfig : original.getClientConfiguration();
       }
 
       @Override
       public boolean checkCRDAndValidateLocalModel() {
-        return checkCR;
+        return checkCR != null ? checkCR : original.checkCRDAndValidateLocalModel();
       }
 
       @Override
       public int concurrentReconciliationThreads() {
-        return threadNumber;
+        return threadNumber != null ? threadNumber : original.concurrentReconciliationThreads();
       }
 
       @Override
       public int getTerminationTimeoutSeconds() {
-        return timeoutSeconds;
+        return timeoutSeconds != null ? timeoutSeconds : original.getTerminationTimeoutSeconds();
       }
 
       @Override
       public Metrics getMetrics() {
-        return metrics;
+        return metrics != null ? metrics : original.getMetrics();
       }
 
       @Override
       public boolean closeClientOnStop() {
-        return closeClientOnStop;
+        return closeClientOnStop != null ? closeClientOnStop : original.closeClientOnStop();
       }
 
       @Override
       public ExecutorService getExecutorService() {
-        if (executorService != null) {
-          return executorService;
-        } else {
-          return super.getExecutorService();
-        }
+        return executorService != null ? executorService : original.getExecutorService();
       }
 
       @Override
       public ObjectMapper getObjectMapper() {
-        return objectMapper;
+        return objectMapper != null ? objectMapper : original.getObjectMapper();
       }
 
       @Override
       public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
-        return Optional.ofNullable(leaderElectionConfiguration);
+        return leaderElectionConfiguration != null ? Optional.of(leaderElectionConfiguration)
+            : original.getLeaderElectionConfiguration();
       }
     };
   }

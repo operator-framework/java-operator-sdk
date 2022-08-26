@@ -50,10 +50,10 @@ class LeaderElectionE2E {
   // not for local mode by design
   @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   void otherInstancesTakesOverWhenSteppingDown() {
-    log.info("Deploying operator");
-    deployOperatorsInOrder();
     log.info("Applying custom resource");
     applyCustomResource();
+    log.info("Deploying operator instances");
+    deployOperatorsInOrder();
 
     log.info("Awaiting custom resource reconciliations");
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
@@ -131,12 +131,14 @@ class LeaderElectionE2E {
   }
 
   private void deployOperatorsInOrder() {
+    log.info("Installing 1st instance");
     applyResources("k8s/operator.yaml");
     await().atMost(Duration.ofSeconds(POD_STARTUP_TIMEOUT)).untilAsserted(() -> {
       var pod = client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).get();
       assertThat(pod.getStatus().getContainerStatuses().get(0).getReady()).isTrue();
     });
 
+    log.info("Installing 2nd instance");
     applyResources("k8s/operator-instance-2.yaml");
     await().atMost(Duration.ofSeconds(POD_STARTUP_TIMEOUT)).untilAsserted(() -> {
       var pod = client.pods().inNamespace(namespace).withName(OPERATOR_2_POD_NAME).get();
