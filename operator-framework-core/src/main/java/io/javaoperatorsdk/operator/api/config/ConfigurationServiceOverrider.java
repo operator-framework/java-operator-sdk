@@ -130,7 +130,8 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public ExecutorService getWorkflowExecutorService() {
-        return workflowExecutorService != null ? workflowExecutorService : original.getWorkflowExecutorService();
+        return workflowExecutorService != null ? workflowExecutorService
+            : original.getWorkflowExecutorService();
       }
 
       @Override

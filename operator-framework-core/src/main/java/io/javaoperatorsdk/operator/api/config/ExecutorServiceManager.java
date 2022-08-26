@@ -76,13 +76,16 @@ public class ExecutorServiceManager {
     try {
       log.debug("Closing executor");
       executor.shutdown();
-      workflowExecutor.shutdown();
+      if (workflowExecutor != null) {
+        workflowExecutor.shutdown();
+        if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
+          workflowExecutor.shutdownNow(); // if we timed out, waiting, cancel everything
+        }
+      }
       if (!executor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
         executor.shutdownNow(); // if we timed out, waiting, cancel everything
       }
-      if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
-        executor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
+
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
     }
