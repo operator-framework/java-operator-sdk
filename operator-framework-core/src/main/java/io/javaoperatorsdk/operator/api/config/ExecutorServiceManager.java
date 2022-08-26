@@ -15,31 +15,35 @@ import org.slf4j.LoggerFactory;
 public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
   private static ExecutorServiceManager instance;
-
   private final ExecutorService executor;
+  private final ExecutorService workflowExecutor;
   private final int terminationTimeoutSeconds;
 
-  private ExecutorServiceManager(InstrumentedExecutorService executor,
+  private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
       int terminationTimeoutSeconds) {
-    this.executor = executor;
+    this.executor = new InstrumentedExecutorService(executor);
+    this.workflowExecutor = new InstrumentedExecutorService(workflowExecutor);
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
 
   public static void init() {
     if (instance == null) {
       final var configuration = ConfigurationServiceProvider.instance();
-      instance = new ExecutorServiceManager(
-          new InstrumentedExecutorService(configuration.getExecutorService()),
+      final var executorService = configuration.getExecutorService();
+      final var workflowExecutorService = configuration.getWorkflowExecutorService();
+      instance = new ExecutorServiceManager(executorService, workflowExecutorService,
           configuration.getTerminationTimeoutSeconds());
-      log.debug("Initialized ExecutorServiceManager executor: {}, timeout: {}",
-          configuration.getExecutorService().getClass(),
+      log.debug(
+          "Initialized ExecutorServiceManager executor: {}, workflow executor: {}, timeout: {}",
+          executorService.getClass(),
+          workflowExecutorService.getClass(),
           configuration.getTerminationTimeoutSeconds());
     } else {
       log.debug("Already started, reusing already setup instance!");
     }
   }
 
-  public static void stop() {
+  public synchronized static void stop() {
     if (instance != null) {
       instance.doStop();
     }
@@ -48,7 +52,7 @@ public class ExecutorServiceManager {
     instance = null;
   }
 
-  public static ExecutorServiceManager instance() {
+  public synchronized static ExecutorServiceManager instance() {
     if (instance == null) {
       // provide a default configuration if none has been provided by init
       init();
@@ -60,13 +64,22 @@ public class ExecutorServiceManager {
     return executor;
   }
 
+  public ExecutorService workflowExecutorService() {
+    return workflowExecutor;
+  }
+
   private void doStop() {
     try {
       log.debug("Closing executor");
       executor.shutdown();
+      workflowExecutor.shutdown();
+      if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
+        workflowExecutor.shutdownNow(); // if we timed out, waiting, cancel everything
+      }
       if (!executor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
         executor.shutdownNow(); // if we timed out, waiting, cancel everything
       }
+
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
     }

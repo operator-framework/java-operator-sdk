@@ -80,6 +80,12 @@ public interface ConfigurationService {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
 
+  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+
+  default int concurrentWorkflowExecutorThreads() {
+    return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
+  }
+
   /**
    * Used to clone custom resources. It is strongly suggested that implementors override this method
    * since the default implementation creates a new {@link Cloner} instance each time this method is
@@ -120,6 +126,10 @@ public interface ConfigurationService {
 
   default ExecutorService getExecutorService() {
     return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+  }
+
+  default ExecutorService getWorkflowExecutorService() {
+    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
   }
 
   default boolean closeClientOnStop() {
