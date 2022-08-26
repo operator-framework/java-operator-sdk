@@ -31,15 +31,15 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, ConfigurationServiceProvider.instance(), null);
+    this(kubernetesClient, ConfigurationServiceProvider.instance());
   }
 
   /**
    * @deprecated Use {@link #Operator(Consumer)} instead
    */
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public Operator(ConfigurationService configurationService) {
-    this(null, configurationService, null);
+    this(null, configurationService);
   }
 
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
@@ -47,7 +47,7 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(client, ConfigurationServiceProvider.instance(), overrider);
+    this(client, ConfigurationServiceProvider.overrideCurrent(overrider));
   }
 
   /**
@@ -58,19 +58,11 @@ public class Operator implements LifecycleAware {
    * @param configurationService provides configuration
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
-    this(kubernetesClient, configurationService, null);
-  }
-
-  private Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService,
-      Consumer<ConfigurationServiceOverrider> overrider) {
     this.kubernetesClient =
         kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
-    ConfigurationServiceProvider.set(configurationService);
-    if (overrider != null) {
-      ConfigurationServiceProvider.overrideCurrent(overrider);
-    }
-    ConfigurationServiceProvider.instance().getLeaderElectionConfiguration()
+    configurationService.getLeaderElectionConfiguration()
         .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
+    ConfigurationServiceProvider.set(configurationService);
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
