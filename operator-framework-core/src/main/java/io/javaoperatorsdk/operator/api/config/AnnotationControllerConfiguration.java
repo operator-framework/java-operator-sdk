@@ -24,6 +24,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
@@ -311,8 +312,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           createFilter(kubeDependent.genericFilter(), GenericFilter.class, context)
               .orElse(null);
 
-      resourceDiscriminator = instantiateIfNotVoid(kubeDependent.resourceDiscriminator(),
-          VoidResourceDiscriminator.class);
+      resourceDiscriminator =
+          instantiateDiscriminatorIfNotVoid(kubeDependent.resourceDiscriminator());
     }
 
     config =
@@ -321,6 +322,15 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
             onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
+  }
+
+  @SuppressWarnings({"unchecked"})
+  private ResourceDiscriminator<?, ? extends HasMetadata> instantiateDiscriminatorIfNotVoid(
+      Class<? extends ResourceDiscriminator> discriminator) {
+    if (discriminator != VoidResourceDiscriminator.class) {
+      return instantiateAndConfigureIfNeeded(discriminator, ResourceDiscriminator.class);
+    }
+    return null;
   }
 
   public static <T> T valueOrDefault(
