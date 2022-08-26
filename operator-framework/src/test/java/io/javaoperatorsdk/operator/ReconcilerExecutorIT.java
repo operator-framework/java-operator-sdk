@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class ControllerExecutionIT {
+class ReconcilerExecutorIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
