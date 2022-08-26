@@ -56,7 +56,7 @@ public abstract class WebPageOperatorAbstractTest {
             () -> {
               var actual = operator().get(WebPage.class, TEST_PAGE);
               var deployment = operator().get(Deployment.class, deploymentName(webPage));
-
+              assertThat(actual.getStatus()).isNotNull();
               assertThat(actual.getStatus().getAreWeGood()).isTrue();
               assertThat(deployment.getSpec().getReplicas())
                   .isEqualTo(deployment.getStatus().getReadyReplicas());
