@@ -64,6 +64,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceIDs) {
+    handleDelete(primaryID, resourceIDs, true);
+  }
+
+  protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceIDs,
+      boolean propagateEvent) {
     if (!isRunning()) {
       return;
     }
@@ -75,7 +80,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (cachedValues != null && cachedValues.isEmpty()) {
       cache.remove(primaryID);
     }
-    if (!removedResources.isEmpty() && deleteAcceptedByFilter(removedResources)) {
+    if (propagateEvent && !removedResources.isEmpty() && deleteAcceptedByFilter(removedResources)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }
