@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 public class ConfigMapDeletePostCondition
@@ -15,9 +14,9 @@ public class ConfigMapDeletePostCondition
 
   @Override
   public boolean isMet(
-      DependentResource<ConfigMap, WorkflowAllFeatureCustomResource> dependentResource,
-      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
-    var configMapDeleted = dependentResource.getSecondaryResource(primary).isEmpty();
+      WorkflowAllFeatureCustomResource primary, ConfigMap secondary,
+      Context<WorkflowAllFeatureCustomResource> context) {
+    var configMapDeleted = secondary == null;
     log.debug("Config Map Deleted: {}", configMapDeleted);
     return configMapDeleted;
   }

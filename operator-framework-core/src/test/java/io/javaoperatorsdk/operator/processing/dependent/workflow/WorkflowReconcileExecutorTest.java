@@ -13,15 +13,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings("rawtypes")
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
-  private final Condition met_reconcile_condition =
-      (dependentResource, primary, context) -> true;
-  private final Condition not_met_reconcile_condition =
-      (dependentResource, primary, context) -> false;
+  private final Condition met_reconcile_condition = (primary, secondary, context) -> true;
+  private final Condition not_met_reconcile_condition = (primary, secondary, context) -> false;
 
   private final Condition<String, TestCustomResource> metReadyCondition =
-      (dependentResource, primary, context) -> true;
+      (primary, secondary, context) -> true;
   private final Condition<String, TestCustomResource> notMetReadyCondition =
-      (dependentResource, primary, context) -> false;
+      (primary, secondary, context) -> false;
 
   @Test
   void reconcileTopLevelResources() {
