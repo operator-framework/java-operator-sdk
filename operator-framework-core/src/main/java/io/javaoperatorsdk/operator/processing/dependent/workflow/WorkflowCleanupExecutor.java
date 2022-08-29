@@ -105,9 +105,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
           deleteCalled.add(dependentResourceNode);
         }
         alreadyVisited.add(dependentResourceNode);
-        // todo: retrieve discriminator
-        final R secondary = context.getSecondaryResource(dependentResource.resourceType())
-            .orElse(null);
+        final R secondary = dependentResource.getSecondaryResource(primary).orElse(null);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary, secondary, context)).orElse(true);
         if (deletePostConditionMet) {

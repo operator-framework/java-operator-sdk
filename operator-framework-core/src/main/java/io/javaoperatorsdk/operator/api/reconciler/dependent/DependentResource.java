@@ -27,6 +27,10 @@ public interface DependentResource<R, P extends HasMetadata> {
    */
   Class<R> resourceType();
 
+  default Optional<R> getSecondaryResource(P primary) {
+    return Optional.empty();
+  }
+
   /**
    * Computes a default name for the specified DependentResource class
    *

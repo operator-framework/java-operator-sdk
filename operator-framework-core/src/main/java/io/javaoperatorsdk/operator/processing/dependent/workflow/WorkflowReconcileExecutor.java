@@ -83,9 +83,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
-    // todo: retrieve discriminator
-    final var secondary = context
-        .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
+    final var secondary = dependentResourceNode.getDependentResource()
+        .getSecondaryResource(primary)
         .orElse(null);
     boolean reconcileConditionMet = dependentResourceNode.getReconcilePrecondition()
         .map(rc -> rc.isMet(primary, secondary, context))
@@ -155,10 +154,9 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void run() {
       try {
-        DependentResource dependentResource = dependentResourceNode.getDependentResource();
+        DependentResource<R, P> dependentResource = dependentResourceNode.getDependentResource();
         if (log.isDebugEnabled()) {
           log.debug(
               "Reconciling {} for primary: {}",
@@ -168,10 +166,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
         ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
         reconcileResults.put(dependentResource, reconcileResult);
         reconciled.add(dependentResourceNode);
-        // todo: retrieve discriminator
-        final var secondary = context
-            .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
-            .orElse(null);
+        final var secondary = dependentResource.getSecondaryResource(primary).orElse(null);
         boolean ready = dependentResourceNode.getReadyPostcondition()
             .map(rc -> rc.isMet(primary, secondary, context))
             .orElse(true);
@@ -203,18 +198,15 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        DependentResource dependentResource = dependentResourceNode.getDependentResource();
+        DependentResource<R, P> dependentResource = dependentResourceNode.getDependentResource();
         var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
-          ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
+          ((Deleter<P>) dependentResource).delete(primary, context);
         }
         alreadyVisited.add(dependentResourceNode);
-        // todo: retrieve discriminator
-        final R secondary = context
-            .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
-            .orElse(null);
+        final R secondary = dependentResource.getSecondaryResource(primary).orElse(null);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
                 secondary,
