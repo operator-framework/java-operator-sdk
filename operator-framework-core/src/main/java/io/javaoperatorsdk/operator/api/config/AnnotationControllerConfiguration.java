@@ -247,9 +247,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
-            instantiateConditionIfNotDefault(dependent.readyPostcondition(), context),
-            instantiateConditionIfNotDefault(dependent.reconcilePrecondition(), context),
-            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context));
+            instantiateIfNotDefault(dependent.readyPostcondition(), Condition.class, context),
+            instantiateIfNotDefault(dependent.reconcilePrecondition(), Condition.class, context),
+            instantiateIfNotDefault(dependent.deletePostcondition(), Condition.class, context));
         specsMap.put(name, spec);
       }
 
@@ -258,10 +258,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
-  protected Condition<?, ?> instantiateConditionIfNotDefault(Class<? extends Condition> condition,
+  protected <T> T instantiateIfNotDefault(Class<? extends T> toInstantiate, Class<T> defaultClass,
       String context) {
-    if (condition != Condition.class) {
-      return instantiateAndConfigureIfNeeded(condition, Condition.class, context);
+    if (!defaultClass.equals(toInstantiate)) {
+      return instantiateAndConfigureIfNeeded(toInstantiate, defaultClass, context);
     }
     return null;
   }
@@ -314,7 +314,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
               .orElse(null);
 
       resourceDiscriminator =
-          instantiateDiscriminatorIfNotVoid(kubeDependent.resourceDiscriminator());
+          instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
+              ResourceDiscriminator.class, context);
     }
 
     config =
@@ -323,15 +324,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
             onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
-  }
-
-  @SuppressWarnings({"unchecked"})
-  private ResourceDiscriminator<?, ? extends HasMetadata> instantiateDiscriminatorIfNotVoid(
-      Class<? extends ResourceDiscriminator> discriminator) {
-    if (discriminator != VoidResourceDiscriminator.class) {
-      return instantiateAndConfigureIfNeeded(discriminator, ResourceDiscriminator.class);
-    }
-    return null;
   }
 
   public static <T> T valueOrDefault(

@@ -6,12 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
-import io.javaoperatorsdk.operator.api.reconciler.VoidResourceDiscriminator;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -71,5 +70,5 @@ public @interface KubernetesDependent {
    */
   Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 
-  Class<? extends ResourceDiscriminator> resourceDiscriminator() default VoidResourceDiscriminator.class;
+  Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
 }
