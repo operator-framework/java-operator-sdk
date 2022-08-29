@@ -342,8 +342,7 @@ class ControllerConfigurationOverriderTest {
   private static class TestCondition implements Condition<ConfigMap, ConfigMap> {
 
     @Override
-    public boolean isMet(DependentResource<ConfigMap, ConfigMap> dependentResource,
-        ConfigMap primary, Context<ConfigMap> context) {
+    public boolean isMet(ConfigMap primary, ConfigMap secondary, Context<ConfigMap> context) {
       return true;
     }
   }
