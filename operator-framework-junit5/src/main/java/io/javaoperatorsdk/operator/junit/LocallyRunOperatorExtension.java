@@ -151,6 +151,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private void applyCrd(String resourceTypeName) {
     String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
     try (InputStream is = getClass().getResourceAsStream(path)) {
+      if (is == null) {
+        throw new IllegalStateException("Cannot find CRD at " + path);
+      }
       final var crd = getKubernetesClient().load(is);
       crd.createOrReplace();
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
