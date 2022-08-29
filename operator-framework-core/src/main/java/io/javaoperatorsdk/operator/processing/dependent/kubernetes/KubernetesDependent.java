@@ -37,11 +37,35 @@ public @interface KubernetesDependent {
    */
   String labelSelector() default NO_VALUE_SET;
 
+  /**
+   * Optional {@link OnAddFilter} to filter events sent to this KubernetesDependent
+   *
+   * @return the {@link OnAddFilter} filter implementation to use, defaulting to the interface
+   *         itself if no value is set
+   */
   Class<? extends OnAddFilter> onAddFilter() default OnAddFilter.class;
 
+  /**
+   * Optional {@link OnUpdateFilter} to filter events sent to this KubernetesDependent
+   *
+   * @return the {@link OnUpdateFilter} filter implementation to use, defaulting to the interface
+   *         itself if no value is set
+   */
   Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
 
+  /**
+   * Optional {@link OnDeleteFilter} to filter events sent to this KubernetesDependent
+   *
+   * @return the {@link OnDeleteFilter} filter implementation to use, defaulting to the interface
+   *         itself if no value is set
+   */
   Class<? extends OnDeleteFilter> onDeleteFilter() default OnDeleteFilter.class;
 
+  /**
+   * Optional {@link GenericFilter} to filter events sent to this KubernetesDependent
+   *
+   * @return the {@link GenericFilter} filter implementation to use, defaulting to the interface
+   *         itself if no value is set
+   */
   Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 }
