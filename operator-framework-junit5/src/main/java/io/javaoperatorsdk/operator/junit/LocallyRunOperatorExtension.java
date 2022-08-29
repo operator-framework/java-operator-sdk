@@ -134,7 +134,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
-      applyCrd(config.getResourceTypeName());
+      // only apply CRD if we're dealing with a CR
+      if (CustomResource.class.isAssignableFrom(config.getResourceClass())) {
+        applyCrd(config.getResourceTypeName());
+      }
 
       if (ref.reconciler instanceof KubernetesClientAware) {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
