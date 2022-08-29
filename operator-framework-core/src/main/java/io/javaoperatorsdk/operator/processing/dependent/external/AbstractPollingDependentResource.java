@@ -2,11 +2,15 @@ package io.javaoperatorsdk.operator.processing.dependent.external;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
 @Ignore
 public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
-    extends AbstractCachingDependentResource<R, P> implements CacheKeyMapper<R> {
+    extends
+    AbstractEventSourceHolderDependentResource<R, P, ExternalResourceCachingEventSource<R, P>>
+    implements CacheKeyMapper<R> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;
   private long pollingPeriod;

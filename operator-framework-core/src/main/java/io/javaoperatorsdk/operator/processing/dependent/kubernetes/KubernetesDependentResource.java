@@ -40,13 +40,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
-  private final Class<R> resourceType;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig kubernetesDependentResourceConfig;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
-    this.resourceType = resourceType;
+    super(resourceType);
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
         : GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
 
@@ -200,11 +199,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected boolean addOwnerReference() {
     return garbageCollected;
-  }
-
-  @Override
-  public Class<R> resourceType() {
-    return resourceType;
   }
 
   @Override
