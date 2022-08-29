@@ -33,7 +33,7 @@ public abstract class AbstractSimpleDependentResource<R, P extends HasMetadata>
   }
 
   @Override
-  public Optional<R> getSecondaryResource(P primaryResource, Context<P> context) {
+  public Optional<R> getSecondaryResource(P primaryResource) {
     return cache.get(ResourceID.fromResource(primaryResource));
   }
 

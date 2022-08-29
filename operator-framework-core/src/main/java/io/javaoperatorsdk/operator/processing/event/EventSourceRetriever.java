@@ -7,11 +7,11 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 public interface EventSourceRetriever<P extends HasMetadata> {
 
-  <R> ResourceEventSource<R, P> getResourceEventSourceFor(
-      Class<R> dependentType);
+  default <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType) {
+    return getResourceEventSourceFor(dependentType, null);
+  }
 
-  <R> ResourceEventSource<R, P> getResourceEventSourceFor(
-      Class<R> dependentType, String qualifier);
+  <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType, String qualifier);
 
   <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType);
 

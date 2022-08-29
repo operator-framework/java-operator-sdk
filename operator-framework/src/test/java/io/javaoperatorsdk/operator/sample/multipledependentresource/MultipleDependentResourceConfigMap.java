@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample.multipledependentresource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -34,5 +35,12 @@ public class MultipleDependentResourceConfigMap
         .endMetadata()
         .withData(data)
         .build();
+  }
+
+  @Override
+  public Optional<ConfigMap> getSecondaryResource(MultipleDependentResourceCustomResource primary) {
+    ConfigMapFilter filter = new ConfigMapFilter(primary, value);
+    return eventSource().getSecondaryResources(primary).stream()
+        .filter(filter::matches).findFirst();
   }
 }

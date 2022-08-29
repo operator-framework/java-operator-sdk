@@ -1,14 +1,19 @@
 package io.javaoperatorsdk.operator.sample.indexdiscriminator;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -34,9 +39,9 @@ public class IndexDiscriminatorTestReconciler
 
   public IndexDiscriminatorTestReconciler() {
     firstDependentResourceConfigMap =
-        new IndexDiscriminatorTestDRConfigMap(FIRST_CONFIG_MAP_SUFFIX_1);
+        new IndexDiscriminatorTestDRConfigMap(FIRST_CONFIG_MAP_SUFFIX_1, CONFIG_MAP_INDEX_1);
     secondDependentResourceConfigMap =
-        new IndexDiscriminatorTestDRConfigMap(FIRST_CONFIG_MAP_SUFFIX_2);
+        new IndexDiscriminatorTestDRConfigMap(FIRST_CONFIG_MAP_SUFFIX_2, CONFIG_MAP_INDEX_2);
   }
 
   @Override
@@ -61,30 +66,9 @@ public class IndexDiscriminatorTestReconciler
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
 
-    eventSource.addIndexer(CONFIG_MAP_INDEX_1, cm -> {
-      if (cm.getMetadata().getName().endsWith(FIRST_CONFIG_MAP_SUFFIX_1)) {
-        return List.of(configMapKey(cm));
-      } else {
-        return Collections.emptyList();
-      }
-    });
-    eventSource.addIndexer(CONFIG_MAP_INDEX_2, cm -> {
-      if (cm.getMetadata().getName().endsWith(FIRST_CONFIG_MAP_SUFFIX_2)) {
-        return List.of(configMapKey(cm));
-      } else {
-        return Collections.emptyList();
-      }
-    });
-
     firstDependentResourceConfigMap.configureWith(eventSource);
     secondDependentResourceConfigMap.configureWith(eventSource);
 
-    firstDependentResourceConfigMap
-        .setResourceDiscriminator(
-            new IndexDiscriminator(CONFIG_MAP_INDEX_1, FIRST_CONFIG_MAP_SUFFIX_1));
-    secondDependentResourceConfigMap
-        .setResourceDiscriminator(
-            new IndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
     return EventSourceInitializer.nameEventSources(eventSource);
   }
 
@@ -98,16 +82,6 @@ public class IndexDiscriminatorTestReconciler
     this.client = kubernetesClient;
     firstDependentResourceConfigMap.setKubernetesClient(kubernetesClient);
     secondDependentResourceConfigMap.setKubernetesClient(kubernetesClient);
-  }
-
-  public static String configMapKey(ConfigMap configMap) {
-    return configMap.getMetadata().getName() + "#" + configMap.getMetadata().getNamespace();
-  }
-
-  public static String configMapKeyFromPrimary(IndexDiscriminatorTestCustomResource primary,
-      String nameSuffix) {
-    return primary.getMetadata().getName() + nameSuffix + "#"
-        + primary.getMetadata().getNamespace();
   }
 
   @Override

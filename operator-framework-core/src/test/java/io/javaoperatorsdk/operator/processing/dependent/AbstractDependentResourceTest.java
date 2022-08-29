@@ -79,8 +79,7 @@ class AbstractDependentResourceTest {
     }
 
     @Override
-    protected Optional<ConfigMap> getSecondaryResource(TestCustomResource primary,
-        Context<TestCustomResource> context) {
+    public Optional<ConfigMap> getSecondaryResource(TestCustomResource primary) {
       return Optional.ofNullable(secondary);
     }
 

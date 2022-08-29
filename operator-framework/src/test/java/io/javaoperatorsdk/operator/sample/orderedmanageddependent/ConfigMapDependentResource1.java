@@ -2,18 +2,16 @@ package io.javaoperatorsdk.operator.sample.orderedmanageddependent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-@KubernetesDependent(labelSelector = "dependent = cm1",
-    resourceDiscriminator = ConfigMapDependentResource1.CM1ResourceDiscriminator.class)
+@KubernetesDependent(labelSelector = "dependent = cm1")
 public class ConfigMapDependentResource1 extends
     CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
@@ -45,11 +43,10 @@ public class ConfigMapDependentResource1 extends
     return configMap;
   }
 
-  public static class CM1ResourceDiscriminator
-      extends ResourceIDMatcherDiscriminator<ConfigMap, OrderedManagedDependentCustomResource> {
-    public CM1ResourceDiscriminator() {
-      super(p -> new ResourceID(p.getMetadata().getName() + "1", p.getMetadata().getNamespace()));
-    }
+  @Override
+  public Optional<ConfigMap> getSecondaryResource(OrderedManagedDependentCustomResource primary) {
+    ConfigMapFilter filter = new ConfigMapFilter(primary, "1");
+    return eventSource().getSecondaryResources(primary).stream()
+        .filter(filter::matches).findFirst();
   }
-
 }

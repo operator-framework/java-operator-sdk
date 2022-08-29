@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -24,7 +26,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected OnUpdateFilter<R> onUpdateFilter;
   protected OnDeleteFilter<R> onDeleteFilter;
   protected GenericFilter<R> genericFilter;
-
 
   public EventSource initEventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
@@ -86,5 +87,10 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   public void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
+  }
+
+  @Override
+  public Optional<R> getSecondaryResource(P primary) {
+    return eventSource.getSecondaryResource(primary);
   }
 }

@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 

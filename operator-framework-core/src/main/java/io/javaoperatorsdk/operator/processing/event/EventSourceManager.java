@@ -172,19 +172,16 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.controllerResourceEventSource();
   }
 
-  @Override
-  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(
-      Class<R> dependentType) {
-    return getResourceEventSourceFor(dependentType, null);
-  }
-
   public <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType) {
     return eventSources.getEventSources(dependentType);
   }
 
+  /**
+   * @deprecated Use {@link #getResourceEventSourcesFor(Class)} instead
+   */
   @Deprecated
   public <R> List<ResourceEventSource<R, P>> getEventSourcesFor(Class<R> dependentType) {
-    return eventSources.getEventSources(dependentType);
+    return getResourceEventSourcesFor(dependentType);
   }
 
   @Override

@@ -19,6 +19,5 @@ public class EmptyTestDependentResource
   public Class<Deployment> resourceType() {
     return Deployment.class;
   }
-
 }
 

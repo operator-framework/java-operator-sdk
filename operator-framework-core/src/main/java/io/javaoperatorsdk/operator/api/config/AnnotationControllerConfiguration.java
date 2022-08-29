@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -288,7 +287,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
-    ResourceDiscriminator<?, ? extends HasMetadata> resourceDiscriminator = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -313,15 +311,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       genericFilter =
           createFilter(kubeDependent.genericFilter(), GenericFilter.class, context)
               .orElse(null);
-
-      resourceDiscriminator =
-          instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
-              ResourceDiscriminator.class, context);
     }
 
     config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
-            resourceDiscriminator, onAddFilter,
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
             onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;

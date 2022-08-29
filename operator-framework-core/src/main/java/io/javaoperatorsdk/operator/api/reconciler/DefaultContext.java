@@ -9,6 +9,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -33,25 +34,21 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
-    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
+    return eventSources().getResourceEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
         .flatMap(Set::stream)
         .collect(Collectors.toSet());
   }
 
-  @Override
-  public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
-    return controller
-        .getEventSourceManager()
-        .getResourceEventSourceFor(expectedType, eventSourceName)
-        .getSecondaryResource(primaryResource);
+  private EventSourceManager<P> eventSources() {
+    return controller.getEventSourceManager();
   }
 
   @Override
-  public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
-      ResourceDiscriminator<R, P> discriminator) {
-    return discriminator.distinguish(expectedType, primaryResource, this,
-        controller.getEventSourceManager());
+  public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
+    return eventSources()
+        .getResourceEventSourceFor(expectedType, eventSourceName)
+        .getSecondaryResource(primaryResource);
   }
 
   @Override

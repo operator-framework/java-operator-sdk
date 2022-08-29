@@ -94,7 +94,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   /**
    * Use to share informers between event more resources.
    *
-   * @param informerEventSource informer to use*
+   * @param informerEventSource informer to use
    */
   public void configureWith(InformerEventSource<R, P> informerEventSource) {
     setEventSource(informerEventSource);
@@ -138,8 +138,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    var resource = getSecondaryResource(primary, context);
-    resource.ifPresent(r -> client.resource(r).delete());
+    getSecondaryResource(primary).ifPresent(r -> client.resource(r).delete());
   }
 
   @SuppressWarnings("unchecked")
@@ -167,7 +166,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
       genericFilter = kubernetesDependentResourceConfig.genericFilter();
-      setResourceDiscriminator(kubernetesDependentResourceConfig.getResourceDiscriminator());
 
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
@@ -209,8 +207,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return resourceType;
   }
 
-
-
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
@@ -233,5 +229,4 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void cleanupAfterEventFiltering(ResourceID resourceID) {
     eventSource().cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
-
 }

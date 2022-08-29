@@ -83,7 +83,6 @@ class ControllerConfigurationOverriderTest {
       public Class<Object> resourceType() {
         return Object.class;
       }
-
     }
   }
 
