@@ -95,21 +95,21 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        var dependentResource = dependentResourceNode.getDependentResource();
+        final var dependentResource = dependentResourceNode.getDependentResource();
         Optional<Condition<R, P>> deletePostCondition =
             dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
-          ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
+          ((Deleter<P>) dependentResource).delete(primary, context);
           deleteCalled.add(dependentResourceNode);
         }
         alreadyVisited.add(dependentResourceNode);
+        // todo: retrieve discriminator
+        final R secondary = context.getSecondaryResource(dependentResource.resourceType())
+            .orElse(null);
         boolean deletePostConditionMet =
-            deletePostCondition.map(c -> c.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary)
-                    .orElse(null),
-                context)).orElse(true);
+            deletePostCondition.map(c -> c.isMet(primary, secondary, context)).orElse(true);
         if (deletePostConditionMet) {
           handleDependentCleaned(dependentResourceNode);
         } else {

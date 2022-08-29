@@ -83,10 +83,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
+    // todo: retrieve discriminator
+    final var secondary = context
+        .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
+        .orElse(null);
     boolean reconcileConditionMet = dependentResourceNode.getReconcilePrecondition()
-        .map(rc -> rc.isMet(primary,
-            dependentResourceNode.getDependentResource().getSecondaryResource(primary).orElse(null),
-            context))
+        .map(rc -> rc.isMet(primary, secondary, context))
         .orElse(true);
 
     if (!reconcileConditionMet) {
@@ -166,11 +168,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
         ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
         reconcileResults.put(dependentResource, reconcileResult);
         reconciled.add(dependentResourceNode);
+        // todo: retrieve discriminator
+        final var secondary = context
+            .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
+            .orElse(null);
         boolean ready = dependentResourceNode.getReadyPostcondition()
-            .map(rc -> rc.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary)
-                    .orElse(null),
-                context))
+            .map(rc -> rc.isMet(primary, secondary, context))
             .orElse(true);
 
         if (ready) {
@@ -208,10 +211,13 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
         }
         alreadyVisited.add(dependentResourceNode);
+        // todo: retrieve discriminator
+        final R secondary = context
+            .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
+            .orElse(null);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary)
-                    .orElse(null),
+                secondary,
                 context)).orElse(true);
         if (deletePostConditionMet) {
           handleDependentDeleted(dependentResourceNode);
