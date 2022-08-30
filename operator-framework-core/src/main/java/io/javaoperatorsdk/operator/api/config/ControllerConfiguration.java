@@ -95,4 +95,9 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
     return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
         ControllerConfiguration.class);
   }
+
+  // todo docs
+  default boolean stopOnWatchConnectionErrors() {
+    return true;
+  }
 }
