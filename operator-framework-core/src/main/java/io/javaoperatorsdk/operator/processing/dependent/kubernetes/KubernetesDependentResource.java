@@ -21,9 +21,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.CacheBacked;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventFilteringIndexerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -33,7 +35,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
+    DependentResourceConfigurator<KubernetesDependentResourceConfig>,
+    CacheBacked<R, EventFilteringIndexerResourceCache<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -217,10 +220,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    eventSource().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
+    cache().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
   }
 
   private void cleanupAfterEventFiltering(ResourceID resourceID) {
-    eventSource().cleanupOnCreateOrUpdateEventFiltering(resourceID);
+    cache().cleanupOnCreateOrUpdateEventFiltering(resourceID);
+  }
+
+  @Override
+  public EventFilteringIndexerResourceCache<R> cache() {
+    return eventSource();
   }
 }
