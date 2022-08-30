@@ -1,0 +1,41 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: connectivity-test
+rules:
+  - apiGroups:
+      - sample.javaoperatorsdk
+    resources:
+      - informerconnectivitytestcustomresources
+    verbs:
+      - "*"
+  - apiGroups:
+      - sample.javaoperatorsdk
+    resources:
+      - informerconnectivitytestcustomresources/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - "get"
+      - "list"
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: noaccessrolebinding
+  namespace: default
+subjects:
+  - kind: User
+    name: noCMAccessUser
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: connectivity-test
+  apiGroup: rbac.authorization.k8s.io
+
+

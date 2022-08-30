@@ -32,7 +32,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     AfterEachCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractOperatorExtension.class);
-  public static final int CRD_READY_WAIT = 2000;
 
   private final KubernetesClient kubernetesClient;
   protected final ConfigurationService configurationService;

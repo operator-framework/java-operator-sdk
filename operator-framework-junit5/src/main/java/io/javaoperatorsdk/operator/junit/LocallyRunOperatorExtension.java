@@ -26,6 +26,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider.override;
+import static io.javaoperatorsdk.operator.junit.UnitTestUtils.applyCrd;
 
 @SuppressWarnings("rawtypes")
 public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
@@ -121,7 +122,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     additionalCustomResourceDefinitions
-        .forEach(cr -> applyCrd(ReconcilerUtils.getResourceTypeName(cr)));
+        .forEach(cr -> applyCrd(getKubernetesClient(),ReconcilerUtils.getResourceTypeName(cr)));
 
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
@@ -134,7 +135,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
-      applyCrd(config.getResourceTypeName());
+      applyCrd(getKubernetesClient(),config.getResourceTypeName());
 
       if (ref.reconciler instanceof KubernetesClientAware) {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
@@ -146,21 +147,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
-  }
-
-  private void applyCrd(String resourceTypeName) {
-    String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
-    try (InputStream is = getClass().getResourceAsStream(path)) {
-      final var crd = getKubernetesClient().load(is);
-      crd.createOrReplace();
-      Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
-      LOGGER.debug("Applied CRD with path: {}", path);
-    } catch (InterruptedException ex) {
-      LOGGER.error("Interrupted.", ex);
-      Thread.currentThread().interrupt();
-    } catch (Exception ex) {
-      throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
-    }
   }
 
   @Override
