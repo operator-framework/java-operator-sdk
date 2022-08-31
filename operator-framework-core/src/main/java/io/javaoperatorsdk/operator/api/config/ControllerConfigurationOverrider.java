@@ -39,6 +39,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
+  private boolean stopOnWatchConnectionError;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -159,6 +160,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withStopOnWatchConnectionError(
+      boolean stopOnWatchConnectionErrors) {
+    this.stopOnWatchConnectionError = stopOnWatchConnectionErrors;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -212,7 +219,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
-        newDependentSpecs);
+        newDependentSpecs, stopOnWatchConnectionError);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

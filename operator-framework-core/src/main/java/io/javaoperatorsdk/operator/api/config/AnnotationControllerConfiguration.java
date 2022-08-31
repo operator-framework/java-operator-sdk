@@ -258,6 +258,13 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
+  @Override
+  public boolean stopOnWatchConnectionError() {
+    return valueOrDefault(
+        annotation, ControllerConfiguration::stopOnWatchConnectionError,
+        DEFAULT_STOP_WATCH_CONNECTION_ERROR);
+  }
+
   protected Condition<?, ?> instantiateConditionIfNotDefault(Class<? extends Condition> condition,
       String context) {
     if (condition != Condition.class) {

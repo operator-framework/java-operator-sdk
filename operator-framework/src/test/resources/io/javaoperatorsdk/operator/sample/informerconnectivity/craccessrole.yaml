@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
-  name: connectivity-test
+  name: informer-connectivity-test
 rules:
   - apiGroups:
       - sample.javaoperatorsdk
@@ -27,15 +27,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: noaccessrolebinding
-  namespace: default
+  name: craccess
 subjects:
   - kind: User
-    name: noCMAccessUser
+    name: CRAccessUser
     apiGroup: rbac.authorization.k8s.io
 roleRef:
-  kind: ClusterRole
-  name: connectivity-test
+  kind: Role
+  name: informer-connectivity-test
   apiGroup: rbac.authorization.k8s.io
 
 

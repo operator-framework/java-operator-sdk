@@ -65,7 +65,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
-        Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
+        Thread.sleep(UnitTestUtils.CRD_READY_WAIT); // readiness is not applicable for CRD, just
+                                                    // wait a little
         LOGGER.debug("Applied CRD with name: {}", crd.get().get(0).getMetadata().getName());
       } catch (InterruptedException ex) {
         LOGGER.error("Interrupted.", ex);

@@ -31,6 +31,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final List<DependentResourceSpec> dependents;
   private final Duration reconciliationMaxInterval;
   private final RateLimiter rateLimiter;
+  private final boolean stopOnWatchConnectionError;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -49,7 +50,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       OnUpdateFilter<R> onUpdateFilter,
       GenericFilter<R> genericFilter,
       RateLimiter rateLimiter,
-      List<DependentResourceSpec> dependents) {
+      List<DependentResourceSpec> dependents, boolean stopOnWatchConnectionError) {
     super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
@@ -65,6 +66,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.rateLimiter =
         rateLimiter != null ? rateLimiter : LinearRateLimiter.deactivatedRateLimiter();
     this.dependents = dependents != null ? dependents : Collections.emptyList();
+    this.stopOnWatchConnectionError = stopOnWatchConnectionError;
   }
 
   @Override
@@ -115,5 +117,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public RateLimiter getRateLimiter() {
     return rateLimiter;
+  }
+
+  @Override
+  public boolean stopOnWatchConnectionError() {
+    return stopOnWatchConnectionError;
   }
 }

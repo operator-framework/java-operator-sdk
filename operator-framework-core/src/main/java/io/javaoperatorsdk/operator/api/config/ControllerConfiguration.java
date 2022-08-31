@@ -21,6 +21,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
+  boolean DEFAULT_STOP_WATCH_CONNECTION_ERROR = true;
 
   default String getName() {
     return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
@@ -97,7 +98,7 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
   }
 
   // todo docs
-  default boolean stopOnWatchConnectionErrors() {
-    return true;
+  default boolean stopOnWatchConnectionError() {
+    return DEFAULT_STOP_WATCH_CONNECTION_ERROR;
   }
 }

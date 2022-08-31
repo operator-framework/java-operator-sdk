@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.junit;
 
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -122,7 +121,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     additionalCustomResourceDefinitions
-        .forEach(cr -> applyCrd(getKubernetesClient(),ReconcilerUtils.getResourceTypeName(cr)));
+        .forEach(cr -> applyCrd(getKubernetesClient(), ReconcilerUtils.getResourceTypeName(cr)));
 
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
@@ -135,7 +134,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
-      applyCrd(getKubernetesClient(),config.getResourceTypeName());
+      applyCrd(getKubernetesClient(), config.getResourceTypeName());
 
       if (ref.reconciler instanceof KubernetesClientAware) {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);

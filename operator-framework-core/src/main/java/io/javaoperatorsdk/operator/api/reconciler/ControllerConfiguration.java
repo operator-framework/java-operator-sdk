@@ -118,4 +118,13 @@ public @interface ControllerConfiguration {
    *         accessible no-arg constructor.
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
+
+  /**
+   * if true, stops the operator if any of the informers have issues with connection, either because
+   * of missing permissions or other connectivity problems. if false, the informers will
+   * periodically try to reconnect.
+   *
+   * @return stop the operator on connection errors
+   **/
+  boolean stopOnWatchConnectionError() default true;
 }
