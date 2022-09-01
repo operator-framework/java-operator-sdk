@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.net.URI;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -31,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 
 class ReconcilerUtilsTest {
 
