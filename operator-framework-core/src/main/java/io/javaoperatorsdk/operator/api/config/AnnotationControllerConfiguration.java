@@ -153,32 +153,38 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public RateLimiter getRateLimiter() {
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
     return instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class,
-        CONTROLLER_CONFIG_ANNOTATION);
+        CONTROLLER_CONFIG_ANNOTATION, this::configureFromAnnotatedReconciler);
   }
 
   @Override
   public Retry getRetry() {
     final Class<? extends Retry> retryClass = annotation.retry();
-    return instantiateAndConfigureIfNeeded(retryClass, Retry.class, CONTROLLER_CONFIG_ANNOTATION);
+    return instantiateAndConfigureIfNeeded(retryClass, Retry.class, CONTROLLER_CONFIG_ANNOTATION,
+        this::configureFromAnnotatedReconciler);
   }
 
-  @SuppressWarnings("unchecked")
+  protected <T> T instantiate(Class<? extends T> toInstantiate, Class<T> expectedType,
+      String context) {
+    return instantiateAndConfigureIfNeeded(toInstantiate, expectedType, context, null);
+  }
+
   protected <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
-      Class<T> expectedType, String context) {
+      Class<T> expectedType, String context, Configurator<T> configurator) {
+    // if class to instantiate equals the expected interface, we cannot instantiate it so just
+    // return null as it means we passed on void-type default value
+    if (expectedType.equals(targetClass)) {
+      return null;
+    }
+
     try {
       final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
       constructor.setAccessible(true);
       final var instance = constructor.newInstance();
-      if (instance instanceof AnnotationConfigurable) {
-        AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
-        final Class<? extends Annotation> configurationClass =
-            (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
-                targetClass, AnnotationConfigurable.class);
-        final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
-        if (configAnnotation != null) {
-          configurable.initFrom(configAnnotation);
-        }
+
+      if (configurator != null) {
+        configurator.configure(instance);
       }
+
       return instance;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
         | NoSuchMethodException e) {
@@ -189,34 +195,45 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     }
   }
 
+  @FunctionalInterface
+  private interface Configurator<T> {
+    void configure(T instance);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> void configureFromAnnotatedReconciler(T instance) {
+    if (instance instanceof AnnotationConfigurable) {
+      AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
+      final Class<? extends Annotation> configurationClass =
+          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
+              instance.getClass(), AnnotationConfigurable.class);
+      final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
+      if (configAnnotation != null) {
+        configurable.initFrom(configAnnotation);
+      }
+    }
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public Optional<OnAddFilter<P>> onAddFilter() {
-    return (Optional<OnAddFilter<P>>) createFilter(annotation.onAddFilter(), OnAddFilter.class,
-        CONTROLLER_CONFIG_ANNOTATION);
-  }
-
-  protected <T> Optional<? extends T> createFilter(Class<? extends T> filter, Class<T> defaultValue,
-      String origin) {
-    if (defaultValue.equals(filter)) {
-      return Optional.empty();
-    } else {
-      return Optional.of(instantiateAndConfigureIfNeeded(filter, defaultValue, origin));
-    }
+    return Optional.ofNullable(
+        instantiate(annotation.onAddFilter(), OnAddFilter.class, CONTROLLER_CONFIG_ANNOTATION));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public Optional<OnUpdateFilter<P>> onUpdateFilter() {
-    return (Optional<OnUpdateFilter<P>>) createFilter(annotation.onUpdateFilter(),
-        OnUpdateFilter.class, CONTROLLER_CONFIG_ANNOTATION);
+    return Optional.ofNullable(
+        instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
+            CONTROLLER_CONFIG_ANNOTATION));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public Optional<GenericFilter<P>> genericFilter() {
-    return (Optional<GenericFilter<P>>) createFilter(annotation.genericFilter(),
-        GenericFilter.class, CONTROLLER_CONFIG_ANNOTATION);
+    return Optional.ofNullable(
+        instantiate(annotation.genericFilter(), GenericFilter.class, CONTROLLER_CONFIG_ANNOTATION));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -247,23 +264,15 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
-            instantiateConditionIfNotDefault(dependent.readyPostcondition(), context),
-            instantiateConditionIfNotDefault(dependent.reconcilePrecondition(), context),
-            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context));
+            instantiate(dependent.readyPostcondition(), Condition.class, context),
+            instantiate(dependent.reconcilePrecondition(), Condition.class, context),
+            instantiate(dependent.deletePostcondition(), Condition.class, context));
         specsMap.put(name, spec);
       }
 
       specs = specsMap.values().stream().collect(Collectors.toUnmodifiableList());
     }
     return specs;
-  }
-
-  protected Condition<?, ?> instantiateConditionIfNotDefault(Class<? extends Condition> condition,
-      String context) {
-    if (condition != Condition.class) {
-      return instantiateAndConfigureIfNeeded(condition, Condition.class, context);
-    }
-    return null;
   }
 
   private String getName(Dependent dependent, Class<? extends DependentResource> dependentType) {
@@ -300,17 +309,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
       final var context =
           KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName() + " DependentResource";
-      onAddFilter = createFilter(kubeDependent.onAddFilter(), OnAddFilter.class, context)
-          .orElse(null);
-      onUpdateFilter =
-          createFilter(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context)
-              .orElse(null);
-      onDeleteFilter =
-          createFilter(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context)
-              .orElse(null);
-      genericFilter =
-          createFilter(kubeDependent.genericFilter(), GenericFilter.class, context)
-              .orElse(null);
+      onAddFilter = instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
+      onUpdateFilter = instantiate(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context);
+      onDeleteFilter = instantiate(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context);
+      genericFilter = instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
     }
 
     config =
