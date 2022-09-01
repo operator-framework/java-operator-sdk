@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 class ReconcilerUtilsTest {
 
   public static final String RESOURCE_URI =
