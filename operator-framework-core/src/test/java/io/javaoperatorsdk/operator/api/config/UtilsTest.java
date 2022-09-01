@@ -9,11 +9,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -89,6 +92,14 @@ class UtilsTest {
     assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class,
         DependentResource.class))
         .isEqualTo(Deployment.class);
+
+    assertThatIllegalArgumentException().isThrownBy(
+        () -> Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
+            DependentResource.class));
+
+    assertThat(Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
+        DependentResourceConfigurator.class))
+        .isEqualTo(KubernetesDependentResourceConfig.class);
   }
 
   @Test
