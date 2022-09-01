@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public class Utils {
 
@@ -181,5 +183,23 @@ public class Utils {
   @FunctionalInterface
   public interface Configurator<T> {
     void configure(T instance);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public static String contextFor(ControllerConfiguration<?> controllerConfiguration,
+      Class<? extends DependentResource> dependentType,
+      Class<? extends Annotation> configurationAnnotation) {
+    final var annotationName =
+        configurationAnnotation != null ? configurationAnnotation.getSimpleName()
+            : io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class
+                .getSimpleName();
+    var context = "annotation: " + annotationName + ", ";
+    if (dependentType != null) {
+      context += "DependentResource: " + dependentType.getName() + ", ";
+    }
+    context += "reconciler: " + controllerConfiguration.getName();
+
+
+    return context;
   }
 }

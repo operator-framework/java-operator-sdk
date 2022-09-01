@@ -39,10 +39,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 public class AnnotationControllerConfiguration<P extends HasMetadata>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
-  private static final String CONTROLLER_CONFIG_ANNOTATION =
-      ControllerConfiguration.class.getSimpleName();
-  private static final String KUBE_DEPENDENT_NAME = KubernetesDependent.class.getSimpleName();
-
   protected final Reconciler<P> reconciler;
   private final ControllerConfiguration annotation;
   private List<DependentResourceSpec> specs;
@@ -151,20 +147,16 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public RateLimiter getRateLimiter() {
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
     return Utils.instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class,
-        contextFor(CONTROLLER_CONFIG_ANNOTATION), this::configureFromAnnotatedReconciler);
+        Utils.contextFor(this, null, null), this::configureFromAnnotatedReconciler);
   }
 
   @Override
   public Retry getRetry() {
     final Class<? extends Retry> retryClass = annotation.retry();
     return Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
-        contextFor(CONTROLLER_CONFIG_ANNOTATION), this::configureFromAnnotatedReconciler);
+        Utils.contextFor(this, null, null), this::configureFromAnnotatedReconciler);
   }
 
-  private String contextFor(String additionalContext) {
-    return additionalContext + ", reconciler: " + getName();
-
-  }
 
   @SuppressWarnings("unchecked")
   private <T> void configureFromAnnotatedReconciler(T instance) {
@@ -185,7 +177,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Optional<OnAddFilter<P>> onAddFilter() {
     return Optional.ofNullable(
         Utils.instantiate(annotation.onAddFilter(), OnAddFilter.class,
-            contextFor(CONTROLLER_CONFIG_ANNOTATION)));
+            Utils.contextFor(this, null, null)));
   }
 
   @SuppressWarnings("unchecked")
@@ -193,7 +185,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Optional<OnUpdateFilter<P>> onUpdateFilter() {
     return Optional.ofNullable(
         Utils.instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
-            contextFor(CONTROLLER_CONFIG_ANNOTATION)));
+            Utils.contextFor(this, null, null)));
   }
 
   @SuppressWarnings("unchecked")
@@ -201,7 +193,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Optional<GenericFilter<P>> genericFilter() {
     return Optional.ofNullable(
         Utils.instantiate(annotation.genericFilter(), GenericFilter.class,
-            contextFor(CONTROLLER_CONFIG_ANNOTATION)));
+            Utils.contextFor(this, null, null)));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -229,7 +221,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           throw new IllegalArgumentException(
               "A DependentResource named '" + name + "' already exists: " + spec);
         }
-        final var context = "DependentResource of type '" + dependentType.getName() + "'";
+        final var context = Utils.contextFor(this, dependentType, null);
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
             Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
@@ -276,8 +268,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
 
       final var context =
-          contextFor(KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName()
-              + " DependentResource");
+          Utils.contextFor(this, dependentType, null);
       onAddFilter = Utils.instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
       onUpdateFilter =
           Utils.instantiate(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context);
