@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,52 +150,20 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @Override
   public RateLimiter getRateLimiter() {
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
-    return instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class,
-        CONTROLLER_CONFIG_ANNOTATION, this::configureFromAnnotatedReconciler);
+    return Utils.instantiateAndConfigureIfNeeded(rateLimiterClass, RateLimiter.class,
+        contextFor(CONTROLLER_CONFIG_ANNOTATION), this::configureFromAnnotatedReconciler);
   }
 
   @Override
   public Retry getRetry() {
     final Class<? extends Retry> retryClass = annotation.retry();
-    return instantiateAndConfigureIfNeeded(retryClass, Retry.class, CONTROLLER_CONFIG_ANNOTATION,
-        this::configureFromAnnotatedReconciler);
+    return Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
+        contextFor(CONTROLLER_CONFIG_ANNOTATION), this::configureFromAnnotatedReconciler);
   }
 
-  protected <T> T instantiate(Class<? extends T> toInstantiate, Class<T> expectedType,
-      String context) {
-    return instantiateAndConfigureIfNeeded(toInstantiate, expectedType, context, null);
-  }
+  private String contextFor(String additionalContext) {
+    return additionalContext + ", reconciler: " + getName();
 
-  protected <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
-      Class<T> expectedType, String context, Configurator<T> configurator) {
-    // if class to instantiate equals the expected interface, we cannot instantiate it so just
-    // return null as it means we passed on void-type default value
-    if (expectedType.equals(targetClass)) {
-      return null;
-    }
-
-    try {
-      final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
-      constructor.setAccessible(true);
-      final var instance = constructor.newInstance();
-
-      if (configurator != null) {
-        configurator.configure(instance);
-      }
-
-      return instance;
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-        | NoSuchMethodException e) {
-      throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
-          + targetClass.getName() + "' for '" + getName()
-          + "' reconciler in " + context
-          + ". You need to provide an accessible no-arg constructor.", e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface Configurator<T> {
-    void configure(T instance);
   }
 
   @SuppressWarnings("unchecked")
@@ -218,22 +184,24 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @SuppressWarnings("unchecked")
   public Optional<OnAddFilter<P>> onAddFilter() {
     return Optional.ofNullable(
-        instantiate(annotation.onAddFilter(), OnAddFilter.class, CONTROLLER_CONFIG_ANNOTATION));
+        Utils.instantiate(annotation.onAddFilter(), OnAddFilter.class,
+            contextFor(CONTROLLER_CONFIG_ANNOTATION)));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public Optional<OnUpdateFilter<P>> onUpdateFilter() {
     return Optional.ofNullable(
-        instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
-            CONTROLLER_CONFIG_ANNOTATION));
+        Utils.instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
+            contextFor(CONTROLLER_CONFIG_ANNOTATION)));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public Optional<GenericFilter<P>> genericFilter() {
     return Optional.ofNullable(
-        instantiate(annotation.genericFilter(), GenericFilter.class, CONTROLLER_CONFIG_ANNOTATION));
+        Utils.instantiate(annotation.genericFilter(), GenericFilter.class,
+            contextFor(CONTROLLER_CONFIG_ANNOTATION)));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -264,9 +232,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
-            instantiate(dependent.readyPostcondition(), Condition.class, context),
-            instantiate(dependent.reconcilePrecondition(), Condition.class, context),
-            instantiate(dependent.deletePostcondition(), Condition.class, context));
+            Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
+            Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
+            Utils.instantiate(dependent.deletePostcondition(), Condition.class, context));
         specsMap.put(name, spec);
       }
 
@@ -308,11 +276,15 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
 
       final var context =
-          KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName() + " DependentResource";
-      onAddFilter = instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
-      onUpdateFilter = instantiate(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context);
-      onDeleteFilter = instantiate(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context);
-      genericFilter = instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
+          contextFor(KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName()
+              + " DependentResource");
+      onAddFilter = Utils.instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
+      onUpdateFilter =
+          Utils.instantiate(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context);
+      onDeleteFilter =
+          Utils.instantiate(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context);
+      genericFilter =
+          Utils.instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
     }
 
     config =

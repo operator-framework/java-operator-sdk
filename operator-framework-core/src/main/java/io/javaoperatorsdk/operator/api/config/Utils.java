@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
@@ -143,5 +145,41 @@ public class Utils {
       throw new OperatorException(
           "Couldn't retrieve generic parameter type from " + clazz.getSimpleName(), e);
     }
+  }
+
+  public static <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
+      Class<T> expectedType, String context, Configurator<T> configurator) {
+    // if class to instantiate equals the expected interface, we cannot instantiate it so just
+    // return null as it means we passed on void-type default value
+    if (expectedType.equals(targetClass)) {
+      return null;
+    }
+
+    try {
+      final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      final var instance = constructor.newInstance();
+
+      if (configurator != null) {
+        configurator.configure(instance);
+      }
+
+      return instance;
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
+          + targetClass.getName() + "': you need to provide an accessible no-arg constructor."
+          + (context != null ? " Context: " + context : ""), e);
+    }
+  }
+
+  public static <T> T instantiate(Class<? extends T> toInstantiate, Class<T> expectedType,
+      String context) {
+    return instantiateAndConfigureIfNeeded(toInstantiate, expectedType, context, null);
+  }
+
+  @FunctionalInterface
+  public interface Configurator<T> {
+    void configure(T instance);
   }
 }
