@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.net.URI;
-
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
