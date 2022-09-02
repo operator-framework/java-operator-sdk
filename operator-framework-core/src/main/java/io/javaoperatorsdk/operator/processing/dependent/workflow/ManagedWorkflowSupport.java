@@ -12,11 +12,9 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 
@@ -73,11 +71,10 @@ class ManagedWorkflowSupport {
     return workflowBuilder.build();
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
+  @SuppressWarnings({"rawtypes"})
   public DependentResource createAndConfigureFrom(DependentResourceSpec spec,
       KubernetesClient client) {
-    final var dependentResource =
-        ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
+    final var dependentResource = spec.getDependentResource();
 
     if (dependentResource instanceof KubernetesClientAware) {
       ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
@@ -95,11 +92,6 @@ class ManagedWorkflowSupport {
                     + EventSourceReferencer.class.getSimpleName());
           }
         });
-
-    if (dependentResource instanceof DependentResourceConfigurator) {
-      final var configurator = (DependentResourceConfigurator) dependentResource;
-      spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
-    }
     return dependentResource;
   }
 

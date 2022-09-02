@@ -140,8 +140,9 @@ public interface ConfigurationService {
     return Serialization.jsonMapper();
   }
 
+  @Deprecated(forRemoval = true)
   default DependentResourceFactory dependentResourceFactory() {
-    return new DependentResourceFactory() {};
+    return null;
   }
 
   default Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {

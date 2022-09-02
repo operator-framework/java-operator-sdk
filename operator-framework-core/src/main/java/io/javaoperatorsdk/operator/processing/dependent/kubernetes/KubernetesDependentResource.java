@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -10,19 +12,26 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -31,7 +40,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
+    AnnotationDependentResourceConfigurator<KubernetesDependent, KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -39,7 +48,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final boolean garbageCollected = this instanceof GarbageCollected;
-  private KubernetesDependentResourceConfig kubernetesDependentResourceConfig;
+  private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -238,5 +247,51 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void cleanupAfterEventFiltering(ResourceID resourceID) {
     ((InformerEventSource<R, P>) eventSource().orElseThrow())
         .cleanupOnCreateOrUpdateEventFiltering(resourceID);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public KubernetesDependentResourceConfig configFrom(KubernetesDependent kubeDependent,
+      ControllerConfiguration<?> parentConfiguration) {
+    var namespaces = parentConfiguration.getNamespaces();
+    var configuredNS = false;
+    String labelSelector = null;
+    OnAddFilter<? extends HasMetadata> onAddFilter = null;
+    OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
+    OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
+    GenericFilter<? extends HasMetadata> genericFilter = null;
+    ResourceDiscriminator<?, ?> resourceDiscriminator = null;
+    if (kubeDependent != null) {
+      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
+          kubeDependent.namespaces())) {
+        namespaces = Set.of(kubeDependent.namespaces());
+        configuredNS = true;
+      }
+
+      final var fromAnnotation = kubeDependent.labelSelector();
+      labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
+
+      final var context =
+          Utils.contextFor(parentConfiguration, getClass(), kubeDependent.annotationType());
+      onAddFilter = Utils.instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
+      onUpdateFilter =
+          Utils.instantiate(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context);
+      onDeleteFilter =
+          Utils.instantiate(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context);
+      genericFilter =
+          Utils.instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
+
+      resourceDiscriminator =
+          Utils.instantiate(kubeDependent.resourceDiscriminator(),
+              ResourceDiscriminator.class, context);
+    }
+
+    return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+        resourceDiscriminator, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
+  }
+
+  @Override
+  public Optional<KubernetesDependentResourceConfig<R>> configuration() {
+    return Optional.ofNullable(kubernetesDependentResourceConfig);
   }
 }
