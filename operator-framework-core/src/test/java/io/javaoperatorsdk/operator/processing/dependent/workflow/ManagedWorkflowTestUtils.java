@@ -10,8 +10,8 @@ public class ManagedWorkflowTestUtils {
 
   @SuppressWarnings("unchecked")
   public static DependentResourceSpec createDRS(String name, String... dependOns) {
-    return new DependentResourceSpec(EmptyTestDependentResource.class,
-        null, name, Set.of(dependOns), null, null, null);
+    return new DependentResourceSpec(new EmptyTestDependentResource(), name, Set.of(dependOns),
+        null, null, null);
   }
 
 }

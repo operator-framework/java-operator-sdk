@@ -4,14 +4,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
+public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
-  private final Class<T> dependentResourceClass;
-
-  private final C dependentResourceConfig;
+  private final DependentResource<R, P> dependentResource;
 
   private final String name;
 
@@ -23,11 +23,10 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
 
   private final Condition<?, ?> deletePostCondition;
 
-  public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
+  public DependentResourceSpec(DependentResource<R, P> dependentResource,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
       Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition) {
-    this.dependentResourceClass = dependentResourceClass;
-    this.dependentResourceConfig = dependentResourceConfig;
+    this.dependentResource = dependentResource;
     this.name = name;
     this.dependsOn = dependsOn;
     this.readyCondition = readyCondition;
@@ -35,12 +34,18 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     this.deletePostCondition = deletePostCondition;
   }
 
-  public Class<T> getDependentResourceClass() {
-    return dependentResourceClass;
+  @SuppressWarnings("unchecked")
+  public Class<DependentResource<R, P>> getDependentResourceClass() {
+    return (Class<DependentResource<R, P>>) dependentResource.getClass();
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public Optional<C> getDependentResourceConfiguration() {
-    return Optional.ofNullable(dependentResourceConfig);
+    if (dependentResource instanceof DependentResourceConfigurator) {
+      var configurator = (DependentResourceConfigurator) dependentResource;
+      return configurator.configuration();
+    }
+    return Optional.empty();
   }
 
   public String getName() {
@@ -50,8 +55,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   @Override
   public String toString() {
     return "DependentResourceSpec{ name='" + name +
-        "', type=" + dependentResourceClass.getCanonicalName() +
-        ", config=" + dependentResourceConfig + '}';
+        "', type=" + getDependentResourceClass().getCanonicalName() + '}';
   }
 
   @Override
@@ -62,7 +66,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DependentResourceSpec<?, ?> that = (DependentResourceSpec<?, ?>) o;
+    DependentResourceSpec<?, ?, ?> that = (DependentResourceSpec<?, ?, ?>) o;
     return name.equals(that.name);
   }
 
@@ -88,5 +92,9 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   @SuppressWarnings("rawtypes")
   public Condition getDeletePostCondition() {
     return deletePostCondition;
+  }
+
+  public DependentResource<R, P> getDependentResource() {
+    return dependentResource;
   }
 }

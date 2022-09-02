@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -159,6 +161,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -166,35 +169,50 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     if (current == null) {
       throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
     }
-    replaceConfig(name, dependentResourceConfig, current);
-    return this;
-  }
 
-  private void replaceConfig(String name, Object newConfig, DependentResourceSpec<?, ?> current) {
-    namedDependentResourceSpecs.put(name,
-        new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name,
-            current.getDependsOn(), current.getReadyCondition(), current.getReconcileCondition(),
-            current.getDeletePostCondition()));
+    var dependentResource = current.getDependentResource();
+    if (dependentResource instanceof DependentResourceConfigurator) {
+      var configurator = (DependentResourceConfigurator) dependentResource;
+      configurator.configureWith(dependentResourceConfig);
+    }
+
+    return this;
   }
 
   @SuppressWarnings("unchecked")
   public ControllerConfiguration<R> build() {
+    // todo: this should be abstracted by introducing an interface to deal with listening to
+    // namespace changes as possibly other things than the informers might be interested in reacting
+    // to such changes
     // propagate namespaces if needed
-    final List<DependentResourceSpec> newDependentSpecs;
-    final var hasModifiedNamespaces = !original.getNamespaces().equals(namespaces);
-    newDependentSpecs = namedDependentResourceSpecs.entrySet().stream()
-        .map(drsEntry -> {
-          final var spec = drsEntry.getValue();
 
-          // if the spec has a config and it's a KubernetesDependentResourceConfig, update the
-          // namespaces if needed, otherwise, just return the existing spec
-          final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
-          return maybeConfig.filter(KubernetesDependentResourceConfig.class::isInstance)
-              .map(KubernetesDependentResourceConfig.class::cast)
-              .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
-              .map(c -> updateSpec(drsEntry.getKey(), spec, c))
-              .orElse(drsEntry.getValue());
-        }).collect(Collectors.toUnmodifiableList());
+    final var hasModifiedNamespaces = !original.getNamespaces().equals(namespaces);
+    final var newDependentSpecs = namedDependentResourceSpecs.values().stream()
+        .map(spec -> {
+          // if the dependent resource has a config and it's a KubernetesDependentResourceConfig,
+          // update
+          // the namespaces if needed, otherwise, do nothing
+          DependentResource dependent = spec.getDependentResource();
+          Optional<DependentResourceSpec> updated = Optional.empty();
+          if (hasModifiedNamespaces && dependent instanceof DependentResourceConfigurator) {
+            DependentResourceConfigurator configurator = (DependentResourceConfigurator) dependent;
+            final Optional<?> config = configurator.configuration();
+            updated = config.filter(KubernetesDependentResourceConfig.class::isInstance)
+                .map(KubernetesDependentResourceConfig.class::cast)
+                .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
+                .map(c -> {
+                  // update the namespaces of the config, configure the dependent with it and update
+                  // the spec
+                  c.setNamespaces(namespaces);
+                  configurator.configureWith(c);
+                  return new DependentResourceSpec(dependent, spec.getName(), spec.getDependsOn(),
+                      spec.getReadyCondition(), spec.getReconcileCondition(),
+                      spec.getDeletePostCondition());
+                });
+          }
+
+          return updated.orElse(spec);
+        }).collect(Collectors.toList());
 
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
@@ -213,14 +231,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         genericFilter,
         rateLimiter,
         newDependentSpecs);
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private DependentResourceSpec<?, ?> updateSpec(String name, DependentResourceSpec spec,
-      KubernetesDependentResourceConfig c) {
-    return new DependentResourceSpec(spec.getDependentResourceClass(),
-        c.setNamespaces(namespaces), name, spec.getDependsOn(), spec.getReadyCondition(),
-        spec.getReconcileCondition(), spec.getDeletePostCondition());
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

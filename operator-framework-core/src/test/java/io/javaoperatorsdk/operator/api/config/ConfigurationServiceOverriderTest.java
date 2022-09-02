@@ -9,10 +9,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -24,12 +21,6 @@ class ConfigurationServiceOverriderTest {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final LeaderElectionConfiguration LEADER_ELECTION_CONFIGURATION =
       new LeaderElectionConfiguration("foo", "fooNS");
-  private static final DependentResourceFactory FACTORY = new DependentResourceFactory() {
-    @Override
-    public <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
-      return DependentResourceFactory.super.createFrom(spec);
-    }
-  };
 
   private static final Cloner CLONER = new Cloner() {
     @Override
@@ -87,11 +78,6 @@ class ConfigurationServiceOverriderTest {
       }
 
       @Override
-      public DependentResourceFactory dependentResourceFactory() {
-        return FACTORY;
-      }
-
-      @Override
       public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
         return Optional.of(LEADER_ELECTION_CONFIGURATION);
       }
@@ -121,7 +107,6 @@ class ConfigurationServiceOverriderTest {
         overridden.concurrentReconciliationThreads());
     assertNotEquals(config.getTerminationTimeoutSeconds(),
         overridden.getTerminationTimeoutSeconds());
-    assertNotEquals(config.dependentResourceFactory(), overridden.dependentResourceFactory());
     assertNotEquals(config.getClientConfiguration(), overridden.getClientConfiguration());
     assertNotEquals(config.getExecutorService(), overridden.getExecutorService());
     assertNotEquals(config.getMetrics(), overridden.getMetrics());

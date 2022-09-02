@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.Annotation;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,21 +14,17 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -159,7 +154,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
 
   @SuppressWarnings("unchecked")
-  private <T> void configureFromAnnotatedReconciler(T instance) {
+  private void configureFromAnnotatedReconciler(Object instance) {
     if (instance instanceof AnnotationConfigurable) {
       AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
       final Class<? extends Annotation> configurationClass =
@@ -169,6 +164,22 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       if (configAnnotation != null) {
         configurable.initFrom(configAnnotation);
       }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void configureFromCustomAnnotation(Object instance) {
+    if (instance instanceof AnnotationDependentResourceConfigurator) {
+      AnnotationDependentResourceConfigurator configurator =
+          (AnnotationDependentResourceConfigurator) instance;
+      final Class<? extends Annotation> configurationClass =
+          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromInterface(
+              instance.getClass(), AnnotationDependentResourceConfigurator.class);
+      final var configAnnotation = instance.getClass().getAnnotation(configurationClass);
+      // always called even if the annotation is null so that implementations can provide default
+      // values
+      final var config = configurator.configFrom(configAnnotation, this);
+      configurator.configureWith(config);
     }
   }
 
@@ -209,11 +220,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
       final var specsMap = new LinkedHashMap<String, DependentResourceSpec>(dependents.length);
       for (Dependent dependent : dependents) {
-        Object config = null;
         final Class<? extends DependentResource> dependentType = dependent.type();
-        if (KubernetesDependentResource.class.isAssignableFrom(dependentType)) {
-          config = createKubernetesResourceConfig(dependentType);
-        }
 
         final var name = getName(dependent, dependentType);
         var spec = specsMap.get(name);
@@ -221,8 +228,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           throw new IllegalArgumentException(
               "A DependentResource named '" + name + "' already exists: " + spec);
         }
+
+        final var dependentResource = Utils.instantiateAndConfigureIfNeeded(dependentType,
+            DependentResource.class,
+            Utils.contextFor(this, dependentType, Dependent.class),
+            this::configureFromCustomAnnotation);
+
         final var context = Utils.contextFor(this, dependentType, null);
-        spec = new DependentResourceSpec(dependentType, config, name,
+        spec = new DependentResourceSpec(dependentResource, name,
             Set.of(dependent.dependsOn()),
             Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
             Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
@@ -243,47 +256,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return name;
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private Object createKubernetesResourceConfig(Class<? extends DependentResource> dependentType) {
-
-    Object config;
-    final var kubeDependent = dependentType.getAnnotation(KubernetesDependent.class);
-
-    var namespaces = getNamespaces();
-    var configuredNS = false;
-    String labelSelector = null;
-    OnAddFilter<? extends HasMetadata> onAddFilter = null;
-    OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
-    OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
-    GenericFilter<? extends HasMetadata> genericFilter = null;
-    if (kubeDependent != null) {
-      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
-          kubeDependent.namespaces())) {
-        namespaces = Set.of(kubeDependent.namespaces());
-        configuredNS = true;
-      }
-
-      final var fromAnnotation = kubeDependent.labelSelector();
-      labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
-
-
-      final var context =
-          Utils.contextFor(this, dependentType, null);
-      onAddFilter = Utils.instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
-      onUpdateFilter =
-          Utils.instantiate(kubeDependent.onUpdateFilter(), OnUpdateFilter.class, context);
-      onDeleteFilter =
-          Utils.instantiate(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context);
-      genericFilter =
-          Utils.instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
-    }
-
-    config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
-            onUpdateFilter, onDeleteFilter, genericFilter);
-
-    return config;
-  }
 
   public static <T> T valueOrDefault(
       ControllerConfiguration controllerConfiguration,
