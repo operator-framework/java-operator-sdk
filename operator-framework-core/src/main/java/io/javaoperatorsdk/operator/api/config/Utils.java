@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -110,17 +111,41 @@ public class Utils {
 
   public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz,
       Class<?> expectedImplementedInterface) {
-    return Arrays.stream(clazz.getGenericInterfaces())
-        .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
-            && type instanceof ParameterizedType)
-        .map(ParameterizedType.class::cast)
-        .findFirst()
-        .map(t -> (Class<?>) t.getActualTypeArguments()[0])
-        .orElseThrow(() -> new RuntimeException(
-            "Couldn't retrieve generic parameter type from " + clazz.getSimpleName()
-                + " because it doesn't implement "
-                + expectedImplementedInterface.getSimpleName()
-                + " directly"));
+    if (expectedImplementedInterface.isAssignableFrom(clazz)) {
+      final var genericInterfaces = clazz.getGenericInterfaces();
+      Optional<? extends Class<?>> target = Optional.empty();
+      if (genericInterfaces.length > 0) {
+        // try to find the target interface among them
+        target = Arrays.stream(genericInterfaces)
+            .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
+                && type instanceof ParameterizedType)
+            .map(ParameterizedType.class::cast)
+            .findFirst()
+            .map(t -> {
+              final Type argument = t.getActualTypeArguments()[0];
+              if (argument instanceof Class) {
+                return (Class<?>) argument;
+              }
+              throw new IllegalArgumentException(clazz.getSimpleName() + " implements "
+                  + expectedImplementedInterface.getSimpleName()
+                  + " but indirectly. Java type erasure doesn't allow to retrieve the generic type from it. Retrieved type was: "
+                  + argument);
+            });
+      }
+
+      if (target.isPresent()) {
+        return target.get();
+      }
+
+      // try the parent
+      var parent = clazz.getSuperclass();
+      if (!Object.class.equals(parent)) {
+        return getFirstTypeArgumentFromInterface(parent, expectedImplementedInterface);
+      }
+    }
+    throw new IllegalArgumentException("Couldn't retrieve generic parameter type from "
+        + clazz.getSimpleName() + " because it or its superclasses don't implement "
+        + expectedImplementedInterface.getSimpleName());
   }
 
   public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
