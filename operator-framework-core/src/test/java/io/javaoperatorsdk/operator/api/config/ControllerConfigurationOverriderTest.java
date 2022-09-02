@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -69,7 +71,10 @@ class ControllerConfigurationOverriderTest {
       }
     }
 
-    private static class ExternalDependentResource implements DependentResource<Object, ConfigMap> {
+    private static class ExternalDependentResource implements DependentResource<Object, ConfigMap>,
+        DependentResourceConfigurator<String> {
+
+      private String config = "UNSET";
 
       @Override
       public ReconcileResult<Object> reconcile(ConfigMap primary, Context<ConfigMap> context) {
@@ -79,6 +84,16 @@ class ControllerConfigurationOverriderTest {
       @Override
       public Class<Object> resourceType() {
         return Object.class;
+      }
+
+      @Override
+      public void configureWith(String config) {
+        this.config = config;
+      }
+
+      @Override
+      public Optional<String> configuration() {
+        return Optional.of(config);
       }
     }
   }
