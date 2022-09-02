@@ -246,7 +246,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   @SuppressWarnings("unchecked")
   public KubernetesDependentResourceConfig configFrom(KubernetesDependent kubeDependent,
-      ControllerConfiguration parentConfiguration) {
+      ControllerConfiguration<?> parentConfiguration) {
     var namespaces = parentConfiguration.getNamespaces();
     var configuredNS = false;
     String labelSelector = null;

@@ -9,9 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
@@ -24,13 +26,18 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
+@SchemaConfig(pollPeriod = 700, host = "127.0.0.1",
+    port = SchemaDependentResource.LOCAL_PORT,
+    user = "root", password = "password")
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
     DependentResourceConfigurator<ResourcePollerConfig>,
+    AnnotationDependentResourceConfigurator<SchemaConfig, ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";
+  public static final int LOCAL_PORT = 3307;
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
@@ -43,11 +50,23 @@ public class SchemaDependentResource
   public Optional<ResourcePollerConfig> configuration() {
     return Optional.of(new ResourcePollerConfig((int) getPollingPeriod(), dbConfig));
   }
-  
+
   @Override
   public void configureWith(ResourcePollerConfig config) {
     this.dbConfig = config.getMySQLDbConfig();
     setPollingPeriod(config.getPollPeriod());
+  }
+
+  @Override
+  public ResourcePollerConfig configFrom(SchemaConfig annotation,
+      ControllerConfiguration<?> parentConfiguration) {
+    if (annotation != null) {
+      return new ResourcePollerConfig(annotation.pollPeriod(),
+          new MySQLDbConfig(annotation.host(), "" + annotation.port(),
+              annotation.user(), annotation.password()));
+    }
+    return new ResourcePollerConfig(SchemaConfig.DEFAULT_POLL_PERIOD,
+        MySQLDbConfig.loadFromEnvironmentVars());
   }
 
   @Override
@@ -102,5 +121,4 @@ public class SchemaDependentResource
       throw new RuntimeException("Error while trying read Schema", e);
     }
   }
-
 }

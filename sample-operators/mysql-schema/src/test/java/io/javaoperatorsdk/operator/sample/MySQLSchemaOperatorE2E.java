@@ -13,12 +13,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -33,13 +32,12 @@ class MySQLSchemaOperatorE2E {
 
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaOperatorE2E.class);
 
-  static final KubernetesClient client = new DefaultKubernetesClient();
+  static final KubernetesClient client = new KubernetesClientBuilder().build();
 
   static final String MY_SQL_NS = "mysql";
 
   private final static List<HasMetadata> infrastructure = new ArrayList<>();
   public static final String TEST_RESOURCE_NAME = "mydb1";
-  public static final Integer LOCAL_PORT = 3307;
 
   static {
     infrastructure.add(
@@ -63,15 +61,10 @@ class MySQLSchemaOperatorE2E {
   AbstractOperatorExtension operator =
       isLocal()
           ? LocallyRunOperatorExtension.builder()
-              .withReconciler(
-                  new MySQLSchemaReconciler(),
-                  c -> c.replacingNamedDependentResourceConfig(
-                      SchemaDependentResource.NAME,
-                      new ResourcePollerConfig(
-                          700, new MySQLDbConfig("127.0.0.1", LOCAL_PORT.toString(), "root",
-                              "password"))))
+              .withReconciler(new MySQLSchemaReconciler()) // configuration for schema comes from
+                                                           // SchemaDependentResource annotation
               .withInfrastructure(infrastructure)
-              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, LOCAL_PORT)
+              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
