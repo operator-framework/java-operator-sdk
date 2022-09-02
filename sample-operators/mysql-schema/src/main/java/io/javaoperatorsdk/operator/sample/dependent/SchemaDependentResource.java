@@ -40,6 +40,11 @@ public class SchemaDependentResource
   }
 
   @Override
+  public Optional<ResourcePollerConfig> configuration() {
+    return Optional.of(new ResourcePollerConfig((int) getPollingPeriod(), dbConfig));
+  }
+  
+  @Override
   public void configureWith(ResourcePollerConfig config) {
     this.dbConfig = config.getMySQLDbConfig();
     setPollingPeriod(config.getPollPeriod());
