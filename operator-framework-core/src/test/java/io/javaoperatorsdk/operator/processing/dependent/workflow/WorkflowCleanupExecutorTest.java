@@ -4,17 +4,20 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   protected TestDeleterDependent dd1 = new TestDeleterDependent("DR_DELETER_1");
   protected TestDeleterDependent dd2 = new TestDeleterDependent("DR_DELETER_2");
   protected TestDeleterDependent dd3 = new TestDeleterDependent("DR_DELETER_3");
+  Context<TestCustomResource> mockContext = mock(Context.class);
 
   @Test
   void cleanUpDiamondWorkflow() {
@@ -45,7 +48,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), mockContext);
     assertThrows(AggregatedOperatorException.class,
         res::throwAggregateExceptionIfErrorsPresent);
 
@@ -64,7 +67,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dd2).dependsOn(dd1).withDeletePostcondition(noMetDeletePostCondition)
         .build();
 
-    var res = workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).deleted(dd2).notReconciled(dd1);
     Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd2);
@@ -79,7 +82,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dd2).dependsOn(dd1).withDeletePostcondition(metDeletePostCondition)
         .build();
 
-    var res = workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).deleted(dd2, dd1);
 
@@ -99,7 +102,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dd4).dependsOn(dd2, dd3)
         .build();
 
-    var res = workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory)
         .reconciledInOrder(dd4, dd2)

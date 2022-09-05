@@ -107,7 +107,10 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
         alreadyVisited.add(dependentResourceNode);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary)
+                // todo pass also discriminator
+                context
+                    .getSecondaryResource(
+                        dependentResourceNode.getDependentResource().resourceType())
                     .orElse(null),
                 context)).orElse(true);
         if (deletePostConditionMet) {
