@@ -85,13 +85,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
     this.configuration = configuration;
+
+
+    // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
       primaryToSecondaryIndex =
+          // The index uses the secondary to primary mapper (always present) to build the index
           new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
     } else {
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
+
     onAddFilter = configuration.onAddFilter().orElse(null);
     onUpdateFilter = configuration.onUpdateFilter().orElse(null);
     onDeleteFilter = configuration.onDeleteFilter().orElse(null);
