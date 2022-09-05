@@ -28,7 +28,7 @@ import static java.lang.String.format;
 
 @SchemaConfig(pollPeriod = 700, host = "127.0.0.1",
     port = SchemaDependentResource.LOCAL_PORT,
-    user = "root", password = "password")
+    user = "root", password = "password") // NOSONAR: password is only used locally, example only
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements EventSourceProvider<MySQLSchema>,
