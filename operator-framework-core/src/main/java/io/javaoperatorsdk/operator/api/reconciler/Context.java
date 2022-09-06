@@ -6,6 +6,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 
 public interface Context<P extends HasMetadata> {
 
@@ -26,4 +27,6 @@ public interface Context<P extends HasMetadata> {
   ControllerConfiguration<P> getControllerConfiguration();
 
   ManagedDependentResourceContext managedDependentResourceContext();
+
+  EventSourceRetriever<P> eventSourceRetriever();
 }
