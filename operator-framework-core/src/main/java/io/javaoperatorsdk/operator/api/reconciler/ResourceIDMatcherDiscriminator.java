@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class ResourceIDMatcherDiscriminator<R extends HasMetadata, P extends HasMetadata>
@@ -17,8 +16,7 @@ public class ResourceIDMatcherDiscriminator<R extends HasMetadata, P extends Has
   }
 
   @Override
-  public Optional<R> distinguish(Class<R> resource, P primary, Context<P> context,
-      EventSourceRetriever<P> eventSourceRetriever) {
+  public Optional<R> distinguish(Class<R> resource, P primary, Context<P> context) {
     var resourceID = mapper.apply(primary);
     return context.getSecondaryResources(resource).stream()
         .filter(r -> r.getMetadata().getName()
