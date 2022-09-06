@@ -51,8 +51,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
       ResourceDiscriminator<R, P> discriminator) {
-    return discriminator.distinguish(expectedType, primaryResource, this,
-        controller.getEventSourceManager());
+    return discriminator.distinguish(expectedType, primaryResource, this);
   }
 
   @Override
