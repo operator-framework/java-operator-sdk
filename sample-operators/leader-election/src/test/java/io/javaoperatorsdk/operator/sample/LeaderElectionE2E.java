@@ -107,7 +107,7 @@ class LeaderElectionE2E {
         .withName(TEST_RESOURCE_NAME)
         .withNamespace(namespace)
         .build());
-    client.resources(res.getClass()).create();
+    client.resources(LeaderElectionTestCustomResource.class).inNamespace(namespace).create(res);
   }
 
   @BeforeEach
