@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
@@ -21,7 +22,11 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class InformerEventSourceTest {
@@ -36,10 +41,10 @@ class InformerEventSourceTest {
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
   private final MixedOperation crClientMock = mock(MixedOperation.class);
-  private final AnyNamespaceOperation specificResourceClientMock =
-      mock(AnyNamespaceOperation.class);
-  private final AnyNamespaceOperation labeledResourceClientMock =
-      mock(AnyNamespaceOperation.class);
+  private final FilterWatchListMultiDeletable specificResourceClientMock =
+      mock(FilterWatchListMultiDeletable.class);
+  private final FilterWatchListDeletable labeledResourceClientMock =
+      mock(FilterWatchListDeletable.class);
   private final SharedIndexInformer informer = mock(SharedIndexInformer.class);
   private final InformerConfiguration<Deployment> informerConfiguration =
       mock(InformerConfiguration.class);

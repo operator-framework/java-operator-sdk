@@ -22,7 +22,7 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    KubernetesClient client = new KubernetesClientBuilder().build();
+    KubernetesClient client = new DefaultKubernetesClient();
     Operator operator = new Operator(client);
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {

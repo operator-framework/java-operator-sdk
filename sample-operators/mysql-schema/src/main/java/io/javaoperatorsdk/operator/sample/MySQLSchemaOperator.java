@@ -23,7 +23,7 @@ public class MySQLSchemaOperator {
   public static void main(String[] args) throws IOException {
     log.info("MySQL Schema Operator starting");
 
-    KubernetesClient client = new KubernetesClientBuilder().build();
+    KubernetesClient client = new DefaultKubernetesClient();
     Operator operator = new Operator(client,
         overrider -> overrider.withMetrics(new MicrometerMetrics(new LoggingMeterRegistry())));
 
