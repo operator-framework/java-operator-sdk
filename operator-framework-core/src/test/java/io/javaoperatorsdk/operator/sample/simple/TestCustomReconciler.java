@@ -38,13 +38,13 @@ public class TestCustomReconciler
   @Override
   public DeleteControl cleanup(
       TestCustomResource resource, Context<TestCustomResource> context) {
-    var statusDetails =
+    var deleted =
         kubernetesClient
             .configMaps()
             .inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getSpec().getConfigMapName())
             .delete();
-    if (statusDetails.size() == 1 && statusDetails.get(0).getCauses().isEmpty()) {
+    if (deleted) {
       log.info(
           "Deleted ConfigMap {} for resource: {}",
           resource.getSpec().getConfigMapName(),

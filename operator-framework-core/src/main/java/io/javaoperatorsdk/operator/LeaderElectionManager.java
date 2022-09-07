@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
-import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.Lock;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -23,7 +22,7 @@ public class LeaderElectionManager {
   private LeaderElector leaderElector = null;
   private final ControllerManager controllerManager;
   private String identity;
-  private CompletableFuture<?> leaderElectionFuture;
+  private Future<?> leaderElectionFuture;
 
   public LeaderElectionManager(ControllerManager controllerManager) {
     this.controllerManager = controllerManager;
@@ -33,11 +32,9 @@ public class LeaderElectionManager {
     this.identity = identity(config);
     Lock lock = new LeaseLock(config.getLeaseNamespace(), config.getLeaseName(), identity);
     // releaseOnCancel is not used in the underlying implementation
-    leaderElector = new LeaderElectorBuilder(client,
-        ConfigurationServiceProvider.instance().getExecutorService())
-        .withConfig(
-            new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
-                config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
+    leaderElector = client.leaderElector().withConfig(
+        new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
+            config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
         .build();
   }
 
@@ -73,7 +70,8 @@ public class LeaderElectionManager {
 
   public void start() {
     if (isLeaderElectionEnabled()) {
-      leaderElectionFuture = leaderElector.start();
+      leaderElectionFuture =
+          ConfigurationServiceProvider.instance().getExecutorService().submit(leaderElector::run);
     }
   }
 

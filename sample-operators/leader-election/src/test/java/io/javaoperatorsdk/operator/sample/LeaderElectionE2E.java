@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 
 import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.CRD_READY_WAIT;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,24 +107,24 @@ class LeaderElectionE2E {
         .withName(TEST_RESOURCE_NAME)
         .withNamespace(namespace)
         .build());
-    client.resource(res).create();
+    client.resources(res.getClass()).create();
   }
 
   @BeforeEach
   void setup() {
     namespace = "leader-election-it-" + UUID.randomUUID();
-    client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
+    client = new DefaultKubernetesClient(new ConfigBuilder()
         .withNamespace(namespace)
-        .build()).build();
+        .build());
     applyCRD();
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).create();
+    client.namespaces().create(new NamespaceBuilder().withNewMetadata().withName(namespace)
+        .endMetadata().build());
   }
 
   @AfterEach
   void tearDown() {
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).delete();
+    client.namespaces().delete(new NamespaceBuilder().withNewMetadata().withName(namespace)
+        .endMetadata().build());
     await()
         .atMost(Duration.ofSeconds(60))
         .untilAsserted(() -> assertThat(client.namespaces().withName(namespace).get()).isNull());

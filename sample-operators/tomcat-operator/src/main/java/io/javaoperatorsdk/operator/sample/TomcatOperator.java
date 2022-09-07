@@ -18,7 +18,7 @@ public class TomcatOperator {
 
   public static void main(String[] args) throws IOException {
 
-    KubernetesClient client = new KubernetesClientBuilder().build();
+    KubernetesClient client = new DefaultKubernetesClient();
     Operator operator = new Operator(client);
     operator.register(new TomcatReconciler());
     operator.register(new WebappReconciler(client));
