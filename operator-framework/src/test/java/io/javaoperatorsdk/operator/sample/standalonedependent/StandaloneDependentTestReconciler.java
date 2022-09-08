@@ -94,7 +94,7 @@ public class StandaloneDependentTestReconciler
     }
 
     @Override
-    protected Deployment desired(StandaloneDependentTestCustomResource primary,
+    protected Deployment createDesired(StandaloneDependentTestCustomResource primary,
         Context<StandaloneDependentTestCustomResource> context) {
       Deployment deployment =
           ReconcilerUtils.loadYaml(Deployment.class, StandaloneDependentResourceIT.class,

@@ -22,7 +22,7 @@ public class IndexDiscriminatorTestDRConfigMap
   }
 
   @Override
-  protected ConfigMap desired(IndexDiscriminatorTestCustomResource primary,
+  protected ConfigMap createDesired(IndexDiscriminatorTestCustomResource primary,
       Context<IndexDiscriminatorTestCustomResource> context) {
     Map<String, String> data = new HashMap<>();
     data.put(DATA_KEY, primary.getSpec().getValue());

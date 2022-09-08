@@ -25,13 +25,13 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       Class<R> resourceType, KubernetesDependentResource<R, P> dependentResource) {
     if (Secret.class.isAssignableFrom(resourceType)) {
       return (actual, primary, context) -> {
-        final var desired = dependentResource.desired(primary, context);
+        final var desired = dependentResource.createDesired(primary, context);
         return Result.computed(
             ResourceComparators.compareSecretData((Secret) desired, (Secret) actual), desired);
       };
     } else if (ConfigMap.class.isAssignableFrom(resourceType)) {
       return (actual, primary, context) -> {
-        final var desired = dependentResource.desired(primary, context);
+        final var desired = dependentResource.createDesired(primary, context);
         return Result.computed(
             ResourceComparators.compareConfigMapData((ConfigMap) desired, (ConfigMap) actual),
             desired);
@@ -68,7 +68,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerMetadata) {
-    final var desired = dependentResource.desired(primary, context);
+    final var desired = dependentResource.createDesired(primary, context);
     if (considerMetadata) {
       final var desiredMetadata = desired.getMetadata();
       final var actualMetadata = actualResource.getMetadata();

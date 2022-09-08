@@ -33,7 +33,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  protected Secret desired(MySQLSchema schema, Context<MySQLSchema> context) {
+  protected Secret createDesired(MySQLSchema schema, Context<MySQLSchema> context) {
     final var password = RandomStringUtils
         .randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
     final var name = schema.getMetadata().getName();

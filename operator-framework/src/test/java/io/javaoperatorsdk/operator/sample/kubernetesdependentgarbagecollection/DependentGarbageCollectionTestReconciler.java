@@ -88,7 +88,7 @@ public class DependentGarbageCollectionTestReconciler
     }
 
     @Override
-    protected ConfigMap desired(DependentGarbageCollectionTestCustomResource primary,
+    protected ConfigMap createDesired(DependentGarbageCollectionTestCustomResource primary,
         Context<DependentGarbageCollectionTestCustomResource> context) {
       ConfigMap configMap = new ConfigMap();
       configMap.setMetadata(new ObjectMetaBuilder()

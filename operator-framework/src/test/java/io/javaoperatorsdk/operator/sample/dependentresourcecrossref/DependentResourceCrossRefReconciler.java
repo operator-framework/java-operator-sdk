@@ -59,7 +59,7 @@ public class DependentResourceCrossRefReconciler
     }
 
     @Override
-    protected Secret desired(DependentResourceCrossRefResource primary,
+    protected Secret createDesired(DependentResourceCrossRefResource primary,
         Context<DependentResourceCrossRefResource> context) {
       Secret secret = new Secret();
       secret.setMetadata(new ObjectMetaBuilder()
@@ -79,7 +79,7 @@ public class DependentResourceCrossRefReconciler
     }
 
     @Override
-    protected ConfigMap desired(DependentResourceCrossRefResource primary,
+    protected ConfigMap createDesired(DependentResourceCrossRefResource primary,
         Context<DependentResourceCrossRefResource> context) {
       var secret = context.getSecondaryResource(Secret.class);
       if (secret.isEmpty()) {

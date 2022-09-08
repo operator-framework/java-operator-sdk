@@ -29,7 +29,7 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
+  protected ConfigMap createDesired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> data = new HashMap<>();
     data.put("index.html", webPage.getSpec().getHtml());
     Map<String, String> labels = new HashMap<>();

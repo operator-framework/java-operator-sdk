@@ -17,7 +17,7 @@ public class ConfigMapDependentResource extends
   }
 
   @Override
-  protected ConfigMap desired(DependentOperationEventFilterCustomResource primary,
+  protected ConfigMap createDesired(DependentOperationEventFilterCustomResource primary,
       Context<DependentOperationEventFilterCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();

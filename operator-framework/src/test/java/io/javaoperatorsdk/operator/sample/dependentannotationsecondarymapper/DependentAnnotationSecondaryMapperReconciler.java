@@ -43,7 +43,7 @@ public class DependentAnnotationSecondaryMapperReconciler
     }
 
     @Override
-    protected ConfigMap desired(DependentAnnotationSecondaryMapperResource primary,
+    protected ConfigMap createDesired(DependentAnnotationSecondaryMapperResource primary,
         Context<DependentAnnotationSecondaryMapperResource> context) {
       ConfigMap configMap = new ConfigMap();
       configMap.setMetadata(new ObjectMetaBuilder()

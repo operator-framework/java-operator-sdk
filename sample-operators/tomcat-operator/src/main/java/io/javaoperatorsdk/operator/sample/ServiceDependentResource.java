@@ -16,7 +16,7 @@ public class ServiceDependentResource extends CRUDKubernetesDependentResource<Se
   }
 
   @Override
-  protected Service desired(Tomcat tomcat, Context<Tomcat> context) {
+  protected Service createDesired(Tomcat tomcat, Context<Tomcat> context) {
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
     return new ServiceBuilder(ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml"))
         .editMetadata()

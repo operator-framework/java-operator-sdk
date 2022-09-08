@@ -30,7 +30,7 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(WorkflowAllFeatureCustomResource primary,
+  protected ConfigMap createDesired(WorkflowAllFeatureCustomResource primary,
       Context<WorkflowAllFeatureCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()

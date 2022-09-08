@@ -21,7 +21,7 @@ public class DeploymentDependentResource
   }
 
   @Override
-  protected Deployment desired(Tomcat tomcat, Context<Tomcat> context) {
+  protected Deployment createDesired(Tomcat tomcat, Context<Tomcat> context) {
     Deployment deployment =
         ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();

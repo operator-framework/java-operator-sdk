@@ -22,7 +22,7 @@ public class MultipleDependentResourceConfigMap
   }
 
   @Override
-  protected ConfigMap desired(MultipleDependentResourceCustomResource primary,
+  protected ConfigMap createDesired(MultipleDependentResourceCustomResource primary,
       Context<MultipleDependentResourceCustomResource> context) {
     Map<String, String> data = new HashMap<>();
     data.put(DATA_KEY, String.valueOf(value));

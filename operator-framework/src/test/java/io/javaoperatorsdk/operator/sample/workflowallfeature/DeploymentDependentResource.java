@@ -14,7 +14,7 @@ public class DeploymentDependentResource extends
   }
 
   @Override
-  protected Deployment desired(WorkflowAllFeatureCustomResource primary,
+  protected Deployment createDesired(WorkflowAllFeatureCustomResource primary,
       Context<WorkflowAllFeatureCustomResource> context) {
     Deployment deployment =
         ReconcilerUtils.loadYaml(Deployment.class, WorkflowAllFeatureIT.class,

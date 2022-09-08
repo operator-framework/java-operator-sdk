@@ -29,7 +29,7 @@ public class ConfigMapDependentResource2 extends
   }
 
   @Override
-  protected ConfigMap desired(OrderedManagedDependentCustomResource primary,
+  protected ConfigMap createDesired(OrderedManagedDependentCustomResource primary,
       Context<OrderedManagedDependentCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();

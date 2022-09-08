@@ -26,6 +26,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   // todo discuss, rather implement this as interface?
   private ResourceDiscriminator<R, P> resourceDiscriminator;
+  // only to support bulk resource creation
+  private R desired;
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
@@ -40,10 +42,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
-          var desired = desired(primary, context);
-          throwIfNull(desired, primary, "Desired");
-          logForOperation("Creating", primary, desired);
-          var createdResource = handleCreate(desired, primary, context);
+          var actualDesired = desired(primary, context);
+          throwIfNull(actualDesired, primary, "Desired");
+          logForOperation("Creating", primary, actualDesired);
+          var createdResource = handleCreate(actualDesired, primary, context);
           return ReconcileResult.resourceCreated(createdResource);
         }
       } else {
@@ -51,10 +53,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable) {
           final var match = updater.match(actual, primary, context);
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElse(desired(primary, context));
-            throwIfNull(desired, primary, "Desired");
-            logForOperation("Updating", primary, desired);
-            var updatedResource = handleUpdate(actual, desired, primary, context);
+            final var actualDesired =
+                match.computedDesired().orElse(createDesired(primary, context));
+            throwIfNull(actualDesired, primary, "Desired");
+            logForOperation("Updating", primary, actualDesired);
+            var updatedResource = handleUpdate(actual, actualDesired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
           }
         } else {
@@ -130,8 +133,25 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected R desired(P primary, Context<P> context) {
+    if (desired == null) {
+      return createDesired(primary, context);
+    } else {
+      return desired;
+    }
+  }
+
+  protected R createDesired(P primary, Context<P> context) {
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or updated");
+  }
+
+  public R getDesired() {
+    return desired;
+  }
+
+  public AbstractDependentResource<R, P> setDesired(R desired) {
+    this.desired = desired;
+    return this;
   }
 
   // todo review & refactor configuration to cover all cases

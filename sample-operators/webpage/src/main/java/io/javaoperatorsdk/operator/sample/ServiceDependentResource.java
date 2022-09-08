@@ -22,7 +22,7 @@ public class ServiceDependentResource extends
   }
 
   @Override
-  protected Service desired(WebPage webPage, Context<WebPage> context) {
+  protected Service createDesired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> serviceLabels = new HashMap<>();
     serviceLabels.put(SELECTOR, "true");
     Service service = loadYaml(Service.class, getClass(), "service.yaml");

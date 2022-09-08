@@ -93,7 +93,7 @@ class GenericKubernetesResourceMatcherTest {
     }
 
     @Override
-    protected Deployment desired(HasMetadata primary, Context context) {
+    protected Deployment createDesired(HasMetadata primary, Context context) {
       final var currentCase = Optional.ofNullable(primary)
           .map(p -> p.getMetadata().getLabels().get("case"))
           .orElse(null);

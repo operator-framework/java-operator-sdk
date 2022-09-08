@@ -24,7 +24,7 @@ public class DeploymentDependentResource
   }
 
   @Override
-  protected Deployment desired(WebPage webPage, Context<WebPage> context) {
+  protected Deployment createDesired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> labels = new HashMap<>();
     labels.put(SELECTOR, "true");
     var deploymentName = deploymentName(webPage);

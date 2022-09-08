@@ -24,7 +24,7 @@ public class ConfigMapDependentResource extends
   }
 
   @Override
-  protected ConfigMap desired(CleanerForManagedDependentCustomResource primary,
+  protected ConfigMap createDesired(CleanerForManagedDependentCustomResource primary,
       Context<CleanerForManagedDependentCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();

@@ -136,7 +136,7 @@ class AbstractSimpleDependentResourceTest {
     }
 
     @Override
-    protected SampleExternalResource desired(TestCustomResource primary,
+    protected SampleExternalResource createDesired(TestCustomResource primary,
         Context<TestCustomResource> context) {
       return SampleExternalResource.testResource1();
     }
