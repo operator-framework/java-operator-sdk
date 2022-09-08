@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -24,7 +26,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
 
-  private ResourceDiscriminator<R, P> resourceDiscriminator;
+  protected List<ResourceDiscriminator<R, P>> resourceDiscriminator = new ArrayList<>(1);
+  // used just for bulk creation
+  protected BulkResourceDiscriminatorFactory<R, P> bulkResourceDiscriminatorFactory;
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
@@ -32,14 +36,44 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     updater = updatable ? (Updater<R, P>) this : null;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    Optional<R> maybeActual = getSecondaryResource(primary, context);
+    var count = count(primary, context);
+    if (isBulkResourceCreation(primary, context)) {
+      initDiscriminators(count);
+    }
+    for (int i = 0; i < count; i++) {
+      reconcileWithIndex(primary, i, context);
+    }
+    // todo result
+    return null;
+  }
+
+  private void initDiscriminators(int count) {
+    if (resourceDiscriminator.size() == count) {
+      return;
+    }
+    if (resourceDiscriminator.size() < count) {
+      for (int i = resourceDiscriminator.size() - 1; i < count; i++) {
+        resourceDiscriminator.add(bulkResourceDiscriminatorFactory.createResourceDiscriminator(i));
+      }
+    }
+    if (resourceDiscriminator.size() < count) {
+      for (int i = resourceDiscriminator.size() - 1; i < count; i++) {
+        resourceDiscriminator.add(bulkResourceDiscriminatorFactory.createResourceDiscriminator(i));
+      }
+    }
+    if (resourceDiscriminator.size() > count) {
+      resourceDiscriminator.subList(count, resourceDiscriminator.size()).clear();
+    }
+  }
+
+  protected ReconcileResult<R> reconcileWithIndex(P primary, int i, Context<P> context) {
+    Optional<R> maybeActual = getSecondaryResource(primary, i, context);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
-          var desired = desired(primary, context);
+          var desired = desired(primary, i, context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -48,7 +82,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       } else {
         final var actual = maybeActual.get();
         if (updatable) {
-          final var match = updater.match(actual, primary, context);
+          // todo simplify matcher?
+          final var match = updater.match(actual, primary, i, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
             throwIfNull(desired, primary, "Desired");
@@ -68,12 +103,25 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(maybeActual.orElse(null));
   }
 
+  // todo check
   protected Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    if (resourceDiscriminator == null) {
+    if (resourceDiscriminator.isEmpty()) {
       return context.getSecondaryResource(resourceType());
     } else {
-      return context.getSecondaryResource(resourceType(), resourceDiscriminator);
+      return context.getSecondaryResource(resourceType(), resourceDiscriminator.get(0));
     }
+  }
+
+  protected Optional<R> getSecondaryResource(P primary, int index, Context<P> context) {
+    if (index > 0 && resourceDiscriminator.isEmpty()) {
+      throw new IllegalStateException(
+          "Handling resources in bulk bot no resource discriminators set.");
+    }
+    if (!isBulkResourceCreation(primary, context)) {
+      return getSecondaryResource(primary, context);
+    }
+
+    return context.getSecondaryResource(resourceType(), resourceDiscriminator.get(index));
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {
@@ -111,7 +159,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected abstract void onCreated(ResourceID primaryResourceId, R created);
 
   /**
-   * Allows sub-classes to perform additional processing on the updated resource if needed.
+   * Allows subclasses to perform additional processing on the updated resource if needed.
    *
    * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
    *        newly updated resource
@@ -133,12 +181,40 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         "desired method must be implemented if this DependentResource can be created and/or updated");
   }
 
-  public void setResourceDiscriminator(
+  protected R desired(P primary, int index, Context<P> context) {
+    if (!isBulkResourceCreation(primary, context)) {
+      return desired(primary, context);
+    } else {
+      throw new IllegalStateException(
+          "desired() with index method must be implemented for bulk DependentResource creation");
+    }
+  }
+
+  public AbstractDependentResource<R, P> setResourceDiscriminator(
       ResourceDiscriminator<R, P> resourceDiscriminator) {
-    this.resourceDiscriminator = resourceDiscriminator;
+    this.resourceDiscriminator.add(resourceDiscriminator);
+    return this;
   }
 
   public ResourceDiscriminator<R, P> getResourceDiscriminator() {
-    return resourceDiscriminator;
+    return resourceDiscriminator.get(0);
+  }
+
+  protected int count(P primary, Context<P> context) {
+    return 1;
+  }
+
+  protected boolean isBulkResourceCreation(P primary, Context<P> context) {
+    return false;
+  }
+
+  public BulkResourceDiscriminatorFactory<R, P> getBulkResourceDiscriminatorFactory() {
+    return bulkResourceDiscriminatorFactory;
+  }
+
+  public AbstractDependentResource<R, P> setBulkResourceDiscriminatorFactory(
+      BulkResourceDiscriminatorFactory<R, P> bulkResourceDiscriminatorFactory) {
+    this.bulkResourceDiscriminatorFactory = bulkResourceDiscriminatorFactory;
+    return this;
   }
 }

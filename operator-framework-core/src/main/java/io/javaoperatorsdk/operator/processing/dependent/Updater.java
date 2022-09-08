@@ -8,4 +8,13 @@ public interface Updater<R, P extends HasMetadata> {
   R update(R actual, R desired, P primary, Context<P> context);
 
   Result<R> match(R actualResource, P primary, Context<P> context);
+
+  // todo change to simple desired matching?
+  default Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+    if (index == 0) {
+      return match(actualResource, primary, context);
+    } else {
+      throw new IllegalStateException("Implement this");
+    }
+  }
 }
