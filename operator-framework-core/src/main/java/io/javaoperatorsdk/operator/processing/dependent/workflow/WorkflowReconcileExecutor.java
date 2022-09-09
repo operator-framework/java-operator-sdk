@@ -35,7 +35,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       new ConcurrentHashMap<>();
 
   private final Set<DependentResourceNode> markedForDelete = ConcurrentHashMap.newKeySet();
-  private final Set<DependentResourceNode> deletePostConditionNotMet = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode> deletePostConditionNotMet =
+      ConcurrentHashMap.newKeySet();
   // used to remember reconciled (not deleted or errored) dependents
   private final Set<DependentResourceNode> reconciled = ConcurrentHashMap.newKeySet();
   private final Map<DependentResource, ReconcileResult> reconcileResults =
