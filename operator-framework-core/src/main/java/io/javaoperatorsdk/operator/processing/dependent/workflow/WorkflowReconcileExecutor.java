@@ -35,7 +35,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       new ConcurrentHashMap<>();
 
   private final Set<DependentResourceNode> markedForDelete = ConcurrentHashMap.newKeySet();
-  private final Set<DependentResourceNode> deleteConditionNotMet = ConcurrentHashMap.newKeySet();
+  private final Set<DependentResourceNode> deletePostConditionNotMet = ConcurrentHashMap.newKeySet();
   // used to remember reconciled (not deleted or errored) dependents
   private final Set<DependentResourceNode> reconciled = ConcurrentHashMap.newKeySet();
   private final Map<DependentResource, ReconcileResult> reconcileResults =
@@ -99,7 +99,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
   }
 
-  private void handleDelete(DependentResourceNode dependentResourceNode) {
+  private synchronized void handleDelete(DependentResourceNode dependentResourceNode) {
     log.debug("Submitting for delete: {}", dependentResourceNode);
 
     if (alreadyVisited(dependentResourceNode)
@@ -119,7 +119,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   private boolean allDependentsDeletedAlready(DependentResourceNode<?, P> dependentResourceNode) {
     var dependents = dependentResourceNode.getParents();
     return dependents.stream().allMatch(d -> alreadyVisited.contains(d) && !notReady.contains(d)
-        && !exceptionsDuringExecution.containsKey(d) && !deleteConditionNotMet.contains(d));
+        && !exceptionsDuringExecution.containsKey(d) && !deletePostConditionNotMet.contains(d));
   }
 
 
@@ -207,16 +207,17 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
             && !(dependentResource instanceof GarbageCollected)) {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
         }
-        alreadyVisited.add(dependentResourceNode);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
                 dependentResourceNode.getDependentResource().getSecondaryResource(primary)
                     .orElse(null),
                 context)).orElse(true);
         if (deletePostConditionMet) {
+          alreadyVisited.add(dependentResourceNode);
           handleDependentDeleted(dependentResourceNode);
         } else {
-          deleteConditionNotMet.add(dependentResourceNode);
+          deletePostConditionNotMet.add(dependentResourceNode);
+          alreadyVisited.add(dependentResourceNode);
         }
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
