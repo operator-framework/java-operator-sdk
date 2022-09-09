@@ -42,11 +42,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (isBulkResourceCreation(primary, context)) {
       initDiscriminators(count);
     }
+    ReconcileResult<R> result = new ReconcileResult<>();
     for (int i = 0; i < count; i++) {
-      reconcileWithIndex(primary, i, context);
+      var res = reconcileWithIndex(primary, i, context);
+      result.addReconcileResult(res);
     }
-    // todo result
-    return null;
+    return result;
   }
 
   private void initDiscriminators(int count) {
@@ -83,7 +84,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         final var actual = maybeActual.get();
         if (updatable) {
           // todo simplify matcher?
-          final var match = updater.match(actual, primary, i, context);
+          final Matcher.Result<R> match;
+          if (isBulkResourceCreation(primary, context)) {
+            match = updater.match(actual, primary, i, context);
+          } else {
+            match = updater.match(actual, primary, context);
+          }
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
             throwIfNull(desired, primary, "Desired");
@@ -192,7 +198,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   public AbstractDependentResource<R, P> setResourceDiscriminator(
       ResourceDiscriminator<R, P> resourceDiscriminator) {
-    this.resourceDiscriminator.add(resourceDiscriminator);
+    if (resourceDiscriminator != null) {
+      this.resourceDiscriminator.add(resourceDiscriminator);
+    }
     return this;
   }
 
