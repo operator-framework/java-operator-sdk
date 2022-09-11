@@ -693,7 +693,7 @@ the events. This means that should the leader change for any reason, for example
 crashed, the other instances are already warmed up and ready to pick up where the previous 
 leader left off should one of them become elected leader.
 
-See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/144947d89323f1c65de6e86bd8b9a6a8ffe714ff/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L26-L30)
+See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/8865302ac0346ee31f2d7b348997ec2913d5922b/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L21-L23)
 .
 
 ## Monitoring with Micrometer
