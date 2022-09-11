@@ -39,7 +39,7 @@ public class LeaderElectionManager {
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
     this.identity = identity(config);
     final var leaseNamespace =
-        config.getLeaseNamespace().or(LeaderElectionManager::tryGetInClusterNamespace);
+        config.getLeaseNamespace().or(LeaderElectionManager::tryNamespaceFromPath);
     if (leaseNamespace.isEmpty()) {
       final var message =
           "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
@@ -96,7 +96,7 @@ public class LeaderElectionManager {
     return id;
   }
 
-  private static Optional<String> tryGetInClusterNamespace() {
+  private static Optional<String> tryNamespaceFromPath() {
     log.info("Trying to get namespace from Kubernetes service account namespace path...");
 
     final var serviceAccountNamespace =
