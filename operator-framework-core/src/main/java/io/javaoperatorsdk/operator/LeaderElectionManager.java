@@ -39,14 +39,15 @@ public class LeaderElectionManager {
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
     this.identity = identity(config);
     final var leaseNamespace =
-        config.getLeaseNamespace().or(LeaderElectionManager::tryNamespaceFromPath);
-    if (leaseNamespace.isEmpty()) {
+        config.getLeaseNamespace().orElseGet(
+            () -> ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace());
+    if (leaseNamespace == null) {
       final var message =
           "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
       log.error(message);
       throw new IllegalArgumentException(message);
     }
-    final var lock = new LeaseLock(leaseNamespace.orElseThrow(), config.getLeaseName(), identity);
+    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
     // releaseOnCancel is not used in the underlying implementation
     leaderElector =
         new LeaderElectorBuilder(

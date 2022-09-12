@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
+import static io.fabric8.kubernetes.client.Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY;
 import static io.fabric8.kubernetes.client.Config.KUBERNETES_NAMESPACE_FILE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +34,7 @@ class LeaderElectionManagerTest {
   @AfterEach
   void tearDown() {
     System.getProperties().remove(KUBERNETES_NAMESPACE_FILE);
+    System.getProperties().remove(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
   }
 
   @Test
@@ -47,6 +49,7 @@ class LeaderElectionManagerTest {
     var namespacePath = tempDir.resolve("namespace");
     Files.writeString(namespacePath, namespace);
 
+    System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
     System.setProperty(KUBERNETES_NAMESPACE_FILE, namespacePath.toString());
 
     leaderElectionManager.init(new LeaderElectionConfiguration("test"), kubernetesClient);
@@ -55,6 +58,15 @@ class LeaderElectionManagerTest {
 
   @Test
   void testFailedToInitInferLeaseNamespace() {
+    System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> leaderElectionManager.init(new LeaderElectionConfiguration("test"),
+            kubernetesClient));
+  }
+
+  @Test
+  void testFailedToInitInferLeaseNamespaceProbablyUsingKubeConfig() {
     assertThrows(
         IllegalArgumentException.class,
         () -> leaderElectionManager.init(new LeaderElectionConfiguration("test"),
