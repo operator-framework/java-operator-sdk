@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 import static io.fabric8.kubernetes.client.Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY;
@@ -33,6 +34,7 @@ class LeaderElectionManagerTest {
 
   @AfterEach
   void tearDown() {
+    ConfigurationServiceProvider.reset();
     System.getProperties().remove(KUBERNETES_NAMESPACE_FILE);
     System.getProperties().remove(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
   }
