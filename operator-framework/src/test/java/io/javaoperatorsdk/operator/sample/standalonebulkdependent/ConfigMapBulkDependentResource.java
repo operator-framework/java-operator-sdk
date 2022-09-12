@@ -7,8 +7,6 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
-import io.javaoperatorsdk.operator.processing.dependent.BulkResourceDiscriminatorFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapBulkDependentResource
@@ -20,22 +18,16 @@ public class ConfigMapBulkDependentResource
   public ConfigMapBulkDependentResource() {
     super(ConfigMap.class);
     setBulkResourceDiscriminatorFactory(
-        new BulkResourceDiscriminatorFactory<ConfigMap, StandaloneBulkDependentTestCustomResource>() {
-          @Override
-          public ResourceDiscriminator<ConfigMap, StandaloneBulkDependentTestCustomResource> createResourceDiscriminator(
-              int index) {
-            return (resource, primary, context) -> {
-              var resources = context.getSecondaryResources(resource).stream()
-                  .filter(r -> r.getMetadata().getName().endsWith("-" + index))
-                  .collect(Collectors.toList());
-              if (resources.isEmpty()) {
-                return Optional.empty();
-              } else if (resources.size() > 1) {
-                throw new IllegalStateException("More than one resource found for index:" + index);
-              } else {
-                return Optional.of(resources.get(0));
-              }
-            };
+        index -> (resource, primary, context) -> {
+          var resources = context.getSecondaryResources(resource).stream()
+              .filter(r -> r.getMetadata().getName().endsWith("-" + index))
+              .collect(Collectors.toList());
+          if (resources.isEmpty()) {
+            return Optional.empty();
+          } else if (resources.size() > 1) {
+            throw new IllegalStateException("More than one resource found for index:" + index);
+          } else {
+            return Optional.of(resources.get(0));
           }
         });
   }
@@ -54,15 +46,9 @@ public class ConfigMapBulkDependentResource
   }
 
   @Override
-  protected boolean isBulkResourceCreation(StandaloneBulkDependentTestCustomResource primary,
+  protected Optional<Integer> count(StandaloneBulkDependentTestCustomResource primary,
       Context<StandaloneBulkDependentTestCustomResource> context) {
-    return true;
-  }
-
-  @Override
-  protected int count(StandaloneBulkDependentTestCustomResource primary,
-      Context<StandaloneBulkDependentTestCustomResource> context) {
-    return primary.getSpec().getNumberOfResources();
+    return Optional.of(primary.getSpec().getNumberOfResources());
   }
 
 
