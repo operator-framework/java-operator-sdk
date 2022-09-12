@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,12 +12,8 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
-import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
-
-import static io.fabric8.kubernetes.client.Config.KUBERNETES_NAMESPACE_FILE;
-import static io.fabric8.kubernetes.client.Config.KUBERNETES_NAMESPACE_PATH;
 
 public class LeaderElectionManager {
 
@@ -95,30 +87,6 @@ public class LeaderElectionManager {
       id = UUID.randomUUID().toString();
     }
     return id;
-  }
-
-  private static Optional<String> tryNamespaceFromPath() {
-    log.info("Trying to get namespace from Kubernetes service account namespace path...");
-
-    final var serviceAccountNamespace =
-        Utils.getSystemPropertyOrEnvVar(KUBERNETES_NAMESPACE_FILE, KUBERNETES_NAMESPACE_PATH);
-    final var serviceAccountNamespacePath = Path.of(serviceAccountNamespace);
-
-    final var serviceAccountNamespaceExists = Files.isRegularFile(serviceAccountNamespacePath);
-    if (serviceAccountNamespaceExists) {
-      log.info("Found service account namespace at: [{}].", serviceAccountNamespace);
-      try {
-        return Optional
-            .of(Files.readString(serviceAccountNamespacePath).strip());
-      } catch (IOException e) {
-        log.error(
-            "Error reading service account namespace from: [" + serviceAccountNamespace + "].", e);
-        return Optional.empty();
-      }
-    }
-
-    log.warn("Did not find service account namespace at: [{}].", serviceAccountNamespace);
-    return Optional.empty();
   }
 
   public void start() {
