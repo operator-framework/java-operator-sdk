@@ -137,9 +137,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
+  public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+    return matcher.match(actualResource, primary, index, context);
+  }
+
   public void delete(P primary, Context<P> context) {
     var resource = getSecondaryResource(primary, context);
     resource.ifPresent(r -> client.resource(r).delete());
+  }
+
+  @Override
+  protected void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
+    client.resource(resource).delete();
   }
 
   @SuppressWarnings("unchecked")
