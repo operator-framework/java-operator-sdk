@@ -83,7 +83,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       } else {
         final var actual = maybeActual.get();
         if (updatable) {
-          // todo simplify matcher?
           final Matcher.Result<R> match;
           if (isBulkResourceCreation(primary, context)) {
             match = updater.match(actual, primary, i, context);
@@ -155,7 +154,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   /**
-   * Allows sub-classes to perform additional processing (e.g. caching) on the created resource if
+   * Allows subclasses to perform additional processing (e.g. caching) on the created resource if
    * needed.
    *
    * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the

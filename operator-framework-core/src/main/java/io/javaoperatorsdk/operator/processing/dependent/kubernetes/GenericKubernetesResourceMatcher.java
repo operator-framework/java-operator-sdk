@@ -24,17 +24,42 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   static <R extends HasMetadata, P extends HasMetadata> Matcher<R, P> matcherFor(
       Class<R> resourceType, KubernetesDependentResource<R, P> dependentResource) {
     if (Secret.class.isAssignableFrom(resourceType)) {
-      return (actual, primary, context) -> {
-        final var desired = dependentResource.desired(primary, context);
-        return Result.computed(
-            ResourceComparators.compareSecretData((Secret) desired, (Secret) actual), desired);
+      return new Matcher<>() {
+        @Override
+        public Result<R> match(R actualResource, P primary, Context<P> context) {
+          final var desired = dependentResource.desired(primary, context);
+          return Result.computed(
+              ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
+              desired);
+        }
+
+        @Override
+        public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+          final var desired = dependentResource.desired(primary, context);
+          return Result.computed(
+              ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
+              desired);
+        }
       };
     } else if (ConfigMap.class.isAssignableFrom(resourceType)) {
-      return (actual, primary, context) -> {
-        final var desired = dependentResource.desired(primary, context);
-        return Result.computed(
-            ResourceComparators.compareConfigMapData((ConfigMap) desired, (ConfigMap) actual),
-            desired);
+      return new Matcher<>() {
+        @Override
+        public Result<R> match(R actualResource, P primary, Context<P> context) {
+          final var desired = dependentResource.desired(primary, context);
+          return Result.computed(
+              ResourceComparators.compareConfigMapData((ConfigMap) desired,
+                  (ConfigMap) actualResource),
+              desired);
+        }
+
+        @Override
+        public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+          final var desired = dependentResource.desired(primary, index, context);
+          return Result.computed(
+              ResourceComparators.compareConfigMapData((ConfigMap) desired,
+                  (ConfigMap) actualResource),
+              desired);
+        }
       };
     } else {
       return new GenericKubernetesResourceMatcher(dependentResource);
@@ -43,32 +68,18 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    return match(dependentResource, actualResource, primary, context, false);
+    var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, false);
   }
 
-  /**
-   * Determines whether the specified actual resource matches the desired state defined by the
-   * specified {@link KubernetesDependentResource} based on the observed state of the associated
-   * specified primary resource.
-   *
-   * @param dependentResource the {@link KubernetesDependentResource} implementation used to
-   *        computed the desired state associated with the specified primary resource
-   * @param actualResource the observed dependent resource for which we want to determine whether it
-   *        matches the desired state or not
-   * @param primary the primary resource from which we want to compute the desired state
-   * @param context the {@link Context} instance within which this method is called
-   * @param considerMetadata {@code true} to consider the metadata of the actual resource when
-   *        determining if it matches the desired state, {@code false} if matching should occur only
-   *        considering the spec of the resources
-   * @return a {@link io.javaoperatorsdk.operator.processing.dependent.Matcher.Result} object
-   * @param <R> the type of resource we want to determine whether they match or not
-   * @param <P> the type of primary resources associated with the secondary resources we want to
-   *        match
-   */
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
-      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
-      Context<P> context, boolean considerMetadata) {
-    final var desired = dependentResource.desired(primary, context);
+  @Override
+  public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+    var desired = dependentResource.desired(primary, index, context);
+    return match(desired, actualResource, false);
+  }
+
+  public static <R extends HasMetadata> Result<R> match(
+      R desired, R actualResource, boolean considerMetadata) {
     if (considerMetadata) {
       final var desiredMetadata = desired.getMetadata();
       final var actualMetadata = actualResource.getMetadata();
@@ -94,5 +105,31 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     }
     return Result.computed(true, desired);
+  }
+
+  /**
+   * Determines whether the specified actual resource matches the desired state defined by the
+   * specified {@link KubernetesDependentResource} based on the observed state of the associated
+   * specified primary resource.
+   *
+   * @param dependentResource the {@link KubernetesDependentResource} implementation used to
+   *        computed the desired state associated with the specified primary resource
+   * @param actualResource the observed dependent resource for which we want to determine whether it
+   *        matches the desired state or not
+   * @param primary the primary resource from which we want to compute the desired state
+   * @param context the {@link Context} instance within which this method is called
+   * @param considerMetadata {@code true} to consider the metadata of the actual resource when
+   *        determining if it matches the desired state, {@code false} if matching should occur only
+   *        considering the spec of the resources
+   * @return a {@link io.javaoperatorsdk.operator.processing.dependent.Matcher.Result} object
+   * @param <R> the type of resource we want to determine whether they match or not
+   * @param <P> the type of primary resources associated with the secondary resources we want to
+   *        match
+   */
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerMetadata) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerMetadata);
   }
 }
