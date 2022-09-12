@@ -36,11 +36,8 @@ public class ReconcilerUtils {
     return getResourceTypeName(resourceClass) + "/" + version;
   }
 
-  public static String getResourceTypeName(
-      Class<? extends HasMetadata> resourceClass) {
-    final var group = HasMetadata.getGroup(resourceClass);
-    final var plural = HasMetadata.getPlural(resourceClass);
-    return (group == null || group.isEmpty()) ? plural : plural + "." + group;
+  public static String getResourceTypeName(Class<? extends HasMetadata> resourceClass) {
+    return HasMetadata.getFullResourceName(resourceClass);
   }
 
   public static String getDefaultFinalizerName(Class<? extends HasMetadata> resourceClass) {
