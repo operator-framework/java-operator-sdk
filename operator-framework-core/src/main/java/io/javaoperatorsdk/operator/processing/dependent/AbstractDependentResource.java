@@ -38,7 +38,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var count = count(primary, context);
+    var count = count(primary, context).orElse(1);
     if (isBulkResourceCreation(primary, context)) {
       initDiscriminators(count);
     }
@@ -204,12 +204,20 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return resourceDiscriminator.get(0);
   }
 
-  protected int count(P primary, Context<P> context) {
-    return 1;
+  /**
+   * @param primary resource
+   * @param context actual context
+   * @return empty optional if it's not a bulk resource management, number of instances otherwise.
+   */
+  protected Optional<Integer> count(P primary, Context<P> context) {
+    return Optional.empty();
   }
 
+  /**
+   * Override in case the count() is a more heavy
+   */
   protected boolean isBulkResourceCreation(P primary, Context<P> context) {
-    return false;
+    return count(primary, context).isPresent();
   }
 
   public BulkResourceDiscriminatorFactory<R, P> getBulkResourceDiscriminatorFactory() {
