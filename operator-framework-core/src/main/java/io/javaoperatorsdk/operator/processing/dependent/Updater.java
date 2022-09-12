@@ -9,7 +9,6 @@ public interface Updater<R, P extends HasMetadata> {
 
   Result<R> match(R actualResource, P primary, Context<P> context);
 
-  // todo change to simple desired matching?
   default Result<R> match(R actualResource, P primary, int index, Context<P> context) {
     throw new IllegalStateException("Implement this for bulk matching");
   }

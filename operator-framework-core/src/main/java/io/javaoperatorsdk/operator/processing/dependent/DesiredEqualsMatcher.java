@@ -16,4 +16,10 @@ public class DesiredEqualsMatcher<R, P extends HasMetadata> implements Matcher<R
     var desired = abstractDependentResource.desired(primary, context);
     return Result.computed(actualResource.equals(desired), desired);
   }
+
+  @Override
+  public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+    var desired = abstractDependentResource.desired(primary, index, context);
+    return Result.computed(actualResource.equals(desired), desired);
+  }
 }
