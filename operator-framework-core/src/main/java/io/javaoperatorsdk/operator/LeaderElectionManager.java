@@ -107,16 +107,17 @@ public class LeaderElectionManager {
     if (serviceAccountNamespaceExists) {
       log.info("Found service account namespace at: [{}].", serviceAccountNamespace);
       try {
-        return Optional.of(Files.readString(serviceAccountNamespacePath));
+        return Optional
+            .of(Files.readString(serviceAccountNamespacePath).strip());
       } catch (IOException e) {
         log.error(
             "Error reading service account namespace from: [" + serviceAccountNamespace + "].", e);
         return Optional.empty();
       }
-    } else {
-      log.warn("Did not find service account namespace at: [{}].", serviceAccountNamespace);
-      return Optional.empty();
     }
+
+    log.warn("Did not find service account namespace at: [{}].", serviceAccountNamespace);
+    return Optional.empty();
   }
 
   public void start() {
