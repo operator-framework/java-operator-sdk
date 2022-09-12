@@ -27,13 +27,31 @@ class StandaloneBulkDependentIT {
   @Test
   void managesBulkConfigMaps() {
     operator.create(testResource());
+    assertNumberOfConfigMaps(3);
 
+    updateSpecWithNumber(1);
+    assertNumberOfConfigMaps(1);
+
+    updateSpecWithNumber(5);
+    assertNumberOfConfigMaps(5);
+
+    operator.delete(testResource());
+    assertNumberOfConfigMaps(0);
+  }
+
+  void assertNumberOfConfigMaps(int n) {
     await().untilAsserted(() -> {
       var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
           .withLabel(LABEL_KEY, LABEL_VALUE)
           .list().getItems();
-      assertThat(cms).hasSize(NUMBER_OF_CONFIG_MAPS);
+      assertThat(cms).hasSize(n);
     });
+  }
+
+  private void updateSpecWithNumber(int n) {
+    var resource = testResource();
+    resource.getSpec().setNumberOfResources(n);
+    operator.replace(resource);
   }
 
   private StandaloneBulkDependentTestCustomResource testResource() {

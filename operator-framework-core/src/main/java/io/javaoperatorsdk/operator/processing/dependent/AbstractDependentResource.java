@@ -40,27 +40,41 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     var count = count(primary, context).orElse(1);
     if (isBulkResourceCreation(primary, context)) {
-      initDiscriminators(count);
+      cleanupBulkResourcesIfRequired(count, resourceDiscriminator.size(), primary, context);
+      adjustDiscriminators(count);
     }
     ReconcileResult<R> result = new ReconcileResult<>();
     for (int i = 0; i < count; i++) {
-      var res = reconcileWithIndex(primary, i, context);
+      var res = reconcileIndexAware(primary, i, context);
       result.addReconcileResult(res);
     }
     return result;
   }
 
-  private void initDiscriminators(int count) {
+  private void cleanupBulkResourcesIfRequired(int targetCount, int actualCount, P primary,
+      Context<P> context) {
+    if (targetCount >= actualCount) {
+      return;
+    }
+    for (int i = targetCount; i < actualCount; i++) {
+      var resource = getSecondaryResourceIndexAware(primary, i, context);
+      var index = i;
+      resource.ifPresent(r -> {
+        deleteBulkResourceWithIndex(primary, r, index, context);
+      });
+    }
+  }
+
+  protected void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
+    throw new IllegalStateException("Implement if handling bulk resources.");
+  }
+
+  private void adjustDiscriminators(int count) {
     if (resourceDiscriminator.size() == count) {
       return;
     }
     if (resourceDiscriminator.size() < count) {
-      for (int i = resourceDiscriminator.size() - 1; i < count; i++) {
-        resourceDiscriminator.add(bulkResourceDiscriminatorFactory.createResourceDiscriminator(i));
-      }
-    }
-    if (resourceDiscriminator.size() < count) {
-      for (int i = resourceDiscriminator.size() - 1; i < count; i++) {
+      for (int i = resourceDiscriminator.size(); i < count; i++) {
         resourceDiscriminator.add(bulkResourceDiscriminatorFactory.createResourceDiscriminator(i));
       }
     }
@@ -69,12 +83,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  protected ReconcileResult<R> reconcileWithIndex(P primary, int i, Context<P> context) {
-    Optional<R> maybeActual = getSecondaryResource(primary, i, context);
+  protected ReconcileResult<R> reconcileIndexAware(P primary, int i, Context<P> context) {
+    Optional<R> maybeActual = getSecondaryResourceIndexAware(primary, i, context);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
-          var desired = desired(primary, i, context);
+          var desired = desiredIndexAware(primary, i, context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -90,7 +104,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
             match = updater.match(actual, primary, context);
           }
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElse(desired(primary, context));
+            final var desired =
+                match.computedDesired().orElse(desiredIndexAware(primary, i, context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actual, desired, primary, context);
@@ -108,12 +123,18 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(maybeActual.orElse(null));
   }
 
+  private R desiredIndexAware(P primary, int i, Context<P> context) {
+    return isBulkResourceCreation(primary, context) ? desired(primary, i, context)
+        : desired(primary, context);
+  }
+
+  // todo check
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return resourceDiscriminator.isEmpty() ? context.getSecondaryResource(resourceType())
         : resourceDiscriminator.get(0).distinguish(resourceType(), primary, context);
   }
 
-  protected Optional<R> getSecondaryResource(P primary, int index, Context<P> context) {
+  protected Optional<R> getSecondaryResourceIndexAware(P primary, int index, Context<P> context) {
     if (index > 0 && resourceDiscriminator.isEmpty()) {
       throw new IllegalStateException(
           "Handling resources in bulk bot no resource discriminators set.");
