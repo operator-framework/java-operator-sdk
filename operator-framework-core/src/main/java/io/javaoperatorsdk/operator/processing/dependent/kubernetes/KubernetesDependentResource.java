@@ -146,8 +146,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
-  @Override
-  protected void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
+  public void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
     client.resource(resource).delete();
   }
 
