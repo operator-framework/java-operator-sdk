@@ -8,3 +8,8 @@ spec:
     - name: operator
       image: leader-election-operator
       imagePullPolicy: Never
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
