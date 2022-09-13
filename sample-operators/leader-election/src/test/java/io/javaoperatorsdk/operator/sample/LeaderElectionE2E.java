@@ -13,8 +13,9 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +47,15 @@ class LeaderElectionE2E {
   private String namespace;
   private KubernetesClient client;
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(strings = {"namespace-inferred-", ""})
   // not for local mode by design
   @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
-  void otherInstancesTakesOverWhenSteppingDown() {
+  void otherInstancesTakesOverWhenSteppingDown(String yamlFilePrefix) {
     log.info("Applying custom resource");
     applyCustomResource();
     log.info("Deploying operator instances");
-    deployOperatorsInOrder();
+    deployOperatorsInOrder(yamlFilePrefix);
 
     log.info("Awaiting custom resource reconciliations");
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
@@ -130,16 +132,16 @@ class LeaderElectionE2E {
         .untilAsserted(() -> assertThat(client.namespaces().withName(namespace).get()).isNull());
   }
 
-  private void deployOperatorsInOrder() {
+  private void deployOperatorsInOrder(String yamlFilePrefix) {
     log.info("Installing 1st instance");
-    applyResources("k8s/operator.yaml");
+    applyResources("k8s/" + yamlFilePrefix + "operator.yaml");
     await().atMost(Duration.ofSeconds(POD_STARTUP_TIMEOUT)).untilAsserted(() -> {
       var pod = client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).get();
       assertThat(pod.getStatus().getContainerStatuses().get(0).getReady()).isTrue();
     });
 
     log.info("Installing 2nd instance");
-    applyResources("k8s/operator-instance-2.yaml");
+    applyResources("k8s/" + yamlFilePrefix + "operator-instance-2.yaml");
     await().atMost(Duration.ofSeconds(POD_STARTUP_TIMEOUT)).untilAsserted(() -> {
       var pod = client.pods().inNamespace(namespace).withName(OPERATOR_2_POD_NAME).get();
       assertThat(pod.getStatus().getContainerStatuses().get(0).getReady()).isTrue();
