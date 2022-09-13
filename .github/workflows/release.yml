@@ -17,9 +17,9 @@ jobs:
         with:
           ref: "v2"
       - uses: actions/checkout@v3
-        if: ${{ endsWith(github.event.release.tag_name, 'c5') }}
+        if: ${{ endsWith(github.event.release.tag_name, 'f8-5.x') }}
         with:
-          ref: "main-c5"
+          ref: "main-f8-5.x"
       - uses: actions/checkout@v3
         if: ${{ startsWith(github.event.release.tag_name, 'v3.') }}
       - name: Set up Java and Maven
@@ -62,9 +62,9 @@ jobs:
         with:
           ref: "v2"
       - uses: actions/checkout@v3
-        if: ${{ endsWith(github.event.release.tag_name, 'c5') }}
+        if: ${{ endsWith(github.event.release.tag_name, 'f8-5.x') }}
         with:
-          ref: "main-c5"
+          ref: "main-f8-5.x"
       - uses: actions/checkout@v3
         if: ${{ startsWith(github.event.release.tag_name, 'v3.') }}
       - name: Set up Java and Maven
@@ -96,10 +96,10 @@ jobs:
           branch: "v2"
       - name: Push changes v2
         uses: ad-m/github-push-action@master
-        if: ${{ endsWith(github.event.release.tag_name, 'c5') }}
+        if: ${{ endsWith(github.event.release.tag_name, 'f8-5.x') }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "main-c5"
+          branch: "main-f8-5.x"
       - name: Push changes v3
         uses: ad-m/github-push-action@master
         if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
