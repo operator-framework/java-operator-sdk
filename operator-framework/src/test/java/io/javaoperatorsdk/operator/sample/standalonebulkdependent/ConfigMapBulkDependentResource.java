@@ -10,35 +10,38 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.BulkResourceDiscriminatorFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapBulkDependentResource
-    extends CRUDKubernetesDependentResource<ConfigMap, StandaloneBulkDependentTestCustomResource> {
+    extends CRUDKubernetesDependentResource<ConfigMap, StandaloneBulkDependentTestCustomResource>
+    implements BulkDependentResource<ConfigMap, StandaloneBulkDependentTestCustomResource> {
 
   private final static Logger log = LoggerFactory.getLogger(ConfigMapBulkDependentResource.class);
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
+  private BulkResourceDiscriminatorFactory<ConfigMap, StandaloneBulkDependentTestCustomResource> factory =
+      index -> (resource, primary, context) -> {
+        var resources = context.getSecondaryResources(resource).stream()
+            .filter(r -> r.getMetadata().getName().endsWith("-" + index))
+            .collect(Collectors.toList());
+        if (resources.isEmpty()) {
+          return Optional.empty();
+        } else if (resources.size() > 1) {
+          throw new IllegalStateException("More than one resource found for index:" + index);
+        } else {
+          return Optional.of(resources.get(0));
+        }
+      };
 
   public ConfigMapBulkDependentResource() {
     super(ConfigMap.class);
-    setBulkResourceDiscriminatorFactory(
-        index -> (resource, primary, context) -> {
-          var resources = context.getSecondaryResources(resource).stream()
-              .filter(r -> r.getMetadata().getName().endsWith("-" + index))
-              .collect(Collectors.toList());
-          if (resources.isEmpty()) {
-            return Optional.empty();
-          } else if (resources.size() > 1) {
-            throw new IllegalStateException("More than one resource found for index:" + index);
-          } else {
-            return Optional.of(resources.get(0));
-          }
-        });
   }
 
   @Override
-  protected ConfigMap desired(StandaloneBulkDependentTestCustomResource primary,
+  public ConfigMap desired(StandaloneBulkDependentTestCustomResource primary,
       int index, Context<StandaloneBulkDependentTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
@@ -51,10 +54,13 @@ public class ConfigMapBulkDependentResource
   }
 
   @Override
-  protected Optional<Integer> count(StandaloneBulkDependentTestCustomResource primary,
+  public int count(StandaloneBulkDependentTestCustomResource primary,
       Context<StandaloneBulkDependentTestCustomResource> context) {
-    return Optional.of(primary.getSpec().getNumberOfResources());
+    return primary.getSpec().getNumberOfResources();
   }
 
-
+  @Override
+  public BulkResourceDiscriminatorFactory<ConfigMap, StandaloneBulkDependentTestCustomResource> bulkResourceDiscriminatorFactory() {
+    return factory;
+  }
 }
