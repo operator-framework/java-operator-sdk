@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -40,13 +42,14 @@ class StandaloneBulkDependentIT {
   }
 
   void assertNumberOfConfigMaps(int n) {
-    await().untilAsserted(() -> {
-      var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
-          .withLabel(LABEL_KEY, LABEL_VALUE)
-          .list().getItems();
-      assertThat(cms).withFailMessage("Number of items is still: " + cms.size())
-          .hasSize(n);
-    });
+    await().atMost(Duration.ofSeconds(20))
+        .untilAsserted(() -> {
+          var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
+              .withLabel(LABEL_KEY, LABEL_VALUE)
+              .list().getItems();
+          assertThat(cms).withFailMessage("Number of items is still: " + cms.size())
+              .hasSize(n);
+        });
   }
 
   private void updateSpecWithNumber(int n) {
