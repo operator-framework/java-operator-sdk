@@ -41,6 +41,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     var count = bulk ? bulkDependentResource.count(primary, context) : 1;
     if (bulk) {
+      //todo do this just if it is deleter?
       cleanupBulkResourcesIfRequired(count, resourceDiscriminator.size(), primary, context);
       adjustDiscriminators(count);
     }
