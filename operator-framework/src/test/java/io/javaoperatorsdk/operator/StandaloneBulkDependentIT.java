@@ -44,7 +44,8 @@ class StandaloneBulkDependentIT {
       var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
           .withLabel(LABEL_KEY, LABEL_VALUE)
           .list().getItems();
-      assertThat(cms).hasSize(n);
+      assertThat(cms).withFailMessage("Number of items is still: " + cms.size())
+          .hasSize(n);
     });
   }
 

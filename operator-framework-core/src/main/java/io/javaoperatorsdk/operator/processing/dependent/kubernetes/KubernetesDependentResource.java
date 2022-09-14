@@ -138,6 +138,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, index, context);
   }
 
+  // todo delete bulk support
   public void delete(P primary, Context<P> context) {
     getSecondaryResource(primary, context).ifPresent(r -> client.resource(r).delete());
   }
