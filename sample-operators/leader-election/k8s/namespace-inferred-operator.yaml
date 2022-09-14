@@ -58,4 +58,3 @@ rules:
       -  "leases"
     verbs:
       - '*'
-
