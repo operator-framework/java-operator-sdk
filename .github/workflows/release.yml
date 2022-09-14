@@ -94,13 +94,13 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: "v2"
-      - name: Push changes v2
+      - name: Push changes v3
         uses: ad-m/github-push-action@master
         if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: "v3"
-      - name: Push changes v3
+      - name: Push changes v4
         uses: ad-m/github-push-action@master
         if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
         with:
