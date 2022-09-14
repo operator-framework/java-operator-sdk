@@ -96,7 +96,7 @@ jobs:
           branch: "v2"
       - name: Push changes v2
         uses: ad-m/github-push-action@master
-        if: ${{ endsWith(github.event.release.tag_name, 'f8-5.x') }}
+        if: ${{ endsWith(github.event.release.tag_name, 'f8v5') }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: "main-f8v5"
