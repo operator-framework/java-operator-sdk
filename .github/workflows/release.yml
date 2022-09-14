@@ -62,7 +62,7 @@ jobs:
         with:
           ref: "v2"
       - uses: actions/checkout@v3
-        if: ${{ endsWith(github.event.release.tag_name, 'f8-5.x') }}
+        if: ${{ endsWith(github.event.release.tag_name, 'f8v5') }}
         with:
           ref: "main-f8v5"
       - uses: actions/checkout@v3
