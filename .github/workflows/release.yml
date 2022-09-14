@@ -18,6 +18,10 @@ jobs:
           ref: "v2"
       - uses: actions/checkout@v3
         if: ${{ startsWith(github.event.release.tag_name, 'v3.') }}
+        with:
+          ref: "v3"
+      - uses: actions/checkout@v3
+        if: ${{ startsWith(github.event.release.tag_name, 'v4.') }}
       - name: Set up Java and Maven
         uses: actions/setup-java@v3
         with:
@@ -59,6 +63,10 @@ jobs:
           ref: "v2"
       - uses: actions/checkout@v3
         if: ${{ startsWith(github.event.release.tag_name, 'v3.') }}
+        with:
+          ref: "v3"
+      - uses: actions/checkout@v3
+        if: ${{ startsWith(github.event.release.tag_name, 'v4.') }}
       - name: Set up Java and Maven
         uses: actions/setup-java@v3
         with:
@@ -86,9 +94,15 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: "v2"
-      - name: Push changes v3
+      - name: Push changes v2
         uses: ad-m/github-push-action@master
         if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "v3"
+      - name: Push changes v3
+        uses: ad-m/github-push-action@master
+        if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
