@@ -41,6 +41,7 @@ jobs:
   release-sdk:
     needs: prepare-release
     uses: ./.github/workflows/release-project-in-dir.yml
+    secrets: inherit
     with:
       version_branch: ${{needs.prepare-release.outputs.version_branch}}
       project_dir: '.'
@@ -48,6 +49,7 @@ jobs:
   release-bom:
     needs: prepare-release
     uses: ./.github/workflows/release-project-in-dir.yml
+    secrets: inherit
     with:
       version_branch: ${{needs.prepare-release.outputs.version_branch}}
       project_dir: './operator-framework-bom'
