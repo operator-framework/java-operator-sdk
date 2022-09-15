@@ -9,20 +9,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
+        run: echo "Matched ${{version-branch}} branch"
         env:
           version-branch: "v1"
       - if: ${{ startsWith(github.event.release.tag_name, 'v2.' ) }}
+        run: echo "Matched ${{version-branch}} branch"
         env:
           version-branch: "v2"
       - if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
+        run: echo "Matched ${{version-branch}} branch"
         env:
           version-branch: "v3"
       - if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
+        run: echo "Matched ${{version-branch}} branch"
         env:
           version-branch: "main"
       - name: Fail if version-branch is not set
         if: "version-branch == ''"
-        run: exit 1
+        run: |
+          echo "Failed to find appropriate branch to release ${{github.event.release.tag_name}} from" 
+          exit 1
 
       - name: Release SDK
         uses: ./.github/workflows/release-project-in-dir.yml
