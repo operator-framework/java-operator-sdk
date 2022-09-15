@@ -41,7 +41,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     var count = bulk ? bulkDependentResource.count(primary, context) : 1;
     if (bulk) {
-      //todo do this just if it is deleter?
+      // todo do this just if it is deleter?
       cleanupBulkResourcesIfRequired(count, resourceDiscriminator.size(), primary, context);
       adjustDiscriminators(count);
     }
@@ -205,12 +205,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected R desired(P primary, int index, Context<P> context) {
-    if (!bulk) {
-      return desired(primary, context);
-    } else {
-      throw new IllegalStateException(
-          "desired() with index method must be implemented for bulk DependentResource creation");
-    }
+    throw new IllegalStateException(
+        "Must be implemented for bulk DependentResource creation");
   }
 
   public AbstractDependentResource<R, P> setResourceDiscriminator(
