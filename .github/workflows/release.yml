@@ -5,40 +5,51 @@ on:
   release:
     types: [ released ]
 jobs:
-  publish:
+
+  prepare-release:
     runs-on: ubuntu-latest
+    env:
+      tmp_version_branch: ''
+    outputs:
+      version_branch: ${{ steps.set-version-branch.outputs.version_branch }}
     steps:
       - if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
-        run: echo "Matched ${{version-branch}} branch"
-        env:
-          version-branch: "v1"
-      - if: ${{ startsWith(github.event.release.tag_name, 'v2.' ) }}
-        run: echo "Matched ${{version-branch}} branch"
-        env:
-          version-branch: "v2"
-      - if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
-        run: echo "Matched ${{version-branch}} branch"
-        env:
-          version-branch: "v3"
-      - if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
-        run: echo "Matched ${{version-branch}} branch"
-        env:
-          version-branch: "main"
-      - name: Fail if version-branch is not set
-        if: "version-branch == ''"
         run: |
-          echo "Failed to find appropriate branch to release ${{github.event.release.tag_name}} from" 
+          echo "Setting version_branch to v1"
+          echo "tmp_version_branch=v1" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v2.' ) }}
+        run: |
+          echo "Setting version_branch to v2"
+          echo "tmp_version_branch=v2" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
+        run: |
+          echo "Setting version_branch to v3"
+          echo "tmp_version_branch=v3" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
+        run: |
+          echo "Setting version_branch to main"
+          echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+      - if: ${{ env.tmp_version_branch == '' }}
+        name: Fail if version_branch is not set
+        run: |
+          echo "Failed to find appropriate branch to release ${{github.event.release.tag_name}} from"
           exit 1
+      - id: set-version-branch
+        name: Set version_branch if matched
+        run: echo "::set-output name=version_branch::$tmp_version_branch"
 
-      - name: Release SDK
-        uses: ./.github/workflows/release-project-in-dir.yml
-        with:
-          version-branch: ${{version-branch}}
-          project-dir: '.'
+  release-sdk:
+    needs: prepare-release
+    uses: ./.github/workflows/release-project-in-dir.yml
+    secrets: inherit
+    with:
+      version_branch: ${{needs.prepare-release.outputs.version_branch}}
+      project_dir: '.'
 
-      - name: Release BOM
-        uses: ./.github/workflows/release-project-in-dir.yml
-        with:
-          version-branch: ${{version-branch}}
-          project-dir: './operator-framework-bom'
-          
+  release-bom:
+    needs: prepare-release
+    uses: ./.github/workflows/release-project-in-dir.yml
+    secrets: inherit
+    with:
+      version_branch: ${{needs.prepare-release.outputs.version_branch}}
+      project_dir: './operator-framework-bom'
