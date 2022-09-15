@@ -5,104 +5,49 @@ on:
   release:
     types: [ released ]
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
-        with:
-          ref: "v1"
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v2.') }}
-        with:
-          ref: "v2"
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v3.') }}
-        with:
-          ref: "v3"
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v4.') }}
-      - name: Set up Java and Maven
-        uses: actions/setup-java@v3
-        with:
-          java-version: 11
-          distribution: temurin
-          cache: 'maven'
-      - name: change version to release version
-        # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
-        run: ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
-        env:
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
-      - name: change version to release version for bom module
-        working-directory: ./operator-framework-bom
-        run: ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
-        env:
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
-      - name: Release Maven package
-        uses: samuelmeuli/action-maven-publish@v1
-        with:
-          maven_profiles: "release"
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          nexus_username: ${{ secrets.OSSRH_USERNAME }}
-          nexus_password: ${{ secrets.OSSRH_TOKEN }}
-    
 
-  # This is separate job because there were issues with git after release step, was not able to commit changes. See history.
-  update-working-version:
+  prepare-release:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.release.tag_name, 'RC')"
+    env:
+      tmp_version_branch: ''
+    outputs:
+      version_branch: ${{ steps.set-version-branch.outputs.version_branch }}
     steps:
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
-        with:
-          ref: "v1"
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v2.') }}
-        with:
-          ref: "v2"
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v3.') }}
-        with:
-          ref: "v3"
-      - uses: actions/checkout@v3
-        if: ${{ startsWith(github.event.release.tag_name, 'v4.') }}
-      - name: Set up Java and Maven
-        uses: actions/setup-java@v3
-        with:
-          java-version: 11
-          distribution: temurin
-          cache: 'maven'
-      - name: change version to release version
+      - if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
         run: |
-          ./mvnw ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
-          ./mvnw ${MAVEN_ARGS} -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Set new SNAPSHOT version into pom files." -a
-        env:
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
-      - name: Push changes v1
-        uses: ad-m/github-push-action@master
-        if: ${{ startsWith(github.event.release.tag_name, 'v1.' ) }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "v1"
-      - name: Push changes v2
-        uses: ad-m/github-push-action@master
-        if: ${{ startsWith(github.event.release.tag_name, 'v2.' ) }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "v2"
-      - name: Push changes v3
-        uses: ad-m/github-push-action@master
-        if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "v3"
-      - name: Push changes v4
-        uses: ad-m/github-push-action@master
-        if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          echo "Setting version_branch to v1"
+          echo "tmp_version_branch=v1" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v2.' ) }}
+        run: |
+          echo "Setting version_branch to v2"
+          echo "tmp_version_branch=v2" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v3.' ) }}
+        run: |
+          echo "Setting version_branch to v3"
+          echo "tmp_version_branch=v3" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
+        run: |
+          echo "Setting version_branch to main"
+          echo "tmp_version_branch=main" >> "$GITHUB_ENV"
+      - if: ${{ env.tmp_version_branch == '' }}
+        name: Fail if version_branch is not set
+        run: |
+          echo "Failed to find appropriate branch to release ${{github.event.release.tag_name}} from"
+          exit 1
+      - id: set-version-branch
+        name: Set version_branch if matched
+        run: echo "::set-output name=version_branch::$tmp_version_branch"
 
+  release-sdk:
+    needs: prepare-release
+    uses: ./.github/workflows/release-project-in-dir.yml
+    with:
+      version_branch: ${{needs.prepare-release.outputs.version_branch}}
+      project_dir: '.'
+
+  release-bom:
+    needs: prepare-release
+    uses: ./.github/workflows/release-project-in-dir.yml
+    with:
+      version_branch: ${{needs.prepare-release.outputs.version_branch}}
+      project_dir: './operator-framework-bom'
