@@ -2,12 +2,37 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-  
+
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>operator-framework-bom</artifactId>
     <version>3.2.1-SNAPSHOT</version>
     <name>Operator SDK - Bill of Materials</name>
     <packaging>pom</packaging>
+    <description>Java SDK for implementing Kubernetes operators</description>
+    <url>https://github.com/java-operator-sdk/java-operator-sdk</url>
+
+    <licenses>
+        <license>
+            <name>Apache 2 License</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Attila Meszaros</name>
+            <email>csviri@gmail.com</email>
+        </developer>
+        <developer>
+            <name>Christophe Laprun</name>
+            <email>claprun@redhat.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/java-operator-sdk/java-operator-sdk.git</connection>
+        <developerConnection>scm:git:git@github.com/java-operator-sdk/java-operator-sdk.git</developerConnection>
+        <url>https://github.com/java-operator-sdk/java-operator-sdk/tree/master</url>
+    </scm>
 
     <dependencyManagement>
         <dependencies>
