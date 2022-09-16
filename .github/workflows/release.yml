@@ -47,7 +47,7 @@ jobs:
       project_dir: '.'
 
   release-bom:
-    needs: prepare-release
+    needs: release-sdk
     uses: ./.github/workflows/release-project-in-dir.yml
     secrets: inherit
     with:
