@@ -24,7 +24,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
 
-  // todo discuss, rather implement this as interface?
   private ResourceDiscriminator<R, P> resourceDiscriminator;
 
   @SuppressWarnings("unchecked")
@@ -134,14 +133,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         "desired method must be implemented if this DependentResource can be created and/or updated");
   }
 
-  // todo review & refactor configuration to cover all cases
-  public ResourceDiscriminator<R, P> getResourceDiscriminator() {
-    return resourceDiscriminator;
-  }
-
-  public AbstractDependentResource<R, P> setResourceDiscriminator(
+  public void setResourceDiscriminator(
       ResourceDiscriminator<R, P> resourceDiscriminator) {
     this.resourceDiscriminator = resourceDiscriminator;
-    return this;
+  }
+
+  public ResourceDiscriminator<R, P> getResourceDiscriminator() {
+    return resourceDiscriminator;
   }
 }
