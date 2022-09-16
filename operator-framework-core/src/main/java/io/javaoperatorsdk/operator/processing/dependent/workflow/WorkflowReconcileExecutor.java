@@ -13,10 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -85,10 +87,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     }
 
     boolean reconcileConditionMet = dependentResourceNode.getReconcilePrecondition()
-        .map(rc -> rc.isMet(primary,
-            context
-                .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
-                .orElse(null),
+        .map(rc -> rc.isMet(primary, getSecondaryResource(dependentResourceNode),
             context))
         .orElse(true);
 
@@ -99,6 +98,25 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
           .submit(new NodeReconcileExecutor(dependentResourceNode));
       actualExecutions.put(dependentResourceNode, nodeFuture);
       log.debug("Submitted to reconcile: {}", dependentResourceNode);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private <R> R getSecondaryResource(DependentResourceNode<R, P> dependentResourceNode) {
+    if (dependentResourceNode.getDependentResource() instanceof AbstractDependentResource &&
+        ((AbstractDependentResource) dependentResourceNode.getDependentResource())
+            .getResourceDiscriminator() != null) {
+      ResourceDiscriminator<R, P> discriminator =
+          ((AbstractDependentResource) dependentResourceNode.getDependentResource())
+              .getResourceDiscriminator();
+      return context
+          .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType(),
+              discriminator)
+          .orElse(null);
+    } else {
+      return context
+          .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
+          .orElse(null);
     }
   }
 
