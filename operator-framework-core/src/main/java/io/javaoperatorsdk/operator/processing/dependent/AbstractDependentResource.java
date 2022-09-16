@@ -24,7 +24,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
 
-  // todo discuss, rather implement this as interface?
   private ResourceDiscriminator<R, P> resourceDiscriminator;
 
   @SuppressWarnings("unchecked")
