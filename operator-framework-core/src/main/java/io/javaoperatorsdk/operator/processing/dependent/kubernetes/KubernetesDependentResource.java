@@ -190,7 +190,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
           resourceType().getSimpleName());
     }
-    return eventSource();
+    return (InformerEventSource<R, P>) eventSource().orElseThrow();
   }
 
   private boolean useDefaultAnnotationsToIdentifyPrimary() {
@@ -241,11 +241,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    eventSource().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
+    ((InformerEventSource<R, P>) eventSource().orElseThrow())
+        .prepareForCreateOrUpdateEventFiltering(resourceID, desired);
   }
 
   private void cleanupAfterEventFiltering(ResourceID resourceID) {
-    eventSource().cleanupOnCreateOrUpdateEventFiltering(resourceID);
+    ((InformerEventSource<R, P>) eventSource().orElseThrow())
+        .cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
 
 }

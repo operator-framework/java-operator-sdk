@@ -39,6 +39,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -209,13 +210,19 @@ public class Controller<P extends HasMetadata>
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
     managedWorkflow
         .getDependentResourcesByName().entrySet().stream()
-        .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
         .forEach(drEntry -> {
-          final var provider = (EventSourceProvider) drEntry.getValue();
-          final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(drEntry.getKey(), source);
+          if (drEntry.getValue() instanceof EventSourceProvider) {
+            final var provider = (EventSourceProvider) drEntry.getValue();
+            final var source = provider.initEventSource(context);
+            eventSourceManager.registerEventSource(drEntry.getKey(), source);
+          } else {
+            Optional<ResourceEventSource> eventSource =
+                drEntry.getValue().provideEventSource(context);
+            eventSource.ifPresent(es -> {
+              eventSourceManager.registerEventSource(drEntry.getKey(), es);
+            });
+          }
         });
-
     // add manually defined event sources
     if (reconciler instanceof EventSourceInitializer) {
       final var provider = (EventSourceInitializer<P>) this.reconciler;

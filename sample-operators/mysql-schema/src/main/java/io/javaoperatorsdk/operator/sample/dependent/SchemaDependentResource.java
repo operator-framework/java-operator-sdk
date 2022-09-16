@@ -97,5 +97,4 @@ public class SchemaDependentResource
       throw new RuntimeException("Error while trying read Schema", e);
     }
   }
-
 }
