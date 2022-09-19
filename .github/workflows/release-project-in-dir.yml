@@ -53,7 +53,8 @@ jobs:
     needs: publish
     if: "!contains(github.event.release.tag_name, 'RC')" # not sure we should keep this the RC part
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout "${{inputs.version_branch}}" branch
+        uses: actions/checkout@v3
         with:
           ref: "${{inputs.version_branch}}"
 
@@ -64,10 +65,9 @@ jobs:
           distribution: temurin
           cache: 'maven'
 
-      - name: Change version to release version
+      - name: Update version to new SNAPSHOT version
         run: |
-          mvn ${MAVEN_ARGS} versions:set -DnewVersion="${RELEASE_VERSION:1}" versions:commit
-          mvn ${MAVEN_ARGS} -q build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
+          mvn ${MAVEN_ARGS} build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}-SNAPSHOT versions:commit
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -m "Set new SNAPSHOT version into pom files." -a

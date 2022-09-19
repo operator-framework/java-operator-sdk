@@ -47,7 +47,7 @@ jobs:
       project_dir: '.'
 
   release-bom:
-    needs: release-sdk
+    needs: [ prepare-release, release-sdk ] # needs prepare-release to be able to get the proper version branch name
     uses: ./.github/workflows/release-project-in-dir.yml
     secrets: inherit
     with:
