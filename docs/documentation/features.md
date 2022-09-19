@@ -262,8 +262,7 @@ automatically triggered even in the absence of other events. See how to override
 standard annotation:
 
 ```java
-@ControllerConfiguration(finalizerName = NO_FINALIZER,
-        reconciliationMaxInterval = @ReconciliationMaxInterval(
+@ControllerConfiguration(maxReconciliationInterval = @ReconciliationMaxInterval(
                 interval = 50,
                 timeUnit = TimeUnit.MILLISECONDS))
 ```
@@ -272,7 +271,7 @@ The event is not propagated at a fixed rate, rather it's scheduled after each re
 next reconciliation will occur at most within the specified interval after the last reconciliation.
 
 This feature can be turned off by setting `reconciliationMaxInterval`
-to [`Constants.NO_RECONCILIATION_MAX_INTERVAL`](https://github.com/java-operator-sdk/java-operator-sdk/blob/442e7d8718e992a36880e42bd0a5c01affaec9df/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L8-L8)
+to [`Constants.NO_MAX_RECONCILIATION_INTERVAL`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L20-L20)
 or any non-positive number.
 
 The automatic retries are not affected by this feature so a reconciliation will be re-triggered
