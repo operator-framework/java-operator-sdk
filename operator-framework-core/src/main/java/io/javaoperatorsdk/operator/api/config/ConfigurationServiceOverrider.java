@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.client.Config;
@@ -16,7 +17,8 @@ public class ConfigurationServiceOverrider {
   private Metrics metrics;
   private Config clientConfig;
   private Boolean checkCR;
-  private Integer threadNumber;
+  private Integer concurrentReconciliationThreads;
+  private Integer concurrentWorkflowExecutorThreads;
   private Cloner cloner;
   private Integer timeoutSeconds;
   private Boolean closeClientOnStop;
@@ -40,7 +42,12 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationServiceOverrider withConcurrentReconciliationThreads(int threadNumber) {
-    this.threadNumber = threadNumber;
+    this.concurrentReconciliationThreads = threadNumber;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withConcurrentWorkflowExecutorThreads(int threadNumber) {
+    this.concurrentWorkflowExecutorThreads = threadNumber;
     return this;
   }
 
@@ -105,7 +112,14 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public int concurrentReconciliationThreads() {
-        return threadNumber != null ? threadNumber : original.concurrentReconciliationThreads();
+        return concurrentReconciliationThreads != null ? concurrentReconciliationThreads
+            : original.concurrentReconciliationThreads();
+      }
+
+      @Override
+      public int concurrentWorkflowExecutorThreads() {
+        return concurrentWorkflowExecutorThreads != null ? concurrentWorkflowExecutorThreads
+            : original.concurrentWorkflowExecutorThreads();
       }
 
       @Override
@@ -125,13 +139,14 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public ExecutorService getExecutorService() {
-        return executorService != null ? executorService : original.getExecutorService();
+        return executorService != null ? executorService
+            : Executors.newFixedThreadPool(concurrentReconciliationThreads());
       }
 
       @Override
       public ExecutorService getWorkflowExecutorService() {
         return workflowExecutorService != null ? workflowExecutorService
-            : original.getWorkflowExecutorService();
+            : Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
       }
 
       @Override
