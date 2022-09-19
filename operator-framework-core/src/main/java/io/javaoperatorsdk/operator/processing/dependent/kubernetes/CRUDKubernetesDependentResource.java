@@ -7,9 +7,8 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 
 /**
- * Adaptor class for standalone mode for resources that manage Create, Read and Update operations
- * and that should be automatically garbage-collected by Kubernetes when the associated primary
- * resource is destroyed.
+ * Adaptor class resources that manage Create, Read and Update operations and that should be
+ * automatically garbage-collected by Kubernetes when the associated primary resource is destroyed.
  *
  * @param <R> the type of the managed dependent resource
  * @param <P> the type of the associated primary resource
