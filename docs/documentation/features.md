@@ -262,7 +262,7 @@ automatically triggered even in the absence of other events. See how to override
 standard annotation:
 
 ```java
-@ControllerConfiguration(maxReconciliationInterval = @ReconciliationMaxInterval(
+@ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(
                 interval = 50,
                 timeUnit = TimeUnit.MILLISECONDS))
 ```
