@@ -92,7 +92,8 @@ class AbstractDependentResourceTest {
         Context<TestCustomResource> context) {}
 
     @Override
-    protected ConfigMap desired(TestCustomResource primary, Context<TestCustomResource> context) {
+    protected ConfigMap desired(TestCustomResource primary, ConfigMap actual,
+        Context<TestCustomResource> context) {
       return desired;
     }
 

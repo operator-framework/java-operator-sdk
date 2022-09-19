@@ -13,7 +13,7 @@ public class DesiredEqualsMatcher<R, P extends HasMetadata> implements Matcher<R
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    var desired = abstractDependentResource.desired(primary, context);
+    var desired = abstractDependentResource.desired(primary, actualResource, context);
     return Result.computed(actualResource.equals(desired), desired);
   }
 }

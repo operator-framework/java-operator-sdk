@@ -30,7 +30,7 @@ public class ConfigMapDependentResource2 extends
 
   @Override
   protected ConfigMap desired(OrderedManagedDependentCustomResource primary,
-      Context<OrderedManagedDependentCustomResource> context) {
+      ConfigMap actual, Context<OrderedManagedDependentCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMeta());

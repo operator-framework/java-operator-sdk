@@ -16,7 +16,7 @@ public class IngressDependentResource extends CRUDKubernetesDependentResource<In
   }
 
   @Override
-  protected Ingress desired(WebPage webPage, Context<WebPage> context) {
+  protected Ingress desired(WebPage webPage, Ingress actual, Context<WebPage> context) {
     return makeDesiredIngress(webPage);
   }
 

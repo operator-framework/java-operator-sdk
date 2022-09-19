@@ -237,8 +237,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected R desired(P primary, Context<P> context) {
-    return super.desired(primary, context);
+  protected R desired(P primary, R actual, Context<P> context) {
+    return super.desired(primary, actual, context);
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {

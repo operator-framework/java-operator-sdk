@@ -62,7 +62,7 @@ public class SchemaDependentResource
   }
 
   @Override
-  public Schema desired(MySQLSchema primary, Context<MySQLSchema> context) {
+  public Schema desired(MySQLSchema primary, Schema actual, Context<MySQLSchema> context) {
     return new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding());
   }
 

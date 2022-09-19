@@ -25,7 +25,7 @@ public class ConfigMapDependentResource extends
 
   @Override
   protected ConfigMap desired(CleanerForManagedDependentCustomResource primary,
-      Context<CleanerForManagedDependentCustomResource> context) {
+      ConfigMap actual, Context<CleanerForManagedDependentCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMeta());
