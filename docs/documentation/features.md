@@ -270,7 +270,7 @@ standard annotation:
 The event is not propagated at a fixed rate, rather it's scheduled after each reconciliation. So the
 next reconciliation will occur at most within the specified interval after the last reconciliation.
 
-This feature can be turned off by setting `reconciliationMaxInterval`
+This feature can be turned off by setting `maxReconciliationInterval`
 to [`Constants.NO_MAX_RECONCILIATION_INTERVAL`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Constants.java#L20-L20)
 or any non-positive number.
 
