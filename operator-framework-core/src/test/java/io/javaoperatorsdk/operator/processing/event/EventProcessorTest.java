@@ -392,18 +392,18 @@ class EventProcessorTest {
     when(mockRetryExecution.nextDelay()).thenReturn(Optional.empty());
     Retry retry = mock(Retry.class);
     when(retry.initExecution()).thenReturn(mockRetryExecution);
-    eventProcessor =
+    eventProcessorWithRetry =
         spy(new EventProcessor(controllerConfiguration(retry,
             LinearRateLimiter.deactivatedRateLimiter()), reconciliationDispatcherMock,
             eventSourceManagerMock,
             metricsMock));
-    eventProcessor.start();
+    eventProcessorWithRetry.start();
     ExecutionScope executionScope = new ExecutionScope(testCustomResource(), null);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException());
-    when(eventProcessor.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+    when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
 
-    eventProcessor.eventProcessingFinished(executionScope, postExecutionControl);
+    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
     verify(retryTimerEventSourceMock, times(1)).scheduleOnce((ResourceID) any(), anyLong());
   }
