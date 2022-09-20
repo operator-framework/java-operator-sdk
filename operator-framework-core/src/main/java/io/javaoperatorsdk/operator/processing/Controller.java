@@ -78,7 +78,7 @@ public class Controller<P extends HasMetadata>
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
     eventSourceManager = new EventSourceManager<>(this);
-    eventProcessor = new EventProcessor<>(eventSourceManager);
+    eventProcessor = new EventProcessor<>(getConfiguration(), eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
   }
 
