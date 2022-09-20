@@ -42,6 +42,7 @@ class StandaloneBulkDependentIT {
   }
 
   void assertNumberOfConfigMaps(int n) {
+    // this test was failing with a lower timeout on GitHub, probably the garbage collection was slower there.
     await().atMost(Duration.ofSeconds(30))
         .untilAsserted(() -> {
           var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
