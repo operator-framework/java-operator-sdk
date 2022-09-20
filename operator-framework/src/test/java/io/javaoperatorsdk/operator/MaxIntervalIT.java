@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestCustomResource;
 import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestReconciler;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MaxIntervalIT {
@@ -27,9 +28,10 @@ class MaxIntervalIT {
     await()
         .pollInterval(50, TimeUnit.MILLISECONDS)
         .atMost(500, TimeUnit.MILLISECONDS)
-        .until(
-            () -> ((MaxIntervalTestReconciler) operator.getFirstReconciler())
-                .getNumberOfExecutions() > 3);
+        .untilAsserted(
+            () -> assertThat(operator.getReconcilerOfType(MaxIntervalTestReconciler.class)
+                .getNumberOfExecutions())
+                .isGreaterThan(3));
   }
 
   private MaxIntervalTestCustomResource createTestResource() {
