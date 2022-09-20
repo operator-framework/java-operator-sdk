@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.standalonebulkdependent;
+package io.javaoperatorsdk.operator.sample.bulkdependent;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;

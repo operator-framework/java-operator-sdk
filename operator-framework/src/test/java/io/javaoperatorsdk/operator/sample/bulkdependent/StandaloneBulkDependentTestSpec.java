@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.standalonebulkdependent;
+package io.javaoperatorsdk.operator.sample.bulkdependent;
 
 public class StandaloneBulkDependentTestSpec {
 
