@@ -7,12 +7,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.standalonebulkdependent.StandaloneBulkDependentReconciler;
-import io.javaoperatorsdk.operator.sample.standalonebulkdependent.StandaloneBulkDependentTestCustomResource;
-import io.javaoperatorsdk.operator.sample.standalonebulkdependent.StandaloneBulkDependentTestSpec;
+import io.javaoperatorsdk.operator.sample.bulkdependent.StandaloneBulkDependentReconciler;
+import io.javaoperatorsdk.operator.sample.bulkdependent.StandaloneBulkDependentTestCustomResource;
+import io.javaoperatorsdk.operator.sample.bulkdependent.StandaloneBulkDependentTestSpec;
 
-import static io.javaoperatorsdk.operator.sample.standalonebulkdependent.ConfigMapBulkDependentResource.LABEL_KEY;
-import static io.javaoperatorsdk.operator.sample.standalonebulkdependent.ConfigMapBulkDependentResource.LABEL_VALUE;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapBulkDependentResource.LABEL_KEY;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapBulkDependentResource.LABEL_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -42,7 +42,8 @@ class StandaloneBulkDependentIT {
   }
 
   void assertNumberOfConfigMaps(int n) {
-    // this test was failing with a lower timeout on GitHub, probably the garbage collection was slower there.
+    // this test was failing with a lower timeout on GitHub, probably the garbage collection was
+    // slower there.
     await().atMost(Duration.ofSeconds(30))
         .untilAsserted(() -> {
           var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
