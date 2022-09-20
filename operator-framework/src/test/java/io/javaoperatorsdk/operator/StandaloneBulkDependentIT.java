@@ -42,7 +42,7 @@ class StandaloneBulkDependentIT {
   }
 
   void assertNumberOfConfigMaps(int n) {
-    await().atMost(Duration.ofSeconds(20))
+    await().atMost(Duration.ofSeconds(30))
         .untilAsserted(() -> {
           var cms = operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
               .withLabel(LABEL_KEY, LABEL_VALUE)
