@@ -217,4 +217,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return this;
   }
 
+  public ResourceDiscriminator<R, P> getResourceDiscriminator() {
+    if (this.resourceDiscriminator.isEmpty()) {
+      return null;
+    } else {
+      return this.resourceDiscriminator.get(0);
+    }
+  }
+
 }
