@@ -601,19 +601,6 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void schedulesReconciliationIfMaxDelayIsSet() {
-    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
-
-    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-
-    PostExecutionControl control =
-        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-
-    assertThat(control.getReScheduleDelay()).isPresent()
-        .hasValue(TimeUnit.HOURS.toMillis(RECONCILIATION_MAX_INTERVAL));
-  }
-
-  @Test
   void canSkipSchedulingMaxDelayIf() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
