@@ -42,7 +42,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     var count = bulk ? bulkDependentResource.count(primary, context) : 1;
     if (bulk) {
-      deleteBulkResourcesIfRequired(count, resourceDiscriminator.size(), primary, context);
+      deleteBulkResourcesIfRequired(count, lastKnownBulkSize(), primary, context);
       adjustDiscriminators(count);
     }
     ReconcileResult<R> result = new ReconcileResult<>();
@@ -220,6 +220,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     } else {
       return this.resourceDiscriminator.get(0);
     }
+  }
+
+  protected int lastKnownBulkSize() {
+    return resourceDiscriminator.size();
   }
 
 }
