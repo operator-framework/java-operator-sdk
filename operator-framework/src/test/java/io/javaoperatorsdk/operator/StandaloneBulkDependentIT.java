@@ -26,6 +26,7 @@ class StandaloneBulkDependentIT {
       LocallyRunOperatorExtension.builder().withReconciler(new StandaloneBulkDependentReconciler())
           .build();
 
+  // TODO update, deleter - no GC test, external bulk resource
   @Test
   void managesBulkConfigMaps() {
     operator.create(testResource());

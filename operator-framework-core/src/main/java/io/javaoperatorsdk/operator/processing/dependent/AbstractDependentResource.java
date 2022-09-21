@@ -34,6 +34,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public AbstractDependentResource() {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
+
     bulkDependentResource = bulk ? (BulkDependentResource<R, P>) this : null;
   }
 
@@ -41,8 +42,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     var count = bulk ? bulkDependentResource.count(primary, context) : 1;
     if (bulk) {
-      // todo do this just if it is deleter?
-      cleanupBulkResourcesIfRequired(count, resourceDiscriminator.size(), primary, context);
+      deleteBulkResourcesIfRequired(count, resourceDiscriminator.size(), primary, context);
       adjustDiscriminators(count);
     }
     ReconcileResult<R> result = new ReconcileResult<>();
@@ -53,7 +53,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return result;
   }
 
-  private void cleanupBulkResourcesIfRequired(int targetCount, int actualCount, P primary,
+  protected void deleteBulkResourcesIfRequired(int targetCount, int actualCount, P primary,
       Context<P> context) {
     if (targetCount >= actualCount) {
       return;

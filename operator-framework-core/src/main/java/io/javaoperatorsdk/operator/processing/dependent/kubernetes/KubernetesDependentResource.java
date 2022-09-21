@@ -7,9 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -125,12 +123,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    return prepare(target, primary, "Creating").create(target);
+    return prepare(target, primary, "Creating").create();
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
     var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-    return prepare(target, primary, "Updating").replace(updatedActual);
+    return prepare(updatedActual, primary, "Updating").replace();
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
@@ -141,10 +139,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, index, context);
   }
 
-  // todo delete bulk support
   public void delete(P primary, Context<P> context) {
-    var resource = getSecondaryResource(primary, context);
-    resource.ifPresent(r -> client.resource(r).delete());
+    if (bulk) {
+      deleteBulkResourcesIfRequired(0, resourceDiscriminator.size(), primary, context);
+    } else {
+      var resource = getSecondaryResource(primary, context);
+      resource.ifPresent(r -> client.resource(r).delete());
+    }
   }
 
   public void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
@@ -152,7 +153,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  protected NonNamespaceOperation<R, KubernetesResourceList<R>, Resource<R>> prepare(R desired,
+  protected Resource<R> prepare(R desired,
       P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
@@ -163,8 +164,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     } else if (useDefaultAnnotationsToIdentifyPrimary()) {
       addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
-    Class<R> targetClass = (Class<R>) desired.getClass();
-    return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace());
+    return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
   }
 
   @Override
@@ -219,8 +219,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public Class<R> resourceType() {
     return resourceType;
   }
-
-
 
   @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
