@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.GenericKubernetesClient;
@@ -14,12 +17,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MockKubernetesClient {
 
   public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz) {
+    return client(clazz, null);
+  }
+
+  public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
+      Consumer<Void> informerRunBehavior) {
     final var client = mock(GenericKubernetesClient.class);
     MixedOperation<T, KubernetesResourceList<T>, Resource<T>> resources =
         mock(MixedOperation.class);
@@ -34,6 +43,19 @@ public class MockKubernetesClient {
     when(resources.inAnyNamespace()).thenReturn(inAnyNamespace);
     when(inAnyNamespace.withLabelSelector(nullable(String.class))).thenReturn(filterable);
     SharedIndexInformer<T> informer = mock(SharedIndexInformer.class);
+    CompletableFuture<Void> stopped = new CompletableFuture<>();
+    when(informer.stopped()).thenReturn(stopped);
+    if (informerRunBehavior != null) {
+      doAnswer(invocation -> {
+        try {
+          informerRunBehavior.accept(null);
+        } catch (Exception e) {
+          stopped.completeExceptionally(e);
+        }
+        return null;
+      }).when(informer).run();
+    }
+    doAnswer(invocation -> null).when(informer).stop();
     Indexer mockIndexer = mock(Indexer.class);
     when(informer.getIndexer()).thenReturn(mockIndexer);
     when(filterable.runnableInformer(anyLong())).thenReturn(informer);

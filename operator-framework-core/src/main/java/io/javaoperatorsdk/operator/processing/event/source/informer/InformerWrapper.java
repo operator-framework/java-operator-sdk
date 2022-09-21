@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
@@ -25,6 +26,18 @@ class InformerWrapper<T extends HasMetadata>
 
   public InformerWrapper(SharedIndexInformer<T> informer) {
     this.informer = informer;
+
+    // register
+    ConfigurationServiceProvider.instance().getInformerStoppedHandler()
+        .ifPresent(ish -> {
+          final var stopped = informer.stopped();
+          if (stopped != null) {
+            stopped.handle((res, ex) -> {
+              ish.onStop(informer, ex);
+              return null;
+            });
+          }
+        });
     this.cache = (Cache<T>) informer.getStore();
   }
 

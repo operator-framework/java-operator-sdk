@@ -148,4 +148,7 @@ public interface ConfigurationService {
     return Optional.empty();
   }
 
+  default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
+    return Optional.empty();
+  }
 }

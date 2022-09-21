@@ -9,11 +9,9 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
-import io.fabric8.kubernetes.client.informers.cache.Indexer;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -22,6 +20,8 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -36,28 +36,15 @@ class InformerEventSourceTest {
   private static final String NEXT_RESOURCE_VERSION = "2";
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
-  private final KubernetesClient clientMock = mock(KubernetesClient.class);
+  private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
   private final TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
-  private final MixedOperation crClientMock = mock(MixedOperation.class);
-  private final FilterWatchListMultiDeletable specificResourceClientMock =
-      mock(FilterWatchListMultiDeletable.class);
-  private final FilterWatchListDeletable labeledResourceClientMock =
-      mock(FilterWatchListDeletable.class);
-  private final SharedIndexInformer informer = mock(SharedIndexInformer.class);
   private final InformerConfiguration<Deployment> informerConfiguration =
       mock(InformerConfiguration.class);
 
   @BeforeEach
   void setup() {
-    when(clientMock.resources(any())).thenReturn(crClientMock);
-    when(crClientMock.inAnyNamespace()).thenReturn(specificResourceClientMock);
-    when(specificResourceClientMock.withLabelSelector((String) null))
-        .thenReturn(labeledResourceClientMock);
-    when(labeledResourceClientMock.runnableInformer(0)).thenReturn(informer);
-    when(informer.getIndexer()).thenReturn(mock(Indexer.class));
-
     when(informerConfiguration.getEffectiveNamespaces())
         .thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
@@ -254,6 +241,20 @@ class InformerEventSourceTest {
     informerEventSource.onDelete(testDeployment(), true);
 
     verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
+    final var exception = new RuntimeException("Informer stopped exceptionally!");
+    final var informerStoppedHandler = mock(InformerStoppedHandler.class);
+    ConfigurationServiceProvider
+        .overrideCurrent(overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler));
+    informerEventSource = new InformerEventSource<>(informerConfiguration,
+        MockKubernetesClient.client(Deployment.class, unused -> {
+          throw exception;
+        }));
+    informerEventSource.start();
+    verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
   }
 
   Deployment testDeployment() {

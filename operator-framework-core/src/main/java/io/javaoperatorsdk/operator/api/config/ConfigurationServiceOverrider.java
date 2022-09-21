@@ -26,6 +26,7 @@ public class ConfigurationServiceOverrider {
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
+  private InformerStoppedHandler informerStoppedHandler;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -90,6 +91,11 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withLeaderElectionConfiguration(
       LeaderElectionConfiguration leaderElectionConfiguration) {
     this.leaderElectionConfiguration = leaderElectionConfiguration;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withInformerStoppedHandler(InformerStoppedHandler handler) {
+    this.informerStoppedHandler = handler;
     return this;
   }
 
@@ -158,6 +164,12 @@ public class ConfigurationServiceOverrider {
       public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
         return leaderElectionConfiguration != null ? Optional.of(leaderElectionConfiguration)
             : original.getLeaderElectionConfiguration();
+      }
+
+      @Override
+      public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
+        return informerStoppedHandler != null ? Optional.of(informerStoppedHandler)
+            : original.getInformerStoppedHandler();
       }
     };
   }
