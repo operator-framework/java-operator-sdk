@@ -15,14 +15,14 @@ import io.javaoperatorsdk.operator.processing.dependent.BulkResourceDiscriminato
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapBulkDependentResource
-    extends CRUDKubernetesDependentResource<ConfigMap, StandaloneBulkDependentTestCustomResource>
-    implements BulkDependentResource<ConfigMap, StandaloneBulkDependentTestCustomResource> {
+    extends CRUDKubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
+    implements BulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   private final static Logger log = LoggerFactory.getLogger(ConfigMapBulkDependentResource.class);
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
-  private BulkResourceDiscriminatorFactory<ConfigMap, StandaloneBulkDependentTestCustomResource> factory =
+  private BulkResourceDiscriminatorFactory<ConfigMap, BulkDependentTestCustomResource> factory =
       index -> (resource, primary, context) -> {
         var resources = context.getSecondaryResources(resource).stream()
             .filter(r -> r.getMetadata().getName().endsWith("-" + index))
@@ -41,8 +41,8 @@ public class ConfigMapBulkDependentResource
   }
 
   @Override
-  public ConfigMap desired(StandaloneBulkDependentTestCustomResource primary,
-      int index, Context<StandaloneBulkDependentTestCustomResource> context) {
+  public ConfigMap desired(BulkDependentTestCustomResource primary,
+      int index, Context<BulkDependentTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName() + "-" + index)
@@ -54,13 +54,13 @@ public class ConfigMapBulkDependentResource
   }
 
   @Override
-  public int count(StandaloneBulkDependentTestCustomResource primary,
-      Context<StandaloneBulkDependentTestCustomResource> context) {
+  public int count(BulkDependentTestCustomResource primary,
+      Context<BulkDependentTestCustomResource> context) {
     return primary.getSpec().getNumberOfResources();
   }
 
   @Override
-  public BulkResourceDiscriminatorFactory<ConfigMap, StandaloneBulkDependentTestCustomResource> bulkResourceDiscriminatorFactory() {
+  public BulkResourceDiscriminatorFactory<ConfigMap, BulkDependentTestCustomResource> bulkResourceDiscriminatorFactory() {
     return factory;
   }
 }
