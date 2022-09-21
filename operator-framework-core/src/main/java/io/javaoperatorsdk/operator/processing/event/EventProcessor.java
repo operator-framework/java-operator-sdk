@@ -42,7 +42,6 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
   private final ExecutorService executor;
-  private final String controllerName;
   private final Metrics metrics;
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
@@ -51,10 +50,9 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   private final Map<String, Object> metricsMetadata;
 
 
-  public EventProcessor(ControllerConfiguration<?> controllerConfiguration,
-      EventSourceManager<R> eventSourceManager) {
+  public EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
-        controllerConfiguration,
+        eventSourceManager.getController().getConfiguration(),
         eventSourceManager.getControllerResourceEventSource(),
         ExecutorServiceManager.instance().executorService(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
@@ -92,7 +90,6 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
             ? new ScheduledThreadPoolExecutor(
                 ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER)
             : executor;
-    this.controllerName = controllerConfiguration.getName();
     this.reconciliationDispatcher = reconciliationDispatcher;
     this.retry = controllerConfiguration.getRetry();
     this.cache = cache;
@@ -403,7 +400,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
       final var name = thread.getName();
       try {
         MDCUtils.addResourceInfo(executionScope.getResource());
-        thread.setName("ReconcilerExecutor-" + controllerName + "-" + thread.getId());
+        thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
@@ -416,8 +413,12 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
 
     @Override
     public String toString() {
-      return controllerName + " -> " + executionScope;
+      return controllerName() + " -> " + executionScope;
     }
+  }
+
+  private String controllerName() {
+    return controllerConfiguration.getName();
   }
 
   public synchronized boolean isUnderProcessing(ResourceID resourceID) {
