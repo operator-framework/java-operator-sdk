@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -37,10 +38,10 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   private static final long MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION = 50;
 
   private volatile boolean running;
+  private final ControllerConfiguration<?> controllerConfiguration;
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
   private final Retry retry;
   private final ExecutorService executor;
-  private final String controllerName;
   private final Metrics metrics;
   private final Cache<R> cache;
   private final EventSourceManager<R> eventSourceManager;
@@ -48,60 +49,53 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   private final ResourceStateManager resourceStateManager = new ResourceStateManager();
   private final Map<String, Object> metricsMetadata;
 
+
   public EventProcessor(EventSourceManager<R> eventSourceManager) {
     this(
+        eventSourceManager.getController().getConfiguration(),
         eventSourceManager.getControllerResourceEventSource(),
         ExecutorServiceManager.instance().executorService(),
-        eventSourceManager.getController().getConfiguration().getName(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
-        eventSourceManager.getController().getConfiguration().getRetry(),
         ConfigurationServiceProvider.instance().getMetrics(),
-        eventSourceManager.getController().getConfiguration().getRateLimiter(),
         eventSourceManager);
   }
 
   @SuppressWarnings("rawtypes")
   EventProcessor(
+      ControllerConfiguration controllerConfiguration,
       ReconciliationDispatcher<R> reconciliationDispatcher,
       EventSourceManager<R> eventSourceManager,
-      String relatedControllerName,
-      Retry retry,
-      RateLimiter rateLimiter,
       Metrics metrics) {
     this(
+        controllerConfiguration,
         eventSourceManager.getControllerResourceEventSource(),
         null,
-        relatedControllerName,
         reconciliationDispatcher,
-        retry,
         metrics,
-        rateLimiter,
         eventSourceManager);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private EventProcessor(
+      ControllerConfiguration controllerConfiguration,
       Cache<R> cache,
       ExecutorService executor,
-      String relatedControllerName,
       ReconciliationDispatcher<R> reconciliationDispatcher,
-      Retry retry,
       Metrics metrics,
-      RateLimiter rateLimiter,
       EventSourceManager<R> eventSourceManager) {
+    this.controllerConfiguration = controllerConfiguration;
     this.running = false;
     this.executor =
         executor == null
             ? new ScheduledThreadPoolExecutor(
                 ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER)
             : executor;
-    this.controllerName = relatedControllerName;
     this.reconciliationDispatcher = reconciliationDispatcher;
-    this.retry = retry;
+    this.retry = controllerConfiguration.getRetry();
     this.cache = cache;
     this.metrics = metrics != null ? metrics : Metrics.NOOP;
     this.eventSourceManager = eventSourceManager;
-    this.rateLimiter = rateLimiter;
+    this.rateLimiter = controllerConfiguration.getRateLimiter();
 
     metricsMetadata = Optional.ofNullable(eventSourceManager.getController())
         .map(Controller::getAssociatedGroupVersionKind)
@@ -272,16 +266,29 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
       }
     }
-
   }
 
   private void reScheduleExecutionIfInstructed(
       PostExecutionControl<R> postExecutionControl, R customResource) {
+
     postExecutionControl
         .getReScheduleDelay()
-        .ifPresent(delay -> {
+        .ifPresentOrElse(delay -> {
           var resourceID = ResourceID.fromResource(customResource);
           log.debug("ReScheduling event for resource: {} with delay: {}",
+              resourceID, delay);
+          retryEventSource().scheduleOnce(resourceID, delay);
+        }, () -> scheduleExecutionForMaxReconciliationInterval(customResource));
+  }
+
+  private void scheduleExecutionForMaxReconciliationInterval(R customResource) {
+    this.controllerConfiguration
+        .maxReconciliationInterval()
+        .ifPresent(m -> {
+          var resourceID = ResourceID.fromResource(customResource);
+          var delay = m.toMillis();
+          log.debug("ReScheduling event for resource because for max reconciliation interval: " +
+              "{} with delay: {}",
               resourceID, delay);
           retryEventSource().scheduleOnce(resourceID, delay);
         });
@@ -319,7 +326,10 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
           metrics.failedReconciliation(resourceID, exception, metricsMetadata);
           retryEventSource().scheduleOnce(resourceID, delay);
         },
-        () -> log.error("Exhausted retries for {}", executionScope));
+        () -> {
+          log.error("Exhausted retries for {}", executionScope);
+          scheduleExecutionForMaxReconciliationInterval(executionScope.getResource());
+        });
   }
 
   private void cleanupOnSuccessfulExecution(ExecutionScope<R> executionScope) {
@@ -390,7 +400,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
       final var name = thread.getName();
       try {
         MDCUtils.addResourceInfo(executionScope.getResource());
-        thread.setName("ReconcilerExecutor-" + controllerName + "-" + thread.getId());
+        thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<R> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
@@ -403,8 +413,12 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
 
     @Override
     public String toString() {
-      return controllerName + " -> " + executionScope;
+      return controllerName() + " -> " + executionScope;
     }
+  }
+
+  private String controllerName() {
+    return controllerConfiguration.getName();
   }
 
   public synchronized boolean isUnderProcessing(ResourceID resourceID) {
