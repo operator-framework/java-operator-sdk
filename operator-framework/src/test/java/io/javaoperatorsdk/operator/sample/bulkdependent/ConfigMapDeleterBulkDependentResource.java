@@ -4,24 +4,31 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.BulkResourceDiscriminatorFactory;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-public class ConfigMapBulkDependentResource
-    extends CRUDKubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
-    implements BulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
-
-  private final static Logger log = LoggerFactory.getLogger(ConfigMapBulkDependentResource.class);
+/**
+ * Not using CRUDKubernetesDependentResource so the delete functionality can be tested.
+ */
+public class ConfigMapDeleterBulkDependentResource
+    extends
+    KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
+    implements Creator<ConfigMap, BulkDependentTestCustomResource>,
+    Updater<ConfigMap, BulkDependentTestCustomResource>,
+    Deleter<BulkDependentTestCustomResource>,
+    BulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
+  public static final String ADDITIONAL_DATA_KEY = "additionalData";
   private BulkResourceDiscriminatorFactory<ConfigMap, BulkDependentTestCustomResource> factory =
       index -> (resource, primary, context) -> {
         var resources = context.getSecondaryResources(resource).stream()
@@ -36,7 +43,7 @@ public class ConfigMapBulkDependentResource
         }
       };
 
-  public ConfigMapBulkDependentResource() {
+  public ConfigMapDeleterBulkDependentResource() {
     super(ConfigMap.class);
   }
 
@@ -49,7 +56,8 @@ public class ConfigMapBulkDependentResource
         .withNamespace(primary.getMetadata().getNamespace())
         .withLabels(Map.of(LABEL_KEY, LABEL_VALUE))
         .build());
-    configMap.setData(Map.of("number", "" + index));
+    configMap.setData(
+        Map.of("number", "" + index, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
     return configMap;
   }
 

@@ -8,9 +8,10 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestSpec;
+import io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource;
 
-import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapBulkDependentResource.LABEL_KEY;
-import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapBulkDependentResource.LABEL_VALUE;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_KEY;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -18,6 +19,8 @@ public abstract class BulkDependentTestBase {
 
   public static final String TEST_RESOURCE_NAME = "test";
   public static final int INITIAL_NUMBER_OF_CONFIG_MAPS = 3;
+  public static final String INITIAL_ADDITIONAL_DATA = "initialData";
+  public static final String NEW_VERSION_OF_ADDITIONAL_DATA = "newVersionOfAdditionalData";
 
   @Test
   public void managesBulkConfigMaps() {
@@ -34,6 +37,16 @@ public abstract class BulkDependentTestBase {
     assertNumberOfConfigMaps(0);
   }
 
+  @Test
+  public void updatesData() {
+    extension().create(testResource());
+    assertNumberOfConfigMaps(3);
+    assertAdditionalDataOnConfigMaps(INITIAL_ADDITIONAL_DATA);
+
+    updateSpecWithNewAdditionalData(NEW_VERSION_OF_ADDITIONAL_DATA);
+    assertAdditionalDataOnConfigMaps(NEW_VERSION_OF_ADDITIONAL_DATA);
+  }
+
   private void assertNumberOfConfigMaps(int n) {
     // this test was failing with a lower timeout on GitHub, probably the garbage collection was
     // slower there.
@@ -48,15 +61,35 @@ public abstract class BulkDependentTestBase {
         });
   }
 
+  private void assertAdditionalDataOnConfigMaps(String expectedValue) {
+    await().atMost(Duration.ofSeconds(30))
+        .untilAsserted(() -> {
+          var cms =
+              extension().getKubernetesClient().configMaps().inNamespace(extension().getNamespace())
+                  .withLabel(LABEL_KEY, LABEL_VALUE)
+                  .list().getItems();
+          cms.forEach(cm -> {
+            assertThat(cm.getData().get(ConfigMapDeleterBulkDependentResource.ADDITIONAL_DATA_KEY))
+                .isEqualTo(expectedValue);
+          });
+        });
+  }
+
   private BulkDependentTestCustomResource testResource() {
     BulkDependentTestCustomResource cr = new BulkDependentTestCustomResource();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(TEST_RESOURCE_NAME);
     cr.setSpec(new BulkDependentTestSpec());
     cr.getSpec().setNumberOfResources(INITIAL_NUMBER_OF_CONFIG_MAPS);
+    cr.getSpec().setAdditionalData(INITIAL_ADDITIONAL_DATA);
     return cr;
   }
 
+  private void updateSpecWithNewAdditionalData(String data) {
+    var resource = testResource();
+    resource.getSpec().setAdditionalData(data);
+    extension().replace(resource);
+  }
 
   private void updateSpecWithNumber(int n) {
     var resource = testResource();
