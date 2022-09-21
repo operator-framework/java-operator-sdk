@@ -16,11 +16,11 @@ public class StandaloneBulkDependentReconciler
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private ConfigMapBulkDependentResource dependent;
+  private ConfigMapDeleterBulkDependentResource dependent;
   private KubernetesClient kubernetesClient;
 
   public StandaloneBulkDependentReconciler() {
-    dependent = new ConfigMapBulkDependentResource();
+    dependent = new CRUDConfigMapBulkDependentResource();
   }
 
   @Override
