@@ -6,8 +6,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration
+@ControllerConfiguration(dependents = @Dependent(type = ConfigMapBulkDependentResource.class))
 public class ManagedBulkDependentReconciler
     implements Reconciler<StandaloneBulkDependentTestCustomResource> {
 

@@ -2,17 +2,37 @@ package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 
-public interface BulkDependentResource<R, P extends HasMetadata> {
+/**
+ * Manages dynamic number of resources created for a primary resource. Since the point of a bulk
+ * dependent resource is to manage the number of secondary resources dynamically it implement
+ * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
+ * implement additionally also {@link Updater}.
+ */
+public interface BulkDependentResource<R, P extends HasMetadata> extends Creator<R, P>, Deleter<P> {
 
+  /**
+   * @return number of resources to create
+   */
   int count(P primary, Context<P> context);
 
-  default R desired(P primary, int index, Context<P> context) {
-    throw new IllegalStateException("Implement if the dependent resource is a creator or updater");
-  }
+  R desired(P primary, int index, Context<P> context);
 
+  /**
+   * Used to delete resource if the desired count is lower than the actual count of a resource.
+   *
+   * @param primary resource
+   * @param resource actual resource from the cache for the index
+   * @param i index of the resource
+   * @param context actual context
+   */
   void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context);
 
+  /**
+   * @return a discriminator factor that helps to create a discriminator for a certain resource with
+   *         an index
+   */
   BulkResourceDiscriminatorFactory<R, P> bulkResourceDiscriminatorFactory();
 
 }
