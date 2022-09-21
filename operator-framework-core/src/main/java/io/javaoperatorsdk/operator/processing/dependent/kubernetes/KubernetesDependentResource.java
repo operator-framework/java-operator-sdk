@@ -141,7 +141,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public void delete(P primary, Context<P> context) {
     if (bulk) {
-      deleteBulkResourcesIfRequired(0, resourceDiscriminator.size(), primary, context);
+      deleteBulkResourcesIfRequired(0, lastKnownBulkSize(), primary, context);
     } else {
       var resource = getSecondaryResource(primary, context);
       resource.ifPresent(r -> client.resource(r).delete());
