@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
-public class StandaloneBulkDependentTestSpec {
+public class BulkDependentTestSpec {
 
   private Integer numberOfResources;
 
@@ -8,7 +8,7 @@ public class StandaloneBulkDependentTestSpec {
     return numberOfResources;
   }
 
-  public StandaloneBulkDependentTestSpec setNumberOfResources(Integer numberOfResources) {
+  public BulkDependentTestSpec setNumberOfResources(Integer numberOfResources) {
     this.numberOfResources = numberOfResources;
     return this;
   }
