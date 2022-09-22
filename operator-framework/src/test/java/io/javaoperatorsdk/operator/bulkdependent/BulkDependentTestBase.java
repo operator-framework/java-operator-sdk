@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator;
+package io.javaoperatorsdk.operator.bulkdependent;
 
 import java.time.Duration;
 
@@ -75,7 +75,7 @@ public abstract class BulkDependentTestBase {
         });
   }
 
-  private BulkDependentTestCustomResource testResource() {
+  public static BulkDependentTestCustomResource testResource() {
     BulkDependentTestCustomResource cr = new BulkDependentTestCustomResource();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(TEST_RESOURCE_NAME);
@@ -91,10 +91,23 @@ public abstract class BulkDependentTestBase {
     extension().replace(resource);
   }
 
+  public static void updateSpecWithNewAdditionalData(LocallyRunOperatorExtension extension,
+      String data) {
+    var resource = testResource();
+    resource.getSpec().setAdditionalData(data);
+    extension.replace(resource);
+  }
+
   private void updateSpecWithNumber(int n) {
     var resource = testResource();
     resource.getSpec().setNumberOfResources(n);
     extension().replace(resource);
+  }
+
+  public static void updateSpecWithNumber(LocallyRunOperatorExtension extension, int n) {
+    var resource = testResource();
+    resource.getSpec().setNumberOfResources(n);
+    extension.replace(resource);
   }
 
   abstract LocallyRunOperatorExtension extension();
