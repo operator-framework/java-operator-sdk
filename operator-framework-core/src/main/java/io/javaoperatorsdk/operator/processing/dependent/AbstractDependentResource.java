@@ -82,7 +82,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected ReconcileResult<R> reconcileIndexAware(P primary, int i, Context<P> context) {
-    Optional<R> maybeActual = getSecondaryResourceIndexAware(primary, i, context);
+    Optional<R> maybeActual = bulk ? getSecondaryResourceIndexAware(primary, i, context)
+        : getSecondaryResource(primary, context);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
@@ -126,7 +127,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         : desired(primary, context);
   }
 
-  // todo check
   protected Optional<R> getSecondaryResource(P primary, Context<P> context) {
     if (resourceDiscriminator.isEmpty()) {
       return context.getSecondaryResource(resourceType());
@@ -136,14 +136,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected Optional<R> getSecondaryResourceIndexAware(P primary, int index, Context<P> context) {
-    if (index > 0 && resourceDiscriminator.isEmpty()) {
-      throw new IllegalStateException(
-          "Handling resources in bulk bot no resource discriminators set.");
-    }
-    if (!bulk) {
-      return getSecondaryResource(primary, context);
-    }
-
     return context.getSecondaryResource(resourceType(), resourceDiscriminator.get(index));
   }
 
