@@ -1,16 +1,12 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent.external;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
 
 public class ExternalBulkDependentResource
@@ -23,15 +19,18 @@ public class ExternalBulkDependentResource
   private ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 
   public ExternalBulkDependentResource() {
-    super(ExternalResource.class, CacheKeyMapper.singleResourceCacheKeyMapper());
+    super(ExternalResource.class, ExternalResource::getId);
   }
 
   @Override
   public Map<ResourceID, Set<ExternalResource>> fetchResources() {
-    // todo
     Map<ResourceID, Set<ExternalResource>> result = new HashMap<>();
     var resources = externalServiceMock.listResources();
-
+    resources.stream().forEach(er -> {
+      var resourceID = toResourceID(er);
+      result.putIfAbsent(resourceID, new HashSet<>());
+      result.get(resourceID).add(er);
+    });
     return result;
   }
 
@@ -56,24 +55,17 @@ public class ExternalBulkDependentResource
   @Override
   public BulkResourceDiscriminatorFactory<ExternalResource, BulkDependentTestCustomResource> bulkResourceDiscriminatorFactory() {
     return index -> (resource, primary, context) -> {
-      ExternalResource collect = context.getSecondaryResources(resource).stream()
+      return context.getSecondaryResources(resource).stream()
           .filter(r -> r.getId().endsWith(EXTERNAL_RESOURCE_NAME_DELIMITER + index))
-          .collect(Collectors.collectingAndThen(
-              Collectors.toList(),
-              list -> {
-                if (list.size() > 1) {
-                  throw new IllegalStateException("Found more than 1 object: " + list);
-                }
-                return list.get(0);
-              }));
-      return Optional.ofNullable(collect);
+          .collect(Collectors.toList()).stream().findFirst();
     };
   }
 
   @Override
   public ExternalResource desired(BulkDependentTestCustomResource primary, int index,
       Context<BulkDependentTestCustomResource> context) {
-    return new ExternalResource(toExternalResourceId(primary, index), "" + index);
+    return new ExternalResource(toExternalResourceId(primary, index),
+        primary.getSpec().getAdditionalData());
   }
 
   @Override
@@ -100,5 +92,10 @@ public class ExternalBulkDependentResource
     return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
         primary.getMetadata().getNamespace() +
         EXTERNAL_RESOURCE_NAME_DELIMITER + i;
+  }
+
+  private ResourceID toResourceID(ExternalResource externalResource) {
+    var parts = externalResource.getId().split(EXTERNAL_RESOURCE_NAME_DELIMITER);
+    return new ResourceID(parts[0], parts[1]);
   }
 }

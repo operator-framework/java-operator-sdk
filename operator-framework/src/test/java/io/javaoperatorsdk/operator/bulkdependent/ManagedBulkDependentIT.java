@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator;
+package io.javaoperatorsdk.operator.bulkdependent;
 
 import org.junit.jupiter.api.extension.RegisterExtension;
 
