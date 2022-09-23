@@ -35,6 +35,15 @@ public class LeaderElectionConfiguration {
         RETRY_PERIOD_DEFAULT_VALUE, null);
   }
 
+  public LeaderElectionConfiguration(String leaseName) {
+    this(
+        leaseName,
+        null,
+        LEASE_DURATION_DEFAULT_VALUE,
+        RENEW_DEADLINE_DEFAULT_VALUE,
+        RETRY_PERIOD_DEFAULT_VALUE, null);
+  }
+
   public LeaderElectionConfiguration(
       String leaseName,
       String leaseNamespace,
@@ -59,8 +68,8 @@ public class LeaderElectionConfiguration {
     this.identity = identity;
   }
 
-  public String getLeaseNamespace() {
-    return leaseNamespace;
+  public Optional<String> getLeaseNamespace() {
+    return Optional.ofNullable(leaseNamespace);
   }
 
   public String getLeaseName() {

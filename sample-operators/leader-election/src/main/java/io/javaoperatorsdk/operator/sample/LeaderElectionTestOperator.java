@@ -17,14 +17,17 @@ public class LeaderElectionTestOperator {
 
     log.info("Starting operator with identity: {}", identity);
 
+    LeaderElectionConfiguration leaderElectionConfiguration =
+        namespace == null
+            ? new LeaderElectionConfiguration("leader-election-test")
+            : new LeaderElectionConfiguration("leader-election-test", namespace, identity);
+
     var client = new KubernetesClientBuilder().build();
-    Operator operator = new Operator(client,
-        c -> c.withLeaderElectionConfiguration(
-            new LeaderElectionConfiguration("leader-election-test", namespace, identity)));
+    Operator operator =
+        new Operator(client, c -> c.withLeaderElectionConfiguration(leaderElectionConfiguration));
 
     operator.register(new LeaderElectionTestReconciler(identity));
     operator.installShutdownHook();
     operator.start();
   }
-
 }

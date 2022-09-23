@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
-import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.Lock;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
@@ -31,14 +30,30 @@ public class LeaderElectionManager {
 
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
     this.identity = identity(config);
-    Lock lock = new LeaseLock(config.getLeaseNamespace(), config.getLeaseName(), identity);
+    final var leaseNamespace =
+        config.getLeaseNamespace().orElseGet(
+            () -> ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace());
+    if (leaseNamespace == null) {
+      final var message =
+          "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
+      log.error(message);
+      throw new IllegalArgumentException(message);
+    }
+    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
     // releaseOnCancel is not used in the underlying implementation
-    leaderElector = new LeaderElectorBuilder(client,
-        ConfigurationServiceProvider.instance().getExecutorService())
-        .withConfig(
-            new LeaderElectionConfig(lock, config.getLeaseDuration(), config.getRenewDeadline(),
-                config.getRetryPeriod(), leaderCallbacks(), true, config.getLeaseName()))
-        .build();
+    leaderElector =
+        new LeaderElectorBuilder(
+            client, ConfigurationServiceProvider.instance().getExecutorService())
+            .withConfig(
+                new LeaderElectionConfig(
+                    lock,
+                    config.getLeaseDuration(),
+                    config.getRenewDeadline(),
+                    config.getRetryPeriod(),
+                    leaderCallbacks(),
+                    true,
+                    config.getLeaseName()))
+            .build();
   }
 
   public boolean isLeaderElectionEnabled() {
@@ -46,9 +61,12 @@ public class LeaderElectionManager {
   }
 
   private LeaderCallbacks leaderCallbacks() {
-    return new LeaderCallbacks(this::startLeading, this::stopLeading, leader -> {
-      log.info("New leader with identity: {}", leader);
-    });
+    return new LeaderCallbacks(
+        this::startLeading,
+        this::stopLeading,
+        leader -> {
+          log.info("New leader with identity: {}", leader);
+        });
   }
 
   private void startLeading() {
@@ -64,7 +82,7 @@ public class LeaderElectionManager {
   }
 
   private String identity(LeaderElectionConfiguration config) {
-    String id = config.getIdentity().orElse(System.getenv("HOSTNAME"));
+    var id = config.getIdentity().orElse(System.getenv("HOSTNAME"));
     if (id == null || id.isBlank()) {
       id = UUID.randomUUID().toString();
     }
