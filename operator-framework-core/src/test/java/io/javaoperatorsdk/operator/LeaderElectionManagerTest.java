@@ -66,12 +66,4 @@ class LeaderElectionManagerTest {
         () -> leaderElectionManager.init(new LeaderElectionConfiguration("test"),
             kubernetesClient));
   }
-
-  @Test
-  void testFailedToInitInferLeaseNamespaceProbablyUsingKubeConfig() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> leaderElectionManager.init(new LeaderElectionConfiguration("test"),
-            kubernetesClient));
-  }
 }
