@@ -72,4 +72,6 @@ public @interface KubernetesDependent {
   Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 
   Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
+
+  String eventSourceNameToUse() default NO_VALUE_SET;
 }
