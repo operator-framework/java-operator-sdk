@@ -104,16 +104,17 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
           deleteCalled.add(dependentResourceNode);
         }
-        alreadyVisited.add(dependentResourceNode);
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
                 dependentResourceNode.getDependentResource().getSecondaryResource(primary)
                     .orElse(null),
                 context)).orElse(true);
         if (deletePostConditionMet) {
+          alreadyVisited.add(dependentResourceNode);
           handleDependentCleaned(dependentResourceNode);
         } else {
           postDeleteConditionNotMet.add(dependentResourceNode);
+          alreadyVisited.add(dependentResourceNode);
         }
       } catch (RuntimeException e) {
         handleExceptionInExecutor(dependentResourceNode, e);
