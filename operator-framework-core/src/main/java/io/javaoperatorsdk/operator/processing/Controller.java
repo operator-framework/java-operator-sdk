@@ -217,7 +217,7 @@ public class Controller<P extends HasMetadata>
             eventSourceManager.registerEventSource(drEntry.getKey(), source);
           } else {
             Optional<ResourceEventSource> eventSource =
-                drEntry.getValue().provideEventSource(context);
+                drEntry.getValue().eventSource(context);
             eventSource.ifPresent(es -> {
               eventSourceManager.registerEventSource(drEntry.getKey(), es);
             });

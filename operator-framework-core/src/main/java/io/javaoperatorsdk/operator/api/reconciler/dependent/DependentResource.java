@@ -31,10 +31,30 @@ public interface DependentResource<R, P extends HasMetadata> {
    */
   Class<R> resourceType();
 
-  default Optional<ResourceEventSource<R, P>> provideEventSource(
+  /**
+   * Dependent resources are designed to by default provide event sources. There are cases where it
+   * might not:
+   * <ul>
+   * <li>If an event source is shared between multiple dependent resources. In this case only one or
+   * none of the dependent resources sharing the event source should provide one.</li>
+   * <li>Some special implementation of an event source. That just execute some action might not
+   * provide one.</li>
+   * </ul>
+   *
+   * @param eventSourceContext context of event source initialization
+   * @return an optional event source
+   */
+  default Optional<ResourceEventSource<R, P>> eventSource(
       EventSourceContext<P> eventSourceContext) {
     return Optional.empty();
   }
+
+  // todo should be a setter?
+  /**
+   * Calling this method, instructs the implementation to not provide an event source, even if it
+   * normally does.
+   */
+  void doNotProvideEventSource();
 
   /**
    * Computes a default name for the specified DependentResource class

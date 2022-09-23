@@ -39,11 +39,11 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
     }
 
     @Override
-    public Optional<ResourceEventSource<ConfigMap, PrimaryIndexerTestCustomResource>> provideEventSource(
+    public Optional<ResourceEventSource<ConfigMap, PrimaryIndexerTestCustomResource>> eventSource(
         EventSourceContext<PrimaryIndexerTestCustomResource> context) {
       cache = context.getPrimaryCache();
       cache.addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
-      return super.provideEventSource(context);
+      return super.eventSource(context);
     }
   }
 }

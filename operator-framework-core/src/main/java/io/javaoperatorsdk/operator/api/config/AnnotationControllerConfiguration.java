@@ -249,7 +249,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
             Set.of(dependent.dependsOn()),
             instantiateConditionIfNotDefault(dependent.readyPostcondition(), context),
             instantiateConditionIfNotDefault(dependent.reconcilePrecondition(), context),
-            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context));
+            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context),
+            dependent.provideEventSource());
         specsMap.put(name, spec);
       }
 

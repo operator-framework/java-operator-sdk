@@ -48,7 +48,7 @@ public interface EventSourceInitializer<P extends HasMetadata> {
 
     Map<String, EventSource> eventSourceMap = new HashMap<>(dependentResources.length);
     for (DependentResource dependentResource : dependentResources) {
-      Optional<ResourceEventSource> es = dependentResource.provideEventSource(context);
+      Optional<ResourceEventSource> es = dependentResource.eventSource(context);
       es.ifPresent(e -> eventSourceMap.put(generateNameFor(e), e));
     }
     return eventSourceMap;
