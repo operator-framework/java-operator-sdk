@@ -109,10 +109,14 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
                 dependentResourceNode.getDependentResource().getSecondaryResource(primary)
                     .orElse(null),
                 context)).orElse(true);
+
         if (deletePostConditionMet) {
           alreadyVisited.add(dependentResourceNode);
           handleDependentCleaned(dependentResourceNode);
         } else {
+          // updating alreadyVisited needs to be the last operation otherwise could lead to a race
+          // condition
+          // in handleCleanup condition checks
           postDeleteConditionNotMet.add(dependentResourceNode);
           alreadyVisited.add(dependentResourceNode);
         }
