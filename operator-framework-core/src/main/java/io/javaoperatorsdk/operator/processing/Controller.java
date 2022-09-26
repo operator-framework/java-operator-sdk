@@ -32,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
@@ -208,6 +209,11 @@ public class Controller<P extends HasMetadata>
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
+    if (reconciler instanceof EventSourceInitializer) {
+      final var provider = (EventSourceInitializer<P>) this.reconciler;
+      final var ownSources = provider.prepareEventSources(context);
+      ownSources.forEach(eventSourceManager::registerEventSource);
+    }
     managedWorkflow
         .getDependentResourcesByName().entrySet().stream()
         .forEach(drEntry -> {
@@ -223,12 +229,10 @@ public class Controller<P extends HasMetadata>
             });
           }
         });
-    // add manually defined event sources
-    if (reconciler instanceof EventSourceInitializer) {
-      final var provider = (EventSourceInitializer<P>) this.reconciler;
-      final var ownSources = provider.prepareEventSources(context);
-      ownSources.forEach(eventSourceManager::registerEventSource);
-    }
+    managedWorkflow.getDependentResourcesByName().entrySet().stream().map(Map.Entry::getValue)
+        .filter(EventSourceAware.class::isInstance)
+        .forEach(dr -> ((EventSourceAware) dr)
+            .selectEventSources(eventSourceManager));
   }
 
   @Override

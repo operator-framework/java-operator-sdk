@@ -73,5 +73,5 @@ public @interface KubernetesDependent {
 
   Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
 
-  String eventSourceNameToUse() default NO_VALUE_SET;
+  String eventSourceToUse() default NO_VALUE_SET;
 }

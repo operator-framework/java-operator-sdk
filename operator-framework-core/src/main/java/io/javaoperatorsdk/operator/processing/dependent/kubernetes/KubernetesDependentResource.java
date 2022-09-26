@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
+    DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -53,9 +53,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         : GenericResourceUpdatePreProcessor.processorFor(resourceType);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void configureWith(KubernetesDependentResourceConfig config) {
+  public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
+    var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
+    if (discriminator != null) {
+      setResourceDiscriminator(discriminator);
+    }
+    config.getEventSourceToUse().ifPresent(n -> {
+      doNotProvideEventSource();
+      setEventSourceToUse(n);
+    });
   }
 
   private void configureWith(String labelSelector, Set<String> namespaces,
@@ -172,14 +181,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     if (kubernetesDependentResourceConfig != null) {
       // sets the filters for the dependent resource, which are applied by parent class
+
       onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
       genericFilter = kubernetesDependentResourceConfig.genericFilter();
-      var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
-      if (discriminator != null) {
-        setResourceDiscriminator(discriminator);
-      }
+
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
           !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);

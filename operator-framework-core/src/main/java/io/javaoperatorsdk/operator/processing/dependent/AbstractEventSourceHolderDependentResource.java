@@ -5,7 +5,9 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -15,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 @Ignore
 public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
-    extends AbstractDependentResource<R, P> {
+    extends AbstractDependentResource<R, P> implements EventSourceAware<P> {
 
   private T eventSource;
   private boolean isCacheFillerEventSource;
@@ -23,6 +25,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected OnUpdateFilter<R> onUpdateFilter;
   protected OnDeleteFilter<R> onDeleteFilter;
   protected GenericFilter<R> genericFilter;
+  protected String eventSourceToUse;
 
   public ResourceEventSource<R, P> provideEventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
@@ -36,6 +39,15 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
       applyFilters();
     }
     return eventSource;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void selectEventSources(EventSourceRetriever<P> eventSourceRetriever) {
+    if (eventSourceToUse != null) {
+      eventSource =
+          (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse);
+    }
   }
 
   /** To make this backwards compatible even for respect of overriding */
@@ -90,4 +102,9 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.onDeleteFilter = onDeleteFilter;
   }
 
+  public AbstractEventSourceHolderDependentResource<R, P, T> setEventSourceToUse(
+      String eventSourceToUse) {
+    this.eventSourceToUse = eventSourceToUse;
+    return this;
+  }
 }
