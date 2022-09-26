@@ -218,8 +218,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
           handleDependentDeleted(dependentResourceNode);
         } else {
           // updating alreadyVisited needs to be the last operation otherwise could lead to a race
-          // condition
-          // in handleDelete condition checks
+          // condition in handleDelete condition checks
           deletePostConditionNotMet.add(dependentResourceNode);
           alreadyVisited.add(dependentResourceNode);
         }
