@@ -46,7 +46,7 @@ public class ReconcileResult<R> {
   }
 
   private ReconcileResult(R resource, Operation operation) {
-    resourceOperations = Map.of(resource, operation);
+    resourceOperations = resource != null ? Map.of(resource, operation) : Collections.emptyMap();
   }
 
   private ReconcileResult(Map<R, Operation> operations) {
