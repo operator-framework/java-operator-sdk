@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManag
 import io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceReconciler;
 import io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceSpec;
 
+import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT_SECONDS;
 import static io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceReconciler.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -20,6 +22,7 @@ class MultipleManagedDependentSameTypeIT {
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String DEFAULT_SPEC_VALUE = "val";
   public static final String UPDATED_SPEC_VALUE = "updated-val";
+  public static final int SECONDS = 30;
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
@@ -54,7 +57,7 @@ class MultipleManagedDependentSameTypeIT {
   }
 
   private void assertConfigMapsDeleted() {
-    await().untilAsserted(() -> {
+    await().atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS)).untilAsserted(() -> {
       var maps = operator.getKubernetesClient().configMaps()
           .inNamespace(operator.getNamespace()).list().getItems().stream()
           .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
