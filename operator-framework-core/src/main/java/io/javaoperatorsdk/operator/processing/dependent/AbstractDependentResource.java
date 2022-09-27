@@ -40,17 +40,19 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var count = bulk ? bulkDependentResource.count(primary, context) : 1;
     if (bulk) {
+      final var count = bulkDependentResource.count(primary, context);
       deleteBulkResourcesIfRequired(count, lastKnownBulkSize(), primary, context);
       adjustDiscriminators(count);
+      @SuppressWarnings("unchecked")
+      final ReconcileResult<R>[] results = new ReconcileResult[count];
+      for (int i = 0; i < count; i++) {
+        results[i] = reconcileIndexAware(primary, i, context);
+      }
+      return ReconcileResult.aggregatedResult(results);
+    } else {
+      return reconcileIndexAware(primary, 0, context);
     }
-    ReconcileResult<R> result = new ReconcileResult<>();
-    for (int i = 0; i < count; i++) {
-      var res = reconcileIndexAware(primary, i, context);
-      result.addReconcileResult(res);
-    }
-    return result;
   }
 
   protected void deleteBulkResourcesIfRequired(int targetCount, int actualCount, P primary,
