@@ -311,7 +311,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
               .orElse(null);
 
       resourceDiscriminator =
-          instantiateIfNotDefault(kubeDependent.resourceDiscriminator(), ResourceDiscriminator.class, context);
+          instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
+              ResourceDiscriminator.class, context);
     }
 
     config =
@@ -321,7 +322,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
     return config;
   }
-  
+
   public static <T> T valueOrDefault(
       ControllerConfiguration controllerConfiguration,
       Function<ControllerConfiguration, T> mapper,
