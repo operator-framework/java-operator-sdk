@@ -56,8 +56,20 @@ public abstract class AbstractExternalDependentResource extends
   @Override
   public void delete(MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
-    externalServiceMock.delete(ExternalResource.toExternalResourceId(primary));
+    externalServiceMock.delete(toExternalResourceID(primary));
   }
 
+  protected ExternalResource desired(MultipleManagedExternalDependentResourceCustomResource primary,
+      Context<MultipleManagedExternalDependentResourceCustomResource> context) {
+    return new ExternalResource(toExternalResourceID(primary),
+        primary.getSpec().getValue());
+  }
+
+  protected String toExternalResourceID(
+      MultipleManagedExternalDependentResourceCustomResource primary) {
+    return ExternalResource.toExternalResourceId(primary) + resourceIDSuffix();
+  }
+
+  protected abstract String resourceIDSuffix();
 
 }

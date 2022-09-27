@@ -31,16 +31,29 @@ class MultipleManagedExternalDependentSameTypeIT {
   @Test
   void handlesExternalCrudOperations() {
     operator.create(testResource());
+    assertResourceCreatedWithData(DEFAULT_SPEC_VALUE);
 
-    assertResourceCreatedWithData();
+    var updatedResource = testResource();
+    updatedResource.getSpec().setValue(UPDATED_SPEC_VALUE);
+    operator.replace(updatedResource);
+    assertResourceCreatedWithData(UPDATED_SPEC_VALUE);
 
-    // todo check issues with update
+    operator.delete(testResource());
+    assertExternalResourceDeleted();
   }
 
-  private void assertResourceCreatedWithData() {
+  private void assertExternalResourceDeleted() {
+    await().untilAsserted(() -> {
+      var resources = externalServiceMock.listResources();
+      assertThat(resources).hasSize(0);
+    });
+  }
+
+  private void assertResourceCreatedWithData(String expectedData) {
     await().untilAsserted(() -> {
       var resources = externalServiceMock.listResources();
       assertThat(resources).hasSize(2);
+      assertThat(resources).allMatch(er -> er.getData().equals(expectedData));
     });
   }
 
