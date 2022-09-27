@@ -28,7 +28,6 @@ public class KubernetesDependentResourceConfig<R> {
 
   public KubernetesDependentResourceConfig() {}
 
-  @SuppressWarnings("rawtypes")
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
       boolean configuredNS, ResourceDiscriminator<R, ?> resourceDiscriminator,
       OnAddFilter<R> onAddFilter,
@@ -81,7 +80,6 @@ public class KubernetesDependentResourceConfig<R> {
     return onUpdateFilter;
   }
 
-  @SuppressWarnings("rawtypes")
   public OnDeleteFilter<R> onDeleteFilter() {
     return onDeleteFilter;
   }
@@ -93,11 +91,5 @@ public class KubernetesDependentResourceConfig<R> {
   @SuppressWarnings("rawtypes")
   public ResourceDiscriminator getResourceDiscriminator() {
     return resourceDiscriminator;
-  }
-
-  public <P> KubernetesDependentResourceConfig<R> setResourceDiscriminator(
-      ResourceDiscriminator<R, ?> resourceDiscriminator) {
-    this.resourceDiscriminator = resourceDiscriminator;
-    return this;
   }
 }
