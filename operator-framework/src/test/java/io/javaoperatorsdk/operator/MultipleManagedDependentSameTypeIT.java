@@ -11,14 +11,15 @@ import io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManag
 import io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceReconciler;
 import io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceSpec;
 
+import static io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceReconciler.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultipleManagedDependentSameTypeIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
-  public static final String DEFAULT_SPEC_VALUE = "val1";
-  public static final String UPDATED_SPEC_VALUE = "val2";
+  public static final String DEFAULT_SPEC_VALUE = "val";
+  public static final String UPDATED_SPEC_VALUE = "updated-val";
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
@@ -30,17 +31,35 @@ class MultipleManagedDependentSameTypeIT {
   @Test
   void handlesCrudOperations() {
     operator.create(testResource());
+    assertConfigMapsPresent(DEFAULT_SPEC_VALUE);
 
-    assertConfigMapsCreated(DEFAULT_SPEC_VALUE);
+    var updatedResource = testResource();
+    updatedResource.getSpec().setValue(UPDATED_SPEC_VALUE);
+    operator.replace(updatedResource);
+    assertConfigMapsPresent(UPDATED_SPEC_VALUE);
+
+    operator.delete(testResource());
+    assertConfigMapsDeleted();
   }
 
-  private void assertConfigMapsCreated(String expectedData) {
+  private void assertConfigMapsPresent(String expectedData) {
     await().untilAsserted(() -> {
       var maps = operator.getKubernetesClient().configMaps()
           .inNamespace(operator.getNamespace()).list().getItems().stream()
           .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
           .collect(Collectors.toList());
       assertThat(maps).hasSize(2);
+      assertThat(maps).allMatch(cm -> cm.getData().get(DATA_KEY).equals(expectedData));
+    });
+  }
+
+  private void assertConfigMapsDeleted() {
+    await().untilAsserted(() -> {
+      var maps = operator.getKubernetesClient().configMaps()
+          .inNamespace(operator.getNamespace()).list().getItems().stream()
+          .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
+          .collect(Collectors.toList());
+      assertThat(maps).hasSize(0);
     });
   }
 
