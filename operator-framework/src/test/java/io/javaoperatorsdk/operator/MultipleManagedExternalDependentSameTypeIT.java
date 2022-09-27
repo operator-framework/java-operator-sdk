@@ -33,6 +33,8 @@ class MultipleManagedExternalDependentSameTypeIT {
     operator.create(testResource());
 
     assertResourceCreatedWithData();
+
+    // todo check issues with update
   }
 
   private void assertResourceCreatedWithData() {

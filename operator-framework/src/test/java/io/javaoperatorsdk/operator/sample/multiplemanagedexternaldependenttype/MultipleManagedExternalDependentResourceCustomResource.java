@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.Multi
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("mmd")
+@ShortNames("mme")
 public class MultipleManagedExternalDependentResourceCustomResource
     extends CustomResource<MultipleManagedDependentResourceSpec, Void>
     implements Namespaced {
