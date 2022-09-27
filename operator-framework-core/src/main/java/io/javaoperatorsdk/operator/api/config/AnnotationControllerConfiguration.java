@@ -45,14 +45,13 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   private static final String KUBE_DEPENDENT_NAME = KubernetesDependent.class.getSimpleName();
 
   protected final Reconciler<P> reconciler;
-  private final io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation;
+  private final ControllerConfiguration annotation;
   private List<DependentResourceSpec> specs;
   private Class<P> resourceClass;
 
   public AnnotationControllerConfiguration(Reconciler<P> reconciler) {
     this.reconciler = reconciler;
-    this.annotation = reconciler.getClass()
-        .getAnnotation(io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
+    this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
     if (annotation == null) {
       throw new OperatorException("Missing mandatory @" + CONTROLLER_CONFIG_ANNOTATION +
           " annotation for reconciler:  " + reconciler);
