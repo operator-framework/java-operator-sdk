@@ -187,6 +187,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
         ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
         reconcileResults.put(dependentResource, reconcileResult);
         reconciled.add(dependentResourceNode);
+
         boolean ready = dependentResourceNode.getReadyPostcondition()
             .map(rc -> rc.isMet(primary,
                 context
