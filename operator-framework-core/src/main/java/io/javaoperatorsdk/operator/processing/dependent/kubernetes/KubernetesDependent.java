@@ -7,7 +7,6 @@ import java.lang.annotation.Target;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
-import io.javaoperatorsdk.operator.api.reconciler.VoidResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.*;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -72,5 +71,5 @@ public @interface KubernetesDependent {
    */
   Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 
-  Class<? extends ResourceDiscriminator> resourceDiscriminator() default VoidResourceDiscriminator.class;
+  Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
 }
