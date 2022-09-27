@@ -8,12 +8,9 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("mdr")
+@ShortNames("mmd")
 public class MultipleManagedDependentResourceCustomResource
-    extends CustomResource<Void, Void>
+    extends CustomResource<MultipleManagedDependentResourceSpec, Void>
     implements Namespaced {
 
-  public String getConfigMapName(int id) {
-    return "configmap" + id;
-  }
 }

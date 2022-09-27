@@ -9,28 +9,29 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent
-public class MultipleManagedDependentResourceConfigMap
+import static io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
+
+@KubernetesDependent(eventSourceToUse = CONFIG_MAP_EVENT_SOURCE,
+    resourceDiscriminator = ConfigMap1Discriminator.class)
+public class MultipleManagedDependentResourceConfigMap1
     extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentResourceCustomResource> {
 
-  public static final String DATA_KEY = "key";
-  private final int value;
+  public static final String NAME_SUFFIX = "-1";
 
-  public MultipleManagedDependentResourceConfigMap(int value) {
+  public MultipleManagedDependentResourceConfigMap1() {
     super(ConfigMap.class);
-    this.value = value;
   }
 
   @Override
   protected ConfigMap desired(MultipleManagedDependentResourceCustomResource primary,
       Context<MultipleManagedDependentResourceCustomResource> context) {
     Map<String, String> data = new HashMap<>();
-    data.put(DATA_KEY, String.valueOf(value));
+    data.put(MultipleManagedDependentResourceReconciler.DATA_KEY, primary.getSpec().getValue());
 
     return new ConfigMapBuilder()
         .withNewMetadata()
-        .withName(primary.getConfigMapName(value))
+        .withName(primary.getMetadata().getName() + NAME_SUFFIX)
         .withNamespace(primary.getMetadata().getNamespace())
         .endMetadata()
         .withData(data)
