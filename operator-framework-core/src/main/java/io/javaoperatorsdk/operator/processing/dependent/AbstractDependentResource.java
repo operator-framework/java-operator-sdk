@@ -32,7 +32,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     updater = updatable ? (Updater<R, P>) this : null;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     Optional<R> maybeActual = getSecondaryResource(primary, context);
@@ -68,12 +67,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(maybeActual.orElse(null));
   }
 
-  protected Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    if (resourceDiscriminator == null) {
-      return context.getSecondaryResource(resourceType());
-    } else {
-      return context.getSecondaryResource(resourceType(), resourceDiscriminator);
-    }
+  public Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return resourceDiscriminator == null ? context.getSecondaryResource(resourceType())
+        : resourceDiscriminator.distinguish(resourceType(), primary, context);
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {

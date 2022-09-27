@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
@@ -26,6 +28,10 @@ public interface DependentResource<R, P extends HasMetadata> {
    * @return the resource type associated with this DependentResource
    */
   Class<R> resourceType();
+
+  default Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return Optional.empty();
+  }
 
   /**
    * Computes a default name for the specified DependentResource class
