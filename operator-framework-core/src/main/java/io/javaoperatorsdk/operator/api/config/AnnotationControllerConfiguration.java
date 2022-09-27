@@ -328,7 +328,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   @SuppressWarnings({"unchecked"})
   private ResourceDiscriminator<?, ? extends HasMetadata> instantiateDiscriminatorIfNotVoid(
       Class<? extends ResourceDiscriminator> discriminator) {
-    if (discriminator != VoidResourceDiscriminator.class) {
+    if (discriminator != ResourceDiscriminator.class) {
       return instantiateAndConfigureIfNeeded(discriminator, ResourceDiscriminator.class,
           CONTROLLER_CONFIG_ANNOTATION);
     }
