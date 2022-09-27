@@ -8,13 +8,18 @@ import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
+import io.javaoperatorsdk.operator.support.ExternalResource;
+import io.javaoperatorsdk.operator.support.ExternalServiceMock;
+
+import static io.javaoperatorsdk.operator.support.ExternalResource.EXTERNAL_RESOURCE_NAME_DELIMITER;
+import static io.javaoperatorsdk.operator.support.ExternalResource.toExternalResourceId;
 
 public class ExternalBulkDependentResource
     extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource>
     implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource>,
     BulkUpdater<ExternalResource, BulkDependentTestCustomResource> {
 
-  public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
+
 
   private ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 
@@ -27,7 +32,7 @@ public class ExternalBulkDependentResource
     Map<ResourceID, Set<ExternalResource>> result = new HashMap<>();
     var resources = externalServiceMock.listResources();
     resources.stream().forEach(er -> {
-      var resourceID = toResourceID(er);
+      var resourceID = er.toResourceID();
       result.putIfAbsent(resourceID, new HashSet<>());
       result.get(resourceID).add(er);
     });
@@ -88,14 +93,4 @@ public class ExternalBulkDependentResource
     return Matcher.Result.computed(desired.equals(actualResource), desired);
   }
 
-  private static String toExternalResourceId(BulkDependentTestCustomResource primary, int i) {
-    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-        primary.getMetadata().getNamespace() +
-        EXTERNAL_RESOURCE_NAME_DELIMITER + i;
-  }
-
-  private ResourceID toResourceID(ExternalResource externalResource) {
-    var parts = externalResource.getId().split(EXTERNAL_RESOURCE_NAME_DELIMITER);
-    return new ResourceID(parts[0], parts[1]);
-  }
 }

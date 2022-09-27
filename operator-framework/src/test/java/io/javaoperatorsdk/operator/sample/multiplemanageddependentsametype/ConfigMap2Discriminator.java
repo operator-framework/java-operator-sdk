@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiplemanageddependent;
+package io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype;
 
 import java.util.Optional;
 
@@ -8,9 +8,9 @@ import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-import static io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceConfigMap1.NAME_SUFFIX;
+import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceConfigMap2.NAME_SUFFIX;
 
-public class ConfigMap1Discriminator
+public class ConfigMap2Discriminator
     implements ResourceDiscriminator<ConfigMap, MultipleManagedDependentResourceCustomResource> {
   @Override
   public Optional<ConfigMap> distinguish(Class<ConfigMap> resource,

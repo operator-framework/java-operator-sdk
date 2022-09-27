@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiplemanageddependent;
+package io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-import static io.javaoperatorsdk.operator.sample.multiplemanageddependent.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
+import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
 @KubernetesDependent(eventSourceToUse = CONFIG_MAP_EVENT_SOURCE,
     resourceDiscriminator = ConfigMap1Discriminator.class)

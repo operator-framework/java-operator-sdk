@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.bulkdependent.external;
+package io.javaoperatorsdk.operator.support;
 
 import java.util.ArrayList;
 import java.util.List;

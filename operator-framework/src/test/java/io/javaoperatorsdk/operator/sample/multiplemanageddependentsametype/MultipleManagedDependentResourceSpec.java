@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiplemanageddependent;
+package io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype;
 
 public class MultipleManagedDependentResourceSpec {
 

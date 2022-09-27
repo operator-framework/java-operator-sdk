@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multiplemanageddependent;
+package io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
