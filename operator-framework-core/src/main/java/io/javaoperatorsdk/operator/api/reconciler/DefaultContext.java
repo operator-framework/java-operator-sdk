@@ -9,6 +9,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -48,6 +49,12 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
+      ResourceDiscriminator<R, P> discriminator) {
+    return discriminator.distinguish(expectedType, primaryResource, this);
+  }
+
+  @Override
   public ControllerConfiguration<P> getControllerConfiguration() {
     return controllerConfiguration;
   }
@@ -55,6 +62,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public ManagedDependentResourceContext managedDependentResourceContext() {
     return defaultManagedDependentResourceContext;
+  }
+
+  @Override
+  public EventSourceRetriever<P> eventSourceRetriever() {
+    return controller.getEventSourceManager();
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
