@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -85,10 +84,6 @@ class ControllerConfigurationOverriderTest {
         return Object.class;
       }
 
-      @Override
-      public Optional<Object> getSecondaryResource(ConfigMap primary) {
-        return Optional.empty();
-      }
     }
   }
 
