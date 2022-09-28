@@ -162,8 +162,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     } else if (useDefaultAnnotationsToIdentifyPrimary()) {
       addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
-    return client.resource(desired).inNamespace(desired.getMetadata().getNamespace())
-        .resource(desired);
+    return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
   }
 
   @Override
