@@ -245,16 +245,21 @@ class InformerEventSourceTest {
 
   @Test
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
-    final var exception = new RuntimeException("Informer stopped exceptionally!");
-    final var informerStoppedHandler = mock(InformerStoppedHandler.class);
-    ConfigurationServiceProvider
-        .overrideCurrent(overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler));
-    informerEventSource = new InformerEventSource<>(informerConfiguration,
-        MockKubernetesClient.client(Deployment.class, unused -> {
-          throw exception;
-        }));
-    informerEventSource.start();
-    verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
+    try {
+      final var exception = new RuntimeException("Informer stopped exceptionally!");
+      final var informerStoppedHandler = mock(InformerStoppedHandler.class);
+      ConfigurationServiceProvider
+          .overrideCurrent(
+              overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler));
+      informerEventSource = new InformerEventSource<>(informerConfiguration,
+          MockKubernetesClient.client(Deployment.class, unused -> {
+            throw exception;
+          }));
+      informerEventSource.start();
+      verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
+    } finally {
+      ConfigurationServiceProvider.reset();
+    }
   }
 
   Deployment testDeployment() {
