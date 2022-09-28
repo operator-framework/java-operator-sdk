@@ -65,7 +65,7 @@ public class WebPageStandaloneDependentsReconciler
 
     webPage.setStatus(
         createStatus(
-            configMapDR.getSecondaryResource(webPage).orElseThrow().getMetadata().getName()));
+            context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
     return UpdateControl.patchStatus(webPage);
   }
 
