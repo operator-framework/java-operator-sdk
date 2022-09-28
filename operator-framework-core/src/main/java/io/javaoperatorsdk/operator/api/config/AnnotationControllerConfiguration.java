@@ -17,9 +17,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -54,9 +53,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
     if (annotation == null) {
-      throw new OperatorException(
-          "Missing mandatory @" + ControllerConfiguration.class.getSimpleName() +
-              " annotation for reconciler:  " + reconciler);
+      throw new OperatorException("Missing mandatory @" + CONTROLLER_CONFIG_ANNOTATION +
+          " annotation for reconciler:  " + reconciler);
     }
   }
 
@@ -247,9 +245,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
-            instantiateConditionIfNotDefault(dependent.readyPostcondition(), context),
-            instantiateConditionIfNotDefault(dependent.reconcilePrecondition(), context),
-            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context));
+            instantiateIfNotDefault(dependent.readyPostcondition(), Condition.class, context),
+            instantiateIfNotDefault(dependent.reconcilePrecondition(), Condition.class, context),
+            instantiateIfNotDefault(dependent.deletePostcondition(), Condition.class, context));
         specsMap.put(name, spec);
       }
 
@@ -258,10 +256,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
-  protected Condition<?, ?> instantiateConditionIfNotDefault(Class<? extends Condition> condition,
+  protected <T> T instantiateIfNotDefault(Class<? extends T> toInstantiate, Class<T> defaultClass,
       String context) {
-    if (condition != Condition.class) {
-      return instantiateAndConfigureIfNeeded(condition, Condition.class, context);
+    if (!defaultClass.equals(toInstantiate)) {
+      return instantiateAndConfigureIfNeeded(toInstantiate, defaultClass, context);
     }
     return null;
   }
@@ -287,6 +285,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
+    ResourceDiscriminator<?, ? extends HasMetadata> resourceDiscriminator = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -296,7 +295,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
-
 
       final var context =
           KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName() + " DependentResource";
@@ -311,10 +309,15 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       genericFilter =
           createFilter(kubeDependent.genericFilter(), GenericFilter.class, context)
               .orElse(null);
+
+      resourceDiscriminator =
+          instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
+              ResourceDiscriminator.class, context);
     }
 
     config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+            resourceDiscriminator, onAddFilter,
             onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
