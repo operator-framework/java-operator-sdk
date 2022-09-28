@@ -28,7 +28,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Updater<R, P> updater;
   protected BulkDependentResource<R, P> bulkDependentResource;
 
-  protected List<ResourceDiscriminator<R, P>> resourceDiscriminator = new ArrayList<>(1);
+  private final List<ResourceDiscriminator<R, P>> resourceDiscriminator = new ArrayList<>(1);
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
@@ -74,8 +74,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
     if (resourceDiscriminator.size() < count) {
       for (int i = resourceDiscriminator.size(); i < count; i++) {
-        resourceDiscriminator.add(bulkDependentResource.bulkResourceDiscriminatorFactory()
-            .createResourceDiscriminator(i));
+        resourceDiscriminator.add(bulkDependentResource.getResourceDiscriminator(i));
       }
     }
     if (resourceDiscriminator.size() > count) {
