@@ -4,11 +4,13 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("rawtypes")
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
@@ -21,6 +23,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   private final Condition<String, TestCustomResource> notMetReadyCondition =
       (primary, secondary, context) -> false;
 
+  Context<TestCustomResource> mockContext = mock(Context.class);
+
   @Test
   void reconcileTopLevelResources() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
@@ -28,7 +32,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr2)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).reconciled(dr1, dr2);
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
@@ -42,7 +46,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr2).dependsOn(dr1)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).reconciledInOrder(dr1, dr2);
@@ -61,7 +65,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr3).dependsOn(dr1)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory)
@@ -83,7 +87,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr4).dependsOn(dr3).dependsOn(dr2)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory)
@@ -103,7 +107,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThrows(AggregatedOperatorException.class,
         res::throwAggregateExceptionIfErrorsPresent);
@@ -123,7 +127,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
     assertThrows(AggregatedOperatorException.class,
         res::throwAggregateExceptionIfErrorsPresent);
 
@@ -145,7 +149,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
     assertThrows(AggregatedOperatorException.class,
         res::throwAggregateExceptionIfErrorsPresent);
 
@@ -164,7 +168,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
     assertThrows(AggregatedOperatorException.class,
         res::throwAggregateExceptionIfErrorsPresent);
 
@@ -182,7 +186,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(drDeleter).withReconcilePrecondition(not_met_reconcile_condition)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).notReconciled(dr1).reconciled(dr2).deleted(drDeleter);
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
@@ -200,7 +204,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .dependsOn(dr1)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).reconciledInOrder(dr1, dr2).deleted(drDeleter);
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
@@ -222,7 +226,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withReconcilePrecondition(met_reconcile_condition)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).notReconciled(dr2);
@@ -246,7 +250,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
     assertThrows(AggregatedOperatorException.class,
         res::throwAggregateExceptionIfErrorsPresent);
 
@@ -267,7 +271,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(drDeleter).dependsOn(dr1, dr2)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
 
@@ -287,7 +291,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(drDeleter2).dependsOn(dr1, drDeleter)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory)
         .reconciledInOrder(dr1, drDeleter2, drDeleter)
@@ -313,7 +317,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(drDeleter4).dependsOn(drDeleter3)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory)
         .reconciledInOrder(dr1, drDeleter4, drDeleter3, drDeleter)
@@ -339,7 +343,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(drDeleter4).dependsOn(drDeleter3, drDeleter2)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).notReconciled(drDeleter)
         .reconciledInOrder(drDeleter4, drDeleter2)
@@ -363,7 +367,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withThrowExceptionFurther(false)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory)
         .notReconciled(drDeleter, drError)
@@ -381,7 +385,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr2).dependsOn(dr1)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).reconciledInOrder(dr1, dr2);
 
@@ -397,7 +401,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr2).dependsOn(dr1)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
 
     assertThat(executionHistory).reconciled(dr1).notReconciled(dr2);
@@ -417,7 +421,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr3).dependsOn(dr1, dr2)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).reconciled(dr1, dr2).notReconciled(dr3);
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
@@ -437,7 +441,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dr4).dependsOn(dr2, dr3)
         .build();
 
-    var res = workflow.reconcile(new TestCustomResource(), null);
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).reconciledInOrder(dr1, dr2)

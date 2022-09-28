@@ -3,16 +3,14 @@ package io.javaoperatorsdk.operator.sample.multipledependentresource;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
@@ -23,7 +21,6 @@ public class MultipleDependentResourceReconciler
 
   public static final int FIRST_CONFIG_MAP_ID = 1;
   public static final int SECOND_CONFIG_MAP_ID = 2;
-  public static final String LABEL = "multipledependentresource";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private final MultipleDependentResourceConfigMap firstDependentResourceConfigMap;
@@ -32,18 +29,19 @@ public class MultipleDependentResourceReconciler
 
   public MultipleDependentResourceReconciler() {
     firstDependentResourceConfigMap = new MultipleDependentResourceConfigMap(FIRST_CONFIG_MAP_ID);
+
     secondDependentResourceConfigMap = new MultipleDependentResourceConfigMap(SECOND_CONFIG_MAP_ID);
 
-    firstDependentResourceConfigMap.configureWith(
-        new KubernetesDependentResourceConfig()
-            .setLabelSelector(getLabelSelector(FIRST_CONFIG_MAP_ID)));
-    secondDependentResourceConfigMap.configureWith(
-        new KubernetesDependentResourceConfig()
-            .setLabelSelector(getLabelSelector(SECOND_CONFIG_MAP_ID)));
-  }
-
-  private String getLabelSelector(int resourceId) {
-    return LABEL + "=" + resourceId;
+    firstDependentResourceConfigMap
+        .setResourceDiscriminator(
+            new ResourceIDMatcherDiscriminator<>(
+                p -> new ResourceID(p.getConfigMapName(FIRST_CONFIG_MAP_ID),
+                    p.getMetadata().getNamespace())));
+    secondDependentResourceConfigMap
+        .setResourceDiscriminator(
+            new ResourceIDMatcherDiscriminator<>(
+                p -> new ResourceID(p.getConfigMapName(SECOND_CONFIG_MAP_ID),
+                    p.getMetadata().getNamespace())));
   }
 
   @Override
@@ -64,9 +62,13 @@ public class MultipleDependentResourceReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResource> context) {
-    return EventSourceInitializer.nameEventSources(
-        firstDependentResourceConfigMap.initEventSource(context),
-        secondDependentResourceConfigMap.initEventSource(context));
+    InformerEventSource<ConfigMap, MultipleDependentResourceCustomResource> eventSource =
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+            .build(), context);
+    firstDependentResourceConfigMap.configureWith(eventSource);
+    secondDependentResourceConfigMap.configureWith(eventSource);
+
+    return EventSourceInitializer.nameEventSources(eventSource);
   }
 
   @Override

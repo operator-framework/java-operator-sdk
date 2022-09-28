@@ -104,12 +104,10 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
           deleteCalled.add(dependentResourceNode);
         }
-        boolean deletePostConditionMet =
-            deletePostCondition.map(c -> c.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary)
-                    .orElse(null),
-                context)).orElse(true);
-
+        boolean deletePostConditionMet = deletePostCondition
+            .map(c -> c.isMet(primary, dependentResourceNode.getSecondaryResource(primary, context),
+                context))
+            .orElse(true);
         if (deletePostConditionMet) {
           alreadyVisited.add(dependentResourceNode);
           handleDependentCleaned(dependentResourceNode);
@@ -126,6 +124,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
       }
     }
   }
+
 
   private synchronized void handleDependentCleaned(
       DependentResourceNode<?, P> dependentResourceNode) {

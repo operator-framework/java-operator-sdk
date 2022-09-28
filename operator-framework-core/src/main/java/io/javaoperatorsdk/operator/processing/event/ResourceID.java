@@ -54,6 +54,12 @@ public class ResourceID implements Serializable {
         that.namespace);
   }
 
+  public boolean isSameResource(HasMetadata hasMetadata) {
+    final var metadata = hasMetadata.getMetadata();
+    return getName().equals(metadata.getName()) &&
+        getNamespace().map(ns -> ns.equals(metadata.getNamespace())).orElse(true);
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(name, namespace);

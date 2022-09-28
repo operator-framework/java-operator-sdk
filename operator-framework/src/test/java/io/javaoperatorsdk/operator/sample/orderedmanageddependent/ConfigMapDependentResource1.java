@@ -6,11 +6,14 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-@KubernetesDependent(labelSelector = "dependent = cm1")
+@KubernetesDependent(labelSelector = "dependent = cm1",
+    resourceDiscriminator = ConfigMapDependentResource1.CM1ResourceDiscriminator.class)
 public class ConfigMapDependentResource1 extends
     CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
@@ -40,6 +43,13 @@ public class ConfigMapDependentResource1 extends
     data.put("key1", "val1");
     configMap.setData(data);
     return configMap;
+  }
+
+  public static class CM1ResourceDiscriminator
+      extends ResourceIDMatcherDiscriminator<ConfigMap, OrderedManagedDependentCustomResource> {
+    public CM1ResourceDiscriminator() {
+      super(p -> new ResourceID(p.getMetadata().getName() + "1", p.getMetadata().getNamespace()));
+    }
   }
 
 }

@@ -1,16 +1,13 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -41,13 +38,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
-  private final Class<R> resourceType;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig kubernetesDependentResourceConfig;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
-    this.resourceType = resourceType;
+    super(resourceType);
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
         : GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
 
@@ -75,6 +71,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .build();
 
     configureWith(new InformerEventSource<>(ic, context));
+
   }
 
   @SuppressWarnings("unchecked")
@@ -94,7 +91,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   /**
    * Use to share informers between event more resources.
    *
-   * @param informerEventSource informer to use*
+   * @param informerEventSource informer to use
    */
   public void configureWith(InformerEventSource<R, P> informerEventSource) {
     setEventSource(informerEventSource);
@@ -125,12 +122,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    return prepare(target, primary, "Creating").create(target);
+    return prepare(target, primary, "Creating").create();
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
     var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-    return prepare(target, primary, "Updating").replace(updatedActual);
+    return prepare(updatedActual, primary, "Updating").replace();
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
@@ -138,13 +135,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public void delete(P primary, Context<P> context) {
-    var resource = getSecondaryResource(primary);
-    resource.ifPresent(r -> client.resource(r).delete());
+    getSecondaryResource(primary, context).ifPresent(r -> client.resource(r).delete());
   }
 
   @SuppressWarnings("unchecked")
-  protected NonNamespaceOperation<R, KubernetesResourceList<R>, Resource<R>> prepare(R desired,
-      P primary, String actionName) {
+  protected Resource<R> prepare(R desired, P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
         desired.getClass(),
@@ -155,7 +150,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
     Class<R> targetClass = (Class<R>) desired.getClass();
-    return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace());
+    return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace())
+        .resource(desired);
   }
 
   @Override
@@ -167,6 +163,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
       genericFilter = kubernetesDependentResourceConfig.genericFilter();
+      setResourceDiscriminator(kubernetesDependentResourceConfig.getResourceDiscriminator());
 
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
@@ -204,16 +201,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public Class<R> resourceType() {
-    return resourceType;
-  }
-
-  @Override
-  public Optional<R> getSecondaryResource(P primaryResource) {
-    return eventSource().getSecondaryResource(primaryResource);
-  }
-
-  @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
   }
@@ -235,5 +222,4 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void cleanupAfterEventFiltering(ResourceID resourceID) {
     eventSource().cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
-
 }
