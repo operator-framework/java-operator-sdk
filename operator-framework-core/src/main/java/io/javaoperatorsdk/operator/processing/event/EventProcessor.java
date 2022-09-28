@@ -135,7 +135,8 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   private void submitReconciliationExecution(ResourceState state) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(state);
-      Optional<R> maybeLatest = cache.get(state.getId());
+      final var resourceID = state.getId();
+      Optional<R> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && maybeLatest.isPresent()) {
         var rateLimit = state.getRateLimit();
@@ -145,24 +146,24 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
         }
         var rateLimiterPermission = rateLimiter.isLimited(rateLimit);
         if (rateLimiterPermission.isPresent()) {
-          handleRateLimitedSubmission(state.getId(), rateLimiterPermission.get());
+          handleRateLimitedSubmission(resourceID, rateLimiterPermission.get());
           return;
         }
         state.setUnderProcessing(true);
         final var latest = maybeLatest.get();
         ExecutionScope<R> executionScope = new ExecutionScope<>(latest, state.getRetry());
         state.unMarkEventReceived();
-        metrics.reconcileCustomResource(state.getId(), state.getRetry(), metricsMetadata);
+        metrics.reconcileCustomResource(resourceID, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(executionScope));
       } else {
         log.debug(
             "Skipping executing controller for resource id: {}. Controller in execution: {}. Latest Resource present: {}",
-            state,
+            resourceID,
             controllerUnderExecution,
             maybeLatest.isPresent());
         if (maybeLatest.isEmpty()) {
-          log.debug("no custom resource found in cache for ResourceID: {}", state);
+          log.debug("no custom resource found in cache for resource id: {}", resourceID);
         }
       }
     } finally {

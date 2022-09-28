@@ -93,10 +93,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   public Optional<R> get(ResourceID resourceID) {
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (resource.isPresent()) {
-      log.debug("Resource found in temporal cache for Resource ID: {}", resourceID);
+      log.debug("Resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     } else {
-      log.debug("Resource not found in temporal cache reading it from informer cache," +
+      log.debug("Resource not found in temporary cache reading it from informer cache," +
           " for Resource ID: {}", resourceID);
       return cache.get(resourceID);
     }
