@@ -1,11 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -21,6 +24,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
 
+  private ResourceDiscriminator<R, P> resourceDiscriminator;
+
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
     creator = creatable ? (Creator<R, P>) this : null;
@@ -29,7 +34,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var maybeActual = getSecondaryResource(primary);
+    Optional<R> maybeActual = getSecondaryResource(primary, context);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
         if (creatable) {
@@ -60,6 +65,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           getClass().getSimpleName());
     }
     return ReconcileResult.noOperation(maybeActual.orElse(null));
+  }
+
+  public Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return resourceDiscriminator == null ? context.getSecondaryResource(resourceType())
+        : resourceDiscriminator.distinguish(resourceType(), primary, context);
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {
@@ -117,5 +127,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected R desired(P primary, Context<P> context) {
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or updated");
+  }
+
+  public void setResourceDiscriminator(
+      ResourceDiscriminator<R, P> resourceDiscriminator) {
+    this.resourceDiscriminator = resourceDiscriminator;
+  }
+
+  public ResourceDiscriminator<R, P> getResourceDiscriminator() {
+    return resourceDiscriminator;
   }
 }

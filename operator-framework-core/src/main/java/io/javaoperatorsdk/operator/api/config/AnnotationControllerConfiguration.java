@@ -15,9 +15,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -48,9 +47,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
     if (annotation == null) {
-      throw new OperatorException(
-          "Missing mandatory @" + ControllerConfiguration.class.getSimpleName() +
-              " annotation for reconciler:  " + reconciler);
+      throw new OperatorException("Missing mandatory @" + CONTROLLER_CONFIG_ANNOTATION +
+          " annotation for reconciler:  " + reconciler);
     }
   }
 
@@ -256,6 +254,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
+    ResourceDiscriminator<?, ? extends HasMetadata> resourceDiscriminator = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -266,7 +265,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
-
       final var context =
           Utils.contextFor(this, dependentType, null);
       onAddFilter = Utils.instantiate(kubeDependent.onAddFilter(), OnAddFilter.class, context);
@@ -276,10 +274,15 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           Utils.instantiate(kubeDependent.onDeleteFilter(), OnDeleteFilter.class, context);
       genericFilter =
           Utils.instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
+
+      resourceDiscriminator =
+              Utils.instantiate(kubeDependent.resourceDiscriminator(),
+                      ResourceDiscriminator.class, context);
     }
 
     config =
-        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS, onAddFilter,
+        new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+            resourceDiscriminator, onAddFilter,
             onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
