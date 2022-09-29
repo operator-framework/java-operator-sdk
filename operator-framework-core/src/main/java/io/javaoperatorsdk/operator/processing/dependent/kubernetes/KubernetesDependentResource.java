@@ -134,8 +134,21 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
+  public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
+    return matcher.match(actualResource, primary, index, context);
+  }
+
   public void delete(P primary, Context<P> context) {
-    getSecondaryResource(primary, context).ifPresent(r -> client.resource(r).delete());
+    if (bulk) {
+      deleteBulkResourcesIfRequired(0, lastKnownBulkSize(), primary, context);
+    } else {
+      var resource = getSecondaryResource(primary, context);
+      resource.ifPresent(r -> client.resource(r).delete());
+    }
+  }
+
+  public void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
+    client.resource(resource).delete();
   }
 
   @SuppressWarnings("unchecked")
@@ -149,9 +162,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     } else if (useDefaultAnnotationsToIdentifyPrimary()) {
       addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
-    Class<R> targetClass = (Class<R>) desired.getClass();
-    return client.resources(targetClass).inNamespace(desired.getMetadata().getNamespace())
-        .resource(desired);
+    return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
   }
 
   @Override
@@ -163,8 +174,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
       genericFilter = kubernetesDependentResourceConfig.genericFilter();
-      setResourceDiscriminator(kubernetesDependentResourceConfig.getResourceDiscriminator());
-
+      var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
+      if (discriminator != null) {
+        setResourceDiscriminator(discriminator);
+      }
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
           !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);
@@ -213,6 +226,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
+  }
+
+  @Override
+  protected R desired(P primary, int index, Context<P> context) {
+    return super.desired(primary, index, context);
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {
