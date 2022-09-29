@@ -135,19 +135,23 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-    final var desired = desired(primary, index, context);
-    return GenericKubernetesResourceMatcher.match(desired, actualResource, false);
+    return matcher.match(actualResource, primary, index, context);
   }
 
-  protected void handleDelete(P primary, Context<P> context) {
-    var resource = getSecondaryResource(primary, context);
-    resource.ifPresent(r -> client.resource(r).delete());
+  public void delete(P primary, Context<P> context) {
+    if (bulk) {
+      deleteBulkResourcesIfRequired(0, lastKnownBulkSize(), primary, context);
+    } else {
+      var resource = getSecondaryResource(primary, context);
+      resource.ifPresent(r -> client.resource(r).delete());
+    }
   }
 
   public void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
     client.resource(resource).delete();
   }
 
+  @SuppressWarnings("unchecked")
   protected Resource<R> prepare(R desired, P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
@@ -188,7 +192,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private boolean useDefaultAnnotationsToIdentifyPrimary() {
-    return !(this instanceof SecondaryToPrimaryMapper) && !garbageCollected && isCreatable();
+    return !(this instanceof SecondaryToPrimaryMapper) && !garbageCollected && creatable;
   }
 
   private void addDefaultSecondaryToPrimaryMapperAnnotations(R desired, P primary) {

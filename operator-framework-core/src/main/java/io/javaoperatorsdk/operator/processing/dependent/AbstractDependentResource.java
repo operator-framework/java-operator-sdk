@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -18,15 +20,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P> {
   private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);
 
-  private final boolean creatable = this instanceof Creator;
-  private final boolean updatable = this instanceof Updater;
-  private final boolean bulk = this instanceof BulkDependentResource;
+  protected final boolean creatable = this instanceof Creator;
+  protected final boolean updatable = this instanceof Updater;
+  protected final boolean bulk = this instanceof BulkDependentResource;
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  private final BulkDependentResource<R, P> bulkDependentResource;
-  private ResourceDiscriminator<R, P> resourceDiscriminator;
-  private int currentCount;
+  protected BulkDependentResource<R, P> bulkDependentResource;
+
+  private final List<ResourceDiscriminator<R, P>> resourceDiscriminator = new ArrayList<>(1);
 
   @SuppressWarnings("unchecked")
   public AbstractDependentResource() {
@@ -40,33 +42,48 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     if (bulk) {
       final var count = bulkDependentResource.count(primary, context);
-      deleteBulkResourcesIfRequired(count, primary, context);
+      deleteBulkResourcesIfRequired(count, lastKnownBulkSize(), primary, context);
+      adjustDiscriminators(count);
       @SuppressWarnings("unchecked")
       final ReconcileResult<R>[] results = new ReconcileResult[count];
       for (int i = 0; i < count; i++) {
         results[i] = reconcileIndexAware(primary, i, context);
       }
-      currentCount = count;
       return ReconcileResult.aggregatedResult(results);
     } else {
       return reconcileIndexAware(primary, 0, context);
     }
   }
 
-  protected void deleteBulkResourcesIfRequired(int targetCount, P primary, Context<P> context) {
-    if (targetCount >= currentCount) {
+  protected void deleteBulkResourcesIfRequired(int targetCount, int actualCount, P primary,
+      Context<P> context) {
+    if (targetCount >= actualCount) {
       return;
     }
-    for (int i = targetCount; i < currentCount; i++) {
-      var resource = bulkDependentResource.getSecondaryResource(primary, i, context);
+    for (int i = targetCount; i < actualCount; i++) {
+      var resource = getSecondaryResourceIndexAware(primary, i, context);
       var index = i;
       resource.ifPresent(
           r -> bulkDependentResource.deleteBulkResourceWithIndex(primary, r, index, context));
     }
   }
 
+  private void adjustDiscriminators(int count) {
+    if (resourceDiscriminator.size() == count) {
+      return;
+    }
+    if (resourceDiscriminator.size() < count) {
+      for (int i = resourceDiscriminator.size(); i < count; i++) {
+        resourceDiscriminator.add(bulkDependentResource.getResourceDiscriminator(i));
+      }
+    }
+    if (resourceDiscriminator.size() > count) {
+      resourceDiscriminator.subList(count, resourceDiscriminator.size()).clear();
+    }
+  }
+
   protected ReconcileResult<R> reconcileIndexAware(P primary, int i, Context<P> context) {
-    Optional<R> maybeActual = bulk ? bulkDependentResource.getSecondaryResource(primary, i, context)
+    Optional<R> maybeActual = bulk ? getSecondaryResourceIndexAware(primary, i, context)
         : getSecondaryResource(primary, context);
     if (creatable || updatable) {
       if (maybeActual.isEmpty()) {
@@ -82,7 +99,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable) {
           final Matcher.Result<R> match;
           if (bulk) {
-            match = bulkDependentResource.match(actual, primary, i, context);
+            match = updater.match(actual, primary, i, context);
           } else {
             match = updater.match(actual, primary, context);
           }
@@ -107,12 +124,17 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private R desiredIndexAware(P primary, int i, Context<P> context) {
-    return bulk ? desired(primary, i, context) : desired(primary, context);
+    return bulk ? desired(primary, i, context)
+        : desired(primary, context);
   }
 
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    return resourceDiscriminator == null ? context.getSecondaryResource(resourceType())
-        : resourceDiscriminator.distinguish(resourceType(), primary, context);
+    return resourceDiscriminator.isEmpty() ? context.getSecondaryResource(resourceType())
+        : resourceDiscriminator.get(0).distinguish(resourceType(), primary, context);
+  }
+
+  protected Optional<R> getSecondaryResourceIndexAware(P primary, int index, Context<P> context) {
+    return context.getSecondaryResource(resourceType(), resourceDiscriminator.get(index));
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {
@@ -173,35 +195,28 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected R desired(P primary, int index, Context<P> context) {
-    throw new IllegalStateException("Must be implemented for bulk DependentResource creation");
+    throw new IllegalStateException(
+        "Must be implemented for bulk DependentResource creation");
   }
 
-  public void delete(P primary, Context<P> context) {
-    if (bulk) {
-      deleteBulkResourcesIfRequired(0, primary, context);
+  public AbstractDependentResource<R, P> setResourceDiscriminator(
+      ResourceDiscriminator<R, P> resourceDiscriminator) {
+    if (resourceDiscriminator != null) {
+      this.resourceDiscriminator.add(resourceDiscriminator);
+    }
+    return this;
+  }
+
+  public ResourceDiscriminator<R, P> getResourceDiscriminator() {
+    if (this.resourceDiscriminator.isEmpty()) {
+      return null;
     } else {
-      handleDelete(primary, context);
+      return this.resourceDiscriminator.get(0);
     }
   }
 
-  protected void handleDelete(P primary, Context<P> context) {
-    throw new IllegalStateException("delete method be implemented if Deleter trait is supported");
+  protected int lastKnownBulkSize() {
+    return resourceDiscriminator.size();
   }
 
-  public void setResourceDiscriminator(
-      ResourceDiscriminator<R, P> resourceDiscriminator) {
-    this.resourceDiscriminator = resourceDiscriminator;
-  }
-
-  protected boolean isCreatable() {
-    return creatable;
-  }
-
-  protected boolean isUpdatable() {
-    return updatable;
-  }
-
-  protected boolean isBulk() {
-    return bulk;
-  }
 }
