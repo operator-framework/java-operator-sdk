@@ -24,42 +24,19 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   static <R extends HasMetadata, P extends HasMetadata> Matcher<R, P> matcherFor(
       Class<R> resourceType, KubernetesDependentResource<R, P> dependentResource) {
     if (Secret.class.isAssignableFrom(resourceType)) {
-      return new Matcher<>() {
-        @Override
-        public Result<R> match(R actualResource, P primary, Context<P> context) {
-          final var desired = dependentResource.desired(primary, context);
-          return Result.computed(
-              ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
-              desired);
-        }
-
-        @Override
-        public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-          final var desired = dependentResource.desired(primary, index, context);
-          return Result.computed(
-              ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
-              desired);
-        }
+      return (actualResource, primary, context) -> {
+        final var desired = dependentResource.desired(primary, context);
+        return Result.computed(
+            ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
+            desired);
       };
     } else if (ConfigMap.class.isAssignableFrom(resourceType)) {
-      return new Matcher<>() {
-        @Override
-        public Result<R> match(R actualResource, P primary, Context<P> context) {
-          final var desired = dependentResource.desired(primary, context);
-          return Result.computed(
-              ResourceComparators.compareConfigMapData((ConfigMap) desired,
-                  (ConfigMap) actualResource),
-              desired);
-        }
-
-        @Override
-        public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-          final var desired = dependentResource.desired(primary, index, context);
-          return Result.computed(
-              ResourceComparators.compareConfigMapData((ConfigMap) desired,
-                  (ConfigMap) actualResource),
-              desired);
-        }
+      return (actualResource, primary, context) -> {
+        final var desired = dependentResource.desired(primary, context);
+        return Result.computed(
+            ResourceComparators.compareConfigMapData((ConfigMap) desired,
+                (ConfigMap) actualResource),
+            desired);
       };
     } else {
       return new GenericKubernetesResourceMatcher(dependentResource);
@@ -69,12 +46,6 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, false);
-  }
-
-  @Override
-  public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-    var desired = dependentResource.desired(primary, index, context);
     return match(desired, actualResource, false);
   }
 
