@@ -8214,7 +8214,7 @@
 
             updateAria: function(toggled) {
                 attr(this.$el, 'aria-expanded', isBoolean(toggled)
-                    ? toggled// todo delete bulk support
+                    ? toggled
                     : isToggled(this.target, this.cls)
                 );
             }
