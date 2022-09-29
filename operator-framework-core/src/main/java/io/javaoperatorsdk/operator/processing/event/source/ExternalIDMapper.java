@@ -1,7 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-public interface ExternalIDMapper<R,T> {
+import java.util.Set;
 
-    T getExternalID(R resource);
+import io.fabric8.kubernetes.api.model.HasMetadata;
+
+public interface ExternalIDMapper<P extends HasMetadata, R, T> {
+
+  Set<T> getExternalIDs(P resource);
+
 
 }
