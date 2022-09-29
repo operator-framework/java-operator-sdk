@@ -125,7 +125,6 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     }
   }
 
-
   private synchronized void handleDependentCleaned(
       DependentResourceNode<?, P> dependentResourceNode) {
     var dependOns = dependentResourceNode.getDependsOn();
