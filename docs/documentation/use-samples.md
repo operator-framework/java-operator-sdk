@@ -53,7 +53,7 @@ Once you've added the dependency, define a main method initializing the Operator
 public class Runner {
 
     public static void main(String[] args) {
-        Operator operator = new Operator(DefaultConfigurationService.instance());
+        Operator operator = new Operator();
         operator.register(new WebPageReconciler());
         operator.start();
     }
