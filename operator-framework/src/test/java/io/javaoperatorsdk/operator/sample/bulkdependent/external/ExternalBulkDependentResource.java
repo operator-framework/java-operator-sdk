@@ -1,11 +1,16 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent.external;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
-import io.javaoperatorsdk.operator.processing.dependent.*;
+import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.BulkUpdater;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
@@ -38,7 +43,7 @@ public class ExternalBulkDependentResource
   @Override
   public void delete(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
-    deleteBulkResourcesIfRequired(0, lastKnownBulkSize(), primary, context);
+    deleteBulkResourcesIfRequired(0, primary, context);
   }
 
   @Override
@@ -92,9 +97,9 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public ResourceDiscriminator<ExternalResource, BulkDependentTestCustomResource> getResourceDiscriminator(
-      int index) {
-    return (resource, primary, context) -> context.getSecondaryResources(resource).stream()
+  public Optional<ExternalResource> getSecondaryResource(BulkDependentTestCustomResource primary,
+      int index, Context<BulkDependentTestCustomResource> context) {
+    return context.getSecondaryResources(resourceType()).stream()
         .filter(r -> r.getId().endsWith(EXTERNAL_RESOURCE_NAME_DELIMITER + index))
         .collect(Collectors.toList()).stream().findFirst();
   }
