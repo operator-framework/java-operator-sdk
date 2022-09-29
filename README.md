@@ -61,3 +61,4 @@ project, as shown below:
 - [Apache Flink Kubernetes operator](https://github.com/apache/flink-kubernetes-operator) is the market lead among Flink operators.
 - [Strimzi Access operator](https://github.com/strimzi/kafka-access-operator). While the core Strimzi operator development predates  
   JOSDK, but new components like the Access operator is using the framework.
+- [EureKubeOperator](https://medium.com/@heesuk.dev/implementing-kubernetes-operator-for-eureka-service-discovery-integration-by-java-operator-sdk-d21d8087c38e): integrates service discovery of Eureka and Kubernetes using the framework - developed by 11street. It is not released as open source yet, but is a very interesting reading about this problem and how it is solved by an operator in writen JOSDK.
