@@ -29,7 +29,6 @@ public class MultipleDependentResourceReconciler
 
   public MultipleDependentResourceReconciler() {
     firstDependentResourceConfigMap = new MultipleDependentResourceConfigMap(FIRST_CONFIG_MAP_ID);
-
     secondDependentResourceConfigMap = new MultipleDependentResourceConfigMap(SECOND_CONFIG_MAP_ID);
 
     firstDependentResourceConfigMap
