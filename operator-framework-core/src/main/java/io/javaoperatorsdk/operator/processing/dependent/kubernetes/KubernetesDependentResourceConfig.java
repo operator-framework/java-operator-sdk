@@ -75,7 +75,6 @@ public class KubernetesDependentResourceConfig<R> {
     return onAddFilter;
   }
 
-
   public OnUpdateFilter<R> onUpdateFilter() {
     return onUpdateFilter;
   }
@@ -91,5 +90,11 @@ public class KubernetesDependentResourceConfig<R> {
   @SuppressWarnings("rawtypes")
   public ResourceDiscriminator getResourceDiscriminator() {
     return resourceDiscriminator;
+  }
+
+  public <P> KubernetesDependentResourceConfig<R> setResourceDiscriminator(
+      ResourceDiscriminator<R, ?> resourceDiscriminator) {
+    this.resourceDiscriminator = resourceDiscriminator;
+    return this;
   }
 }
