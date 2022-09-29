@@ -26,16 +26,6 @@ class InformerWrapper<T extends HasMetadata>
 
   public InformerWrapper(SharedIndexInformer<T> informer) {
     this.informer = informer;
-
-    // register
-    ConfigurationServiceProvider.instance().getInformerStoppedHandler()
-        .ifPresent(ish -> {
-          final var stopped = informer.stopped();
-          stopped.handle((res, ex) -> {
-            ish.onStop(informer, ex);
-            return null;
-          });
-        });
     this.cache = (Cache<T>) informer.getStore();
   }
 
@@ -43,6 +33,27 @@ class InformerWrapper<T extends HasMetadata>
   public void start() throws OperatorException {
     try {
       informer.run();
+
+      // register stopped handler if we have one defined
+      ConfigurationServiceProvider.instance().getInformerStoppedHandler()
+          .ifPresent(ish -> {
+            final var stopped = informer.stopped();
+            if (stopped != null) {
+              stopped.handle((res, ex) -> {
+                ish.onStop(informer, ex);
+                return null;
+              });
+            } else {
+              final var apiTypeClass = informer.getApiTypeClass();
+              final var fullResourceName =
+                  HasMetadata.getFullResourceName(apiTypeClass);
+              final var version = HasMetadata.getVersion(apiTypeClass);
+              throw new IllegalStateException(
+                  "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
+                      + fullResourceName + "/" + version);
+            }
+          });
+
     } catch (Exception e) {
       ReconcilerUtils.handleKubernetesClientException(e,
           HasMetadata.getFullResourceName(informer.getApiTypeClass()));
