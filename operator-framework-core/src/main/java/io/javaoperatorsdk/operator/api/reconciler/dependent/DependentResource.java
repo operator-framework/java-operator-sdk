@@ -56,12 +56,6 @@ public interface DependentResource<R, P extends HasMetadata> {
    */
   void doNotProvideEventSource();
 
-  /**
-   * Retrieves the resource type associated with this DependentResource
-   *
-   * @return the resource type associated with this DependentResource
-   */
-  Class<R> resourceType();
 
   default Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return Optional.empty();
