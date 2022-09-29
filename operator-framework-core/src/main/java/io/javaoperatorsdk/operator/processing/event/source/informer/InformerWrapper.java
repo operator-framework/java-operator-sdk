@@ -31,12 +31,10 @@ class InformerWrapper<T extends HasMetadata>
     ConfigurationServiceProvider.instance().getInformerStoppedHandler()
         .ifPresent(ish -> {
           final var stopped = informer.stopped();
-          if (stopped != null) {
-            stopped.handle((res, ex) -> {
-              ish.onStop(informer, ex);
-              return null;
-            });
-          }
+          stopped.handle((res, ex) -> {
+            ish.onStop(informer, ex);
+            return null;
+          });
         });
     this.cache = (Cache<T>) informer.getStore();
   }
