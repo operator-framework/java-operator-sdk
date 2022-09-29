@@ -134,7 +134,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
-      applyCrd(config.getResourceTypeName());
+      // only try to apply a CRD for the reconciler if it is associated to a CR
+      if (CustomResource.class.isAssignableFrom(config.getResourceClass())) {
+        applyCrd(config.getResourceTypeName());
+      }
 
       if (ref.reconciler instanceof KubernetesClientAware) {
         ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
@@ -151,6 +154,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private void applyCrd(String resourceTypeName) {
     String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
     try (InputStream is = getClass().getResourceAsStream(path)) {
+      if (is == null) {
+        throw new IllegalStateException("Cannot find CRD at " + path);
+      }
       final var crd = getKubernetesClient().load(is);
       crd.createOrReplace();
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
