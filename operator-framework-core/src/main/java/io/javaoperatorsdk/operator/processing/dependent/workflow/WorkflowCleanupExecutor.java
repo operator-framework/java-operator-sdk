@@ -106,11 +106,10 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
           ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
           deleteCalled.add(dependentResourceNode);
         }
-        boolean deletePostConditionMet =
-            deletePostCondition
-                .map(c -> c.isMet(primary, getSecondaryResource(dependentResourceNode),
-                    context))
-                .orElse(true);
+        boolean deletePostConditionMet = deletePostCondition
+            .map(c -> c.isMet(primary, dependentResourceNode.getSecondaryResource(primary, context),
+                context))
+            .orElse(true);
         if (deletePostConditionMet) {
           alreadyVisited.add(dependentResourceNode);
           handleDependentCleaned(dependentResourceNode);
@@ -128,24 +127,6 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private <R> R getSecondaryResource(DependentResourceNode<R, P> dependentResourceNode) {
-    if (dependentResourceNode.getDependentResource() instanceof AbstractDependentResource &&
-        ((AbstractDependentResource) dependentResourceNode.getDependentResource())
-            .getResourceDiscriminator() != null) {
-      ResourceDiscriminator<R, P> discriminator =
-          ((AbstractDependentResource) dependentResourceNode.getDependentResource())
-              .getResourceDiscriminator();
-      return context
-          .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType(),
-              discriminator)
-          .orElse(null);
-    } else {
-      return context
-          .getSecondaryResource(dependentResourceNode.getDependentResource().resourceType())
-          .orElse(null);
-    }
-  }
 
   private synchronized void handleDependentCleaned(
       DependentResourceNode<?, P> dependentResourceNode) {

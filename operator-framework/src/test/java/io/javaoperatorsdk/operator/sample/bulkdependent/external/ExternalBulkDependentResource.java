@@ -4,24 +4,20 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
-import io.javaoperatorsdk.operator.support.ExternalResource;
-import io.javaoperatorsdk.operator.support.ExternalServiceMock;
-
-import static io.javaoperatorsdk.operator.support.ExternalResource.EXTERNAL_RESOURCE_NAME_DELIMITER;
-import static io.javaoperatorsdk.operator.support.ExternalResource.toExternalResourceId;
 
 public class ExternalBulkDependentResource
     extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource>
     implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource>,
     BulkUpdater<ExternalResource, BulkDependentTestCustomResource> {
 
+  public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
-
-  private ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
+  private final ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 
   public ExternalBulkDependentResource() {
     super(ExternalResource.class, ExternalResource::getId);
@@ -31,8 +27,8 @@ public class ExternalBulkDependentResource
   public Map<ResourceID, Set<ExternalResource>> fetchResources() {
     Map<ResourceID, Set<ExternalResource>> result = new HashMap<>();
     var resources = externalServiceMock.listResources();
-    resources.stream().forEach(er -> {
-      var resourceID = er.toResourceID();
+    resources.forEach(er -> {
+      var resourceID = toResourceID(er);
       result.putIfAbsent(resourceID, new HashSet<>());
       result.get(resourceID).add(er);
     });
@@ -55,15 +51,6 @@ public class ExternalBulkDependentResource
   public void deleteBulkResourceWithIndex(BulkDependentTestCustomResource primary,
       ExternalResource resource, int i, Context<BulkDependentTestCustomResource> context) {
     externalServiceMock.delete(resource.getId());
-  }
-
-  @Override
-  public BulkResourceDiscriminatorFactory<ExternalResource, BulkDependentTestCustomResource> bulkResourceDiscriminatorFactory() {
-    return index -> (resource, primary, context) -> {
-      return context.getSecondaryResources(resource).stream()
-          .filter(r -> r.getId().endsWith(EXTERNAL_RESOURCE_NAME_DELIMITER + index))
-          .collect(Collectors.toList()).stream().findFirst();
-    };
   }
 
   @Override
@@ -93,4 +80,22 @@ public class ExternalBulkDependentResource
     return Matcher.Result.computed(desired.equals(actualResource), desired);
   }
 
+  private static String toExternalResourceId(BulkDependentTestCustomResource primary, int i) {
+    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
+        primary.getMetadata().getNamespace() +
+        EXTERNAL_RESOURCE_NAME_DELIMITER + i;
+  }
+
+  private ResourceID toResourceID(ExternalResource externalResource) {
+    var parts = externalResource.getId().split(EXTERNAL_RESOURCE_NAME_DELIMITER);
+    return new ResourceID(parts[0], parts[1]);
+  }
+
+  @Override
+  public ResourceDiscriminator<ExternalResource, BulkDependentTestCustomResource> getResourceDiscriminator(
+      int index) {
+    return (resource, primary, context) -> context.getSecondaryResources(resource).stream()
+        .filter(r -> r.getId().endsWith(EXTERNAL_RESOURCE_NAME_DELIMITER + index))
+        .collect(Collectors.toList()).stream().findFirst();
+  }
 }

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalBulkResourceReconciler;
-import io.javaoperatorsdk.operator.support.ExternalServiceMock;
+import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalServiceMock;
 
 import static io.javaoperatorsdk.operator.bulkdependent.BulkDependentTestBase.*;
 import static org.assertj.core.api.Assertions.assertThat;

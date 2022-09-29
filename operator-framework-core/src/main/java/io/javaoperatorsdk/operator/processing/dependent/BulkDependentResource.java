@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 
 /**
@@ -29,10 +30,6 @@ public interface BulkDependentResource<R, P extends HasMetadata> extends Creator
    */
   void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context);
 
-  /**
-   * @return a discriminator factor that helps to create a discriminator for a certain resource with
-   *         an index
-   */
-  BulkResourceDiscriminatorFactory<R, P> bulkResourceDiscriminatorFactory();
+  ResourceDiscriminator<R, P> getResourceDiscriminator(int index);
 
 }

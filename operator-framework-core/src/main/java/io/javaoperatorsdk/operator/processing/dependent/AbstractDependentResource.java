@@ -60,17 +60,19 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    var count = bulk ? bulkDependentResource.count(primary, context) : 1;
     if (bulk) {
+      final var count = bulkDependentResource.count(primary, context);
       deleteBulkResourcesIfRequired(count, lastKnownBulkSize(), primary, context);
       adjustDiscriminators(count);
+      @SuppressWarnings("unchecked")
+      final ReconcileResult<R>[] results = new ReconcileResult[count];
+      for (int i = 0; i < count; i++) {
+        results[i] = reconcileIndexAware(primary, i, context);
+      }
+      return ReconcileResult.aggregatedResult(results);
+    } else {
+      return reconcileIndexAware(primary, 0, context);
     }
-    ReconcileResult<R> result = new ReconcileResult<>();
-    for (int i = 0; i < count; i++) {
-      var res = reconcileIndexAware(primary, i, context);
-      result.addReconcileResult(res);
-    }
-    return result;
   }
 
   protected void deleteBulkResourcesIfRequired(int targetCount, int actualCount, P primary,
@@ -92,8 +94,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
     if (resourceDiscriminator.size() < count) {
       for (int i = resourceDiscriminator.size(); i < count; i++) {
-        resourceDiscriminator.add(bulkDependentResource.bulkResourceDiscriminatorFactory()
-            .createResourceDiscriminator(i));
+        resourceDiscriminator.add(bulkDependentResource.getResourceDiscriminator(i));
       }
     }
     if (resourceDiscriminator.size() > count) {
@@ -147,12 +148,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         : desired(primary, context);
   }
 
-  protected Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    if (resourceDiscriminator.isEmpty()) {
-      return context.getSecondaryResource(resourceType());
-    } else {
-      return context.getSecondaryResource(resourceType(), resourceDiscriminator.get(0));
-    }
+  public Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return resourceDiscriminator.isEmpty() ? context.getSecondaryResource(resourceType())
+        : resourceDiscriminator.get(0).distinguish(resourceType(), primary, context);
   }
 
   protected Optional<R> getSecondaryResourceIndexAware(P primary, int index, Context<P> context) {

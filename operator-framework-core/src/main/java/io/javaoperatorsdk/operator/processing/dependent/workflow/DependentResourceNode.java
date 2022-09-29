@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
@@ -84,5 +85,9 @@ public class DependentResourceNode<R, P extends HasMetadata> {
 
   public List<DependentResourceNode> getParents() {
     return parents;
+  }
+
+  protected R getSecondaryResource(P primary, Context<P> context) {
+    return getDependentResource().getSecondaryResource(primary, context).orElse(null);
   }
 }
