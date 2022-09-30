@@ -36,8 +36,8 @@ would fail again on the same error.
 
 ## Notes
 
-- The informer implementation if fabric8 client changed in this regard, before it was not stopping on deserialization
-  error, but as describe this change in behavior is completely acceptable.
+- The informer implementation in fabric8 client changed in this regard, before it was not stopping on deserialization
+  error, but as described this change in behavior is completely acceptable.
 
 - the deserializer can be set to be more lenient by configuring the Serialization Unmatched Field Type module:
   `Serialization.UNMATCHED_FIELD_TYPE_MODULE.setRestrictToTemplates(true);`. In general is not desired to
