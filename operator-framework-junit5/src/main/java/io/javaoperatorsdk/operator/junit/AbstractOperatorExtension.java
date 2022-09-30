@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.extension.*;
@@ -22,7 +23,7 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Utils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 
 public abstract class AbstractOperatorExtension implements HasKubernetesClient,
@@ -35,7 +36,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   public static final int CRD_READY_WAIT = 2000;
 
   private final KubernetesClient kubernetesClient;
-  protected final ConfigurationService configurationService;
   protected final List<HasMetadata> infrastructure;
   protected Duration infrastructureTimeout;
   protected final boolean oneNamespacePerClass;
@@ -45,7 +45,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected String namespace;
 
   protected AbstractOperatorExtension(
-      ConfigurationService configurationService,
       List<HasMetadata> infrastructure,
       Duration infrastructureTimeout,
       boolean oneNamespacePerClass,
@@ -54,8 +53,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient != null ? kubernetesClient
         : new KubernetesClientBuilder()
-            .withConfig(configurationService.getClientConfiguration()).build();
-    this.configurationService = configurationService;
+            .withConfig(ConfigurationServiceProvider.instance().getClientConfiguration()).build();
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
     this.oneNamespacePerClass = oneNamespacePerClass;
@@ -126,7 +124,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   }
 
   @Deprecated(forRemoval = true)
-  @SuppressWarnings("unchecked")
   public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
     return delete(resource);
   }
@@ -214,7 +211,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
   @SuppressWarnings("unchecked")
   public static abstract class AbstractBuilder<T extends AbstractBuilder<T>> {
-    protected ConfigurationService configurationService;
     protected final List<HasMetadata> infrastructure;
     protected Duration infrastructureTimeout;
     protected boolean preserveNamespaceOnError;
@@ -222,8 +218,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean oneNamespacePerClass;
 
     protected AbstractBuilder() {
-      this.configurationService = ConfigurationServiceProvider.instance();
-
       this.infrastructure = new ArrayList<>();
       this.infrastructureTimeout = Duration.ofMinutes(1);
 
@@ -255,8 +249,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       return (T) this;
     }
 
-    public T withConfigurationService(ConfigurationService value) {
-      configurationService = value;
+    public T withConfigurationService(Consumer<ConfigurationServiceOverrider> overrider) {
+      ConfigurationServiceProvider.overrideCurrent(overrider);
       return (T) this;
     }
 
