@@ -9,8 +9,11 @@ accepted
 In case there are multiple versions of a custom resource in can happen that a controller/informer tracking
 such a resource might run into deserialization problem as shown
 in [this integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/07aab1a9914d865364d7236e496ef9ba5b50699e/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultiVersionCRDIT.java#L55-L55)
-. In the mentioned case two versions of a custom resource are not compatible with each other. The informer receives
-both, but naturally not able to deserialize one of them.
+.
+Such case is possible (as seen in the test) if there are no conversion hooks in place, so the two custom resources
+which have different version are stored in the original form (not converted) and are not compatible.
+In this case, if there is no further filtering (by labels) informer receives both, but naturally not able to deserialize
+one of them.
 
 How should the framework or the underlying informer behave?
 
@@ -33,5 +36,9 @@ would fail again on the same error.
 
 ## Notes
 
-The informer implementation if fabric8 client changed in this regard, before it was not stopping on deserialization
-error, but as describe this change in behavior is completely acceptable.
+- The informer implementation if fabric8 client changed in this regard, before it was not stopping on deserialization
+  error, but as describe this change in behavior is completely acceptable.
+
+- the deserializer can be set to be more lenient by configuring the Serialization Unmatched Field Type module:
+  `Serialization.UNMATCHED_FIELD_TYPE_MODULE.setRestrictToTemplates(true);`. In general is not desired to
+  process custom resources that are not deserialized correctly.  
