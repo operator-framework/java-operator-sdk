@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator;
 import java.time.Duration;
 import java.util.HashMap;
 
+import io.fabric8.kubernetes.client.utils.Serialization;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
