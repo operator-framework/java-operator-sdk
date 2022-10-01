@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,17 +31,19 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
   private final Duration operatorDeploymentTimeout;
 
   private ClusterDeployedOperatorExtension(
-      ConfigurationService configurationService,
-      List<HasMetadata> operatorDeployment,
-      Duration operatorDeploymentTimeout,
-      List<HasMetadata> infrastructure,
-      Duration infrastructureTimeout,
-      boolean preserveNamespaceOnError,
-      boolean waitForNamespaceDeletion,
-      boolean oneNamespacePerClass) {
+          ConfigurationService configurationService,
+          List<HasMetadata> operatorDeployment,
+          Duration operatorDeploymentTimeout,
+          List<HasMetadata> infrastructure,
+          Duration infrastructureTimeout,
+          boolean preserveNamespaceOnError,
+          boolean waitForNamespaceDeletion,
+          boolean oneNamespacePerClass,
+          KubernetesClient kubernetesClient) {
     super(configurationService, infrastructure, infrastructureTimeout, oneNamespacePerClass,
         preserveNamespaceOnError,
-        waitForNamespaceDeletion);
+        waitForNamespaceDeletion,
+        kubernetesClient);
     this.operatorDeployment = operatorDeployment;
     this.operatorDeploymentTimeout = operatorDeploymentTimeout;
   }
@@ -104,6 +108,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
+    private KubernetesClient kubernetesClient;
 
     protected Builder() {
       super();
@@ -135,6 +140,11 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return this;
     }
 
+    public Builder withKubernetesClient(KubernetesClient kubernetesClient) {
+      this.kubernetesClient = kubernetesClient;
+      return this;
+    }
+
     public ClusterDeployedOperatorExtension build() {
       return new ClusterDeployedOperatorExtension(
           configurationService,
@@ -144,7 +154,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           infrastructureTimeout,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
-          oneNamespacePerClass);
+          oneNamespacePerClass,
+          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build());
     }
   }
 }

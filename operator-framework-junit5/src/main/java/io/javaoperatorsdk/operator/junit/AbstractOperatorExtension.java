@@ -50,9 +50,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       Duration infrastructureTimeout,
       boolean oneNamespacePerClass,
       boolean preserveNamespaceOnError,
-      boolean waitForNamespaceDeletion) {
-
-    this.kubernetesClient = new KubernetesClientBuilder().build();
+      boolean waitForNamespaceDeletion,
+      KubernetesClient kubernetesClient) {
+    this.kubernetesClient = kubernetesClient;
     this.configurationService = configurationService;
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
