@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -270,7 +269,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
-          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build());
+          kubernetesClient);
     }
   }
 

@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
 public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension {
@@ -155,7 +154,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
-          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build());
+          kubernetesClient);
     }
   }
 }
