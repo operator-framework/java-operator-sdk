@@ -213,28 +213,26 @@ public class Controller<P extends HasMetadata>
       final var provider = (EventSourceInitializer<P>) this.reconciler;
       final var ownSources = provider.prepareEventSources(context);
       ownSources.forEach(eventSourceManager::registerEventSource);
-    } else {
-      managedWorkflow
-          .getDependentResourcesByName().entrySet().stream()
-          .forEach(drEntry -> {
-            if (drEntry.getValue() instanceof EventSourceProvider) {
-              final var provider = (EventSourceProvider) drEntry.getValue();
-              final var source = provider.initEventSource(context);
-              eventSourceManager.registerEventSource(drEntry.getKey(), source);
-            } else {
-              Optional<ResourceEventSource> eventSource =
-                  drEntry.getValue().eventSource(context);
-              eventSource.ifPresent(es -> {
-                eventSourceManager.registerEventSource(drEntry.getKey(), es);
-              });
-            }
-          });
-      managedWorkflow.getDependentResourcesByName().entrySet().stream().map(Map.Entry::getValue)
-          .filter(EventSourceAware.class::isInstance)
-          .forEach(dr -> ((EventSourceAware) dr)
-              .selectEventSources(eventSourceManager));
     }
-
+    managedWorkflow
+        .getDependentResourcesByName().entrySet().stream()
+        .forEach(drEntry -> {
+          if (drEntry.getValue() instanceof EventSourceProvider) {
+            final var provider = (EventSourceProvider) drEntry.getValue();
+            final var source = provider.initEventSource(context);
+            eventSourceManager.registerEventSource(drEntry.getKey(), source);
+          } else {
+            Optional<ResourceEventSource> eventSource =
+                drEntry.getValue().eventSource(context);
+            eventSource.ifPresent(es -> {
+              eventSourceManager.registerEventSource(drEntry.getKey(), es);
+            });
+          }
+        });
+    managedWorkflow.getDependentResourcesByName().entrySet().stream().map(Map.Entry::getValue)
+        .filter(EventSourceAware.class::isInstance)
+        .forEach(dr -> ((EventSourceAware) dr)
+            .selectEventSources(eventSourceManager));
   }
 
   @Override
