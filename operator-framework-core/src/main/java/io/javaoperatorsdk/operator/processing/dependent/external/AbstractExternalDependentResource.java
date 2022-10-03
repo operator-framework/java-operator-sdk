@@ -8,6 +8,10 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
+  protected AbstractExternalDependentResource(Class<R> resourceType) {
+    super(resourceType);
+  }
+
   @Override
   protected void onCreated(ResourceID primaryResourceId, R created) {
     super.onCreated(primaryResourceId, created);
