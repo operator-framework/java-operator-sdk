@@ -60,10 +60,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (discriminator != null) {
       setResourceDiscriminator(discriminator);
     }
-    config.getEventSourceToUse().ifPresent(n -> {
-      doNotProvideEventSource();
-      setEventSourceToUse(n);
-    });
   }
 
   private void configureWith(String labelSelector, Set<String> namespaces,
@@ -160,7 +156,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     client.resource(resource).delete();
   }
 
-  @SuppressWarnings("unchecked")
   protected Resource<R> prepare(R desired,
       P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",

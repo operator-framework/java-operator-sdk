@@ -9,13 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 @Ignore
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
@@ -29,7 +27,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected BulkDependentResource<R, P> bulkDependentResource;
-  private boolean returnEventSource = true;
 
   protected List<ResourceDiscriminator<R, P>> resourceDiscriminator = new ArrayList<>(1);
 
@@ -40,23 +37,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
     bulkDependentResource = bulk ? (BulkDependentResource<R, P>) this : null;
   }
-
-  @Override
-  public void doNotProvideEventSource() {
-    this.returnEventSource = false;
-  }
-
-  @Override
-  public Optional<ResourceEventSource<R, P>> eventSource(EventSourceContext<P> eventSourceContext) {
-    if (!returnEventSource) {
-      return Optional.empty();
-    } else {
-      return Optional.of(provideEventSource(eventSourceContext));
-    }
-  }
-
-  protected abstract ResourceEventSource<R, P> provideEventSource(
-      EventSourceContext<P> eventSourceContext);
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
@@ -237,9 +217,5 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected int lastKnownBulkSize() {
     return resourceDiscriminator.size();
-  }
-
-  protected boolean getReturnEventSource() {
-    return returnEventSource;
   }
 }

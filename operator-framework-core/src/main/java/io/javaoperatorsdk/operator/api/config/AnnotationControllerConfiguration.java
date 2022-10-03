@@ -248,7 +248,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
             instantiateIfNotDefault(dependent.readyPostcondition(), Condition.class, context),
             instantiateIfNotDefault(dependent.reconcilePrecondition(), Condition.class, context),
             instantiateIfNotDefault(dependent.deletePostcondition(), Condition.class, context),
-            dependent.provideEventSource());
+            Constants.NO_VALUE_SET.equals(dependent.eventSource()) ? null
+                : dependent.eventSource());
         specsMap.put(name, spec);
       }
 
@@ -314,14 +315,12 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       resourceDiscriminator =
           instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
               ResourceDiscriminator.class, context);
-      eventSourceNameToUse = Constants.NO_VALUE_SET.equals(kubeDependent.eventSourceToUse()) ? null
-          : kubeDependent.eventSourceToUse();
     }
 
     config =
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
             resourceDiscriminator, onAddFilter,
-            onUpdateFilter, onDeleteFilter, genericFilter, eventSourceNameToUse);
+            onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
   }

@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
@@ -78,11 +79,13 @@ class ManagedWorkflowSupport {
     final var dependentResource =
         ConfigurationServiceProvider.instance().dependentResourceFactory().createFrom(spec);
 
+    if (dependentResource instanceof EventSourceAware) {
+      EventSourceAware eventSourceAware = (EventSourceAware) dependentResource;
+      spec.getEventSourceName().ifPresent(n -> eventSourceAware.useEventSourceNamed((String) n));
+    }
+
     if (dependentResource instanceof KubernetesClientAware) {
       ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
-    }
-    if (!spec.provideEventSource()) {
-      dependentResource.doNotProvideEventSource();
     }
     if (dependentResource instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) dependentResource;

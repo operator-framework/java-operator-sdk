@@ -20,8 +20,5 @@ public class EmptyTestDependentResource
     return Deployment.class;
   }
 
-  @Override
-  public void doNotProvideEventSource() {}
-
 }
 

@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Optional;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -18,8 +17,6 @@ public class KubernetesDependentResourceConfig<R> {
   private String labelSelector = NO_VALUE_SET;
   private boolean namespacesWereConfigured = false;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
-  private String eventSourceToUse;
-
   private OnAddFilter<R> onAddFilter;
 
   private OnUpdateFilter<R> onUpdateFilter;
@@ -34,7 +31,7 @@ public class KubernetesDependentResourceConfig<R> {
       boolean configuredNS, ResourceDiscriminator<R, ?> resourceDiscriminator,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
-      OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter, String eventSourceToUse) {
+      OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.namespacesWereConfigured = configuredNS;
@@ -43,12 +40,10 @@ public class KubernetesDependentResourceConfig<R> {
     this.onDeleteFilter = onDeleteFilter;
     this.genericFilter = genericFilter;
     this.resourceDiscriminator = resourceDiscriminator;
-    this.eventSourceToUse = eventSourceToUse;
   }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
-    this(namespaces, labelSelector, true, null, null, null,
-        null, null, null);
+    this(namespaces, labelSelector, true, null, null, null, null, null);
   }
 
   public KubernetesDependentResourceConfig<R> setNamespaces(Set<String> namespaces) {
@@ -95,9 +90,5 @@ public class KubernetesDependentResourceConfig<R> {
   @SuppressWarnings("rawtypes")
   public ResourceDiscriminator getResourceDiscriminator() {
     return resourceDiscriminator;
-  }
-
-  public Optional<String> getEventSourceToUse() {
-    return Optional.ofNullable(eventSourceToUse);
   }
 }

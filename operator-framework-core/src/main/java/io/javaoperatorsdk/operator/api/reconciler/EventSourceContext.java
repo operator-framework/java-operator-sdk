@@ -3,6 +3,8 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
@@ -13,14 +15,14 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
  */
 public class EventSourceContext<P extends HasMetadata> {
 
-  private final IndexerResourceCache<P> primaryCache;
+  private final EventSourceManager<P> eventSourceManager;
   private final ControllerConfiguration<P> controllerConfiguration;
   private final KubernetesClient client;
 
-  public EventSourceContext(IndexerResourceCache<P> primaryCache,
+  public EventSourceContext(EventSourceManager<P> eventSourceManager,
       ControllerConfiguration<P> controllerConfiguration,
       KubernetesClient client) {
-    this.primaryCache = primaryCache;
+    this.eventSourceManager = eventSourceManager;
     this.controllerConfiguration = controllerConfiguration;
     this.client = client;
   }
@@ -31,7 +33,7 @@ public class EventSourceContext<P extends HasMetadata> {
    * @return the primary resource cache
    */
   public IndexerResourceCache<P> getPrimaryCache() {
-    return primaryCache;
+    return eventSourceManager.getControllerResourceEventSource();
   }
 
   /**
@@ -53,5 +55,9 @@ public class EventSourceContext<P extends HasMetadata> {
    */
   public KubernetesClient getClient() {
     return client;
+  }
+
+  public EventSourceRetriever<P> getEventSourceRetriever() {
+    return eventSourceManager;
   }
 }
