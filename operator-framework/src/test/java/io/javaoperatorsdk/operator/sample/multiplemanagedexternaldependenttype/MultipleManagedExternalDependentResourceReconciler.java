@@ -16,8 +16,10 @@ import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(dependents = {
-    @Dependent(type = ExternalDependentResource1.class, provideEventSource = false),
-    @Dependent(type = ExternalDependentResource2.class, provideEventSource = false)
+    @Dependent(type = ExternalDependentResource1.class,
+        eventSource = MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE),
+    @Dependent(type = ExternalDependentResource2.class,
+        eventSource = MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE)
 })
 public class MultipleManagedExternalDependentResourceReconciler
     implements Reconciler<MultipleManagedExternalDependentResourceCustomResource>,
@@ -47,17 +49,16 @@ public class MultipleManagedExternalDependentResourceReconciler
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
-    PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(() -> {
-          var lists = externalServiceMock.listResources();
-          Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
-          lists.forEach(er -> {
-            var resourceId = er.toResourceID();
-            res.computeIfAbsent(resourceId, rid -> new HashSet<>());
-            res.get(resourceId).add(er);
-          });
-          return res;
-        }, 1000L, ExternalResource.class, ExternalResource::getId);
+    final var pollingEventSource = new PollingEventSource<>(() -> {
+      var lists = externalServiceMock.listResources();
+      Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
+      lists.forEach(er -> {
+        var resourceId = er.toResourceID();
+        res.computeIfAbsent(resourceId, rid -> new HashSet<>());
+        res.get(resourceId).add(er);
+      });
+      return res;
+    }, 1000L, ExternalResource.class, ExternalResource::getId);
 
     return Map.of(CONFIG_MAP_EVENT_SOURCE, pollingEventSource);
   }

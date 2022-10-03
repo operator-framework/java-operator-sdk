@@ -65,5 +65,5 @@ public @interface Dependent {
    *
    * @return if the event source (if any) provided by the dependent resource should be used or not.
    */
-  boolean provideEventSource() default true;
+  String eventSource() default NO_VALUE_SET;
 }

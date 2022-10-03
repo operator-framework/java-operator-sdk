@@ -40,7 +40,6 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -214,25 +213,21 @@ public class Controller<P extends HasMetadata>
       final var ownSources = provider.prepareEventSources(context);
       ownSources.forEach(eventSourceManager::registerEventSource);
     }
-    managedWorkflow
-        .getDependentResourcesByName().entrySet().stream()
-        .forEach(drEntry -> {
-          if (drEntry.getValue() instanceof EventSourceProvider) {
-            final var provider = (EventSourceProvider) drEntry.getValue();
-            final var source = provider.initEventSource(context);
-            eventSourceManager.registerEventSource(drEntry.getKey(), source);
-          } else {
-            Optional<ResourceEventSource> eventSource =
-                drEntry.getValue().eventSource(context);
-            eventSource.ifPresent(es -> {
-              eventSourceManager.registerEventSource(drEntry.getKey(), es);
-            });
-          }
-        });
-    managedWorkflow.getDependentResourcesByName().entrySet().stream().map(Map.Entry::getValue)
-        .filter(EventSourceAware.class::isInstance)
-        .forEach(dr -> ((EventSourceAware) dr)
-            .selectEventSources(eventSourceManager));
+    managedWorkflow.getDependentResourcesByName().entrySet().stream().filter(entry -> {
+      final var value = entry.getValue();
+      return value instanceof EventSourceProvider || value instanceof EventSourceAware;
+    }).forEach(entry -> {
+      final var value = entry.getValue();
+      final var key = entry.getKey();
+      if (value instanceof EventSourceProvider) {
+        final var provider = (EventSourceProvider) value;
+        final var source = provider.initEventSource(context);
+        eventSourceManager.registerEventSource(key, source);
+      } else {
+        ((EventSourceAware<?, P>) value).eventSource(context)
+            .ifPresent(es -> eventSourceManager.registerEventSource(key, es));
+      }
+    });
   }
 
   @Override
@@ -299,8 +294,8 @@ public class Controller<P extends HasMetadata>
     try {
       // check that the custom resource is known by the cluster if configured that way
       validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
-      final var context = new EventSourceContext<>(
-          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+      final var context =
+          new EventSourceContext<>(eventSourceManager, configuration, kubernetesClient);
 
       initAndRegisterEventSources(context);
       eventSourceManager.start();
