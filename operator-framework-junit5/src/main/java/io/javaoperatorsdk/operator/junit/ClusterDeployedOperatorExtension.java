@@ -12,14 +12,14 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
 public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension {
@@ -31,15 +31,15 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
   private final Duration operatorDeploymentTimeout;
 
   private ClusterDeployedOperatorExtension(
-          ConfigurationService configurationService,
-          List<HasMetadata> operatorDeployment,
-          Duration operatorDeploymentTimeout,
-          List<HasMetadata> infrastructure,
-          Duration infrastructureTimeout,
-          boolean preserveNamespaceOnError,
-          boolean waitForNamespaceDeletion,
-          boolean oneNamespacePerClass,
-          KubernetesClient kubernetesClient) {
+      ConfigurationService configurationService,
+      List<HasMetadata> operatorDeployment,
+      Duration operatorDeploymentTimeout,
+      List<HasMetadata> infrastructure,
+      Duration infrastructureTimeout,
+      boolean preserveNamespaceOnError,
+      boolean waitForNamespaceDeletion,
+      boolean oneNamespacePerClass,
+      KubernetesClient kubernetesClient) {
     super(configurationService, infrastructure, infrastructureTimeout, oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
