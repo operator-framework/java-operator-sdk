@@ -49,7 +49,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
-  // todo should be a setter?
   /**
    * Calling this method, instructs the implementation to not provide an event source, even if it
    * normally does.

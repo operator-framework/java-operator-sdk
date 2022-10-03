@@ -52,10 +52,10 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   public void selectEventSources(EventSourceRetriever<P> eventSourceRetriever) {
     if (!getReturnEventSource()) {
       if (eventSourceToUse != null) {
-        eventSource =
-            (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse);
+        setEventSource(
+            (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse));
       } else {
-        eventSource = (T) eventSourceRetriever.getResourceEventSourceFor(resourceType());
+        setEventSource((T) eventSourceRetriever.getResourceEventSourceFor(resourceType()));
       }
     }
   }
