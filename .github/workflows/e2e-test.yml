@@ -5,10 +5,12 @@ on:
   pull_request:
     paths-ignore:
       - 'docs/**'
+      - 'adr/**'
     branches: [ main, next ]
   push:
     paths-ignore:
       - 'docs/**'
+      - 'adr/**'
     branches:
       - main
       - next

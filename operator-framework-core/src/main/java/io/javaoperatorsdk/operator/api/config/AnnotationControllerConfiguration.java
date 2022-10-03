@@ -313,7 +313,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
               .orElse(null);
 
       resourceDiscriminator =
-          instantiateDiscriminatorIfNotVoid(kubeDependent.resourceDiscriminator());
+              instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
+                      ResourceDiscriminator.class, context);
       eventSourceNameToUse = Constants.NO_VALUE_SET.equals(kubeDependent.eventSourceToUse()) ? null
           : kubeDependent.eventSourceToUse();
     }

@@ -10,10 +10,12 @@ on:
   push:
     paths-ignore:
       - 'docs/**'
+      - 'adr/**'
     branches: [ main ]
   pull_request:
     paths-ignore:
       - 'docs/**'
+      - 'adr/**'
     types: [ opened, synchronize, reopened ]
 
 jobs:
