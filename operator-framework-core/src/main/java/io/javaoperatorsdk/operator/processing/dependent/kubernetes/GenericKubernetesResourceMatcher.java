@@ -35,7 +35,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
         @Override
         public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-          final var desired = dependentResource.desired(primary, context);
+          final var desired = dependentResource.desired(primary, index, context);
           return Result.computed(
               ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
               desired);

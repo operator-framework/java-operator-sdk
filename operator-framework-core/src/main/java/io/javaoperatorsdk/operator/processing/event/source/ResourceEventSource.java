@@ -12,9 +12,9 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 public interface ResourceEventSource<R, P extends HasMetadata> extends EventSource {
 
   /**
-   * Retrieves the resource type associated with this ResourceOwner
+   * Retrieves the resource type associated with this ResourceEventSource
    *
-   * @return the resource type associated with this ResourceOwner
+   * @return the resource type associated with this ResourceEventSource
    */
   Class<R> resourceType();
 

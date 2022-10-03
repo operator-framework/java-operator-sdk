@@ -54,9 +54,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     this.annotation = reconciler.getClass()
         .getAnnotation(io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
     if (annotation == null) {
-      throw new OperatorException(
-          "Missing mandatory @" + ControllerConfiguration.class.getSimpleName() +
-              " annotation for reconciler:  " + reconciler);
+      throw new OperatorException("Missing mandatory @" + CONTROLLER_CONFIG_ANNOTATION +
+          " annotation for reconciler:  " + reconciler);
     }
   }
 
@@ -247,9 +246,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
-            instantiateConditionIfNotDefault(dependent.readyPostcondition(), context),
-            instantiateConditionIfNotDefault(dependent.reconcilePrecondition(), context),
-            instantiateConditionIfNotDefault(dependent.deletePostcondition(), context),
+            instantiateIfNotDefault(dependent.readyPostcondition(), Condition.class, context),
+            instantiateIfNotDefault(dependent.reconcilePrecondition(), Condition.class, context),
+            instantiateIfNotDefault(dependent.deletePostcondition(), Condition.class, context),
             dependent.provideEventSource());
         specsMap.put(name, spec);
       }
@@ -259,10 +258,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
-  protected Condition<?, ?> instantiateConditionIfNotDefault(Class<? extends Condition> condition,
+  protected <T> T instantiateIfNotDefault(Class<? extends T> toInstantiate, Class<T> defaultClass,
       String context) {
-    if (condition != Condition.class) {
-      return instantiateAndConfigureIfNeeded(condition, Condition.class, context);
+    if (!defaultClass.equals(toInstantiate)) {
+      return instantiateAndConfigureIfNeeded(toInstantiate, defaultClass, context);
     }
     return null;
   }
@@ -299,7 +298,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
-
       final var context =
           KUBE_DEPENDENT_NAME + " annotation on " + dependentType.getName() + " DependentResource";
       onAddFilter = createFilter(kubeDependent.onAddFilter(), OnAddFilter.class, context)
@@ -315,7 +313,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
               .orElse(null);
 
       resourceDiscriminator =
-          instantiateDiscriminatorIfNotVoid(kubeDependent.resourceDiscriminator());
+          instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
+              ResourceDiscriminator.class, context);
       eventSourceNameToUse = Constants.NO_VALUE_SET.equals(kubeDependent.eventSourceToUse()) ? null
           : kubeDependent.eventSourceToUse();
     }

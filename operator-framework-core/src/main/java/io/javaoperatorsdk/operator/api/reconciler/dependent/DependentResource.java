@@ -56,6 +56,11 @@ public interface DependentResource<R, P extends HasMetadata> {
    */
   void doNotProvideEventSource();
 
+
+  default Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return Optional.empty();
+  }
+
   /**
    * Computes a default name for the specified DependentResource class
    *

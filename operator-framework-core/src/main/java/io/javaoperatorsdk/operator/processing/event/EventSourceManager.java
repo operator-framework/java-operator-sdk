@@ -173,8 +173,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(
-      Class<R> dependentType) {
+  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType) {
     return getResourceEventSourceFor(dependentType, null);
   }
 

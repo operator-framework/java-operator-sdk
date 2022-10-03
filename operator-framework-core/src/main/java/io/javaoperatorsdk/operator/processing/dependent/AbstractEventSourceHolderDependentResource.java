@@ -20,12 +20,18 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     extends AbstractDependentResource<R, P> implements EventSourceAware<P> {
 
   private T eventSource;
+  private final Class<R> resourceType;
   private boolean isCacheFillerEventSource;
   protected OnAddFilter<R> onAddFilter;
   protected OnUpdateFilter<R> onUpdateFilter;
   protected OnDeleteFilter<R> onDeleteFilter;
   protected GenericFilter<R> genericFilter;
   protected String eventSourceToUse;
+
+  protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
+    this.resourceType = resourceType;
+  }
+
 
   public ResourceEventSource<R, P> provideEventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
@@ -53,6 +59,11 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   /** To make this backwards compatible even for respect of overriding */
   public T initEventSource(EventSourceContext<P> context) {
     return (T) eventSource(context).orElseThrow();
+  }
+
+  @Override
+  public Class<R> resourceType() {
+    return resourceType;
   }
 
   protected abstract T createEventSource(EventSourceContext<P> context);

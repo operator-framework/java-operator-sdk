@@ -19,10 +19,7 @@ public class ResourceIDMatcherDiscriminator<R extends HasMetadata, P extends Has
   public Optional<R> distinguish(Class<R> resource, P primary, Context<P> context) {
     var resourceID = mapper.apply(primary);
     return context.getSecondaryResources(resource).stream()
-        .filter(r -> r.getMetadata().getName()
-            .equals(resourceID.getName()) &&
-            resourceID.getNamespace().map(ns -> ns.equals(r.getMetadata().getNamespace()))
-                .orElse(true))
+        .filter(resourceID::isSameResource)
         .findFirst();
   }
 }

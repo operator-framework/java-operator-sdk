@@ -38,13 +38,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected KubernetesClient client;
   private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
-  private final Class<R> resourceType;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig kubernetesDependentResourceConfig;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
-    this.resourceType = resourceType;
+    super(resourceType);
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
         : GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
 
@@ -101,7 +100,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   /**
    * Use to share informers between event more resources.
    *
-   * @param informerEventSource informer to use*
+   * @param informerEventSource informer to use
    */
   public void configureWith(InformerEventSource<R, P> informerEventSource) {
     setEventSource(informerEventSource);
@@ -186,7 +185,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
       genericFilter = kubernetesDependentResourceConfig.genericFilter();
-
+      var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
+      if (discriminator != null) {
+        setResourceDiscriminator(discriminator);
+      }
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
           !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);
@@ -223,11 +225,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  public Class<R> resourceType() {
-    return resourceType;
-  }
-
-  @Override
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
   }
@@ -256,5 +253,4 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     ((InformerEventSource<R, P>) eventSource().orElseThrow())
         .cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
-
 }

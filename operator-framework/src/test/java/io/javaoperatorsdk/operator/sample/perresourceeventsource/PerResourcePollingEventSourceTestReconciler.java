@@ -57,7 +57,8 @@ public class PerResourcePollingEventSourceTestReconciler
   }
 
   public int getNumberOfExecutions(String name) {
-    return numberOfExecutions.get(name);
+    var num = numberOfExecutions.get(name);
+    return num == null ? 0 : num;
   }
 
   public int getNumberOfFetchExecution(String name) {

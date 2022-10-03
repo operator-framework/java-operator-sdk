@@ -7,12 +7,11 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkResourceDiscriminatorFactory;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 /**
@@ -29,19 +28,6 @@ public class ConfigMapDeleterBulkDependentResource
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
   public static final String ADDITIONAL_DATA_KEY = "additionalData";
-  private BulkResourceDiscriminatorFactory<ConfigMap, BulkDependentTestCustomResource> factory =
-      index -> (resource, primary, context) -> {
-        var resources = context.getSecondaryResources(resource).stream()
-            .filter(r -> r.getMetadata().getName().endsWith("-" + index))
-            .collect(Collectors.toList());
-        if (resources.isEmpty()) {
-          return Optional.empty();
-        } else if (resources.size() > 1) {
-          throw new IllegalStateException("More than one resource found for index:" + index);
-        } else {
-          return Optional.of(resources.get(0));
-        }
-      };
 
   public ConfigMapDeleterBulkDependentResource() {
     super(ConfigMap.class);
@@ -68,7 +54,19 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  public BulkResourceDiscriminatorFactory<ConfigMap, BulkDependentTestCustomResource> bulkResourceDiscriminatorFactory() {
-    return factory;
+  public ResourceDiscriminator<ConfigMap, BulkDependentTestCustomResource> getResourceDiscriminator(
+      int index) {
+    return (resource, primary, context) -> {
+      var resources = context.getSecondaryResources(resource).stream()
+          .filter(r -> r.getMetadata().getName().endsWith("-" + index))
+          .collect(Collectors.toList());
+      if (resources.isEmpty()) {
+        return Optional.empty();
+      } else if (resources.size() > 1) {
+        throw new IllegalStateException("More than one resource found for index:" + index);
+      } else {
+        return Optional.of(resources.get(0));
+      }
+    };
   }
 }
