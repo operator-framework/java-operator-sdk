@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 
 public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension {
@@ -36,10 +38,12 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       Duration infrastructureTimeout,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
-      boolean oneNamespacePerClass) {
+      boolean oneNamespacePerClass,
+      KubernetesClient kubernetesClient) {
     super(configurationService, infrastructure, infrastructureTimeout, oneNamespacePerClass,
         preserveNamespaceOnError,
-        waitForNamespaceDeletion);
+        waitForNamespaceDeletion,
+        kubernetesClient);
     this.operatorDeployment = operatorDeployment;
     this.operatorDeploymentTimeout = operatorDeploymentTimeout;
   }
@@ -104,6 +108,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
+    private KubernetesClient kubernetesClient;
 
     protected Builder() {
       super();
@@ -135,6 +140,11 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return this;
     }
 
+    public Builder withKubernetesClient(KubernetesClient kubernetesClient) {
+      this.kubernetesClient = kubernetesClient;
+      return this;
+    }
+
     public ClusterDeployedOperatorExtension build() {
       return new ClusterDeployedOperatorExtension(
           configurationService,
@@ -144,7 +154,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           infrastructureTimeout,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
-          oneNamespacePerClass);
+          oneNamespacePerClass,
+          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build());
     }
   }
 }
