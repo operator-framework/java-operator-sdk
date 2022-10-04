@@ -32,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
@@ -39,6 +40,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -207,21 +209,30 @@ public class Controller<P extends HasMetadata>
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
-    managedWorkflow
-        .getDependentResourcesByName().entrySet().stream()
-        .filter(drEntry -> drEntry.getValue() instanceof EventSourceProvider)
-        .forEach(drEntry -> {
-          final var provider = (EventSourceProvider) drEntry.getValue();
-          final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(drEntry.getKey(), source);
-        });
-
-    // add manually defined event sources
     if (reconciler instanceof EventSourceInitializer) {
       final var provider = (EventSourceInitializer<P>) this.reconciler;
       final var ownSources = provider.prepareEventSources(context);
       ownSources.forEach(eventSourceManager::registerEventSource);
     }
+    managedWorkflow
+        .getDependentResourcesByName().entrySet().stream()
+        .forEach(drEntry -> {
+          if (drEntry.getValue() instanceof EventSourceProvider) {
+            final var provider = (EventSourceProvider) drEntry.getValue();
+            final var source = provider.initEventSource(context);
+            eventSourceManager.registerEventSource(drEntry.getKey(), source);
+          } else {
+            Optional<ResourceEventSource> eventSource =
+                drEntry.getValue().eventSource(context);
+            eventSource.ifPresent(es -> {
+              eventSourceManager.registerEventSource(drEntry.getKey(), es);
+            });
+          }
+        });
+    managedWorkflow.getDependentResourcesByName().entrySet().stream().map(Map.Entry::getValue)
+        .filter(EventSourceAware.class::isInstance)
+        .forEach(dr -> ((EventSourceAware) dr)
+            .selectEventSources(eventSourceManager));
   }
 
   @Override

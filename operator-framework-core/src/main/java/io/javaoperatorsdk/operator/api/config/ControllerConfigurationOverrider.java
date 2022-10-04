@@ -174,7 +174,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     namedDependentResourceSpecs.put(name,
         new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name,
             current.getDependsOn(), current.getReadyCondition(), current.getReconcileCondition(),
-            current.getDeletePostCondition()));
+            current.getDeletePostCondition(), current.provideEventSource()));
   }
 
   @SuppressWarnings("unchecked")
@@ -220,7 +220,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
       KubernetesDependentResourceConfig c) {
     return new DependentResourceSpec(spec.getDependentResourceClass(),
         c.setNamespaces(namespaces), name, spec.getDependsOn(), spec.getReadyCondition(),
-        spec.getReconcileCondition(), spec.getDeletePostCondition());
+        spec.getReconcileCondition(), spec.getDeletePostCondition(), spec.provideEventSource());
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

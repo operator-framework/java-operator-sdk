@@ -5,11 +5,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -84,6 +81,8 @@ class ControllerConfigurationOverriderTest {
         return Object.class;
       }
 
+      @Override
+      public void doNotProvideEventSource() {}
     }
   }
 
