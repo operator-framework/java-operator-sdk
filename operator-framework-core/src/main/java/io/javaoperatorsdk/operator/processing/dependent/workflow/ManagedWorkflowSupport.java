@@ -81,7 +81,9 @@ class ManagedWorkflowSupport {
     if (dependentResource instanceof KubernetesClientAware) {
       ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
     }
-
+    if (!spec.provideEventSource()) {
+      dependentResource.doNotProvideEventSource();
+    }
     if (dependentResource instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) dependentResource;
       spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
