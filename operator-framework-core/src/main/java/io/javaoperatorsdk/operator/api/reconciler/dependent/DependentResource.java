@@ -25,9 +25,9 @@ public interface DependentResource<R, P extends HasMetadata> {
   ReconcileResult<R> reconcile(P primary, Context<P> context);
 
   /**
-   * Retrieves the resource type associated with this ResourceOwner
+   * Retrieves the resource type associated with this DependentResource
    *
-   * @return the resource type associated with this ResourceOwner
+   * @return the resource type associated with this DependentResource
    */
   Class<R> resourceType();
 
@@ -49,7 +49,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
-  // todo should be a setter?
   /**
    * Calling this method, instructs the implementation to not provide an event source, even if it
    * normally does.

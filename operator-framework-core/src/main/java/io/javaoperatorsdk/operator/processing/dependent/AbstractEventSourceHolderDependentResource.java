@@ -50,9 +50,13 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   @SuppressWarnings("unchecked")
   @Override
   public void selectEventSources(EventSourceRetriever<P> eventSourceRetriever) {
-    if (eventSourceToUse != null) {
-      eventSource =
-          (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse);
+    if (!getReturnEventSource()) {
+      if (eventSourceToUse != null) {
+        setEventSource(
+            (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse));
+      } else {
+        setEventSource((T) eventSourceRetriever.getResourceEventSourceFor(resourceType()));
+      }
     }
   }
 

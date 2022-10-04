@@ -29,7 +29,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected BulkDependentResource<R, P> bulkDependentResource;
-  protected boolean returnEventSource = true;
+  private boolean returnEventSource = true;
 
   protected List<ResourceDiscriminator<R, P>> resourceDiscriminator = new ArrayList<>(1);
 
@@ -239,4 +239,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return resourceDiscriminator.size();
   }
 
+  protected boolean getReturnEventSource() {
+    return returnEventSource;
+  }
 }

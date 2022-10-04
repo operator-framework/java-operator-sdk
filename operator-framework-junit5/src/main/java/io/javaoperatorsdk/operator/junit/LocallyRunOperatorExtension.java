@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -48,14 +50,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       Duration infrastructureTimeout,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
-      boolean oneNamespacePerClass) {
+      boolean oneNamespacePerClass,
+      KubernetesClient kubernetesClient) {
     super(
         configurationService,
         infrastructure,
         infrastructureTimeout,
         oneNamespacePerClass,
         preserveNamespaceOnError,
-        waitForNamespaceDeletion);
+        waitForNamespaceDeletion,
+        kubernetesClient);
     this.reconcilers = reconcilers;
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
@@ -194,6 +198,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<ReconcilerSpec> reconcilers;
     private final List<PortForwardSpec> portForwards;
     private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
+    private KubernetesClient kubernetesClient;
 
     protected Builder() {
       super();
@@ -243,6 +248,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    public Builder withKubernetesClient(KubernetesClient kubernetesClient) {
+      this.kubernetesClient = kubernetesClient;
+      return this;
+    }
 
     public Builder withAdditionalCustomResourceDefinition(
         Class<? extends CustomResource> customResource) {
@@ -260,7 +269,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           infrastructureTimeout,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
-          oneNamespacePerClass);
+          oneNamespacePerClass,
+          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build());
     }
   }
 

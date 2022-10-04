@@ -26,9 +26,7 @@ public class MultipleManagedExternalDependentResourceReconciler
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   protected ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
-
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-
 
   public MultipleManagedExternalDependentResourceReconciler() {}
 
@@ -40,7 +38,6 @@ public class MultipleManagedExternalDependentResourceReconciler
 
     return UpdateControl.noUpdate();
   }
-
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();

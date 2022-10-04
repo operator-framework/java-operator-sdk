@@ -9,13 +9,8 @@ public class ExternalResource {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
-  // id can be either provided or generated, depends on service type
   private String id;
-  private final String data;
-
-  public ExternalResource(String data) {
-    this(null, data);
-  }
+  private String data;
 
   public ExternalResource(String id, String data) {
     this.id = id;
@@ -24,10 +19,6 @@ public class ExternalResource {
 
   public String getId() {
     return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
   }
 
   public String getData() {
