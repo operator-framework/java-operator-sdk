@@ -49,8 +49,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
-  default void useEventSourceWithName(String name) {}
-
   default Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return Optional.empty();
   }

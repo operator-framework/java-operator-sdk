@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DeferrableEventSourceHolder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
@@ -83,7 +84,17 @@ class ManagedWorkflowSupport {
     }
 
     spec.getUseEventSourceWithName()
-        .ifPresent(esName -> dependentResource.useEventSourceWithName((String) esName));
+        .ifPresent(esName -> {
+          final var name = (String) esName;
+          if (dependentResource instanceof DeferrableEventSourceHolder) {
+            ((DeferrableEventSourceHolder) dependentResource).useEventSourceWithName(name);
+          } else {
+            throw new IllegalStateException(
+                "DependentResource " + spec + " wants to use EventSource named " + name
+                    + " but doesn't implement support for this feature by implementing "
+                    + DeferrableEventSourceHolder.class.getSimpleName());
+          }
+        });
 
     if (dependentResource instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) dependentResource;

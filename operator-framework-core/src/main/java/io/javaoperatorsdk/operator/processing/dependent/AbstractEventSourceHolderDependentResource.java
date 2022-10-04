@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceAware;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DeferrableEventSourceHolder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 @Ignore
 public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
-    extends AbstractDependentResource<R, P> implements EventSourceAware<P> {
+    extends AbstractDependentResource<R, P> implements DeferrableEventSourceHolder<P> {
 
   private T eventSource;
   private final Class<R> resourceType;
@@ -31,7 +31,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
     this.resourceType = resourceType;
   }
-
 
   public Optional<ResourceEventSource<R, P>> eventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
@@ -49,14 +48,20 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   @SuppressWarnings("unchecked")
   @Override
-  public void selectEventSources(EventSourceRetriever<P> eventSourceRetriever) {
-    if (eventSourceNameToUse != null) {
-      setEventSource(
-          (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceNameToUse));
+  public Optional<String> resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
+    if (eventSourceNameToUse != null && eventSource == null) {
+      final var source =
+          eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceNameToUse);
+      if (source == null) {
+        return Optional.of(eventSourceNameToUse);
+      }
+      setEventSource((T) source);
     }
+    return Optional.empty();
   }
 
   /** To make this backwards compatible even for respect of overriding */
+  @SuppressWarnings("unchecked")
   public T initEventSource(EventSourceContext<P> context) {
     return (T) eventSource(context).orElseThrow();
   }
@@ -116,11 +121,5 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   public void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
-  }
-
-  public AbstractEventSourceHolderDependentResource<R, P, T> setEventSourceNameToUse(
-      String eventSourceNameToUse) {
-    this.eventSourceNameToUse = eventSourceNameToUse;
-    return this;
   }
 }
