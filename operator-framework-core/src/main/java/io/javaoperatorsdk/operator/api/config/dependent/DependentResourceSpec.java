@@ -23,9 +23,12 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
 
   private final Condition<?, ?> deletePostCondition;
 
+  private final boolean provideEventSource;
+
   public DependentResourceSpec(Class<T> dependentResourceClass, C dependentResourceConfig,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
-      Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition) {
+      Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition,
+      boolean provideEventSource) {
     this.dependentResourceClass = dependentResourceClass;
     this.dependentResourceConfig = dependentResourceConfig;
     this.name = name;
@@ -33,6 +36,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     this.readyCondition = readyCondition;
     this.reconcileCondition = reconcileCondition;
     this.deletePostCondition = deletePostCondition;
+    this.provideEventSource = provideEventSource;
   }
 
   public Class<T> getDependentResourceClass() {
@@ -88,5 +92,9 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
   @SuppressWarnings("rawtypes")
   public Condition getDeletePostCondition() {
     return deletePostCondition;
+  }
+
+  public boolean provideEventSource() {
+    return provideEventSource;
   }
 }

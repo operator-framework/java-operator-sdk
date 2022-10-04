@@ -1,12 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceAware;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -15,8 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 @Ignore
 public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
-    extends AbstractDependentResource<R, P>
-    implements EventSourceProvider<P> {
+    extends AbstractDependentResource<R, P> implements EventSourceAware<P> {
 
   private T eventSource;
   private final Class<R> resourceType;
@@ -25,12 +26,14 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected OnUpdateFilter<R> onUpdateFilter;
   protected OnDeleteFilter<R> onDeleteFilter;
   protected GenericFilter<R> genericFilter;
+  protected String eventSourceToUse;
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
     this.resourceType = resourceType;
   }
 
-  public EventSource initEventSource(EventSourceContext<P> context) {
+
+  public ResourceEventSource<R, P> provideEventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
     // before this method is called in the managed case, so only create the event source if it
     // hasn't already been set.
@@ -38,12 +41,28 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     // event source
     // is shared between dependent resources this does not override the existing filters.
     if (eventSource == null) {
-      eventSource = createEventSource(context);
+      setEventSource(createEventSource(context));
       applyFilters();
     }
-
-    isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
     return eventSource;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void selectEventSources(EventSourceRetriever<P> eventSourceRetriever) {
+    if (!getReturnEventSource()) {
+      if (eventSourceToUse != null) {
+        setEventSource(
+            (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse));
+      } else {
+        setEventSource((T) eventSourceRetriever.getResourceEventSourceFor(resourceType()));
+      }
+    }
+  }
+
+  /** To make this backwards compatible even for respect of overriding */
+  public T initEventSource(EventSourceContext<P> context) {
+    return (T) eventSource(context).orElseThrow();
   }
 
   @Override
@@ -54,6 +73,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected abstract T createEventSource(EventSourceContext<P> context);
 
   protected void setEventSource(T eventSource) {
+    isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
     this.eventSource = eventSource;
   }
 
@@ -64,8 +84,8 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.eventSource.setGenericFilter(genericFilter);
   }
 
-  protected T eventSource() {
-    return eventSource;
+  public Optional<ResourceEventSource<R, P>> eventSource() {
+    return Optional.ofNullable(eventSource);
   }
 
   protected void onCreated(ResourceID primaryResourceId, R created) {
@@ -95,5 +115,11 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   public void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
+  }
+
+  public AbstractEventSourceHolderDependentResource<R, P, T> setEventSourceToUse(
+      String eventSourceToUse) {
+    this.eventSourceToUse = eventSourceToUse;
+    return this;
   }
 }

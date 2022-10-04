@@ -32,8 +32,8 @@ public class DependentGarbageCollectionTestReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<DependentGarbageCollectionTestCustomResource> context) {
-    return EventSourceInitializer
-        .nameEventSources(configMapDependent.initEventSource(context));
+    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+        configMapDependent);
   }
 
   @Override

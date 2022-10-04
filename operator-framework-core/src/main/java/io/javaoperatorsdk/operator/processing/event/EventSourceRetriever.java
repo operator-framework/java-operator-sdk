@@ -11,7 +11,7 @@ public interface EventSourceRetriever<P extends HasMetadata> {
       Class<R> dependentType);
 
   <R> ResourceEventSource<R, P> getResourceEventSourceFor(
-      Class<R> dependentType, String qualifier);
+      Class<R> dependentType, String name);
 
   <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType);
 
