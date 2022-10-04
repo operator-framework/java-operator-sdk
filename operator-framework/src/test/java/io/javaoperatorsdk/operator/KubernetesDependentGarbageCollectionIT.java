@@ -43,10 +43,11 @@ class KubernetesDependentGarbageCollectionIT {
 
     operator.delete(createdResources);
 
-    await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
-      ConfigMap cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(cm).isNull();
-    });
+    await().atMost(Duration.ofSeconds(IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT_SECONDS))
+        .untilAsserted(() -> {
+          ConfigMap cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
+          assertThat(cm).isNull();
+        });
   }
 
   @Test

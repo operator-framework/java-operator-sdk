@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
@@ -26,8 +25,7 @@ import static java.lang.String.format;
 
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
-    implements EventSourceProvider<MySQLSchema>,
-    DependentResourceConfigurator<ResourcePollerConfig>,
+    implements DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";
@@ -97,5 +95,4 @@ public class SchemaDependentResource
       throw new RuntimeException("Error while trying read Schema", e);
     }
   }
-
 }

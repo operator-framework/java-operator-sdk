@@ -55,9 +55,9 @@ public class WebPageDependentsWorkflowReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceInitializer.nameEventSources(configMapDR.initEventSource(context),
-        deploymentDR.initEventSource(context), serviceDR.initEventSource(context),
-        ingressDR.initEventSource(context));
+    return EventSourceInitializer.nameEventSourcesFromDependentResource(context, configMapDR,
+        deploymentDR, serviceDR,
+        ingressDR);
   }
 
   @Override

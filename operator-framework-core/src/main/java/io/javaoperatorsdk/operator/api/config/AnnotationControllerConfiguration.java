@@ -224,7 +224,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
             Set.of(dependent.dependsOn()),
             Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
             Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
-            Utils.instantiate(dependent.deletePostcondition(), Condition.class, context));
+            Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
+            dependent.provideEventSource());
         specsMap.put(name, spec);
       }
 
@@ -255,13 +256,13 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
     ResourceDiscriminator<?, ? extends HasMetadata> resourceDiscriminator = null;
+    String eventSourceNameToUse = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
         namespaces = Set.of(kubeDependent.namespaces());
         configuredNS = true;
       }
-
       final var fromAnnotation = kubeDependent.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
@@ -278,12 +279,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       resourceDiscriminator =
               Utils.instantiate(kubeDependent.resourceDiscriminator(),
                       ResourceDiscriminator.class, context);
+      eventSourceNameToUse = Constants.NO_VALUE_SET.equals(kubeDependent.eventSourceToUse()) ? null
+              : kubeDependent.eventSourceToUse();
     }
 
     config =
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
             resourceDiscriminator, onAddFilter,
-            onUpdateFilter, onDeleteFilter, genericFilter);
+            onUpdateFilter, onDeleteFilter, genericFilter, eventSourceNameToUse);
 
     return config;
   }

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.primaryindexer;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -10,8 +11,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
 @ControllerConfiguration(dependents = @Dependent(
@@ -38,11 +39,11 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
     }
 
     @Override
-    public EventSource initEventSource(
+    public Optional<ResourceEventSource<ConfigMap, PrimaryIndexerTestCustomResource>> eventSource(
         EventSourceContext<PrimaryIndexerTestCustomResource> context) {
       cache = context.getPrimaryCache();
       cache.addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
-      return super.initEventSource(context);
+      return super.eventSource(context);
     }
   }
 }
