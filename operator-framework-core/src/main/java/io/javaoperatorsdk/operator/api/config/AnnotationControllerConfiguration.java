@@ -242,13 +242,17 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           throw new IllegalArgumentException(
               "A DependentResource named '" + name + "' already exists: " + spec);
         }
+
+        var eventSourceName = dependent.useEventSourceWithName();
+        eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
+
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
             instantiateIfNotDefault(dependent.readyPostcondition(), Condition.class, context),
             instantiateIfNotDefault(dependent.reconcilePrecondition(), Condition.class, context),
             instantiateIfNotDefault(dependent.deletePostcondition(), Condition.class, context),
-            dependent.useEventSourceWithName());
+            eventSourceName);
         specsMap.put(name, spec);
       }
 

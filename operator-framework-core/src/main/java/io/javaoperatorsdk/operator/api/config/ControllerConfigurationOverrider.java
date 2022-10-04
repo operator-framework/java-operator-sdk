@@ -174,7 +174,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     namedDependentResourceSpecs.put(name,
         new DependentResourceSpec<>(current.getDependentResourceClass(), newConfig, name,
             current.getDependsOn(), current.getReadyCondition(), current.getReconcileCondition(),
-            current.getDeletePostCondition(), current.getUseEventSourceWithName()));
+            current.getDeletePostCondition(), current.getUseEventSourceWithName().orElse(null)));
   }
 
   @SuppressWarnings("unchecked")
@@ -221,7 +221,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return new DependentResourceSpec(spec.getDependentResourceClass(),
         c.setNamespaces(namespaces), name, spec.getDependsOn(), spec.getReadyCondition(),
         spec.getReconcileCondition(), spec.getDeletePostCondition(),
-        spec.getUseEventSourceWithName());
+        (String) spec.getUseEventSourceWithName().orElse(null));
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

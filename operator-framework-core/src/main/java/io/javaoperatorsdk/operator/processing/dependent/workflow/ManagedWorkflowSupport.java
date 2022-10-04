@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
@@ -82,10 +81,10 @@ class ManagedWorkflowSupport {
     if (dependentResource instanceof KubernetesClientAware) {
       ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
     }
-    if (!Constants.NO_VALUE_SET.equals(spec.getUseEventSourceWithName())
-        && spec.getUseEventSourceWithName() != null) {
-      dependentResource.useEventSourceWithName(spec.getUseEventSourceWithName());
-    }
+
+    spec.getUseEventSourceWithName()
+        .ifPresent(esName -> dependentResource.useEventSourceWithName((String) esName));
+
     if (dependentResource instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) dependentResource;
       spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);

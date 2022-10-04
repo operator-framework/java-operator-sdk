@@ -94,7 +94,7 @@ public class DependentResourceSpec<T extends DependentResource<?, ?>, C> {
     return deletePostCondition;
   }
 
-  public String getUseEventSourceWithName() {
-    return useEventSourceWithName;
+  public Optional<String> getUseEventSourceWithName() {
+    return Optional.ofNullable(useEventSourceWithName);
   }
 }
