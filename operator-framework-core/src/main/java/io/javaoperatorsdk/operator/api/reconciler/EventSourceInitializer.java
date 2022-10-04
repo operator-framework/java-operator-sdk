@@ -1,10 +1,14 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 /**
  * An interface that a {@link Reconciler} can implement to have the SDK register the provided
@@ -37,6 +41,22 @@ public interface EventSourceInitializer<P extends HasMetadata> {
       eventSourceMap.put(generateNameFor(eventSource), eventSource);
     }
     return eventSourceMap;
+  }
+
+  @SuppressWarnings("unchecked,rawtypes")
+  static <K extends HasMetadata> Map<String, EventSource> nameEventSourcesFromDependentResource(
+      EventSourceContext<K> context, DependentResource... dependentResources) {
+
+    if (dependentResources != null) {
+      Map<String, EventSource> eventSourceMap = new HashMap<>(dependentResources.length);
+      for (DependentResource dependentResource : dependentResources) {
+        Optional<ResourceEventSource> es = dependentResource.eventSource(context);
+        es.ifPresent(e -> eventSourceMap.put(generateNameFor(e), e));
+      }
+      return eventSourceMap;
+    } else {
+      return Collections.emptyMap();
+    }
   }
 
   /**

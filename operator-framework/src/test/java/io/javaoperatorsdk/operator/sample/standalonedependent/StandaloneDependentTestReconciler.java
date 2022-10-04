@@ -38,8 +38,8 @@ public class StandaloneDependentTestReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return EventSourceInitializer
-        .nameEventSources(deploymentDependent.initEventSource(context));
+    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+        deploymentDependent);
   }
 
   @Override
