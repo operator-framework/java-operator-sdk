@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 
-public interface DeferrableEventSourceHolder<P extends HasMetadata> {
+public interface EventSourceReferencer<P extends HasMetadata> {
 
   default void useEventSourceWithName(String name) {}
 

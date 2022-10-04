@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DeferrableEventSourceHolder;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 @Ignore
 public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
-    extends AbstractDependentResource<R, P> implements DeferrableEventSourceHolder<P> {
+    extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {
 
   private T eventSource;
   private final Class<R> resourceType;

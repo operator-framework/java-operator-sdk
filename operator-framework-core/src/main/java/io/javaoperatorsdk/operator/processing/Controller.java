@@ -35,8 +35,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DeferrableEventSourceHolder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
@@ -234,11 +234,11 @@ public class Controller<P extends HasMetadata>
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
-      final Map<String, List<DeferrableEventSourceHolder>> unresolvable = new HashMap<>(size);
+      final Map<String, List<EventSourceReferencer>> unresolvable = new HashMap<>(size);
       dependentResourcesByName.values().stream()
-          .filter(DeferrableEventSourceHolder.class::isInstance)
-          .map(DeferrableEventSourceHolder.class::cast)
-          .forEach(dr -> ((DeferrableEventSourceHolder<P>) dr)
+          .filter(EventSourceReferencer.class::isInstance)
+          .map(EventSourceReferencer.class::cast)
+          .forEach(dr -> ((EventSourceReferencer<P>) dr)
               .resolveEventSource(eventSourceManager).ifPresent(unresolved -> unresolvable
                   .computeIfAbsent(unresolved, s -> new ArrayList<>()).add(dr)));
       if (!unresolvable.isEmpty()) {
