@@ -79,9 +79,6 @@ class AbstractDependentResourceTest {
     }
 
     @Override
-    public void useEventSourceWithName(String name) {}
-
-    @Override
     public Optional<ConfigMap> getSecondaryResource(TestCustomResource primary,
         Context<TestCustomResource> context) {
       return Optional.ofNullable(secondary);

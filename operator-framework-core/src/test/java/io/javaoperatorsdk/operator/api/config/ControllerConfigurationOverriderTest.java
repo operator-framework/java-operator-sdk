@@ -80,9 +80,6 @@ class ControllerConfigurationOverriderTest {
       public Class<Object> resourceType() {
         return Object.class;
       }
-
-      @Override
-      public void useEventSourceWithName(String name) {}
     }
   }
 
