@@ -14,8 +14,7 @@ public class ExternalIDGenServiceMock {
       throw new IllegalArgumentException("ID provided for external resource");
     }
     String id = UUID.randomUUID().toString();
-    externalResource.setId(id);
-    resourceMap.put(id, externalResource);
+    resourceMap.put(id, new ExternalResource(id, externalResource.getData()));
     return externalResource;
   }
 

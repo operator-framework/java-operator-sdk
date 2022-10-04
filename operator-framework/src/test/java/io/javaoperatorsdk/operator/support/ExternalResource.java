@@ -21,6 +21,7 @@ public class ExternalResource {
     return id;
   }
 
+
   public String getData() {
     return data;
   }
