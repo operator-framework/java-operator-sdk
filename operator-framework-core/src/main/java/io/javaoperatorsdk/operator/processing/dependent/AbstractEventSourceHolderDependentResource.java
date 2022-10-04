@@ -26,43 +26,44 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected OnUpdateFilter<R> onUpdateFilter;
   protected OnDeleteFilter<R> onDeleteFilter;
   protected GenericFilter<R> genericFilter;
-  protected String eventSourceToUse;
+  protected String eventSourceNameToUse;
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
     this.resourceType = resourceType;
   }
 
 
-  public ResourceEventSource<R, P> provideEventSource(EventSourceContext<P> context) {
+  public Optional<ResourceEventSource<R, P>> eventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
     // before this method is called in the managed case, so only create the event source if it
     // hasn't already been set.
     // The filters are applied automatically only if event source is created automatically. So if an
     // event source
     // is shared between dependent resources this does not override the existing filters.
-    if (eventSource == null) {
+    if (eventSource == null && eventSourceNameToUse == null) {
       setEventSource(createEventSource(context));
       applyFilters();
     }
-    return eventSource;
+    return Optional.ofNullable(eventSource);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void selectEventSources(EventSourceRetriever<P> eventSourceRetriever) {
-    if (!getReturnEventSource()) {
-      if (eventSourceToUse != null) {
-        setEventSource(
-            (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceToUse));
-      } else {
-        setEventSource((T) eventSourceRetriever.getResourceEventSourceFor(resourceType()));
-      }
+    if (eventSourceNameToUse != null) {
+      setEventSource(
+          (T) eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceNameToUse));
     }
   }
 
   /** To make this backwards compatible even for respect of overriding */
   public T initEventSource(EventSourceContext<P> context) {
     return (T) eventSource(context).orElseThrow();
+  }
+
+  @Override
+  public void useEventSourceWithName(String name) {
+    this.eventSourceNameToUse = name;
   }
 
   @Override
@@ -117,9 +118,9 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.onDeleteFilter = onDeleteFilter;
   }
 
-  public AbstractEventSourceHolderDependentResource<R, P, T> setEventSourceToUse(
-      String eventSourceToUse) {
-    this.eventSourceToUse = eventSourceToUse;
+  public AbstractEventSourceHolderDependentResource<R, P, T> setEventSourceNameToUse(
+      String eventSourceNameToUse) {
+    this.eventSourceNameToUse = eventSourceNameToUse;
     return this;
   }
 }

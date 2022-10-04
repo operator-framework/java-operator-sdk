@@ -49,7 +49,7 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    public void doNotProvideEventSource() {}
+    public void useEventSourceWithName(String name) {}
 
     @Override
     public String toString() {
@@ -111,7 +111,7 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    public void doNotProvideEventSource() {}
+    public void useEventSourceWithName(String name) {}
 
     @Override
     public String toString() {

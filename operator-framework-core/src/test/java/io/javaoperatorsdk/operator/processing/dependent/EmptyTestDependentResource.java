@@ -21,7 +21,7 @@ public class EmptyTestDependentResource
   }
 
   @Override
-  public void doNotProvideEventSource() {}
+  public void useEventSourceWithName(String name) {}
 
 }
 

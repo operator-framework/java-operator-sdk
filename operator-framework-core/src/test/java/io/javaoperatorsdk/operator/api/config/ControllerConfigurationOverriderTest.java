@@ -82,7 +82,7 @@ class ControllerConfigurationOverriderTest {
       }
 
       @Override
-      public void doNotProvideEventSource() {}
+      public void useEventSourceWithName(String name) {}
     }
   }
 

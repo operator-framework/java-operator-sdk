@@ -60,10 +60,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (discriminator != null) {
       setResourceDiscriminator(discriminator);
     }
-    config.getEventSourceToUse().ifPresent(n -> {
-      doNotProvideEventSource();
-      setEventSourceToUse(n);
-    });
   }
 
   private void configureWith(String labelSelector, Set<String> namespaces,

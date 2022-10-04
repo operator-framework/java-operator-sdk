@@ -11,9 +11,13 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
+import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
+
 @ControllerConfiguration(dependents = {
-    @Dependent(type = MultipleManagedDependentResourceConfigMap1.class),
-    @Dependent(type = MultipleManagedDependentResourceConfigMap2.class)
+    @Dependent(type = MultipleManagedDependentResourceConfigMap1.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+    @Dependent(type = MultipleManagedDependentResourceConfigMap2.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
 })
 public class MultipleManagedDependentResourceReconciler
     implements Reconciler<MultipleManagedDependentResourceCustomResource>,
