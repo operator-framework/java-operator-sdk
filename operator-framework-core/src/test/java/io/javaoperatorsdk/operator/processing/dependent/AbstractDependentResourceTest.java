@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,6 +78,12 @@ class AbstractDependentResourceTest {
     @Override
     public Class<ConfigMap> resourceType() {
       return ConfigMap.class;
+    }
+
+    @Override
+    protected ResourceEventSource<ConfigMap, TestCustomResource> provideEventSource(
+        EventSourceContext<TestCustomResource> eventSourceContext) {
+      return null;
     }
 
     @Override
