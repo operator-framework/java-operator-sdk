@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig> {
+    DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -52,9 +52,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         : GenericResourceUpdatePreProcessor.processorFor(resourceType);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void configureWith(KubernetesDependentResourceConfig config) {
+  public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
+    var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
+    if (discriminator != null) {
+      setResourceDiscriminator(discriminator);
+    }
+    config.getEventSourceToUse().ifPresent(n -> {
+      doNotProvideEventSource();
+      setEventSourceToUse(n);
+    });
   }
 
   private void configureWith(String labelSelector, Set<String> namespaces,
@@ -152,7 +161,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  protected Resource<R> prepare(R desired, P primary, String actionName) {
+  protected Resource<R> prepare(R desired,
+      P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
         desired.getClass(),
@@ -170,6 +180,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     if (kubernetesDependentResourceConfig != null) {
       // sets the filters for the dependent resource, which are applied by parent class
+
       onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
@@ -188,7 +199,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
           resourceType().getSimpleName());
     }
-    return eventSource();
+    return (InformerEventSource<R, P>) eventSource().orElseThrow();
   }
 
   private boolean useDefaultAnnotationsToIdentifyPrimary() {
@@ -234,10 +245,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    eventSource().prepareForCreateOrUpdateEventFiltering(resourceID, desired);
+    ((InformerEventSource<R, P>) eventSource().orElseThrow())
+        .prepareForCreateOrUpdateEventFiltering(resourceID, desired);
   }
 
   private void cleanupAfterEventFiltering(ResourceID resourceID) {
-    eventSource().cleanupOnCreateOrUpdateEventFiltering(resourceID);
+    ((InformerEventSource<R, P>) eventSource().orElseThrow())
+        .cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
 }
