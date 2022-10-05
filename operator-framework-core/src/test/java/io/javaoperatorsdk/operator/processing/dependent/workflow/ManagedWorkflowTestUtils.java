@@ -12,7 +12,7 @@ public class ManagedWorkflowTestUtils {
   public static DependentResourceSpec createDRS(String name, String... dependOns) {
     return new DependentResourceSpec(EmptyTestDependentResource.class,
         null, name, Set.of(dependOns), null, null, null,
-        true);
+        null);
   }
 
 }
