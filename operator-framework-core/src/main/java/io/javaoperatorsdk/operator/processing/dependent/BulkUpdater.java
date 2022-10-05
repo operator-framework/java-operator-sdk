@@ -13,8 +13,12 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 public interface BulkUpdater<R, P extends HasMetadata> extends Updater<R, P> {
 
   default Matcher.Result<R> match(R actualResource, P primary, Context<P> context) {
-    throw new IllegalStateException();
+    if (!(this instanceof BulkDependentResource)) {
+      throw new IllegalStateException(
+          BulkUpdater.class.getSimpleName() + " interface should only be implemented by "
+              + BulkDependentResource.class.getSimpleName() + " implementations");
+    }
+    throw new IllegalStateException("This method should not be called from a "
+        + BulkDependentResource.class.getSimpleName() + " implementation");
   }
-
-  Matcher.Result<R> match(R actualResource, P primary, int index, Context<P> context);
 }
