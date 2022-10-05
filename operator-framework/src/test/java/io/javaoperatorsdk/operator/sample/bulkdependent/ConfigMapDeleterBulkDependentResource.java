@@ -21,7 +21,7 @@ public class ConfigMapDeleterBulkDependentResource
     implements Creator<ConfigMap, BulkDependentTestCustomResource>,
     Updater<ConfigMap, BulkDependentTestCustomResource>,
     Deleter<BulkDependentTestCustomResource>,
-    BulkDependentResource<ConfigMap, BulkDependentTestCustomResource, Integer> {
+    BulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
@@ -33,18 +33,18 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  public Set<Integer> targetKeys(BulkDependentTestCustomResource primary,
+  public Set<String> targetKeys(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
-    Set<Integer> res = new HashSet<>();
+    Set<String> res = new HashSet<>();
     for (int i = 0; i < number; i++) {
-      res.add(i);
+      res.add(Integer.toString(i));
     }
     return res;
   }
 
   @Override
-  public ConfigMap desired(BulkDependentTestCustomResource primary, Integer key,
+  public ConfigMap desired(BulkDependentTestCustomResource primary, String key,
       Context<BulkDependentTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
@@ -60,7 +60,7 @@ public class ConfigMapDeleterBulkDependentResource
   // todo fix generics?
   @Override
   public void deleteBulkResource(BulkDependentTestCustomResource primary, ConfigMap resource,
-      Integer key,
+      String key,
       Context<BulkDependentTestCustomResource> context) {
     super.deleteBulkResource(primary, resource, key, context);
   }
@@ -69,20 +69,20 @@ public class ConfigMapDeleterBulkDependentResource
   @Override
   public Matcher.Result<ConfigMap> match(ConfigMap actualResource,
       BulkDependentTestCustomResource primary,
-      Integer index, Context<BulkDependentTestCustomResource> context) {
+      String index, Context<BulkDependentTestCustomResource> context) {
     return super.match(actualResource, primary, index, context);
   }
 
   @Override
-  public Map<Integer, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
+  public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var configMaps = context.getSecondaryResources(ConfigMap.class);
-    Map<Integer, ConfigMap> result = new HashMap<>(configMaps.size());
+    Map<String, ConfigMap> result = new HashMap<>(configMaps.size());
     configMaps.forEach(cm -> {
       String name = cm.getMetadata().getName();
       if (name.startsWith(primary.getMetadata().getName())) {
         String key = name.substring(name.lastIndexOf(INDEX_DELIMITER) + 1);
-        result.put(Integer.parseInt(key), cm);
+        result.put(key, cm);
       }
     });
     return result;

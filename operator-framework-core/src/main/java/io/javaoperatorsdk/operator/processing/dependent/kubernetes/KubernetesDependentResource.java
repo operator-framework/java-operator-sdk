@@ -139,7 +139,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
-  public Result<R> match(R actualResource, P primary, Object key, Context<P> context) {
+  public Result<R> match(R actualResource, P primary, String key, Context<P> context) {
     final var desired = bulkDependentResource.desired(primary, key, context);
     return GenericKubernetesResourceMatcher.match((R) desired, actualResource, false);
   }
@@ -150,7 +150,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
 
-  public void deleteBulkResource(P primary, R resource, Object key, Context<P> context) {
+  public void deleteBulkResource(P primary, R resource, String key, Context<P> context) {
     client.resource(resource).delete();
   }
 

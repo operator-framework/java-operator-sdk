@@ -14,19 +14,18 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
  * implement additionally also {@link Updater}.
  */
-public interface BulkDependentResource<R, P extends HasMetadata, T>
+public interface BulkDependentResource<R, P extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {
 
   /**
    * @return number of resources to create
    */
-  Set<T> targetKeys(P primary, Context<P> context);
+  Set<String> targetKeys(P primary, Context<P> context);
 
-  Map<T, R> getSecondaryResources(P primary, Context<P> context);
+  Map<String, R> getSecondaryResources(P primary, Context<P> context);
 
-  R desired(P primary, T key, Context<P> context);
+  R desired(P primary, String key, Context<P> context);
 
-  // todo add back key?
   /**
    * Used to delete resource if the desired count is lower than the actual count of a resource.
    *
@@ -35,7 +34,7 @@ public interface BulkDependentResource<R, P extends HasMetadata, T>
    * @param key key of the resource
    * @param context actual context
    */
-  void deleteBulkResource(P primary, R resource, T key, Context<P> context);
+  void deleteBulkResource(P primary, R resource, String key, Context<P> context);
 
   /**
    * Determines whether the specified secondary resource matches the desired state with target index
@@ -51,6 +50,6 @@ public interface BulkDependentResource<R, P extends HasMetadata, T>
    *         convenience methods ({@link Result#nonComputed(boolean)} and
    *         {@link Result#computed(boolean, Object)})
    */
-  Result<R> match(R actualResource, P primary, T key, Context<P> context);
+  Result<R> match(R actualResource, P primary, String key, Context<P> context);
 
 }

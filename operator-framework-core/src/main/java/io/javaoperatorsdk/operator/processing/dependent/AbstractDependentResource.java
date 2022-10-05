@@ -25,7 +25,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   @SuppressWarnings("rawtypes")
-  protected BulkDependentResource bulkDependentResource;
+  protected BulkDependentResource<R, P> bulkDependentResource;
   private ResourceDiscriminator<R, P> resourceDiscriminator;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -36,18 +36,18 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     bulkDependentResource = bulk ? (BulkDependentResource) this : null;
   }
 
-  @SuppressWarnings("unchecked")
+
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     if (bulk) {
       final var targetKeys = bulkDependentResource.targetKeys(primary, context);
-      Map<Object, R> actualResources =
+      Map<String, R> actualResources =
           bulkDependentResource.getSecondaryResources(primary, context);
 
       deleteBulkResourcesIfRequired(targetKeys, actualResources, primary, context);
       final List<ReconcileResult<R>> results = new ArrayList<>(targetKeys.size());
 
-      for (Object key : targetKeys) {
+      for (String key : targetKeys) {
         results.add(reconcileIndexAware(primary, actualResources.get(key), key, context));
       }
       return ReconcileResult.aggregatedResult(results);
@@ -58,7 +58,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected void deleteBulkResourcesIfRequired(Set targetKeys, Map<Object, R> actualResources,
+  protected void deleteBulkResourcesIfRequired(Set targetKeys, Map<String, R> actualResources,
       P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!targetKeys.contains(key)) {
@@ -68,7 +68,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   @SuppressWarnings("unchecked")
-  protected ReconcileResult<R> reconcileIndexAware(P primary, R resource, Object key,
+  protected ReconcileResult<R> reconcileIndexAware(P primary, R resource, String key,
       Context<P> context) {
     if (creatable || updatable) {
       if (resource == null) {
@@ -107,7 +107,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(resource);
   }
 
-  private R desiredIndexAware(P primary, Object key, Context<P> context) {
+  private R desiredIndexAware(P primary, String key, Context<P> context) {
     return bulk ? (R) bulkDependentResource.desired(primary, key, context)
         : desired(primary, context);
   }
