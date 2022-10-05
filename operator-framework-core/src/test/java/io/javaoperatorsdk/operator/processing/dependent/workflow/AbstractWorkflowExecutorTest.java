@@ -49,9 +49,6 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    public void doNotProvideEventSource() {}
-
-    @Override
     public String toString() {
       return name;
     }
@@ -109,9 +106,6 @@ public class AbstractWorkflowExecutorTest {
     public Class<String> resourceType() {
       return String.class;
     }
-
-    @Override
-    public void doNotProvideEventSource() {}
 
     @Override
     public String toString() {

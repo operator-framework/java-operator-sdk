@@ -242,13 +242,17 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           throw new IllegalArgumentException(
               "A DependentResource named '" + name + "' already exists: " + spec);
         }
+
+        var eventSourceName = dependent.useEventSourceWithName();
+        eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
+
         final var context = "DependentResource of type '" + dependentType.getName() + "'";
         spec = new DependentResourceSpec(dependentType, config, name,
             Set.of(dependent.dependsOn()),
             instantiateIfNotDefault(dependent.readyPostcondition(), Condition.class, context),
             instantiateIfNotDefault(dependent.reconcilePrecondition(), Condition.class, context),
             instantiateIfNotDefault(dependent.deletePostcondition(), Condition.class, context),
-            dependent.provideEventSource());
+            eventSourceName);
         specsMap.put(name, spec);
       }
 
@@ -287,7 +291,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
     ResourceDiscriminator<?, ? extends HasMetadata> resourceDiscriminator = null;
-    String eventSourceNameToUse = null;
     if (kubeDependent != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
           kubeDependent.namespaces())) {
@@ -314,14 +317,12 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       resourceDiscriminator =
           instantiateIfNotDefault(kubeDependent.resourceDiscriminator(),
               ResourceDiscriminator.class, context);
-      eventSourceNameToUse = Constants.NO_VALUE_SET.equals(kubeDependent.eventSourceToUse()) ? null
-          : kubeDependent.eventSourceToUse();
     }
 
     config =
         new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
             resourceDiscriminator, onAddFilter,
-            onUpdateFilter, onDeleteFilter, genericFilter, eventSourceNameToUse);
+            onUpdateFilter, onDeleteFilter, genericFilter);
 
     return config;
   }

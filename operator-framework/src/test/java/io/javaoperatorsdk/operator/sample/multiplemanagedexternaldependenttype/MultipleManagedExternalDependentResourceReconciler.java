@@ -15,9 +15,13 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
+import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
+
 @ControllerConfiguration(dependents = {
-    @Dependent(type = ExternalDependentResource1.class, provideEventSource = false),
-    @Dependent(type = ExternalDependentResource2.class, provideEventSource = false)
+    @Dependent(type = ExternalDependentResource1.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+    @Dependent(type = ExternalDependentResource2.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
 })
 public class MultipleManagedExternalDependentResourceReconciler
     implements Reconciler<MultipleManagedExternalDependentResourceCustomResource>,
