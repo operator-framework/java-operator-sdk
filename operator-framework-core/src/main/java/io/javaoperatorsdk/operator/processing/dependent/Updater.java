@@ -8,8 +8,4 @@ public interface Updater<R, P extends HasMetadata> {
   R update(R actual, R desired, P primary, Context<P> context);
 
   Result<R> match(R actualResource, P primary, Context<P> context);
-
-  default Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-    throw new IllegalStateException("Implement this for bulk matching");
-  }
 }
