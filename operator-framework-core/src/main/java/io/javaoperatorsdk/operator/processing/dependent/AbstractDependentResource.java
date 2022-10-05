@@ -57,19 +57,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   protected void deleteBulkResourcesIfRequired(Set targetKeys, Map<Object, R> actualResources,
       P primary, Context<P> context) {
-    actualResources.entrySet().forEach(entry -> {
-      if (!targetKeys.contains(entry.getKey())) {
-        bulkDependentResource.deleteBulkResource(primary, entry.getValue(), context);
+    actualResources.forEach((key, value) -> {
+      if (!targetKeys.contains(key)) {
+        bulkDependentResource.deleteBulkResource(primary, value, context);
       }
     });
-  }
-
-  protected void deleteBulkResourcesIfRequired(P primary, Context<P> context) {
-    var actualResources = bulkDependentResource.getSecondaryResources(primary, context);
-    deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
   }
 
   @SuppressWarnings("unchecked")
