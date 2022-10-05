@@ -20,3 +20,7 @@ permalink: /docs/glossary
   managed by the `Deployment` controller.
 - **Dependent Resource** - a feature of JOSDK, to make it easier to manage secondary resources. A
   dependent resource represents a secondary resource with related reconciliation logic.
+- **Low-level API** - a reconciler implementation without using the Dependent Resource and Workflow features.
+  Simply just implementing a logic using
+  the [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java)
+  interface.
