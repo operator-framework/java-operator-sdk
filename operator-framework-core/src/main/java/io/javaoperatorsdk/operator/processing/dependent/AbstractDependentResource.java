@@ -62,7 +62,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!targetKeys.contains(key)) {
-        bulkDependentResource.deleteBulkResource(primary, value, context);
+        bulkDependentResource.deleteBulkResource(primary, value, key, context);
       }
     });
   }

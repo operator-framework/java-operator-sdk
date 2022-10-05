@@ -59,6 +59,14 @@ public class ConfigMapDeleterBulkDependentResource
 
   // todo fix generics?
   @Override
+  public void deleteBulkResource(BulkDependentTestCustomResource primary, ConfigMap resource,
+      Integer key,
+      Context<BulkDependentTestCustomResource> context) {
+    super.deleteBulkResource(primary, resource, key, context);
+  }
+
+  // todo fix generics?
+  @Override
   public Matcher.Result<ConfigMap> match(ConfigMap actualResource,
       BulkDependentTestCustomResource primary,
       Integer index, Context<BulkDependentTestCustomResource> context) {

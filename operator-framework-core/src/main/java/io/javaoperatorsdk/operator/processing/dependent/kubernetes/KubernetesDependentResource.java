@@ -150,9 +150,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
 
-  public void deleteBulkResource(P primary, R resource, Context<P> context) {
+  public void deleteBulkResource(P primary, R resource, Object key, Context<P> context) {
     client.resource(resource).delete();
-
   }
 
   protected Resource<R> prepare(R desired, P primary, String actionName) {

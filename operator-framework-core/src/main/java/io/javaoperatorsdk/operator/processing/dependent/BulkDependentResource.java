@@ -32,9 +32,10 @@ public interface BulkDependentResource<R, P extends HasMetadata, T>
    *
    * @param primary resource
    * @param resource actual resource from the cache for the index
+   * @param key key of the resource
    * @param context actual context
    */
-  void deleteBulkResource(P primary, R resource, Context<P> context);
+  void deleteBulkResource(P primary, R resource, T key, Context<P> context);
 
   /**
    * Determines whether the specified secondary resource matches the desired state with target index
@@ -43,12 +44,13 @@ public interface BulkDependentResource<R, P extends HasMetadata, T>
    *
    * @param actualResource the resource we want to determine whether it's matching the desired state
    * @param primary the primary resource from which the desired state is inferred
+   * @param key key of the resource
    * @param context the context in which the resource is being matched
    * @return a {@link Result} encapsulating whether the resource matched its desired state and this
    *         associated state if it was computed as part of the matching process. Use the static
    *         convenience methods ({@link Result#nonComputed(boolean)} and
    *         {@link Result#computed(boolean, Object)})
    */
-  Result<R> match(R actualResource, P primary, T index, Context<P> context);
+  Result<R> match(R actualResource, P primary, T key, Context<P> context);
 
 }

@@ -94,6 +94,7 @@ public class ExternalBulkDependentResource
 
   @Override
   public void deleteBulkResource(BulkDependentTestCustomResource primary, ExternalResource resource,
+      Integer key,
       Context<BulkDependentTestCustomResource> context) {
     externalServiceMock.delete(resource.getId());
   }
