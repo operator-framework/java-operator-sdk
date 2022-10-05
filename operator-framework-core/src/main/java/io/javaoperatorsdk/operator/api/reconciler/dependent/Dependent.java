@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
@@ -59,11 +60,11 @@ public @interface Dependent {
   String[] dependsOn() default {};
 
   /**
-   * Setting this to false means that the event source provided by the dependent resource won't be
-   * used. This is helpful if more dependent resources created for the same type, and want to share
-   * a common event source. In that case an event source needs to be explicitly registered.
+   * Setting here a name of the event source means that dependent resource will use an event source
+   * registered with that name. So won't create one. This is helpful if more dependent resources
+   * created for the same type, and want to share a common event source.
    *
-   * @return if the event source (if any) provided by the dependent resource should be used or not.
+   * @return event source name (if any) provided by the dependent resource should be used.
    */
-  boolean provideEventSource() default true;
+  String useEventSourceWithName() default NO_VALUE_SET;
 }
