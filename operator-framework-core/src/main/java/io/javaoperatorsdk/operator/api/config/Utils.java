@@ -126,6 +126,14 @@ public class Utils {
               if (argument instanceof Class) {
                 return (Class<?>) argument;
               }
+              // account for the case where the argument itself has parameters, which we will ignore
+              // and just return the raw type
+              if (argument instanceof ParameterizedType) {
+                final var rawType = ((ParameterizedType) argument).getRawType();
+                if (rawType instanceof Class) {
+                  return (Class<?>) rawType;
+                }
+              }
               throw new IllegalArgumentException(clazz.getSimpleName() + " implements "
                   + expectedImplementedInterface.getSimpleName()
                   + " but indirectly. Java type erasure doesn't allow to retrieve the generic type from it. Retrieved type was: "
