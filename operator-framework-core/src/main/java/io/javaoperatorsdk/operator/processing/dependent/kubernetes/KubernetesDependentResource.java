@@ -140,25 +140,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-    return matcher.match(actualResource, primary, index, context);
+    final var desired = desired(primary, index, context);
+    return GenericKubernetesResourceMatcher.match(desired, actualResource, false);
   }
 
-  public void delete(P primary, Context<P> context) {
-    if (bulk) {
-      deleteBulkResourcesIfRequired(0, lastKnownBulkSize(), primary, context);
-    } else {
-      var resource = getSecondaryResource(primary, context);
-      resource.ifPresent(r -> client.resource(r).delete());
-    }
+  protected void handleDelete(P primary, Context<P> context) {
+    var resource = getSecondaryResource(primary, context);
+    resource.ifPresent(r -> client.resource(r).delete());
   }
 
   public void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
     client.resource(resource).delete();
   }
 
-  @SuppressWarnings("unchecked")
-  protected Resource<R> prepare(R desired,
-      P primary, String actionName) {
+  protected Resource<R> prepare(R desired, P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
         desired.getClass(),
@@ -176,7 +171,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     if (kubernetesDependentResourceConfig != null) {
       // sets the filters for the dependent resource, which are applied by parent class
-
       onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
@@ -199,7 +193,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private boolean useDefaultAnnotationsToIdentifyPrimary() {
-    return !(this instanceof SecondaryToPrimaryMapper) && !garbageCollected && creatable;
+    return !(this instanceof SecondaryToPrimaryMapper) && !garbageCollected && isCreatable();
   }
 
   private void addDefaultSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
