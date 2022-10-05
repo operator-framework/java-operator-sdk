@@ -5,6 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
@@ -48,16 +49,15 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   @SuppressWarnings("unchecked")
   @Override
-  public Optional<String> resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
+  public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     if (eventSourceNameToUse != null && eventSource == null) {
       final var source =
           eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceNameToUse);
       if (source == null) {
-        return Optional.of(eventSourceNameToUse);
+        throw new EventSourceNotFoundException(eventSourceNameToUse);
       }
       setEventSource((T) source);
     }
-    return Optional.empty();
   }
 
   /** To make this backwards compatible even for respect of overriding */

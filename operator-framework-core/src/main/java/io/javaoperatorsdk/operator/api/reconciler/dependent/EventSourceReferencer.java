@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 
@@ -9,6 +7,11 @@ public interface EventSourceReferencer<P extends HasMetadata> {
 
   default void useEventSourceWithName(String name) {}
 
-  Optional<String> resolveEventSource(EventSourceRetriever<P> eventSourceRetriever);
+  /**
+   * Throws {@link EventSourceNotFoundException} an exception if the target event source to use is
+   * not found.
+   */
+  void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever)
+      throws EventSourceNotFoundException;
 
 }
