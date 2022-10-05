@@ -49,13 +49,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
-  /**
-   * Calling this method, instructs the implementation to not provide an event source, even if it
-   * normally does.
-   */
-  void doNotProvideEventSource();
-
-
   default Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return Optional.empty();
   }

@@ -9,11 +9,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.DATA_KEY;
 
-@KubernetesDependent(eventSourceToUse = CONFIG_MAP_EVENT_SOURCE,
-    resourceDiscriminator = ConfigMap2Discriminator.class)
+@KubernetesDependent(resourceDiscriminator = ConfigMap2Discriminator.class)
 public class MultipleManagedDependentResourceConfigMap2
     extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentResourceCustomResource> {
