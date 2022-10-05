@@ -24,7 +24,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  @SuppressWarnings("rawtypes")
   protected BulkDependentResource<R, P> bulkDependentResource;
   private ResourceDiscriminator<R, P> resourceDiscriminator;
 
@@ -57,7 +56,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   protected void deleteBulkResourcesIfRequired(Set targetKeys, Map<String, R> actualResources,
       P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
@@ -67,7 +66,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     });
   }
 
-  @SuppressWarnings("unchecked")
   protected ReconcileResult<R> reconcileIndexAware(P primary, R resource, String key,
       Context<P> context) {
     if (creatable || updatable) {
@@ -108,10 +106,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private R desiredIndexAware(P primary, String key, Context<P> context) {
-    return bulk ? (R) bulkDependentResource.desired(primary, key, context)
+    return bulk ? bulkDependentResource.desired(primary, key, context)
         : desired(primary, context);
   }
 
+  @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return resourceDiscriminator == null ? context.getSecondaryResource(resourceType())
         : resourceDiscriminator.distinguish(resourceType(), primary, context);
@@ -174,8 +173,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         "desired method must be implemented if this DependentResource can be created and/or updated");
   }
 
-
-  @SuppressWarnings("unchecked")
   public void delete(P primary, Context<P> context) {
     if (bulk) {
       var actualResources = bulkDependentResource.getSecondaryResources(primary, context);

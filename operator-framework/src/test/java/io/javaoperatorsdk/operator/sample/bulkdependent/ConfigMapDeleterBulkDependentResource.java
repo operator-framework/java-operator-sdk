@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
@@ -55,22 +54,6 @@ public class ConfigMapDeleterBulkDependentResource
     configMap.setData(
         Map.of("number", "" + key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
     return configMap;
-  }
-
-  // todo fix generics?
-  @Override
-  public void deleteBulkResource(BulkDependentTestCustomResource primary, ConfigMap resource,
-      String key,
-      Context<BulkDependentTestCustomResource> context) {
-    super.deleteBulkResource(primary, resource, key, context);
-  }
-
-  // todo fix generics?
-  @Override
-  public Matcher.Result<ConfigMap> match(ConfigMap actualResource,
-      BulkDependentTestCustomResource primary,
-      String index, Context<BulkDependentTestCustomResource> context) {
-    return super.match(actualResource, primary, index, context);
   }
 
   @Override
