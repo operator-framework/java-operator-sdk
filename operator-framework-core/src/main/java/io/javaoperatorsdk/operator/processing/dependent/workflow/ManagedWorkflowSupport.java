@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
@@ -81,9 +82,20 @@ class ManagedWorkflowSupport {
     if (dependentResource instanceof KubernetesClientAware) {
       ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
     }
-    if (!spec.provideEventSource()) {
-      dependentResource.doNotProvideEventSource();
-    }
+
+    spec.getUseEventSourceWithName()
+        .ifPresent(esName -> {
+          final var name = (String) esName;
+          if (dependentResource instanceof EventSourceReferencer) {
+            ((EventSourceReferencer) dependentResource).useEventSourceWithName(name);
+          } else {
+            throw new IllegalStateException(
+                "DependentResource " + spec + " wants to use EventSource named " + name
+                    + " but doesn't implement support for this feature by implementing "
+                    + EventSourceReferencer.class.getSimpleName());
+          }
+        });
+
     if (dependentResource instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) dependentResource;
       spec.getDependentResourceConfiguration().ifPresent(configurator::configureWith);
