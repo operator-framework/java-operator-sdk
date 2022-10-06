@@ -42,15 +42,31 @@ public class ExternalStateReconciler
     numberOfExecutions.addAndGet(1);
 
     var externalResource = context.getSecondaryResource(ExternalResource.class);
-    if (externalResource.isEmpty()) {
-      createExternalResource(resource);
-    }
+    externalResource.ifPresentOrElse(r -> {
+      if (!r.getData().equals(resource.getSpec().getData())) {
+        updateExternalResource(resource, r);
+      }
+    }, () -> {
+      if (externalResource.isEmpty()) {
+        createExternalResource(resource);
+      }
+    });
+
+
     return UpdateControl.noUpdate();
+  }
+
+  private void updateExternalResource(ExternalStateCustomResource resource,
+      ExternalResource externalResource) {
+    var newResource = new ExternalResource(externalResource.getId(), resource.getSpec().getData());
+    externalService.update(newResource);
+    externalResourceEventSource.handleRecentResourceUpdate(ResourceID.fromResource(resource),
+        newResource, externalResource);
   }
 
   private void createExternalResource(ExternalStateCustomResource resource) {
     var createdResource =
-        externalService.create(new ExternalResource(resource.getMetadata().getName()));
+        externalService.create(new ExternalResource(resource.getSpec().getData()));
     var configMap = new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(resource.getMetadata().getName())

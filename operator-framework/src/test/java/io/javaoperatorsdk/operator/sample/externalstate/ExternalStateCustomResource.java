@@ -10,6 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("ess")
 public class ExternalStateCustomResource
-    extends CustomResource<Void, Void>
+    extends CustomResource<ExternalStateSpec, Void>
     implements Namespaced {
 }
