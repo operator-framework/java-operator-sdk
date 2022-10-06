@@ -27,6 +27,8 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 
+import javaoperatorsdk.sample.v1.LeaderElection;
+
 import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.CRD_READY_WAIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -61,7 +63,7 @@ class LeaderElectionE2E {
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
         .atMost(Duration.ofSeconds(MAX_WAIT_SECONDS))
         .untilAsserted(() -> {
-          var actualStatus = client.resources(LeaderElectionTestCustomResource.class)
+          var actualStatus = client.resources(LeaderElection.class)
               .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
@@ -71,14 +73,14 @@ class LeaderElectionE2E {
 
     client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).delete();
 
-    var actualListSize = client.resources(LeaderElectionTestCustomResource.class)
+    var actualListSize = client.resources(LeaderElection.class)
         .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy()
         .size();
 
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
         .atMost(Duration.ofSeconds(240))
         .untilAsserted(() -> {
-          var actualStatus = client.resources(LeaderElectionTestCustomResource.class)
+          var actualStatus = client.resources(LeaderElection.class)
               .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
@@ -87,7 +89,7 @@ class LeaderElectionE2E {
         });
 
     assertReconciliations(
-        client.resources(LeaderElectionTestCustomResource.class).inNamespace(namespace)
+        client.resources(LeaderElection.class).inNamespace(namespace)
             .withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy());
   }
 
@@ -104,7 +106,7 @@ class LeaderElectionE2E {
   }
 
   private void applyCustomResource() {
-    var res = new LeaderElectionTestCustomResource();
+    var res = new LeaderElection();
     res.setMetadata(new ObjectMetaBuilder()
         .withName(TEST_RESOURCE_NAME)
         .withNamespace(namespace)
@@ -150,7 +152,7 @@ class LeaderElectionE2E {
 
   void applyCRD() {
     String path =
-        "./target/classes/META-INF/fabric8/leaderelectiontestcustomresources.sample.javaoperatorsdk-v1.yml";
+        "./src/main/resources/kubernetes/leaderelection.sample.javaoperatorsdk-v1.yml";
     try (InputStream is = new FileInputStream(path)) {
       final var crd = client.load(is);
       crd.createOrReplace();
