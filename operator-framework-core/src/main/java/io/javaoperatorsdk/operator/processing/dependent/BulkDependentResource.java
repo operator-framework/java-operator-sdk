@@ -17,7 +17,14 @@ public interface BulkDependentResource<R, P extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {
 
   /**
-   * @return number of resources to create
+   * Retrieves a map of desired secondary resources associated with the specified primary resource,
+   * identified by an arbitrary key.
+   *
+   * @param primary the primary resource with which we want to identify which secondary resources
+   *        are associated
+   * @param context the {@link Context} associated with the current reconciliation
+   * @return a Map associating bulk secondary resources with the specified primary via arbitrary
+   *         identifiers
    */
   Map<String, R> desiredResources(P primary, Context<P> context);
 

@@ -148,6 +148,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
+  @SuppressWarnings("unused")
   public void deleteBulkResource(P primary, R resource, String key, Context<P> context) {
     client.resource(resource).delete();
   }
