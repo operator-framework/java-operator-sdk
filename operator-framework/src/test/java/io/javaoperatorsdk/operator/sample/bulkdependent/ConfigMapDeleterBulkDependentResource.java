@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -27,43 +25,49 @@ public class ConfigMapDeleterBulkDependentResource
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
   public static final String ADDITIONAL_DATA_KEY = "additionalData";
+  public static final String INDEX_DELIMITER = "-";
 
   public ConfigMapDeleterBulkDependentResource() {
     super(ConfigMap.class);
   }
 
   @Override
-  public ConfigMap desired(BulkDependentTestCustomResource primary,
-      int index, Context<BulkDependentTestCustomResource> context) {
+  public Set<String> targetKeys(BulkDependentTestCustomResource primary,
+      Context<BulkDependentTestCustomResource> context) {
+    var number = primary.getSpec().getNumberOfResources();
+    Set<String> res = new HashSet<>();
+    for (int i = 0; i < number; i++) {
+      res.add(Integer.toString(i));
+    }
+    return res;
+  }
+
+  @Override
+  public ConfigMap desired(BulkDependentTestCustomResource primary, String key,
+      Context<BulkDependentTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName() + "-" + index)
+        .withName(primary.getMetadata().getName() + INDEX_DELIMITER + key)
         .withNamespace(primary.getMetadata().getNamespace())
         .withLabels(Map.of(LABEL_KEY, LABEL_VALUE))
         .build());
     configMap.setData(
-        Map.of("number", "" + index, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
+        Map.of("number", "" + key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
     return configMap;
   }
 
   @Override
-  public int count(BulkDependentTestCustomResource primary,
+  public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
-    return primary.getSpec().getNumberOfResources();
-  }
-
-  @Override
-  public Optional<ConfigMap> getSecondaryResource(BulkDependentTestCustomResource primary,
-      int index, Context<BulkDependentTestCustomResource> context) {
-    var resources = context.getSecondaryResources(resourceType()).stream()
-        .filter(r -> r.getMetadata().getName().endsWith("-" + index))
-        .collect(Collectors.toList());
-    if (resources.isEmpty()) {
-      return Optional.empty();
-    } else if (resources.size() > 1) {
-      throw new IllegalStateException("More than one resource found for index:" + index);
-    } else {
-      return Optional.of(resources.get(0));
-    }
+    var configMaps = context.getSecondaryResources(ConfigMap.class);
+    Map<String, ConfigMap> result = new HashMap<>(configMaps.size());
+    configMaps.forEach(cm -> {
+      String name = cm.getMetadata().getName();
+      if (name.startsWith(primary.getMetadata().getName())) {
+        String key = name.substring(name.lastIndexOf(INDEX_DELIMITER) + 1);
+        result.put(key, cm);
+      }
+    });
+    return result;
   }
 }
