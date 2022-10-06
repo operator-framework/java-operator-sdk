@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Map;
-import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -20,11 +19,9 @@ public interface BulkDependentResource<R, P extends HasMetadata>
   /**
    * @return number of resources to create
    */
-  Set<String> targetKeys(P primary, Context<P> context);
+  Map<String, R> desiredResources(P primary, Context<P> context);
 
   Map<String, R> getSecondaryResources(P primary, Context<P> context);
-
-  R desired(P primary, String key, Context<P> context);
 
   /**
    * Used to delete resource if the desired count is lower than the actual count of a resource.
@@ -50,6 +47,6 @@ public interface BulkDependentResource<R, P extends HasMetadata>
    *         convenience methods ({@link Result#nonComputed(boolean)} and
    *         {@link Result#computed(boolean, Object)})
    */
-  Result<R> match(R actualResource, P primary, String key, Context<P> context);
+  Result<R> match(R actualResource, R desired, P primary, String key, Context<P> context);
 
 }

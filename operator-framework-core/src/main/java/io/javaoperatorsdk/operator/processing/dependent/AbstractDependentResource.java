@@ -35,24 +35,25 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     bulkDependentResource = bulk ? (BulkDependentResource) this : null;
   }
 
-
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     if (bulk) {
-      final var targetKeys = bulkDependentResource.targetKeys(primary, context);
+      final var targetResources = bulkDependentResource.desiredResources(primary, context);
+
       Map<String, R> actualResources =
           bulkDependentResource.getSecondaryResources(primary, context);
 
-      deleteBulkResourcesIfRequired(targetKeys, actualResources, primary, context);
-      final List<ReconcileResult<R>> results = new ArrayList<>(targetKeys.size());
+      deleteBulkResourcesIfRequired(targetResources.keySet(), actualResources, primary, context);
+      final List<ReconcileResult<R>> results = new ArrayList<>(targetResources.size());
 
-      for (String key : targetKeys) {
-        results.add(reconcileIndexAware(primary, actualResources.get(key), key, context));
-      }
+      targetResources.forEach((key, resource) -> {
+        results.add(reconcileIndexAware(primary, actualResources.get(key), resource, key, context));
+      });
+
       return ReconcileResult.aggregatedResult(results);
     } else {
       var actualResource = getSecondaryResource(primary, context);
-      return reconcileIndexAware(primary, actualResource.orElse(null), null, context);
+      return reconcileIndexAware(primary, actualResource.orElse(null), null, null, context);
     }
   }
 
@@ -66,12 +67,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     });
   }
 
-  protected ReconcileResult<R> reconcileIndexAware(P primary, R resource, String key,
+  protected ReconcileResult<R> reconcileIndexAware(P primary, R actualResource, R desiredResource,
+      String key,
       Context<P> context) {
     if (creatable || updatable) {
-      if (resource == null) {
+      if (actualResource == null) {
         if (creatable) {
-          var desired = desiredIndexAware(primary, key, context);
+          var desired = bulkAwareDesired(primary, desiredResource, context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -81,20 +83,22 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable) {
           final Matcher.Result<R> match;
           if (bulk) {
-            match = bulkDependentResource.match(resource, primary, key, context);
+            match =
+                bulkDependentResource.match(actualResource, desiredResource, primary, key, context);
           } else {
-            match = updater.match(resource, primary, context);
+            match = updater.match(actualResource, primary, context);
           }
           if (!match.matched()) {
             final var desired =
-                match.computedDesired().orElse(desiredIndexAware(primary, key, context));
+                match.computedDesired().orElse(bulkAwareDesired(primary, desiredResource, context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
-            var updatedResource = handleUpdate(resource, desired, primary, context);
+            var updatedResource = handleUpdate(actualResource, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
           }
         } else {
-          log.debug("Update skipped for dependent {} as it matched the existing one", resource);
+          log.debug("Update skipped for dependent {} as it matched the existing one",
+              actualResource);
         }
       }
     } else {
@@ -102,11 +106,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           "Dependent {} is read-only, implement Creator and/or Updater interfaces to modify it",
           getClass().getSimpleName());
     }
-    return ReconcileResult.noOperation(resource);
+    return ReconcileResult.noOperation(actualResource);
   }
 
-  private R desiredIndexAware(P primary, String key, Context<P> context) {
-    return bulk ? bulkDependentResource.desired(primary, key, context)
+  private R bulkAwareDesired(P primary, R alreadyComputedDesire, Context<P> context) {
+    return bulk ? alreadyComputedDesire
         : desired(primary, context);
   }
 
