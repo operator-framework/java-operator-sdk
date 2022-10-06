@@ -36,7 +36,8 @@ public abstract class AbstractEventSource implements EventSource {
     return eventSourceStartPriority;
   }
 
-  public AbstractEventSource setEventSourcePriority(EventSourceStartPriority eventSourceStartPriority) {
+  public AbstractEventSource setEventSourcePriority(
+      EventSourceStartPriority eventSourceStartPriority) {
     this.eventSourceStartPriority = eventSourceStartPriority;
     return this;
   }

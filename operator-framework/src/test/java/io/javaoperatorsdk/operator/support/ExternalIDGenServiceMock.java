@@ -1,22 +1,20 @@
 package io.javaoperatorsdk.operator.support;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ExternalServiceMock {
+public class ExternalIDGenServiceMock {
 
-  private static ExternalServiceMock serviceMock = new ExternalServiceMock();
+  private static ExternalIDGenServiceMock serviceMock = new ExternalIDGenServiceMock();
 
   private Map<String, ExternalResource> resourceMap = new ConcurrentHashMap<>();
 
   public ExternalResource create(ExternalResource externalResource) {
-    if (externalResource.getId() == null) {
-      throw new IllegalArgumentException("id of the resource is null");
+    if (externalResource.getId() != null) {
+      throw new IllegalArgumentException("ID provided for external resource");
     }
-    resourceMap.put(externalResource.getId(), externalResource);
+    String id = UUID.randomUUID().toString();
+    resourceMap.put(id, new ExternalResource(id, externalResource.getData()));
     return externalResource;
   }
 
@@ -36,7 +34,8 @@ public class ExternalServiceMock {
     return new ArrayList<>(resourceMap.values());
   }
 
-  public static ExternalServiceMock getInstance() {
+  public static ExternalIDGenServiceMock getInstance() {
     return serviceMock;
   }
+
 }
