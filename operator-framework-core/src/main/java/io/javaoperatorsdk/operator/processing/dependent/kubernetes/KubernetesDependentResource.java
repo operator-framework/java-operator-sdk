@@ -139,9 +139,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
-  public Result<R> match(R actualResource, P primary, int index, Context<P> context) {
-    final var desired = desired(primary, index, context);
-    return GenericKubernetesResourceMatcher.match(desired, actualResource, false);
+  public Result<R> match(R actualResource, P primary, String key, Context<P> context) {
+    final var desired = bulkDependentResource.desired(primary, key, context);
+    return GenericKubernetesResourceMatcher.match((R) desired, actualResource, false);
   }
 
   protected void handleDelete(P primary, Context<P> context) {
@@ -149,7 +149,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
-  public void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context) {
+
+  public void deleteBulkResource(P primary, R resource, String key, Context<P> context) {
     client.resource(resource).delete();
   }
 
@@ -227,11 +228,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
-  }
-
-  @Override
-  protected R desired(P primary, int index, Context<P> context) {
-    return super.desired(primary, index, context);
   }
 
   private void prepareEventFiltering(R desired, ResourceID resourceID) {

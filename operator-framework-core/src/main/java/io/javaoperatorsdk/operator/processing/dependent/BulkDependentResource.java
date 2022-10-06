@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -13,24 +14,27 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
  * implement additionally also {@link Updater}.
  */
-public interface BulkDependentResource<R, P extends HasMetadata> extends Creator<R, P>, Deleter<P> {
+public interface BulkDependentResource<R, P extends HasMetadata>
+    extends Creator<R, P>, Deleter<P> {
 
   /**
    * @return number of resources to create
    */
-  int count(P primary, Context<P> context);
+  Set<String> targetKeys(P primary, Context<P> context);
 
-  R desired(P primary, int index, Context<P> context);
+  Map<String, R> getSecondaryResources(P primary, Context<P> context);
+
+  R desired(P primary, String key, Context<P> context);
 
   /**
    * Used to delete resource if the desired count is lower than the actual count of a resource.
    *
    * @param primary resource
    * @param resource actual resource from the cache for the index
-   * @param i index of the resource
+   * @param key key of the resource
    * @param context actual context
    */
-  void deleteBulkResourceWithIndex(P primary, R resource, int i, Context<P> context);
+  void deleteBulkResource(P primary, R resource, String key, Context<P> context);
 
   /**
    * Determines whether the specified secondary resource matches the desired state with target index
@@ -39,14 +43,13 @@ public interface BulkDependentResource<R, P extends HasMetadata> extends Creator
    *
    * @param actualResource the resource we want to determine whether it's matching the desired state
    * @param primary the primary resource from which the desired state is inferred
+   * @param key key of the resource
    * @param context the context in which the resource is being matched
    * @return a {@link Result} encapsulating whether the resource matched its desired state and this
    *         associated state if it was computed as part of the matching process. Use the static
    *         convenience methods ({@link Result#nonComputed(boolean)} and
    *         {@link Result#computed(boolean, Object)})
    */
-  Result<R> match(R actualResource, P primary, int index, Context<P> context);
-
-  Optional<R> getSecondaryResource(P primary, int index, Context<P> context);
+  Result<R> match(R actualResource, P primary, String key, Context<P> context);
 
 }
