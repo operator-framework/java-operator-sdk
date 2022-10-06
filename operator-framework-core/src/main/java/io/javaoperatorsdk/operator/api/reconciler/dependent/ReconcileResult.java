@@ -22,15 +22,14 @@ public class ReconcileResult<R> {
     return new ReconcileResult<>(resource, Operation.NONE);
   }
 
-  @SafeVarargs
-  public static <T> ReconcileResult<T> aggregatedResult(ReconcileResult<T>... results) {
+  public static <T> ReconcileResult<T> aggregatedResult(List<ReconcileResult<T>> results) {
     if (results == null) {
       throw new IllegalArgumentException("Should provide results to aggregate");
     }
-    if (results.length == 1) {
-      return results[0];
+    if (results.size() == 1) {
+      return results.get(0);
     }
-    final Map<T, Operation> operations = new HashMap<>(results.length);
+    final Map<T, Operation> operations = new HashMap<>(results.size());
     for (ReconcileResult<T> res : results) {
       res.getSingleResource().ifPresent(r -> operations.put(r, res.getSingleOperation()));
     }
