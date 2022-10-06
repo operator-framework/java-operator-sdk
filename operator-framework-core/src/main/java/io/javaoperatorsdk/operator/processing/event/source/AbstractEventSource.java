@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 public abstract class AbstractEventSource implements EventSource {
   private EventHandler handler;
   private volatile boolean running = false;
-  private EventSourceStartPriority eventSourceStartPriority;
+  private EventSourceStartPriority eventSourceStartPriority = EventSourceStartPriority.DEFAULT;
 
   protected EventHandler getEventHandler() {
     return handler;

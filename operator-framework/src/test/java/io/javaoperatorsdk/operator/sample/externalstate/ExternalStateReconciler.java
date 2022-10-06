@@ -58,6 +58,7 @@ public class ExternalStateReconciler
             .build())
         .withData(Map.of(ID_KEY, createdResource.getId()))
         .build();
+    configMap.addOwnerReference(resource);
     client.configMaps().resource(configMap).create();
 
     var primaryID = ResourceID.fromResource(resource);
