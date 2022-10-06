@@ -26,10 +26,10 @@ See the [contribution](https://javaoperatorsdk.io/docs/contributing) guide on th
 ## What is Java Operator SDK
 
 Java Operator SDK is a higher level framework and related tooling to support writing Kubernetes Operators in Java.
-It makes it easy to implement best practices and patters for an Operator. Features include: 
+It makes it easy to implement best practices and patterns for an Operator. Features include: 
 
 * Optimal handling Kubernetes API events
-* Handling dependent resources, related events, caching.
+* Handling dependent resources, related events, and caching.
 * Automatic Retries
 * Smart event scheduling
 * Handling Observed Generations automatically
@@ -58,7 +58,7 @@ project, as shown below:
   Operators in Java with the Java Operator SDK" blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk#).
 - [Keycloak operator](https://github.com/keycloak/keycloak/tree/main/operator): the official
   Keycloak operator, built with Quarkus and JOSDK.
-- [Apache Flink Kubernetes operator](https://github.com/apache/flink-kubernetes-operator) is the market lead among Flink operators.
+- [Apache Flink Kubernetes operator](https://github.com/apache/flink-kubernetes-operator) is the market leader among Flink operators.
 - [Strimzi Access operator](https://github.com/strimzi/kafka-access-operator). While the core Strimzi operator development predates  
   JOSDK, but new components like the Access operator is using the framework.
-- [EureKubeOperator](https://medium.com/@heesuk.dev/implementing-kubernetes-operator-for-eureka-service-discovery-integration-by-java-operator-sdk-d21d8087c38e): integrates service discovery of Eureka and Kubernetes using the framework - developed by 11street. It is not released as open source yet, but is a very interesting reading about this problem and how it is solved by an operator in writen JOSDK.
+- [EureKubeOperator](https://medium.com/@heesuk.dev/implementing-kubernetes-operator-for-eureka-service-discovery-integration-by-java-operator-sdk-d21d8087c38e): integrates service discovery of Eureka and Kubernetes using the framework - developed by 11street. It is not released as an open source yet but is very interesting to read about this problem and how it is solved by an operator written with JOSDK.
