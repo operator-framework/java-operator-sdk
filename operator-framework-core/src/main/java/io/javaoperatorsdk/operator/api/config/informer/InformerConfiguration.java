@@ -164,7 +164,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
 
     /**
-     * Whether or not the associated informer should track changes made to the parent
+     * Whether the associated informer should track changes made to the parent
      * {@link io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
      *
      * @param followChanges {@code true} to reconfigure the associated informer when the parent
