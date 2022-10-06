@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.time.Duration;
+import java.util.ArrayList;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -27,6 +28,9 @@ public class LeaderElectionTestReconciler
 
     if (resource.getStatus() == null) {
       resource.setStatus(new LeaderElectionStatus());
+    }
+    if (resource.getStatus().getReconciledBy() == null) {
+      resource.getStatus().setReconciledBy(new ArrayList<>());
     }
 
     resource.getStatus().getReconciledBy().add(reconcilerName);
