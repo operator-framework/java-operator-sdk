@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -139,9 +140,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
+  @SuppressWarnings("unchecked")
   public Result<R> match(R actualResource, P primary, String key, Context<P> context) {
-    final var desired = bulkDependentResource.desired(primary, key, context);
-    return GenericKubernetesResourceMatcher.match((R) desired, actualResource, false);
+    final var desired = ((BulkDependentResource<R, P>) this).desired(primary, key, context);
+    return GenericKubernetesResourceMatcher.match(desired, actualResource, false);
   }
 
   protected void handleDelete(P primary, Context<P> context) {
@@ -149,7 +151,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
-
+  @SuppressWarnings("unused")
   public void deleteBulkResource(P primary, R resource, String key, Context<P> context) {
     client.resource(resource).delete();
   }

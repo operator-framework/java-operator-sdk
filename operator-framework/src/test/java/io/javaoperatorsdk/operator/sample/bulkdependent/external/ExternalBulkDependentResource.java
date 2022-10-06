@@ -60,7 +60,7 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public Set<String> targetKeys(BulkDependentTestCustomResource primary,
+  public Set<String> desiredResourceKeys(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
     Set<String> res = new HashSet<>();

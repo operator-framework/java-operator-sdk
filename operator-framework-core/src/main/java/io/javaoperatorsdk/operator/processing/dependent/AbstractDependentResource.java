@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @Ignore
@@ -20,58 +21,32 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
-  private final boolean bulk = this instanceof BulkDependentResource;
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  protected BulkDependentResource<R, P> bulkDependentResource;
   private ResourceDiscriminator<R, P> resourceDiscriminator;
+  private final DependentResourceReconciler<R, P> dependentResourceReconciler;
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   protected AbstractDependentResource() {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
 
-    bulkDependentResource = bulk ? (BulkDependentResource) this : null;
+    dependentResourceReconciler = this instanceof BulkDependentResource
+        ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
+        : new SingleDependentResourceReconciler<>(this);
   }
-
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    if (bulk) {
-      final var targetKeys = bulkDependentResource.targetKeys(primary, context);
-      Map<String, R> actualResources =
-          bulkDependentResource.getSecondaryResources(primary, context);
-
-      deleteBulkResourcesIfRequired(targetKeys, actualResources, primary, context);
-      final List<ReconcileResult<R>> results = new ArrayList<>(targetKeys.size());
-
-      for (String key : targetKeys) {
-        results.add(reconcileIndexAware(primary, actualResources.get(key), key, context));
-      }
-      return ReconcileResult.aggregatedResult(results);
-    } else {
-      var actualResource = getSecondaryResource(primary, context);
-      return reconcileIndexAware(primary, actualResource.orElse(null), null, context);
-    }
+    return dependentResourceReconciler.reconcile(primary, context);
   }
 
-  @SuppressWarnings({"rawtypes"})
-  protected void deleteBulkResourcesIfRequired(Set targetKeys, Map<String, R> actualResources,
-      P primary, Context<P> context) {
-    actualResources.forEach((key, value) -> {
-      if (!targetKeys.contains(key)) {
-        bulkDependentResource.deleteBulkResource(primary, value, key, context);
-      }
-    });
-  }
-
-  protected ReconcileResult<R> reconcileIndexAware(P primary, R resource, String key,
-      Context<P> context) {
+  protected ReconcileResult<R> reconcile(P primary, R resource, Context<P> context) {
     if (creatable || updatable) {
       if (resource == null) {
         if (creatable) {
-          var desired = desiredIndexAware(primary, key, context);
+          var desired = desired(primary, context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -80,14 +55,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       } else {
         if (updatable) {
           final Matcher.Result<R> match;
-          if (bulk) {
-            match = bulkDependentResource.match(resource, primary, key, context);
-          } else {
-            match = updater.match(resource, primary, context);
-          }
+          match = match(resource, primary, context);
           if (!match.matched()) {
             final var desired =
-                match.computedDesired().orElse(desiredIndexAware(primary, key, context));
+                match.computedDesired().orElse(desired(primary, context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(resource, desired, primary, context);
@@ -105,9 +76,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(resource);
   }
 
-  private R desiredIndexAware(P primary, String key, Context<P> context) {
-    return bulk ? bulkDependentResource.desired(primary, key, context)
-        : desired(primary, context);
+  public Result<R> match(R resource, P primary, Context<P> context) {
+    return updater.match(resource, primary, context);
   }
 
   @Override
@@ -174,12 +144,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   public void delete(P primary, Context<P> context) {
-    if (bulk) {
-      var actualResources = bulkDependentResource.getSecondaryResources(primary, context);
-      deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
-    } else {
-      handleDelete(primary, context);
-    }
+    dependentResourceReconciler.delete(primary, context);
   }
 
   protected void handleDelete(P primary, Context<P> context) {
@@ -195,11 +160,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return creatable;
   }
 
+  @SuppressWarnings("unused")
   protected boolean isUpdatable() {
     return updatable;
   }
 
-  protected boolean isBulk() {
-    return bulk;
-  }
 }
