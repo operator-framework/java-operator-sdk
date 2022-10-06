@@ -47,8 +47,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     this.reconciler = reconciler;
     this.annotation = reconciler.getClass().getAnnotation(ControllerConfiguration.class);
     if (annotation == null) {
-      throw new OperatorException("Missing mandatory @" + CONTROLLER_CONFIG_ANNOTATION +
-          " annotation for reconciler:  " + reconciler);
+      throw new OperatorException(
+          "Missing mandatory @" + ControllerConfiguration.class.getSimpleName() +
+              " annotation for reconciler:  " + reconciler);
     }
   }
 
@@ -227,7 +228,7 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
             Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
             Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
             Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
-                eventSourceName);
+            eventSourceName);
         specsMap.put(name, spec);
       }
 
@@ -278,8 +279,8 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
           Utils.instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
 
       resourceDiscriminator =
-              Utils.instantiate(kubeDependent.resourceDiscriminator(),
-                      ResourceDiscriminator.class, context);
+          Utils.instantiate(kubeDependent.resourceDiscriminator(),
+              ResourceDiscriminator.class, context);
     }
 
     config =
