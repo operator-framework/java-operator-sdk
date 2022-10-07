@@ -46,14 +46,15 @@ public interface BulkDependentResource<R, P extends HasMetadata>
    * {@link Context}.
    *
    * @param actualResource the resource we want to determine whether it's matching the desired state
+   * @param desired the resource's desired state
    * @param primary the primary resource from which the desired state is inferred
-   * @param key key of the resource
    * @param context the context in which the resource is being matched
    * @return a {@link Result} encapsulating whether the resource matched its desired state and this
    *         associated state if it was computed as part of the matching process. Use the static
    *         convenience methods ({@link Result#nonComputed(boolean)} and
    *         {@link Result#computed(boolean, Object)})
    */
-  Result<R> match(R actualResource, R desired, P primary, String key, Context<P> context);
-
+  default Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
+    return Matcher.Result.computed(desired.equals(actualResource), desired);
+  }
 }

@@ -23,15 +23,15 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    final var targetKeys = bulkDependentResource.desiredResourceKeys(primary, context);
+    final var desiredResources = bulkDependentResource.desiredResources(primary, context);
     Map<String, R> actualResources =
         bulkDependentResource.getSecondaryResources(primary, context);
 
-    deleteBulkResourcesIfRequired(targetKeys, actualResources, primary, context);
+    deleteBulkResourcesIfRequired(desiredResources.keySet(), actualResources, primary, context);
 
-    final List<ReconcileResult<R>> results = new ArrayList<>(targetKeys.size());
+    final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
     actualResources.forEach((key, value) -> {
-      final var instance = new BulkDependentResourceInstance<>(key, bulkDependentResource);
+      final var instance = new BulkDependentResourceInstance<>(bulkDependentResource, value);
       results.add(instance.reconcile(primary, value, context));
     });
 
@@ -55,13 +55,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
   private static class BulkDependentResourceInstance<R, P extends HasMetadata>
       extends AbstractDependentResource<R, P> {
-    private final String key;
     private final BulkDependentResource<R, P> bulkDependentResource;
+    private final R desired;
 
-    private BulkDependentResourceInstance(String key,
-        BulkDependentResource<R, P> bulkDependentResource) {
-      this.key = key;
+    private BulkDependentResourceInstance(BulkDependentResource<R, P> bulkDependentResource,
+        R desired) {
       this.bulkDependentResource = bulkDependentResource;
+      this.desired = desired;
     }
 
     @SuppressWarnings("unchecked")
@@ -71,12 +71,12 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
     @Override
     protected R desired(P primary, Context<P> context) {
-      return bulkDependentResource.desired(primary, key, context);
+      return desired;
     }
 
     @Override
     public Result<R> match(R resource, P primary, Context<P> context) {
-      return bulkDependentResource.match(resource, primary, key, context);
+      return bulkDependentResource.match(resource, desired, primary, context);
     }
 
     @Override

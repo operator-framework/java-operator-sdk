@@ -42,7 +42,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return dependentResourceReconciler.reconcile(primary, context);
   }
 
-  protected ReconcileResult<R> reconcile(P primary, R resource, Context<P> context) {
+  protected ReconcileResult<R> reconcile(P primary, R actualResource, Context<P> context) {
     if (creatable || updatable) {
       if (actualResource == null) {
         if (creatable) {
@@ -55,7 +55,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       } else {
         if (updatable) {
           final Matcher.Result<R> match;
-          match = match(resource, primary, context);
+          match = match(actualResource, primary, context);
           if (!match.matched()) {
             final var desired =
                 match.computedDesired().orElse(desired(primary, context));
