@@ -60,12 +60,14 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public Set<String> targetKeys(BulkDependentTestCustomResource primary,
+  public Map<String, ExternalResource> desiredResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
-    Set<String> res = new HashSet<>();
+    Map<String, ExternalResource> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
-      res.add(Integer.toString(i));
+      var key = Integer.toString(i);
+      res.put(key, new ExternalResource(toExternalResourceId(primary, key),
+          primary.getSpec().getAdditionalData()));
     }
     return res;
   }
@@ -85,13 +87,6 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public ExternalResource desired(BulkDependentTestCustomResource primary, String key,
-      Context<BulkDependentTestCustomResource> context) {
-    return new ExternalResource(toExternalResourceId(primary, key),
-        primary.getSpec().getAdditionalData());
-  }
-
-  @Override
   public void deleteBulkResource(BulkDependentTestCustomResource primary, ExternalResource resource,
       String key,
       Context<BulkDependentTestCustomResource> context) {
@@ -100,9 +95,9 @@ public class ExternalBulkDependentResource
 
   @Override
   public Matcher.Result<ExternalResource> match(ExternalResource actualResource,
+      ExternalResource desired,
       BulkDependentTestCustomResource primary, String index,
       Context<BulkDependentTestCustomResource> context) {
-    var desired = desired(primary, index, context);
     return Matcher.Result.computed(desired.equals(actualResource), desired);
   }
 }
