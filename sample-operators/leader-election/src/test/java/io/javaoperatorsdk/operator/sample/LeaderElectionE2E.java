@@ -152,7 +152,7 @@ class LeaderElectionE2E {
 
   void applyCRD() {
     String path =
-        "./src/main/resources/kubernetes/leaderelection.sample.javaoperatorsdk-v1.yml";
+        "./src/main/resources/kubernetes/leaderelections.sample.javaoperatorsdk-v1.yml";
     try (InputStream is = new FileInputStream(path)) {
       final var crd = client.load(is);
       crd.createOrReplace();
