@@ -35,6 +35,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     bulkDependentResource = bulk ? (BulkDependentResource) this : null;
   }
 
+
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     if (bulk) {

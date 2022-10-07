@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
@@ -51,7 +52,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
+    this.kubernetesClient = kubernetesClient != null ? kubernetesClient
+        : new KubernetesClientBuilder()
+            .withConfig(configurationService.getClientConfiguration()).build();
     this.configurationService = configurationService;
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
