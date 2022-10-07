@@ -32,17 +32,17 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  public Set<String> targetKeys(BulkDependentTestCustomResource primary,
+  public Map<String, ConfigMap> desiredResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
-    Set<String> res = new HashSet<>();
+    Map<String, ConfigMap> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
-      res.add(Integer.toString(i));
+      var key = Integer.toString(i);
+      res.put(key, desired(primary, key, context));
     }
     return res;
   }
 
-  @Override
   public ConfigMap desired(BulkDependentTestCustomResource primary, String key,
       Context<BulkDependentTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
