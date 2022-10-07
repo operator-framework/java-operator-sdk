@@ -1,4 +1,12 @@
 package io.javaoperatorsdk.operator;
 
-public class ExternalStateIT {
+class ExternalStateIT {
+
+  // @RegisterExtension
+  // LocallyRunOperatorExtension operator =
+  // LocallyRunOperatorExtension.builder().withReconciler(ExternalStateReconciler.class)
+  // .build();
+
+
+
 }
