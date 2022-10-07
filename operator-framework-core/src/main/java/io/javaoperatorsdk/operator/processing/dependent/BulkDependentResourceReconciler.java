@@ -78,6 +78,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     protected R desired(P primary, Context<P> context) {
       return desired;
     }
+
     @SuppressWarnings("unchecked")
     public R update(R actual, R desired, P primary, Context<P> context) {
       return ((Updater<R, P>) bulkDependentResource).update(actual, desired, primary, context);
