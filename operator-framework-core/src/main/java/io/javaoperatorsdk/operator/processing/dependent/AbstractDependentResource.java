@@ -57,8 +57,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           final Matcher.Result<R> match;
           match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired =
-                match.computedDesired().orElse(desired(primary, context));
+            final var desired = match.computedDesired().orElse(desired(primary, context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);

@@ -8,6 +8,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -30,9 +31,12 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     deleteBulkResourcesIfRequired(desiredResources.keySet(), actualResources, primary, context);
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
-    actualResources.forEach((key, value) -> {
-      final var instance = new BulkDependentResourceInstance<>(bulkDependentResource, value);
-      results.add(instance.reconcile(primary, value, context));
+    final var updatable = bulkDependentResource instanceof Updater;
+    desiredResources.forEach((key, value) -> {
+      final var instance =
+          updatable ? new UpdatableBulkDependentResourceInstance<>(bulkDependentResource, value)
+              : new BulkDependentResourceInstance<>(bulkDependentResource, value);
+      results.add(instance.reconcile(primary, actualResources.get(key), context));
     });
 
     return ReconcileResult.aggregatedResult(results);
@@ -54,7 +58,8 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
   }
 
   private static class BulkDependentResourceInstance<R, P extends HasMetadata>
-      extends AbstractDependentResource<R, P> {
+      extends AbstractDependentResource<R, P>
+      implements Creator<R, P>, Deleter<P> {
     private final BulkDependentResource<R, P> bulkDependentResource;
     private final R desired;
 
@@ -72,6 +77,10 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     @Override
     protected R desired(P primary, Context<P> context) {
       return desired;
+    }
+    @SuppressWarnings("unchecked")
+    public R update(R actual, R desired, P primary, Context<P> context) {
+      return ((Updater<R, P>) bulkDependentResource).update(actual, desired, primary, context);
     }
 
     @Override
@@ -92,6 +101,21 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     @Override
     public Class<R> resourceType() {
       return asAbstractDependentResource().resourceType();
+    }
+
+    @Override
+    public R create(R desired, P primary, Context<P> context) {
+      return bulkDependentResource.create(desired, primary, context);
+    }
+  }
+
+  private static class UpdatableBulkDependentResourceInstance<R, P extends HasMetadata>
+      extends BulkDependentResourceInstance<R, P> implements Updater<R, P> {
+
+    private UpdatableBulkDependentResourceInstance(
+        BulkDependentResource<R, P> bulkDependentResource,
+        R desired) {
+      super(bulkDependentResource, desired);
     }
   }
 }
