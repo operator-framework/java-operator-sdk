@@ -52,7 +52,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
       Map<String, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!expectedKeys.contains(key)) {
-        bulkDependentResource.deleteBulkResource(primary, value, key, context);
+        bulkDependentResource.deleteTargetResource(primary, value, key, context);
       }
     });
   }
