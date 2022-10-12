@@ -36,7 +36,7 @@ public class TomcatReconciler implements Reconciler<Tomcat> {
           tomcat.getMetadata().getNamespace(),
           tomcat.getStatus().getReadyReplicas());
       return UpdateControl.patchStatus(updatedTomcat);
-    }).orElse(UpdateControl.noUpdate());
+    }).orElseGet(UpdateControl::noUpdate);
   }
 
   private Tomcat updateTomcatStatus(Tomcat tomcat, Deployment deployment) {

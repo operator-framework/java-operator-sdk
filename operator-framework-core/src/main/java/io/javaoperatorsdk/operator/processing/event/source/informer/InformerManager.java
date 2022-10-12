@@ -127,11 +127,11 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     if (isWatchingAllNamespaces()) {
       return getSource(ALL_NAMESPACES_MAP_KEY)
           .map(source -> source.list(namespace, predicate))
-          .orElse(Stream.empty());
+          .orElseGet(Stream::empty);
     } else {
       return getSource(namespace)
           .map(source -> source.list(predicate))
-          .orElse(Stream.empty());
+          .orElseGet(Stream::empty);
     }
   }
 

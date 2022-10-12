@@ -165,7 +165,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       Exception e) throws Exception {
     if (isErrorStatusHandlerPresent()) {
       try {
-        RetryInfo retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
+        RetryInfo retryInfo = context.getRetryInfo().orElseGet(() -> new RetryInfo() {
           @Override
           public int getAttemptCount() {
             return 0;
