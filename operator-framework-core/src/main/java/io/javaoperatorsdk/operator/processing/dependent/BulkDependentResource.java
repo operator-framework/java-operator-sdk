@@ -41,13 +41,13 @@ public interface BulkDependentResource<R, P extends HasMetadata>
   Map<String, R> getSecondaryResources(P primary, Context<P> context);
 
   /**
-   * Deletes the actual resource identified by the specified key if it's not in the set of desired
-   * secondary resources for the specified primary.
+   * Deletes the actual resource if it's not in the set of desired secondary resources for the
+   * specified primary.
    *
-   * @param primary  the primary resource for which we want to remove now undesired secondary
-   *                 resources still present on the cluster
+   * @param primary the primary resource for which we want to remove now undesired secondary
+   *        resources still present on the cluster
    * @param resource the actual resource existing on the cluster that needs to be removed
-   * @param context  actual context
+   * @param context actual context
    */
   void deleteTargetResource(P primary, R resource, Context<P> context);
 
