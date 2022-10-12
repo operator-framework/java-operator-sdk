@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -83,12 +82,6 @@ class AbstractDependentResourceTest {
         Context<TestCustomResource> context) {
       return Optional.ofNullable(secondary);
     }
-
-    @Override
-    protected void onCreated(ResourceID primaryResourceId, ConfigMap created) {}
-
-    @Override
-    protected void onUpdated(ResourceID primaryResourceId, ConfigMap updated, ConfigMap actual) {}
 
     @Override
     protected ConfigMap desired(TestCustomResource primary, Context<TestCustomResource> context) {

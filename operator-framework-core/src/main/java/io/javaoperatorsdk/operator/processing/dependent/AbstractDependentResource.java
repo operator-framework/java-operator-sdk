@@ -125,7 +125,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    *        newly created resource
    * @param created the newly created resource
    */
-  protected abstract void onCreated(ResourceID primaryResourceId, R created);
+  protected void onCreated(ResourceID primaryResourceId, R created) {}
 
   /**
    * Allows subclasses to perform additional processing on the updated resource if needed.
@@ -135,7 +135,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @param updated the updated resource
    * @param actual the resource as it was before the update
    */
-  protected abstract void onUpdated(ResourceID primaryResourceId, R updated, R actual);
+  protected void onUpdated(ResourceID primaryResourceId, R updated, R actual) {}
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     ResourceID resourceID = ResourceID.fromResource(primary);
@@ -166,7 +166,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected boolean isCreatable() {
     return creatable;
   }
-
   @SuppressWarnings("unused")
   protected boolean isUpdatable() {
     return updatable;
