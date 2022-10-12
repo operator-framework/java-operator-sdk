@@ -139,7 +139,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return matcher.match(actualResource, primary, context);
   }
 
-  public Result<R> match(R actualResource, R desired, P primary, String key, Context<P> context) {
+  @SuppressWarnings("unused")
+  public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     return GenericKubernetesResourceMatcher.match(desired, actualResource, false);
   }
 
@@ -148,6 +149,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     resource.ifPresent(r -> client.resource(r).delete());
   }
 
+  @SuppressWarnings("unused")
   public void deleteBulkResource(P primary, R resource, String key, Context<P> context) {
     client.resource(resource).delete();
   }
