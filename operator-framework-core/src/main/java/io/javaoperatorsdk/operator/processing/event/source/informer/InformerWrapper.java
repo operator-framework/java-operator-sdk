@@ -7,6 +7,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
@@ -20,6 +23,8 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 class InformerWrapper<T extends HasMetadata>
     implements LifecycleAware, IndexerResourceCache<T> {
+
+  private static final Logger log = LoggerFactory.getLogger(InformerWrapper.class);
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
@@ -45,8 +50,7 @@ class InformerWrapper<T extends HasMetadata>
               });
             } else {
               final var apiTypeClass = informer.getApiTypeClass();
-              final var fullResourceName =
-                  HasMetadata.getFullResourceName(apiTypeClass);
+              final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
               final var version = HasMetadata.getVersion(apiTypeClass);
               throw new IllegalStateException(
                   "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
@@ -55,8 +59,12 @@ class InformerWrapper<T extends HasMetadata>
           });
 
     } catch (Exception e) {
-      ReconcilerUtils.handleKubernetesClientException(e,
-          HasMetadata.getFullResourceName(informer.getApiTypeClass()));
+      final var apiTypeClass = informer.getApiTypeClass();
+      final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
+      final var version = HasMetadata.getVersion(apiTypeClass);
+      log.error("Couldn't start informer for " + fullResourceName + "/" + version + " resources",
+          e);
+      ReconcilerUtils.handleKubernetesClientException(e, fullResourceName);
       throw e;
     }
   }

@@ -133,7 +133,7 @@ public class ReconcilerUtils {
         // only throw MissingCRDException if the 404 error occurs on the target CRD
         if (resourceTypeName.equals(ke.getFullResourceName())
             || matchesResourceType(resourceTypeName, ke)) {
-          throw new MissingCRDException(resourceTypeName, null, e.getMessage(), e);
+          throw new MissingCRDException(resourceTypeName, ke.getVersion(), e.getMessage(), e);
         }
       }
     }
