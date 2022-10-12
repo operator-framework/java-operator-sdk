@@ -166,7 +166,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected boolean isCreatable() {
     return creatable;
   }
-  @SuppressWarnings("unused")
+@SuppressWarnings("unused")
   protected boolean isUpdatable() {
     return updatable;
   }

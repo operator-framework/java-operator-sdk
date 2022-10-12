@@ -1,10 +1,14 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.concurrent.CompletionStage;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 /**
  * Contextual information made available to event sources.
@@ -13,14 +17,14 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
  */
 public class EventSourceContext<P extends HasMetadata> {
 
-  private final IndexerResourceCache<P> primaryCache;
   private final ControllerConfiguration<P> controllerConfiguration;
   private final KubernetesClient client;
+  private final EventSourceManager<P> eventSourceManager;
 
-  public EventSourceContext(IndexerResourceCache<P> primaryCache,
+  public EventSourceContext(EventSourceManager<P> eventSourceManager,
       ControllerConfiguration<P> controllerConfiguration,
       KubernetesClient client) {
-    this.primaryCache = primaryCache;
+    this.eventSourceManager = eventSourceManager;
     this.controllerConfiguration = controllerConfiguration;
     this.client = client;
   }
@@ -31,7 +35,7 @@ public class EventSourceContext<P extends HasMetadata> {
    * @return the primary resource cache
    */
   public IndexerResourceCache<P> getPrimaryCache() {
-    return primaryCache;
+    return eventSourceManager.getControllerResourceEventSource();
   }
 
   /**
@@ -53,5 +57,10 @@ public class EventSourceContext<P extends HasMetadata> {
    */
   public KubernetesClient getClient() {
     return client;
+  }
+
+  public <R> CompletionStage<ResourceEventSource<R, P>> getResourceEventSourceWhenStartedFor(
+      Class<R> dependentType, String name) {
+    return eventSourceManager.getResourceEventSourceWhenStartedFor(dependentType, name);
   }
 }

@@ -4,6 +4,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -31,6 +33,7 @@ public class EventSourceManager<P extends HasMetadata>
 
   private final EventSources<P> eventSources;
   private final Controller<P> controller;
+  private CompletableFuture<Boolean> started;
 
   public EventSourceManager(Controller<P> controller) {
     this(controller, new EventSources<>());
@@ -41,8 +44,6 @@ public class EventSourceManager<P extends HasMetadata>
     this.controller = controller;
     // controller event source needs to be available before we create the event processor
     eventSources.initControllerEventSource(controller);
-
-
     postProcessDefaultEventSourcesAfterProcessorInitializer();
   }
 
@@ -63,21 +64,32 @@ public class EventSourceManager<P extends HasMetadata>
    */
   @Override
   public synchronized void start() {
-    startEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources()
-        .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
-        .parallel().forEach(this::startEventSource);
-    eventSources.additionalNamedEventSources()
-        .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
-        .parallel().forEach(this::startEventSource);
+    started = new CompletableFuture<>();
+    try {
+      startEventSource(eventSources.namedControllerResourceEventSource());
+      eventSources.additionalNamedEventSources()
+          .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
+          .parallel().forEach(EventSourceManager.this::startEventSource);
+      eventSources.additionalNamedEventSources()
+          .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
+          .parallel().forEach(EventSourceManager.this::startEventSource);
+    } catch (Exception e) {
+      started.completeExceptionally(e);
+    }
+    started.complete(true);
   }
 
   @Override
   public synchronized void stop() {
-    stopEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource);
-    eventSources.clear();
-
+    started = new CompletableFuture<>();
+    try {
+      stopEventSource(eventSources.namedControllerResourceEventSource());
+      eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource);
+      eventSources.clear();
+    } catch (Exception e) {
+      started.completeExceptionally(e);
+    }
+    started.complete(false);
   }
 
   @SuppressWarnings("rawtypes")
@@ -121,6 +133,11 @@ public class EventSourceManager<P extends HasMetadata>
 
   public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
+    if (started != null && started.join()) {
+      throw new IllegalStateException(
+          "Cannot register new EventSources after manager has been started");
+    }
+
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (name == null || name.isBlank()) {
@@ -178,18 +195,16 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.controllerResourceEventSource();
   }
 
-  @Override
-  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType) {
-    return getResourceEventSourceFor(dependentType, null);
-  }
-
   public <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType) {
     return eventSources.getEventSources(dependentType);
   }
 
+  /**
+   * @deprecated Use {@link #getResourceEventSourceFor(Class)} instead
+   */
   @Deprecated
   public <R> List<ResourceEventSource<R, P>> getEventSourcesFor(Class<R> dependentType) {
-    return eventSources.getEventSources(dependentType);
+    return getResourceEventSourcesFor(dependentType);
   }
 
   @Override
@@ -197,6 +212,17 @@ public class EventSourceManager<P extends HasMetadata>
       Class<R> dependentType, String qualifier) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
     return eventSources.get(dependentType, qualifier);
+  }
+
+  public <R> CompletionStage<ResourceEventSource<R, P>> getResourceEventSourceWhenStartedFor(
+      Class<R> dependentType, String name) {
+    return started.thenApply(isStarted -> {
+      if (isStarted) {
+        return getResourceEventSourceFor(dependentType, name);
+      }
+      throw new IllegalStateException(
+          "Cannot retrieve EventSources on a non-started EventSourceManager");
+    });
   }
 
   TimerEventSource<P> retryEventSource() {

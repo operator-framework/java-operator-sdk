@@ -212,7 +212,7 @@ public class Controller<P extends HasMetadata>
     }
   }
 
-  public void initAndRegisterEventSources(EventSourceContext<P> context) {
+  private void initAndRegisterEventSources(EventSourceContext<P> context) {
     if (reconciler instanceof EventSourceInitializer) {
       final var provider = (EventSourceInitializer<P>) this.reconciler;
       final var ownSources = provider.prepareEventSources(context);
@@ -318,8 +318,8 @@ public class Controller<P extends HasMetadata>
     try {
       // check that the custom resource is known by the cluster if configured that way
       validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
-      final var context = new EventSourceContext<>(
-          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+      final var context =
+          new EventSourceContext<>(eventSourceManager, configuration, kubernetesClient);
 
       initAndRegisterEventSources(context);
       eventSourceManager.start();
