@@ -17,10 +17,27 @@ public interface BulkDependentResource<R, P extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {
 
   /**
-   * @return number of resources to create
+   * Retrieves a map of desired secondary resources associated with the specified primary resource,
+   * identified by an arbitrary key.
+   *
+   * @param primary the primary resource with which we want to identify which secondary resources
+   *        are associated
+   * @param context the {@link Context} associated with the current reconciliation
+   * @return a Map associating desired secondary resources with the specified primary via arbitrary
+   *         identifiers
    */
   Map<String, R> desiredResources(P primary, Context<P> context);
 
+  /**
+   * Retrieves the actual secondary resources currently existing on the server and associated with
+   * the specified primary resource.
+   *
+   * @param primary the primary resource for which we want to retrieve the associated secondary
+   *        resources
+   * @param context the {@link Context} associated with the current reconciliation
+   * @return a Map associating actual secondary resources with the specified primary via arbitrary
+   *         identifiers
+   */
   Map<String, R> getSecondaryResources(P primary, Context<P> context);
 
   /**
@@ -39,14 +56,15 @@ public interface BulkDependentResource<R, P extends HasMetadata>
    * {@link Context}.
    *
    * @param actualResource the resource we want to determine whether it's matching the desired state
+   * @param desired the resource's desired state
    * @param primary the primary resource from which the desired state is inferred
-   * @param key key of the resource
    * @param context the context in which the resource is being matched
    * @return a {@link Result} encapsulating whether the resource matched its desired state and this
    *         associated state if it was computed as part of the matching process. Use the static
    *         convenience methods ({@link Result#nonComputed(boolean)} and
    *         {@link Result#computed(boolean, Object)})
    */
-  Result<R> match(R actualResource, R desired, P primary, String key, Context<P> context);
-
+  default Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
+    return Matcher.Result.computed(desired.equals(actualResource), desired);
+  }
 }
