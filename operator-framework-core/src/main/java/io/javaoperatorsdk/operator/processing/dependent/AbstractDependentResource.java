@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @Ignore
@@ -20,61 +21,40 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
-  private final boolean bulk = this instanceof BulkDependentResource;
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  protected BulkDependentResource<R, P> bulkDependentResource;
   private ResourceDiscriminator<R, P> resourceDiscriminator;
+  private final DependentResourceReconciler<R, P> dependentResourceReconciler;
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   protected AbstractDependentResource() {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
 
-    bulkDependentResource = bulk ? (BulkDependentResource) this : null;
+    dependentResourceReconciler = this instanceof BulkDependentResource
+        ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
+        : new SingleDependentResourceReconciler<>(this);
   }
 
-
+  /**
+   * Overriding classes are strongly encouraged to call this implementation as part of their
+   * implementation, as they otherwise risk breaking functionality.
+   *
+   * @param primary the primary resource for which we want to reconcile the dependent state
+   * @param context {@link Context} providing useful contextual information
+   * @return the reconciliation result
+   */
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    if (bulk) {
-      final var targetResources = bulkDependentResource.desiredResources(primary, context);
-
-      Map<String, R> actualResources =
-          bulkDependentResource.getSecondaryResources(primary, context);
-
-      deleteBulkResourcesIfRequired(targetResources.keySet(), actualResources, primary, context);
-      final List<ReconcileResult<R>> results = new ArrayList<>(targetResources.size());
-
-      targetResources.forEach((key, resource) -> {
-        results.add(reconcileIndexAware(primary, actualResources.get(key), resource, key, context));
-      });
-
-      return ReconcileResult.aggregatedResult(results);
-    } else {
-      var actualResource = getSecondaryResource(primary, context);
-      return reconcileIndexAware(primary, actualResource.orElse(null), null, null, context);
-    }
+    return dependentResourceReconciler.reconcile(primary, context);
   }
 
-  @SuppressWarnings({"rawtypes"})
-  protected void deleteBulkResourcesIfRequired(Set targetKeys, Map<String, R> actualResources,
-      P primary, Context<P> context) {
-    actualResources.forEach((key, value) -> {
-      if (!targetKeys.contains(key)) {
-        bulkDependentResource.deleteBulkResource(primary, value, key, context);
-      }
-    });
-  }
-
-  protected ReconcileResult<R> reconcileIndexAware(P primary, R actualResource, R desiredResource,
-      String key,
-      Context<P> context) {
+  protected ReconcileResult<R> reconcile(P primary, R actualResource, Context<P> context) {
     if (creatable || updatable) {
       if (actualResource == null) {
         if (creatable) {
-          var desired = bulkAwareDesired(primary, desiredResource, context);
+          var desired = desired(primary, context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -82,16 +62,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         }
       } else {
         if (updatable) {
-          final Matcher.Result<R> match;
-          if (bulk) {
-            match =
-                bulkDependentResource.match(actualResource, desiredResource, primary, key, context);
-          } else {
-            match = updater.match(actualResource, primary, context);
-          }
+          final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired =
-                match.computedDesired().orElse(bulkAwareDesired(primary, desiredResource, context));
+            final var desired = match.computedDesired().orElse(desired(primary, context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
@@ -110,9 +83,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(actualResource);
   }
 
-  private R bulkAwareDesired(P primary, R alreadyComputedDesire, Context<P> context) {
-    return bulk ? alreadyComputedDesire
-        : desired(primary, context);
+  public Result<R> match(R resource, P primary, Context<P> context) {
+    return updater.match(resource, primary, context);
   }
 
   @Override
@@ -179,12 +151,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   public void delete(P primary, Context<P> context) {
-    if (bulk) {
-      var actualResources = bulkDependentResource.getSecondaryResources(primary, context);
-      deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
-    } else {
-      handleDelete(primary, context);
-    }
+    dependentResourceReconciler.delete(primary, context);
   }
 
   protected void handleDelete(P primary, Context<P> context) {
@@ -200,11 +167,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return creatable;
   }
 
+  @SuppressWarnings("unused")
   protected boolean isUpdatable() {
     return updatable;
-  }
-
-  protected boolean isBulk() {
-    return bulk;
   }
 }
