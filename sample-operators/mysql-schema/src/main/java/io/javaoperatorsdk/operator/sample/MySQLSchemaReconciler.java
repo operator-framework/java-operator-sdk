@@ -44,7 +44,7 @@ public class MySQLSchemaReconciler
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
       log.info("Schema {} created - updating CR status", s.getName());
       return UpdateControl.patchStatus(schema);
-    }).orElse(UpdateControl.noUpdate());
+    }).orElseGet(UpdateControl::noUpdate);
   }
 
   @Override
