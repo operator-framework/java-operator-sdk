@@ -37,6 +37,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         : new SingleDependentResourceReconciler<>(this);
   }
 
+  /**
+   * Overriding classes are strongly encouraged to call this implementation as part of their
+   * implementation, as they otherwise risk breaking functionality.
+   *
+   * @param primary the primary resource for which we want to reconcile the dependent state
+   * @param context {@link Context} providing useful contextual information
+   * @return the reconciliation result
+   */
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     return dependentResourceReconciler.reconcile(primary, context);
@@ -54,8 +62,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         }
       } else {
         if (updatable) {
-          final Matcher.Result<R> match;
-          match = match(actualResource, primary, context);
+          final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElse(desired(primary, context));
             throwIfNull(desired, primary, "Desired");

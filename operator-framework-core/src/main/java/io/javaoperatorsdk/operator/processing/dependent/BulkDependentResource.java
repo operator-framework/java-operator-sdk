@@ -23,11 +23,21 @@ public interface BulkDependentResource<R, P extends HasMetadata>
    * @param primary the primary resource with which we want to identify which secondary resources
    *        are associated
    * @param context the {@link Context} associated with the current reconciliation
-   * @return a Map associating bulk secondary resources with the specified primary via arbitrary
+   * @return a Map associating desired secondary resources with the specified primary via arbitrary
    *         identifiers
    */
   Map<String, R> desiredResources(P primary, Context<P> context);
 
+  /**
+   * Retrieves the actual secondary resources currently existing on the server and associated with
+   * the specified primary resource.
+   * 
+   * @param primary the primary resource for which we want to retrieve the associated secondary
+   *        resources
+   * @param context the {@link Context} associated with the current reconciliation
+   * @return a Map associating actual secondary resources with the specified primary via arbitrary
+   *         identifiers
+   */
   Map<String, R> getSecondaryResources(P primary, Context<P> context);
 
   /**

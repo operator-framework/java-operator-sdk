@@ -25,9 +25,9 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
     final var desiredResources = bulkDependentResource.desiredResources(primary, context);
-    Map<String, R> actualResources =
-        bulkDependentResource.getSecondaryResources(primary, context);
+    Map<String, R> actualResources = bulkDependentResource.getSecondaryResources(primary, context);
 
+    // remove existing resources that are not needed anymore according to the primary state
     deleteBulkResourcesIfRequired(desiredResources.keySet(), actualResources, primary, context);
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
@@ -48,7 +48,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
   }
 
-  protected void deleteBulkResourcesIfRequired(Set<String> expectedKeys,
+  private void deleteBulkResourcesIfRequired(Set<String> expectedKeys,
       Map<String, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!expectedKeys.contains(key)) {
@@ -57,6 +57,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     });
   }
 
+  /**
+   * Exposes a dynamically-created instance of the bulk dependent resource precursor as an
+   * AbstractDependentResource so that we can reuse its reconciliation logic.
+   * 
+   * @param <R>
+   * @param <P>
+   */
   private static class BulkDependentResourceInstance<R, P extends HasMetadata>
       extends AbstractDependentResource<R, P>
       implements Creator<R, P>, Deleter<P> {
@@ -110,6 +117,12 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     }
   }
 
+  /**
+   * Makes sure that the instance implements Updater if its precursor does as well.
+   * 
+   * @param <R>
+   * @param <P>
+   */
   private static class UpdatableBulkDependentResourceInstance<R, P extends HasMetadata>
       extends BulkDependentResourceInstance<R, P> implements Updater<R, P> {
 
