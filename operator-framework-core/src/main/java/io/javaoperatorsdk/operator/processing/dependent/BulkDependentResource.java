@@ -31,7 +31,7 @@ public interface BulkDependentResource<R, P extends HasMetadata>
   /**
    * Retrieves the actual secondary resources currently existing on the server and associated with
    * the specified primary resource.
-   * 
+   *
    * @param primary the primary resource for which we want to retrieve the associated secondary
    *        resources
    * @param context the {@link Context} associated with the current reconciliation

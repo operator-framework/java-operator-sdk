@@ -60,7 +60,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
   /**
    * Exposes a dynamically-created instance of the bulk dependent resource precursor as an
    * AbstractDependentResource so that we can reuse its reconciliation logic.
-   * 
+   *
    * @param <R>
    * @param <P>
    */
@@ -119,7 +119,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
   /**
    * Makes sure that the instance implements Updater if its precursor does as well.
-   * 
+   *
    * @param <R>
    * @param <P>
    */
